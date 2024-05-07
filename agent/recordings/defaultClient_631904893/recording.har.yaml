@@ -5,11 +5,11 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: 9f7f663cb598400f3c64fd1ca9ffc51f
+    - _id: 16a0e3fbc2a8228810f9f03e9be2cda5
       _order: 0
       cache: {}
       request:
-        bodySize: 520
+        bodySize: 768
         cookies: []
         headers:
           - name: content-type
@@ -37,10 +37,14 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: My name i Lar Monsen
+                text: My name is Lars Monsen
               - speaker: assistant
-                text: Nice to meet you Lar! I'm Cody, an AI assistant from Sourcegraph. How can
-                  I help you today?
+                text: It's nice to meet you Lars! I'm Cody, an AI assistant for helping with
+                  coding and programming questions. I'm always excited to chat
+                  with new humans and learn about their interests and goals
+                  related to technology. Do you have any particular coding
+                  projects or topics you're working on or curious about? I'd be
+                  happy discuss them with you.
               - speaker: human
                 text: What is my name?
               - speaker: assistant
@@ -51,10 +55,10 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 928
+        bodySize: 1018
         content:
           mimeType: text/event-stream
-          size: 928
+          size: 1018
           text: >+
             event: completion
 
@@ -88,27 +92,32 @@ log:
 
             event: completion
 
-            data: {"completion":"You told me your name is Lar","stopReason":""}
+            data: {"completion":"You told me your name is L","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"You told me your name is Lar Mon","stopReason":""}
+            data: {"completion":"You told me your name is Lars","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"You told me your name is Lar Monsen","stopReason":""}
+            data: {"completion":"You told me your name is Lars Mon","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"You told me your name is Lar Monsen.","stopReason":""}
+            data: {"completion":"You told me your name is Lars Monsen","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"You told me your name is Lar Monsen.","stopReason":"end_turn"}
+            data: {"completion":"You told me your name is Lars Monsen.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"You told me your name is Lars Monsen.","stopReason":"end_turn"}
 
 
             event: done
@@ -118,7 +127,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 25 Apr 2024 16:45:31 GMT
+            value: Tue, 07 May 2024 11:38:49 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -147,7 +156,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-04-25T16:45:29.708Z
+      startedDateTime: 2024-05-07T11:38:47.856Z
       time: 0
       timings:
         blocked: -1
@@ -996,11 +1005,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 0a41e22152406388804c0721b13c6409
+    - _id: 6c672b885e92d83bcec36f2320b7024f
       _order: 0
       cache: {}
       request:
-        bodySize: 255
+        bodySize: 257
         cookies: []
         headers:
           - name: content-type
@@ -1026,7 +1035,7 @@ log:
               - speaker: system
                 text: You are Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: My name i Lar Monsen
+                text: My name is Lars Monsen
             model: anthropic/claude-3-sonnet-20240229
             temperature: 0
             topK: -1
@@ -1036,149 +1045,364 @@ log:
             value: "1"
         url: https://sourcegraph.com/.api/completions/stream?api-version=1
       response:
-        bodySize: 2985
+        bodySize: 16081
         content:
           mimeType: text/event-stream
-          size: 2985
+          size: 16081
           text: >+
             event: completion
 
-            data: {"completion":"Nice","stopReason":""}
+            data: {"completion":"It","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to","stopReason":""}
+            data: {"completion":"It's","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet","stopReason":""}
+            data: {"completion":"It's nice","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you","stopReason":""}
+            data: {"completion":"It's nice to","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you ","stopReason":""}
+            data: {"completion":"It's nice to meet","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you Lar","stopReason":""}
+            data: {"completion":"It's nice to meet you","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you Lar!","stopReason":""}
+            data: {"completion":"It's nice to meet you Lars","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you Lar! I","stopReason":""}
+            data: {"completion":"It's nice to meet you Lars!","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you Lar! I'm","stopReason":""}
+            data: {"completion":"It's nice to meet you Lars! I","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you Lar! I'm C","stopReason":""}
+            data: {"completion":"It's nice to meet you Lars! I'm","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you Lar! I'm Cody","stopReason":""}
+            data: {"completion":"It's nice to meet you Lars! I'm C","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you Lar! I'm Cody,","stopReason":""}
+            data: {"completion":"It's nice to meet you Lars! I'm Cody","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you Lar! I'm Cody, an","stopReason":""}
+            data: {"completion":"It's nice to meet you Lars! I'm Cody,","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you Lar! I'm Cody, an AI","stopReason":""}
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you Lar! I'm Cody, an AI assistant","stopReason":""}
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you Lar! I'm Cody, an AI assistant from","stopReason":""}
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you Lar! I'm Cody, an AI assistant from Sourc","stopReason":""}
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you Lar! I'm Cody, an AI assistant from Sourceg","stopReason":""}
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you Lar! I'm Cody, an AI assistant from Sourcegraph","stopReason":""}
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you Lar! I'm Cody, an AI assistant from Sourcegraph.","stopReason":""}
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you Lar! I'm Cody, an AI assistant from Sourcegraph. How","stopReason":""}
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding an","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you Lar! I'm Cody, an AI assistant from Sourcegraph. How can","stopReason":""}
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you Lar! I'm Cody, an AI assistant from Sourcegraph. How can I","stopReason":""}
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you Lar! I'm Cody, an AI assistant from Sourcegraph. How can I help","stopReason":""}
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you Lar! I'm Cody, an AI assistant from Sourcegraph. How can I help you","stopReason":""}
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you Lar! I'm Cody, an AI assistant from Sourcegraph. How can I help you today","stopReason":""}
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you Lar! I'm Cody, an AI assistant from Sourcegraph. How can I help you today?","stopReason":""}
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"Nice to meet you Lar! I'm Cody, an AI assistant from Sourcegraph. How can I help you today?","stopReason":"end_turn"}
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excite","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans an","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests an","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals relate","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any particular","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any particular coding","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any particular coding projects","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any particular coding projects or","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any particular coding projects or topics","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any particular coding projects or topics you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any particular coding projects or topics you're","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any particular coding projects or topics you're working","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any particular coding projects or topics you're working on","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any particular coding projects or topics you're working on or","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any particular coding projects or topics you're working on or curious","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any particular coding projects or topics you're working on or curious about","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any particular coding projects or topics you're working on or curious about?","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any particular coding projects or topics you're working on or curious about? I","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any particular coding projects or topics you're working on or curious about? I'","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any particular coding projects or topics you're working on or curious about? I'd be","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any particular coding projects or topics you're working on or curious about? I'd be happy","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any particular coding projects or topics you're working on or curious about? I'd be happy discuss","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any particular coding projects or topics you're working on or curious about? I'd be happy discuss them","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any particular coding projects or topics you're working on or curious about? I'd be happy discuss them with","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any particular coding projects or topics you're working on or curious about? I'd be happy discuss them with you","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any particular coding projects or topics you're working on or curious about? I'd be happy discuss them with you.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"It's nice to meet you Lars! I'm Cody, an AI assistant for helping with coding and programming questions. I'm always excited to chat with new humans and learn about their interests and goals related to technology. Do you have any particular coding projects or topics you're working on or curious about? I'd be happy discuss them with you.","stopReason":"end_turn"}
 
 
             event: done
@@ -1188,7 +1412,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 25 Apr 2024 16:45:29 GMT
+            value: Tue, 07 May 2024 11:38:46 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1217,7 +1441,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-04-25T16:45:27.881Z
+      startedDateTime: 2024-05-07T11:38:45.239Z
       time: 0
       timings:
         blocked: -1

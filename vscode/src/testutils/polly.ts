@@ -26,11 +26,6 @@ export function startPollyRecording(userOptions: PollyOptions): Polly {
         recordIfMissing: options.recordIfMissing ?? options.recordingMode === 'record',
         mode: options.recordingMode,
         adapters: ['node-http'],
-        // adapterOptions: {
-        //     'node-http': {
-        //       https: true
-        //     }
-        //   },
         persister: 'cody-fs',
         recordFailedRequests: true,
         expiryStrategy: options.recordingExpiryStrategy,
