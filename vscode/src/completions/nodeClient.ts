@@ -6,6 +6,7 @@
 import http from 'node:http'
 import https from 'node:https'
 
+import { agent } from '@sourcegraph/cody-shared'
 import {
     type CompletionCallbacks,
     type CompletionParameters,
@@ -125,6 +126,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     },
                     // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
                     rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0',
+                    agent: agent.current?.(url),
                 },
                 (res: http.IncomingMessage) => {
                     const { 'set-cookie': _setCookie, ...safeHeaders } = res.headers
