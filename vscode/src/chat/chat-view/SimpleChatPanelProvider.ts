@@ -60,7 +60,6 @@ import { countGeneratedCode } from '../utils'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import type { URI } from 'vscode-uri'
 import { getContextFileFromUri } from '../../commands/context/file-path'
@@ -71,6 +70,7 @@ import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { chatModel } from '../../models'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
+import { gitCommitIdFromGitExtension } from '../../repository/git-extension-api'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import type { MessageErrorType } from '../MessageProvider'
 import { getChatContextItemsForMention } from '../context/chatContext'
@@ -415,6 +415,18 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.initDoer.signalInitialized()
     }
 
+    private async getRepoMetadataIfPublic(): Promise<string> {
+        const currentCodebase = await this.codebaseStatusProvider.currentCodebase()
+        if (currentCodebase?.isPublic) {
+            const gitMetadata = {
+                githubUrl: currentCodebase?.remote,
+                commit: gitCommitIdFromGitExtension(currentCodebase?.localFolder),
+            }
+            return JSON.stringify(gitMetadata)
+        }
+        return ''
+    }
+
     /**
      * Handles user input text for both new and edit submissions
      */
@@ -430,7 +442,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     ): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
             span.setAttribute('sampled', true)
-
             const authStatus = this.authProvider.getAuthStatus()
             const sharedProperties = {
                 requestID,
@@ -454,6 +465,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // the condition below is an additional safeguard measure
                     promptText:
                         authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
+                    gitMetadata:
+                        authStatus.isDotCom && addEnhancedContext
+                            ? await this.getRepoMetadataIfPublic()
+                            : '',
                 },
             })
 
@@ -877,7 +892,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 included: getContextStats(newContextUsed.filter(f => f.source === 'user')),
                 excluded: getContextStats(newContextIgnored.filter(f => f.source === 'user')),
             }
-
             sendTelemetry(contextSummary, privateContextStats)
         }
 

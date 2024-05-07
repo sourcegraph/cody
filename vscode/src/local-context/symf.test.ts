@@ -28,7 +28,15 @@ describe('symf', () => {
     describe('expand-query', () => {
         let polly: Polly
         beforeAll(() => {
-            polly = startPollyRecording({ recordingName: 'symf' })
+            polly = startPollyRecording({
+                recordingName: 'symf',
+                // To update symf recordings, uncomment the following two lines,
+                // recordingMode: 'record',
+                // keepUnusedRecordings: false,
+                // Then:
+                // source agent/scripts/export-cody-http-recording-tokens.sh
+                // pnpm -C vscode test:unit
+            })
         })
 
         function check(query: PromptString, expectedHandler: (expandedTerm: string) => void): void {

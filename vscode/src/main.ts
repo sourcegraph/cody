@@ -14,6 +14,7 @@ import {
     githubClient,
     graphqlClient,
     newPromptMixin,
+    setClientNameVersion,
     setLogger,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -138,6 +139,7 @@ const register = async (
     disposable: vscode.Disposable
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => Promise<void>
 }> => {
+    setClientNameVersion(platform.extensionClient.clientName, platform.extensionClient.clientVersion)
     const authProvider = new AuthProvider(initialConfig)
 
     const disposables: vscode.Disposable[] = []
@@ -605,7 +607,9 @@ const register = async (
         // For register sidebar clicks
         vscode.commands.registerCommand('cody.sidebar.click', (name: string, command: string) => {
             const source: EventSource = 'sidebar'
-            telemetryService.log(`CodyVSCodeExtension:command:${name}:clicked`, { source })
+            telemetryService.log(`CodyVSCodeExtension:command:${name}:clicked`, {
+                source,
+            })
             telemetryRecorder.recordEvent(`cody.command.${name}`, 'clicked', {
                 privateMetadata: { source },
             })
@@ -658,7 +662,9 @@ const register = async (
                     'cody-autocomplete',
                     setupAutocomplete
                 )
-                autocompleteDisposables.push({ dispose: autocompleteFeatureFlagChangeSubscriber })
+                autocompleteDisposables.push({
+                    dispose: autocompleteFeatureFlagChangeSubscriber,
+                })
                 autocompleteDisposables.push(
                     await createInlineCompletionItemProvider({
                         config,

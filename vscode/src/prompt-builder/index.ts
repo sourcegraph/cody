@@ -106,6 +106,19 @@ export class PromptBuilder {
                 result.ignored.push(userContextItem)
                 continue
             }
+            // Special-case remote context here. We can usually rely on the remote context to honor
+            // any context filters but in case of client side overwrites, we want a file that is
+            // ignored on a client to always be treated as ignored.
+            if (
+                userContextItem.type === 'file' &&
+                (userContextItem.uri.scheme === 'https' || userContextItem.uri.scheme === 'http') &&
+                userContextItem.repoName &&
+                contextFiltersProvider.isRepoNameIgnored(userContextItem.repoName)
+            ) {
+                result.ignored.push(userContextItem)
+                continue
+            }
+
             // Skip context items that have already been seen
             if (this.seenContext.has(id)) {
                 result.duplicate.push(userContextItem)

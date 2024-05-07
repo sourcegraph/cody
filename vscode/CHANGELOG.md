@@ -13,6 +13,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+- Autocomplete: Handle incomplete Ollama response chunks gracefully. [pull/4066](https://github.com/sourcegraph/cody/pull/4066)
+
 ### Changed
 
 - Search: Cody's Natural Language Search has been moved to a new quick pick interface, and the search box has been removed from the sidebar. [pull/3991](https://github.com/sourcegraph/cody/pull/3991)
@@ -20,6 +22,16 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
   - `Add Code to Chat`: Add selected code to the current opened chat, or new chat if no panel is opened.
   - `New Chat with Code`: Opens a new chat with the selected code when no existing chat panel is open and code is selected in the editor.
 - Fixes an issue where triggering a recipe with no open editor window will cause unexpected behavior. [pull/3911](https://github.com/sourcegraph/cody/pull/3911)
+
+## [1.16.2]
+
+### Added
+
+### Fixed
+
+- Chat: Fixed a bug where the entire Cody chat view would appear blank. [pull/4062](https://github.com/sourcegraph/cody/pull/4062)
+
+### Changed
 
 ## [1.16.1]
 
