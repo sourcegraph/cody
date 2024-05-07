@@ -1,4 +1,4 @@
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import {
     type FunctionComponent,
     type HTMLAttributes,
@@ -58,7 +58,9 @@ export const Popover: FunctionComponent<{
         if (!popoverEl.current || !anchor) {
             return
         }
-        popoverEl.current.hidePopover()
+        try {
+            popoverEl.current.hidePopover()
+        } catch {}
         if (anchorWasFocused) {
             anchor.focus()
         }
@@ -79,7 +81,7 @@ export const Popover: FunctionComponent<{
             ref={popoverEl}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
-            className={classNames(styles.popover, className)}
+            className={clsx(styles.popover, className)}
         >
             {visible ? children : null}
         </aside>

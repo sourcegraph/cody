@@ -1,4 +1,4 @@
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import type { FunctionComponent } from 'react'
 import type { UserAccountInfo } from '../Chat'
 import styles from './UserAvatar.module.css'
@@ -32,7 +32,7 @@ export const UserAvatar: FunctionComponent<Props> = ({ user, size, className }) 
 
         return (
             <img
-                className={classNames(styles.userAvatar, className)}
+                className={clsx(styles.userAvatar, className)}
                 src={url}
                 role="presentation"
                 title={title}
@@ -45,7 +45,7 @@ export const UserAvatar: FunctionComponent<Props> = ({ user, size, className }) 
     return (
         <div
             title={title}
-            className={classNames(styles.userAvatar, className)}
+            className={clsx(styles.userAvatar, className)}
             style={{ width: `${size}px`, height: `${size}px` }}
         >
             <span className={styles.initials}>

@@ -10,6 +10,7 @@ import {
     type Disposable,
     type IRemoteSearch,
     type PromptString,
+    contextFiltersProvider,
     graphqlClient,
     isError,
 } from '@sourcegraph/cody-shared'
@@ -29,6 +30,13 @@ interface DisplayRepo {
 
 export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
     public static readonly MAX_REPO_COUNT = 10
+    private disposeOnContextFilterChanged: () => void
+
+    constructor() {
+        this.disposeOnContextFilterChanged = contextFiltersProvider.onContextFiltersChanged(() => {
+            this.statusChangedEmitter.fire(this)
+        })
+    }
 
     private statusChangedEmitter = new vscode.EventEmitter<ContextStatusProvider>()
 
@@ -40,6 +48,7 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
 
     public dispose(): void {
         this.statusChangedEmitter.dispose()
+        this.disposeOnContextFilterChanged()
     }
 
     // #region ContextStatusProvider implementation.
@@ -62,6 +71,7 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
                         state: 'ready',
                         id,
                         inclusion: auto ? 'auto' : 'manual',
+                        isIgnored: contextFiltersProvider.isRepoNameIgnored(displayName),
                     },
                 ],
             }

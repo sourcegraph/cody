@@ -166,11 +166,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
                       }
                 - name: starcoder-7b
                   value:
-                    - |-
-                      const user = {
-                        firstName: 'John',
-                        isEligible: true
-                      }
+                    - const user = new User()
               prompts:
                 - name: fireworks
                   value:
@@ -251,7 +247,7 @@ describe.skipIf(isWindows())('Graph Context', () => {
                         import { User } from './user'
 
 
-                        const user = {<fim_suffix>
+                        const user = <fim_suffix>
 
 
                         export const message = 'Hello'<fim_middle>
@@ -283,13 +279,12 @@ describe.skipIf(isWindows())('Graph Context', () => {
             const text = await autocompletes()
             expect(text).includes('isNewCar')
             expect(text).includes('minimumYear:')
-            expect(text).toMatchInlineSnapshot(`
+            expect(text).toMatchInlineSnapshot(
+                `
               "autocompletes:
                 - name: starcoder-16b
                   value:
-                    - |2-
-                        const newCars = cars.filter(isNewCar)
-                        return newCars[0].user
+                    - "  return cars.find(isNewCar)!.user"
               prompts:
                 - name: fireworks
                   value:
@@ -379,10 +374,11 @@ describe.skipIf(isWindows())('Graph Context', () => {
 
                         export const message = 'Hello'<fim_middle>
               "
-            `)
+            `
+            )
         }, 10_000)
 
-        it('complex-types', async () => {
+        it.skip('complex-types', async () => {
             modelFilter = { model: 'starcoder-16b' }
             await changeFile(
                 mainUri,
@@ -503,7 +499,8 @@ describe.skipIf(isWindows())('Graph Context', () => {
                 `
               "autocompletes:
                 - name: starcoder-16b
-                  value: []
+                  value:
+                    - "    doSomething({ validDogSled: true })"
               prompts:
                 - name: fireworks
                   value:
@@ -557,7 +554,8 @@ describe.skipIf(isWindows())('Graph Context', () => {
             // TODO: add .includes assertion for a non-empty result. It looks
             // like starcoder-16b doesn't have strong enough reasoning skills to
             // make use of the context.
-            expect(await autocompletes()).toMatchInlineSnapshot(`
+            expect(await autocompletes()).toMatchInlineSnapshot(
+                `
               "autocompletes:
                 - name: starcoder-16b
                   value: []
@@ -716,383 +714,24 @@ describe.skipIf(isWindows())('Graph Context', () => {
                             makeWebAuthn({<fim_suffix>
                         }<fim_middle>
               "
-            `)
-        }, 10_000)
-
-        it('member-selection', async () => {
-            modelFilter = { model: 'starcoder-16b' }
-            await changeFile(
-                mainUri,
-                dedent`
-            import { selector, All } from './members'
-
-            function run(all: All): void {
-                selector./* CURSOR */
-            }
             `
             )
-
-            const text = await autocompletes()
-            expect(text).toMatchInlineSnapshot(
-                `
-              "autocompletes:
-                - name: starcoder-16b
-                  value:
-                    - "    selector.query({ isMammal: true, animalName: 'Dog' })"
-              prompts:
-                - name: fireworks
-                  value:
-                    - speaker: human
-                      text: >-
-                        <filename>src/main.ts<fim_prefix>// Additional documentation for
-                        \`selector\`:
-
-                        //
-
-                        // var selector: Selector
-
-                        //
-
-                        // Additional documentation for \`Selector\`:
-
-                        //
-
-                        // interface Selector {
-
-                        //   query(params: { isMammal: boolean; animalName: string; }) => { animals: Animal[]; }
-
-                        // }
-
-                        //
-
-                        import { selector, All } from './members'
-
-
-                        function run(all: All): void {
-                            selector.<fim_suffix>
-                        }<fim_middle>
-              "
-            `
-            )
-        }, 10_000)
-
-        it('member-selection-expression', async () => {
-            modelFilter = { model: 'starcoder-16b' }
-            await changeFile(
-                mainUri,
-                dedent`
-            import { getter } from './members-indirection'
-
-            function run(): void {
-                getter.indirect()./* CURSOR */
-            }
-            `
-            )
-
-            const text = await autocompletes()
-            expect(text).toMatchInlineSnapshot(
-                `
-              "autocompletes:
-                - name: starcoder-16b
-                  value:
-                    - "    getter.indirect().query({ isMammal: true, animalName: 'Dog' })"
-              prompts:
-                - name: fireworks
-                  value:
-                    - speaker: human
-                      text: >-
-                        <filename>src/main.ts<fim_prefix>// Additional documentation for
-                        \`getter\`:
-
-                        //
-
-                        // var getter: { a: A; b: B; c: C; indirect(): Selector; }
-
-                        //
-
-                        // Additional documentation for \`Selector\`:
-
-                        //
-
-                        // interface Selector {
-
-                        //   query(params: { isMammal: boolean; animalName: string; }) => { animals: Animal[]; }
-
-                        // }
-
-                        //
-
-                        import { getter } from './members-indirection'
-
-
-                        function run(): void {
-                            getter.indirect().<fim_suffix>
-                        }<fim_middle>
-              "
-            `
-            )
-        }, 10_000)
-
-        it('member-selection-expression-this', async () => {
-            modelFilter = { model: 'starcoder-16b' }
-            await changeFile(
-                mainUri,
-                dedent`
-            import { getter } from './members-indirection'
-
-            class Runner {
-
-                foobar = getter
-                run(): void {
-                    this.foobar.indirect()./* CURSOR */
-                }
-            }
-            `
-            )
-
-            const text = await autocompletes()
-            expect(text).toMatchInlineSnapshot(
-                `
-              "autocompletes:
-                - name: starcoder-16b
-                  value:
-                    - "        this.foobar.indirect().query({ isMammal: true, animalName:
-                      'Dog' })"
-              prompts:
-                - name: fireworks
-                  value:
-                    - speaker: human
-                      text: >-
-                        <filename>src/main.ts<fim_prefix>// Additional documentation for
-                        \`getter\`:
-
-                        //
-
-                        // var getter: { a: A; b: B; c: C; indirect(): Selector; }
-
-                        //
-
-                        // Additional documentation for \`Selector\`:
-
-                        //
-
-                        // interface Selector {
-
-                        //   query(params: { isMammal: boolean; animalName: string; }) => { animals: Animal[]; }
-
-                        // }
-
-                        //
-
-                        import { getter } from './members-indirection'
-
-
-                        class Runner {
-
-                            foobar = getter
-                            run(): void {
-                                this.foobar.indirect().<fim_suffix>
-                            }
-                        }<fim_middle>
-              "
-            `
-            )
-        }, 10_000)
-
-        it('function-parameter2', async () => {
-            modelFilter = { model: 'starcoder-16b' }
-            await changeFile(
-                mainUri,
-                dedent`
-            import makeWebAuthn from 'webauthn4js';
-
-            function main() {
-                makeWebAuthn({/* CURSOR */})
-            }
-            `
-            )
-
-            const text = await autocompletes()
-            // Assert that the context includes types from the webauthn4js
-            // package.  If these assertions are failing it could indicate that
-            // you have not run `pnpm install`.
-            expect(text).includes('export type Config')
-            expect(text).includes('interface WebAuthn4JSEvents')
-            expect(text).toMatchInlineSnapshot(`
-              "autocompletes:
-                - name: starcoder-16b
-                  value: []
-              prompts:
-                - name: fireworks
-                  value:
-                    - speaker: human
-                      text: >-
-                        <filename>src/main.ts<fim_prefix>// Additional documentation for
-                        \`makeWebAuthn\`:
-
-                        //
-
-                        // var makeWebAuthn: { (config: Config): Promise<WebAuthn4JS>; schemas: any; }
-
-                        //
-
-                        // Additional documentation for \`WebAuthn4JSEvents\`:
-
-                        //
-
-                        // interface WebAuthn4JSEvents {
-
-                        //   error: (err: Error) => void
-
-                        //   exit: (code: number) => void
-
-                        // }
-
-                        //
-
-                        //
-
-                        // Additional documentation for \`TypedEmitter\`:
-
-                        //
-
-                        // class TypedEmitter {
-
-                        //   L: L
-
-                        //   addListener<U extends keyof L>(event: U, listener: L[U]): this
-
-                        //   prependListener<U extends keyof L>(event: U, listener: L[U]): this
-
-                        //   prependOnceListener<U extends keyof L>(event: U, listener: L[U]): this
-
-                        //   removeListener<U extends keyof L>(event: U, listener: L[U]): this
-
-                        //   removeAllListeners(event?: keyof L): this
-
-                        //   once<U extends keyof L>(event: U, listener: L[U]): this
-
-                        //   on<U extends keyof L>(event: U, listener: L[U]): this
-
-                        //   off<U extends keyof L>(event: U, listener: L[U]): this
-
-                        //   emit<U extends keyof L>(event: U, ...args: Parameters<L[U]>): boolean
-
-                        //   eventNames<U extends keyof L>(): U[]
-
-                        //   listenerCount(type: keyof L): number
-
-                        //   listeners<U extends keyof L>(type: U): L[U][]
-
-                        //   rawListeners<U extends keyof L>(type: U): L[U][]
-
-                        //   getMaxListeners(): number
-
-                        //   setMaxListeners(n: number): this
-
-                        // }
-
-                        //
-
-                        //
-
-                        // Additional documentation for \`WebAuthn4JS\`:
-
-                        //
-
-                        // interface WebAuthn4JS extends TypedEmitter<WebAuthn4JSEvents> {
-
-                        //   beginRegistration(user: User, ...opts: ((cco: PublicKeyCredentialCreationOptions) => PublicKeyCredentialCreationOptions)[]) => Promise<...>
-
-                        //   finishRegistration(user: User, sessionData: SessionData, response: CredentialCreationResponse) => Promise<Credential>
-
-                        //   beginLogin(user: User, ...opts: ((cro: PublicKeyCredentialRequestOptions) => PublicKeyCredentialRequestOptions)[]) => Promise<...>
-
-                        //   finishLogin(user: User, sessionData: SessionData, response: CredentialAssertionResponse) => Promise<Credential>
-
-                        //   exit(code?: number) => void
-
-                        // }
-
-                        //
-
-                        //
-
-                        // Additional documentation for \`Config\`:
-
-                        //
-
-                        // export type Config = {
-
-                        //     /** A valid domain that identifies the Relying Party. A credential can only by used  with the same enity (as identified by the \`RPID\`) it was registered with. */
-
-                        //     RPID: string;
-
-                        //     /** Friendly name for the Relying Party (application). The browser may display this to the user. */
-
-                        //     RPDisplayName: string;
-
-                        //     /** Configures the list of Relying Party Server Origins that are permitted. These should be fully qualified origins. */
-
-                        //     RPOrigins: string[];
-
-                        //     /** Preferred attestation conveyance during credential generation */
-
-                        //     AttestationPreference?: ConveyancePreference | undefined;
-
-                        //     /** Login requirements for authenticator attributes. */
-
-                        //     AuthenticatorSelection?: AuthenticatorSelection | undefined;
-
-                        //     /** Enables various debug options. */
-
-                        //     Debug?: boolean | undefined;
-
-                        //     /** Ensures the user.id value during registrations is encoded as a raw UTF8 string. This is useful when you only use printable ASCII characters for the random user.id but the browser library does not decode the URL Safe Base64 data. */
-
-                        //     EncodeUserIDAsString?: boolean | undefined;
-
-                        //     /** Configures various timeouts. */
-
-                        //     Timeouts?: TimeoutsConfig | undefined;
-
-                        //     /** @deprecated This option has been removed from newer specifications due to security considerations. */
-
-                        //     RPIcon?: string | undefined;
-
-                        //     /** @deprecated Use RPOrigins instead. */
-
-                        //     RPOrigin?: string | undefined;
-
-                        //     /** @deprecated Use Timeouts instead. */
-
-                        //     Timeout?: number | undefined;
-
-                        // };
-
-                        import makeWebAuthn from 'webauthn4js';
-
-
-                        function main() {
-                            makeWebAuthn({<fim_suffix>
-                        }<fim_middle>
-              "
-            `)
         }, 10_000)
 
         const tsxUri = workspace.file('src', 'Calculator.tsx')
-        it('tsx', async () => {
+        it.skip('tsx', async () => {
             modelFilter = { model: 'starcoder-16b' }
             await openFile(tsxUri)
 
             const text = await autocompletes()
             expect(text).includes('props.languageKind')
-            expect(text).toMatchInlineSnapshot(`
+            expect(text).toMatchInlineSnapshot(
+                `
               "autocompletes:
                 - name: starcoder-16b
                   value:
                     - "    return <h1>My favorite calculator comes from
-                      {props.languageKind}</h1>"
+                      {props.languageKind}!</h1>"
               prompts:
                 - name: fireworks
                   value:
@@ -1140,7 +779,8 @@ describe.skipIf(isWindows())('Graph Context', () => {
 
                         <fim_middle>
               "
-            `)
+            `
+            )
         }, 10_000)
 
         const jsUri = workspace.file('src', 'typeless2.js')

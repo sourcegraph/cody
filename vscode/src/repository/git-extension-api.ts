@@ -106,3 +106,8 @@ export function gitRemoteUrlsFromGitExtension(uri: vscode.Uri): string[] | undef
 
     return remoteUrls.size ? Array.from(remoteUrls) : undefined
 }
+
+export function gitCommitIdFromGitExtension(uri: vscode.Uri): string | undefined {
+    const repository = vscodeGitAPI?.getRepository(uri)
+    return repository?.state?.HEAD?.commit
+}

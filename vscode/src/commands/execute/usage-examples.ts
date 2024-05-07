@@ -144,7 +144,8 @@ async function symbolContextItems(
 
     const packages = (
         await PACKAGE_CONTEXT_MENTION_PROVIDER.queryContextItems(
-            `${symbolPackage.ecosystem}:${symbolPackage.name}`
+            `${symbolPackage.ecosystem}:${symbolPackage.name}`,
+            { gitRemotes: [] }
         )
     ).filter(item => item.title === symbolPackage.name.toString())
     logDebug('executeUsageExampleCommand', 'found packages', JSON.stringify({ packages }))

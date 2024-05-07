@@ -6,5 +6,6 @@ data class EditTask(
   val state: CodyTaskState, // Oneof: Idle, Working, Inserting, Applying, Formatting, Applied, Finished, Error, Pending
   val error: CodyError? = null,
   val selectionRange: Range,
+  val instruction: String? = null,
 )
 

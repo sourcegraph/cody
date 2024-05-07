@@ -155,9 +155,13 @@ export class FixupController
         }
 
         editor.revealRange(task.selectionRange)
-        const editOk = await editor.edit(editBuilder => {
-            editBuilder.replace(task.selectionRange, task.original)
-        })
+
+        // TODO: We should figure out why `editor.edit` often returns `null` instead of a boolean.
+        // Please do not remove this `!== false` check without fixing underlying issue, it is necessary for now
+        const editOk =
+            ((await editor.edit(editBuilder => {
+                editBuilder.replace(task.selectionRange, task.original)
+            })) as any) !== false
 
         const legacyMetadata = {
             intent: task.intent,

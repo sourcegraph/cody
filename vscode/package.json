@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "1.16.1",
+  "version": "1.16.2",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -571,6 +571,11 @@
         "icon": "$(search)",
         "title": "Natural Language Search Code (Beta)",
         "when": "cody.activated && workspaceFolderCount > 0"
+      },
+      {
+        "command": "cody.test.set-context-filters",
+        "title": "[Internal] Set Context Filters Overwrite",
+        "when": "cody.activated && cody.devOrTest"
       }
     ],
     "keybindings": [
@@ -732,6 +737,10 @@
         {
           "command": "cody.show-rate-limit-modal",
           "when": "false"
+        },
+        {
+          "command": "cody.test.set-context-filters",
+          "when": "cody.activated && cody.devOrTest"
         }
       ],
       "editor/context": [
@@ -1337,7 +1346,7 @@
     "@vscode/webview-ui-toolkit": "^1.2.2",
     "async-mutex": "^0.4.0",
     "axios": "^1.3.6",
-    "classnames": "^2.3.2",
+    "clsx": "^2.1.1",
     "crypto-js": "^4.2.0",
     "detect-indent": "^7.0.1",
     "diff": "^5.2.0",

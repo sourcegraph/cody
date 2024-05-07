@@ -3,6 +3,7 @@ import type { EnterpriseContextFactory } from './context/enterprise-context-fact
 import { FixupCodeLenses } from './non-stop/codelenses/provider'
 import type { FixupActor, FixupFileCollection } from './non-stop/roles'
 import type { FixupControlApplicator } from './non-stop/strategies'
+import { version } from './version'
 
 /**
  * Extension objects that are provided to the client to interact with directly.
@@ -28,6 +29,9 @@ export interface ExtensionClient {
      * @param fixups the live collection of fixups; methods to manipulate them.
      */
     createFixupControlApplicator(fixups: FixupActor & FixupFileCollection): FixupControlApplicator
+
+    get clientName(): string
+    get clientVersion(): string
 }
 
 /**
@@ -39,5 +43,7 @@ export function defaultVSCodeExtensionClient(): ExtensionClient {
             dispose: () => {},
         }),
         createFixupControlApplicator: files => new FixupCodeLenses(files),
+        clientName: 'vscode',
+        clientVersion: version,
     }
 }

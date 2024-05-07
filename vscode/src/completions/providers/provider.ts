@@ -9,6 +9,7 @@ import {
 
 import type { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 
+import type { TriggerKind } from '../get-inline-completions'
 import type { FetchCompletionResult } from './fetch-and-process-completions'
 
 export interface ProviderConfig {
@@ -66,6 +67,7 @@ export interface ProviderOptions {
     document: TextDocument
     docContext: DocumentContext
     multiline: boolean
+    triggerKind: TriggerKind
     /**
      * Number of parallel LLM requests per completion.
      */
