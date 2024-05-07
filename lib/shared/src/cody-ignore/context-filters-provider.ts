@@ -156,8 +156,12 @@ export class ContextFiltersProvider implements vscode.Disposable {
             return 'non-file-uri'
         }
 
-        const repoNames = await wrapInActiveSpan('repoNameResolver.getRepoNamesFromWorkspaceUri', () =>
-            this.getRepoNamesFromWorkspaceUri?.(uri)
+        const repoNames = await wrapInActiveSpan(
+            'repoNameResolver.getRepoNamesFromWorkspaceUri',
+            span => {
+                span.setAttribute('sampled', true)
+                return this.getRepoNamesFromWorkspaceUri?.(uri)
+            }
         )
 
         if (!repoNames) {
