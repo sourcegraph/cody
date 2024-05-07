@@ -17,7 +17,7 @@ describe('PromptBuilder', () => {
 
     const preamble: Message[] = [{ speaker: 'system', text: ps`preamble` }]
 
-    it('throws error when trying to add Enhanced Context before chat input', () => {
+    it('throws an error when trying to add Enhanced Context before chat input', () => {
         const builder = new PromptBuilder({ input: 100, output: 100 })
         builder.tryAddToPrefix(preamble)
         const file: ContextItem = {
@@ -30,7 +30,7 @@ describe('PromptBuilder', () => {
         expect(() => builder.tryAddContext('enhanced', transcript.reverse())).rejects.toThrowError()
     })
 
-    it('throws error when trying to add User Context before chat input', () => {
+    it('throws an error when trying to add User Context before chat input', () => {
         const builder = new PromptBuilder({ input: 100, output: 100 })
         builder.tryAddToPrefix(preamble)
         const file: ContextItem = {
@@ -197,7 +197,7 @@ describe('PromptBuilder', () => {
             expect(prompt).toEqual([...preamble, ...chatTranscript])
         })
 
-        it('should not contains duplicated context', async () => {
+        it('should not contain duplicated context', async () => {
             const builder = new PromptBuilder({ input: 100, output: 100 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
