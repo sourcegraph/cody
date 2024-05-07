@@ -1,9 +1,8 @@
-import { FeatureFlag, featureFlagProvider, telemetryRecorder } from '@sourcegraph/cody-shared'
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { type TextChange, updateRangeMultipleChanges } from '../../src/non-stop/tracked-range'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import { logSidebarClick } from '../services/SidebarCommands'
-import { logFirstEnrollmentEvent } from '../services/utils/enrollment-event'
 import {
     registerAutocompleteListener,
     registerChatTutorialCommand,
@@ -212,14 +211,6 @@ export const registerInteractiveTutorial = async (
 
     let cleanup: vscode.Disposable | undefined
     const start = async () => {
-        const enabled = await featureFlagProvider.evaluateFeatureFlag(
-            FeatureFlag.CodyInteractiveTutorial
-        )
-        logFirstEnrollmentEvent(FeatureFlag.CodyInteractiveTutorial, enabled)
-        if (!enabled) {
-            return
-        }
-
         status = 'starting'
         cleanup = await startTutorial(document)
         disposables.push(cleanup)

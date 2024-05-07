@@ -8,7 +8,6 @@ import {
     SourcegraphGraphQLAPIClient,
     isDotCom,
     isError,
-    featureFlagProvider,
 } from '@sourcegraph/cody-shared'
 
 import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'
@@ -31,6 +30,7 @@ import { getAuthReferralCode } from './AuthProviderSimplified'
 import { localStorage } from './LocalStorageProvider'
 import { secretStorage } from './SecretStorageProvider'
 import { telemetryService } from './telemetry'
+import { maybeStartInteractiveTutorial } from '../tutorial/helpers'
 
 type Listener = (authStatus: AuthStatus) => void
 type Unsubscribe = () => void
@@ -500,14 +500,7 @@ export class AuthProvider {
         }
         telemetryRecorder.recordEvent('cody.auth.login', 'firstEver')
         this.setHasAuthenticatedBefore()
-
-        // A/B testing logic for the interactive tutorial
-        // Ensure that the featureFlagProvider has the latest auth status,
-        // and then trigger the tutorial.
-        // This will either noop or open the tutorial depending on the feature flag.
-        void featureFlagProvider.syncAuthStatus().then(() => {
-            return vscode.commands.executeCommand('cody.tutorial.start')
-        })
+        void maybeStartInteractiveTutorial()
     }
 
     private setHasAuthenticatedBefore() {
