@@ -170,10 +170,6 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
         ]
     )
 
-    if (finetunedModel) {
-        return { provider: 'fireworks', model: 'fireworks-completions-fine-tuned' }
-    }
-
     if (llamaCode13B) {
         return { provider: 'fireworks', model: 'llama-code-13b' }
     }
@@ -183,6 +179,12 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
     }
 
     if (starCoderHybrid) {
+        // Adding the fine-tuned model here for the A/B test setup.
+        // Among all the users in starcoder-hybrid - some % of them will be redirected to the fine-tuned model.
+        if (finetunedModel) {
+            return { provider: 'fireworks', model: 'fireworks-completions-fine-tuned' }
+        }
+
         return { provider: 'fireworks', model: 'starcoder-hybrid' }
     }
 
