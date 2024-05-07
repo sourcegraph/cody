@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 import { findRangeOfText } from './utils'
+import { TutorialSource } from './commands'
 
 export class TutorialLinkProvider implements vscode.DocumentLinkProvider {
     constructor(public editor: vscode.TextEditor) {}
@@ -16,15 +17,27 @@ export class TutorialLinkProvider implements vscode.DocumentLinkProvider {
 
         const editRange = findRangeOfText(document, 'Start an Edit')
         if (editRange) {
+            const params = [document, 'link' satisfies TutorialSource]
             links.push(
-                new vscode.DocumentLink(editRange, vscode.Uri.parse('command:cody.tutorial.edit'))
+                new vscode.DocumentLink(
+                    editRange,
+                    vscode.Uri.parse(
+                        `command:cody.tutorial.edit?${encodeURIComponent(JSON.stringify(params))}`
+                    )
+                )
             )
         }
 
         const chatRange = findRangeOfText(document, 'Start a Chat')
         if (chatRange) {
+            const params = [document, 'link' satisfies TutorialSource]
             links.push(
-                new vscode.DocumentLink(chatRange, vscode.Uri.parse('command:cody.tutorial.chat'))
+                new vscode.DocumentLink(
+                    chatRange,
+                    vscode.Uri.parse(
+                        `command:cody.tutorial.chat?${encodeURIComponent(JSON.stringify(params))}`
+                    )
+                )
             )
         }
 

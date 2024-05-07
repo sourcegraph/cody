@@ -26,7 +26,7 @@ export const setFixDiagnostic = (
     ])
 }
 
-type TutorialSource = 'link' | 'editor'
+export type TutorialSource = 'link' | 'editor'
 
 /**
  * States at which we consider an Edit to be "terminated" for the purposes of the tutorial.
@@ -93,7 +93,7 @@ export const registerChatTutorialCommand = (onComplete: () => void): vscode.Disp
     const disposable = vscode.commands.registerCommand(
         'cody.tutorial.chat',
         async (_document: vscode.TextDocument, source: TutorialSource = 'editor') => {
-            telemetryRecorder.recordEvent('cody.interactiveTutorial', 'edit', {
+            telemetryRecorder.recordEvent('cody.interactiveTutorial', 'chat', {
                 privateMetadata: { source },
             })
             await vscode.commands.executeCommand('cody.chat.panel.new')
