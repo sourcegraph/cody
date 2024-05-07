@@ -23,6 +23,7 @@ import {
     SYMBOL_HELP_LABEL,
 } from '../../chat/context/constants'
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
+import { executeDocCommand, executeTestEditCommand } from '../../commands/execute'
 import { getEditor } from '../../editor/active-editor'
 import { editModel } from '../../models'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
@@ -35,12 +36,11 @@ import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './
 import { DOCUMENT_ITEM, MODEL_ITEM, RANGE_ITEM, TEST_ITEM, getEditInputItems } from './get-items/edit'
 import { getModelInputItems, getModelOptionItems } from './get-items/model'
 import { getRangeInputItems } from './get-items/range'
+import { RANGE_SYMBOLS_ITEM, getRangeSymbolInputItems } from './get-items/range-symbols'
 import type { EditModelItem, EditRangeItem } from './get-items/types'
 import { getMatchingContext } from './get-matching-context'
 import { createQuickPick } from './quick-pick'
 import { fetchDocumentSymbols, getLabelForContextItem, removeAfterLastAt } from './utils'
-import { RANGE_SYMBOLS_ITEM, getRangeSymbolInputItems } from './get-items/range-symbols'
-import { executeDocCommand, executeTestEditCommand } from '../../commands/execute'
 
 interface QuickPickInput {
     /** The user provided instruction */

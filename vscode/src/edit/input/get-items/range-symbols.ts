@@ -1,12 +1,11 @@
 import * as vscode from 'vscode'
-// import { QUICK_PICK_ITEM_CHECKED_PREFIX, QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX } from '../constants'
-import type { GetItemsResult } from '../quick-pick'
-import { symbolIsFunctionLike } from './utils'
-import { getMinimumDistanceToRangeBoundary } from '../../../non-stop/utils'
 import {
     QUICK_PICK_ITEM_CHECKED_PREFIX,
     QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX,
 } from '../../../chat/context/constants'
+import { getMinimumDistanceToRangeBoundary } from '../../../non-stop/utils'
+import type { GetItemsResult } from '../quick-pick'
+import { symbolIsFunctionLike } from './utils'
 
 export const RANGE_SYMBOLS_ITEM: vscode.QuickPickItem = {
     label: `${QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX} $(symbol-method) Select a symbol...`,

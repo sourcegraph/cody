@@ -8,8 +8,8 @@ import { getEditSmartSelection } from '../../utils/edit-selection'
 import type { EditInputInitialValues } from '../get-input'
 import type { GetItemsResult } from '../quick-pick'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './constants'
-import type { EditRangeItem } from './types'
 import { RANGE_SYMBOLS_ITEM } from './range-symbols'
+import type { EditRangeItem } from './types'
 
 const getDefaultRangeItems = (
     document: vscode.TextDocument,
