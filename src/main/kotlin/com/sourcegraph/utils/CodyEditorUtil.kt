@@ -212,12 +212,13 @@ object CodyEditorUtil {
       val uri = URI.create(uriString).withScheme("file")
       val vf =
           LocalFileSystem.getInstance().refreshAndFindFileByNioFile(uri.toPath()) ?: return false
-      OpenFileDescriptor(
-              project,
-              vf,
-              selection?.start?.line ?: 0,
-              /* logicalColumn= */ selection?.start?.character ?: 0)
-          .navigate(/* requestFocus= */ preserveFocus != true)
+      if (selection == null) {
+        OpenFileDescriptor(project, vf).navigate(/* requestFocus= */ preserveFocus != true)
+      } else {
+        OpenFileDescriptor(
+                project, vf, selection.start.line, /* logicalColumn= */ selection.start.character)
+            .navigate(/* requestFocus= */ preserveFocus != true)
+      }
       return true
     } catch (e: Exception) {
       logger.error("Cannot switch view to file $uriString", e)

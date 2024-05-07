@@ -52,8 +52,10 @@ class CodyAgentService(project: Project) : Disposable {
         FixupService.getInstance(project).getActiveSession()?.update(task)
       }
 
-      agent.client.onEditTaskDidDelete = Consumer { _ ->
-        FixupService.getInstance(project).getActiveSession()?.taskDeleted()
+      agent.client.onEditTaskDidDelete = Consumer { params ->
+        FixupService.getInstance(project).getActiveSession()?.let {
+          if (params.id == it.taskId) it.taskDeleted()
+        }
       }
 
       agent.client.onWorkspaceEdit = Consumer { params ->

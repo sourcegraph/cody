@@ -553,7 +553,7 @@ class EditCommandPrompt(
         return
       }
       // Kick off the editing command.
-      controller.setActiveSession(EditCodeSession(controller, editor, text, llmDropdown.item))
+      EditCodeSession(controller, editor, text, llmDropdown.item)
     }
     clearActivePrompt()
   }
