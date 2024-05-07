@@ -63,7 +63,7 @@ abstract class FixupSession(
   private val fixupService = FixupService.getInstance(project)
 
   // This is passed back by the Agent when we initiate the editing task.
-  var taskId: String? = null
+  @Volatile var taskId: String? = null
 
   // The current lens group. Changes as the state machine proceeds.
   private var lensGroup: LensWidgetGroup? = null
@@ -107,7 +107,6 @@ abstract class FixupSession(
             if (error != null || result == null) {
               showErrorGroup("Error while generating doc string: $error")
             } else {
-              taskId = result.id
               selectionRange = adjustToDocumentRange(result.selectionRange)
             }
             null
@@ -154,7 +153,9 @@ abstract class FixupSession(
       CodyTaskState.Working,
       CodyTaskState.Inserting,
       CodyTaskState.Applying,
-      CodyTaskState.Formatting -> {}
+      CodyTaskState.Formatting -> {
+        taskId = task.id
+      }
       // Tasks remain in this state until explicit accept/undo/cancel.
       CodyTaskState.Applied -> showAcceptGroup()
       // Then they transition to finished.
