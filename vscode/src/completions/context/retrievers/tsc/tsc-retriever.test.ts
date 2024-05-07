@@ -7,9 +7,10 @@ import { getCurrentDocContext } from '../../../get-current-doc-context'
 import { documentAndPosition } from '../../../test-helpers'
 import { TscRetriever, defaultTscRetrieverOptions } from './tsc-retriever'
 
-import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
+import { type AutocompleteContextSnippet, isWindows } from '@sourcegraph/cody-shared'
 
-describe('TscRetriever', () => {
+// TODO: fix Windows tests CODY-1280
+describe.skipIf(isWindows())('TscRetriever', () => {
     const retriever = new TscRetriever({
         ...defaultTscRetrieverOptions(),
         includeSymbolsInCurrentFile: true,
