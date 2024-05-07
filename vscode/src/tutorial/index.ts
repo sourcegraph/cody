@@ -20,7 +20,7 @@ import {
     resetDocument,
 } from './content'
 import { setTutorialUri } from './helpers'
-import { ChatLinkProvider, ResetLensProvider } from './providers'
+import { TutorialLinkProvider, ResetLensProvider } from './providers'
 
 export const startTutorial = async (document: vscode.TextDocument): Promise<vscode.Disposable> => {
     const disposables: vscode.Disposable[] = []
@@ -126,7 +126,9 @@ export const startTutorial = async (document: vscode.TextDocument): Promise<vsco
                 setFixDiagnostic(diagnosticCollection, editor.document.uri, activeStep.range)
                 break
             case 'edit':
-                disposables.push(registerEditTutorialCommand(editor, progressToNextStep))
+                disposables.push(
+                    ...registerEditTutorialCommand(editor, progressToNextStep, activeStep.range)
+                )
                 break
             case 'chat':
                 disposables.push(registerChatTutorialCommand(progressToNextStep))
@@ -170,7 +172,10 @@ export const startTutorial = async (document: vscode.TextDocument): Promise<vsco
     disposables.push(
         startListeningForSuccess('autocomplete'),
         new ResetLensProvider(editor),
-        vscode.languages.registerDocumentLinkProvider(editor.document.uri, new ChatLinkProvider(editor)),
+        vscode.languages.registerDocumentLinkProvider(
+            editor.document.uri,
+            new TutorialLinkProvider(editor)
+        ),
         vscode.window.onDidChangeVisibleTextEditors(editors => {
             const tutorialIsActive = editors.find(
                 editor => editor.document.uri.toString() === document.uri.toString()
