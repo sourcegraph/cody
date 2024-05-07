@@ -62,6 +62,7 @@ export interface Configuration {
     experimentalChatContextRanker: boolean | undefined
     experimentalOllamaChat: boolean
     experimentalSupercompletions: boolean
+    experimentalGithubAccessToken: string
 
     /**
      * Unstable Features for internal testing only
@@ -72,7 +73,7 @@ export interface Configuration {
      * Experimental autocomplete
      */
     autocompleteExperimentalHotStreak?: boolean
-    autocompleteExperimentalGraphContext: 'bfg' | 'bfg-mixed' | null
+    autocompleteExperimentalGraphContext: 'bfg' | 'bfg-mixed' | 'tsc' | 'tsc-mixed' | null
     autocompleteExperimentalOllamaOptions: OllamaOptions
     autocompleteExperimentalFireworksOptions?: FireworksOptions
     autocompleteExperimentalSmartThrottle?: boolean

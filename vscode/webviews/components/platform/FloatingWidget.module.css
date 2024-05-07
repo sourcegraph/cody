@@ -1,0 +1,5 @@
+.container {
+    color: var(--vscode-dropdown-foreground);
+    background-color: var(--vscode-quickInput-background);
+    border: solid 1px var(--vscode-dropdown-border);
+}

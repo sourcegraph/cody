@@ -2,12 +2,12 @@ import { findLast } from 'lodash'
 import type { Position, TextDocument } from 'vscode'
 import type {
     Language,
+    default as Parser,
     Point,
     Query,
     QueryCapture,
     SyntaxNode,
     Tree,
-    default as Parser,
 } from 'web-tree-sitter'
 
 import { type SupportedLanguage, isSupportedLanguage } from './grammars'

@@ -5,3 +5,4 @@ dist/
 .vscode-test-web/
 resources/wasm/
 GITHUB_CHANGELOG.md
+walkthroughs/cody_tutorial.py

@@ -6,7 +6,7 @@ import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary'
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { PlainTextPlugin } from '@lexical/react/LexicalPlainTextPlugin'
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import {
     $getRoot,
     $getSelection,
@@ -65,7 +65,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
     )
 
     return (
-        <div className={classNames(styles.editorShell, className)}>
+        <div className={clsx(styles.editorShell, className)}>
             <div className={styles.editorContainer}>
                 <LexicalComposer initialConfig={initialConfig}>
                     <PlainTextPlugin

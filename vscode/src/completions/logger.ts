@@ -23,6 +23,7 @@ import type {
     PersistencePresentEventPayload,
     PersistenceRemovedEventPayload,
 } from '../common/persistence-tracker/types'
+import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import { completionProviderConfig } from './completion-provider-config'
 import type { ContextSummary } from './context/context-mixer'
 import type { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
@@ -857,9 +858,4 @@ const otherCompletionProviders = [
 ]
 function getOtherCompletionProvider(): string[] {
     return otherCompletionProviders.filter(id => vscode.extensions.getExtension(id)?.isActive)
-}
-
-function isRunningInsideAgent(): boolean {
-    const config = getConfiguration(vscode.workspace.getConfiguration())
-    return !!config.isRunningInsideAgent
 }

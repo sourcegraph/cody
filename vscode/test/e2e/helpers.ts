@@ -1,17 +1,17 @@
 import * as child_process from 'node:child_process'
 import {
+    promises as fs,
     type PathLike,
     type RmOptions,
     mkdir,
     mkdtempSync,
-    promises as fs,
     rmSync,
     writeFile,
 } from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 
-import { type Frame, type FrameLocator, type Page, expect, test as base } from '@playwright/test'
+import { type Frame, type FrameLocator, type Page, test as base, expect } from '@playwright/test'
 import { _electron as electron } from 'playwright'
 import * as uuid from 'uuid'
 
@@ -20,6 +20,7 @@ import {
     SERVER_URL,
     VALID_TOKEN,
     loggedEvents,
+    loggedV2Events,
     resetLoggedEvents,
     sendTestInfo,
 } from '../fixtures/mock-server'
@@ -54,6 +55,11 @@ export interface TestConfiguration {
 // playwright test extension: Add expectedEvents to each test to compare against
 export interface ExpectedEvents {
     expectedEvents: string[]
+}
+
+// playwright test extension: Add expectedV2Events to each test to compare against
+export interface ExpectedV2Events {
+    expectedV2Events: string[]
 }
 
 export const test = base
@@ -98,6 +104,23 @@ export const test = base
             ),
     })
 
+    .extend<ExpectedV2Events>({
+        expectedV2Events: async ({ preAuthenticate }, use) =>
+            await use(
+                preAuthenticate
+                    ? [
+                          // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+                          // 'cody.extention.installed'
+                          'cody.auth:connected',
+                      ]
+                    : [
+                          // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+                          // 'cody.extention.installed',
+                          'cody.auth:connected',
+                      ]
+            ),
+    })
+
     .extend<{ server: MockServer }>({
         // biome-ignore lint/correctness/noEmptyPattern: Playwright ascribes meaning to the empty pattern: No dependencies.
         server: async ({}, use) => {
@@ -115,6 +138,7 @@ export const test = base
                 dotcomUrl,
                 server: MockServer,
                 expectedEvents,
+                expectedV2Events,
                 preAuthenticate,
             },
             use,
@@ -210,6 +234,14 @@ export const test = base
                 console.error('Expected events do not match actual events!')
                 console.log('Expected:', expectedEvents)
                 console.log('Logged:', loggedEvents)
+                throw error
+            }
+            try {
+                await assertEvents(loggedV2Events, expectedV2Events)
+            } catch (error) {
+                console.error('Expected v2 events do not match actual events!')
+                console.log('Expected:', expectedV2Events)
+                console.log('Logged:', loggedV2Events)
                 throw error
             }
 
@@ -400,7 +432,7 @@ export function withPlatformSlashes(input: string) {
 }
 
 const isPlatform = (platform: string) => process.platform === platform
-export function getMetaKeyByOS(): string {
+export function getMetaKeyByOS(): 'Meta' | 'Control' {
     return isPlatform('darwin') ? 'Meta' : 'Control'
 }
 

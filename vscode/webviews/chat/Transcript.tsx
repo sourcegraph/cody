@@ -1,7 +1,7 @@
 import type React from 'react'
 import { type FunctionComponent, useEffect, useRef } from 'react'
 
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 
 import { type ChatMessage, type Guardrails, renderCodyMarkdown } from '@sourcegraph/cody-shared'
 
@@ -9,7 +9,7 @@ import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 
-import { ChatModelDropdownMenu } from '../Components/ChatModelDropdownMenu'
+import { ModelSelectField } from '../components/modelSelectField/ModelSelectField'
 import { CodyLogo } from '../icons/CodyLogo'
 import styles from './Transcript.module.css'
 import { Cell } from './cells/Cell'
@@ -184,18 +184,20 @@ export const Transcript: React.FunctionComponent<{
         }
 
     return (
-        <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
-            <div ref={scrollAnchoredContainerRef} className={classNames(styles.scrollAnchoredContainer)}>
+        <div ref={transcriptContainerRef} className={clsx(className, styles.container)}>
+            <div ref={scrollAnchoredContainerRef} className={clsx(styles.scrollAnchoredContainer)}>
                 {!!chatModels?.length &&
                     onCurrentChatModelChange &&
                     userInfo &&
                     userInfo.isDotComUser && (
-                        <ChatModelDropdownMenu
-                            models={chatModels}
-                            disabled={transcript.length > 0}
-                            onCurrentChatModelChange={onCurrentChatModelChange}
-                            userInfo={userInfo}
-                        />
+                        <div className={styles.modelSelectFieldContainer}>
+                            <ModelSelectField
+                                models={chatModels}
+                                disabled={transcript.length > 0}
+                                onModelSelect={onCurrentChatModelChange}
+                                userInfo={userInfo}
+                            />
+                        </div>
                     )}
                 {transcript.length === 0 && <WelcomeMessageCell welcomeMessage={welcomeMessage} />}
                 {earlierMessages.map(messageToTranscriptItem(0))}
@@ -220,7 +222,7 @@ export const Transcript: React.FunctionComponent<{
                         />
                     )}
             </div>
-            <div className={classNames(styles.scrollAnchor)}>&nbsp;</div>
+            <div className={clsx(styles.scrollAnchor)}>&nbsp;</div>
         </div>
     )
 }

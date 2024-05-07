@@ -219,13 +219,7 @@ export class MockServer {
             const events = req.body as TelemetryEventInput[]
             for (const event of events) {
                 void logTestingData('new', JSON.stringify(event))
-                if (
-                    ![
-                        'cody.extension', // extension setup events can behave differently in test environments
-                    ].includes(event.feature)
-                ) {
-                    loggedV2Events.push(`${event.feature}/${event.action}`)
-                }
+                loggedV2Events.push(`${event.feature}:${event.action}`)
             }
             res.status(200)
         })
@@ -585,7 +579,7 @@ export let loggedEvents: string[] = []
 // Events recorded using the new event recorders
 // Needs to be recorded separately from the legacy events to ensure ordering
 // is stable.
-let loggedV2Events: string[] = []
+export let loggedV2Events: string[] = []
 
 export function resetLoggedEvents(): void {
     loggedEvents = []

@@ -16,12 +16,14 @@ import type { CodebaseRepoIdMapper } from '../../context/enterprise-context-fact
 import { getEditor } from '../../editor/active-editor'
 import type { SymfRunner } from '../../local-context/symf'
 import { getCodebaseFromWorkspaceUri } from '../../repository/git-extension-api'
+import { RepoMetadatafromGitApi } from '../../repository/repo-metadata-from-git-api'
 
 interface CodebaseIdentifiers {
     localFolder: vscode.Uri
     remote?: string
     remoteRepoId?: string
     setting?: string
+    isPublic?: boolean
 }
 
 /**
@@ -160,6 +162,9 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
                 newCodebase.remoteRepoId = (
                     await this.codebaseRepoIdMapper?.repoForCodebase(newCodebase.remote)
                 )?.id
+                const instance = RepoMetadatafromGitApi.getInstance()
+                const gitMetaData = await instance.getRepoMetadataUsingGitUrl(newCodebase.remote)
+                newCodebase.isPublic = gitMetaData?.isPublic
             }
         }
 

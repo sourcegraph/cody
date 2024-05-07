@@ -19,6 +19,7 @@ import { localStorage } from '../../services/LocalStorageProvider'
 import { telemetryService } from '../../services/telemetry'
 
 import { DEFAULT_EVENT_SOURCE } from '@sourcegraph/cody-shared'
+import type { URI } from 'vscode-uri'
 import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ContextRankingController } from '../../local-context/context-ranking'
@@ -90,7 +91,20 @@ export class ChatManager implements vscode.Disposable {
             vscode.commands.registerCommand(CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID, (...args) =>
                 this.passthroughVsCodeOpen(...args)
             ),
-            vscode.commands.registerCommand('cody.chat.context.add', () => this.sendSelectionToChat())
+
+            // Mention selection/file commands
+            vscode.commands.registerCommand('cody.mention.selection', uri =>
+                this.sendEditorContextToChat('chat', uri)
+            ),
+            vscode.commands.registerCommand('cody.mention.selection.new', uri =>
+                this.sendEditorContextToChat('new-chat', uri)
+            ),
+            vscode.commands.registerCommand('cody.mention.file', uri =>
+                this.sendEditorContextToChat('chat', uri)
+            ),
+            vscode.commands.registerCommand('cody.mention.file.new', uri =>
+                this.sendEditorContextToChat('new-chat', uri)
+            )
         )
     }
 
@@ -135,14 +149,17 @@ export class ChatManager implements vscode.Disposable {
         return provider
     }
 
-    private async sendSelectionToChat(): Promise<void> {
+    private async sendEditorContextToChat(mode: 'chat' | 'new-chat', uri?: URI): Promise<void> {
         telemetryService.log('CodyVSCodeExtension:addChatContext:clicked', undefined, {
             hasV2Event: true,
         })
         telemetryRecorder.recordEvent('cody.addChatContext', 'clicked')
 
-        const provider = await this.chatPanelsManager.getActiveChatPanel()
-        await provider?.handleGetUserEditorContext()
+        const provider =
+            mode === 'new-chat'
+                ? await this.chatPanelsManager.getNewChatPanel()
+                : await this.chatPanelsManager.getActiveChatPanel()
+        await provider?.handleGetUserEditorContext(uri)
     }
 
     private async editChatHistory(treeItem?: vscode.TreeItem): Promise<void> {

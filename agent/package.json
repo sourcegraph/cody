@@ -34,11 +34,7 @@
     "assets": "dist/*.{wasm,map}"
   },
   "bin": "dist/index.js",
-  "files": [
-    "dist/index.js",
-    "dist/index.js.map",
-    "dist/*.wasm"
-  ],
+  "files": ["dist/index.js", "dist/index.js.map", "dist/*.wasm"],
   "dependencies": {
     "@pollyjs/core": "^6.0.6",
     "@pollyjs/persister": "^6.0.6",
@@ -73,6 +69,7 @@
     "google-protobuf": "^3.21.2",
     "parse-git-diff": "^0.0.14",
     "pkg": "^5.8.1",
-    "rimraf": "^5.0.5"
+    "rimraf": "^5.0.5",
+    "yaml": "^2.3.4"
   }
 }

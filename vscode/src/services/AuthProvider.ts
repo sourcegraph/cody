@@ -25,6 +25,7 @@ import { logDebug } from '../log'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { closeAuthProgressIndicator } from '../auth/auth-progress-indicator'
+import { maybeStartInteractiveTutorial } from '../tutorial/helpers'
 import { AuthMenu, showAccessTokenInputBox, showInstanceURLInputBox } from './AuthMenus'
 import { getAuthReferralCode } from './AuthProviderSimplified'
 import { localStorage } from './LocalStorageProvider'
@@ -71,7 +72,11 @@ export class AuthProvider {
         }
         logDebug('AuthProvider:init:lastEndpoint', lastEndpoint)
 
-        await this.auth({ endpoint: lastEndpoint, token: token || null, isExtensionStartup: true })
+        await this.auth({
+            endpoint: lastEndpoint,
+            token: token || null,
+            isExtensionStartup: true,
+        })
     }
 
     public addChangeListener(listener: Listener): Unsubscribe {
@@ -123,13 +128,19 @@ export class AuthProvider {
                 // Auto log user if token for the selected instance was found in secret
                 const selectedEndpoint = item.uri
                 const token = await secretStorage.get(selectedEndpoint)
-                let authStatus = await this.auth({ endpoint: selectedEndpoint, token: token || null })
+                let authStatus = await this.auth({
+                    endpoint: selectedEndpoint,
+                    token: token || null,
+                })
                 if (!authStatus?.isLoggedIn) {
                     const newToken = await showAccessTokenInputBox(item.uri)
                     if (!newToken) {
                         return
                     }
-                    authStatus = await this.auth({ endpoint: selectedEndpoint, token: newToken || null })
+                    authStatus = await this.auth({
+                        endpoint: selectedEndpoint,
+                        token: newToken || null,
+                    })
                 }
                 await showAuthResultMessage(selectedEndpoint, authStatus?.authStatus)
                 logDebug('AuthProvider:signinMenu', mode, selectedEndpoint)
@@ -142,7 +153,10 @@ export class AuthProvider {
         if (!accessToken) {
             return
         }
-        const authState = await this.auth({ endpoint: instanceUrl, token: accessToken })
+        const authState = await this.auth({
+            endpoint: instanceUrl,
+            token: accessToken,
+        })
         telemetryService.log(
             'CodyVSCodeExtension:auth:fromToken',
             {
@@ -206,9 +220,14 @@ export class AuthProvider {
             ...options
         )
         switch (option) {
-            case 'Manage Account':
-                void vscode.env.openExternal(vscode.Uri.parse(ACCOUNT_USAGE_URL.toString()))
+            case 'Manage Account': {
+                // Add the username to the web can warn if the logged in session on web is different from VS Code
+                const uri = vscode.Uri.parse(ACCOUNT_USAGE_URL.toString()).with({
+                    query: `cody_client_user=${encodeURIComponent(this.authStatus.username)}`,
+                })
+                void vscode.env.openExternal(uri)
                 break
+            }
             case 'Switch Account...':
                 await this.signinMenu()
                 break
@@ -344,7 +363,7 @@ export class AuthProvider {
         if (isExtensionStartup && isLoggedIn) {
             await this.setHasAuthenticatedBefore()
         } else if (isLoggedIn) {
-            this.logFirstEverAuthentication()
+            this.handleFirstEverAuthentication()
         }
 
         await this.storeAuthInfo(url, token)
@@ -474,12 +493,16 @@ export class AuthProvider {
     }
 
     // Logs a telemetry event if the user has never authenticated to Sourcegraph.
-    private logFirstEverAuthentication(): void {
-        if (!localStorage.get(HAS_AUTHENTICATED_BEFORE_KEY)) {
-            telemetryRecorder.recordEvent('cody.auth.login', 'firstEver')
-            this.setHasAuthenticatedBefore()
+    private handleFirstEverAuthentication(): void {
+        if (localStorage.get(HAS_AUTHENTICATED_BEFORE_KEY)) {
+            // User has authenticated before, noop
+            return
         }
+        telemetryRecorder.recordEvent('cody.auth.login', 'firstEver')
+        this.setHasAuthenticatedBefore()
+        void maybeStartInteractiveTutorial()
     }
+
     private setHasAuthenticatedBefore() {
         return localStorage.set(HAS_AUTHENTICATED_BEFORE_KEY, 'true')
     }

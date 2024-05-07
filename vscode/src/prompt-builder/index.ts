@@ -2,22 +2,21 @@ import {
     type ChatMessage,
     type ContextItem,
     type ContextMessage,
-    type ContextTokenUsageType,
     type Message,
     type ModelContextWindow,
     TokenCounter,
+    contextFiltersProvider,
     isCodyIgnoredFile,
     ps,
-    toRangeData,
 } from '@sourcegraph/cody-shared'
-import { SHA256 } from 'crypto-js'
-import { renderContextItem } from './utils'
+import type { ContextTokenUsageType } from '@sourcegraph/cody-shared/src/token'
+import { sortContextItems } from '../chat/chat-view/agentContextSorting'
+import { getUniqueContextItems, isUniqueContextItem } from './unique-context'
+import { getContextItemTokenUsageType, renderContextItem } from './utils'
 
 interface PromptBuilderContextResult {
     limitReached: boolean
-    used: ContextItem[]
     ignored: ContextItem[]
-    duplicate: ContextItem[]
 }
 
 /**
@@ -29,7 +28,8 @@ interface PromptBuilderContextResult {
 export class PromptBuilder {
     private prefixMessages: Message[] = []
     private reverseMessages: Message[] = []
-    private seenContext = new Set<string>()
+
+    public contextItems: ContextItem[] = []
 
     private tokenCounter: TokenCounter
 
@@ -38,6 +38,15 @@ export class PromptBuilder {
     }
 
     public build(): Message[] {
+        // Create context messages for each context item, where
+        // assistant messages come first because the transcript is in reversed order.
+        const assistantMessage = { speaker: 'assistant', text: ps`Ok.` } as Message
+        for (const item of this.contextItems) {
+            const contextMessage = renderContextItem(item)
+            const messagePair = contextMessage && [assistantMessage, contextMessage]
+            messagePair && this.reverseMessages.push(...messagePair)
+        }
+
         return this.prefixMessages.concat([...this.reverseMessages].reverse())
     }
 
@@ -78,62 +87,80 @@ export class PromptBuilder {
         return 0
     }
 
-    private processedContextType = new Set<ContextTokenUsageType>()
-
-    public tryAddContext(
-        tokenType: ContextTokenUsageType,
+    public async tryAddContext(
+        type: ContextTokenUsageType | 'history',
         contextMessages: (ContextItem | ContextMessage)[]
-    ): PromptBuilderContextResult {
+    ): Promise<PromptBuilderContextResult> {
         const result = {
             limitReached: false, // Indicates if the token budget was exceeded
-            used: [] as ContextItem[], // The items that were successfully added
             ignored: [] as ContextItem[], // The items that were ignored
-            duplicate: [] as ContextItem[], // The items that were duplicates of previously seen items
         }
-        this.processedContextType.add(tokenType)
-        // Create a new array to avoid modifying the original array, then reverse it to process the newest context items first.
+
+        // Create a new array to avoid modifying the original array,
+        // then reverse it to process the newest context items first.
         const reversedContextItems = contextMessages.slice().reverse()
+
+        // Required by agent tests to ensure the context items are sorted correctly.
+        sortContextItems(reversedContextItems as ContextItem[])
+
         for (const item of reversedContextItems) {
-            const userContextItem = contextItem(item)
-            const id = contextItemId(item)
+            const newContextItem = contextItem(item)
             // Skip context items that are in the Cody ignore list
-            if (isCodyIgnoredFile(userContextItem.uri)) {
-                result.ignored.push(userContextItem)
+            if (isCodyIgnoredFile(newContextItem.uri)) {
+                result.ignored.push(newContextItem)
                 continue
             }
-            // Skip context items that have already been seen
-            if (this.seenContext.has(id)) {
-                result.duplicate.push(userContextItem)
+            if (await contextFiltersProvider.isUriIgnored(newContextItem.uri)) {
+                result.ignored.push(newContextItem)
                 continue
             }
-            const contextMsg = isContextItem(item) ? renderContextItem(item) : item
-            if (!contextMsg) {
-                continue
-            }
-            const assistantMsg = { speaker: 'assistant', text: ps`Ok.` } as Message
-            const withinLimit = this.tokenCounter.updateUsage(tokenType, [contextMsg, assistantMsg])
-
-            // Check if the type of context item has been processed before to determine if it is a new item or not.
-            // We do not want to update exisiting context items from chat history that's not related to last human message,
-            // unless isTooLarge is undefined, meaning it has not been processed before like new enhanced context.
+            // Special-case remote context here. We can usually rely on the remote context to honor
+            // any context filters but in case of client side overwrites, we want a file that is
+            // ignored on a client to always be treated as ignored.
             if (
-                (tokenType === 'user' && !this.processedContextType.has(tokenType)) ||
-                userContextItem.isTooLarge === undefined
+                newContextItem.type === 'file' &&
+                (newContextItem.uri.scheme === 'https' || newContextItem.uri.scheme === 'http') &&
+                newContextItem.repoName &&
+                contextFiltersProvider.isRepoNameIgnored(newContextItem.repoName)
             ) {
-                userContextItem.isTooLarge = !withinLimit
+                result.ignored.push(newContextItem)
+                continue
             }
 
-            this.seenContext.add(id)
-            // Skip context items that would exceed the token budget
-            if (!withinLimit) {
-                userContextItem.content = undefined
-                result.ignored.push(userContextItem)
+            const contextMessage = isContextItem(item) ? renderContextItem(item) : item
+            if (!contextMessage) {
+                continue
+            }
+
+            // Skip duplicated or invalid items before updating the token usage.
+            if (!isUniqueContextItem(newContextItem, this.contextItems)) {
+                continue
+            }
+
+            const messagePair = [{ speaker: 'assistant', text: ps`Ok.` } as Message, contextMessage]
+            const tokenType = getContextItemTokenUsageType(newContextItem)
+            const isWithinLimit = this.tokenCounter.updateUsage(tokenType, messagePair)
+
+            // Don't update context items from the past (history items) unless undefined.
+            if (type !== 'history' || newContextItem.isTooLarge === undefined) {
+                newContextItem.isTooLarge = !isWithinLimit
+            }
+
+            // Skip item that would exceed token limit & add it to the ignored list.
+            if (!isWithinLimit) {
+                newContextItem.content = undefined
+                result.ignored.push(newContextItem)
                 result.limitReached = true
                 continue
             }
-            this.reverseMessages.push(assistantMsg, contextMsg)
-            result.used.push(userContextItem)
+
+            // Add the new valid context item to the context list.
+            this.contextItems.push(newContextItem)
+            // Update context items for the next iteration, removes items that are no longer unique.
+            // TODO (bee) update token usage to reflect the removed context items.
+            this.contextItems = getUniqueContextItems(this.contextItems)
         }
+
         return result
     }
 }
@@ -144,22 +171,4 @@ function isContextItem(value: ContextItem | ContextMessage): value is ContextIte
 
 function contextItem(value: ContextItem | ContextMessage): ContextItem {
     return isContextItem(value) ? value : value.file
-}
-
-function contextItemId(value: ContextItem | ContextMessage): string {
-    const item = contextItem(value)
-
-    // HACK: Handle `item.range` values that were serialized from `vscode.Range` into JSON `[start,
-    // end]`. If a value of that type exists in `item.range`, it's a bug, but it's an easy-to-hit
-    // bug, so protect against it. See the `toRangeData` docstring for more.
-    const range = toRangeData(item.range)
-    if (range) {
-        return `${item.uri.toString()}#${range.start.line}:${range.end.line}`
-    }
-
-    if (item.content) {
-        return `${item.uri.toString()}#${SHA256(item.content).toString()}`
-    }
-
-    return item.uri.toString()
 }

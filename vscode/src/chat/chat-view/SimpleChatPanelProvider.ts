@@ -10,7 +10,6 @@ import {
     type ChatMessage,
     ConfigFeaturesSingleton,
     type ContextItem,
-    type ContextItemFile,
     ContextItemSource,
     type ContextItemWithContent,
     type DefaultChatCommands,
@@ -61,14 +60,17 @@ import { countGeneratedCode } from '../utils'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
+import type { URI } from 'vscode-uri'
+import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor } from '../../commands/context/selection'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { chatModel } from '../../models'
+import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
+import { gitCommitIdFromGitExtension } from '../../repository/git-extension-api'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import type { MessageErrorType } from '../MessageProvider'
 import { getChatContextItemsForMention } from '../context/chatContext'
@@ -413,6 +415,18 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.initDoer.signalInitialized()
     }
 
+    private async getRepoMetadataIfPublic(): Promise<string> {
+        const currentCodebase = await this.codebaseStatusProvider.currentCodebase()
+        if (currentCodebase?.isPublic) {
+            const gitMetadata = {
+                githubUrl: currentCodebase?.remote,
+                commit: gitCommitIdFromGitExtension(currentCodebase?.localFolder),
+            }
+            return JSON.stringify(gitMetadata)
+        }
+        return ''
+    }
+
     /**
      * Handles user input text for both new and edit submissions
      */
@@ -428,7 +442,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     ): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
             span.setAttribute('sampled', true)
-
             const authStatus = this.authProvider.getAuthStatus()
             const sharedProperties = {
                 requestID,
@@ -452,6 +465,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // the condition below is an additional safeguard measure
                     promptText:
                         authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
+                    gitMetadata:
+                        authStatus.isDotCom && addEnhancedContext
+                            ? await this.getRepoMetadataIfPublic()
+                            : '',
                 },
             })
 
@@ -649,20 +666,31 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
     }
 
-    public async handleGetUserEditorContext(): Promise<void> {
-        const selectionFiles = (await getContextFileFromCursor()) as ContextItemFile[]
+    public async handleGetUserEditorContext(uri?: URI): Promise<void> {
+        // Get selection from the active editor
+        const selection = vscode.window.activeTextEditor?.selection
+
+        // Determine context based on URI presence
+        const contextItem = uri
+            ? await getContextFileFromUri(uri, selection)
+            : await getContextFileFromCursor()
+
         const { input, context } = this.chatModel.contextWindow
-        const contextItems = selectionFiles.map(f => ({
-            ...f,
-            content: undefined,
-            isTooLarge: f.size ? f.size > (context?.user ?? input) : undefined,
-            source: ContextItemSource.User,
-        }))
+        const userContextSize = context?.user ?? input
+
         void this.postMessage({
             type: 'chat-input-context',
-            items: contextItems,
+            items: contextItem.map(f => ({
+                ...f,
+                // Remove content to avoid sending large data to the webview
+                content: undefined,
+                isTooLarge: f.size ? f.size > userContextSize : undefined,
+                source: ContextItemSource.User,
+                range: f.range,
+            })),
         })
-        // Makes sure to reveal the webview panel in case the panel is hidden.
+
+        // Reveal the webview panel if it is hidden
         this.webviewPanel?.reveal()
     }
 
@@ -828,20 +856,20 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         prompter: IPrompter,
         sendTelemetry?: (contextSummary: any, privateContextStats?: any) => void
     ): Promise<Message[]> {
-        const { prompt, newContextUsed, newContextIgnored } = await prompter.makePrompt(
+        const { prompt, context } = await prompter.makePrompt(
             this.chatModel,
             this.authProvider.getAuthStatus().codyApiVersion
         )
 
         // Update UI based on prompt construction
         // Includes the excluded context items to display in the UI
-        this.chatModel.setLastMessageContext([...newContextUsed, ...newContextIgnored])
+        this.chatModel.setLastMessageContext([...context.used, ...context.ignored])
 
         if (sendTelemetry) {
             // Create a summary of how many code snippets of each context source are being
             // included in the prompt
             const contextSummary: { [key: string]: number } = {}
-            for (const { source } of newContextUsed) {
+            for (const { source } of context.used) {
                 if (!source) {
                     continue
                 }
@@ -861,10 +889,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 }
             // NOTE: The private context stats are only logged for DotCom users
             const privateContextStats = {
-                included: getContextStats(newContextUsed.filter(f => f.source === 'user')),
-                excluded: getContextStats(newContextIgnored.filter(f => f.source === 'user')),
+                included: getContextStats(context.used.filter(f => f.source === 'user')),
+                excluded: getContextStats(context.ignored.filter(f => f.source === 'user')),
             }
-
             sendTelemetry(contextSummary, privateContextStats)
         }
 
@@ -1201,12 +1228,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         })
 
         // Let the webview know if it is active
-        panel.onDidChangeViewState(event =>
+        panel.onDidChangeViewState(event => {
             this.postMessage({
                 type: 'webview-state',
                 isActive: event.webviewPanel.active,
             })
-        )
+        })
 
         this.disposables.push(
             panel.webview.onDidReceiveMessage(message =>
@@ -1258,10 +1285,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     // =======================================================================
 
     public setChatTitle(title: string): void {
+        const isDefaultChatTitle = title === 'New Chat'
         // Skip storing default chat title
-        if (title !== 'New Chat') {
+        if (!isDefaultChatTitle) {
             this.chatModel.setCustomChatTitle(title)
         }
+
         this.postChatTitle()
     }
 
@@ -1276,7 +1305,7 @@ function newChatModelFromSerializedChatTranscript(
     modelID: string
 ): SimpleChatModel {
     return new SimpleChatModel(
-        json.chatModel || modelID,
+        migrateAndNotifyForOutdatedModels(json.chatModel || modelID)!,
         json.interactions.flatMap((interaction: SerializedChatInteraction): ChatMessage[] =>
             [
                 PromptString.unsafe_deserializeChatMessage(interaction.humanMessage),

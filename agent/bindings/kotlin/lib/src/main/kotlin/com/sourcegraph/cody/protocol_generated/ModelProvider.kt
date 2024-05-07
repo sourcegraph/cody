@@ -6,6 +6,7 @@ data class ModelProvider(
   val codyProOnly: Boolean,
   val provider: String,
   val title: String,
+  val deprecated: Boolean,
   val primaryProviders: List<ModelProvider>,
   val localProviders: List<ModelProvider>,
 )

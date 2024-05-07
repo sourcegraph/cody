@@ -8,8 +8,32 @@ import { getEditor } from '../../editor/active-editor'
 import type { EditCommandResult } from '../../main'
 import type { CodyCommandArgs } from '../types'
 
-import { getEditLineSelection } from '../../edit/utils/edit-selection'
+import {
+    getEditAdjustedUserSelection,
+    getEditDefaultProvidedRange,
+} from '../../edit/utils/edit-selection'
 import { execQueryWrapper } from '../../tree-sitter/query-sdk'
+
+/**
+ * Gets the default range and insertion point for documenting the code around the current cursor position.
+ */
+function getDefaultDocumentableRanges(editor: vscode.TextEditor): {
+    range?: vscode.Range
+    insertionPoint?: vscode.Position
+} {
+    const defaultRange = getEditDefaultProvidedRange(editor.document, editor.selection)
+
+    if (defaultRange) {
+        return {
+            range: defaultRange,
+            insertionPoint: defaultRange.start,
+        }
+    }
+
+    // No usable selection, fallback to expanding the range to the nearest block,
+    // as is the default behavior for all "Edit" commands
+    return {}
+}
 
 /**
  * Gets the symbol range and preferred insertion point for documentation
@@ -27,15 +51,8 @@ function getDocumentableRange(editor: vscode.TextEditor): {
     range?: vscode.Range
     insertionPoint?: vscode.Position
 } {
-    const { document, selection } = editor
-    if (!selection.isEmpty) {
-        const lineSelection = getEditLineSelection(editor.document, editor.selection)
-        // The user has made an active selection, use that as the documentable range
-        return {
-            range: lineSelection,
-            insertionPoint: lineSelection.start,
-        }
-    }
+    const { document } = editor
+    const adjustedSelection = getEditAdjustedUserSelection(document, editor.selection)
 
     /**
      * Attempt to get the range of a documentable symbol at the current cursor position.
@@ -43,23 +60,40 @@ function getDocumentableRange(editor: vscode.TextEditor): {
      */
     const [documentableNode] = execQueryWrapper({
         document,
-        position: editor.selection.active,
+        position: adjustedSelection.start,
         queryWrapper: 'getDocumentableNode',
     })
+
     if (!documentableNode) {
-        return {}
+        return getDefaultDocumentableRanges(editor)
     }
 
     const { range: documentableRange, insertionPoint: documentableInsertionPoint } = documentableNode
     if (!documentableRange) {
-        // No user-provided selection, no documentable range found.
+        // No documentable range found.
         // Fallback to expanding the range to the nearest block.
-        return {}
+        return getDefaultDocumentableRanges(editor)
     }
 
     const {
         node: { startPosition, endPosition },
     } = documentableRange
+    const range = new vscode.Range(
+        startPosition.row,
+        startPosition.column,
+        endPosition.row,
+        endPosition.column
+    )
+
+    // If the users' adjusted selection aligns with the start of the node and is contained within the node,
+    // It is probable that the user would benefit from expanding to this node completely
+    const selectionMatchesNode =
+        adjustedSelection.start.isEqual(range.start) && range.contains(adjustedSelection.end)
+    if (!selectionMatchesNode && !editor.selection.isEmpty) {
+        // We found a documentable range, but the users' adjusted selection does not match it.
+        // We have to use the users' selection here, as it's possible they do not want the documentable node.
+        return getDefaultDocumentableRanges(editor)
+    }
 
     const insertionPoint = documentableInsertionPoint
         ? new vscode.Position(documentableInsertionPoint.node.startPosition.row + 1, 0)
@@ -69,12 +103,7 @@ function getDocumentableRange(editor: vscode.TextEditor): {
           )
 
     return {
-        range: new vscode.Range(
-            startPosition.row,
-            startPosition.column,
-            endPosition.row,
-            endPosition.column
-        ),
+        range,
         insertionPoint,
     }
 }

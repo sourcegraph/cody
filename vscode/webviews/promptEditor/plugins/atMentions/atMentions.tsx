@@ -19,7 +19,7 @@ import {
     displayPath,
     scanForMentionTriggerInUserTextInput,
 } from '@sourcegraph/cody-shared'
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import { useCurrentChatModel } from '../../../chat/models/chatModelContext'
 import { toSerializedPromptEditorValue } from '../../PromptEditor'
 import {
@@ -47,8 +47,8 @@ export function parseLineRangeInMention(text: string): {
         return { textWithoutRange: text }
     }
 
-    let startLine = parseInt(match[1], 10)
-    let endLine = parseInt(match[2], 10)
+    let startLine = Number.parseInt(match[1], 10)
+    let endLine = Number.parseInt(match[2], 10)
     if (startLine > endLine) {
         // Reverse range so that startLine is always before endLine.
         ;[startLine, endLine] = [endLine, startLine]
@@ -208,7 +208,7 @@ export default function MentionsPlugin(): JSX.Element | null {
                                     left: x ?? 0,
                                     width: 'max-content',
                                 }}
-                                className={classNames(styles.popover)}
+                                className={clsx(styles.popover)}
                             >
                                 <OptionsList
                                     query={query ?? ''}

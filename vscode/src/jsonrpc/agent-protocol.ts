@@ -238,7 +238,7 @@ export type ServerRequests = {
 
     'textDocument/edit': [TextDocumentEditParams, boolean]
     'textDocument/openUntitledDocument': [UntitledTextDocument, boolean]
-    'textDocument/show': [{ uri: string; options?: vscode.TextDocumentShowOptions }, boolean]
+    'textDocument/show': [{ uri: string; options?: TextDocumentShowOptionsParams }, boolean]
     'workspace/edit': [WorkspaceEditParams, boolean]
 
     // Low-level API to handle requests from the VS Code extension to create a
@@ -359,7 +359,7 @@ interface CompletionItemParams {
     completionID: string
 }
 
-interface AutocompleteParams {
+export interface AutocompleteParams {
     uri: string
     filePath?: string
     position: Position
@@ -543,6 +543,12 @@ export interface ProtocolTextDocument {
     filePath?: string
     content?: string
     selection?: Range
+    contentChanges?: ProtocolTextDocumentContentChangeEvent[]
+}
+
+export interface ProtocolTextDocumentContentChangeEvent {
+    range: Range
+    text: string
 }
 
 interface ExecuteCommandParams {
@@ -661,6 +667,13 @@ export interface TextDocumentEditParams {
     edits: TextEdit[]
     options?: { undoStopBefore: boolean; undoStopAfter: boolean }
 }
+
+export interface TextDocumentShowOptionsParams {
+    preserveFocus?: boolean
+    preview?: boolean
+    selection?: Range
+}
+
 export type TextEdit = ReplaceTextEdit | InsertTextEdit | DeleteTextEdit
 export interface ReplaceTextEdit {
     type: 'replace'
@@ -685,6 +698,7 @@ export interface EditTask {
     state: CodyTaskState
     error?: CodyError
     selectionRange: Range
+    instruction?: string
 }
 
 export interface CodyError {

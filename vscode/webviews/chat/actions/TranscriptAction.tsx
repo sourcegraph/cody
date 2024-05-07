@@ -1,6 +1,6 @@
 import type React from 'react'
 
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 
 import styles from './TranscriptAction.module.css'
 
@@ -22,7 +22,7 @@ export const TranscriptAction: React.FunctionComponent<{
     onClick?: () => void
 }> = ({ title, steps, className, onClick }) => {
     return (
-        <details className={classNames(className, styles.container)}>
+        <details className={clsx(className, styles.container)}>
             <summary onClick={onClick} onKeyDown={onClick}>
                 {typeof title === 'string' ? (
                     title

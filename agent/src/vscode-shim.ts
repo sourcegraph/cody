@@ -4,7 +4,7 @@ import path from 'node:path'
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
-import { extensionForLanguage, logDebug, logError } from '@sourcegraph/cody-shared'
+import { extensionForLanguage, logDebug, logError, setClientNameVersion } from '@sourcegraph/cody-shared'
 
 // <VERY IMPORTANT - PLEASE READ>
 // This file must not import any module that transitively imports from 'vscode'.
@@ -110,6 +110,7 @@ const emptyFileWatcher: vscode.FileSystemWatcher = {
 export let clientInfo: ClientInfo | undefined
 export function setClientInfo(newClientInfo: ClientInfo): void {
     clientInfo = newClientInfo
+    setClientNameVersion(clientInfo.name, clientInfo.version)
     if (newClientInfo.extensionConfiguration) {
         setExtensionConfiguration(newClientInfo.extensionConfiguration)
     }
@@ -175,6 +176,7 @@ export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments)
 }
 
 export const workspaceFolders: vscode.WorkspaceFolder[] = []
+export const workspaceTextDocuments: vscode.TextDocument[] = []
 
 // vscode.workspace.onDidChangeConfiguration
 const _workspace: typeof vscode.workspace = {
@@ -204,7 +206,7 @@ const _workspace: typeof vscode.workspace = {
     registerFileSystemProvider: () => emptyDisposable,
     registerNotebookSerializer: () => emptyDisposable,
     saveAll: () => Promise.resolve(false),
-    textDocuments: [], // Cody uses `vscode.window.tabGroups.all` instead of this API
+    textDocuments: workspaceTextDocuments,
     updateWorkspaceFolders: () => false,
     workspaceFile: undefined,
     registerTaskProvider: () => emptyDisposable,
@@ -304,7 +306,10 @@ const _workspace: typeof vscode.workspace = {
             const language: string = (uriOrString as any)?.language ?? ''
             const content: string = (uriOrString as any)?.content ?? ''
             const extension = extensionForLanguage(language) ?? language
-            const untitledUri = Uri.from({ scheme: 'untitled', path: `${uuid.v4()}.${extension}` })
+            const untitledUri = Uri.from({
+                scheme: 'untitled',
+                path: `${uuid.v4()}.${extension}`,
+            })
             if (clientInfo?.capabilities?.untitledDocuments !== 'enabled') {
                 const errorMessage =
                     'Client does not support untitled documents. To fix this problem, set `untitledDocuments: "enabled"` in client capabilities'
@@ -430,7 +435,10 @@ export function defaultWebviewPanel(params: {
     title: string
     showOptions:
         | vscode.ViewColumn
-        | { readonly viewColumn: vscode.ViewColumn; readonly preserveFocus?: boolean }
+        | {
+              readonly viewColumn: vscode.ViewColumn
+              readonly preserveFocus?: boolean
+          }
     options: (vscode.WebviewPanelOptions & vscode.WebviewOptions) | undefined
     onDidReceiveMessage: vscode.EventEmitter<any>
     onDidPostMessage: EventEmitter<any>
@@ -440,7 +448,10 @@ export function defaultWebviewPanel(params: {
         dispose: () => {},
         onDidChangeViewState: emptyEvent(),
         onDidDispose: emptyEvent(),
-        options: params.options ?? { enableFindWidget: false, retainContextWhenHidden: false },
+        options: params.options ?? {
+            enableFindWidget: false,
+            retainContextWhenHidden: false,
+        },
         reveal: () => {},
         title: params.title,
         viewColumn:
@@ -547,7 +558,10 @@ async function showWindowMessage(
             })
             return result ?? undefined
         }
-        agent.notify('debug/message', { channel: 'window.showErrorMessage', message })
+        agent.notify('debug/message', {
+            channel: 'window.showErrorMessage',
+            message,
+        })
     }
     return Promise.resolve(undefined)
 }
@@ -609,7 +623,11 @@ const _window: typeof vscode.window = {
                 {
                     report: ({ message, increment }) => {
                         if (progressClient && !token.isCancellationRequested) {
-                            progressClient.notify('progress/report', { id, message, increment })
+                            progressClient.notify('progress/report', {
+                                id,
+                                message,
+                                increment,
+                            })
                         }
                     },
                 },
@@ -652,7 +670,22 @@ const _window: typeof vscode.window = {
                     `vscode.window.showTextDocument: unable to infer URI from argument ${params}`
                 )
             }
-            const result = await agent.request('textDocument/show', { uri })
+            const selection = (options as any)?.selection
+            const selectionRange = selection
+                ? new Range(
+                      selection.start.line,
+                      selection.start.character,
+                      selection.end.line,
+                      selection.end.character
+                  )
+                : undefined
+            const result = await agent.request('textDocument/show', {
+                uri,
+                options: {
+                    preserveFocus: (options as any)?.preserveFocus ?? true,
+                    selection: selectionRange,
+                },
+            })
             if (!result) {
                 throw new Error(`showTextDocument: client returned false when trying to show URI ${uri}`)
             }
@@ -776,13 +809,19 @@ const gitExports: GitExtension = {
             getRepository(uri) {
                 try {
                     const cwd = uri.fsPath
-                    const toplevel = execSync('git rev-parse --show-toplevel', { cwd, stdio: 'pipe' })
+                    const toplevel = execSync('git rev-parse --show-toplevel', {
+                        cwd,
+                        stdio: 'pipe',
+                    })
                         .toString()
                         .trim()
                     if (toplevel !== uri.fsPath) {
                         return null
                     }
-                    const commit = execSync('git rev-parse --abbrev-ref HEAD', { cwd, stdio: 'pipe' })
+                    const commit = execSync('git rev-parse --abbrev-ref HEAD', {
+                        cwd,
+                        stdio: 'pipe',
+                    })
                         .toString()
                         .trim()
                     return gitRepository(Uri.file(toplevel), commit)
@@ -952,7 +991,10 @@ const _languages: Partial<typeof vscode.languages> = {
             return [] as vscode.Diagnostic[] // return diagnostics for the specific resource
         }
         return [[resource, []]] // return diagnostics for all resources
-    }) as { (resource: vscode.Uri): vscode.Diagnostic[]; (): [vscode.Uri, vscode.Diagnostic[]][] },
+    }) as {
+        (resource: vscode.Uri): vscode.Diagnostic[]
+        (): [vscode.Uri, vscode.Diagnostic[]][]
+    },
 }
 
 export const languages = _languages as typeof vscode.languages
