@@ -20,7 +20,7 @@ import {
     resetDocument,
 } from './content'
 import { setTutorialUri } from './helpers'
-import { TutorialLinkProvider, ResetLensProvider } from './providers'
+import { ResetLensProvider, TutorialLinkProvider } from './providers'
 
 export const startTutorial = async (document: vscode.TextDocument): Promise<vscode.Disposable> => {
     const disposables: vscode.Disposable[] = []

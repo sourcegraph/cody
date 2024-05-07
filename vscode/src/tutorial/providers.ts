@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
-import { findRangeOfText } from './utils'
 import type { TutorialSource } from './commands'
+import { findRangeOfText } from './utils'
 
 export class TutorialLinkProvider implements vscode.DocumentLinkProvider {
     constructor(public editor: vscode.TextEditor) {}

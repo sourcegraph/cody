@@ -25,12 +25,12 @@ import { logDebug } from '../log'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { closeAuthProgressIndicator } from '../auth/auth-progress-indicator'
+import { maybeStartInteractiveTutorial } from '../tutorial/helpers'
 import { AuthMenu, showAccessTokenInputBox, showInstanceURLInputBox } from './AuthMenus'
 import { getAuthReferralCode } from './AuthProviderSimplified'
 import { localStorage } from './LocalStorageProvider'
 import { secretStorage } from './SecretStorageProvider'
 import { telemetryService } from './telemetry'
-import { maybeStartInteractiveTutorial } from '../tutorial/helpers'
 
 type Listener = (authStatus: AuthStatus) => void
 type Unsubscribe = () => void

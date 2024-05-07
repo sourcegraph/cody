@@ -1,8 +1,8 @@
-import { FeatureFlag, featureFlagProvider, telemetryRecorder } from '@sourcegraph/cody-shared'
 import path from 'node:path'
+import { FeatureFlag, featureFlagProvider, telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { logFirstEnrollmentEvent } from '../services/utils/enrollment-event'
 import { telemetryService } from '../services/telemetry'
+import { logFirstEnrollmentEvent } from '../services/utils/enrollment-event'
 
 let tutorialDocumentUri: vscode.Uri
 

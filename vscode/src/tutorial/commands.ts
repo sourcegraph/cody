@@ -1,10 +1,10 @@
 import { ps, telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { executeEdit } from '../edit/execute'
+import { type TextChange, updateRangeMultipleChanges } from '../non-stop/tracked-range'
 import { CodyTaskState } from '../non-stop/utils'
 import { TODO_DECORATION } from './constants'
 import type { TutorialStep } from './content'
-import { type TextChange, updateRangeMultipleChanges } from '../non-stop/tracked-range'
 
 export const setFixDiagnostic = (
     collection: vscode.DiagnosticCollection,
