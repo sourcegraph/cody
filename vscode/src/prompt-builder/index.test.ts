@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import * as vscode from 'vscode'
 
 import type { ContextItem, ContextMessage, Message } from '@sourcegraph/cody-shared'
 import { type ChatMessage, contextFiltersProvider, ps } from '@sourcegraph/cody-shared'
@@ -11,6 +12,36 @@ describe('PromptBuilder', () => {
     })
 
     const preamble: Message[] = [{ speaker: 'system', text: ps`preamble` }]
+
+    it('PromptBuilder.tryAddContext should not allow prompt to exceed overall limit', async () => {
+        const promptBuilder = new PromptBuilder({ input: 10, output: 100 })
+        const preamble: Message[] = [{ speaker: 'system', text: ps`Hi!` }]
+        promptBuilder.tryAddToPrefix(preamble)
+        const transcript: Message[] = [
+            { speaker: 'human', text: ps`Hi!` },
+            { speaker: 'assistant', text: ps`Hi!` },
+        ]
+        promptBuilder.tryAddMessages([...transcript].reverse())
+
+        const contextItems: ContextItem[] = [
+            {
+                type: 'file',
+                uri: vscode.Uri.file('/foo/bar'),
+                content: 'This is a file that exceeds the token limit',
+                isTooLarge: true,
+            },
+        ]
+
+        const { limitReached, ignored } = await promptBuilder.tryAddContext('enhanced', contextItems)
+        expect(limitReached).toBeTruthy()
+        expect(ignored).toEqual(contextItems)
+
+        expect(promptBuilder.contextItems).toEqual([])
+
+        const prompt = promptBuilder.build()
+        expect(prompt).toEqual([...preamble, ...transcript])
+    })
+
     describe('tryAddMessages', () => {
         it('throws error when tryAddMessages before tryAddPrefix', () => {
             const builder = new PromptBuilder({ input: 100, output: 100 })
