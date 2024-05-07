@@ -263,11 +263,6 @@ export const registerInteractiveTutorial = async (
             if (status === 'started') {
                 return vscode.window.showTextDocument(documentUri)
             }
-            // Refresh any flags when a manual start is triggered
-            // This is primarily so, when a user authenticates for the first time,
-            // We ensure we use the correct feature flag value before determining if they should
-            // see the tutorial.
-            await featureFlagProvider.refreshFeatureFlags()
             return start()
         }),
         vscode.commands.registerCommand('cody.tutorial.reset', async () => {

@@ -8,6 +8,7 @@ import {
     SourcegraphGraphQLAPIClient,
     isDotCom,
     isError,
+    featureFlagProvider,
 } from '@sourcegraph/cody-shared'
 
 import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'
@@ -498,8 +499,15 @@ export class AuthProvider {
             return
         }
         telemetryRecorder.recordEvent('cody.auth.login', 'firstEver')
-        void vscode.commands.executeCommand('cody.tutorial.start')
         this.setHasAuthenticatedBefore()
+
+        // A/B testing logic for the interactive tutorial
+        // Ensure that the featureFlagProvider has the latest auth status,
+        // and then trigger the tutorial.
+        // This will either noop or open the tutorial depending on the feature flag.
+        void featureFlagProvider.syncAuthStatus().then(() => {
+            return vscode.commands.executeCommand('cody.tutorial.start')
+        })
     }
 
     private setHasAuthenticatedBefore() {
