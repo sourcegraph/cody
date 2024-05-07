@@ -8,8 +8,8 @@ import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProviderConfigFromVSCodeConfig } from './providers/create-provider'
 
 interface providerConfig {
-    providerName: string,
-    modelName: string,
+    providerName: string
+    modelName: string
     completionsProvider: InlineCompletionItemProvider
 }
 
@@ -50,7 +50,9 @@ export async function triggerMultiModelAutocompletionsForComparison(
     }
     const allPromises: Promise<MultiModelCompletionsResults>[] = []
     for (const completionsProviderConfig of allCompletionsProvidersConfig) {
-        allPromises.push(manuallyGetCompletionItemsForProvider(completionsProviderConfig, document, position, context))
+        allPromises.push(
+            manuallyGetCompletionItemsForProvider(completionsProviderConfig, document, position, context)
+        )
     }
     const completions = await Promise.all(allPromises)
     let completionsOutput = ''
@@ -133,7 +135,7 @@ export async function createInlineCompletionItemFromMultipleProviders({
             return {
                 providerName: curretProviderConfig.provider,
                 modelName: curretProviderConfig.model,
-                completionsProvider: completionsProvider
+                completionsProvider: completionsProvider,
             }
         }
         return undefined
