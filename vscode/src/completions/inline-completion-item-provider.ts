@@ -608,27 +608,6 @@ export class InlineCompletionItemProvider
         }
     }
 
-    public async manuallyGetCompletionItemsForProvider(
-        document: vscode.TextDocument,
-        position: vscode.Position,
-        context: vscode.InlineCompletionContext
-    ): Promise<MultiModelCompletionsResults> {
-        const result = await this.provideInlineCompletionItems(
-            document,
-            position,
-            context,
-            new vscode.CancellationTokenSource().token
-        )
-        const model = this.config.providerConfig.model
-        const provider = this.config.providerConfig.identifier
-        const completion = result?.items[0].insertText?.toString() || ''
-        return {
-            provider,
-            model,
-            completion,
-        }
-    }
-
     public async manuallyTriggerCompletion(): Promise<void> {
         await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
         this.lastManualCompletionTimestamp = Date.now()

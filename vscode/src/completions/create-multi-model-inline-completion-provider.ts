@@ -7,8 +7,36 @@ import type { MultiModelCompletionsResults } from './inline-completion-item-prov
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProviderConfigFromVSCodeConfig } from './providers/create-provider'
 
+interface providerConfig {
+    providerName: string,
+    modelName: string,
+    completionsProvider: InlineCompletionItemProvider
+}
+
+async function manuallyGetCompletionItemsForProvider(
+    completionsProviderConfig: providerConfig,
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    context: vscode.InlineCompletionContext
+): Promise<MultiModelCompletionsResults> {
+    const result = await completionsProviderConfig.completionsProvider.provideInlineCompletionItems(
+        document,
+        position,
+        context,
+        new vscode.CancellationTokenSource().token
+    )
+    const model = completionsProviderConfig.modelName
+    const provider = completionsProviderConfig.providerName
+    const completion = result?.items[0].insertText?.toString() || ''
+    return {
+        provider,
+        model,
+        completion,
+    }
+}
+
 export async function triggerMultiModelAutocompletionsForComparison(
-    allCompletionsProviders: InlineCompletionItemProvider[]
+    allCompletionsProvidersConfig: providerConfig[]
 ) {
     const activeEditor = vscode.window.activeTextEditor
     if (!activeEditor) {
@@ -21,8 +49,8 @@ export async function triggerMultiModelAutocompletionsForComparison(
         selectedCompletionInfo: undefined,
     }
     const allPromises: Promise<MultiModelCompletionsResults>[] = []
-    for (const provider of allCompletionsProviders) {
-        allPromises.push(provider.manuallyGetCompletionItemsForProvider(document, position, context))
+    for (const completionsProviderConfig of allCompletionsProvidersConfig) {
+        allPromises.push(manuallyGetCompletionItemsForProvider(completionsProviderConfig, document, position, context))
     }
     const completions = await Promise.all(allPromises)
     let completionsOutput = ''
@@ -102,15 +130,16 @@ export async function createInlineCompletionItemFromMultipleProviders({
                 isDotComUser: isDotCom(authStatus.endpoint || ''),
                 noAnalytics: true,
             })
-            return completionsProvider
+            return {
+                providerName: curretProviderConfig.provider,
+                modelName: curretProviderConfig.model,
+                completionsProvider: completionsProvider
+            }
         }
-        // biome-ignore lint/style/noUselessElse: returns undefined if provider config not valid
-        else {
-            return undefined
-        }
+        return undefined
     })
     const allProviders = await Promise.all(allPromises)
-    const allCompletionsProviders: InlineCompletionItemProvider[] = []
+    const allCompletionsProviders: providerConfig[] = []
     for (const provider of allProviders) {
         if (provider) {
             allCompletionsProviders.push(provider)
