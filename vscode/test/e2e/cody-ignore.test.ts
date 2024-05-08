@@ -1,6 +1,12 @@
 import path from 'node:path'
 import { expect } from '@playwright/test'
-import { createEmptyChatPanel, getContextCell, sidebarExplorer, sidebarSignin } from './common'
+import {
+    atMentionMenuHeading,
+    createEmptyChatPanel,
+    getContextCell,
+    sidebarExplorer,
+    sidebarSignin,
+} from './common'
 import { type ExpectedEvents, test } from './helpers'
 
 /**
@@ -76,7 +82,7 @@ test.extend<ExpectedEvents>({
     await chatInput.focus()
     await chatInput.clear()
     await chatInput.fill('@ignoredByCody')
-    await expect(chatPanel.getByRole('heading', { name: 'No files found' })).toBeVisible()
+    await expect(atMentionMenuHeading(chatPanel, 'No files found')).toBeVisible()
     await chatInput.clear()
     await chatInput.fill('@ignore')
     await expect(

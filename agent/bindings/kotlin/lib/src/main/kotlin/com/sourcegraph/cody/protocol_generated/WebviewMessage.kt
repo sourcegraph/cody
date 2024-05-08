@@ -346,7 +346,6 @@ data class `simplified-onboardingWebviewMessage`(
 data class GetUserContextWebviewMessage(
   val command: CommandEnum, // Oneof: getUserContext
   val query: String,
-  val range: RangeData? = null,
 ) : WebviewMessage() {
 
   enum class CommandEnum {

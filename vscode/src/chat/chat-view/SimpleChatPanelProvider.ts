@@ -20,7 +20,6 @@ import {
     ModelProvider,
     ModelUsage,
     PromptString,
-    type RangeData,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     Typewriter,
@@ -286,7 +285,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 this.postChatModels()
                 break
             case 'getUserContext':
-                await this.handleGetUserContextFilesCandidates(message.query, message.range)
+                await this.handleGetUserContextFilesCandidates(message.query)
                 break
             case 'insert':
                 await handleCodeFromInsertAtCursor(message.text)
@@ -612,7 +611,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         await chatModel.set(modelID)
     }
 
-    private async handleGetUserContextFilesCandidates(query: string, range?: RangeData): Promise<void> {
+    private async handleGetUserContextFilesCandidates(query: string): Promise<void> {
         // Cancel previously in-flight query.
         const cancellation = new vscode.CancellationTokenSource()
         this.contextFilesQueryCancellation?.cancel()
@@ -640,8 +639,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             const items = await getChatContextItemsForMention(
                 query,
                 cancellation.token,
-                scopedTelemetryRecorder,
-                range
+                scopedTelemetryRecorder
             )
             if (cancellation.token.isCancellationRequested) {
                 return
@@ -856,20 +854,20 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         prompter: IPrompter,
         sendTelemetry?: (contextSummary: any, privateContextStats?: any) => void
     ): Promise<Message[]> {
-        const { prompt, newContextUsed, newContextIgnored } = await prompter.makePrompt(
+        const { prompt, context } = await prompter.makePrompt(
             this.chatModel,
             this.authProvider.getAuthStatus().codyApiVersion
         )
 
         // Update UI based on prompt construction
         // Includes the excluded context items to display in the UI
-        this.chatModel.setLastMessageContext([...newContextUsed, ...newContextIgnored])
+        this.chatModel.setLastMessageContext([...context.used, ...context.ignored])
 
         if (sendTelemetry) {
             // Create a summary of how many code snippets of each context source are being
             // included in the prompt
             const contextSummary: { [key: string]: number } = {}
-            for (const { source } of newContextUsed) {
+            for (const { source } of context.used) {
                 if (!source) {
                     continue
                 }
@@ -889,8 +887,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 }
             // NOTE: The private context stats are only logged for DotCom users
             const privateContextStats = {
-                included: getContextStats(newContextUsed.filter(f => f.source === 'user')),
-                excluded: getContextStats(newContextIgnored.filter(f => f.source === 'user')),
+                included: getContextStats(context.used.filter(f => f.source === 'user')),
+                excluded: getContextStats(context.ignored.filter(f => f.source === 'user')),
             }
             sendTelemetry(contextSummary, privateContextStats)
         }

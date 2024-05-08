@@ -15,6 +15,7 @@ import {
 
 import { URI } from 'vscode-uri'
 import type { RequestMethodName } from '../../vscode/src/jsonrpc/jsonrpc'
+import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient, asTranscriptMessage } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 import { decodeURIs } from './decodeURIs'
@@ -24,7 +25,6 @@ import type {
     EditTask,
     Requests,
 } from './protocol-alias'
-import { TESTING_TOKENS } from './testing-tokens'
 import { trimEndOfLine } from './trimEndOfLine'
 
 const explainPollyError = `
@@ -34,9 +34,7 @@ const explainPollyError = `
     If you get PollyError or unexpected diff, you might need to update recordings to match your changes.
     Run the following commands locally to update the recordings:
 
-      export SRC_ACCESS_TOKEN=YOUR_TOKEN
-      export SRC_ACCESS_TOKEN_WITH_RATE_LIMIT=RATE_LIMITED_TOKEN # see https://sourcegraph.slack.com/archives/C059N5FRYG3/p1702990080820699
-      export SRC_ENDPOINT=https://sourcegraph.com
+      source agent/scripts/export-cody-http-recording-tokens.sh
       pnpm update-agent-recordings
       # Press 'u' to update the snapshots if the new behavior makes sense. It's
       # normal that the LLM returns minor changes to the wording.
@@ -57,7 +55,7 @@ describe('Agent', () => {
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
         name: 'defaultClient',
-        token: TESTING_TOKENS.dotcom,
+        credentials: TESTING_CREDENTIALS.dotcom,
     })
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
@@ -749,21 +747,23 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "The code \`@src/animal.ts:1-6\` defines an interface called \`Animal\` in TypeScript. An interface is a way to define the structure of an object, including its properties and methods. The purpose of this code is to establish a blueprint or contract for objects that represent animals.
+              "\`@src/animal.ts:1-6\` is a TypeScript code snippet that defines an interface called \`Animal\`. An interface in TypeScript is a way to define the shape, or structure, of an object. It specifies the properties and methods that an object must have to be considered an instance of that interface.
 
-              The \`Animal\` interface does not take any direct input. Instead, it specifies the requirements that objects implementing this interface must fulfill.
+              In this case, the \`Animal\` interface has three properties:
 
-              The output of this code is not a value or data structure but rather a contract or specification for objects that represent animals. This contract includes the following:
+              1. \`name\`: This is a string property that represents the name of the animal.
+              2. \`makeAnimalSound()\`: This is a method that returns a string, representing the sound the animal makes.
+              3. \`isMammal\`: This is a boolean property that indicates whether the animal is a mammal or not.
 
-              1. A property named \`name\` of type \`string\`, which is likely intended to hold the name of the animal.
-              2. A method named \`makeAnimalSound()\` that returns a \`string\`. This method is expected to return the sound that the animal makes.
-              3. A property named \`isMammal\` of type \`boolean\`, which indicates whether the animal is a mammal or not.
+              The purpose of this code is to provide a blueprint or contract for any object that needs to represent an animal in the application. It does not take any direct input, but it specifies the requirements for an object to be considered an \`Animal\`.
 
-              To achieve its purpose, the code uses TypeScript's interface syntax. It declares the \`Animal\` interface and specifies the properties and methods that objects implementing this interface must have. The interface does not provide any implementation details; it only defines the structure or shape of the objects.
+              The output of this code is not a value, but rather a definition or specification that can be used throughout the application to ensure that any object representing an animal adheres to this structure.
 
-              The logic flow or data transformations are not explicitly shown in this code snippet, as it is a structural definition rather than a functional implementation.
+              The code achieves its purpose by defining the \`Animal\` interface with the specified properties and methods. Any object that needs to be an instance of \`Animal\` must have these properties and methods defined, with the correct types and return types.
 
-              In summary, the code \`@src/animal.ts:1-6\` defines an \`Animal\` interface that serves as a blueprint for objects representing animals. It specifies that these objects must have a \`name\` property of type \`string\`, a \`makeAnimalSound()\` method that returns a \`string\`, and an \`isMammal\` property of type \`boolean\`. This interface can be used to ensure that objects representing animals conform to a consistent structure and have the required properties and methods."
+              For example, if you were to create an object representing a dog, it would need to have a \`name\` property of type string, a \`makeAnimalSound()\` method that returns a string (e.g., "Woof!"), and a \`isMammal\` property of type boolean (which would be true for dogs).
+
+              There is no complex logic or data transformation happening in this code snippet. It is simply a definition or contract that other parts of the application can use to ensure consistency and type safety when working with animal objects."
             `,
                 explainPollyError
             )
@@ -781,70 +781,67 @@ describe('Agent', () => {
                 const lastMessage = await client.firstNonEmptyTranscript(id)
                 expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                     `
-                  "Based on the shared code context, the test framework being used is Vitest, which is a Vite-native test runner. No new imports are needed - we can use the existing \`vitest\` library for writing our tests.
+                  "Based on the shared code context, the test framework being used is Vitest. It appears to be following the same testing patterns as Jest, with \`describe\` blocks for test suites and \`it\` blocks for individual test cases.
 
-                  The \`Animal\` interface defines an object with properties \`name\` (string), \`makeAnimalSound\` (function that returns a string), and \`isMammal\` (boolean). Our tests should aim to validate the expected behavior and cover edge cases for any implementations of this interface.
+                  No new imports needed - using existing libs (vitest and its existing imports).
 
-                  Here's a suite of unit tests for the \`Animal\` interface:
+                  The provided code snippet defines an \`Animal\` interface with three properties: \`name\` of type string, \`makeAnimalSound\` which is a function that returns a string, and \`isMammal\` of type boolean.
+
+                  Test coverage summary:
+                  - The tests will cover the properties and expected behavior of the \`Animal\` interface.
+                  - No actual implementation of the \`makeAnimalSound\` function is provided, so the tests will have to make assumptions about its expected behavior.
+                  - Edge cases like handling empty or invalid inputs for the \`name\` property can be tested.
+
+                  Here is a suite of unit tests for the \`Animal\` interface:
 
                   \`\`\`typescript
                   import { describe, it, expect } from 'vitest'
                   import { Animal } from './animal'
 
-                  // Mock implementation of the Animal interface
-                  class MockAnimal implements Animal {
-                    name = 'Cody'
-                    isMammal = true
-
-                    makeAnimalSound() {
-                      return 'Woof!'
-                    }
-                  }
-
                   describe('Animal', () => {
-                    let animal: Animal
+                    it('should have a name property', () => {
+                      const animal: Animal = {
+                        name: 'Tiger',
+                        makeAnimalSound: () => 'Roar',
+                        isMammal: true
+                      }
 
-                    beforeEach(() => {
-                      animal = new MockAnimal()
+                      expect(animal.name).toBe('Tiger')
                     })
 
-                    it('should have a name', () => {
-                      expect(animal.name).toBeDefined()
-                      expect(typeof animal.name).toBe('string')
+                    it('should have a isMammal property', () => {
+                      const animal: Animal = {
+                        name: 'Crocodile',
+                        makeAnimalSound: () => 'Hiss',
+                        isMammal: false
+                      }
+
+                      expect(animal.isMammal).toBe(false)
                     })
 
-                    it('should have a makeAnimalSound method', () => {
-                      expect(animal.makeAnimalSound).toBeDefined()
+                    it('should have a makeAnimalSound function', () => {
+                      const animal: Animal = {
+                        name: 'Elephant',
+                        makeAnimalSound: () => 'Trumpet',
+                        isMammal: true
+                      }
+
                       expect(typeof animal.makeAnimalSound).toBe('function')
                     })
 
-                    it('should have an isMammal property', () => {
-                      expect(animal.isMammal).toBeDefined()
-                      expect(typeof animal.isMammal).toBe('boolean')
-                    })
+                    it('should handle empty name', () => {
+                      const animal: Animal = {
+                        name: '',
+                        makeAnimalSound: () => 'Meow',
+                        isMammal: true
+                      }
 
-                    it('should return a string when makeAnimalSound is called', () => {
-                      const sound = animal.makeAnimalSound()
-                      expect(sound).toBeDefined()
-                      expect(typeof sound).toBe('string')
-                    })
-
-                    it('should return the correct animal sound', () => {
-                      const sound = animal.makeAnimalSound()
-                      expect(sound).toBe('Woof!')
+                      expect(animal.name).toBe('')
                     })
                   })
                   \`\`\`
 
-                  This suite covers the following cases:
-
-                  1. Ensures that the \`name\` property exists and is a string.
-                  2. Ensures that the \`makeAnimalSound\` method exists and is a function.
-                  3. Ensures that the \`isMammal\` property exists and is a boolean.
-                  4. Ensures that calling the \`makeAnimalSound\` method returns a defined value of type string.
-                  5. Ensures that calling the \`makeAnimalSound\` method returns the expected animal sound.
-
-                  These tests provide good coverage for the \`Animal\` interface, ensuring that any implementation adheres to the expected structure and behavior. However, it's worth noting that these tests rely on a mock implementation of the \`Animal\` interface. In a real-world scenario, you would likely have concrete implementations of the \`Animal\` interface, and you might need to adjust the tests accordingly."
+                  These tests cover the basic properties and behavior of the \`Animal\` interface, including checking for the presence of the required properties, testing the \`makeAnimalSound\` function type, and handling edge cases like an empty name."
                 `,
                     explainPollyError
                 )
@@ -972,28 +969,24 @@ describe('Agent', () => {
                         .model,
                 })
                 await client.acceptEditTask(uri, task)
-                expect(client.documentText(uri)).toMatchInlineSnapshot(`
+                expect(client.documentText(uri)).toMatchInlineSnapshot(
+                    `
                   "import { useEffect } from "react";
                   import React = require("react");
 
-                  export type Message = {
-                    id: string;
-                    content: string;
-                    role: "assistant" | "user";
-                  };
+                  import { Message } from "../types";
 
-                  type ChatColumnProps = {
-                    messages: Message[];
-                    setChatID: (chatID: string) => void;
-                    isLoading: boolean;
+                  type Props = {
+                      messages: Message[];
+                      setChatID: (chatID: string) => void;
+                      isLoading: boolean;
                   };
 
                   export default function ChatColumn({
-                    messages,
-                    setChatID,
-                    isLoading,
-                  }: ChatColumnProps) {
-
+                      messages,
+                      setChatID,
+                      isLoading,
+                  }: Props) {
                   	useEffect(() => {
                   		if (!isLoading) {
                   			setChatID(messages[0].chatID);
@@ -1011,7 +1004,9 @@ describe('Agent', () => {
                   	);
                   }
                   "
-                `)
+                `,
+                    explainPollyError
+                )
             }, 20_000)
         })
 
@@ -1041,22 +1036,22 @@ describe('Agent', () => {
                 obtained =>
                     expect(obtained).toMatchInlineSnapshot(
                         `
-                      "const foo = 42
+                  "const foo = 42
 
-                      export class TestClass {
-                          constructor(private shouldGreet: boolean) {}
+                  export class TestClass {
+                      constructor(private shouldGreet: boolean) {}
 
-                              /**
-                           * Logs a greeting message to the console if the \`shouldGreet\` parameter passed to the \`TestClass\` constructor is true.
-                           */
-                      public functionName() {
-                              if (this.shouldGreet) {
-                                  console.log(/* CURSOR */ 'Hello World!')
-                              }
+                          /**
+                       * Logs "Hello World!" to the console if \`shouldGreet\` is true.
+                       */
+                  public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
                           }
                       }
-                      "
-                    `,
+                  }
+                  "
+                `,
                         explainPollyError
                     )
             )
@@ -1066,27 +1061,24 @@ describe('Agent', () => {
                 'commands/document (Function within a property)',
                 'TestLogger.ts',
                 obtained =>
-                    expect(obtained).toMatchInlineSnapshot(
-                        `
-                      "const foo = 42
-                      export const TestLogger = {
-                          startLogging: () => {
-                              // Do some stuff
+                    expect(obtained).toMatchInlineSnapshot(`
+                  "const foo = 42
+                  export const TestLogger = {
+                      startLogging: () => {
+                          // Do some stuff
 
-                                      /**
-                               * Records a log message.
-                               */
-                      function recordLog() {
-                                  console.log(/* CURSOR */ 'Recording the log')
-                              }
+                                  /**
+                           * Records a log message to the console.
+                           */
+                  function recordLog() {
+                              console.log(/* CURSOR */ 'Recording the log')
+                          }
 
-                              recordLog()
-                          },
-                      }
-                      "
-                    `,
-                        explainPollyError
-                    )
+                          recordLog()
+                      },
+                  }
+                  "
+                `)
             )
 
             checkDocumentCommand(
@@ -1096,30 +1088,31 @@ describe('Agent', () => {
                 obtained =>
                     expect(obtained).toMatchInlineSnapshot(
                         `
-                      "import { expect } from 'vitest'
-                      import { it } from 'vitest'
-                      import { describe } from 'vitest'
+                  "import { expect } from 'vitest'
+                  import { it } from 'vitest'
+                  import { describe } from 'vitest'
 
-                      describe('test block', () => {
-                          it('does 1', () => {
-                              expect(true).toBe(true)
-                          })
-
-                          it('does 2', () => {
-                              expect(true).toBe(true)
-                          })
-
-                          it('does something else', () => {
-                              // This line will error due to incorrect usage of \`performance.now\`
-                                      /**
-                               * Retrieves the current time in milliseconds since the page was loaded.
-                               * This value is useful for measuring performance of code execution.
-                               */
-                      const startTime = performance.now(/* CURSOR */)
-                          })
+                  describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
                       })
-                      "
-                    `,
+
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of \`performance.now\`
+                                  /**
+                           * Returns the current time in milliseconds since the page was loaded.
+                           *
+                           * Use this to measure the duration of an operation or to profile code performance.
+                           */
+                  const startTime = performance.now(/* CURSOR */)
+                      })
+                  })
+                  "
+                `,
                         explainPollyError
                     )
             )
@@ -1142,22 +1135,19 @@ describe('Agent', () => {
             })) as CustomChatCommandResult
             expect(result.type).toBe('chat')
             const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
-            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
-                `
-              "Based on the code snippets you've shared, the file names are:
+            expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
+              "Based on the code snippets you've shared, the files I've seen so far are:
 
-              1. \`trickyLogic.ts\`
-              2. \`animal.ts\`
-              3. \`ChatColumn.tsx\`
-              4. \`example.test.ts\`
-              5. \`multiple-selections.ts\`
-              6. \`squirrel.ts\`
-              7. \`sum.ts\`
-              8. \`TestClass.ts\`
-              9. \`TestLogger.ts\`"
-            `,
-                explainPollyError
-            )
+              1. \`src/TestLogger.ts\`
+              2. \`src/TestClass.ts\`
+              3. \`src/sum.ts\`
+              4. \`src/squirrel.ts\`
+              5. \`src/multiple-selections.ts\`
+              6. \`src/example.test.ts\`
+              7. \`src/ChatColumn.tsx\`
+              8. \`src/animal.ts\`
+              9. \`src/trickyLogic.ts\`"
+            `)
         }, 30_000)
 
         it('commands/custom, chat command, adds argument', async () => {
@@ -1260,7 +1250,7 @@ describe('Agent', () => {
             const reply = trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')
             expect(reply).not.includes('.cody/ignore') // file that's not located in the src/directory
             expect(reply).toMatchInlineSnapshot(
-                `"You have shared codebase context from 9 different files."`,
+                `"You have shared code contexts from 9 different files."`,
                 explainPollyError
             )
         }, 30_000)
@@ -1402,7 +1392,7 @@ describe('Agent', () => {
         const rateLimitedClient = TestClient.create({
             workspaceRootUri: workspace.rootUri,
             name: 'rateLimitedClient',
-            token: TESTING_TOKENS.dotcomProUserRateLimited,
+            credentials: TESTING_CREDENTIALS.dotcomProUserRateLimited,
         })
         // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
         beforeAll(async () => {
@@ -1429,7 +1419,7 @@ describe('Agent', () => {
         const demoEnterpriseClient = TestClient.create({
             workspaceRootUri: workspace.rootUri,
             name: 'enterpriseClient',
-            token: TESTING_TOKENS.enterprise,
+            credentials: TESTING_CREDENTIALS.enterprise,
             logEventMode: 'connected-instance-only',
         })
         // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
@@ -1452,34 +1442,34 @@ describe('Agent', () => {
             obtained =>
                 expect(obtained).toMatchInlineSnapshot(
                     `
-                  "import { expect } from 'vitest'
-                  import { it } from 'vitest'
-                  import { describe } from 'vitest'
+              "import { expect } from 'vitest'
+              import { it } from 'vitest'
+              import { describe } from 'vitest'
 
-                  /**
-                   * Test block for example tests
-                   *
-                   * Contains tests:
-                   * - does 1: expects true to be true
-                   * - does 2: expects true to be true
-                   * - does something else: uses performance.now incorrectly
-                   */
-                  describe('test block', () => {
-                      it('does 1', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does 2', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does something else', () => {
-                          // This line will error due to incorrect usage of \`performance.now\`
-                          const startTime = performance.now(/* CURSOR */)
-                      })
+              /**
+               * Test block for example functionality
+               *
+               * This test block contains three test cases:
+               * - "does 1": Verifies that true is equal to true
+               * - "does 2": Verifies that true is equal to true
+               * - "does something else": Currently incomplete test case that will error due to incorrect usage of \`performance.now\`
+               */
+              describe('test block', () => {
+                  it('does 1', () => {
+                      expect(true).toBe(true)
                   })
-                  "
-                `,
+
+                  it('does 2', () => {
+                      expect(true).toBe(true)
+                  })
+
+                  it('does something else', () => {
+                      // This line will error due to incorrect usage of \`performance.now\`
+                      const startTime = performance.now(/* CURSOR */)
+                  })
+              })
+              "
+            `,
                     explainPollyError
                 )
         )
@@ -1594,7 +1584,7 @@ describe('Agent', () => {
         const s2EnterpriseClient = TestClient.create({
             workspaceRootUri: workspace.rootUri,
             name: 'enterpriseMainBranchClient',
-            token: TESTING_TOKENS.s2,
+            credentials: TESTING_CREDENTIALS.s2,
             logEventMode: 'connected-instance-only',
         })
 

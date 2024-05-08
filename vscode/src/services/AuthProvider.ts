@@ -25,6 +25,7 @@ import { logDebug } from '../log'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { closeAuthProgressIndicator } from '../auth/auth-progress-indicator'
+import { maybeStartInteractiveTutorial } from '../tutorial/helpers'
 import { AuthMenu, showAccessTokenInputBox, showInstanceURLInputBox } from './AuthMenus'
 import { getAuthReferralCode } from './AuthProviderSimplified'
 import { localStorage } from './LocalStorageProvider'
@@ -498,8 +499,8 @@ export class AuthProvider {
             return
         }
         telemetryRecorder.recordEvent('cody.auth.login', 'firstEver')
-        void vscode.commands.executeCommand('cody.tutorial.start')
         this.setHasAuthenticatedBefore()
+        void maybeStartInteractiveTutorial()
     }
 
     private setHasAuthenticatedBefore() {

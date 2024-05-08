@@ -5,7 +5,7 @@ devtools console:
 
 const lines = [':root {']
 for (const [name, value] of document.querySelector('.monaco-workbench').computedStyleMap()) {
-    if (/^--vscode-(button|foreground|checkbox|editor|focusBorder|font|input|inputOption|inputValidation|link|list|problemsErrorIcon|quickInput|pickerGroup|sideBar|sideBarTitle|sideBarSectionHeader|tab|textLink|widget|dropdown|quickInputList)(-|$)/.test(name)){
+    if (/^--vscode-(button|foreground|checkbox|editor|focusBorder|font|input|inputOption|inputValidation|link|list|problemsErrorIcon|quickInput|pickerGroup|sideBar|sideBarTitle|sideBarSectionHeader|tab|textLink|widget|dropdown|quickInputList|badge)(-|$)/.test(name)){
         lines.push(`    ${name}: ${value};`);
     }
 }
@@ -14,6 +14,8 @@ console.log(lines.join('\n'))
 */
 
 :root {
+    --vscode-badge-background: #616161;
+    --vscode-badge-foreground: #f8f8f8;
     --vscode-button-background: #0078d4;
     --vscode-button-border: rgba(255, 255, 255, 0.07);
     --vscode-button-foreground: #ffffff;

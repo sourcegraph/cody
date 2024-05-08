@@ -1,7 +1,6 @@
 import type { MenuRenderFn } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import {
     type MentionQuery,
-    type RangeData,
     displayLineRange,
     displayPath,
     displayPathBasename,
@@ -23,8 +22,9 @@ import {
     PACKAGE_HELP_LABEL,
     SYMBOL_HELP_LABEL,
 } from '../../../../src/chat/context/constants'
+import { Command, CommandGroup, CommandItem, CommandList } from '../../../components/shadcn/ui/command'
 import styles from './OptionsList.module.css'
-import { type MentionTypeaheadOption, RANGE_MATCHES_REGEXP } from './atMentions'
+import type { MentionTypeaheadOption } from './atMentions'
 
 export const OptionsList: FunctionComponent<
     { query: string; options: MentionTypeaheadOption[] } & Pick<
@@ -32,44 +32,72 @@ export const OptionsList: FunctionComponent<
         'selectedIndex' | 'setHighlightedIndex' | 'selectOptionAndCleanUp'
     >
 > = ({ query, options, selectedIndex, setHighlightedIndex, selectOptionAndCleanUp }) => {
-    const ref = useRef<HTMLUListElement>(null)
-    // biome-ignore lint/correctness/useExhaustiveDependencies: Intent is to run whenever `options` changes.
+    const ref = useRef<HTMLDivElement>(null)
+
+    // Scroll selected into view. Needs `setTimeout` because we need to wait for all DOM mutations.
+    // The `cmdk` package handles this when using its own input, but here we need to use the Lexical
+    // editor's input because the user is still typing into the Lexical editor.
     useEffect(() => {
-        // Scroll to top when options change because the prior `selectedIndex` is invalidated.
-        ref?.current?.scrollTo(0, 0)
-        setHighlightedIndex(0)
-    }, [options])
+        const timeoutHandle = setTimeout(() => {
+            if (ref.current && selectedIndex !== null) {
+                const selected = ref.current.querySelector('[aria-selected="true"]')
+
+                if (selected && selected.parentElement?.firstChild === selected) {
+                    // First item in Group, ensure heading is in view
+                    selected
+                        .closest('[cmdk-group=""]')
+                        ?.querySelector('[cmdk-group-heading=""]')
+                        ?.scrollIntoView({ block: 'nearest' })
+                }
+
+                selected?.scrollIntoView({ block: 'nearest' })
+            }
+        })
+        return () => clearTimeout(timeoutHandle)
+    }, [selectedIndex])
 
     const mentionQuery = parseMentionQuery(query, [])
 
     return (
-        <div className={styles.container}>
-            <h3 className={clsx(styles.item, styles.helpItem)}>
-                <span>{getHelpText(mentionQuery, options)}</span>
-                <br />
-            </h3>
-            {options.length > 0 && (
-                <ul ref={ref} className={styles.list}>
+        <Command
+            loop={true}
+            shouldFilter={false}
+            value={options.at(selectedIndex ?? 0)?.key}
+            className={styles.container}
+            label="@-mention context"
+            ref={ref}
+        >
+            <CommandList>
+                <CommandGroup
+                    heading={getHelpText(mentionQuery, options)}
+                    forceMount={true}
+                    ref={unsetAriaHidden}
+                >
                     {options.map((option, i) => (
-                        <Item
-                            query={query}
-                            isSelected={selectedIndex === i}
-                            onClick={() => {
+                        <CommandItem
+                            key={option.key}
+                            value={option.key}
+                            onSelect={() => {
                                 setHighlightedIndex(i)
                                 selectOptionAndCleanUp(option)
                             }}
-                            onMouseEnter={() => {
-                                setHighlightedIndex(i)
-                            }}
-                            key={option.key}
-                            option={option}
                             className={styles.item}
-                        />
+                        >
+                            <ItemContent query={mentionQuery} option={option} />
+                        </CommandItem>
                     ))}
-                </ul>
-            )}
-        </div>
+                </CommandGroup>
+            </CommandList>
+        </Command>
     )
+}
+
+/**
+ * Needed for Playwright to consider the element visible. It *is* visible, and the `aria-hidden`
+ * attribute is incorrect because the header it's applied to contains important information.
+ */
+function unsetAriaHidden(element: HTMLDivElement | null): void {
+    element?.querySelector('[cmdk-group-heading]')?.removeAttribute('aria-hidden')
 }
 
 function getHelpText(mentionQuery: MentionQuery, options: MentionTypeaheadOption[]): string {
@@ -87,36 +115,32 @@ function getHelpText(mentionQuery: MentionQuery, options: MentionTypeaheadOption
                       (mentionQuery.text.length < 3 ? NO_SYMBOL_MATCHES_HELP_LABEL : '')
         default:
             return options.length > 0
-                ? isValidLineRangeQuery(mentionQuery.text)
+                ? mentionQuery.maybeHasRangeSuffix
                     ? FILE_RANGE_TOOLTIP_LABEL
                     : FILE_HELP_LABEL
                 : NO_FILE_MATCHES_LABEL
     }
 }
 
-function getDescription(item: MentionTypeaheadOption['item'], query: string): string {
+function getDescription(item: MentionTypeaheadOption['item'], query: MentionQuery): string {
+    const range = query.range ?? item.range
     switch (item.type) {
         case 'github_issue':
         case 'github_pull_request':
             return `${item.owner}/${item.repoName}`
         case 'file': {
-            const range = getLineRangeInMention(query, item.range)
             const dir = decodeURIComponent(displayPathDirname(item.uri))
-            return `${range ? `Lines ${range} · ` : ''}${dir === '.' ? '' : dir}`
+            return `${range ? `Lines ${displayLineRange(range)} · ` : ''}${dir === '.' ? '' : dir}`
         }
         default:
-            return `${displayPath(item.uri)}:${getLineRangeInMention(query, item.range)}`
+            return `${displayPath(item.uri)}:${range ? displayLineRange(range) : ''}`
     }
 }
 
-const Item: FunctionComponent<{
-    query: string
-    isSelected: boolean
-    onClick: () => void
-    onMouseEnter: () => void
+const ItemContent: FunctionComponent<{
+    query: MentionQuery
     option: MentionTypeaheadOption
-    className?: string
-}> = ({ query, isSelected, onClick, onMouseEnter, option, className }) => {
+}> = ({ query, option }) => {
     const item = option.item
     const isFileType = item.type === 'file'
     const isSymbol = item.type === 'symbol'
@@ -129,30 +153,14 @@ const Item: FunctionComponent<{
     let warning: string
     if (isIgnored) {
         warning = IGNORED_FILE_WARNING_LABEL
-    } else if (isLargeFile && !item.range && !isValidLineRangeQuery(query)) {
+    } else if (isLargeFile && !item.range && !query.maybeHasRangeSuffix) {
         warning = LARGE_FILE_WARNING_LABEL
     } else {
         warning = ''
     }
 
     return (
-        // biome-ignore lint/a11y/useKeyWithClickEvents:
-        <li
-            key={option.key}
-            tabIndex={-1}
-            className={clsx(
-                className,
-                styles.optionItem,
-                isSelected && styles.selected,
-                warning && styles.disabled
-            )}
-            ref={option.setRefElement}
-            // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: This element is interactive, in a dropdown list.
-            role="option"
-            aria-selected={isSelected}
-            onMouseEnter={onMouseEnter}
-            onClick={onClick}
-        >
+        <div className={styles.optionItem}>
             <div className={styles.optionItemRow}>
                 {item.type === 'symbol' && icon && (
                     <i className={`codicon codicon-${icon}`} title={item.kind} />
@@ -168,25 +176,6 @@ const Item: FunctionComponent<{
                 {description && <span className={styles.optionItemDescription}>{description}</span>}
             </div>
             {warning && <span className={styles.optionItemWarning}>{warning}</span>}
-        </li>
+        </div>
     )
-}
-
-const isValidLineRangeQuery = (query: string): boolean =>
-    query.endsWith(':') || RANGE_MATCHES_REGEXP.test(query)
-
-/**
- * Gets the display line range from the query string.
- */
-function getLineRangeInMention(query: string, range?: RangeData): string {
-    // Parses out the start and end line numbers from the query if it contains a line range match.
-    const queryRange = query.match(RANGE_MATCHES_REGEXP)
-    if (query && queryRange?.[1]) {
-        const [_, start, end] = queryRange
-        const startLine = Number.parseInt(start)
-        const endLine = end ? Number.parseInt(end) : Number.POSITIVE_INFINITY
-        return `${startLine}-${endLine !== Number.POSITIVE_INFINITY ? endLine : '#'}`
-    }
-    // Passed in range string if no line number match.
-    return range ? displayLineRange(range).toString() : ''
 }
