@@ -304,8 +304,8 @@ const _workspace: typeof vscode.workspace = {
             ((uriOrString as any)?.language || (uriOrString as any)?.content) &&
             agent
         ) {
-            const language: string | undefined = (uriOrString as any)?.language
-            const content: string | undefined = (uriOrString as any)?.content
+            const language: string = (uriOrString as any)?.language ?? ''
+            const content: string = (uriOrString as any)?.content ?? ''
             const extension = extensionForLanguage(language) ?? language
             const untitledUri = Uri.from({
                 scheme: 'untitled',
