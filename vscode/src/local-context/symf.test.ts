@@ -11,24 +11,24 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { type PromptString, ps } from '@sourcegraph/cody-shared'
 import { SourcegraphNodeCompletionsClient } from '../completions/nodeClient'
+import { TESTING_CREDENTIALS } from '../testutils/testing-credentials'
 
 describe('symf', () => {
     const client = new SourcegraphNodeCompletionsClient({
-        accessToken:
-            // The redacted ID below is copy-pasted from the recording file and needs to be updated
-            // whenever we change the underlying access token. We can't return a random string here
-            // because then Polly won't be able to associate the HTTP requests between record mode
-            // and replay mode.
-            process.env.SRC_ACCESS_TOKEN ??
-            'REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4',
-        serverEndpoint: process.env.SRC_ENDPOINT ?? 'https://sourcegraph.com',
+        accessToken: TESTING_CREDENTIALS.dotcom.token ?? TESTING_CREDENTIALS.dotcom.redactedToken,
+        serverEndpoint: TESTING_CREDENTIALS.dotcom.serverEndpoint,
         customHeaders: {},
     })
 
     describe('expand-query', () => {
         let polly: Polly
         beforeAll(() => {
-            polly = startPollyRecording({ recordingName: 'symf' })
+            polly = startPollyRecording({
+                recordingName: 'symf',
+                // Run the command below to update symf recordings:
+                // source agent/scripts/export-cody-http-recording-tokens.sh
+                // CODY_RECORDING_MODE=record pnpm -C vscode test:unit
+            })
         })
 
         function check(query: PromptString, expectedHandler: (expandedTerm: string) => void): void {

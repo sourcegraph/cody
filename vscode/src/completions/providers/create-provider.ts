@@ -21,6 +21,53 @@ import { createProviderConfig as createOpenAICompatibleProviderConfig } from './
 import type { ProviderConfig } from './provider'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
+export async function createProviderConfigFromVSCodeConfig(
+    client: CodeCompletionsClient,
+    authStatus: AuthStatus,
+    model: string | undefined,
+    provider: string,
+    config: ConfigurationWithAccessToken
+): Promise<ProviderConfig | null> {
+    switch (provider) {
+        case 'unstable-openai': {
+            return createUnstableOpenAIProviderConfig({
+                client,
+            })
+        }
+        case 'fireworks': {
+            return createFireworksProviderConfig({
+                client,
+                model: config.autocompleteAdvancedModel ?? model ?? null,
+                timeouts: config.autocompleteTimeouts,
+                authStatus,
+                config,
+            })
+        }
+        case 'anthropic': {
+            return createAnthropicProviderConfig({ client, model })
+        }
+        case 'experimental-openaicompatible': {
+            return createOpenAICompatibleProviderConfig({
+                client,
+                model: config.autocompleteAdvancedModel ?? model ?? null,
+                timeouts: config.autocompleteTimeouts,
+                authStatus,
+                config,
+            })
+        }
+        case 'experimental-ollama':
+        case 'unstable-ollama': {
+            return createExperimentalOllamaProviderConfig(config.autocompleteExperimentalOllamaOptions)
+        }
+        default:
+            logError(
+                'createProviderConfig',
+                `Unrecognized provider '${config.autocompleteAdvancedProvider}' configured.`
+            )
+            return null
+    }
+}
+
 export async function createProviderConfig(
     config: ConfigurationWithAccessToken,
     client: CodeCompletionsClient,
@@ -34,47 +81,7 @@ export async function createProviderConfig(
     )
     if (providerAndModelFromVSCodeConfig) {
         const { provider, model } = providerAndModelFromVSCodeConfig
-
-        switch (provider) {
-            case 'unstable-openai': {
-                return createUnstableOpenAIProviderConfig({
-                    client,
-                })
-            }
-            case 'fireworks': {
-                return createFireworksProviderConfig({
-                    client,
-                    model: config.autocompleteAdvancedModel ?? model ?? null,
-                    timeouts: config.autocompleteTimeouts,
-                    authStatus,
-                    config,
-                })
-            }
-            case 'anthropic': {
-                return createAnthropicProviderConfig({ client, model })
-            }
-            case 'experimental-openaicompatible': {
-                return createOpenAICompatibleProviderConfig({
-                    client,
-                    model: config.autocompleteAdvancedModel ?? model ?? null,
-                    timeouts: config.autocompleteTimeouts,
-                    authStatus,
-                    config,
-                })
-            }
-            case 'experimental-ollama':
-            case 'unstable-ollama': {
-                return createExperimentalOllamaProviderConfig(
-                    config.autocompleteExperimentalOllamaOptions
-                )
-            }
-            default:
-                logError(
-                    'createProviderConfig',
-                    `Unrecognized provider '${config.autocompleteAdvancedProvider}' configured.`
-                )
-                return null
-        }
+        return createProviderConfigFromVSCodeConfig(client, authStatus, model, provider, config)
     }
 
     /**
@@ -153,12 +160,15 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
         return { provider: configuredProvider }
     }
 
-    const [starCoder2Hybrid, starCoderHybrid, llamaCode13B, claude3] = await Promise.all([
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
-    ])
+    const [starCoder2Hybrid, starCoderHybrid, llamaCode13B, claude3, finetunedModel] = await Promise.all(
+        [
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteFineTunedModel),
+        ]
+    )
 
     if (llamaCode13B) {
         return { provider: 'fireworks', model: 'llama-code-13b' }
@@ -169,6 +179,12 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
     }
 
     if (starCoderHybrid) {
+        // Adding the fine-tuned model here for the A/B test setup.
+        // Among all the users in starcoder-hybrid - some % of them will be redirected to the fine-tuned model.
+        if (finetunedModel) {
+            return { provider: 'fireworks', model: 'fireworks-completions-fine-tuned' }
+        }
+
         return { provider: 'fireworks', model: 'starcoder-hybrid' }
     }
 

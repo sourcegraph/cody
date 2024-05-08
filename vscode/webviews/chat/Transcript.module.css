@@ -21,11 +21,13 @@
 .welcome-message-cell-content p:last-child {
     margin-bottom: 0;
 }
+.welcome-message-cell-content {
+    p {
+        margin-block: 1rem;
+    }
+}
 
 .model-select-field-container {
     padding: 8px 10px 5px 12px;
     border-bottom: solid 1px var(--vscode-sideBarSectionHeader-border);
-    > button:not(:focus) {
-        border-color: transparent;
-    }
 }

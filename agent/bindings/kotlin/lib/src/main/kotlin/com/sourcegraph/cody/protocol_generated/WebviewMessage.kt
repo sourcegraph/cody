@@ -16,6 +16,7 @@ sealed class WebviewMessage {
           "ready" -> context.deserialize<ReadyWebviewMessage>(element, ReadyWebviewMessage::class.java)
           "initialized" -> context.deserialize<InitializedWebviewMessage>(element, InitializedWebviewMessage::class.java)
           "event" -> context.deserialize<EventWebviewMessage>(element, EventWebviewMessage::class.java)
+          "recordEvent" -> context.deserialize<RecordEventWebviewMessage>(element, RecordEventWebviewMessage::class.java)
           "submit" -> context.deserialize<SubmitWebviewMessage>(element, SubmitWebviewMessage::class.java)
           "history" -> context.deserialize<HistoryWebviewMessage>(element, HistoryWebviewMessage::class.java)
           "restoreHistory" -> context.deserialize<RestoreHistoryWebviewMessage>(element, RestoreHistoryWebviewMessage::class.java)
@@ -76,6 +77,18 @@ data class EventWebviewMessage(
 
   enum class CommandEnum {
     @SerializedName("event") Event,
+  }
+}
+
+data class RecordEventWebviewMessage(
+  val command: CommandEnum, // Oneof: recordEvent
+  val feature: String,
+  val action: String,
+  val parameters: WebviewRecordEventParameters,
+) : WebviewMessage() {
+
+  enum class CommandEnum {
+    @SerializedName("recordEvent") RecordEvent,
   }
 }
 
@@ -333,7 +346,6 @@ data class `simplified-onboardingWebviewMessage`(
 data class GetUserContextWebviewMessage(
   val command: CommandEnum, // Oneof: getUserContext
   val query: String,
-  val range: RangeData? = null,
 ) : WebviewMessage() {
 
   enum class CommandEnum {

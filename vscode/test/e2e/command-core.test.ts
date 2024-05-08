@@ -57,7 +57,7 @@ test.extend<ExpectedEvents>({
     await page.getByRole('tab', { name: 'index.html' }).hover()
 
     // Bring the cody sidebar to the foreground
-    await page.click('.badge[aria-label="Cody"]')
+    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
 
     await page.getByText('Explain Code').hover()
     await page.getByText('Explain Code').click()
@@ -91,8 +91,10 @@ test.extend<ExpectedEvents>({
     await page.getByText('Explain Code').click()
     await expectContextCellCounts(contextCell, { files: 1 })
     await contextCell.click()
-    await expect(chatPanel.getByRole('link', { name: 'index.html:2-10' })).toBeVisible()
+    // The context should show the file with the correct range
     await expect(chatPanel.getByRole('link', { name: 'index.html:1-11' })).toBeVisible()
+    // If a context item is a subcontext of an existing context item, it should not be added to avoid duplication.
+    await expect(chatPanel.getByRole('link', { name: 'index.html:2-10' })).not.toBeVisible()
     const disabledEditButtons = chatPanel.getByTitle('Cannot Edit Command').locator('i')
     const editLastMessageButton = chatPanel.getByRole('button', { name: /^Edit Last Message/ })
     // Edit button and Edit Last Message are shown on all command messages.
@@ -210,7 +212,7 @@ test.extend<ExpectedEvents>({
     await page.getByText("fizzbuzz.push('Buzz')").click()
 
     // Bring the cody sidebar to the foreground
-    await page.click('.badge[aria-label="Cody"]')
+    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
 
     // Trigger the documentaton command
     await page.getByText('Document Code').hover()

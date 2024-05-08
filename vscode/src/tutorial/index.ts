@@ -1,8 +1,8 @@
-import { FeatureFlag, featureFlagProvider, telemetryRecorder } from '@sourcegraph/cody-shared'
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { type TextChange, updateRangeMultipleChanges } from '../../src/non-stop/tracked-range'
+import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import { logSidebarClick } from '../services/SidebarCommands'
-import { logFirstEnrollmentEvent } from '../services/utils/enrollment-event'
 import {
     registerAutocompleteListener,
     registerChatTutorialCommand,
@@ -20,7 +20,7 @@ import {
     resetDocument,
 } from './content'
 import { setTutorialUri } from './helpers'
-import { ChatLinkProvider, ResetLensProvider } from './providers'
+import { ResetLensProvider, TutorialLinkProvider } from './providers'
 
 export const startTutorial = async (document: vscode.TextDocument): Promise<vscode.Disposable> => {
     const disposables: vscode.Disposable[] = []
@@ -126,7 +126,9 @@ export const startTutorial = async (document: vscode.TextDocument): Promise<vsco
                 setFixDiagnostic(diagnosticCollection, editor.document.uri, activeStep.range)
                 break
             case 'edit':
-                disposables.push(registerEditTutorialCommand(editor, progressToNextStep))
+                disposables.push(
+                    ...registerEditTutorialCommand(editor, progressToNextStep, activeStep.range)
+                )
                 break
             case 'chat':
                 disposables.push(registerChatTutorialCommand(progressToNextStep))
@@ -170,7 +172,10 @@ export const startTutorial = async (document: vscode.TextDocument): Promise<vsco
     disposables.push(
         startListeningForSuccess('autocomplete'),
         new ResetLensProvider(editor),
-        vscode.languages.registerDocumentLinkProvider(editor.document.uri, new ChatLinkProvider(editor)),
+        vscode.languages.registerDocumentLinkProvider(
+            editor.document.uri,
+            new TutorialLinkProvider(editor)
+        ),
         vscode.window.onDidChangeVisibleTextEditors(editors => {
             const tutorialIsActive = editors.find(
                 editor => editor.document.uri.toString() === document.uri.toString()
@@ -195,6 +200,14 @@ export const startTutorial = async (document: vscode.TextDocument): Promise<vsco
 export const registerInteractiveTutorial = async (
     context: vscode.ExtensionContext
 ): Promise<vscode.Disposable[]> => {
+    if (isRunningInsideAgent()) {
+        // TODO: The interactive tutorial is currently VS Code specific, both in terms of features and keyboard shortcuts.
+        // Consider opening this up to support dynamic content via Cody Agent.
+        // This would allow us the present the same tutorial but with client-specific steps.
+        // Alternatively, clients may not wish to use this tutorial and instead opt for something more suitable for their environment.
+        return []
+    }
+
     const disposables: vscode.Disposable[] = []
     const documentUri = setTutorialUri(context)
     let document = await initTutorialDocument(documentUri)
@@ -203,14 +216,6 @@ export const registerInteractiveTutorial = async (
 
     let cleanup: vscode.Disposable | undefined
     const start = async () => {
-        const enabled = await featureFlagProvider.evaluateFeatureFlag(
-            FeatureFlag.CodyInteractiveTutorial
-        )
-        logFirstEnrollmentEvent(FeatureFlag.CodyInteractiveTutorial, enabled)
-        if (!enabled) {
-            return
-        }
-
         status = 'starting'
         cleanup = await startTutorial(document)
         disposables.push(cleanup)
@@ -254,11 +259,6 @@ export const registerInteractiveTutorial = async (
             if (status === 'started') {
                 return vscode.window.showTextDocument(documentUri)
             }
-            // Refresh any flags when a manual start is triggered
-            // This is primarily so, when a user authenticates for the first time,
-            // We ensure we use the correct feature flag value before determining if they should
-            // see the tutorial.
-            await featureFlagProvider.refreshFeatureFlags()
             return start()
         }),
         vscode.commands.registerCommand('cody.tutorial.reset', async () => {

@@ -68,11 +68,21 @@ export function createOllamaClient(
                 }
 
                 for (const chunkString of chunk.toString().split(RESPONSE_SEPARATOR).filter(Boolean)) {
-                    const line = JSON.parse(chunkString) as OllamaGenerateResponse
+                    let line: OllamaGenerateResponse
+
+                    try {
+                        line = JSON.parse(chunkString) as OllamaGenerateResponse
+                    } catch {
+                        // ignore JSON.parse() errors most probably caused by incomplete chunk and wait for the next one.
+                        break
+                    }
 
                     if (line.response) {
                         insertText += line.response
-                        yield { completion: insertText, stopReason: CompletionStopReason.StreamingChunk }
+                        yield {
+                            completion: insertText,
+                            stopReason: CompletionStopReason.StreamingChunk,
+                        }
                     }
 
                     if (line.done && line.total_duration) {

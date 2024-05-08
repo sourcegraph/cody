@@ -144,6 +144,10 @@ export enum TriggerKind {
     SuggestWidget = 'SuggestWidget',
 }
 
+export function allTriggerKinds(): TriggerKind[] {
+    return [TriggerKind.Automatic, TriggerKind.Hover, TriggerKind.Manual, TriggerKind.SuggestWidget]
+}
+
 export async function getInlineCompletions(
     params: InlineCompletionsParams
 ): Promise<InlineCompletionsResult | null> {
@@ -413,6 +417,7 @@ function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
     const { document, position, triggerKind, providerConfig, docContext } = params
 
     const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
+        triggerKind,
         docContext,
         document,
         position,

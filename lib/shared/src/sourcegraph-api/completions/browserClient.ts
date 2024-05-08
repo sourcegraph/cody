@@ -4,6 +4,7 @@ import { dependentAbortController } from '../../common/abortController'
 import { addCustomUserAgent } from '../graphql/client'
 
 import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
+import { addClientInfoParams } from '../client-name-version'
 import { SourcegraphCompletionsClient } from './client'
 import type {
     CompletionCallbacks,
@@ -33,6 +34,7 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
         if (apiVersion >= 1) {
             url.searchParams.append('api-version', '' + apiVersion)
         }
+        addClientInfoParams(url.searchParams)
 
         const abort = dependentAbortController(signal)
         const headersInstance = new Headers(this.config.customHeaders as HeadersInit)

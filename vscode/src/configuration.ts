@@ -146,6 +146,8 @@ export function getConfiguration(
 
         experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
 
+        experimentalGithubAccessToken: getHiddenSetting('experimental.github.accessToken', ''),
+
         autocompleteExperimentalHotStreak: getHiddenSetting(
             'autocomplete.experimental.hotStreak',
             false
@@ -164,6 +166,10 @@ export function getConfiguration(
         autocompleteExperimentalSmartThrottle: getHiddenSetting(
             'autocomplete.experimental.smartThrottle',
             false
+        ),
+        autocompleteExperimentalMultiModelCompletions: getHiddenSetting(
+            'autocomplete.experimental.multiModelCompletions',
+            undefined
         ),
 
         // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.

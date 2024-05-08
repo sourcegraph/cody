@@ -15,11 +15,10 @@ import {
     type ContextItem,
     ContextItemSource,
     FAST_CHAT_INPUT_TOKEN_BUDGET,
-    type RangeData,
     displayPath,
     scanForMentionTriggerInUserTextInput,
 } from '@sourcegraph/cody-shared'
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import { useCurrentChatModel } from '../../../chat/models/chatModelContext'
 import { toSerializedPromptEditorValue } from '../../PromptEditor'
 import {
@@ -29,38 +28,6 @@ import {
 } from '../../nodes/ContextItemMentionNode'
 import { OptionsList } from './OptionsList'
 import { useChatContextItems } from './chatContextClient'
-
-export const RANGE_MATCHES_REGEXP = /:(\d+)?-?(\d+)?$/
-export const LINE_RANGE_REGEXP = /:(\d+)-(\d+)$/
-
-/**
- * Parses the line range (if any) at the end of a string like `foo.txt:1-2`. Because this means "all
- * of lines 1 and 2", the returned range actually goes to the start of line 3 to ensure all of line
- * 2 is included. Also, lines in mentions are 1-indexed while `RangeData` is 0-indexed.
- */
-export function parseLineRangeInMention(text: string): {
-    textWithoutRange: string
-    range?: RangeData
-} {
-    const match = text.match(LINE_RANGE_REGEXP)
-    if (match === null) {
-        return { textWithoutRange: text }
-    }
-
-    let startLine = Number.parseInt(match[1], 10)
-    let endLine = Number.parseInt(match[2], 10)
-    if (startLine > endLine) {
-        // Reverse range so that startLine is always before endLine.
-        ;[startLine, endLine] = [endLine, startLine]
-    }
-    return {
-        textWithoutRange: text.slice(0, -match[0].length),
-        range: {
-            start: { line: startLine - 1, character: 0 },
-            end: { line: endLine, character: 0 },
-        },
-    }
-}
 
 const SUGGESTION_LIST_LENGTH_LIMIT = 20
 
@@ -208,7 +175,7 @@ export default function MentionsPlugin(): JSX.Element | null {
                                     left: x ?? 0,
                                     width: 'max-content',
                                 }}
-                                className={classNames(styles.popover)}
+                                className={clsx(styles.popover)}
                             >
                                 <OptionsList
                                     query={query ?? ''}

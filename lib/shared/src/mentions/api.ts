@@ -1,5 +1,7 @@
 import type { ContextItem, ContextItemWithContent } from '../codebase-context/messages'
 import type { PromptString } from '../prompt/prompt-string'
+import { GITHUB_CONTEXT_MENTION_PROVIDER } from './providers/githubMentions'
+import { OPENCTX_CONTEXT_MENTION_PROVIDER } from './providers/openctxMentions'
 import { PACKAGE_CONTEXT_MENTION_PROVIDER } from './providers/packageMentions'
 import { SOURCEGRAPH_SEARCH_CONTEXT_MENTION_PROVIDER } from './providers/sourcegraphSearch'
 import { URL_CONTEXT_MENTION_PROVIDER } from './providers/urlMentions'
@@ -20,6 +22,8 @@ export const CONTEXT_MENTION_PROVIDERS: ContextMentionProvider[] = [
     URL_CONTEXT_MENTION_PROVIDER,
     PACKAGE_CONTEXT_MENTION_PROVIDER,
     SOURCEGRAPH_SEARCH_CONTEXT_MENTION_PROVIDER,
+    OPENCTX_CONTEXT_MENTION_PROVIDER,
+    GITHUB_CONTEXT_MENTION_PROVIDER,
 ]
 
 /**
@@ -42,7 +46,11 @@ export interface ContextMentionProvider<ID extends ContextMentionProviderID = Co
      *
      * {@link query} omits the `@` but includes the trigger prefix from {@link triggerPrefixes}.
      */
-    queryContextItems(query: string, signal?: AbortSignal): Promise<ContextItemFromProvider<ID>[]>
+    queryContextItems(
+        query: string,
+        props: ContextItemProps,
+        signal?: AbortSignal
+    ): Promise<ContextItemFromProvider<ID>[]>
 
     /**
      * Resolve a context item to one or more items that have the {@link ContextItem.content} field
@@ -54,6 +62,13 @@ export interface ContextMentionProvider<ID extends ContextMentionProviderID = Co
         input: PromptString,
         signal?: AbortSignal
     ): Promise<ContextItemWithContent[]>
+}
+
+/**
+ * Props required by context item providers to return possible context items.
+ */
+export interface ContextItemProps {
+    gitRemotes: { hostname: string; owner: string; repoName: string; url: string }[]
 }
 
 export type ContextItemFromProvider<ID extends ContextMentionProviderID> = ContextItem & {

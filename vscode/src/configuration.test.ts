@@ -83,6 +83,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.experimental.fireworksOptions':
                         return undefined
+                    case 'cody.autocomplete.experimental.multiModelCompletions':
+                        return undefined
                     case 'cody.autocomplete.experimental.ollamaOptions':
                         return {
                             model: 'codellama:7b-code',
@@ -102,6 +104,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.supercompletions':
                         return false
+                    case 'cody.experimental.github.accessToken':
+                        return ''
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -128,6 +132,7 @@ describe('getConfiguration', () => {
             experimentalTracing: true,
             experimentalGuardrails: true,
             experimentalOllamaChat: true,
+            experimentalGithubAccessToken: '',
             codeActions: true,
             commandHints: true,
             isRunningInsideAgent: false,

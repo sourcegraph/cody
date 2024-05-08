@@ -1,12 +1,14 @@
-import { ModelProvider, ModelUsage } from '@sourcegraph/cody-shared'
-import { type ContextItem, type Message, ps } from '@sourcegraph/cody-shared'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { ModelProvider, ModelUsage, contextFiltersProvider } from '@sourcegraph/cody-shared'
+import { type Message, ps } from '@sourcegraph/cody-shared'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
-import { PromptBuilder } from '../../prompt-builder'
 import { SimpleChatModel } from './SimpleChatModel'
 import { DefaultPrompter } from './prompt'
 
 describe('DefaultPrompter', () => {
+    beforeEach(() => {
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
+    })
     afterEach(() => {
         vi.restoreAllMocks()
     })
@@ -18,9 +20,10 @@ describe('DefaultPrompter', () => {
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
 
-        const { prompt, newContextUsed } = await new DefaultPrompter([], () =>
-            Promise.resolve([])
-        ).makePrompt(chat, 0)
+        const { prompt, context } = await new DefaultPrompter([], () => Promise.resolve([])).makePrompt(
+            chat,
+            0
+        )
 
         expect(prompt).toEqual<Message[]>([
             {
@@ -36,7 +39,8 @@ describe('DefaultPrompter', () => {
                 text: ps`Hello`,
             },
         ])
-        expect(newContextUsed).toEqual([])
+        expect(context.used).toEqual([])
+        expect(context.ignored).toEqual([])
     })
 
     it('adds the cody.chat.preInstruction vscode setting if set', async () => {
@@ -54,9 +58,10 @@ describe('DefaultPrompter', () => {
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
 
-        const { prompt, newContextUsed } = await new DefaultPrompter([], () =>
-            Promise.resolve([])
-        ).makePrompt(chat, 0)
+        const { prompt, context } = await new DefaultPrompter([], () => Promise.resolve([])).makePrompt(
+            chat,
+            0
+        )
 
         expect(prompt).toEqual<Message[]>([
             {
@@ -72,38 +77,7 @@ describe('DefaultPrompter', () => {
                 text: ps`Hello`,
             },
         ])
-        expect(newContextUsed).toEqual([])
-    })
-
-    it('tryAddContext limit should not allow prompt to exceed overall limit', async () => {
-        const promptBuilder = new PromptBuilder({ input: 10, output: 100 })
-        const preamble: Message[] = [{ speaker: 'system', text: ps`Hi!` }]
-        promptBuilder.tryAddToPrefix(preamble)
-        const transcript: Message[] = [
-            { speaker: 'human', text: ps`Hi!` },
-            { speaker: 'assistant', text: ps`Hi!` },
-        ]
-        promptBuilder.tryAddMessages([...transcript].reverse())
-
-        const contextItems: ContextItem[] = [
-            {
-                type: 'file',
-                uri: vscode.Uri.file('/foo/bar'),
-                content: 'This is a file that exceeds the token limit',
-                isTooLarge: true,
-            },
-        ]
-
-        const { limitReached, ignored, duplicate, used } = promptBuilder.tryAddContext(
-            'enhanced',
-            contextItems
-        )
-        expect(limitReached).toBeTruthy()
-        expect(ignored).toEqual(contextItems)
-        expect(duplicate).toEqual([])
-        expect(used).toEqual([])
-
-        const prompt = promptBuilder.build()
-        expect(prompt).toEqual([...preamble, ...transcript])
+        expect(context.used).toEqual([])
+        expect(context.ignored).toEqual([])
     })
 })

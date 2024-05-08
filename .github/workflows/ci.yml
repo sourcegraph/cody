@@ -212,7 +212,24 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-      - run: pnpm exec biome ci --error-on-warnings .
+      # Run Biome and capture the output. If biome crashes, it still reports a
+      # successful CI run (exit code 0) but that will ripple down to errors in
+      # the Biome VS Code extension. This ensures that we don't accidentally
+      # break Biome.
+      - name: Biome
+        run: |
+          set +e
+          output=$(pnpm exec biome ci --error-on-warnings . 2>&1)
+          status=$?
+          echo "$output"
+          if [ $status -ne 0 ]; then
+            exit $status
+          fi
+          if echo "$output" | grep -q "Biome encountered an unexpected error"; then
+            echo "Error string 'Biome encountered an unexpected error' detected in output."
+            exit 1
+          fi
+        shell: bash
       - run: pnpm run build
       - run: pnpm -C vscode run build
       - run: CODY_RELEASE_TYPE=stable pnpm -C vscode run release:dry-run

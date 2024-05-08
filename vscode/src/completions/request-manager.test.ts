@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { getCurrentDocContext } from './get-current-doc-context'
-import { InlineCompletionsResultSource } from './get-inline-completions'
+import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
 import type { FetchCompletionResult } from './providers/fetch-and-process-completions'
 import { STOP_REASON_HOT_STREAK } from './providers/hot-streak'
@@ -74,6 +74,7 @@ function createProvider(prefix: string) {
         multiline: false,
         n: 1,
         firstCompletionTimeout: 1500,
+        triggerKind: TriggerKind.Automatic,
     })
 }
 

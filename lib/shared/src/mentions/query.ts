@@ -1,3 +1,4 @@
+import type { RangeData } from '../common/range'
 import type { ContextMentionProvider, ContextMentionProviderID } from './api'
 
 /**
@@ -14,6 +15,17 @@ export interface MentionQuery {
      * prefix characters that indicate the {@link MentionQuery.provider}, such as `#` for symbols.
      */
     text: string
+
+    /**
+     * The line range in the query, if any.
+     */
+    range?: RangeData
+
+    /**
+     * If the query suffix resembles a partially typed range suffix (such as `foo.txt:`,
+     * `foo.txt:1`, or `foo.txt:12-`).
+     */
+    maybeHasRangeSuffix?: boolean
 }
 
 /**
@@ -43,7 +55,44 @@ export function parseMentionQuery(
         }
     }
 
-    return { provider: 'file', text: query }
+    const { textWithoutRange, maybeHasRangeSuffix, range } = extractRangeFromFileMention(query)
+    return { provider: 'file', text: textWithoutRange, maybeHasRangeSuffix, range }
+}
+
+const RANGE_SUFFIX_REGEXP = /:(?:(\d+)-?)?(\d+)?$/
+const LINE_RANGE_REGEXP = /:(\d+)-(\d+)$/
+
+/**
+ * Parses the line range (if any) at the end of a string like `foo.txt:1-2`. Because this means "all
+ * of lines 1 and 2", the returned range actually goes to the start of line 3 to ensure all of line
+ * 2 is included. Also, lines in mentions are 1-indexed while `RangeData` is 0-indexed.
+ */
+export function extractRangeFromFileMention(query: string): {
+    textWithoutRange: string
+    maybeHasRangeSuffix: boolean
+    range?: RangeData
+} {
+    const maybeHasRangeSuffix = RANGE_SUFFIX_REGEXP.test(query)
+
+    const match = query.match(LINE_RANGE_REGEXP)
+    if (match === null) {
+        return { textWithoutRange: query.replace(RANGE_SUFFIX_REGEXP, ''), maybeHasRangeSuffix }
+    }
+
+    let startLine = Number.parseInt(match[1], 10)
+    let endLine = Number.parseInt(match[2], 10)
+    if (startLine > endLine) {
+        // Reverse range so that startLine is always before endLine.
+        ;[startLine, endLine] = [endLine, startLine]
+    }
+    return {
+        textWithoutRange: query.slice(0, -match[0].length),
+        maybeHasRangeSuffix: true,
+        range: {
+            start: { line: startLine - 1, character: 0 },
+            end: { line: endLine, character: 0 },
+        },
+    }
 }
 
 const PUNCTUATION = ',\\+\\*\\$\\|#{}\\(\\)\\^\\[\\]!\'"<>;'

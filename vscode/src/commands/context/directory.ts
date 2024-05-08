@@ -2,7 +2,9 @@ import {
     type ContextItem,
     ContextItemSource,
     TokenCounter,
+    contextFiltersProvider,
     logError,
+    toRangeData,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -48,6 +50,10 @@ export async function getContextFileFromDirectory(directory?: URI): Promise<Cont
                 // Reconstruct the file URI with the file name and directory URI
                 const fileUri = Utils.joinPath(dirUri, name)
 
+                if (await contextFiltersProvider.isUriIgnored(fileUri)) {
+                    continue
+                }
+
                 // check file size before opening the file. skip file if it's larger than 1MB
                 const fileSize = await vscode.workspace.fs.stat(fileUri)
                 if (fileSize.size > 1000000 || !fileSize.size) {
@@ -64,7 +70,7 @@ export async function getContextFileFromDirectory(directory?: URI): Promise<Cont
                     uri: fileUri,
                     content,
                     source: ContextItemSource.Editor,
-                    range,
+                    range: toRangeData(range),
                     size,
                 })
 

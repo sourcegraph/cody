@@ -125,6 +125,8 @@ test.extend<ExpectedEvents>({
 
     // Choosing a repository should open the repository picker.
     const chooseReposButton = chatFrame.getByRole('button', { name: 'Choose Repositories' })
+    await expect(chooseReposButton).toBeVisible()
+    await chooseReposButton.hover()
     await chooseReposButton.click()
     const repoPicker = page.getByText(/Choose up to \d+ more repositories/)
     await expect(repoPicker).toBeVisible()

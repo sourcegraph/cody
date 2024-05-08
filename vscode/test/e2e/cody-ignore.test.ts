@@ -1,6 +1,12 @@
 import path from 'node:path'
 import { expect } from '@playwright/test'
-import { createEmptyChatPanel, getContextCell, sidebarExplorer, sidebarSignin } from './common'
+import {
+    atMentionMenuHeading,
+    createEmptyChatPanel,
+    getContextCell,
+    sidebarExplorer,
+    sidebarSignin,
+} from './common'
 import { type ExpectedEvents, test } from './helpers'
 
 /**
@@ -52,12 +58,12 @@ test.extend<ExpectedEvents>({
 
     // Cody icon in the status bar should shows that the file is being ignored
     const statusBarButton = page.getByRole('button', {
-        name: 'cody-logo-heavy, Current file is ignored by Cody',
+        name: 'cody-logo-heavy-slash File Ignored, The current file is ignored by Cody',
     })
     await statusBarButton.hover()
     await expect(statusBarButton).toBeVisible()
 
-    await page.click('.badge[aria-label="Cody"]')
+    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
 
     // Start new chat
     const [chatPanel, chatInput] = await createEmptyChatPanel(page)
@@ -76,7 +82,7 @@ test.extend<ExpectedEvents>({
     await chatInput.focus()
     await chatInput.clear()
     await chatInput.fill('@ignoredByCody')
-    await expect(chatPanel.getByRole('heading', { name: 'No files found' })).toBeVisible()
+    await expect(atMentionMenuHeading(chatPanel, 'No files found')).toBeVisible()
     await chatInput.clear()
     await chatInput.fill('@ignore')
     await expect(
@@ -90,7 +96,9 @@ test.extend<ExpectedEvents>({
     // Assistant should not response to your command, so you should still see the old message.
     await expect(chatPanel.getByText('Ignore me')).toBeVisible()
     // A system message shows up to notify users that the file is ignored
-    await expect(page.getByText(/^Cannot execute a command in an ignored file./)).toBeVisible()
+    await expect(
+        page.getByText(/^Command failed to run: file is ignored \(due to your cody ignore config\)/)
+    ).toBeVisible()
 })
 
 function withPlatformSlashes(input: string) {

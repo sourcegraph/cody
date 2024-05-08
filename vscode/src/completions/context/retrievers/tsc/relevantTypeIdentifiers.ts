@@ -1,4 +1,5 @@
 import ts from 'typescript'
+import { declarationName } from './SymbolFormatter'
 import { getTSSymbolAtLocation } from './getTSSymbolAtLocation'
 
 /**
@@ -49,6 +50,22 @@ export function pushTypeIdentifiers(result: ts.Node[], checker: ts.TypeChecker, 
         for (const member of node.members) {
             pushTypeIdentifiers(result, checker, member)
         }
+    } else if (ts.isPropertyAccessExpression(node)) {
+        pushTypeDefinition(result, checker, node.expression)
+    } else {
+        // Uncomment below to debug what kind of if (ts.isX) case to handle
+        // console.log({ text: node.getText(), kindString: ts.SyntaxKind[node.kind] })
+    }
+}
+
+// Equivalent to doing "Go to Type Definition" on an expression and adding the
+// type definition to the Cody context.
+export function pushTypeDefinition(result: ts.Node[], checker: ts.TypeChecker, node: ts.Node): void {
+    const tpe = checker.getTypeAtLocation(node)
+    const declaration = tpe?.symbol?.declarations?.[0]
+    const name = declaration ? declarationName(declaration) : undefined
+    if (name) {
+        result.push(name)
     }
 }
 

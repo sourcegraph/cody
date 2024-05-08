@@ -4,8 +4,12 @@ import * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
 import { defaultCommands } from '.'
+import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/context-filter'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
-import { getEditLineSelection } from '../../edit/utils/edit-selection'
+import {
+    getEditAdjustedUserSelection,
+    getEditDefaultProvidedRange,
+} from '../../edit/utils/edit-selection'
 import { getEditor } from '../../editor/active-editor'
 import type { EditCommandResult } from '../../main'
 import { execQueryWrapper } from '../../tree-sitter/query-sdk'
@@ -20,12 +24,8 @@ import { isTestFileForOriginal } from '../utils/test-commands'
  * using a tree-sitter query. If found, returns the range for the symbol.
  */
 function getTestableRange(editor: vscode.TextEditor): vscode.Range | undefined {
-    const { document, selection } = editor
-    if (!selection.isEmpty) {
-        const lineSelection = getEditLineSelection(editor.document, editor.selection)
-        // The user has made an active selection, use that as the testable range
-        return lineSelection
-    }
+    const { document } = editor
+    const adjustedSelection = getEditAdjustedUserSelection(document, editor.selection)
 
     /**
      * Attempt to get the range of a testable symbol at the current cursor position.
@@ -37,21 +37,38 @@ function getTestableRange(editor: vscode.TextEditor): vscode.Range | undefined {
         queryWrapper: 'getTestableNode',
     })
     if (!testableNode) {
-        return undefined
+        return getEditDefaultProvidedRange(editor.document, editor.selection)
     }
 
     const { range: testableRange } = testableNode
     if (!testableRange) {
         // No user-provided selection, no testable range found.
-        // Fallback to expanding the range to the nearest block.
-        return undefined
+        // Fallback to expanding the range to the nearest block,
+        // as is the default behavior for all "Edit" commands
+        return getEditDefaultProvidedRange(editor.document, editor.selection)
     }
 
     const {
         node: { startPosition, endPosition },
     } = testableRange
+    const range = new vscode.Range(
+        startPosition.row,
+        startPosition.column,
+        endPosition.row,
+        endPosition.column
+    )
 
-    return new vscode.Range(startPosition.row, startPosition.column, endPosition.row, endPosition.column)
+    // If the users' adjusted selection aligns with the start of the node and is contained within the node,
+    // It is probable that the user would benefit from expanding to this node completely
+    const selectionMatchesNode =
+        adjustedSelection.start.isEqual(range.start) && range.contains(adjustedSelection.end)
+    if (!selectionMatchesNode && !editor.selection.isEmpty) {
+        // We found a testable range, but the users' adjusted selection does not match it.
+        // We have to use the users' selection here, as it's possible they do not want the testable node.
+        return getEditDefaultProvidedRange(editor.document, editor.selection)
+    }
+
+    return range
 }
 
 /**
@@ -65,6 +82,7 @@ export async function executeTestEditCommand(
 ): Promise<EditCommandResult | undefined> {
     return wrapInActiveSpan('command.test', async span => {
         span.setAttribute('sampled', true)
+
         // The prompt for generating tests in a new test file
         const newTestFilePrompt = PromptString.fromDefaultCommands(defaultCommands, 'test')
         // The prompt for adding new test suite to an existing test file
@@ -73,6 +91,10 @@ export async function executeTestEditCommand(
         const editor = getEditor()?.active
         const document = editor?.document
         if (!document) {
+            return
+        }
+
+        if (await isUriIgnoredByContextFilterWithNotification(document.uri, 'test')) {
             return
         }
 

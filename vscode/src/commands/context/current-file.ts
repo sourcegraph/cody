@@ -2,7 +2,9 @@ import {
     type ContextItem,
     ContextItemSource,
     TokenCounter,
+    contextFiltersProvider,
     logError,
+    toRangeData,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -15,6 +17,10 @@ export async function getContextFileFromCurrentFile(): Promise<ContextItem[]> {
             const document = editor?.active?.document
             if (!document) {
                 throw new Error('No active editor')
+            }
+
+            if (await contextFiltersProvider.isUriIgnored(document.uri)) {
+                return []
             }
 
             const selection = new vscode.Selection(
@@ -37,7 +43,7 @@ export async function getContextFileFromCurrentFile(): Promise<ContextItem[]> {
                     uri: document.uri,
                     content,
                     source: ContextItemSource.Editor,
-                    range: selection,
+                    range: toRangeData(selection),
                     size,
                 } satisfies ContextItem,
             ]
