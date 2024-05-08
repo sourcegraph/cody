@@ -1,11 +1,11 @@
 .model-title-with-icon {
-    display: inline-flex;
-    align-items: end;
-    gap: 0.45rem;
+    flex: 1;
 
-    .model-text {
-        display: block;
-    }
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    line-height: 1;
+
     .model-name {
         font-weight: 500;
     }
@@ -25,26 +25,32 @@
 
     & > svg {
         opacity: 0.5;
-        margin-top: -1px
     }
 }
+
 
 .badge  {
     margin-left: auto;
     line-height: 1;
-    letter-spacing: -0.025rem;
+    font-size: 11px;
+    border-radius: 3px;
+    padding: 3px 5px;
+    margin-bottom: -1px;
 }
 
 .cody-pro-badge {
-    background: repeating-conic-gradient(#7048E8 50%, #00CBEC 75%, #A112FF 100%, #FF5543 125%, #7048E8 150%);
-    color: rgba(255, 255, 255, 0.9);
-    border-radius: 4px;
-    padding: 3px 4px;
+    background: linear-gradient(135deg, #60D5E7 14.14%, #CD8BFA 49.5%, #F4897D 70.71%);
+    color: black;
 }
 
-.experimental-badge {
+.other-badge {
     background: var(--vscode-badge-background);
     color: var(--vscode-badge-foreground);
-    border-radius: 4px;
-    padding: 3px 4px;
+}
+
+/* Only show provider name and Default badge in dropdown menu, not in the button. */
+button > .model-title-with-icon {
+    .model-provider, .default-badge {
+        display: none;
+    }
 }
