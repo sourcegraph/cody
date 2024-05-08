@@ -24,11 +24,32 @@ val isForceAgentBuild =
         properties("forceAgentBuild") == "true"
 val isForceCodeSearchBuild = isForceBuild || properties("forceCodeSearchBuild") == "true"
 
+// As https://www.jetbrains.com/updates/updates.xml adds a new "IntelliJ IDEA" YYYY.N version, add
+// it to this list.
+// Remove unsupported old versions from this list.
+val versionsOfInterest =
+    listOf("2022.1", "2022.2", "2022.3", "2023.1", "2023.2", "2023.3", "2024.1").sorted()
+val versionsToValidate =
+    when (project.properties["validation"]?.toString()) {
+      "lite" -> listOf(versionsOfInterest.first(), versionsOfInterest.last())
+      null,
+      "full" -> versionsOfInterest
+      else ->
+          error(
+              "Unexpected validation property: \"validation\" should be \"lite\" or \"full\" (default) was \"${project.properties["validation"]}\"")
+    }
+val skippedFailureLevels =
+    EnumSet.of(
+        FailureLevel.DEPRECATED_API_USAGES,
+        FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES, // blocked by: Kotlin UI DSL Cell.align
+        FailureLevel.EXPERIMENTAL_API_USAGES,
+        FailureLevel.NOT_DYNAMIC)!!
+
 plugins {
   id("java")
   // Dependencies are locked at this version to work with JDK 11 on CI.
   id("org.jetbrains.kotlin.jvm") version "1.9.22"
-  id("org.jetbrains.intellij") version "1.17.2"
+  id("org.jetbrains.intellij") version "1.17.3"
   id("org.jetbrains.changelog") version "1.3.1"
   id("com.diffplug.spotless") version "6.25.0"
 }
@@ -366,13 +387,7 @@ tasks {
   }
 
   runPluginVerifier {
-    ideVersions.set(listOf("2022.1", "2022.2", "2022.3", "2023.1", "2023.2", "2023.3"))
-    val skippedFailureLevels =
-        EnumSet.of(
-            FailureLevel.DEPRECATED_API_USAGES,
-            FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES, // blocked by: Kotlin UI DSL Cell.align
-            FailureLevel.EXPERIMENTAL_API_USAGES,
-            FailureLevel.NOT_DYNAMIC)
+    ideVersions.set(versionsToValidate)
     failureLevel.set(EnumSet.complementOf(skippedFailureLevels))
   }
 
