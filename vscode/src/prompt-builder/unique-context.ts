@@ -2,7 +2,6 @@ import {
     type ContextItem,
     type RangeData,
     displayPath as getDisplayPath,
-    toRangeData,
 } from '@sourcegraph/cody-shared'
 import { getContextItemTokenUsageType } from './utils'
 
@@ -56,26 +55,23 @@ export function getUniqueContextItems(reversedItems: ContextItem[]): ContextItem
  * @returns boolean whether the `itemToAdd` is unique.
  */
 export function isUniqueContextItem(itemToAdd: ContextItem, uniqueItems: ContextItem[]): boolean {
-    const itemToAddRange = itemToAdd.range
     const itemToAddDisplayPath = getContextItemDisplayPath(itemToAdd)
+    const itemToAddRange = itemToAdd.range
 
     for (const item of uniqueItems) {
-        const currentItemRange = item.range
-        const currentItemDisplayPath = getContextItemDisplayPath(item)
-
         // Check for existing items with the same display path
-        if (currentItemDisplayPath === itemToAddDisplayPath) {
+        if (getContextItemDisplayPath(item) === itemToAddDisplayPath) {
             // Assume context with no range contains full file content (unique)
-            if (item === itemToAdd || !currentItemRange) {
+            if (item === itemToAdd || !item.range) {
                 return false // Duplicate found.
             }
 
             // Duplicates if overlapping ranges on the same lines,
             // or if one range contains the other.
-            if (currentItemRange && itemToAddRange) {
+            if (item.range && itemToAddRange) {
                 return !(
-                    rangesOnSameLines(currentItemRange, itemToAddRange) ||
-                    rangeContainsLines(currentItemRange, itemToAddRange)
+                    rangesOnSameLines(item.range, itemToAddRange) ||
+                    rangeContainsLines(item.range, itemToAddRange)
                 )
             }
         }
@@ -90,10 +86,6 @@ export function isUniqueContextItem(itemToAdd: ContextItem, uniqueItems: Context
  * - The end of the outer range is greater than or equal to the end of the inner range.
  */
 function rangeContainsLines(outerRange: RangeData, innerRange: RangeData): boolean {
-    // Ensure the range is a RangeData instance
-    outerRange = toRangeData(outerRange)
-    innerRange = toRangeData(innerRange)
-
     return outerRange.start.line <= innerRange.start.line && outerRange.end.line >= innerRange.end.line
 }
 
@@ -101,11 +93,7 @@ function rangeContainsLines(outerRange: RangeData, innerRange: RangeData): boole
  * Checks if both ranges are on the same lines.
  */
 function rangesOnSameLines(range1: RangeData, range2: RangeData): boolean {
-    // Ensure the range is a RangeData instance
-    range1 = toRangeData(range1)
-    range2 = toRangeData(range2)
-
-    return range1.start.line === range2.start.line && range1.end.line === range2.end.line
+    return range1.start?.line === range2.start?.line && range1.end?.line === range2.end?.line
 }
 
 /**
