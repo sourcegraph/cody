@@ -28,17 +28,13 @@
     }
 }
 
-button > .model-title-with-icon .model-provider {
-    /* HACK(sqs): Hide the provider name from the button (show it only in the dropdown). */
-    display: none;
-}
 
 .badge  {
     margin-left: auto;
     line-height: 1;
     font-size: 11px;
     border-radius: 3px;
-    padding: 4px 5px;
+    padding: 3px 5px;
     margin-bottom: -1px;
 }
 
@@ -47,7 +43,14 @@ button > .model-title-with-icon .model-provider {
     color: black;
 }
 
-.experimental-badge {
+.other-badge {
     background: var(--vscode-badge-background);
     color: var(--vscode-badge-foreground);
+}
+
+/* Only show provider name and Default badge in dropdown menu, not in the button. */
+button > .model-title-with-icon {
+    .model-provider, .default-badge {
+        display: none;
+    }
 }

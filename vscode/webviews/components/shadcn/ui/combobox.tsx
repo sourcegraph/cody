@@ -17,6 +17,7 @@ export interface SelectListOption {
 
 export const ComboBox: FunctionComponent<{
     options: SelectListOption[]
+    groupOrder?: string[]
     pluralNoun: string
     value: string | undefined
     onChange: (value: Value | undefined) => void
@@ -31,6 +32,7 @@ export const ComboBox: FunctionComponent<{
     __storybook__open?: boolean
 }> = ({
     options,
+    groupOrder,
     pluralNoun,
     value,
     onChange,
@@ -65,9 +67,24 @@ export const ComboBox: FunctionComponent<{
             }
         }
         return Array.from(groups.entries())
-            .sort((a, b) => a[0].localeCompare(b[0]))
+            .sort((a, b) => {
+                if (groupOrder) {
+                    const aIndex = groupOrder.indexOf(a[0])
+                    const bIndex = groupOrder.indexOf(b[0])
+                    if (aIndex !== -1 && bIndex !== -1) {
+                        return aIndex - bIndex
+                    }
+                    if (aIndex !== -1) {
+                        return -1
+                    }
+                    if (bIndex !== -1) {
+                        return 1
+                    }
+                }
+                return a[0].localeCompare(b[0])
+            })
             .map(([group, options]) => ({ group, options }))
-    }, [options])
+    }, [options, groupOrder])
 
     return (
         <Popover open={open} onOpenChange={onOpenChange}>

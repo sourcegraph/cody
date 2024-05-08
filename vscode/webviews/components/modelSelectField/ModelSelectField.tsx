@@ -1,4 +1,4 @@
-import type { ModelProvider } from '@sourcegraph/cody-shared'
+import { type ModelProvider, ModelUIGroup } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import { type FunctionComponent, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
@@ -103,6 +103,7 @@ export const ModelSelectField: React.FunctionComponent<{
     return (
         <ComboBox
             options={options}
+            groupOrder={GROUP_ORDER}
             pluralNoun="models"
             value={selectedModel.model}
             onChange={onChange}
@@ -114,6 +115,13 @@ export const ModelSelectField: React.FunctionComponent<{
         />
     )
 }
+
+const GROUP_ORDER = [
+    ModelUIGroup.Accuracy,
+    ModelUIGroup.Balanced,
+    ModelUIGroup.Speed,
+    ModelUIGroup.Ollama,
+]
 
 type ModelAvailability = 'available' | 'needs-cody-pro' | 'not-selectable-on-enterprise'
 
@@ -158,8 +166,11 @@ const ModelTitleWithIcon: FunctionComponent<{
         {modelAvailability === 'needs-cody-pro' && (
             <span className={clsx(styles.badge, styles.codyProBadge)}>Cody Pro</span>
         )}
+        {model.initialDefault && (
+            <span className={clsx(styles.badge, styles.otherBadge, styles.defaultBadge)}>Default</span>
+        )}
         {model.provider === 'Ollama' && (
-            <span className={clsx(styles.badge, styles.experimentalBadge)}>Experimental</span>
+            <span className={clsx(styles.badge, styles.otherBadge)}>Experimental</span>
         )}
     </span>
 )

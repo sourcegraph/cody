@@ -17,6 +17,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         model: 'anthropic/claude-3-sonnet-20240229',
         provider: 'Anthropic',
         default: true,
+        initialDefault: true,
         codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         // Has a higher context window with a seperated limit for user-context.
@@ -26,7 +27,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
             context: { user: CLAUDE3_USER_CONTEXT_TOKEN_BUDGET },
         },
         deprecated: false,
-        uiGroup: ModelUIGroup.Speed,
+        uiGroup: ModelUIGroup.Balanced,
     },
     {
         title: 'Claude 3 Opus',
