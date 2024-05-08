@@ -144,6 +144,10 @@ export enum TriggerKind {
     SuggestWidget = 'SuggestWidget',
 }
 
+export function allTriggerKinds(): TriggerKind[] {
+    return [TriggerKind.Automatic, TriggerKind.Hover, TriggerKind.Manual, TriggerKind.SuggestWidget]
+}
+
 export async function getInlineCompletions(
     params: InlineCompletionsParams
 ): Promise<InlineCompletionsResult | null> {
@@ -327,7 +331,7 @@ async function doGetInlineCompletions(
         : triggerKind !== TriggerKind.Automatic
           ? 0
           : ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) +
-              (artificialDelay ?? 0)
+            (artificialDelay ?? 0)
 
     // We split the desired debounceTime into two chunks. One that is at most 25ms where every
     // further execution is halted...
@@ -413,6 +417,7 @@ function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
     const { document, position, triggerKind, providerConfig, docContext } = params
 
     const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
+        triggerKind,
         docContext,
         document,
         position,

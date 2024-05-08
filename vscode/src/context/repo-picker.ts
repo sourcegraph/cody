@@ -1,15 +1,20 @@
 import * as vscode from 'vscode'
 
+import { contextFiltersProvider, pluralize } from '@sourcegraph/cody-shared'
 import { logDebug } from '../log'
 import { RemoteSearch } from './remote-search'
 import { type Repo, type RepoFetcher, RepoFetcherState } from './repo-fetcher'
 import type { WorkspaceRepoMapper } from './workspace-repo-mapper'
 
+interface RepoQuickPickItem extends vscode.QuickPickItem, Repo {
+    isIgnored: boolean
+}
+
 // A quickpick for choosing a set of repositories from a Sourcegraph instance.
 export class RemoteRepoPicker implements vscode.Disposable {
     private readonly maxSelectedRepoCount: number = RemoteSearch.MAX_REPO_COUNT - 1
     private disposables: vscode.Disposable[] = []
-    private readonly quickpick: vscode.QuickPick<vscode.QuickPickItem & Repo>
+    private readonly quickpick: vscode.QuickPick<RepoQuickPickItem>
     private prefetchedRepos: Map<string, Repo> = new Map()
 
     constructor(
@@ -30,7 +35,7 @@ export class RemoteRepoPicker implements vscode.Disposable {
             this.disposables
         )
 
-        this.quickpick = vscode.window.createQuickPick<vscode.QuickPickItem & Repo>()
+        this.quickpick = vscode.window.createQuickPick<RepoQuickPickItem>()
         this.quickpick.matchOnDetail = true
         this.quickpick.canSelectMany = true
         this.updateTitle()
@@ -79,7 +84,7 @@ export class RemoteRepoPicker implements vscode.Disposable {
 
     // Shows the remote repo picker. Resolves with `undefined` if the user
     // dismissed the dialog with ESC, a click away, etc.
-    public show(selection: Repo[]): Promise<Repo[] | undefined> {
+    public async show(selection: Repo[]): Promise<Repo[] | undefined> {
         logDebug('RepoPicker', 'showing; fetcher state =', this.fetcher.state)
 
         let onDone = { resolve: (_: Repo[] | undefined) => {}, reject: (error: Error) => {} }
@@ -98,6 +103,7 @@ export class RemoteRepoPicker implements vscode.Disposable {
             id: repo.id,
             label: repo.name,
             name: repo.name,
+            isIgnored: contextFiltersProvider.isRepoNameIgnored(repo.name),
         }))
         this.handleRepoListChanged()
 
@@ -131,6 +137,11 @@ export class RemoteRepoPicker implements vscode.Disposable {
                 )
                 return
             }
+            const ignoredRepos = this.quickpick.selectedItems.filter(item => item.isIgnored)
+            if (ignoredRepos.length > 0) {
+                showIgnoredRepoNotification(ignoredRepos.map(item => item.name))
+            }
+
             onDone.resolve(this.quickpick.selectedItems.map(item => ({ name: item.name, id: item.id })))
             this.quickpick.hide()
         })
@@ -149,9 +160,9 @@ export class RemoteRepoPicker implements vscode.Disposable {
             this.workspaceRepoMapper.workspaceRepos.map(item => item.id)
         )
 
-        const selectedItems: (vscode.QuickPickItem & Repo)[] = []
-        const workspaceItems: (vscode.QuickPickItem & Repo)[] = []
-        const items: (vscode.QuickPickItem & Repo)[] = []
+        const selectedItems: RepoQuickPickItem[] = []
+        const workspaceItems: RepoQuickPickItem[] = []
+        const items: RepoQuickPickItem[] = []
 
         const displayedRepos = new Set<string>()
         for (const repo of [...this.fetcher.repositories, ...this.prefetchedRepos.values()]) {
@@ -160,15 +171,17 @@ export class RemoteRepoPicker implements vscode.Disposable {
                 continue
             }
             displayedRepos.add(repo.id)
+            const isIgnored = contextFiltersProvider.isRepoNameIgnored(repo.name)
 
             const inWorkspace = workspaceRepos.has(repo.id)
             const shortName = repo.name.slice(repo.name.lastIndexOf('/') + 1)
             const item = {
-                label: shortName,
+                label: `${isIgnored ? '$(warning) ' : ''}${shortName}`,
                 name: repo.name,
                 id: repo.id,
                 description: inWorkspace ? 'In your workspace' : '',
                 detail: repo.name,
+                isIgnored,
             }
             if (inWorkspace) {
                 workspaceItems.push(item)
@@ -186,6 +199,7 @@ export class RemoteRepoPicker implements vscode.Disposable {
                 label: 'Repositories in your workspace',
                 name: 'SEPARATOR',
                 id: 'SEPARATOR',
+                isIgnored: false,
             },
             ...workspaceItems,
             {
@@ -193,9 +207,18 @@ export class RemoteRepoPicker implements vscode.Disposable {
                 label: 'Repositories from your Sourcegraph instance',
                 name: 'SEPARATOR',
                 id: 'SEPARATOR',
+                isIgnored: false,
             },
             ...items,
         ]
         this.quickpick.selectedItems = selectedItems
     }
+}
+
+function showIgnoredRepoNotification(names: string[]) {
+    vscode.window.showErrorMessage(
+        `The ${pluralize('repository', names.length, 'repositories')} ${names.join(
+            ', '
+        )} is ignored by your Cody ignore policy.`
+    )
 }

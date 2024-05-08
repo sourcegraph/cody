@@ -11,9 +11,10 @@ import {
     PromptString,
     contextFiltersProvider,
     featureFlagProvider,
+    githubClient,
     graphqlClient,
-    isDotCom,
     newPromptMixin,
+    setClientNameVersion,
     setLogger,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -40,11 +41,14 @@ import {
     executeTestChatCommand,
     executeTestEditCommand,
 } from './commands/execute'
+import { executeExplainHistoryCommand } from './commands/execute/explain-history'
+import { executeUsageExamplesCommand } from './commands/execute/usage-examples'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
+import { exposeOpenCtxExtensionAPIHandle } from './context/openctx'
 import { EditManager } from './edit/manager'
 import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInfo'
 import { VSCodeEditor } from './editor/vscode-editor'
@@ -79,6 +83,7 @@ import {
 import { openCodyIssueReporter } from './services/utils/issue-reporter'
 import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
+import { registerInteractiveTutorial } from './tutorial'
 import { version } from './version'
 
 /**
@@ -120,6 +125,8 @@ export async function start(
         })
     )
 
+    exposeOpenCtxExtensionAPIHandle()
+
     return vscode.Disposable.from(...disposables)
 }
 
@@ -132,6 +139,7 @@ const register = async (
     disposable: vscode.Disposable
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => Promise<void>
 }> => {
+    setClientNameVersion(platform.extensionClient.clientName, platform.extensionClient.clientVersion)
     const authProvider = new AuthProvider(initialConfig)
 
     const disposables: vscode.Disposable[] = []
@@ -145,6 +153,7 @@ const register = async (
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
+
     await configureEventsInfra(initialConfig, isExtensionModeDevOrTest, authProvider)
 
     const editor = new VSCodeEditor()
@@ -177,6 +186,7 @@ const register = async (
     await authProvider.init()
 
     graphqlClient.onConfigurationChange(initialConfig)
+    githubClient.onConfigurationChange({ authToken: initialConfig.experimentalGithubAccessToken })
     void featureFlagProvider.syncAuthStatus()
 
     const {
@@ -256,6 +266,7 @@ const register = async (
 
         promises.push(featureFlagProvider.syncAuthStatus())
         graphqlClient.onConfigurationChange(newConfig)
+        githubClient.onConfigurationChange({ authToken: initialConfig.experimentalGithubAccessToken })
         promises.push(
             contextFiltersProvider
                 .init(bindedRepoNamesResolver)
@@ -294,14 +305,9 @@ const register = async (
     // currently crashes with a cryptic error when running with symf enabled so
     // we need a way to reliably disable symf until we fix the root problem.
     if (symfRunner && config.experimentalSymfContext) {
-        const searchViewProvider = new SearchViewProvider(context.extensionUri, symfRunner)
+        const searchViewProvider = new SearchViewProvider(symfRunner)
         disposables.push(searchViewProvider)
         searchViewProvider.initialize()
-        disposables.push(
-            vscode.window.registerWebviewViewProvider('cody.search', searchViewProvider, {
-                webviewOptions: { retainContextWhenHidden: true },
-            })
-        )
     }
 
     if (config.experimentalSupercompletions) {
@@ -385,8 +391,41 @@ const register = async (
         vscode.commands.registerCommand('cody.command.generate-tests', a => executeTestChatCommand(a)),
         vscode.commands.registerCommand('cody.command.unit-tests', a => executeTestEditCommand(a)),
         vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a)),
-        vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a))
+        vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a)),
+        vscode.commands.registerCommand('cody.command.usageExamples', a =>
+            executeUsageExamplesCommand(a)
+        )
     )
+
+    // Internal-only test commands
+    if (isExtensionModeDevOrTest) {
+        await vscode.commands.executeCommand('setContext', 'cody.devOrTest', true)
+        disposables.push(
+            vscode.commands.registerCommand('cody.test.set-context-filters', async () => {
+                // Prompt the user for the policy
+                const raw = await vscode.window.showInputBox({ title: 'Context Filters Overwrite' })
+                if (!raw) {
+                    return
+                }
+                try {
+                    const policy = JSON.parse(raw)
+                    contextFiltersProvider.setTestingContextFilters(policy)
+                } catch (error) {
+                    vscode.window.showErrorMessage(
+                        'Failed to parse context filters policy. Please check your JSON syntax.'
+                    )
+                }
+            })
+        )
+    }
+
+    if (commandsManager !== undefined) {
+        disposables.push(
+            vscode.commands.registerCommand('cody.command.explain-history', a =>
+                executeExplainHistoryCommand(commandsManager, a)
+            )
+        )
+    }
 
     disposables.push(
         // Tests
@@ -394,6 +433,7 @@ const register = async (
         vscode.commands.registerCommand('cody.test.token', async (endpoint, token) =>
             authProvider.auth({ endpoint, token })
         ),
+
         // Auth
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
@@ -544,15 +584,17 @@ const register = async (
         // Check if user has just moved back from a browser window to upgrade cody pro
         vscode.window.onDidChangeWindowState(async ws => {
             const authStatus = authProvider.getAuthStatus()
-            const endpoint = authStatus.endpoint
-            if (ws.focused && endpoint && isDotCom(endpoint) && authStatus.isLoggedIn) {
+            if (ws.focused && authStatus.isDotCom && authStatus.isLoggedIn) {
                 const res = await graphqlClient.getCurrentUserCodyProEnabled()
                 if (res instanceof Error) {
                     console.error(res)
                     return
                 }
-                authStatus.userCanUpgrade = !res.codyProEnabled
-                void chatManager.syncAuthStatus(authStatus)
+                // Re-auth if user's cody pro status has changed
+                const isCurrentCodyProUser = !authStatus.userCanUpgrade
+                if (res.codyProEnabled !== isCurrentCodyProUser) {
+                    authProvider.reloadAuthStatus()
+                }
             }
         }),
         new CodyProExpirationNotifications(
@@ -565,7 +607,9 @@ const register = async (
         // For register sidebar clicks
         vscode.commands.registerCommand('cody.sidebar.click', (name: string, command: string) => {
             const source: EventSource = 'sidebar'
-            telemetryService.log(`CodyVSCodeExtension:command:${name}:clicked`, { source })
+            telemetryService.log(`CodyVSCodeExtension:command:${name}:clicked`, {
+                source,
+            })
             telemetryRecorder.recordEvent(`cody.command.${name}`, 'clicked', {
                 privateMetadata: { source },
             })
@@ -618,7 +662,9 @@ const register = async (
                     'cody-autocomplete',
                     setupAutocomplete
                 )
-                autocompleteDisposables.push({ dispose: autocompleteFeatureFlagChangeSubscriber })
+                autocompleteDisposables.push({
+                    dispose: autocompleteFeatureFlagChangeSubscriber,
+                })
                 autocompleteDisposables.push(
                     await createInlineCompletionItemProvider({
                         config,
@@ -648,6 +694,10 @@ const register = async (
             })
         )
     }
+
+    registerInteractiveTutorial(context).then(disposable => {
+        disposables.push(...disposable)
+    })
 
     // INC-267 do NOT await on this promise. This promise triggers
     // `vscode.window.showInformationMessage()`, which only resolves after the

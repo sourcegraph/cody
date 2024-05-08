@@ -7,15 +7,15 @@ import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import * as vscode from 'vscode'
+import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient } from '../src/TestClient'
+import { TestWorkspace } from '../src/TestWorkspace'
 
 async function main() {
     if (!process.env.SRC_ACCESS_TOKEN) {
         console.log('SRC_ACCESS_TOKEN is not defined')
         process.exit(1)
     }
-    const accessToken = process.env.SRC_ACCESS_TOKEN
-    const serverEndpoint = process.env.SRC_ENDPOINT ?? 'https://sourcegraph.com'
 
     const prototypePath = path.join(__dirname, '..', 'src', '__tests__', 'example-ts')
     const workspaceRootUri = vscode.Uri.file(path.join(os.tmpdir(), 'cody-vscode-shim-test'))
@@ -29,23 +29,23 @@ async function main() {
     })
 
     const osArch = getOSArch()
+    const workspace = new TestWorkspace(prototypePath)
+    const credentials = TESTING_CREDENTIALS.dotcom
 
     const client = TestClient.create({
+        workspaceRootUri: workspace.rootUri,
         name: 'defaultClient',
         bin: './dist/agent-' + osArch,
-        accessToken,
+        credentials: credentials,
     })
 
-    await client.initialize({
-        serverEndpoint: serverEndpoint,
-        accessToken,
-    })
+    await client.initialize({})
 
     const valid = await client.request('extensionConfiguration/change', {
         ...client.info.extensionConfiguration,
         anonymousUserID: 'abcde1234',
-        accessToken,
-        serverEndpoint: serverEndpoint,
+        accessToken: credentials.token!,
+        serverEndpoint: credentials.serverEndpoint,
         customHeaders: {},
     })
 

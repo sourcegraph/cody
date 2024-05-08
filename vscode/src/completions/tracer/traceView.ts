@@ -162,12 +162,12 @@ ${
               ),
               data.completionProviderCallResult.debugMessage
                   ? codeDetailsWithSummary(
-                          'Timing',
-                          data.completionProviderCallResult.debugMessage,
-                          undefined,
-                          undefined,
-                          true
-                      )
+                        'Timing',
+                        data.completionProviderCallResult.debugMessage,
+                        undefined,
+                        undefined,
+                        true
+                    )
                   : null,
           ]
               .filter(isDefined)
@@ -195,8 +195,8 @@ ${
         : data.result.items.length === 0
           ? 'Empty completions.'
           : data.result.items
-                  .map(item => inlineCompletionItemDescription(item, data.params?.document))
-                  .join('\n\n---\n\n')
+                .map(item => inlineCompletionItemDescription(item, data.params?.document))
+                .join('\n\n---\n\n')
 }`,
 
         data?.error &&

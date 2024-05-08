@@ -2,6 +2,7 @@ import {
     type ContextItem,
     ContextItemSource,
     type ContextMessage,
+    type ContextTokenUsageType,
     PromptString,
     populateCodeContextTemplate,
     populateContextTemplateFromText,
@@ -32,8 +33,20 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
         messageText = populateContextTemplateFromText(templateText, promptContext.content, uri)
     } else if (contextItem.source === ContextItemSource.Terminal) {
         messageText = promptContext.content
+    } else if (contextItem.source === ContextItemSource.History) {
+        messageText = promptContext.content
     } else {
         messageText = populateCodeContextTemplate(promptContext.content, uri, promptContext.repoName)
     }
     return { speaker: 'human', text: messageText, file: contextItem }
+}
+
+export function getContextItemTokenUsageType(item: ContextItem): ContextTokenUsageType {
+    switch (item.source) {
+        case 'user':
+        case 'selection':
+            return 'user'
+        default:
+            return 'enhanced'
+    }
 }

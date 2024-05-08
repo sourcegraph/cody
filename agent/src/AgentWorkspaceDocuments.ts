@@ -8,6 +8,9 @@ import { logDebug, logError } from '@sourcegraph/cody-shared'
 import { doesFileExist } from '../../vscode/src/commands/utils/workspace-files'
 import { resetActiveEditor } from '../../vscode/src/editor/active-editor'
 import { AgentTextDocument } from './AgentTextDocument'
+import { applyContentChanges } from './applyContentChanges'
+import { calculateContentChanges } from './calculateContentChanges'
+import { clearArray } from './clearArray'
 import * as vscode_shim from './vscode-shim'
 
 type EditFunction = (
@@ -30,12 +33,30 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     public activeDocumentFilePath: vscode.Uri | null = null
 
     public openUri(uri: vscode.Uri): AgentTextDocument {
-        return this.loadedDocument(ProtocolTextDocumentWithUri.from(uri))
+        return this.loadAndUpdateDocument(ProtocolTextDocumentWithUri.from(uri))
     }
-    public loadedDocument(document: ProtocolTextDocumentWithUri): AgentTextDocument {
+    public loadAndUpdateDocument(document: ProtocolTextDocumentWithUri): AgentTextDocument {
+        return this.loadAndUpdateDocumentWithChanges(document).document
+    }
+    public loadAndUpdateDocumentWithChanges(document: ProtocolTextDocumentWithUri): {
+        document: AgentTextDocument
+        contentChanges: vscode.TextDocumentContentChangeEvent[]
+    } {
         const fromCache = this.agentDocuments.get(document.underlying.uri)
         if (!fromCache) {
-            return new AgentTextDocument(document)
+            return { document: new AgentTextDocument(document), contentChanges: [] }
+        }
+
+        const contentChanges: vscode.TextDocumentContentChangeEvent[] = []
+
+        if (document.contentChanges && document.contentChanges.length > 0) {
+            const changes = applyContentChanges(fromCache, document.contentChanges)
+            contentChanges.push(...changes.contentChanges)
+            document.underlying.content = changes.newText
+        } else if (document.content !== undefined) {
+            for (const change of calculateContentChanges(fromCache, document.content)) {
+                contentChanges.push(change)
+            }
         }
 
         if (document.content === undefined) {
@@ -48,7 +69,7 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
 
         fromCache.update(document)
 
-        return fromCache
+        return { document: fromCache, contentChanges }
     }
 
     public setActiveTextEditor(textEditor: vscode.TextEditor): void {
@@ -73,8 +94,15 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         return this.agentDocuments.get(uriString)
     }
 
-    public addDocument(document: ProtocolTextDocumentWithUri): AgentTextDocument {
-        const agentDocument = this.loadedDocument(document)
+    public loadDocument(document: ProtocolTextDocumentWithUri): AgentTextDocument {
+        return this.loadDocumentWithChanges(document).document
+    }
+    public loadDocumentWithChanges(document: ProtocolTextDocumentWithUri): {
+        document: AgentTextDocument
+        contentChanges: vscode.TextDocumentContentChangeEvent[]
+    } {
+        const { document: agentDocument, contentChanges } =
+            this.loadAndUpdateDocumentWithChanges(document)
         this.agentDocuments.set(document.underlying.uri, agentDocument)
 
         const tabs: vscode.Tab[] = []
@@ -97,15 +125,16 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
             },
         ]
 
-        while (vscode_shim.visibleTextEditors.length > 0) {
-            vscode_shim.visibleTextEditors.pop()
-        }
+        clearArray(vscode_shim.visibleTextEditors)
+        clearArray(vscode_shim.workspaceTextDocuments)
+
         for (const document of this.allDocuments()) {
+            vscode_shim.workspaceTextDocuments.push(document)
             vscode_shim.visibleTextEditors.push(this.newTextEditor(document))
         }
         vscode_shim.onDidChangeVisibleTextEditors.fire(vscode_shim.visibleTextEditors)
 
-        return agentDocument
+        return { document: agentDocument, contentChanges }
     }
 
     public deleteDocument(uri: vscode.Uri): void {
@@ -139,7 +168,7 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
                 logError('vscode.workspace.openTextDocument', `unable to read non-file URI: ${uri}`)
             }
         }
-        return Promise.resolve(this.loadedDocument(document))
+        return Promise.resolve(this.loadAndUpdateDocument(document))
     }
 
     public async reset(): Promise<void> {

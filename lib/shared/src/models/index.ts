@@ -1,7 +1,6 @@
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
-import type { ModelContextWindow } from './types'
-import type { ModelUsage } from './types'
+import type { ModelContextWindow, ModelUsage } from './types'
 import { getModelInfo } from './utils'
 
 /**
@@ -10,19 +9,31 @@ import { getModelInfo } from './utils'
  * retrieve and select between them.
  */
 export class ModelProvider {
-    // Whether the model is the default model
+    /**
+     * Whether the model is the default model for new chats and edits. The user can change their
+     * default model.
+     */
     public default = false
+
+    /**
+     * Whether the model is the server-set initial default for new users.
+     */
+    public initialDefault? = false
+
     // Whether the model is only available to Pro users
     public codyProOnly = false
     // The name of the provider of the model, e.g. "Anthropic"
     public provider: string
-    // The title of the model, e.g. "Claude 2.0"
+    // The title of the model, e.g. "Claude 3 Sonnet"
     public readonly title: string
+    // A deprecated model can be used (to not break agent) but won't be rendered
+    // in the UI
+    public deprecated = false
 
     constructor(
         /**
          * The model id that includes the provider name & the model name,
-         * e.g. "anthropic/claude-2.0"
+         * e.g. "anthropic/claude-3-sonnet-20240229"
          */
         public readonly model: string,
         /**
@@ -49,7 +60,8 @@ export class ModelProvider {
              * The API endpoint for the model
              */
             apiEndpoint?: string
-        }
+        },
+        public readonly uiGroup?: string
     ) {
         const { provider, title } = getModelInfo(model)
         this.provider = provider
@@ -132,5 +144,20 @@ export class ModelProvider {
 
     public static getProviderByModel(modelID: string): ModelProvider | undefined {
         return ModelProvider.providers.find(m => m.model === modelID)
+    }
+
+    public static getProviderByModelSubstringOrError(modelSubstring: string): ModelProvider {
+        const models = ModelProvider.providers.filter(m => m.model.includes(modelSubstring))
+        if (models.length === 1) {
+            return models[0]
+        }
+        if (models.length === 0) {
+            throw new Error(`No model found for substring ${modelSubstring}`)
+        }
+        throw new Error(
+            `Multiple models found for substring ${modelSubstring}: ${models
+                .map(m => m.model)
+                .join(', ')}`
+        )
     }
 }

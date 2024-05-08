@@ -25,12 +25,12 @@
     "test:unit": "vitest run",
     "test:integration": "pnpm -C vscode test:integration",
     "test:e2e": "pnpm -C vscode test:e2e",
-    "generate-agent-kotlin-bindings": "pnpm build && pnpm dlx ts-node agent/src/cli/scip-codegen/command.ts --output ../jetbrains/src/main/kotlin/com/sourcegraph/cody/protocol_generated",
-    "update-agent-recordings": "pnpm build && CODY_KEEP_UNUSED_RECORDINGS=false CODY_RECORD_IF_MISSING=true vitest agent/src/index.test.ts",
+    "generate-agent-kotlin-bindings": "./agent/scripts/generate-agent-kotlin-bindings.sh",
+    "update-agent-recordings": "pnpm build && CODY_KEEP_UNUSED_RECORDINGS=false CODY_RECORD_IF_MISSING=true vitest agent/src",
     "update-symf-recordings": "rm -rf recordings && CODY_RECORD_IF_MISSING=true vitest vscode/src/local-context/symf.test.ts"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.5.2",
+    "@biomejs/biome": "1.7.2",
     "@sourcegraph/tsconfig": "^4.0.1",
     "@storybook/addon-essentials": "^8.0.5",
     "@storybook/react": "^8.0.5",

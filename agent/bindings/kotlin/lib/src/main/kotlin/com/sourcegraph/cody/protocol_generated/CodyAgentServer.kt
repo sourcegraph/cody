@@ -99,7 +99,7 @@ interface CodyAgentServer {
   @JsonRequest("ignore/test")
   fun ignore_test(params: Ignore_TestParams): CompletableFuture<Ignore_TestResult>
   @JsonRequest("testing/ignore/overridePolicy")
-  fun testing_ignore_overridePolicy(params: Testing_Ignore_OverridePolicyParams?): CompletableFuture<Null?>
+  fun testing_ignore_overridePolicy(params: ContextFilters?): CompletableFuture<Null?>
   @JsonRequest("remoteRepo/has")
   fun remoteRepo_has(params: RemoteRepo_HasParams): CompletableFuture<RemoteRepo_HasResult>
   @JsonRequest("remoteRepo/list")

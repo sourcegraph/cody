@@ -1,9 +1,9 @@
 import {
     CONTEXT_MENTION_PROVIDERS,
     type ContextItem,
+    type ContextItemProps,
     type ContextMentionProvider,
     type MentionQuery,
-    type RangeData,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -12,6 +12,7 @@ import {
     getFileContextFiles,
     getOpenTabsContextFile,
     getSymbolContextFiles,
+    getWorkspaceGitRemotes,
 } from '../../editor/utils/editor-context'
 
 export async function getChatContextItemsForMention(
@@ -20,8 +21,7 @@ export async function getChatContextItemsForMention(
     telemetryRecorder?: {
         empty: () => void
         withProvider: (type: MentionQuery['provider']) => void
-    },
-    range?: RangeData
+    }
 ): Promise<ContextItem[]> {
     const mentionQuery =
         typeof query === 'string' ? parseMentionQuery(query, getEnabledContextMentionProviders()) : query
@@ -47,10 +47,10 @@ export async function getChatContextItemsForMention(
 
             // If a range is provided, that means user is trying to mention a specific line range.
             // We will get the content of the file for that range to display file size warning if needed.
-            if (range && files.length) {
+            if (mentionQuery.range && files.length > 0) {
                 return getContextFileFromUri(
                     files[0].uri,
-                    new vscode.Range(range.start.line, 0, range.end.line, 0)
+                    new vscode.Range(mentionQuery.range.start.line, 0, mentionQuery.range.end.line, 0)
                 )
             }
 
@@ -58,10 +58,13 @@ export async function getChatContextItemsForMention(
         }
 
         default: {
+            const props: ContextItemProps = { gitRemotes: getWorkspaceGitRemotes() }
+
             for (const provider of getEnabledContextMentionProviders()) {
                 if (provider.id === mentionQuery.provider) {
                     return provider.queryContextItems(
                         mentionQuery.text,
+                        props,
                         convertCancellationTokenToAbortSignal(cancellationToken)
                     )
                 }

@@ -57,7 +57,7 @@ export class FixupDocumentEditObserver {
             // Cancel any ongoing `add` tasks on undo.
             // This is to avoid a scenario where a user is trying to undo a specific part of text, but cannot because the streamed text continues to come in as the latest addition.
             if (
-                task.state === CodyTaskState.inserting &&
+                task.state === CodyTaskState.Inserting &&
                 event.reason === vscode.TextDocumentChangeReason.Undo
             ) {
                 this.provider_.cancel(task)

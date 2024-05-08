@@ -1,19 +1,19 @@
 import type { MenuRenderFn } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import {
     type MentionQuery,
-    type RangeData,
     displayLineRange,
     displayPath,
     displayPathBasename,
     displayPathDirname,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import { type FunctionComponent, useEffect, useRef } from 'react'
 import {
     FILE_HELP_LABEL,
     FILE_RANGE_TOOLTIP_LABEL,
     GENERAL_HELP_LABEL,
+    IGNORED_FILE_WARNING_LABEL,
     LARGE_FILE_WARNING_LABEL,
     NO_FILE_MATCHES_LABEL,
     NO_PACKAGE_MATCHES_LABEL,
@@ -23,7 +23,7 @@ import {
     SYMBOL_HELP_LABEL,
 } from '../../../../src/chat/context/constants'
 import styles from './OptionsList.module.css'
-import { type MentionTypeaheadOption, RANGE_MATCHES_REGEXP } from './atMentions'
+import type { MentionTypeaheadOption } from './atMentions'
 
 export const OptionsList: FunctionComponent<
     { query: string; options: MentionTypeaheadOption[] } & Pick<
@@ -43,7 +43,7 @@ export const OptionsList: FunctionComponent<
 
     return (
         <div className={styles.container}>
-            <h3 className={classNames(styles.item, styles.helpItem)}>
+            <h3 className={clsx(styles.item, styles.helpItem)}>
                 <span>{getHelpText(mentionQuery, options)}</span>
                 <br />
             </h3>
@@ -51,7 +51,7 @@ export const OptionsList: FunctionComponent<
                 <ul ref={ref} className={styles.list}>
                     {options.map((option, i) => (
                         <Item
-                            query={query}
+                            query={mentionQuery}
                             isSelected={selectedIndex === i}
                             onClick={() => {
                                 setHighlightedIndex(i)
@@ -86,15 +86,30 @@ function getHelpText(mentionQuery: MentionQuery, options: MentionTypeaheadOption
                       (mentionQuery.text.length < 3 ? NO_SYMBOL_MATCHES_HELP_LABEL : '')
         default:
             return options.length > 0
-                ? isValidLineRangeQuery(mentionQuery.text)
+                ? mentionQuery.maybeHasRangeSuffix
                     ? FILE_RANGE_TOOLTIP_LABEL
                     : FILE_HELP_LABEL
                 : NO_FILE_MATCHES_LABEL
     }
 }
 
+function getDescription(item: MentionTypeaheadOption['item'], query: MentionQuery): string {
+    const range = query.range ?? item.range
+    switch (item.type) {
+        case 'github_issue':
+        case 'github_pull_request':
+            return `${item.owner}/${item.repoName}`
+        case 'file': {
+            const dir = decodeURIComponent(displayPathDirname(item.uri))
+            return `${range ? `Lines ${displayLineRange(range)} · ` : ''}${dir === '.' ? '' : dir}`
+        }
+        default:
+            return `${displayPath(item.uri)}:${range ? displayLineRange(range) : ''}`
+    }
+}
+
 const Item: FunctionComponent<{
-    query: string
+    query: MentionQuery
     isSelected: boolean
     onClick: () => void
     onMouseEnter: () => void
@@ -103,30 +118,28 @@ const Item: FunctionComponent<{
 }> = ({ query, isSelected, onClick, onMouseEnter, option, className }) => {
     const item = option.item
     const isFileType = item.type === 'file'
-    const isPackageType = item.type === 'package'
-    const icon =
-        isFileType || isPackageType ? null : item.kind === 'class' ? 'symbol-structure' : 'symbol-method'
-    const title =
-        item.title ?? (isFileType || isPackageType ? displayPathBasename(item.uri) : item.symbolName)
+    const isSymbol = item.type === 'symbol'
+    const icon = isSymbol ? (item.kind === 'class' ? 'symbol-structure' : 'symbol-method') : null
+    const title = item.title ?? (isSymbol ? item.symbolName : displayPathBasename(item.uri))
+    const description = getDescription(item, query)
 
-    const range = getLineRangeInMention(query, item.range)
-    const dir = decodeURIComponent(displayPathDirname(item.uri))
-    const description = isPackageType
-        ? ''
-        : isFileType
-          ? `${range ? `Lines ${range} · ` : ''}${dir === '.' ? '' : dir}`
-          : `${displayPath(item.uri)}:${getLineRangeInMention(query, item.range)}`
-
+    const isIgnored = isFileType && item.isIgnored
     const isLargeFile = isFileType && item.isTooLarge
-    const warning =
-        isLargeFile && !item.range && !isValidLineRangeQuery(query) ? LARGE_FILE_WARNING_LABEL : ''
+    let warning: string
+    if (isIgnored) {
+        warning = IGNORED_FILE_WARNING_LABEL
+    } else if (isLargeFile && !item.range && !query.maybeHasRangeSuffix) {
+        warning = LARGE_FILE_WARNING_LABEL
+    } else {
+        warning = ''
+    }
 
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents:
         <li
             key={option.key}
             tabIndex={-1}
-            className={classNames(
+            className={clsx(
                 className,
                 styles.optionItem,
                 isSelected && styles.selected,
@@ -144,7 +157,7 @@ const Item: FunctionComponent<{
                     <i className={`codicon codicon-${icon}`} title={item.kind} />
                 )}
                 <span
-                    className={classNames(
+                    className={clsx(
                         styles.optionItemTitle,
                         warning && styles.optionItemTitleWithWarning
                     )}
@@ -156,23 +169,4 @@ const Item: FunctionComponent<{
             {warning && <span className={styles.optionItemWarning}>{warning}</span>}
         </li>
     )
-}
-
-const isValidLineRangeQuery = (query: string): boolean =>
-    query.endsWith(':') || RANGE_MATCHES_REGEXP.test(query)
-
-/**
- * Gets the display line range from the query string.
- */
-function getLineRangeInMention(query: string, range?: RangeData): string {
-    // Parses out the start and end line numbers from the query if it contains a line range match.
-    const queryRange = query.match(RANGE_MATCHES_REGEXP)
-    if (query && queryRange?.[1]) {
-        const [_, start, end] = queryRange
-        const startLine = parseInt(start)
-        const endLine = end ? parseInt(end) : Number.POSITIVE_INFINITY
-        return `${startLine}-${endLine !== Number.POSITIVE_INFINITY ? endLine : '#'}`
-    }
-    // Passed in range string if no line number match.
-    return range ? displayLineRange(range).toString() : ''
 }

@@ -70,7 +70,9 @@ export class ContextFiltersProvider implements vscode.Disposable {
             const response = await graphqlClient.contextFilters()
             this.setContextFilters(response)
         } catch (error) {
-            logError('ContextFiltersProvider', 'fetchContextFilters', { verbose: error })
+            logError('ContextFiltersProvider', 'fetchContextFilters', {
+                verbose: error,
+            })
         }
     }
 
@@ -83,7 +85,9 @@ export class ContextFiltersProvider implements vscode.Disposable {
         this.parsedContextFilters = null
         this.lastContextFiltersResponse = contextFilters
 
-        logDebug('ContextFiltersProvider', 'setContextFilters', { verbose: contextFilters })
+        logDebug('ContextFiltersProvider', 'setContextFilters', {
+            verbose: contextFilters,
+        })
         this.parsedContextFilters = {
             include: contextFilters.include?.map(parseContextFilterItem) || null,
             exclude: contextFilters.exclude?.map(parseContextFilterItem) || null,
@@ -152,8 +156,12 @@ export class ContextFiltersProvider implements vscode.Disposable {
             return 'non-file-uri'
         }
 
-        const repoNames = await wrapInActiveSpan('repoNameResolver.getRepoNamesFromWorkspaceUri', () =>
-            this.getRepoNamesFromWorkspaceUri?.(uri)
+        const repoNames = await wrapInActiveSpan(
+            'repoNameResolver.getRepoNamesFromWorkspaceUri',
+            span => {
+                span.setAttribute('sampled', true)
+                return this.getRepoNamesFromWorkspaceUri?.(uri)
+            }
         )
 
         if (!repoNames) {

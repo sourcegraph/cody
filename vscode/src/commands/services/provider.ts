@@ -1,8 +1,14 @@
-import { type CodyCommand, type ContextItem, featureFlagProvider } from '@sourcegraph/cody-shared'
+import {
+    type CodyCommand,
+    type ContextItem,
+    featureFlagProvider,
+    isFileURI,
+} from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
 import { CodyCommandMenuItems } from '..'
 import { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
+import { getContextFileFromGitLog } from '../context/git-log'
 import { getContextFileFromShell } from '../context/shell'
 import { showCommandMenu } from '../menus'
 import type { CodyCommandArgs } from '../types'
@@ -92,6 +98,34 @@ export class CommandsProvider implements vscode.Disposable {
      */
     public async runShell(shell: string): Promise<ContextItem[]> {
         return getContextFileFromShell(shell)
+    }
+
+    /**
+     * History returns the context for how a file changed. Locally this is
+     * implemented as git log.
+     */
+    public async history(
+        uri: vscode.Uri,
+        options: {
+            /**
+             * Uses git log's -L:<funcname>:<file> traces the evolution of the
+             * function name regex <funcname>, within the <file>. This relies on
+             * reasonable heuristics built into git to find function bodies.
+             * However, the heuristics often fail so we should switch to computing
+             * the line region ourselves.
+             * https://git-scm.com/docs/git-log#Documentation/git-log.txt--Lltfuncnamegtltfilegt
+             */
+            funcname: string
+            /**
+             * Limit the amount of commits to maxCount.
+             */
+            maxCount: number
+        }
+    ): Promise<ContextItem[]> {
+        if (!isFileURI(uri)) {
+            throw new Error('history only supported on local file paths')
+        }
+        return getContextFileFromGitLog(uri, options)
     }
 
     public dispose(): void {

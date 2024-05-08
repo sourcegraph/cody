@@ -1,12 +1,67 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { ContextItem, ContextMessage, Message } from '@sourcegraph/cody-shared'
-import { type ChatMessage, ps } from '@sourcegraph/cody-shared'
+import {
+    type ChatMessage,
+    ContextItemSource,
+    contextFiltersProvider,
+    ps,
+} from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 import { PromptBuilder } from './index'
 
 describe('PromptBuilder', () => {
+    beforeEach(() => {
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
+    })
+
     const preamble: Message[] = [{ speaker: 'system', text: ps`preamble` }]
+
+    it('throws an error when trying to add Enhanced Context before chat input', () => {
+        const builder = new PromptBuilder({ input: 100, output: 100 })
+        builder.tryAddToPrefix(preamble)
+        const file: ContextItem = {
+            type: 'file',
+            uri: URI.file('/foo/bar'),
+            content: 'foobar',
+            size: 100,
+        }
+        const transcript: ContextMessage[] = [{ speaker: 'human', file, text: ps`` }]
+        expect(() => builder.tryAddContext('enhanced', transcript.reverse())).rejects.toThrowError()
+    })
+
+    it('throws an error when trying to add User Context before chat input', () => {
+        const builder = new PromptBuilder({ input: 100, output: 100 })
+        builder.tryAddToPrefix(preamble)
+        const file: ContextItem = {
+            type: 'file',
+            uri: URI.file('/foo/bar'),
+            content: 'foobar',
+            size: 100,
+        }
+        const transcript: ContextMessage[] = [{ speaker: 'human', file, text: ps`` }]
+        expect(() => builder.tryAddContext('user', transcript.reverse())).rejects.toThrowError()
+    })
+
+    describe('tryAddToPrefix', () => {
+        it('should add messages to prefix if within token limit', () => {
+            const builder = new PromptBuilder({ input: 20, output: 100 })
+            const preambleTranscript: ChatMessage[] = [{ speaker: 'human', text: ps`Hi!` }]
+
+            expect(builder.tryAddToPrefix(preambleTranscript)).toBe(true)
+            expect(builder.build()).toEqual(preambleTranscript)
+            // expect(mockUpdateUsage).toHaveBeenCalledWith('preamble', messages)
+        })
+
+        it('should not add messages to prefix if not within token limit', () => {
+            const builder = new PromptBuilder({ input: 1, output: 100 })
+            const preambleTranscript: ChatMessage[] = [{ speaker: 'human', text: ps`Hi!` }]
+
+            expect(builder.tryAddToPrefix(preambleTranscript)).toBe(false)
+            expect(builder.build()).toEqual([])
+        })
+    })
+
     describe('tryAddMessages', () => {
         it('throws error when tryAddMessages before tryAddPrefix', () => {
             const builder = new PromptBuilder({ input: 100, output: 100 })
@@ -102,31 +157,201 @@ describe('PromptBuilder', () => {
         })
     })
 
-    describe('tryAddMessages', () => {
-        it('throws error when trying to add Enhanced Context before chat input', () => {
-            const builder = new PromptBuilder({ input: 100, output: 100 })
+    describe('tryAddContext', () => {
+        const chatTranscript: Message[] = [
+            { speaker: 'human', text: ps`Hi!` },
+            { speaker: 'assistant', text: ps`Hi!` },
+        ]
+
+        const fileWithSameUri: ContextItem = {
+            type: 'file',
+            uri: URI.file('/foo/bar.go'),
+            size: 1,
+            content: 'foo',
+        }
+
+        function generateContextTranscript(contextItems: ContextItem[]): ContextMessage[] {
+            return contextItems.map(file => ({ speaker: 'human', file, text: ps`` }))
+        }
+
+        it('should not allow context prompt to exceed context window', async () => {
+            const builder = new PromptBuilder({ input: 10, output: 100 })
             builder.tryAddToPrefix(preamble)
-            const file: ContextItem = {
-                type: 'file',
-                uri: URI.file('/foo/bar'),
-                content: 'foobar',
-                size: 100,
-            }
-            const transcript: ContextMessage[] = [{ speaker: 'human', file, text: ps`` }]
-            expect(() => builder.tryAddContext('enhanced', transcript.reverse())).toThrowError()
+            builder.tryAddMessages([...chatTranscript].reverse())
+
+            const contextItems: ContextItem[] = [
+                {
+                    ...fileWithSameUri,
+                    content: 'This is a file that exceeds the token limit',
+                    isTooLarge: true,
+                    size: 20,
+                },
+            ]
+
+            const { limitReached, ignored } = await builder.tryAddContext('enhanced', contextItems)
+            expect(limitReached).toBeTruthy()
+            expect(ignored).toEqual(contextItems)
+            expect(builder.contextItems).toEqual([])
+
+            const prompt = builder.build()
+            expect(prompt).toEqual([...preamble, ...chatTranscript])
         })
 
-        it('throws error when trying to add User Context before chat input', () => {
+        it('should not contain duplicated context', async () => {
             const builder = new PromptBuilder({ input: 100, output: 100 })
             builder.tryAddToPrefix(preamble)
+            builder.tryAddMessages([...chatTranscript].reverse())
+
             const file: ContextItem = {
-                type: 'file',
-                uri: URI.file('/foo/bar'),
-                content: 'foobar',
-                size: 100,
+                ...fileWithSameUri,
+                range: { start: { line: 0, character: 0 }, end: { line: 1, character: 1 } },
+                source: ContextItemSource.User,
             }
-            const transcript: ContextMessage[] = [{ speaker: 'human', file, text: ps`` }]
-            expect(() => builder.tryAddContext('user', transcript.reverse())).toThrowError()
+
+            // Context should onlt be added once even when provided twice.
+            const contextTranscript = generateContextTranscript([file, file])
+            await builder.tryAddContext('user', contextTranscript.reverse())
+            expect(builder.contextItems.length).toBe(1)
+        })
+
+        it('should not contains non-unique context (context with overlapping ranges)', async () => {
+            const builder = new PromptBuilder({ input: 100, output: 100 })
+            builder.tryAddToPrefix(preamble)
+            builder.tryAddMessages([...chatTranscript].reverse())
+
+            const innerRange: ContextItem = {
+                ...fileWithSameUri,
+                range: { start: { line: 0, character: 0 }, end: { line: 1, character: 1 } },
+                source: ContextItemSource.User,
+            }
+
+            const outterRange: ContextItem = {
+                ...fileWithSameUri,
+                range: { start: { line: 0, character: 0 }, end: { line: 10, character: 1 } },
+                source: ContextItemSource.User,
+            }
+            const contextTranscript = generateContextTranscript([innerRange, outterRange])
+            await builder.tryAddContext('user', contextTranscript.reverse())
+            expect(builder.contextItems.length).toBe(1)
+            expect(builder.contextItems).toStrictEqual([outterRange])
+        })
+
+        it('should not contains context that is too large', async () => {
+            const builder = new PromptBuilder({ input: 10, output: 10 })
+            builder.tryAddToPrefix(preamble)
+            builder.tryAddMessages([...chatTranscript].reverse())
+
+            const innerRange: ContextItem = {
+                ...fileWithSameUri,
+                range: { start: { line: 1, character: 0 }, end: { line: 2, character: 1 } },
+                source: ContextItemSource.Embeddings,
+            }
+
+            const outterRange: ContextItem = {
+                ...fileWithSameUri,
+                size: 100,
+                content: 'This is a file that exceeds the token limit',
+                range: { start: { line: 0, character: 0 }, end: { line: 10, character: 1 } },
+                source: ContextItemSource.Search,
+                isTooLarge: true,
+            }
+
+            const contextTranscript = generateContextTranscript([innerRange, outterRange, innerRange])
+            const { limitReached, ignored } = await builder.tryAddContext('enhanced', contextTranscript)
+            // Outter range should be ignored because it exceeds the token limit,
+            // and should not be added to the final context items list.
+            expect(limitReached).toBeTruthy()
+            expect(ignored).toEqual([outterRange])
+            expect(builder.contextItems).toStrictEqual([innerRange])
+        })
+
+        it('should remove context with overlapping ranges when full file is provided', async () => {
+            const builder = new PromptBuilder({ input: 10, output: 10 })
+            builder.tryAddToPrefix(preamble)
+            builder.tryAddMessages([...chatTranscript].reverse())
+
+            const partialFile: ContextItem = {
+                ...fileWithSameUri,
+                range: { start: { line: 1, character: 0 }, end: { line: 2, character: 1 } },
+                source: ContextItemSource.Embeddings,
+            }
+
+            const fullFile: ContextItem = {
+                ...fileWithSameUri,
+                size: 2,
+                content: 'This has full file content.',
+                source: ContextItemSource.User,
+                isTooLarge: true,
+            }
+
+            const contextTranscript = generateContextTranscript([partialFile, fullFile, partialFile])
+            const { limitReached } = await builder.tryAddContext('user', contextTranscript)
+            expect(limitReached).toBeFalsy()
+            expect(builder.contextItems).toStrictEqual([fullFile])
+        })
+
+        it('should not remove user-added with overlapping ranges even when full file is provided', async () => {
+            const builder = new PromptBuilder({ input: 10, output: 10 })
+            builder.tryAddToPrefix(preamble)
+            builder.tryAddMessages([...chatTranscript].reverse())
+
+            const selection: ContextItem = {
+                ...fileWithSameUri,
+                range: { start: { line: 1, character: 0 }, end: { line: 2, character: 1 } },
+                source: ContextItemSource.Selection,
+            }
+
+            const fullFile: ContextItem = {
+                ...fileWithSameUri,
+                size: 2,
+                content: 'This has full file content.',
+                source: ContextItemSource.User,
+                isTooLarge: true,
+            }
+
+            const contextTranscript = generateContextTranscript([selection, fullFile, selection])
+            const { limitReached } = await builder.tryAddContext('user', contextTranscript)
+            expect(limitReached).toBeFalsy()
+            expect(builder.contextItems).toStrictEqual([selection, fullFile])
+        })
+
+        it('should deduplicate context from different token usage types', async () => {
+            const builder = new PromptBuilder({ input: 10, output: 10 })
+            builder.tryAddToPrefix(preamble)
+            builder.tryAddMessages([...chatTranscript].reverse())
+
+            const selection: ContextItem = {
+                ...fileWithSameUri,
+                range: { start: { line: 1, character: 0 }, end: { line: 2, character: 1 } },
+                source: ContextItemSource.Selection,
+            }
+
+            const fullFile: ContextItem = {
+                ...fileWithSameUri,
+                size: 2,
+                content: 'This has full file content.',
+                source: ContextItemSource.User,
+                isTooLarge: true,
+            }
+
+            const userContext = generateContextTranscript([selection])
+            const user = await builder.tryAddContext('user', userContext)
+            expect(builder.contextItems).toStrictEqual([selection])
+            expect(user.limitReached).toBeFalsy()
+            expect(user.added).toStrictEqual([selection])
+
+            const historyContext = generateContextTranscript([fullFile])
+            const history = await builder.tryAddContext('history', historyContext)
+            expect(history.limitReached).toBeFalsy()
+            expect(history.added).toStrictEqual([fullFile])
+
+            const enhancedContext = generateContextTranscript([selection, fullFile])
+            const enhanced = await builder.tryAddContext('enhanced', enhancedContext)
+            expect(enhanced.limitReached).toBeFalsy()
+            expect(enhanced.added).toStrictEqual([])
+
+            // The final context items should only contain the selection and full file.
+            expect(builder.contextItems).toStrictEqual([selection, fullFile])
         })
     })
 })

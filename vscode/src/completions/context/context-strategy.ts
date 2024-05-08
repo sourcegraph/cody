@@ -1,16 +1,17 @@
 import * as vscode from 'vscode'
-
 import type { ContextRetriever } from '../types'
-
 import type { BfgRetriever } from './retrievers/bfg/bfg-retriever'
 import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
 import { SectionHistoryRetriever } from './retrievers/section-history/section-history-retriever'
+import { loadTscRetriever } from './retrievers/tsc/load-tsc-retriever'
 
 export type ContextStrategy =
     | 'bfg'
+    | 'bfg-mixed'
     | 'jaccard-similarity'
     | 'new-jaccard-similarity'
-    | 'bfg-mixed'
+    | 'tsc'
+    | 'tsc-mixed'
     | 'local-mixed'
     | 'none'
 
@@ -30,6 +31,16 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
     ) {
         switch (contextStrategy) {
             case 'none':
+                break
+            case 'tsc-mixed':
+                this.localRetriever = new JaccardSimilarityRetriever()
+                this.disposables.push(this.localRetriever)
+                this.graphRetriever = loadTscRetriever()
+                if (this.graphRetriever) this.disposables.push(this.graphRetriever)
+                break
+            case 'tsc':
+                this.graphRetriever = loadTscRetriever()
+                if (this.graphRetriever) this.disposables.push(this.graphRetriever)
                 break
             case 'bfg-mixed':
             case 'bfg':
@@ -75,6 +86,8 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                 }
                 break
 
+            case 'tsc':
+            case 'tsc-mixed':
             // The bfg mixed strategy mixes local and graph based retrievers
             case 'bfg-mixed':
                 if (this.graphRetriever?.isSupportedForLanguageId(document.languageId)) {

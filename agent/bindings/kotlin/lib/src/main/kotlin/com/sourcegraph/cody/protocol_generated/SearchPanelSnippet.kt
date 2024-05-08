@@ -3,6 +3,6 @@ package com.sourcegraph.cody.protocol_generated
 
 data class SearchPanelSnippet(
   val contents: String,
-  val range: RangeParams,
+  val range: RangeData,
 )
 

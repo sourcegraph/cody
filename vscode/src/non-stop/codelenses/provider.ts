@@ -219,7 +219,7 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
 
     public didUpdateTask(task: FixupTask): void {
         this.updateKeyboardShortcutEnablement([task.fixupFile])
-        if (task.state === CodyTaskState.finished) {
+        if (task.state === CodyTaskState.Finished) {
             this.removeLensesFor(task)
             return
         }

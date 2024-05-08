@@ -1,11 +1,17 @@
 // Add anything else here that needs to be used outside of this library.
 
 export { ModelProvider } from './models'
-export { type ChatModel, type EditModel, ModelUsage, type ModelContextWindow } from './models/types'
+export {
+    type ChatModel,
+    type EditModel,
+    ModelUsage,
+    type ModelContextWindow,
+} from './models/types'
 export { getDotComDefaultModels } from './models/dotcom'
 export {
     getProviderName,
     getModelInfo,
+    ModelUIGroup,
 } from './models/utils'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
@@ -23,7 +29,10 @@ export type {
     SerializedChatTranscript,
 } from './chat/transcript'
 export { serializeChatMessage } from './chat/transcript'
-export { errorToChatError, DEFAULT_EVENT_SOURCE } from './chat/transcript/messages'
+export {
+    errorToChatError,
+    DEFAULT_EVENT_SOURCE,
+} from './chat/transcript/messages'
 export type {
     ChatError,
     EventSource,
@@ -57,6 +66,8 @@ export {
     type ContextItemSymbol,
     type ContextFileType,
     type ContextItemPackage,
+    type ContextItemGithubIssue,
+    type ContextItemGithubPullRequest,
     type ContextMessage,
     type SymbolKind,
 } from './codebase-context/messages'
@@ -68,9 +79,18 @@ export type {
     TerminalOutputArguments,
 } from './commands/types'
 export { CustomCommandType } from './commands/types'
-export { type DefaultCodyCommands, DefaultChatCommands, DefaultEditCommands } from './commands/types'
+export {
+    type DefaultCodyCommands,
+    DefaultChatCommands,
+    DefaultEditCommands,
+} from './commands/types'
 export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
-export { type RangeData, toRangeData, displayLineRange, displayRange } from './common/range'
+export {
+    type RangeData,
+    toRangeData,
+    displayLineRange,
+    displayRange,
+} from './common/range'
 export * from './common/abortController'
 export {
     ProgrammingLanguage,
@@ -79,7 +99,12 @@ export {
     extensionForLanguage,
 } from './common/languages'
 export { renderMarkdown, escapeHTML } from './common/markdown'
-export { posixFilePaths, pathFunctionsForURI } from './common/path'
+export {
+    posixFilePaths,
+    pathFunctionsForURI,
+    defaultPathFunctions,
+} from './common/path'
+export { parseEvents } from './sourcegraph-api/completions/parse'
 export { isWindows, isMacOS } from './common/platform'
 export {
     assertFileURI,
@@ -158,11 +183,23 @@ export {
     truncatePromptString,
 } from './prompt/truncation'
 export type { Message } from './sourcegraph-api'
+export {
+    addClientInfoParams,
+    getClientInfoParams,
+    setClientNameVersion,
+} from './sourcegraph-api/client-name-version'
 export { SourcegraphBrowserCompletionsClient } from './sourcegraph-api/completions/browserClient'
 export { SourcegraphCompletionsClient } from './sourcegraph-api/completions/client'
-export type { CompletionLogger, CompletionsClientConfig } from './sourcegraph-api/completions/client'
+export type {
+    CompletionLogger,
+    CompletionsClientConfig,
+} from './sourcegraph-api/completions/client'
 export * from './sourcegraph-api/completions/types'
-export { DOTCOM_URL, LOCAL_APP_URL, isDotCom } from './sourcegraph-api/environments'
+export {
+    DOTCOM_URL,
+    LOCAL_APP_URL,
+    isDotCom,
+} from './sourcegraph-api/environments'
 export {
     AbortError,
     NetworkError,
@@ -174,7 +211,10 @@ export {
     isNetworkError,
     isRateLimitError,
 } from './sourcegraph-api/errors'
-export { SourcegraphGraphQLAPIClient, graphqlClient } from './sourcegraph-api/graphql'
+export {
+    SourcegraphGraphQLAPIClient,
+    graphqlClient,
+} from './sourcegraph-api/graphql'
 export {
     ConfigFeaturesSingleton,
     addCustomUserAgent,
@@ -212,7 +252,11 @@ export { EventLogger } from './telemetry/EventLogger'
 export type { ExtensionDetails } from './telemetry/EventLogger'
 export { testFileUri } from './test/path-helpers'
 export * from './tracing'
-export { convertGitCloneURLToCodebaseName, isError, createSubscriber } from './utils'
+export {
+    convertGitCloneURLToCodebaseName,
+    isError,
+    createSubscriber,
+} from './utils'
 export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
 export * from './auth/types'
 export * from './auth/tokens'
@@ -225,6 +269,7 @@ export {
 export {
     CONTEXT_MENTION_PROVIDERS,
     type ContextMentionProvider,
+    type ContextItemProps,
 } from './mentions/api'
 export { TokenCounter } from './token/counter'
 export { ENHANCED_CONTEXT_ALLOCATION } from './token/constants'
@@ -241,3 +286,11 @@ export * from './sourcegraph-api/utils'
 export * from './token'
 export * from './token/constants'
 export * from './configuration'
+export * from './mentions/providers/packageMentions'
+export * from './mentions/providers/sourcegraphSearch'
+export * from './githubClient'
+export {
+    setOpenCtxExtensionAPI,
+    getOpenCtxExtensionAPI,
+    type OpenCtxExtensionAPI,
+} from './context/openctx/api'

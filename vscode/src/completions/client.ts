@@ -16,6 +16,7 @@ import {
     createSSEIterator,
     featureFlagProvider,
     getActiveTraceAndSpanId,
+    getClientInfoParams,
     isAbortError,
     isNodeResponse,
     isRateLimitError,
@@ -38,7 +39,8 @@ export function createClient(
         params: CodeCompletionsParams,
         abortController: AbortController
     ): CompletionResponseGenerator {
-        const url = new URL('/.api/completions/code', config.serverEndpoint).href
+        const query = new URLSearchParams(getClientInfoParams())
+        const url = new URL(`/.api/completions/code?${query.toString()}`, config.serverEndpoint).href
         const log = logger?.startCompletion(params, url)
         const { signal } = abortController
 
@@ -78,7 +80,9 @@ export function createClient(
                     headers.set('Accept-Encoding', 'gzip;q=0')
                 }
 
-                const serializedParams: SerializedCodeCompletionsParams & { stream: boolean } = {
+                const serializedParams: SerializedCodeCompletionsParams & {
+                    stream: boolean
+                } = {
                     ...params,
                     stream: enableStreaming,
                     messages: await Promise.all(
@@ -214,7 +218,9 @@ export function createClient(
                     throw new TracedError(message, traceId)
                 } finally {
                     if (completionResponse) {
-                        span.addEvent('return', { stopReason: completionResponse.stopReason })
+                        span.addEvent('return', {
+                            stopReason: completionResponse.stopReason,
+                        })
                         span.setStatus({ code: SpanStatusCode.OK })
                         span.end()
                         log?.onComplete(completionResponse)
@@ -243,7 +249,7 @@ export async function createRateLimitErrorFromResponse(
         'autocompletions',
         await response.text(),
         upgradeIsAvailable,
-        limit ? parseInt(limit, 10) : undefined,
+        limit ? Number.parseInt(limit, 10) : undefined,
         retryAfter
     )
 }

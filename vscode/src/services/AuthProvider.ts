@@ -25,6 +25,7 @@ import { logDebug } from '../log'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { closeAuthProgressIndicator } from '../auth/auth-progress-indicator'
+import { maybeStartInteractiveTutorial } from '../tutorial/helpers'
 import { AuthMenu, showAccessTokenInputBox, showInstanceURLInputBox } from './AuthMenus'
 import { getAuthReferralCode } from './AuthProviderSimplified'
 import { localStorage } from './LocalStorageProvider'
@@ -362,7 +363,7 @@ export class AuthProvider {
         if (isExtensionStartup && isLoggedIn) {
             await this.setHasAuthenticatedBefore()
         } else if (isLoggedIn) {
-            this.logFirstEverAuthentication()
+            this.handleFirstEverAuthentication()
         }
 
         await this.storeAuthInfo(url, token)
@@ -492,12 +493,16 @@ export class AuthProvider {
     }
 
     // Logs a telemetry event if the user has never authenticated to Sourcegraph.
-    private logFirstEverAuthentication(): void {
-        if (!localStorage.get(HAS_AUTHENTICATED_BEFORE_KEY)) {
-            telemetryRecorder.recordEvent('cody.auth.login', 'firstEver')
-            this.setHasAuthenticatedBefore()
+    private handleFirstEverAuthentication(): void {
+        if (localStorage.get(HAS_AUTHENTICATED_BEFORE_KEY)) {
+            // User has authenticated before, noop
+            return
         }
+        telemetryRecorder.recordEvent('cody.auth.login', 'firstEver')
+        this.setHasAuthenticatedBefore()
+        void maybeStartInteractiveTutorial()
     }
+
     private setHasAuthenticatedBefore() {
         return localStorage.set(HAS_AUTHENTICATED_BEFORE_KEY, 'true')
     }
