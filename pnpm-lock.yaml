@@ -290,6 +290,9 @@ importers:
       lru-cache:
         specifier: ^10.0.0
         version: 10.0.0
+      mac-ca:
+        specifier: ^2.0.3
+        version: 2.0.3
       marked:
         specifier: ^4.0.16
         version: 4.0.16
@@ -302,6 +305,9 @@ importers:
       vscode-uri:
         specifier: ^3.0.7
         version: 3.0.7
+      win-ca:
+        specifier: ^3.5.1
+        version: 3.5.1
     devDependencies:
       '@octokit/types':
         specifier: ^13.5.0

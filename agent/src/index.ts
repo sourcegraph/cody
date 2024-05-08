@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import type { Command } from 'commander'
-import { registerLocalCertificates } from './certs'
+import { registerLocalCertificates } from '@sourcegraph/cody-shared'
 
 console.log = console.error
 

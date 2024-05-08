@@ -8,6 +8,7 @@ import { ProxyAgent } from 'proxy-agent'
 import { HttpProxyAgent } from 'http-proxy-agent'
 import { HttpsProxyAgent } from 'https-proxy-agent'
 import { SocksProxyAgent } from 'socks-proxy-agent';
+import { registerLocalCertificates } from '@sourcegraph/cody-shared'
 
 // The path to the exported class can be found in the npm contents
 // https://www.npmjs.com/package/@vscode/proxy-agent?activeTab=code
@@ -91,7 +92,8 @@ function getSystemProxyURI( protocol: string, env: typeof process.env): string |
 }
 
 export function initializeNetworkAgent(): void {
-    require('mac-ca').addToGlobalAgent({ excludeBundled: false })
+    // This is to load certs for HTTPS requests
+    registerLocalCertificates()
     proxyAgent = new ProxyAgent({
         keepAlive: true,
         keepAliveMsecs: 60000,
