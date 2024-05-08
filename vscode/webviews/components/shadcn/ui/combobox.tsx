@@ -21,6 +21,7 @@ export const ComboBox: FunctionComponent<{
     value: string | undefined
     onChange: (value: Value | undefined) => void
     onOpen?: () => void
+    filter?: boolean
     disabled?: boolean
     readOnly?: boolean
     className?: string
@@ -34,6 +35,7 @@ export const ComboBox: FunctionComponent<{
     value,
     onChange,
     onOpen: parentOnOpen,
+    filter,
     disabled,
     readOnly,
     className,
@@ -92,19 +94,28 @@ export const ComboBox: FunctionComponent<{
             >
                 <Command
                     loop={true}
-                    filter={(value, search, keywords) =>
-                        [value, ...(keywords ?? [])].some(term =>
-                            term.toLowerCase().includes(search.toLowerCase())
-                        )
-                            ? 1
-                            : 0
+                    shouldFilter={filter}
+                    filter={
+                        filter
+                            ? (value, search, keywords) =>
+                                  [value, ...(keywords ?? [])].some(term =>
+                                      term.toLowerCase().includes(search.toLowerCase())
+                                  )
+                                      ? 1
+                                      : 0
+                            : undefined
                     }
                     defaultValue={value}
+                    tabIndex={0}
                     className="focus:tw-outline-none"
                 >
                     <CommandList>
-                        <CommandInput placeholder={`Search ${pluralNoun}...`} />
-                        <CommandEmpty>No matching {pluralNoun}</CommandEmpty>
+                        {filter && (
+                            <>
+                                <CommandInput placeholder={`Search ${pluralNoun}...`} />
+                                <CommandEmpty>No matching {pluralNoun}</CommandEmpty>
+                            </>
+                        )}
                         {optionsByGroup.map(({ group, options }) => (
                             <CommandGroup heading={group} key={group}>
                                 {options.map(option => (
