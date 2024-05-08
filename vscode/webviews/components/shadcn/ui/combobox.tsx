@@ -82,7 +82,7 @@ export const ComboBox: FunctionComponent<{
                         ? options.find(option => option.value === value)?.title
                         : 'Select...'}
                     {!readOnly && (
-                        <ChevronUpDownIcon className="tw-ml-2 tw-h-5 tw-w-5 tw-shrink-0 tw-opacity-50" />
+                        <ChevronUpDownIcon className="tw-ml-3 tw-h-5 tw-w-5 tw-shrink-0 tw-opacity-50" />
                     )}
                 </Button>
             </PopoverTrigger>

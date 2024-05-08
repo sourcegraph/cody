@@ -6,9 +6,6 @@
     gap: 0.45rem;
     line-height: 1;
 
-    .model-text {
-        margin-bottom: -2px;
-    }
     .model-name {
         font-weight: 500;
     }
@@ -39,16 +36,15 @@ button > .model-title-with-icon .model-provider {
 .badge  {
     margin-left: auto;
     line-height: 1;
-    letter-spacing: -0.02rem;
-    font-size: 90%;
+    font-size: 11px;
     border-radius: 3px;
-    padding: 2px 3px 1px;
+    padding: 4px 5px;
     margin-bottom: -1px;
 }
 
 .cody-pro-badge {
-    background: repeating-conic-gradient(#7048E888 50%, #00CBEC88 75%, #A112FF88 100%, #FF554388 125%, #7048E888 150%);
-    color: rgba(255, 255, 255, 1);
+    background: linear-gradient(135deg, #60D5E7 14.14%, #CD8BFA 49.5%, #F4897D 70.71%);
+    color: black;
 }
 
 .experimental-badge {
