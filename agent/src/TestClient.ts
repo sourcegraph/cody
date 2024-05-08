@@ -83,6 +83,7 @@ interface TestClientParams {
     logEventMode?: 'connected-instance-only' | 'all' | 'dotcom-only'
     onWindowRequest?: (params: ShowWindowMessageParams) => Promise<string>
     extraConfiguration?: Record<string, any>
+    extraEnvironmentVariables?: Record<string, string>
 }
 
 let isBuilt = false
@@ -151,6 +152,7 @@ export class TestClient extends MessageHandler {
                 DISABLE_FEATURE_FLAGS: params.areFeatureFlagsEnabled ? undefined : 'true',
                 CODY_LOG_EVENT_MODE: params.logEventMode,
                 ...process.env,
+                ...params.extraEnvironmentVariables,
             },
         })
         child.on('error', error => console.error('TestClient spawn error:', error))
