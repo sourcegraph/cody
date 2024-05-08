@@ -9,6 +9,7 @@ import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.fileChooser.FileSaverDialog
+import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
@@ -36,8 +37,7 @@ class ExportChatsAction : DumbAwareBGTAction() {
     val token = CancellationToken()
     token.onFinished { isRunning.getAndSet(false) }
 
-    // Update default file path to user home if myProject.getBasePath() is not valid
-    var outputDir: VirtualFile? = project.baseDir
+    var outputDir: VirtualFile? = project.guessProjectDir()
     if (outputDir == null || !outputDir.exists()) {
       outputDir = VfsUtil.getUserHomeDir()
     }

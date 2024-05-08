@@ -25,8 +25,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.messages.MessageBusConnection
+import com.intellij.util.ui.ImageUtil
 import com.intellij.util.ui.JBUI
-import com.intellij.util.ui.UIUtil
 import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
 import com.sourcegraph.cody.agent.protocol.ModelUsage
 import com.sourcegraph.cody.chat.ui.LlmDropdown
@@ -590,8 +590,7 @@ class EditCommandPrompt(
       if (offscreenImage == null ||
           offscreenImage!!.width != width ||
           offscreenImage!!.height != height) {
-        @Suppress("DEPRECATION")
-        offscreenImage = UIUtil.createImage(width, height, BufferedImage.TYPE_INT_ARGB)
+        offscreenImage = ImageUtil.createImage(width, height, BufferedImage.TYPE_INT_ARGB)
       }
       val offscreenGraphics = offscreenImage!!.createGraphics()
       super.paintComponent(offscreenGraphics)
