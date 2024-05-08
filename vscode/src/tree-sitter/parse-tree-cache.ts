@@ -76,6 +76,8 @@ function getLanguageIfTreeSitterEnabled(document: TextDocument): SupportedLangua
 export function updateParseTreeOnEdit(edit: vscode.TextDocumentChangeEvent): void {
     wrapInActiveSpan('updateParseTreeOnEdit', span => {
         span.setAttribute('sampled', true)
+        span.setAttribute('languageId', edit.document.languageId)
+
         const { document, contentChanges } = edit
         if (contentChanges.length === 0) {
             return
