@@ -136,6 +136,7 @@ object Constants {
   const val streaming = "streaming"
   const val disabled = "disabled"
   const val enabled = "enabled"
+  const val onlyRealFiles = "onlyRealFiles"
   const val notification = "notification"
   const val request = "request"
 }

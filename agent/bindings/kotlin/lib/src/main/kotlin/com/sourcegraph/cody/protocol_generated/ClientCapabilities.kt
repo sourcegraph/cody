@@ -10,7 +10,7 @@ data class ClientCapabilities(
   val progressBars: ProgressBarsEnum? = null, // Oneof: none, enabled
   val edit: EditEnum? = null, // Oneof: none, enabled
   val editWorkspace: EditWorkspaceEnum? = null, // Oneof: none, enabled
-  val untitledDocuments: UntitledDocumentsEnum? = null, // Oneof: none, enabled
+  val untitledDocuments: UntitledDocumentsEnum? = null, // Oneof: none, enabled, onlyRealFiles
   val showDocument: ShowDocumentEnum? = null, // Oneof: none, enabled
   val codeLenses: CodeLensesEnum? = null, // Oneof: none, enabled
   val showWindowMessage: ShowWindowMessageEnum? = null, // Oneof: notification, request
@@ -49,6 +49,7 @@ data class ClientCapabilities(
   enum class UntitledDocumentsEnum {
     @SerializedName("none") None,
     @SerializedName("enabled") Enabled,
+    @SerializedName("onlyRealFiles") OnlyRealFiles,
   }
 
   enum class ShowDocumentEnum {
