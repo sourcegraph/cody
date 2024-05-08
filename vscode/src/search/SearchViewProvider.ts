@@ -202,7 +202,7 @@ export class SearchViewProvider implements vscode.Disposable {
     private async getSearchQueryInput(): Promise<void> {
         const quickPick = vscode.window.createQuickPick()
         quickPick.placeholder =
-            'Examples: "password hashing", "connection retries", a symbol name, or a topic.'
+            'Search… (e.g. "password hashing", "connection retries", a symbol name, or a topic)'
         quickPick.items = [
             { label: 'Search for code using a natural language query.', alwaysShow: true },
         ]
