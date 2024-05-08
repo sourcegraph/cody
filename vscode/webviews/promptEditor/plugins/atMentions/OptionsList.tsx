@@ -8,7 +8,7 @@ import {
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { type FunctionComponent, useLayoutEffect, useRef } from 'react'
+import { type FunctionComponent, useEffect, useRef } from 'react'
 import {
     FILE_HELP_LABEL,
     FILE_RANGE_TOOLTIP_LABEL,
@@ -37,8 +37,8 @@ export const OptionsList: FunctionComponent<
     // Scroll selected into view. Needs `setTimeout` because we need to wait for all DOM mutations.
     // The `cmdk` package handles this when using its own input, but here we need to use the Lexical
     // editor's input because the user is still typing into the Lexical editor.
-    useLayoutEffect(() => {
-        setTimeout(() => {
+    useEffect(() => {
+        const timeoutHandle = setTimeout(() => {
             if (ref.current && selectedIndex !== null) {
                 const selected = ref.current.querySelector('[aria-selected="true"]')
 
@@ -53,6 +53,7 @@ export const OptionsList: FunctionComponent<
                 selected?.scrollIntoView({ block: 'nearest' })
             }
         })
+        return () => clearTimeout(timeoutHandle)
     }, [selectedIndex])
 
     const mentionQuery = parseMentionQuery(query, [])
@@ -80,8 +81,7 @@ export const OptionsList: FunctionComponent<
                                 setHighlightedIndex(i)
                                 selectOptionAndCleanUp(option)
                             }}
-                            onMouseEnter={() => setHighlightedIndex(i)}
-                            className={clsx(styles.item, selectedIndex === i && styles.selected)}
+                            className={styles.item}
                         >
                             <ItemContent query={mentionQuery} option={option} />
                         </CommandItem>
