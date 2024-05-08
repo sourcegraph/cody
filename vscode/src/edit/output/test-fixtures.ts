@@ -5,8 +5,8 @@ interface ResponseTestFixture {
     expected: string
 }
 
-const CLEAN_RESPONSE = `export function logDebug(filterLabel: string, text: string, ...args: unknown[]): void {
-    log('error', filterLabel, text, ...args)
+const CLEAN_RESPONSE = `export function logDebug<T extends string>(filterLabel: string, text: string, ...args: unknown[]): void {
+    log<T>('error', filterLabel, text, ...args)
 }`
 
 export const RESPONSE_TEST_FIXTURES: Record<string, ResponseTestFixture> = {
@@ -37,6 +37,10 @@ export const RESPONSE_TEST_FIXTURES: Record<string, ResponseTestFixture> = {
             CLEAN_RESPONSE +
             `</${PROMPT_TOPICS.OUTPUT}>` +
             '```',
+        expected: CLEAN_RESPONSE,
+    },
+    withHtmlEntities: {
+        response: CLEAN_RESPONSE.replace(/</g, '&lt;').replace(/>/g, '&gt;'),
         expected: CLEAN_RESPONSE,
     },
 }

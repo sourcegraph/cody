@@ -16,6 +16,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Fixed
 
 - Autocomplete: Handle incomplete Ollama response chunks gracefully. [pull/4066](https://github.com/sourcegraph/cody/pull/4066)
+- Edit: Improved handling of responses that contain HTML entities. [pull/4085](https://github.com/sourcegraph/cody/pull/4085)
 
 ### Changed
 

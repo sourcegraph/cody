@@ -420,6 +420,9 @@ importers:
       '@sourcegraph/tree-sitter-wasms':
         specifier: ^0.1.9
         version: 0.1.9
+      '@types/he':
+        specifier: ^1.2.3
+        version: 1.2.3
       '@vscode/codicons':
         specifier: ^0.0.35
         version: 0.0.35
@@ -456,6 +459,9 @@ importers:
       glob:
         specifier: ^7.2.3
         version: 7.2.3
+      he:
+        specifier: ^1.2.0
+        version: 1.2.0
       ini:
         specifier: ^4.1.2
         version: 4.1.2
@@ -5414,6 +5420,10 @@ packages:
       '@types/unist': 3.0.2
     dev: true
 
+  /@types/he@1.2.3:
+    resolution: {integrity: sha512-q67/qwlxblDzEDvzHhVkwc1gzVWxaNxeyHUBF4xElrvjL11O+Ytze+1fGpBHlr/H9myiBUaUXNnNPmBHxxfAcA==}
+    dev: false
+
   /@types/highlight.js@9.12.4:
     resolution: {integrity: sha512-t2szdkwmg2JJyuCM20e8kR2X59WCE5Zkl4bzm1u1Oukjm79zpbiAv+QjnwLnuuV0WHEcX2NgUItu0pAMKuOPww==}
     dev: true
@@ -8869,7 +8879,6 @@ packages:
   /he@1.2.0:
     resolution: {integrity: sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==}
     hasBin: true
-    dev: true
 
   /heap-js@2.5.0:
     resolution: {integrity: sha512-kUGoI3p7u6B41z/dp33G6OaL7J4DRqRYwVmeIlwLClx7yaaAy7hoDExnuejTKtuDwfcatGmddHDEOjf6EyIxtQ==}
