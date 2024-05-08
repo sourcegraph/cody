@@ -110,7 +110,7 @@ describe('getConfiguration', () => {
             },
         }
         expect(getConfiguration(config)).toEqual({
-            proxy: "",
+            proxy: undefined,
             codebase: 'my/codebase',
             useContext: 'keyword',
             customHeaders: {
