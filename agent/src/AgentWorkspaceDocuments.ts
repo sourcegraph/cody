@@ -160,7 +160,7 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
                     'File does not exist',
                     uri.toString()
                 )
-            } else if (uri.scheme === 'file') {
+            } else if (uri.scheme === 'file' || uri.scheme === 'untitled') {
                 // Read the file content from disk if the user hasn't opened this file before.
                 const buffer = await fspromises.readFile(uri.fsPath, 'utf8')
                 document.underlying.content = buffer.toString()
