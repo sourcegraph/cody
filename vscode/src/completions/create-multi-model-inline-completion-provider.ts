@@ -102,6 +102,8 @@ export async function createInlineCompletionItemFromMultipleProviders({
 
     const allPromises = multiModelConfigsList.map(async curretProviderConfig => {
         const newConfig = _.cloneDeep(config)
+        // Override some config to ensure we are not logging extra events.
+        newConfig.telemetryLevel = "off"
         // We should only override the fireworks "cody.autocomplete.experimental.fireworksOptions" when added in the config.
         newConfig.autocompleteExperimentalFireworksOptions =
             curretProviderConfig.enableExperimentalFireworksOverrides
@@ -130,7 +132,7 @@ export async function createInlineCompletionItemFromMultipleProviders({
                 isRunningInsideAgent: config.isRunningInsideAgent,
                 createBfgRetriever,
                 isDotComUser: isDotCom(authStatus.endpoint || ''),
-                noAnalytics: true,
+                noInlineAccept: true,
             })
             return {
                 providerName: curretProviderConfig.provider,
