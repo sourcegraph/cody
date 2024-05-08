@@ -36,11 +36,12 @@ export const getRangeSymbolInputItems = async (
      * Finds the symbol item that is closest to the initial cursor position.
      * Note: Clone the array to avoid mutating the original symbolItems
      */
-    const activeItem = [...symbolItems].sort(
+    const activeItem = symbolItems.reduce(
         (a, b) =>
-            getMinimumDistanceToRangeBoundary(initialValues.initialCursorPosition, a.range) -
-            getMinimumDistanceToRangeBoundary(initialValues.initialCursorPosition, b.range)
-    )[0]
+            getMinimumDistanceToRangeBoundary(initialValues.initialCursorPosition, a.range) <
+            getMinimumDistanceToRangeBoundary(initialValues.initialCursorPosition, b.range) ? a : b,
+        symbolItems[0]
+    )
 
     if (activeItem) {
         // Update the label of the active item
