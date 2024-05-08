@@ -60,7 +60,7 @@ export class DefaultPrompter implements IPrompter {
             }
 
             // Add existing chat transcript messages
-            const reverseTranscript = [...chat.getMessages()].reverse()
+            const reverseTranscript = [...chat.getDehydratedMessages()].reverse()
             const transcriptLimitReached = promptBuilder.tryAddMessages(reverseTranscript)
             if (transcriptLimitReached) {
                 logDebug(

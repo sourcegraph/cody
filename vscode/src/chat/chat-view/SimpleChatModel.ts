@@ -120,6 +120,12 @@ export class SimpleChatModel {
         return this.messages
     }
 
+    // De-hydrate because vscode.Range serializes to `[start, end]` in JSON.
+    // TODO: we should use a different type for `getMessages` to make the range hydration explicit.
+    public getDehydratedMessages(): readonly ChatMessage[] {
+        return this.messages.map(prepareChatMessage)
+    }
+
     public getChatTitle(): string {
         if (this.customChatTitle) {
             return this.customChatTitle
