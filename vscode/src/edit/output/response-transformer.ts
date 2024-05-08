@@ -1,3 +1,4 @@
+import { decode } from 'he'
 import type { FixupTask } from '../../non-stop/FixupTask'
 import { PROMPT_TOPICS } from '../prompt/constants'
 
@@ -26,7 +27,11 @@ const MARKDOWN_CODE_BLOCK_REGEX = new RegExp(
     'g'
 )
 
-// It also removes all spaces before a new line to keep the indentations
+/**
+ * Given the LLM response for a FixupTask, transforms the response
+ * to make it suitable to insert as code.
+ * This is handling cases where the LLM response does not __only__ include code.
+ */
 export function responseTransformer(
     text: string,
     task: FixupTask,
@@ -42,10 +47,13 @@ export function responseTransformer(
         // Trim any leading or trailing spaces
         .replace(/^\s*\n/, '')
 
-    if (task.mode === 'insert' && !isMessageInProgress && !strippedText.endsWith('\n')) {
+    // Strip the response of any remaining HTML entities such as &lt; and &gt;
+    const decodedText = decode(strippedText)
+
+    if (task.mode === 'insert' && !isMessageInProgress && !decodedText.endsWith('\n')) {
         // For insertions, we want to always ensure we include a new line at the end of the response
-        return strippedText + '\n'
+        return decodedText + '\n'
     }
 
-    return strippedText
+    return decodedText
 }
