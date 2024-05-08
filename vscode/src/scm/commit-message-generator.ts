@@ -17,7 +17,6 @@ import {
     truncateText,
 } from '@sourcegraph/cody-shared'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
-import { gitAPI } from '../repository/git-extension-api'
 import { telemetryService } from '../services/telemetry'
 
 const execFile = promisify(_execFile)
@@ -40,43 +39,7 @@ export class CommitMessageGenerator implements vscode.Disposable {
         this.disposables.push(
             vscode.commands.registerCommand(
                 'cody.command.generate-commit-message',
-                async (scm: vscode.SourceControl) => {
-                    this.initialScmPlaceholder = scm.inputBox.placeholder
-                    this.initialScmValue = scm.inputBox.value
-
-                    // Update the input box to represent a loading state
-                    scm.inputBox.value = ''
-                    scm.inputBox.placeholder = 'Cody is working...'
-                    scm.inputBox.enabled = false
-
-                    try {
-                        await vscode.commands.executeCommand(
-                            'setContext',
-                            'cody.generating-commit-message',
-                            true
-                        )
-                        telemetryRecorder.recordEvent('cody.command.generateCommitMessage', 'started')
-
-                        const commitMessage = await this.provideCommitMessage()
-                        if (!commitMessage || commitMessage.length === 0) {
-                            telemetryRecorder.recordEvent('cody.command.generateCommitMessage', 'empty')
-                            return
-                        }
-
-                        console.log('Got commit message', commitMessage)
-                        scm.inputBox.value = commitMessage
-                    } catch {
-                        scm.inputBox.value = this.initialScmValue
-                    } finally {
-                        scm.inputBox.placeholder = this.initialScmPlaceholder
-                        scm.inputBox.enabled = true
-                        await vscode.commands.executeCommand(
-                            'setContext',
-                            'cody.generating-commit-message',
-                            false
-                        )
-                    }
-                }
+                async (scm: vscode.SourceControl) => this.provideCommitMessage(scm)
             ),
             vscode.commands.registerCommand(
                 'cody.command.generate-commit-message.stop',
@@ -94,7 +57,18 @@ export class CommitMessageGenerator implements vscode.Disposable {
         )
     }
 
-    private async provideCommitMessage(): Promise<string | undefined> {
+    private async provideCommitMessage(scm: vscode.SourceControl): Promise<void> {
+        telemetryRecorder.recordEvent('cody.command.generateCommitMessage', 'started')
+        await vscode.commands.executeCommand('setContext', 'cody.generating-commit-message', true)
+
+        this.initialScmPlaceholder = scm.inputBox.placeholder
+        this.initialScmValue = scm.inputBox.value
+
+        // Update the input box to represent a loading state
+        scm.inputBox.value = ''
+        scm.inputBox.placeholder = 'Cody is working...'
+        scm.inputBox.enabled = false
+
         const humanPrompt = await this.getHumanPrompt()
         if (!humanPrompt) {
             return Promise.reject()
@@ -115,12 +89,18 @@ export class CommitMessageGenerator implements vscode.Disposable {
         const multiplexer = new BotResponseMultiplexer()
         multiplexer.sub(COMMIT_MESSAGE_TOPIC, {
             onResponse: (content: string) => {
-                console.log('Got content', content)
                 completion = content
                 return Promise.resolve()
             },
-            onTurnComplete: () => {
-                return Promise.resolve()
+            onTurnComplete: async () => {
+                scm.inputBox.value = completion
+                scm.inputBox.enabled = true
+                scm.inputBox.placeholder = this.initialScmPlaceholder
+                await vscode.commands.executeCommand(
+                    'setContext',
+                    'cody.generating-commit-message',
+                    false
+                )
             },
         })
 
@@ -163,6 +143,11 @@ export class CommitMessageGenerator implements vscode.Disposable {
                 }
             }
         } catch (error) {
+            scm.inputBox.value = this.initialScmValue
+            scm.inputBox.placeholder = this.initialScmPlaceholder
+            scm.inputBox.enabled = true
+            await vscode.commands.executeCommand('setContext', 'cody.generating-commit-message', false)
+
             if (isRateLimitError(error)) {
                 vscode.commands.executeCommand(
                     'cody.show-rate-limit-modal',
@@ -173,8 +158,6 @@ export class CommitMessageGenerator implements vscode.Disposable {
             }
             return Promise.reject(error)
         }
-
-        return completion.trim()
     }
 
     private async getHumanPrompt(): Promise<{
@@ -192,13 +175,7 @@ export class CommitMessageGenerator implements vscode.Disposable {
             return null
         }
 
-        const gitApi = gitAPI()
-        const repository = gitApi?.getRepository(workspaceUri)
-        console.log('Got a repository?')
-        console.log(Object.keys(repository || {}))
-
         const diffs = await this.getDiffFromGitCli(workspaceUri.fsPath)
-
         if (diffs.length === 0) {
             return { isEmpty: true, isTruncated: false, prompt: '' }
         }
@@ -222,7 +199,6 @@ export class CommitMessageGenerator implements vscode.Disposable {
         const templateContent =
             (await this.getCommitTemplate(workspaceUri!.fsPath)) || DEFAULT_TEMPLATE_CONTENT //somehow tsc screws up here?!?
         const fullPrompt = PROMPT_PREFIX(diffContent) + PROMPT_SUFFIX(templateContent)
-        // TODO: Check correct varss
         const prompt = truncateText(fullPrompt, CHAT_INPUT_TOKEN_BUDGET)
 
         return {
