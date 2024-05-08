@@ -28,6 +28,16 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Edit: The "Document Code" and "Generate Tests" commands now execute with a single click/action, rather than requiring the user to specify the range first. The range can be modified from the normal Edit input. [pull/4071](https://github.com/sourcegraph/cody/pull/4071)
 - Chat: The model selector now groups chat model choices by characteristics (such as "More Accurate", "Balanced", "Faster", and "Ollama") and indicates the default choice. [pull/4033](https://github.com/sourcegraph/cody/pull/4033)
 
+## [1.16.4]
+
+### Added
+
+### Fixed
+
+- Chat: Fixed a bug where the entire Cody chat view would appear blank when clicking the chat model dropdown. [pull/4098](https://github.com/sourcegraph/cody/pull/4098)
+
+### Changed
+
 ## [1.16.3]
 
 ### Added
