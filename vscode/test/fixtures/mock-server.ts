@@ -480,6 +480,7 @@ export class MockServer {
                         break
                     }
                     default:
+                        console.log("No mock found for operation: "+ operation)
                         res.status(400).send(
                             JSON.stringify({
                                 errors: [
