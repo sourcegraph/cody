@@ -123,6 +123,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         ...(customUserAgent ? { 'User-Agent': customUserAgent } : null),
                         ...this.config.customHeaders,
                         ...getTraceparentHeaders(),
+                        'Connection': 'keep-alive',
                     },
                     // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
                     rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0',
