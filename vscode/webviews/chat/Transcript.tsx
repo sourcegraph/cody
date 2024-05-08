@@ -193,7 +193,7 @@ export const Transcript: React.FunctionComponent<{
                         <div className={styles.modelSelectFieldContainer}>
                             <ModelSelectField
                                 models={chatModels}
-                                disabled={transcript.length > 0}
+                                readOnly={transcript.length > 0}
                                 onModelSelect={onCurrentChatModelChange}
                                 userInfo={userInfo}
                             />

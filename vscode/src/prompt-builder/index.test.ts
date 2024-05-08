@@ -314,5 +314,44 @@ describe('PromptBuilder', () => {
             expect(limitReached).toBeFalsy()
             expect(builder.contextItems).toStrictEqual([selection, fullFile])
         })
+
+        it('should deduplicate context from different token usage types', async () => {
+            const builder = new PromptBuilder({ input: 10, output: 10 })
+            builder.tryAddToPrefix(preamble)
+            builder.tryAddMessages([...chatTranscript].reverse())
+
+            const selection: ContextItem = {
+                ...fileWithSameUri,
+                range: { start: { line: 1, character: 0 }, end: { line: 2, character: 1 } },
+                source: ContextItemSource.Selection,
+            }
+
+            const fullFile: ContextItem = {
+                ...fileWithSameUri,
+                size: 2,
+                content: 'This has full file content.',
+                source: ContextItemSource.User,
+                isTooLarge: true,
+            }
+
+            const userContext = generateContextTranscript([selection])
+            const user = await builder.tryAddContext('user', userContext)
+            expect(builder.contextItems).toStrictEqual([selection])
+            expect(user.limitReached).toBeFalsy()
+            expect(user.added).toStrictEqual([selection])
+
+            const historyContext = generateContextTranscript([fullFile])
+            const history = await builder.tryAddContext('history', historyContext)
+            expect(history.limitReached).toBeFalsy()
+            expect(history.added).toStrictEqual([fullFile])
+
+            const enhancedContext = generateContextTranscript([selection, fullFile])
+            const enhanced = await builder.tryAddContext('enhanced', enhancedContext)
+            expect(enhanced.limitReached).toBeFalsy()
+            expect(enhanced.added).toStrictEqual([])
+
+            // The final context items should only contain the selection and full file.
+            expect(builder.contextItems).toStrictEqual([selection, fullFile])
+        })
     })
 })

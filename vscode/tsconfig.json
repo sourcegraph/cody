@@ -7,6 +7,9 @@
     "jsx": "react-jsx",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "types": ["@testing-library/jest-dom"],
+    "paths": {
+      "@/*": ["./webviews/*"]
+    }
   },
   "include": [
     "src",
@@ -17,7 +20,7 @@
     "test/e2e/utils/commands.json",
     "webviews",
     "webviews/*.d.ts",
-    "package.json"
+    "package.json",
   ],
   "exclude": [
     "scripts",

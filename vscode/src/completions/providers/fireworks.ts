@@ -84,7 +84,7 @@ const MODEL_MAP = {
 
     // Fine-tuned model mapping
     'fireworks-completions-fine-tuned':
-        'fireworks/accounts/sourcegraph/models/codecompletion-m-mixtral-rb-rs-m-go-400k-25e',
+        'fireworks/accounts/sourcegraph/models/codecompletion-mixtral-rust-152k-005e',
 }
 
 type FireworksModel =

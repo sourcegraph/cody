@@ -12,6 +12,9 @@ const config: StorybookConfig = {
         defineProjectWithDefaults(__dirname, {
             ...config,
             define: { 'process.env': '{}' },
+            css: {
+                postcss: __dirname + '/../webviews',
+            },
         }),
 }
 export default config

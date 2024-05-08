@@ -3,6 +3,7 @@ package com.sourcegraph.cody.protocol_generated
 
 data class ModelProvider(
   val default: Boolean,
+  val initialDefault: Boolean? = null,
   val codyProOnly: Boolean,
   val provider: String,
   val title: String,

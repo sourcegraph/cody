@@ -20,7 +20,7 @@ interface QuickPickConfiguration {
 
 interface QuickPick {
     input: vscode.QuickPick<vscode.QuickPickItem>
-    render: (title: string, value: string) => void
+    render: (value: string) => void
 }
 
 export const createQuickPick = ({
@@ -67,8 +67,7 @@ export const createQuickPick = ({
 
     return {
         input: quickPick,
-        render: (title, value) => {
-            quickPick.title = title
+        render: value => {
             quickPick.value = value
 
             const itemsOrPromise = getItems()
