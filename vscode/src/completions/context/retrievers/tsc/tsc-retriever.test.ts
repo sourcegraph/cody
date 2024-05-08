@@ -47,7 +47,7 @@ describe.skipIf(isWindows())('TscRetriever', () => {
             docContext,
             document,
             position,
-            hints: { maxChars: 1000, maxMs: 100 },
+            hints: { maxChars: 10_000, maxMs: 100 },
         })
         return { snippets: result, moduleName, namespaceName }
     }

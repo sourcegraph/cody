@@ -26,20 +26,24 @@ const path = defaultPathFunctions()
  * `ts.{Symbol,Type}`).
  */
 export class SymbolFormatter {
-    private queue = new Set<ts.Symbol>()
+    public queue = new Map<ts.Symbol, number>()
     public isRendered = new Set<ts.Symbol>()
-    constructor(private checker: ts.TypeChecker) {}
+    private depth = 0
+    constructor(
+        private checker: ts.TypeChecker,
+        private maxDepth: number
+    ) {}
 
-    public formatSymbolWithQueue(sym: ts.Symbol): { formatted: string; queue: ts.Symbol[] } {
-        const formatted = this.formatSymbol(sym)
+    public formatSymbol(
+        sym: ts.Symbol,
+        depth: number,
+        params?: { stripEnclosingInformation?: boolean }
+    ): string {
+        const oldDepth = this.depth
+        this.depth = depth
         this.queueRelatedSymbols(sym)
+        this.depth = oldDepth
 
-        // TODO: return a queue of symbols that got added in this function call,
-        // not accumulated list
-        return { formatted, queue: [...this.queue] }
-    }
-
-    public formatSymbol(sym: ts.Symbol, params?: { stripEnclosingInformation?: boolean }): string {
         const declaration = sym.declarations?.[0]
         if (!declaration) {
             return ''
@@ -65,6 +69,9 @@ export class SymbolFormatter {
     }
 
     private queueRelatedSymbols(sym: ts.Symbol): void {
+        if (this.depth > this.maxDepth) {
+            return
+        }
         const walkNode = (node: ts.Node | undefined): void => {
             if (!node) {
                 return
@@ -108,7 +115,7 @@ export class SymbolFormatter {
         if (isStdLibSymbol(s)) {
             return
         }
-        this.queue.add(s)
+        this.queue.set(s, this.depth + 1)
     }
 
     private registerRenderedNode(node: ts.Node): void {
@@ -184,9 +191,13 @@ export class SymbolFormatter {
                 }
                 const name = declarationName(decl)
                 if (name) {
-                    p.line(this.formatSymbol(member, { stripEnclosingInformation: true }))
+                    p.line(
+                        this.formatSymbol(member, this.depth + 1, { stripEnclosingInformation: true })
+                    )
                 } else if (memberName === ts.InternalSymbolName.Constructor) {
-                    p.line(this.formatSymbol(member, { stripEnclosingInformation: true }))
+                    p.line(
+                        this.formatSymbol(member, this.depth + 1, { stripEnclosingInformation: true })
+                    )
                 }
             }
         })
