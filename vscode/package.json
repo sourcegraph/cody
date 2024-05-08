@@ -417,6 +417,12 @@
         "when": "cody.activated && config.cody.autocomplete && editorHasFocus && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
       },
       {
+        "command": "cody.multi-model-autocomplete.manual-trigger",
+        "category": "Cody",
+        "title": "Get Completions for multiple autocomplete models",
+        "when": "cody.activated && config.cody.autocomplete.experimental.multiModelCompletions && config.cody.autocomplete && editorHasFocus && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
+      },
+      {
         "command": "cody.chat.panel.new",
         "category": "Cody",
         "title": "New Chat",
@@ -642,6 +648,11 @@
       {
         "command": "cody.autocomplete.manual-trigger",
         "key": "alt+\\",
+        "when": "editorTextFocus && !editorHasSelection && config.cody.autocomplete.enabled && !inlineSuggestionsVisible"
+      },
+      {
+        "command": "cody.multi-model-autocomplete.manual-trigger",
+        "key": "alt+m",
         "when": "editorTextFocus && !editorHasSelection && config.cody.autocomplete.enabled && !inlineSuggestionsVisible"
       },
       {
