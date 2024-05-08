@@ -203,9 +203,7 @@ export class SearchViewProvider implements vscode.Disposable {
         const quickPick = vscode.window.createQuickPick()
         quickPick.placeholder =
             'Search… (e.g. "password hashing", "connection retries", a symbol name, or a topic)'
-        quickPick.items = [
-            { label: 'Search for code using a natural language query.', alwaysShow: true },
-        ]
+        quickPick.items = []
         quickPick.title = 'Natural Language Code Search (Beta)'
         quickPick.buttons = searchQuickPickButtons
         quickPick.matchOnDescription = false
