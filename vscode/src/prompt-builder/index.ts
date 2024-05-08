@@ -17,6 +17,7 @@ import { getContextItemTokenUsageType, renderContextItem } from './utils'
 interface PromptBuilderContextResult {
     limitReached: boolean
     ignored: ContextItem[]
+    added: ContextItem[]
 }
 
 /**
@@ -29,6 +30,9 @@ export class PromptBuilder {
     private prefixMessages: Message[] = []
     private reverseMessages: Message[] = []
 
+    /**
+     * A list of context items that are used to build context messages.
+     */
     public contextItems: ContextItem[] = []
 
     private tokenCounter: TokenCounter
@@ -91,9 +95,11 @@ export class PromptBuilder {
         type: ContextTokenUsageType | 'history',
         contextMessages: (ContextItem | ContextMessage)[]
     ): Promise<PromptBuilderContextResult> {
+        // Turn-based context items that are used for UI display only.
         const result = {
             limitReached: false, // Indicates if the token budget was exceeded
             ignored: [] as ContextItem[], // The items that were ignored
+            added: [] as ContextItem[], // The items that were added as context
         }
 
         // Create a new array to avoid modifying the original array,
@@ -155,12 +161,14 @@ export class PromptBuilder {
             }
 
             // Add the new valid context item to the context list.
-            this.contextItems.push(newContextItem)
+            result.added.push(newContextItem) // for UI display.
+            this.contextItems.push(newContextItem) // for building context messages.
             // Update context items for the next iteration, removes items that are no longer unique.
             // TODO (bee) update token usage to reflect the removed context items.
             this.contextItems = getUniqueContextItems(this.contextItems)
         }
 
+        result.added = this.contextItems.filter(c => result.added.includes(c))
         return result
     }
 }
