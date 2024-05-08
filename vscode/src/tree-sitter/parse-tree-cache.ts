@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import type { TextDocument } from 'vscode'
 import type { default as Parser, Tree } from 'web-tree-sitter'
 
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { type SupportedLanguage, isSupportedLanguage } from './grammars'
 import { type WrappedParser, createParser, getParser } from './parser'
 
@@ -73,41 +74,44 @@ function getLanguageIfTreeSitterEnabled(document: TextDocument): SupportedLangua
 }
 
 export function updateParseTreeOnEdit(edit: vscode.TextDocumentChangeEvent): void {
-    const { document, contentChanges } = edit
-    if (contentChanges.length === 0) {
-        return
-    }
+    wrapInActiveSpan('updateParseTreeOnEdit', span => {
+        span.setAttribute('sampled', true)
+        const { document, contentChanges } = edit
+        if (contentChanges.length === 0) {
+            return
+        }
 
-    const cache = getCachedParseTreeForDocument(document)
-    if (!cache) {
-        return
-    }
+        const cache = getCachedParseTreeForDocument(document)
+        if (!cache) {
+            return
+        }
 
-    const { tree, parser, cacheKey } = cache
+        const { tree, parser, cacheKey } = cache
 
-    for (const change of contentChanges) {
-        const startIndex = change.rangeOffset
-        const oldEndIndex = change.rangeOffset + change.rangeLength
-        const newEndIndex = change.rangeOffset + change.text.length
-        const startPosition = document.positionAt(startIndex)
-        const oldEndPosition = document.positionAt(oldEndIndex)
-        const newEndPosition = document.positionAt(newEndIndex)
-        const startPoint = asPoint(startPosition)
-        const oldEndPoint = asPoint(oldEndPosition)
-        const newEndPoint = asPoint(newEndPosition)
+        for (const change of contentChanges) {
+            const startIndex = change.rangeOffset
+            const oldEndIndex = change.rangeOffset + change.rangeLength
+            const newEndIndex = change.rangeOffset + change.text.length
+            const startPosition = document.positionAt(startIndex)
+            const oldEndPosition = document.positionAt(oldEndIndex)
+            const newEndPosition = document.positionAt(newEndIndex)
+            const startPoint = asPoint(startPosition)
+            const oldEndPoint = asPoint(oldEndPosition)
+            const newEndPoint = asPoint(newEndPosition)
 
-        tree.edit({
-            startIndex,
-            oldEndIndex,
-            newEndIndex,
-            startPosition: startPoint,
-            oldEndPosition: oldEndPoint,
-            newEndPosition: newEndPoint,
-        })
-    }
+            tree.edit({
+                startIndex,
+                oldEndIndex,
+                newEndIndex,
+                startPosition: startPoint,
+                oldEndPosition: oldEndPoint,
+                newEndPosition: newEndPoint,
+            })
+        }
 
-    const updatedTree = parser.safeParse(document.getText(), tree)
-    parseTreesPerFile.set(cacheKey, updatedTree)
+        const updatedTree = parser.safeParse(document.getText(), tree)
+        parseTreesPerFile.set(cacheKey, updatedTree)
+    })
 }
 
 export function asPoint(position: Pick<vscode.Position, 'line' | 'character'>): Parser.Point {
