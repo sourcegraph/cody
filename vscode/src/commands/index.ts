@@ -69,6 +69,15 @@ export const CodyCommandMenuItems = [
         type: 'default',
     },
     {
+        key: 'commit',
+        description: 'Generate Commit (Experimental)',
+        icon: 'git-commit',
+        command: { command: 'cody.command.generate-commit' },
+        keybinding: '',
+        type: 'default',
+        configuration: 'cody.internal.unstable',
+    },
+    {
         key: 'custom',
         description: 'Custom Commands',
         icon: 'tools',

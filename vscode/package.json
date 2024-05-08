@@ -340,6 +340,20 @@
         "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle"
       },
       {
+        "command": "cody.command.generate-commit",
+        "category": "Cody Command",
+        "title": "Generate Commit (Experimental)",
+        "icon": "$(cody-logo)",
+        "when": "cody.activated && config.git.enabled && scmProvider == git && !cody.isGeneratingCommit"
+      },
+      {
+        "command": "cody.command.abort-commit",
+        "category": "Cody Command",
+        "title": "Stop Cody from Generating Commit (Experimental)",
+        "icon": "$(debug-stop)",
+        "when": "cody.activated && cody.isGeneratingCommit"
+      },
+      {
         "command": "cody.auth.signout",
         "category": "Cody",
         "title": "Sign Out",
@@ -725,6 +739,14 @@
           "when": "cody.activated && editorIsOpen && config.cody.experimental.noodle"
         },
         {
+          "command": "cody.command.generate-commit",
+          "when": "cody.activated && config.git.enabled && scmProvider == git && !cody.isGeneratingCommit"
+        },
+        {
+          "command": "cody.command.abort-commit",
+          "when": "cody.activated && cody.isGeneratingCommit"
+        },
+        {
           "command": "cody.menu.custom-commands",
           "when": "cody.activated"
         },
@@ -952,6 +974,18 @@
           "command": "cody.mention.file.new",
           "group": "0_cody",
           "when": "cody.activated && resourceScheme == file && !cody.hasNewChatOpened"
+        }
+      ],
+      "scm/title": [
+        {
+          "command": "cody.command.generate-commit",
+          "when": "cody.activated && config.git.enabled && scmProvider == git && !cody.isGeneratingCommit",
+          "group": "navigation@1"
+        },
+        {
+          "command": "cody.command.abort-commit",
+          "when": "cody.activated && cody.isGeneratingCommit",
+          "group": "navigation@1"
         }
       ]
     },

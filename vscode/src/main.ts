@@ -43,6 +43,7 @@ import {
 } from './commands/execute'
 import { executeExplainHistoryCommand } from './commands/execute/explain-history'
 import { executeUsageExamplesCommand } from './commands/execute/usage-examples'
+import { CodySourceControl } from './commands/scm/source-control'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
@@ -395,7 +396,8 @@ const register = async (
         vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a)),
         vscode.commands.registerCommand('cody.command.usageExamples', a =>
             executeUsageExamplesCommand(a)
-        )
+        ),
+        new CodySourceControl(authProvider, chatClient)
     )
 
     // Internal-only test commands
