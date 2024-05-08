@@ -23,22 +23,20 @@ import {
     SYMBOL_HELP_LABEL,
 } from '../../chat/context/constants'
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
-import { commands as defaultCommands } from '../../commands/execute/cody.json'
+import { executeDocCommand, executeTestEditCommand } from '../../commands/execute'
 import { getEditor } from '../../editor/active-editor'
 import { editModel } from '../../models'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { telemetryService } from '../../services/telemetry'
-import { executeEdit } from '../execute'
 import type { EditIntent } from '../types'
 import { isGenerateIntent } from '../utils/edit-intent'
 import { getEditModelsForUser } from '../utils/edit-models'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './get-items/constants'
-import { getDocumentInputItems } from './get-items/document'
 import { DOCUMENT_ITEM, MODEL_ITEM, RANGE_ITEM, TEST_ITEM, getEditInputItems } from './get-items/edit'
 import { getModelInputItems, getModelOptionItems } from './get-items/model'
 import { getRangeInputItems } from './get-items/range'
-import { getTestInputItems } from './get-items/test'
+import { RANGE_SYMBOLS_ITEM, getRangeSymbolInputItems } from './get-items/range-symbols'
 import type { EditModelItem, EditRangeItem } from './get-items/types'
 import { getMatchingContext } from './get-matching-context'
 import { createQuickPick } from './quick-pick'
@@ -187,7 +185,7 @@ export const getInput = async (
             getItems: () => getModelInputItems(modelOptions, activeModel, isCodyPro),
             buttons: [vscode.QuickInputButtons.Back],
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
-            onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
+            onDidTriggerButton: () => editInput.render(editInput.input.value),
             onDidAccept: async item => {
                 const acceptedItem = item as EditModelItem
                 if (!acceptedItem) {
@@ -224,7 +222,40 @@ export const getInput = async (
                 activeModel = acceptedItem.model
                 activeModelContextWindow = getContextWindowOnModelChange(acceptedItem.model)
 
-                editInput.render(activeTitle, editInput.input.value)
+                editInput.render(editInput.input.value)
+            },
+        })
+
+        const rangeSymbolsInput = createQuickPick({
+            title: activeTitle,
+            placeHolder: 'Select a symbol',
+            getItems: () =>
+                getRangeSymbolInputItems({ ...initialValues, initialCursorPosition }, symbolsPromise),
+            buttons: [vscode.QuickInputButtons.Back],
+            onDidTriggerButton: () => editInput.render(editInput.input.value),
+            onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
+            onDidChangeActive: async items => {
+                const item = items[0] as EditRangeItem
+                if (item) {
+                    const range = item.range instanceof vscode.Range ? item.range : await item.range()
+                    previewActiveRange(range)
+                }
+            },
+            onDidAccept: async item => {
+                const acceptedItem = item as EditRangeItem
+                if (!acceptedItem) {
+                    return
+                }
+                telemetryRecorder.recordEvent('cody.fixup.input.rangeSymbol', 'selected')
+
+                activeRangeItem = acceptedItem
+                const range =
+                    acceptedItem.range instanceof vscode.Range
+                        ? acceptedItem.range
+                        : await acceptedItem.range()
+
+                updateActiveRange(range)
+                editInput.render(editInput.input.value)
             },
         })
 
@@ -239,7 +270,7 @@ export const getInput = async (
                     symbolsPromise
                 ),
             buttons: [vscode.QuickInputButtons.Back],
-            onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
+            onDidTriggerButton: () => editInput.render(editInput.input.value),
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             onDidChangeActive: async items => {
                 const item = items[0] as EditRangeItem
@@ -253,6 +284,12 @@ export const getInput = async (
                 if (!acceptedItem) {
                     return
                 }
+
+                if (acceptedItem.label === RANGE_SYMBOLS_ITEM.label) {
+                    rangeSymbolsInput.render('')
+                    return
+                }
+
                 telemetryRecorder.recordEvent('cody.fixup.input.range', 'selected')
 
                 activeRangeItem = acceptedItem
@@ -262,91 +299,7 @@ export const getInput = async (
                         : await acceptedItem.range()
 
                 updateActiveRange(range)
-                editInput.render(activeTitle, editInput.input.value)
-            },
-        })
-
-        const documentInput = createQuickPick({
-            title: activeTitle,
-            placeHolder: 'Select a symbol to document',
-            getItems: () => getDocumentInputItems(document, initialValues, activeRange, symbolsPromise),
-            buttons: [vscode.QuickInputButtons.Back],
-            onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
-            onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
-            onDidChangeActive: async items => {
-                const item = items[0] as EditRangeItem
-                if (item) {
-                    const range = item.range instanceof vscode.Range ? item.range : await item.range()
-                    previewActiveRange(range)
-                }
-            },
-            onDidAccept: async item => {
-                const acceptedItem = item as EditRangeItem
-                if (!acceptedItem) {
-                    return
-                }
-
-                const range =
-                    acceptedItem.range instanceof vscode.Range
-                        ? acceptedItem.range
-                        : await acceptedItem.range()
-
-                // Expand the range from the node to include the full lines
-                const fullDocumentableRange = new vscode.Range(
-                    document.lineAt(range.start.line).range.start,
-                    document.lineAt(range.end.line).range.end
-                )
-                updateActiveRange(fullDocumentableRange)
-
-                // Hide the input and execute a new edit for 'Document'
-                documentInput.input.hide()
-                return executeEdit({
-                    configuration: {
-                        document,
-                        instruction: PromptString.fromDefaultCommands(defaultCommands, 'doc'),
-                        range: activeRange,
-                        intent: 'doc',
-                        mode: 'insert',
-                        userContextFiles: [],
-                    },
-                    source: 'menu',
-                })
-            },
-        })
-
-        const unitTestInput = createQuickPick({
-            title: activeTitle,
-            placeHolder: 'Select a symbol to generate tests',
-            getItems: () =>
-                getTestInputItems(editor.document, initialValues, activeRange, symbolsPromise),
-            buttons: [vscode.QuickInputButtons.Back],
-            onDidTriggerButton: () => editInput.render(activeTitle, editInput.input.value),
-            onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
-            onDidChangeActive: async items => {
-                const item = items[0] as EditRangeItem
-                if (item) {
-                    const range = item.range instanceof vscode.Range ? item.range : await item.range()
-                    previewActiveRange(range)
-                }
-            },
-            onDidAccept: async item => {
-                const acceptedItem = item as EditRangeItem
-                if (!acceptedItem) {
-                    return
-                }
-
-                const range =
-                    acceptedItem.range instanceof vscode.Range
-                        ? acceptedItem.range
-                        : await acceptedItem.range()
-                updateActiveRange(range)
-
-                // Hide the input and execute a new edit for 'Test'
-                unitTestInput.input.hide()
-
-                // TODO: This should entirely run through `executeEdit` when
-                // the unit test command has fully moved over to Edit.
-                return vscode.commands.executeCommand('cody.command.unit-tests')
+                editInput.render(editInput.input.value)
             },
         })
 
@@ -479,17 +432,17 @@ export const getInput = async (
                 const selectedItem = input.selectedItems[0]
                 switch (selectedItem.label) {
                     case MODEL_ITEM.label:
-                        modelInput.render(activeTitle, '')
+                        modelInput.render('')
                         return
                     case RANGE_ITEM.label:
-                        rangeInput.render(activeTitle, '')
+                        rangeInput.render('')
                         return
                     case DOCUMENT_ITEM.label:
-                        documentInput.render(activeTitle, '')
-                        return
+                        input.hide()
+                        return executeDocCommand({ range: activeRange, source: 'menu' })
                     case TEST_ITEM.label:
-                        unitTestInput.render(activeTitle, '')
-                        return
+                        input.hide()
+                        return executeTestEditCommand({ range: activeRange, source: 'menu' })
                     case FILE_HELP_LABEL:
                     case LARGE_FILE_WARNING_LABEL:
                     case SYMBOL_HELP_LABEL:
@@ -534,7 +487,7 @@ export const getInput = async (
         })
 
         const initialInput = initialValues.initialInputValue?.toString() || ''
-        editInput.render(activeTitle, initialInput)
+        editInput.render(initialInput)
 
         if (initialInput.length === 0) {
             // If we have no initial input, we want to ensure we don't auto-select anything
