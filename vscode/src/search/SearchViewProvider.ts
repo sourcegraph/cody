@@ -200,13 +200,25 @@ export class SearchViewProvider implements vscode.Disposable {
     }
 
     private async getSearchQueryInput(): Promise<void> {
-        const input = await vscode.window.showInputBox({
-            title: 'Natural Language Code Search (Beta)',
-            prompt: 'Search for code using a natural language query, such as "password hashing", "connection retries", a symbol name, or a topic.',
+        const quickPick = vscode.window.createQuickPick()
+        quickPick.placeholder =
+            'Examples: "password hashing", "connection retries", a symbol name, or a topic.'
+        quickPick.items = [
+            { label: 'Search for code using a natural language query.', alwaysShow: true },
+        ]
+        quickPick.title = 'Natural Language Code Search (Beta)'
+        quickPick.buttons = searchQuickPickButtons
+        quickPick.matchOnDescription = false
+        quickPick.matchOnDetail = false
+        quickPick.onDidAccept(() => {
+            const input = quickPick.value
+            quickPick.hide()
+            if (input?.trim()) {
+                this.onDidReceiveQuery(PromptString.unsafe_fromUserQuery(input.trim()))
+            }
         })
-        if (input?.trim()) {
-            this.onDidReceiveQuery(PromptString.unsafe_fromUserQuery(input.trim()))
-        }
+
+        quickPick.show()
     }
 
     // TODO(beyang): support cancellation through symf
@@ -240,16 +252,7 @@ export class SearchViewProvider implements vscode.Disposable {
         quickPick.matchOnDescription = true
         quickPick.matchOnDetail = true
         quickPick.ignoreFocusOut = false
-        quickPick.buttons = [
-            {
-                iconPath: new vscode.ThemeIcon('refresh'),
-                tooltip: 'Update search index for current workspace folder',
-            },
-            {
-                iconPath: new vscode.ThemeIcon('sync'),
-                tooltip: 'Update search indices for all workspace folders',
-            },
-        ]
+        quickPick.buttons = searchQuickPickButtons
         quickPick.onDidAccept(() => (quickPick.selectedItems[0] as SymfResultQuickPickItem)?.onSelect())
 
         quickPick.show()
@@ -388,3 +391,14 @@ async function resultsToDisplayResults(results: Result[]): Promise<SearchPanelFi
         )
     ).filter(result => result !== null) as SearchPanelFile[]
 }
+
+const searchQuickPickButtons = [
+    {
+        iconPath: new vscode.ThemeIcon('refresh'),
+        tooltip: 'Update search index for current workspace folder',
+    },
+    {
+        iconPath: new vscode.ThemeIcon('sync'),
+        tooltip: 'Update search indices for all workspace folders',
+    },
+]
