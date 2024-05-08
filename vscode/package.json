@@ -343,6 +343,12 @@
         "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle"
       },
       {
+        "command": "cody.command.github-pull-fixup",
+        "category": "Cody Command",
+        "title": "Fixup GitHub Pull Request Comments",
+        "when": "cody.activated && config.cody.experimental.noodle"
+      },
+      {
         "command": "cody.auth.signout",
         "category": "Cody",
         "title": "Sign Out",
@@ -722,6 +728,10 @@
         {
           "command": "cody.command.usageExamples",
           "when": "cody.activated && editorIsOpen && config.cody.experimental.noodle && (editorLangId === typescript || editorLangId === typescriptreact)"
+        },
+        {
+          "command": "cody.command.github-pull-fixup",
+          "when": "cody.activated && config.cody.experimental.noodle"
         },
         {
           "command": "cody.command.explain-history",
