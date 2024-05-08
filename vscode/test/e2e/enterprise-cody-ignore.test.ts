@@ -49,17 +49,14 @@ test
         // biome-ignore lint/correctness/noEmptyPattern: Playwright needs empty pattern to specify "no dependencies".
         workspaceDirectory: async ({}, use) => {
             await withTempDir(async dir => {
-                // Initialize a git repository there
+                // Initialize a git repo
                 await spawn('git', ['init'], { cwd: dir })
-                await spawn('git', ['config', 'user.name', 'Test User'], { cwd: dir })
-                await spawn('git', ['config', 'user.email', 'test@example.host'], { cwd: dir })
                 await spawn(
                     'git',
                     ['remote', 'add', 'origin', 'git@github.com:sourcegraph/sourcegraph.git'],
                     { cwd: dir }
                 )
 
-                // Commit some content to the git repository.
                 await Promise.all([
                     fs.writeFile(
                         path.join(dir, 'foo.ts'),
@@ -82,9 +79,6 @@ test
             .onGraphQl('ResolveRepoName')
             .replyJson({ data: { repository: { name: 'github.com/sourcegraph/sourcegraph' } } })
 
-        // Open a file from workspace3
-        // NOTE: This workspace, since it's checked into the Cody repo, will report
-        // as `github.com/sourcegraph/cody` and thus be part of the ignore pattern.
         await sidebarExplorer(page).click()
         await page.getByRole('treeitem', { name: 'foo.ts' }).locator('a').dblclick()
         await page.getByRole('tab', { name: 'foo.ts' }).hover()
@@ -96,7 +90,53 @@ test
         await statusBarButton.hover()
         await expect(statusBarButton).toBeVisible()
 
-        await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
+        // Clicking on the Cody icon shows a message
+        await statusBarButton.click()
+        await expect(page.getByText('Cody is disabled in this file')).toBeVisible()
+        await page.keyboard.press('Escape')
+
+        // Opening the sidebar should show a notice
+        await page.getByRole('tab', { name: 'Cody' }).click()
+        await expect(
+            page.getByText(
+                'Commands are disabled for this file by an admin setting. Other Cody features are also disabled'
+            )
+        ).toBeVisible()
+
+        await clearAllNotifications(page)
+
+        // Manually invoking commands should show an error
+        const commands = [
+            ['Edit Code', 'Edit failed to run'],
+            ['Document Code', 'Edit failed to run'],
+            ['Explain Code', 'Command failed to run'],
+            ['Generate Unit Tests', 'Failed to generate test'],
+            ['Find Code Smells', 'Command failed to run'],
+        ]
+        for (const [command, title] of commands) {
+            // Trigger an edit action should show a notification
+            await page.getByText('function foo() {').click()
+            await page.keyboard.down('Shift')
+            await page.keyboard.press('ArrowDown')
+            await page.getByRole('button', { name: 'Cody Commands' }).click()
+            await page.getByRole('option', { name: command }).click()
+            await expectNotificationToBeVisible(
+                page,
+                `${title}: file is ignored (due to cody.contextFilters Enterprise configuration setting)`
+            )
+            await page.locator('.notification-list-item').hover()
+            await page.getByRole('button', { name: 'Clear Notification' }).click()
+        }
+
+        // Manually invoking autocomplete should show an error
+        await page.getByText('function foo() {').click()
+        await page.keyboard.press('Alt+\\')
+        await expectNotificationToBeVisible(
+            page,
+            'Failed to generate autocomplete: file is ignored (due to cody.contextFilters Enterprise configuration setting)'
+        )
+
+        // Chat
     }
 )
 
@@ -106,7 +146,7 @@ async function setUpAndOverwriteContextFilters(
     filters: ContextFilters
 ) {
     // Sign into Cody
-    await sidebarSignin(page, sidebar)
+    await sidebarSignin(page, sidebar, true)
 
     // Enable overwrite policy
     const metaKey = getMetaKeyByOS()
@@ -114,5 +154,17 @@ async function setUpAndOverwriteContextFilters(
     await executeCommandInPalette(page, '[Internal] Set Context Filters Overwrite')
     await page.keyboard.insertText(JSON.stringify(filters))
     await page.keyboard.press('Enter')
-    await page.waitForTimeout(100) // Give the updates some time to settle
+    await page.waitForTimeout(200) // Give the updates some time to settle
+}
+
+async function clearAllNotifications(page: Page) {
+    await executeCommandInPalette(page, 'Notifications: Clear All Notifications')
+}
+
+async function expectNotificationToBeVisible(page: Page, text: string) {
+    return expect(
+        page.locator('.notification-list-item', {
+            hasText: text,
+        })
+    ).toBeVisible()
 }
