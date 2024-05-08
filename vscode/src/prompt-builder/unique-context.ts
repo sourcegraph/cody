@@ -93,7 +93,7 @@ function rangeContainsLines(outerRange: RangeData, innerRange: RangeData): boole
  * Checks if both ranges are on the same lines.
  */
 function rangesOnSameLines(range1: RangeData, range2: RangeData): boolean {
-    return range1.start.line === range2.start.line && range1.end.line === range2.end.line
+    return range1.start?.line === range2.start?.line && range1.end?.line === range2.end?.line
 }
 
 /**
