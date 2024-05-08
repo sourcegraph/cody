@@ -56,12 +56,10 @@ export function getUniqueContextItems(reversedItems: ContextItem[]): ContextItem
  * @returns boolean whether the `itemToAdd` is unique.
  */
 export function isUniqueContextItem(itemToAdd: ContextItem, uniqueItems: ContextItem[]): boolean {
-    // Ensure the range is a RangeData instance
     const itemToAddRange = itemToAdd.range
     const itemToAddDisplayPath = getContextItemDisplayPath(itemToAdd)
 
     for (const item of uniqueItems) {
-        // Ensure the range is a RangeData instance
         const currentItemRange = item.range
         const currentItemDisplayPath = getContextItemDisplayPath(item)
 
