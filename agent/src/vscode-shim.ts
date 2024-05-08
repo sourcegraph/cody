@@ -295,6 +295,7 @@ const _workspace: typeof vscode.workspace = {
             return workspaceDocuments.openTextDocument(Uri.file(uriOrString))
         }
         if (uriOrString instanceof Uri) {
+            if (uriOrString.scheme === 'untitled') await createDocument(uriOrString)
             return workspaceDocuments.openTextDocument(uriOrString)
         }
 
@@ -303,32 +304,14 @@ const _workspace: typeof vscode.workspace = {
             ((uriOrString as any)?.language || (uriOrString as any)?.content) &&
             agent
         ) {
-            const language: string = (uriOrString as any)?.language ?? ''
-            const content: string = (uriOrString as any)?.content ?? ''
+            const language: string | undefined = (uriOrString as any)?.language
+            const content: string | undefined = (uriOrString as any)?.content
             const extension = extensionForLanguage(language) ?? language
             const untitledUri = Uri.from({
                 scheme: 'untitled',
                 path: `${uuid.v4()}.${extension}`,
             })
-            if (clientInfo?.capabilities?.untitledDocuments !== 'enabled') {
-                const errorMessage =
-                    'Client does not support untitled documents. To fix this problem, set `untitledDocuments: "enabled"` in client capabilities'
-                logError('vscode.workspace.openTextDocument', 'unsupported operation', errorMessage)
-                throw new Error(errorMessage)
-            }
-            const result = await agent.request('textDocument/openUntitledDocument', {
-                uri: untitledUri.toString(),
-                content,
-                language,
-            })
-
-            if (!result) {
-                throw new Error(
-                    `client returned false from textDocument/openUntitledDocument: ${JSON.stringify(
-                        uriOrString
-                    )}`
-                )
-            }
+            await createDocument(untitledUri, content, extension)
             const document = await workspaceDocuments.openTextDocument(untitledUri)
             if (document.getText() !== content) {
                 throw new Error(
@@ -487,6 +470,32 @@ const defaultTreeView: vscode.TreeView<any> = {
     description: undefined,
     message: undefined,
     title: undefined,
+}
+
+async function createDocument(uri: Uri, content?: string, language?: string) {
+    if (
+        clientInfo?.capabilities?.untitledDocuments === 'none' ||
+        (clientInfo?.capabilities?.untitledDocuments === 'onlyRealFiles' &&
+            !(uri.path.startsWith('/') || uri.path.startsWith('\\')))
+    ) {
+        const errorMessage =
+            'Client does not support untitled documents. To fix this problem, set `untitledDocuments: "enabled"` in client capabilities'
+        logError('vscode.workspace.openTextDocument', 'unsupported operation', errorMessage)
+        throw new Error(errorMessage)
+    }
+    if (agent) {
+        const result = await agent.request('textDocument/openUntitledDocument', {
+            uri: uri.toString(),
+            content,
+            language,
+        })
+
+        if (!result) {
+            throw new Error(
+                `client returned false from textDocument/openUntitledDocument: ${uri.toString()}`
+            )
+        }
+    }
 }
 
 function outputChannel(name: string): vscode.LogOutputChannel {

@@ -420,7 +420,9 @@ interface ClientCapabilities {
     progressBars?: 'none' | 'enabled'
     edit?: 'none' | 'enabled'
     editWorkspace?: 'none' | 'enabled'
-    untitledDocuments?: 'none' | 'enabled'
+    // Documents with the untitled:// schema could be either in-memory tmp files (editors like IntelliJ does not support those)
+    // or  new files which have proper file path but were not created yet on the disk; we need to distinguish them
+    untitledDocuments?: 'none' | 'enabled' | 'onlyRealFiles'
     showDocument?: 'none' | 'enabled'
     codeLenses?: 'none' | 'enabled'
     showWindowMessage?: 'notification' | 'request'
