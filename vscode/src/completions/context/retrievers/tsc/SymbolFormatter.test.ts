@@ -19,7 +19,7 @@ describe('SymbolFormatter', () => {
         // quickly adds up, but it's good enough for now.
         const program = ts.createProgram(['test.ts'], {}, host)
         const checker = program.getTypeChecker()
-        const formatter = new SymbolFormatter(checker)
+        const formatter = new SymbolFormatter(checker, 10)
         const sourceFile = program.getSourceFile('test.ts')
         if (!sourceFile) {
             return []
@@ -34,7 +34,7 @@ describe('SymbolFormatter', () => {
             if (!symbol) {
                 continue
             }
-            result.push(formatter.formatSymbol(symbol))
+            result.push(formatter.formatSymbol(statement, symbol, 0))
         }
         return result
     }

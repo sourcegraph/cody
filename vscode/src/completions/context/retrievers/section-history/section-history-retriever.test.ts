@@ -6,6 +6,7 @@ import { testFileUri } from '@sourcegraph/cody-shared'
 import { range, withPosixPathsInString } from '../../../../testutils/textDocument'
 import * as docContextGetters from '../../../doc-context-getters'
 
+import { nextTick } from './nextTick'
 import { SectionHistoryRetriever } from './section-history-retriever'
 
 const document1Uri = testFileUri('document1.ts')
@@ -274,7 +275,3 @@ describe('GraphSectionObserver', () => {
         })
     })
 })
-
-function nextTick() {
-    return new Promise(resolve => process.nextTick(resolve))
-}
