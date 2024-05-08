@@ -1,12 +1,12 @@
 import http from 'node:http'
 import https from 'node:https'
-import { parse as parseUrl } from 'url';
+import { parse as parseUrl } from 'node:url'
 import { agent, registerLocalCertificates } from '@sourcegraph/cody-shared'
-import { type Configuration } from '@sourcegraph/cody-shared'
-import { getConfiguration } from './configuration'
+import type { Configuration } from '@sourcegraph/cody-shared'
 import { HttpProxyAgent } from 'http-proxy-agent'
 import { HttpsProxyAgent } from 'https-proxy-agent'
-import { SocksProxyAgent } from 'socks-proxy-agent';
+import { SocksProxyAgent } from 'socks-proxy-agent'
+import { getConfiguration } from './configuration'
 
 // The path to the exported class can be found in the npm contents
 // https://www.npmjs.com/package/@vscode/proxy-agent?activeTab=code
@@ -25,8 +25,7 @@ let httpsProxyAgent: HttpsProxyAgent<string>
 
 function getCustomAgent({ proxy }: Configuration): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
     return ({ protocol }) => {
-        const optionStrictSSL = undefined
-        const proxyURL = proxy || getSystemProxyURI(protocol, process.env);
+        const proxyURL = proxy || getSystemProxyURI(protocol, process.env)
         if (!proxyURL) {
             if (protocol === 'http:') {
                 console.log('No proxy set for HTTP requests')
@@ -36,7 +35,7 @@ function getCustomAgent({ proxy }: Configuration): ({ protocol }: Pick<URL, 'pro
         }
 
         if (proxyURL?.startsWith('socks')) {
-            if(!socksProxyAgent) {
+            if (!socksProxyAgent) {
                 socksProxyAgent = new SocksProxyAgent(proxyURL, {
                     keepAlive: true,
                     keepAliveMsecs: 60000,
@@ -44,25 +43,27 @@ function getCustomAgent({ proxy }: Configuration): ({ protocol }: Pick<URL, 'pro
             }
             return socksProxyAgent
         }
-        const proxyEndpoint = parseUrl(proxyURL);
+        const proxyEndpoint = parseUrl(proxyURL)
 
         const opts = {
             host: proxyEndpoint.hostname || '',
-            port: (proxyEndpoint.port ? +proxyEndpoint.port : 0) || (proxyEndpoint.protocol === 'https' ? 443 : 80),
+            port:
+                (proxyEndpoint.port ? +proxyEndpoint.port : 0) ||
+                (proxyEndpoint.protocol === 'https' ? 443 : 80),
             auth: proxyEndpoint.auth,
-            rejectUnauthorized: !!(optionStrictSSL) ? optionStrictSSL : true,
+            rejectUnauthorized: true,
             keepAlive: true,
             keepAliveMsecs: 60000,
             ...https.globalAgent.options,
-        };
+        }
         if (protocol === 'http:') {
-            if(!httpProxyAgent) {
+            if (!httpProxyAgent) {
                 httpProxyAgent = new HttpProxyAgent(proxyURL, opts)
             }
             return httpProxyAgent
         }
 
-        if(!httpsProxyAgent) {
+        if (!httpsProxyAgent) {
             httpsProxyAgent = new HttpsProxyAgent(proxyURL, opts)
         }
         return httpsProxyAgent
@@ -76,15 +77,17 @@ export function setCustomAgent(
     return agent.current as ({ protocol }: Pick<URL, 'protocol'>) => http.Agent
 }
 
-function getSystemProxyURI( protocol: string, env: typeof process.env): string | null {
-	if (protocol === 'http:') {
-		return env.HTTP_PROXY || env.http_proxy || null;
-	} else if (protocol === 'https:') {
-		return env.HTTPS_PROXY || env.https_proxy || env.HTTP_PROXY || env.http_proxy || null;
-	} else if (protocol.startsWith('socks')) {
-        return env.SOCKS_PROXY || env.socks_proxy || null;
+function getSystemProxyURI(protocol: string, env: typeof process.env): string | null {
+    if (protocol === 'http:') {
+        return env.HTTP_PROXY || env.http_proxy || null
     }
-	return null;
+    if (protocol === 'https:') {
+        return env.HTTPS_PROXY || env.https_proxy || env.HTTP_PROXY || env.http_proxy || null
+    }
+    if (protocol.startsWith('socks')) {
+        return env.SOCKS_PROXY || env.socks_proxy || null
+    }
+    return null
 }
 
 export function initializeNetworkAgent(): void {

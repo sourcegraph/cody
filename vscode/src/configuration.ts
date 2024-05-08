@@ -98,7 +98,7 @@ export function getConfiguration(
             !!getHiddenSetting<number | undefined>('testing.localEmbeddings.dimension', undefined)
         )
     }
-    const vsCodeConfig = vscode.workspace.getConfiguration();
+    const vsCodeConfig = vscode.workspace.getConfiguration()
 
     return {
         proxy: vsCodeConfig.get<string>('http.proxy'),

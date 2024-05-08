@@ -1,7 +1,7 @@
 import http from 'node:http'
+import { type Configuration, PromptString } from '@sourcegraph/cody-shared'
 import { describe, expect, it } from 'vitest'
 import { initializeNetworkAgent, setCustomAgent } from './fetch.node'
-import { type Configuration, PromptString} from '@sourcegraph/cody-shared'
 describe('customAgent', () => {
     it('uses keep-alive', async () => {
         initializeNetworkAgent()
@@ -12,8 +12,8 @@ describe('customAgent', () => {
             telemetryLevel: 'all',
             useContext: 'embeddings',
             customHeaders: {},
-            chatPreInstruction: new PromptString(""),
-            editPreInstruction: new PromptString(""),
+            chatPreInstruction: new PromptString(''),
+            editPreInstruction: new PromptString(''),
             codeActions: false,
             commandHints: false,
             commandCodeLenses: false,
@@ -34,13 +34,13 @@ describe('customAgent', () => {
             autocompleteExperimentalGraphContext: null,
             autocompleteExperimentalOllamaOptions: {
                 url: '',
-                model: ''
+                model: '',
             },
             autocompleteTimeouts: {},
-            testingModelConfig: undefined
-        };
+            testingModelConfig: undefined,
+        }
         const agent = setCustomAgent(config)
-        console.log("started Agent")
+        console.log('started Agent')
         // Create a local http server
         const server = http.createServer((req, res) => {
             res.writeHead(200, { 'Content-Type': 'application/json' })
@@ -51,7 +51,7 @@ describe('customAgent', () => {
             )
         })
         server.listen(3002, '127.0.0.1')
-        console.log("server started")
+        console.log('server started')
 
         const opt: http.RequestOptions = {
             host: '127.0.0.1',
@@ -61,7 +61,7 @@ describe('customAgent', () => {
             // Omitting this causes all connections to close regardless of `http.proxySupport`
             headers: { Connection: 'keep-alive' },
         }
-        console.log("making request")
+        console.log('making request')
 
         const requests = new Promise(resolve => {
             http.get(opt, r1 => {
