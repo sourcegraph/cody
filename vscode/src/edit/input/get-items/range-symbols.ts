@@ -39,7 +39,9 @@ export const getRangeSymbolInputItems = async (
     const activeItem = symbolItems.reduce(
         (a, b) =>
             getMinimumDistanceToRangeBoundary(initialValues.initialCursorPosition, a.range) <
-            getMinimumDistanceToRangeBoundary(initialValues.initialCursorPosition, b.range) ? a : b,
+            getMinimumDistanceToRangeBoundary(initialValues.initialCursorPosition, b.range)
+                ? a
+                : b,
         symbolItems[0]
     )
 
