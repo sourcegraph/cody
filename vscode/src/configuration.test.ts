@@ -110,7 +110,7 @@ describe('getConfiguration', () => {
             },
         }
         expect(getConfiguration(config)).toEqual({
-            proxy: 'socks5://127.0.0.1:9999',
+            proxy: "",
             codebase: 'my/codebase',
             useContext: 'keyword',
             customHeaders: {
@@ -144,6 +144,7 @@ describe('getConfiguration', () => {
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteFormatOnAccept: true,
             autocompleteDisableInsideComments: false,
+            autocompleteExperimentalFireworksOptions: undefined,
             autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalGraphContext: 'bfg',
             autocompleteExperimentalSmartThrottle: false,

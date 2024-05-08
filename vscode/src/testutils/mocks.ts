@@ -814,7 +814,7 @@ export class MockFeatureFlagProvider extends FeatureFlagProvider {
 export const emptyMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>())
 
 export const DEFAULT_VSCODE_SETTINGS = {
-    proxy: null,
+    proxy: "",
     codebase: '',
     customHeaders: {},
     chatPreInstruction: ps``,
