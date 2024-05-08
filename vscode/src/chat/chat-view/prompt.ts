@@ -78,10 +78,10 @@ export class DefaultPrompter implements IPrompter {
 
             // Lists of context items added from the last human message.
             // NOTE: For UI display only, not used in the prompt.
-            const context = { used: [] as ContextItem[], ignored: [] as ContextItem[] }
+            const context: PromptInfo['context'] = { used: [], ignored: [] }
             // List of valid context items added from the last human message
             context.used.push(...newUserContext.added.map(c => ({ ...c, isTooLarge: false })))
-            // NOTE: Only used for display excluded context from user-specifed context items in UI
+            // NOTE: Only used for display excluded context from user-specified context items in UI
             context.ignored.push(...newUserContext.ignored.map(c => ({ ...c, isTooLarge: true })))
 
             // Add user and enhanced context from previous messages (chat transcript)
