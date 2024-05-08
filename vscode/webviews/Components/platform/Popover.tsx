@@ -39,23 +39,23 @@ export const Popover: FunctionComponent<{
     const [anchorWasFocused, setAnchorWasFocused] = useState(false)
 
     const showPopover = useCallback((): void => {
-        if (!popoverEl.current || !anchor) {
+        if (!popoverEl.current || !anchor || popoverEl.current?.open) {
             return
         }
-
         setAnchorWasFocused(document.activeElement === anchor)
 
         // Need to call showPopover before getPopoverDimensions because it needs to be displayed in
         // order to calculate its dimensions.
-        popoverEl.current.showPopover()
-
+        try {
+            popoverEl.current.showPopover()
+        } catch {}
         const { top, left, right } = getPopoverDimensions(position, anchor, popoverEl.current)
         popoverEl.current.style.top = top
         if (left !== undefined) popoverEl.current.style.left = left
         if (right !== undefined) popoverEl.current.style.right = right
     }, [anchor, position])
     const hidePopover = useCallback((): void => {
-        if (!popoverEl.current || !anchor) {
+        if (!popoverEl.current || !anchor || !popoverEl.current?.open) {
             return
         }
         try {
