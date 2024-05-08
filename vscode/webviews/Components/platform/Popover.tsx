@@ -47,7 +47,9 @@ export const Popover: FunctionComponent<{
 
         // Need to call showPopover before getPopoverDimensions because it needs to be displayed in
         // order to calculate its dimensions.
-        popoverEl.current.showPopover()
+        try {
+            popoverEl.current.showPopover()
+        } catch {}
 
         const { top, left, right } = getPopoverDimensions(position, anchor, popoverEl.current)
         popoverEl.current.style.top = top
