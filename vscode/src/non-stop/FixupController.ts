@@ -531,6 +531,12 @@ export class FixupController
             })
         }
 
+        const stopTrackingAcceptance = () => {
+            rejectionEditListener.dispose()
+            rejectionFileListener.dispose()
+            commandUndoListener.dispose()
+        }
+
         /**
          * Tracks when a user clicks "Undo" in the Edit codelens.
          * This is important as VS Code doesn't let us easily differentiate between
@@ -545,23 +551,26 @@ export class FixupController
 
             // Immediately dispose of the rejectionListener, otherwise this will also run
             // and mark the "Undo" change here as an "acccepted" change made by the user.
-            rejectionListener.dispose()
-            commandUndoListener.dispose()
+            stopTrackingAcceptance()
 
             // If a user manually clicked "Undo", we can be confident that they reject the fixup.
             logAcceptance('rejected')
         })
+
         let undoCount = 0
         /**
-         * Tracks the rejection of a Fixup task via the users' next action.
+         * Tracks the rejection of a Fixup task via the users' next in-file action.
          * As in, if the user immediately undos the change via the system undo command,
          * or if they persist to make new edits to the file.
          *
          * Will listen for changes to the text document and tracks whether the Edit changes were undone or redone.
          * When a change is made, it logs telemetry about whether the change was rejected or accepted.
          */
-        const rejectionListener = vscode.workspace.onDidChangeTextDocument(event => {
-            if (event.document.uri !== document.uri || event.contentChanges.length === 0) {
+        const rejectionEditListener = vscode.workspace.onDidChangeTextDocument(event => {
+            if (
+                event.document.uri.toString() !== document.uri.toString() ||
+                event.contentChanges.length === 0
+            ) {
                 // Irrelevant change, ignore
                 return
             }
@@ -582,8 +591,24 @@ export class FixupController
             logAcceptance(undoCount > 0 ? 'rejected' : 'accepted')
 
             // We no longer need to track this change, so dispose of our listeners
-            rejectionListener.dispose()
-            commandUndoListener.dispose()
+            stopTrackingAcceptance()
+        })
+
+        /**
+         * Tracks the rejection of a Fixup task through if the source file
+         * was deleted before we marked the task as "accepted".
+         */
+        const rejectionFileListener = vscode.workspace.onDidDeleteFiles(event => {
+            if (event.files.some(uri => uri.toString() !== document.uri.toString())) {
+                // Irrelevant deletion, ignore
+                return
+            }
+
+            // File was deleted, mark this change as rejected
+            logAcceptance('rejected')
+
+            // We no longer need to track this change, so dispose of our listeners
+            stopTrackingAcceptance()
         })
     }
 
