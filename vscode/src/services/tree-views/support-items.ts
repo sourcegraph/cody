@@ -1,4 +1,3 @@
-import { FeatureFlag } from '@sourcegraph/cody-shared'
 import { releaseType } from '../../release'
 import { version } from '../../version'
 import type { CodySidebarTreeItem } from './treeViewItems'
@@ -42,12 +41,15 @@ export const SupportSidebarItems: CodySidebarTreeItem[] = [
         command: { command: 'cody.sidebar.releaseNotes' },
         contextValue: 'cody.version',
     },
-    {
-        title: 'Tutorial',
-        icon: 'tasklist',
-        command: { command: 'cody.sidebar.tutorial' },
-        requireFeature: FeatureFlag.CodyInteractiveTutorial,
-    },
+    // Note: Currently disabled due to an issue where this occasionally evaluates the feature flag
+    // __before__ the user is fully finished authenticating. This will cache an incorrectly
+    // false value which inteferes with the balance of an ongoing A/B test.
+    // {
+    //     title: 'Tutorial',
+    //     icon: 'tasklist',
+    //     command: { command: 'cody.sidebar.tutorial' },
+    //     requireFeature: FeatureFlag.CodyInteractiveTutorial,
+    // },
     {
         title: 'Documentation',
         icon: 'book',
