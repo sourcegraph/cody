@@ -4,7 +4,7 @@ import path from 'node:path'
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
-import { logDebug, logError, setClientNameVersion } from '@sourcegraph/cody-shared'
+import { extensionForLanguage, logDebug, logError, setClientNameVersion } from '@sourcegraph/cody-shared'
 
 // <VERY IMPORTANT - PLEASE READ>
 // This file must not import any module that transitively imports from 'vscode'.
@@ -465,7 +465,9 @@ function toUri(
         typeof uriOrString === 'object' &&
         ((uriOrString as any)?.language || (uriOrString as any)?.content)
     ) {
-        return Uri.from({ scheme: 'untitled', path: `${uuid.v4()}` })
+        const language = (uriOrString as any)?.language ?? ''
+        const extension = extensionForLanguage(language) ?? language
+        return Uri.from({ scheme: 'untitled', path: `${uuid.v4()}.${extension}` })
     }
     return
 }
