@@ -140,7 +140,7 @@ test.extend<ExpectedEvents>({
         'cody.auth.signin.token:clicked',
         'cody.auth:connected',
         'cody.command.codelens:clicked',
-        'cody.menu:command:default:clicked',
+        'cody.menu.command:default:clicked',
         'cody.command.test:executed',
         'cody.fixup.response:hasCode',
         'cody.fixup.apply:succeeded',
