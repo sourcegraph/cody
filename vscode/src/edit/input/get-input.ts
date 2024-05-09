@@ -195,9 +195,6 @@ export const getInput = async (
                 telemetryRecorder.recordEvent('cody.fixup.input.model', 'selected')
 
                 if (acceptedItem.codyProOnly && !isCodyPro) {
-                    // Temporarily ignore focus out, so that the user can return to the quick pick if desired.
-                    modelInput.input.ignoreFocusOut = true
-
                     const option = await vscode.window.showInformationMessage(
                         'Upgrade to Cody Pro',
                         {
@@ -213,8 +210,6 @@ export const getInput = async (
                         void vscode.env.openExternal(vscode.Uri.parse(ACCOUNT_UPGRADE_URL.toString()))
                     }
 
-                    // Restore the default focus behaviour
-                    modelInput.input.ignoreFocusOut = false
                     return
                 }
 
