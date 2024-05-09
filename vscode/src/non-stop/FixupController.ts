@@ -889,12 +889,7 @@ export class FixupController
                         ),
                     }
                 ),
-                new Promise<void>(resolve =>
-                    setTimeout(() => {
-                        telemetryRecorder.recordEvent('cody.fixup.formatting', 'timedOut')
-                        resolve()
-                    }, formattingTimeout)
-                ),
+                new Promise<void>(resolve => setTimeout(resolve, formattingTimeout)),
             ])) || []
 
         const formattingChangesInRange = formattingChanges.filter(change =>
