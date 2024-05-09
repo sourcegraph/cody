@@ -60,6 +60,7 @@ export function createOllamaClient(
 
             let insertText = ''
             let stopReason = ''
+            let buffer = ''
 
             for await (const chunk of iterableBody) {
                 if (signal.aborted) {
@@ -67,12 +68,15 @@ export function createOllamaClient(
                     break
                 }
 
-                for (const chunkString of chunk.toString().split(RESPONSE_SEPARATOR).filter(Boolean)) {
+                buffer += chunk.toString()
+
+                for (const chunkString of buffer.split(RESPONSE_SEPARATOR).filter(Boolean)) {
                     let line: OllamaGenerateResponse
 
                     try {
                         line = JSON.parse(chunkString) as OllamaGenerateResponse
-                    } catch {
+                        buffer = ''
+                    } catch (error) {
                         // ignore JSON.parse() errors most probably caused by incomplete chunk and wait for the next one.
                         break
                     }
