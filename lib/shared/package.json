@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@octokit/types": "^13.5.0",
-    "@sourcegraph/cody-context-filters-test-dataset": "^0.0.1",
+    "@sourcegraph/cody-context-filters-test-dataset": "^1.0.0",
     "@types/crypto-js": "^4.2.2",
     "@types/dedent": "^0.7.0",
     "@types/diff": "^5.0.9",

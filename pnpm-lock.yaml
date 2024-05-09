@@ -307,8 +307,8 @@ importers:
         specifier: ^13.5.0
         version: 13.5.0
       '@sourcegraph/cody-context-filters-test-dataset':
-        specifier: ^0.0.1
-        version: 0.0.1
+        specifier: ^1.0.0
+        version: 1.0.0
       '@types/crypto-js':
         specifier: ^4.2.2
         version: 4.2.2
@@ -4469,8 +4469,8 @@ packages:
       p-map: 4.0.0
     dev: true
 
-  /@sourcegraph/cody-context-filters-test-dataset@0.0.1:
-    resolution: {integrity: sha512-Z8ozYA1VdXJYXglgann0elVT3B5DgMtlwwZfUJiKr3+xG7HcM1obxxjNvj9eizGi+TSpukvwiPeFWr0BLzMPfg==}
+  /@sourcegraph/cody-context-filters-test-dataset@1.0.0:
+    resolution: {integrity: sha512-Uf7wMo5Fu3+g03gl2jvU2qHMaDp0p9RK9U2ucmy6VxWaavxALCC8iy47JL5GdgR5qG3ekEd5mAQV0dIIfoKELA==}
     dev: true
 
   /@sourcegraph/telemetry@0.16.0:
