@@ -49,10 +49,7 @@ export function populateTerminalOutputContextTemplate(output: string): string {
     return COMMAND_OUTPUT_TEMPLATE + output
 }
 
-const SELECTED_CODE_CONTEXT_TEMPLATE = ps`My selected {languageName} code from file \`{filePath}\`:
-<selected>
-{code}
-</selected>`
+const SELECTED_CODE_CONTEXT_TEMPLATE = ps`My selected code from @{filePath}{codebase}:\n\`\`\`\n{code}\`\`\``
 
 export function populateCurrentSelectedCodeContextTemplate(
     code: PromptString,
@@ -63,7 +60,6 @@ export function populateCurrentSelectedCodeContextTemplate(
     return SELECTED_CODE_CONTEXT_TEMPLATE.replace('{code}', code)
         .replace('{codebase}', repoName ? ps` in \`{repoName}\` repository` : ps``)
         .replaceAll('{filePath}', PromptString.fromDisplayPathLineRange(fileUri, range))
-        .replace('{languageName}', PromptString.fromMarkdownCodeBlockLanguageIDForFilename(fileUri))
 }
 
 const DIRECTORY_FILE_LIST_TEMPLATE =

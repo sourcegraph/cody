@@ -14,7 +14,7 @@ import {
 import { URI } from 'vscode-uri'
 
 export function renderContextItem(contextItem: ContextItem): ContextMessage | null {
-    const { source } = contextItem
+    const { source, range } = contextItem
     const { content, repoName } = PromptString.fromContextItem(contextItem)
     // Do not create context item for empty file
     if (!content?.trim()?.length) {
@@ -27,7 +27,7 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
 
     switch (source) {
         case ContextItemSource.Selection:
-            messageText = populateCurrentSelectedCodeContextTemplate(content, uri)
+            messageText = populateCurrentSelectedCodeContextTemplate(content, uri, range)
             break
         case ContextItemSource.Editor:
             // This template text works best with prompts in our commands

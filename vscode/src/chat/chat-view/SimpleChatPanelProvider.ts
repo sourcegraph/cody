@@ -599,7 +599,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 'user',
                 contextFiles,
                 editorState,
-                addEnhancedContext
+                addEnhancedContext,
+                'chat'
             )
         } catch {
             this.postError(new Error('Failed to edit prompt'), 'transcript')
