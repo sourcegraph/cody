@@ -93,7 +93,7 @@ test.extend<ExpectedEvents>({
         'cody.auth.login:firstEver',
         'cody.auth.signin.token:clicked',
         'cody.auth:connected',
-        'cody.menu.command:default:clicked',
+        'cody.menu.command.default:clicked',
         'cody.chat-question:submitted',
         'cody.chat-question:executed',
         'cody.chatResponse:hasCode',

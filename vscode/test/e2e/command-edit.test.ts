@@ -26,7 +26,7 @@ test.extend<ExpectedEvents>({
         'cody.auth.login:firstEver',
         'cody.auth.signin.token:clicked',
         'cody.auth:connected',
-        'cody.menu.command:default:clicked',
+        'cody.menu.command.default:clicked',
         'cody.menu.edit:clicked',
         'cody.command.edit:executed',
         'cody.fixup.response:hasCode',
