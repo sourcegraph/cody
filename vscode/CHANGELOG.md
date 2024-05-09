@@ -2,7 +2,7 @@
 
 This is a log of all notable changes to Cody for VS Code. [Unreleased] changes are included in the nightly pre-release builds.
 
-## [1.16.6]
+## [1.16.7]
 
 ### Added
 
