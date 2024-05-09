@@ -7,6 +7,7 @@ import {
     type PromptString,
     displayPathBasename,
     getEditorInsertSpaces,
+    getEditorTabSize,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 
@@ -875,9 +876,9 @@ export class FixupController
                 'vscode.executeFormatDocumentProvider',
                 document.uri,
                 {
-                    tabSize: document.uri,
+                    tabSize: getEditorTabSize(document.uri, vscode.workspace, vscode.window),
                     insertSpaces: getEditorInsertSpaces(document.uri, vscode.workspace, vscode.window),
-                }
+                } satisfies vscode.FormattingOptions
             )) || []
 
         const formattingChangesInRange = formattingChanges.filter(change =>
