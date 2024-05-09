@@ -12,6 +12,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
   - `New Chat with File Content`: Opens a new chat with the file content when no existing chat panel is open.
 - Chat: New optimization for prompt quality and token usage, deduplicating context items, and optimizing token allocation. [pull/3929](https://github.com/sourcegraph/cody/pull/3929)
 - Document Code/Generate Tests: User selections are now matched against known symbol ranges, and adjusted in cases where a user selection in a suitable subset of one of these ranges. [pull/4031](https://github.com/sourcegraph/cody/pull/4031)
+- Extension: Added the `vscode.git` extension to the `extensionDependencies` list. [pull/4110](https://github.com/sourcegraph/cody/pull/4110)
 
 ### Fixed
 
