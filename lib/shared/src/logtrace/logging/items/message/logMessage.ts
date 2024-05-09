@@ -84,7 +84,7 @@ export function log(
         tags: opts?.tags,
     }
 
-    logger.push(item)
+    logger.push([item])
 }
 
 export type MessageOptions = MessageWithoutDataOptions | MessageWithDataOptions

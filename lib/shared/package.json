@@ -10,7 +10,11 @@
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist", "src", "!**/*.test.*"],
+  "files": [
+    "dist",
+    "src",
+    "!**/*.test.*"
+  ],
   "sideEffects": false,
   "scripts": {
     "build": "tsc --build",
@@ -19,8 +23,8 @@
   },
   "dependencies": {
     "@microsoft/fetch-event-source": "^2.0.1",
-    "@openctx/client": "^0.0.8",
     "@octokit/core": "5.2.0",
+    "@openctx/client": "^0.0.8",
     "@opentelemetry/api": "^1.7.0",
     "@sourcegraph/telemetry": "^0.16.0",
     "crypto-js": "^4.2.0",
@@ -30,6 +34,7 @@
     "dompurify": "^3.0.4",
     "fast-xml-parser": "^4.3.2",
     "highlight.js": "^10.7.3",
+    "immer": "^10.1.1",
     "isomorphic-fetch": "^3.0.0",
     "js-tiktoken": "^1.0.10",
     "lodash": "^4.17.21",
@@ -37,6 +42,8 @@
     "marked": "^4.0.16",
     "re2js": "^0.4.1",
     "semver": "^7.5.4",
+    "source-map-support": "^0.5.21",
+    "ulidx": "^2.3.0",
     "vscode-uri": "^3.0.7"
   },
   "devDependencies": {
@@ -51,6 +58,7 @@
     "@types/marked": "^5.0.0",
     "@types/node-fetch": "^2.6.4",
     "@types/semver": "^7.5.0",
-    "@types/vscode": "^1.80.0"
+    "@types/vscode": "^1.80.0",
+    "type-fest": "^4.17.0"
   }
 }

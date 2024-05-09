@@ -1,6 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+import type { LogSinkInput } from '.'
 import { SaveLogItemsSink, alert, debug, info, log, logger, panic, warn } from '.'
-import { dateGenerator, idGenerator } from '../util'
+import { dateGenerator, idGenerator, withPathsReplaced } from '../util'
 
 interface TestContext {
     sink: SaveLogItemsSink
@@ -40,7 +41,9 @@ describe('logger', () => {
             },
             { privateExcept: ['data.array', 'msg.0', 'data.user.jsonName', 'data.array.[].bleh.[].a'] }
         )
-        expect(context.sink.savedInputs).toMatchSnapshot()
+
+        logger.flush()
+        expect(itemsToSnapshot(context.sink.savedInputs)).toMatchSnapshot()
     })
     // it<TestContext>('logs messages to sinks according to log level', context => {
     //     const sink = new TestLogSink()
@@ -84,6 +87,31 @@ describe('logger', () => {
     // test.todo('can tag tests')
     // test.todo('dedents messages')
 })
+
+function itemsToSnapshot(items: LogSinkInput[]) {
+    return withPathsReplaced(
+        items,
+        ['origin.callsite.column', 'origin.callsite.line', 'origin.callsite.fullFilePath', 'original'],
+        originalValue => {
+            switch (typeof originalValue) {
+                case 'number':
+                case 'bigint':
+                    return 0
+                case 'boolean':
+                    return true
+                case 'object':
+                    if (Array.isArray(originalValue)) {
+                        return []
+                    }
+                    return {}
+                case 'string':
+                    return '<masked>'
+                default:
+                    return false
+            }
+        }
+    )
+}
 
 function reset() {
     let seed = 0

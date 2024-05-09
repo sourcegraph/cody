@@ -2,12 +2,13 @@ import type { ReadonlyDeep } from 'type-fest'
 import type { LogItem, LogItemJson } from '../items'
 import type { LogLevel } from '../items/message'
 
-export type LogSinkInput = ReadonlyDeep<LogItem>
-export type LogSinkJsonInput = ReadonlyDeep<LogItemJson>
+// The original is set if the log item was emitted on the same process
+// This allows sinks like Sentry that run in the same process to leverage
+// Raw error objects before they are transformed into JSON
+export type LogSinkInput = ReadonlyDeep<LogItemJson & { original?: LogItem }>
 
 export interface LogSink {
-    log?: (item: LogSinkInput | LogSinkInput[]) => void
-    logJson?: (item: LogSinkJsonInput | LogSinkJsonInput[]) => void
+    log: (items: LogSinkInput[]) => void
     flush: () => void
 }
 
@@ -40,13 +41,15 @@ export class SaveLogItemsSink implements LogSink {
  * A basic sink that logs messages to the console.
  */
 export class ConsoleLogMessageSink implements LogSink {
-    public logJson(item: LogSinkJsonInput | LogSinkJsonInput[]) {
-        Array.isArray(item) ? item.forEach(this.logOne.bind(this)) : this.logOne(item)
+    public log(items: LogSinkInput | LogSinkInput[]) {
+        for (const item of [items].flat()) {
+            this.logOne(item)
+        }
     }
 
     public flush() {}
 
-    private logOne(item: LogSinkJsonInput) {
+    private logOne(item: LogSinkInput) {
         if (item.message) {
             const message = `${item.timestamp}\t${item.message}`
             switch (item.level) {

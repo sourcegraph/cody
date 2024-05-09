@@ -333,6 +333,9 @@ importers:
       highlight.js:
         specifier: ^10.7.3
         version: 10.7.3
+      immer:
+        specifier: ^10.1.1
+        version: 10.1.1
       isomorphic-fetch:
         specifier: ^3.0.0
         version: 3.0.0
@@ -354,6 +357,12 @@ importers:
       semver:
         specifier: ^7.5.4
         version: 7.5.4
+      source-map-support:
+        specifier: ^0.5.21
+        version: 0.5.21
+      ulidx:
+        specifier: ^2.3.0
+        version: 2.3.0
       vscode-uri:
         specifier: ^3.0.7
         version: 3.0.7
@@ -394,6 +403,9 @@ importers:
       '@types/vscode':
         specifier: ^1.80.0
         version: 1.80.0
+      type-fest:
+        specifier: ^4.17.0
+        version: 4.17.0
 
   vscode:
     dependencies:
@@ -9118,6 +9130,10 @@ packages:
   /immediate@3.0.6:
     resolution: {integrity: sha512-XXOFtyqDjNDAQxVfYxuF7g9Il/IbWmmlQg2MYKOH8ExIT1qg6xc4zyS3HaEEATgs1btfzxq15ciUiY7gjSXRGQ==}
     dev: true
+
+  /immer@10.1.1:
+    resolution: {integrity: sha512-s2MPrmjovJcoMaHtx6K11Ra7oD05NT97w1IC5zpMkT6Atjr7H8LjaDd81iIxUYpMKSRRNMJE703M1Fhr/TctHw==}
+    dev: false
 
   /import-fresh@3.3.0:
     resolution: {integrity: sha512-veYYhQa+D1QBKznvhUHxb8faxlrwUnxseDAbAp457E0wLNio2bOSKnjYDhMj+YiAq61xrMGhQk9iXVk5FzgQMw==}

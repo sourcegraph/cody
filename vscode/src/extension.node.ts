@@ -1,6 +1,11 @@
 // Sentry should be imported first
 import { NodeSentryService } from './services/sentry/sentry.node'
 
+// Internal logging library second
+import { ConsoleLogMessageSink, SaveLogItemsSink, logger } from '@sourcegraph/cody-shared/src/logtrace'
+logger.register('vscode-node', [new SaveLogItemsSink(1000), new ConsoleLogMessageSink()])
+
+// Other dependencies
 import * as vscode from 'vscode'
 
 import { startTokenReceiver } from './auth/token-receiver'
@@ -22,6 +27,7 @@ import {
 } from './local-context/local-embeddings'
 import { SymfRunner } from './local-context/symf'
 import { gitRemoteUrlsFromGitCli } from './repository/repo-name-getter.node'
+import { LogTraceNodeSinksService } from './services/logtrace/sinks.node'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 
 /**
@@ -58,6 +64,7 @@ export function activate(
         createBfgRetriever: () => new BfgRetriever(context),
         createSentryService: (...args) => new NodeSentryService(...args),
         createOpenTelemetryService: (...args) => new OpenTelemetryService(...args),
+        createLogTraceSinksService: (...args) => new LogTraceNodeSinksService(...args),
         getRemoteUrlGetters: () => [gitRemoteUrlsFromGitCli],
         startTokenReceiver: (...args) => startTokenReceiver(...args),
 

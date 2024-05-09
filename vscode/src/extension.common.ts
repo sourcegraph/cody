@@ -23,6 +23,11 @@ import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
 import type { RemoteUrlGetter } from './repository/enterprise-repo-name-resolver'
 import type {
+    LogTraceSinksConfig,
+    LogTraceSinksContext,
+    LogTraceSinksService,
+} from './services/logtrace/sinks'
+import type {
     OpenTelemetryService,
     OpenTelemetryServiceConfig,
 } from './services/open-telemetry/OpenTelemetryService.node'
@@ -48,6 +53,10 @@ export interface PlatformContext {
     ) => SourcegraphCompletionsClient
     createSentryService?: (config: Pick<ConfigurationWithAccessToken, 'serverEndpoint'>) => SentryService
     createOpenTelemetryService?: (config: OpenTelemetryServiceConfig) => OpenTelemetryService
+    createLogTraceSinksService: (
+        context: LogTraceSinksContext,
+        config: LogTraceSinksConfig
+    ) => LogTraceSinksService
     getRemoteUrlGetters?: () => RemoteUrlGetter[]
     startTokenReceiver?: typeof startTokenReceiver
     onConfigurationChange?: (configuration: Configuration) => void

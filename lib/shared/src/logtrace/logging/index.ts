@@ -12,7 +12,6 @@ export {
     ConsoleLogMessageSink,
     LogSink,
     LogSinkInput,
-    LogSinkJsonInput,
     SaveLogItemsSink,
     TraceSpanErrorSink,
     TraceSpanErrorSinkOptions,

@@ -1,5 +1,6 @@
+import { cloneDeep } from 'lodash'
 import { describe, expect, expectTypeOf, it } from 'vitest'
-import { type AllPossiblePaths, idGenerator, replacePathsIfSet } from './util'
+import { type AllPossiblePaths, idGenerator, withPathsReplaced } from './util'
 
 describe('IdGenerator', () => {
     it('Outputs lexicographically sortable ids', () => {
@@ -23,7 +24,7 @@ describe('AllPossiblePaths', () => {
     })
 })
 
-describe('replacePathsIfSet', () => {
+describe('withPathsReplaced', () => {
     it('Replaces paths', () => {
         const input = {
             a: 'a',
@@ -40,9 +41,17 @@ describe('replacePathsIfSet', () => {
             },
         }
 
-        replacePathsIfSet(input, ['key.is.[].unset', 'c.d', 'g.h.[].b'], '<REDACTED>')
+        // we clone the original input so that we can check later
+        // that it wasn't modified
+        const clonedInput = cloneDeep(input)
+        expect(clonedInput).not.toBe(input)
 
-        expect(input).toEqual({
+        const [output] = withPathsReplaced(input, ['key.is.[].unset', 'c.d', 'g.h.[].b'], '<REDACTED>')
+
+        // this tests that the input object was not modified
+        expect(input).toEqual(clonedInput)
+
+        expect(output).toEqual({
             a: 'a',
             b: 'b',
             c: {

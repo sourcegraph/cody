@@ -18,8 +18,10 @@ import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-c
 import type { SymfRunner } from './local-context/symf'
 import { logDebug, logger } from './log'
 import type { AuthProvider } from './services/AuthProvider'
+import type { LogTraceSinksConfig, LogTraceSinksService } from './services/logtrace/sinks'
 
 interface ExternalServices {
+    logtraceSinksService: LogTraceSinksService
     chatClient: ChatClient
     codeCompletionsClient: CodeCompletionsClient
     guardrails: Guardrails
@@ -42,7 +44,8 @@ type ExternalServicesConfiguration = Pick<
     | 'experimentalTracing'
 > &
     LocalEmbeddingsConfig &
-    ContextRankerConfig
+    ContextRankerConfig &
+    LogTraceSinksConfig
 
 export async function configureExternalServices(
     context: vscode.ExtensionContext,
@@ -53,11 +56,13 @@ export async function configureExternalServices(
         | 'createCompletionsClient'
         | 'createSentryService'
         | 'createOpenTelemetryService'
+        | 'createLogTraceSinksService'
         | 'createSymfRunner'
         | 'createContextRankingController'
     >,
     authProvider: AuthProvider
 ): Promise<ExternalServices> {
+    const logtraceSinksService = platform.createLogTraceSinksService(context, initialConfig)
     const sentryService = platform.createSentryService?.(initialConfig)
     const openTelemetryService = platform.createOpenTelemetryService?.(initialConfig)
     const completionsClient = platform.createCompletionsClient(initialConfig, logger)
@@ -88,6 +93,7 @@ export async function configureExternalServices(
     const guardrails = new SourcegraphGuardrailsClient(graphqlClient)
 
     return {
+        logtraceSinksService,
         chatClient,
         codeCompletionsClient,
         guardrails,
@@ -95,6 +101,7 @@ export async function configureExternalServices(
         contextRanking,
         symfRunner,
         onConfigurationChange: newConfig => {
+            logtraceSinksService?.onConfigurationChange(newConfig)
             sentryService?.onConfigurationChange(newConfig)
             openTelemetryService?.onConfigurationChange(newConfig)
             completionsClient.onConfigurationChange(newConfig)

@@ -48,10 +48,10 @@ export interface MessageLogItem<
               privateExcept?: never
           }
         | { privateExcept: string[]; publicExcept?: never }
+    data: D
     verbose?: string[]
     trace?: SpanWrapper
     tags?: string[]
-    data: D
 }
 
 export interface StateLogItem extends BaseLogItem {

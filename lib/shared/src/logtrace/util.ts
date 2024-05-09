@@ -1,7 +1,6 @@
+import { produce } from 'immer'
 import type { JsonObject, JsonValue, Jsonifiable } from 'type-fest'
 import type { KeysOfUnion } from 'type-fest'
-import type { UndefinedToOptional } from 'type-fest/source/internal'
-import type { JsonifyObject } from 'type-fest/source/jsonify'
 import { monotonicFactory } from 'ulidx'
 
 export const IS_TEST = (typeof process === 'object' && !!process.env.VITEST) ?? false
@@ -95,7 +94,11 @@ export type DefaultDiscriminantFields<T extends { _type: string }> = {
 
 // #region Possible Paths
 //this type extracts all variants of objects that a key can be. It also takes any variants nested in array types
-type UnionKeys<T> = T extends T ? (keyof T extends string | number ? keyof T : never) : never
+type UnionKeys<T> = T extends T
+    ? Exclude<keyof T, undefined> extends string | number
+        ? Exclude<keyof T, undefined>
+        : never
+    : never
 type AggregateTypes<T, K extends PropertyKey> = T extends any
     ? K extends keyof T
         ? T[K]
@@ -119,22 +122,51 @@ export type AllPossiblePaths<T> =
     | `${UnionKeys<T>}`
     | (Extract<T, object> extends any
           ? {
-                  [K in UnionKeys<T>]:
-                      | `${K}.${AllPossiblePaths<AggregatedObjectKeyType<T, K>>}`
-                      | (Extract<T[K], Array<any>> extends Array<infer AV>
-                              ? `${K}.[].${AllPossiblePaths<AggregatedArrayKeyType<T, K>>}`
-                              : never)
-              }[UnionKeys<T>]
+                [K in UnionKeys<T>]:
+                    | `${K}.${AllPossiblePaths<AggregatedObjectKeyType<T, K>>}`
+                    | (Extract<T[K], Array<any>> extends Array<infer AV>
+                          ? `${K}.[].${AllPossiblePaths<AggregatedArrayKeyType<T, K>>}`
+                          : never)
+            }[UnionKeys<T>]
           : never)
 
 /**
  * Replace existing values, if they are not undefined/null, at the specified paths with the replacement value.
+ *
+ * For performance reasons if modifications are made to an object or nested field a new object is returned that might re-use objects for unmodified keys.
+ *
  * Paths are in the format as allowed by @link{AllPossiblePaths} such as `a.b.[].c`
  */
-export function replacePathsIfSet<T extends object>(
-    obj: JsonifyObject<UndefinedToOptional<T>>,
+export function withPathsReplaced<infer, D extends Record<string, unknown> = any>(
+    objOrObjs: D | D[],
+    pathOrPaths: `${AllPossiblePaths<D>}`[],
+    replacement: JsonValue | JsonObject | ((v: unknown) => JsonValue)
+): Record<string, unknown>[] {
+    const paths = [pathOrPaths].flat()
+    const newValues: any[] = [objOrObjs].flat().map(obj => {
+        return produce(obj, (draft: any) => {
+            replacePathsIfSet(draft, paths, replacement)
+        })
+    })
+
+    return newValues
+}
+
+// export function log<M = any, D = any>(
+//     message: M extends LogMessage<any> ? M : never,
+//     data: D extends JsonifiableObject ? D : never,
+//     opts: M extends LogMessage<infer LV>
+//         ? MessageWithDataOptions<
+//               | `data.${AllPossiblePaths<Jsonify<D>>}`
+//               | `msg.${Exclude<keyof Readonly<LV>, keyof any[]> & string}`
+//           >
+//         : never
+// ): void
+
+function replacePathsIfSet(
+    obj: Record<string, unknown>,
     paths: string[],
-    replacement: JsonValue | JsonObject
+    replacement: JsonValue | JsonObject | ((v: unknown) => JsonValue)
 ) {
     for (const path of paths) {
         const [head, ...tail] = path.split('.')
@@ -153,10 +185,9 @@ export function replacePathsIfSet<T extends object>(
             // we need to traverse the object deeper
             replacePathsIfSet(valueAtKey as any, [tail.join('.')], replacement)
         } else if (valueAtKey !== undefined && valueAtKey !== null) {
-            console.log(valueAtKey)
             // we found the key
-            ;(obj as any)[head] = replacement
+            ;(obj as any)[head] =
+                typeof replacement === 'function' ? replacement(valueAtKey) : replacement
         }
     }
-    return obj
 }

@@ -1,12 +1,13 @@
-import { ConsoleLogMessageSink, type LogSink } from './sinks'
+import { ConsoleLogMessageSink, type LogSink, type LogSinkInput } from './sinks'
 export {
     LogSink,
     LogSinkInput,
     ConsoleLogMessageSink,
     SaveLogItemsSink,
 } from './sinks'
+import { debounce, zip } from 'lodash'
 import { IS_TEST, idGenerator } from '../util'
-import type { LogItem } from './items'
+import type { LogItem, LogItemJson } from './items'
 
 const ALREADY_REGISTERED_ERROR = new Error(
     'The logger has already been registered. Make sure you only call `register()` once in your entrypoint'
@@ -16,33 +17,74 @@ const NOT_REGISTERED_ERROR = new Error(
     'Logger not initialized. Make sure to call `register()` in your entrypoint.'
 )
 
+const FLUSH_DEBOUNCE_MS = 100
+const FLUSH_MAX_WAIT = 5 * FLUSH_DEBOUNCE_MS
+
 class Logger {
     private _id?: string
     private _session?: string
     private _sinks: Set<LogSink> = new Set()
-    public push(items: LogItem | LogItem[]): void {
-        //TODO(rnauta): how to handle message serialized
-        // const serialized = JSON.parse(JSON.stringify(items))
-        //TODO(rnauta): always wrap in a trace?
-        for (const sink of this.sinks) {
-            sink.log?.(items)
-        }
+
+    private _buffer: LogItem[] = []
+    private _jsonBuffer: LogItemJson[] = []
+
+    public push(items: LogItem[]): void {
+        //TODO: figure out how we can handle delays in sinks when spans depend on it
+        this._buffer = this._buffer.concat(items)
+        this._debouncedFlush()
     }
+
+    public pushSerialized(items: LogItemJson[]): void {
+        this._jsonBuffer = this._jsonBuffer.concat(items)
+        this._debouncedFlush()
+    }
+
     public register(
         id: string,
         defaultSinks: LogSink[] = [new ConsoleLogMessageSink()],
-        session = idGenerator.next(),
+        sessionOverride = idGenerator.next(),
         force = IS_TEST
     ) {
         if (this._id && !force) {
             throw ALREADY_REGISTERED_ERROR
         }
         this._id = id
-        this._session = session
+        this._session = sessionOverride
         this._sinks.clear()
         for (const sink of defaultSinks) {
             this._sinks.add(sink)
         }
+        logger = this
+    }
+
+    private _flush(): void {
+        const itemBuffer = this._buffer
+        const jsonBuffer: LogSinkInput[] = this._jsonBuffer
+        this._jsonBuffer = []
+        this._buffer = []
+
+        const serializedItemBuffer: Array<LogItemJson> = JSON.parse(JSON.stringify(itemBuffer))
+
+        const sinkInputs = jsonBuffer.concat(
+            zip(serializedItemBuffer, itemBuffer).map(
+                ([serialized, original]) =>
+                    Object.assign(serialized!, { original: original! }) satisfies LogSinkInput
+            )
+        )
+
+        for (const sink of this._sinks) {
+            sink.log(sinkInputs)
+        }
+    }
+
+    private _debouncedFlush = debounce(this._flush.bind(this), FLUSH_DEBOUNCE_MS, {
+        leading: false,
+        maxWait: FLUSH_MAX_WAIT,
+    })
+
+    public flush(): void {
+        this._debouncedFlush.cancel()
+        this._flush()
     }
 
     public get id(): string {
@@ -65,8 +107,7 @@ class UninitializedLogger extends Logger {
         session?: string | undefined,
         _?: boolean
     ) {
-        logger = new Logger()
-        logger.register(id, defaultSinks, session, true)
+        new Logger().register(id, defaultSinks, session, true)
     }
 
     public push(items: LogItem | LogItem[]): void {

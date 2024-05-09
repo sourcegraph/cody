@@ -16,22 +16,19 @@ exports[`logger > logs basic messages 1`] = `
     },
     "origin": {
       "callsite": {
-        "column": 9,
-        "fullFilePath": "/Users/rnauta/Documents/github/sourcegraph/cody/lib/logtrace/src/logging/logger.test.ts",
-        "line": 19,
+        "column": 0,
+        "fullFilePath": "<masked>",
+        "line": 0,
         "methodName": "<unknown>",
-        "relativeFilePath": undefined,
       },
       "id": "test",
       "session": "test",
     },
-    "tags": undefined,
+    "original": {},
     "timestamp": {
-      "datetime": 2024-05-01T00:00:00.000Z,
+      "datetime": "2024-05-01T00:00:00.000Z",
       "timezoneOffset": 0,
     },
-    "trace": undefined,
-    "verbose": undefined,
     "visibility": {
       "privateExcept": [],
     },
@@ -53,22 +50,19 @@ exports[`logger > logs basic messages 1`] = `
     },
     "origin": {
       "callsite": {
-        "column": 9,
-        "fullFilePath": "/Users/rnauta/Documents/github/sourcegraph/cody/lib/logtrace/src/logging/logger.test.ts",
-        "line": 20,
+        "column": 0,
+        "fullFilePath": "<masked>",
+        "line": 0,
         "methodName": "<unknown>",
-        "relativeFilePath": undefined,
       },
       "id": "test",
       "session": "test",
     },
-    "tags": undefined,
+    "original": {},
     "timestamp": {
-      "datetime": 2024-05-01T00:00:00.000Z,
+      "datetime": "2024-05-01T00:00:00.000Z",
       "timezoneOffset": 0,
     },
-    "trace": undefined,
-    "verbose": undefined,
     "visibility": {
       "privateExcept": [],
     },
@@ -89,22 +83,19 @@ exports[`logger > logs basic messages 1`] = `
     },
     "origin": {
       "callsite": {
-        "column": 9,
-        "fullFilePath": "/Users/rnauta/Documents/github/sourcegraph/cody/lib/logtrace/src/logging/logger.test.ts",
-        "line": 21,
+        "column": 0,
+        "fullFilePath": "<masked>",
+        "line": 0,
         "methodName": "<unknown>",
-        "relativeFilePath": undefined,
       },
       "id": "test",
       "session": "test",
     },
-    "tags": undefined,
+    "original": {},
     "timestamp": {
-      "datetime": 2024-05-01T00:00:00.000Z,
+      "datetime": "2024-05-01T00:00:00.000Z",
       "timezoneOffset": 0,
     },
-    "trace": undefined,
-    "verbose": undefined,
     "visibility": {
       "privateExcept": [],
     },
@@ -128,22 +119,19 @@ exports[`logger > logs basic messages 1`] = `
     },
     "origin": {
       "callsite": {
-        "column": 9,
-        "fullFilePath": "/Users/rnauta/Documents/github/sourcegraph/cody/lib/logtrace/src/logging/logger.test.ts",
-        "line": 22,
+        "column": 0,
+        "fullFilePath": "<masked>",
+        "line": 0,
         "methodName": "<unknown>",
-        "relativeFilePath": undefined,
       },
       "id": "test",
       "session": "test",
     },
-    "tags": undefined,
+    "original": {},
     "timestamp": {
-      "datetime": 2024-05-01T00:00:00.000Z,
+      "datetime": "2024-05-01T00:00:00.000Z",
       "timezoneOffset": 0,
     },
-    "trace": undefined,
-    "verbose": undefined,
     "visibility": {
       "privateExcept": [],
     },
@@ -158,6 +146,13 @@ exports[`logger > logs basic messages 1`] = `
         {
           "cooper": "hello",
         },
+        {
+          "bleh": [
+            {
+              "a": 6,
+            },
+          ],
+        },
       ],
       "user": {
         "jsonName": "json:Bert",
@@ -169,30 +164,29 @@ exports[`logger > logs basic messages 1`] = `
       "level": "panic",
       "template": [
         "This is a complex message ",
+        " ",
         "",
       ],
       "vars": [
         "Bert",
+        3,
       ],
     },
     "origin": {
       "callsite": {
-        "column": 9,
-        "fullFilePath": "/Users/rnauta/Documents/github/sourcegraph/cody/lib/logtrace/src/logging/logger.test.ts",
-        "line": 35,
+        "column": 0,
+        "fullFilePath": "<masked>",
+        "line": 0,
         "methodName": "<unknown>",
-        "relativeFilePath": undefined,
       },
       "id": "test",
       "session": "test",
     },
-    "tags": undefined,
+    "original": {},
     "timestamp": {
-      "datetime": 2024-05-01T00:00:00.000Z,
+      "datetime": "2024-05-01T00:00:00.000Z",
       "timezoneOffset": 0,
     },
-    "trace": undefined,
-    "verbose": undefined,
     "visibility": {
       "privateExcept": [],
     },
