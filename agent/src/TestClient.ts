@@ -5,12 +5,7 @@ import { createPatch } from 'diff'
 import { execSync, spawn } from 'node:child_process'
 import fspromises from 'node:fs/promises'
 import path from 'node:path'
-import {
-    type ContextItem,
-    DOTCOM_URL,
-    type SerializedChatMessage,
-    logError,
-} from '@sourcegraph/cody-shared'
+import { type ContextItem, type SerializedChatMessage, logError } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { applyPatch } from 'fast-myers-diff'
 import { expect } from 'vitest'
@@ -26,6 +21,10 @@ import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../vscode/
 import { doesFileExist } from '../../vscode/src/commands/utils/workspace-files'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { CodyTaskState } from '../../vscode/src/non-stop/utils'
+import {
+    TESTING_CREDENTIALS,
+    type TestingCredentials,
+} from '../../vscode/src/testutils/testing-credentials'
 import { AgentTextDocument } from './AgentTextDocument'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { MessageHandler, type NotificationMethodName } from './jsonrpc-alias'
@@ -49,8 +48,8 @@ import type {
     WebviewPostMessageParams,
     WorkspaceEditParams,
 } from './protocol-alias'
-import type { TestingToken } from './testing-tokens'
 import { trimEndOfLine } from './trimEndOfLine'
+
 type ProgressMessage = ProgressStartMessage | ProgressReportMessage | ProgressEndMessage
 
 interface ProgressStartMessage {
@@ -77,7 +76,7 @@ export function getAgentDir(): string {
 interface TestClientParams {
     readonly workspaceRootUri: vscode.Uri
     readonly name: string
-    readonly token: TestingToken
+    readonly credentials: TestingCredentials
     bin?: string
     telemetryExporter?: 'testing' | 'graphql' // defaults to testing, which doesn't send telemetry
     areFeatureFlagsEnabled?: boolean // do not evaluate feature flags by default
@@ -110,14 +109,20 @@ function buildAgentBinary(): void {
             // Fail fast if we're trying to record without being authenticated.
             // Without this check, the error message can be cryptic if you try
             // to record without being authenticated.
-            execSync('src login', { stdio: 'inherit' })
+            execSync('src login', {
+                stdio: 'inherit',
+                env: {
+                    ...process.env,
+                    SRC_ACCESS_TOKEN: TESTING_CREDENTIALS.dotcom.token,
+                    SERVER_ENDPOINT: TESTING_CREDENTIALS.dotcom.serverEndpoint,
+                },
+            })
         } catch {
             throw new Error(
                 "Can't record HTTP requests without being authenticated. " +
                     'To fix this problem, run:\n  source agent/scripts/export-cody-http-recording-tokens.sh'
             )
         }
-        expect(new URL(process.env.SRC_ENDPOINT ?? '')).toStrictEqual(DOTCOM_URL)
     }
 }
 
@@ -140,8 +145,8 @@ export class TestClient extends MessageHandler {
                 CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
                 CODY_RECORDING_DIRECTORY: recordingDirectory,
                 CODY_RECORDING_NAME: params.name,
-                SRC_ACCESS_TOKEN: params.token.production,
-                REDACTED_SRC_ACCESS_TOKEN: params.token.redacted,
+                SRC_ACCESS_TOKEN: params.credentials.token,
+                REDACTED_SRC_ACCESS_TOKEN: params.credentials.redactedToken,
                 CODY_TELEMETRY_EXPORTER: params.telemetryExporter ?? 'testing',
                 DISABLE_FEATURE_FLAGS: params.areFeatureFlagsEnabled ? undefined : 'true',
                 CODY_LOG_EVENT_MODE: params.logEventMode,
@@ -175,7 +180,7 @@ export class TestClient extends MessageHandler {
     public workspaceEditParams: WorkspaceEditParams[] = []
 
     get serverEndpoint(): string {
-        return this.params.token.serverEndpoint
+        return this.params.credentials.serverEndpoint
     }
     get completionProvider(): string {
         return this.params?.extraConfiguration?.['cody.autocomplete.advanced.provider'] ?? ''
@@ -320,7 +325,7 @@ export class TestClient extends MessageHandler {
             return result
         })
         this.registerRequest('textDocument/openUntitledDocument', params => {
-            this.workspace.addDocument(ProtocolTextDocumentWithUri.fromDocument(params))
+            this.workspace.loadDocument(ProtocolTextDocumentWithUri.fromDocument(params))
             this.notify('textDocument/didOpen', params)
             return Promise.resolve(true)
         })
@@ -366,7 +371,7 @@ export class TestClient extends MessageHandler {
         const protocolDocument = ProtocolTextDocumentWithUri.from(document.uri, {
             content: updatedContent,
         })
-        this.workspace.addDocument(protocolDocument)
+        this.workspace.loadDocument(protocolDocument)
         return { success: true, protocolDocument }
     }
     private logMessage(params: DebugMessage): void {
@@ -426,7 +431,7 @@ export class TestClient extends MessageHandler {
             content,
             selection: start && end ? { start, end } : undefined,
         }
-        this.workspace.addDocument(ProtocolTextDocumentWithUri.fromDocument(protocolDocument))
+        this.workspace.loadDocument(ProtocolTextDocumentWithUri.fromDocument(protocolDocument))
         this.workspace.activeDocumentFilePath = uri
         this.notify(method, protocolDocument)
     }
@@ -847,8 +852,8 @@ ${patch}`
             },
             extensionConfiguration: {
                 anonymousUserID: `${this.name}abcde1234`,
-                accessToken: this.params.token.production ?? this.params.token.redacted,
-                serverEndpoint: this.params.token.serverEndpoint,
+                accessToken: this.params.credentials.token ?? this.params.credentials.redactedToken,
+                serverEndpoint: this.params.credentials.serverEndpoint,
                 customHeaders: {},
                 customConfiguration: {
                     // For testing .cody/ignore

@@ -37,7 +37,7 @@ test.extend<ExpectedEvents>({
         'cody.fixup.reverted:clicked',
         'cody.sidebar.edit:clicked',
     ],
-})('code lenses for edit (fixup) task', async ({ page, sidebar, expectedEvents }) => {
+})('edit (fixup) task', async ({ page, sidebar, expectedEvents }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -122,4 +122,65 @@ test.extend<ExpectedEvents>({
     await undoLens.click()
     await expect(page.getByText('>Hello Cody</')).toBeVisible()
     await expect(page.getByText('>Goodbye Cody</')).not.toBeVisible()
+})
+
+test('edit (fixup) input - range selection', async ({ page, sidebar }) => {
+    // Sign into Cody
+    await sidebarSignin(page, sidebar)
+
+    // Open the Explorer view from the sidebar
+    await sidebarExplorer(page).click()
+    await page.getByRole('treeitem', { name: 'buzz.ts' }).locator('a').dblclick()
+    await page.getByRole('tab', { name: 'buzz.ts' }).hover()
+
+    // Place the cursor on some text within a range
+    await page.getByText("fizzbuzz.push('Buzz')").click()
+
+    // Open the Edit input
+    await page.getByRole('button', { name: 'Cody Commands' }).click()
+    await page.getByRole('option', { name: 'Edit code' }).click()
+
+    // Check the correct range item is auto-selected
+    const rangeItem = page.getByText('Nearest Code Block')
+    expect(rangeItem).toBeVisible()
+
+    // Open the range input and check it has the correct item selected
+    await rangeItem.click()
+    const selectedRangeItem = page.getByLabel('check   file-code  Nearest Code Block')
+    expect(selectedRangeItem).toBeVisible()
+
+    // Open the symbols input and check it has the correct item selected
+    const symbolitem = page.getByText('Select a Symbol...')
+    await symbolitem.click()
+    const selectedSymbolItem = page.getByLabel('symbol-method  fizzbuzz')
+    await selectedSymbolItem.click()
+
+    // Check that the range input updated correctly to reflect the selected symbol
+    const inputBox = page.getByPlaceholder(/^Enter edit instructions \(type @ to include code/)
+    expect(inputBox).toBeVisible()
+    const updatedRangeItem = page.getByLabel('$(symbol-method) fizzbuzz')
+    expect(updatedRangeItem).toBeVisible()
+})
+
+test('edit (fixup) input - model selection', async ({ page, sidebar }) => {
+    // Sign into Cody
+    await sidebarSignin(page, sidebar)
+
+    // Open the Explorer view from the sidebar
+    await sidebarExplorer(page).click()
+    await page.getByRole('treeitem', { name: 'buzz.ts' }).locator('a').dblclick()
+    await page.getByRole('tab', { name: 'buzz.ts' }).hover()
+
+    // Open the Edit input
+    await page.getByRole('button', { name: 'Cody Commands' }).click()
+    await page.getByRole('option', { name: 'Edit code' }).click()
+
+    // Check the correct range item is auto-selected
+    const modelItem = page.getByText('Claude 3 Sonnet')
+    expect(modelItem).toBeVisible()
+
+    // Open the model input and check it has the correct item selected
+    await modelItem.click()
+    const selectedModelItem = page.getByLabel('check   anthropic-logo  Claude 3 Sonnet, by Anthropic')
+    expect(selectedModelItem).toBeVisible()
 })

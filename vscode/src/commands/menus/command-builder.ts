@@ -4,6 +4,7 @@ import type { CodyCommand } from '@sourcegraph/cody-shared'
 
 import { type CodyCommandMode, CustomCommandType } from '@sourcegraph/cody-shared'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
 import { fromSlashCommand } from '../utils/common'
 import { CommandModeMenuOptions, customPromptsContextOptions } from './items/menu'

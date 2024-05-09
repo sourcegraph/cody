@@ -1,91 +1,30 @@
 .container {
     min-width: 180px;
-    font-size: var(--vscode-font-size);
-    padding: 0 5px 5px 5px; /* match VS Code quickpick padding */
+    max-height: 330px;
 }
 
-:root {
-    --item-height: 22px; /* match VS Code quickpick item height */
-    --item-padding-y: 0.2rem;
-    --item-padding-x: 11px; /* match VS Code quickpick padding */
-    --description-font-size: 0.9em; /* match VS Code quickpick description */
-}
-
-.list {
-    max-height: calc(8*var(--item-height));
-    overflow-y: scroll;
-    list-style: none;
-    padding: var(--list-padding-y) 0;
-    margin: 0;
-
-    border-top: 1px solid var(--vscode-pickerGroup-border);
-    margin-top: -1px;
-}
-
-.item {
-    display: flex;
-    min-height: calc(var(--item-height) - 2*var(--item-padding-y));
-    padding: var(--item-padding-y) var(--item-padding-x);
-}
-
-.help-item {
-    opacity: 0.75;
-    padding: 5px var(--item-padding-x);
-    user-select: none;
-    font-size: inherit;
-    font-weight: normal;
-    margin: 0;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
-}
-
-/* Hide scrollbar */
-.list {
+/* Hide scroll bar. */
+.container [cmdk-list] {
     scrollbar-width: none;
 }
-.list::-webkit-scrollbar {
+.container [cmdk-list]::-webkit-scrollbar {
     display: none;
 }
 
-/* Scroll snap */
-.list {
-    scroll-snap-type: y mandatory;
-    scroll-behavior: auto;
-}
-.option-item {
-    scroll-snap-align: end;
+:root {
+    --description-font-size: 0.9em; /* match VS Code quickpick description */
 }
 
-
-.option-item {
-    cursor: pointer;
-    border-radius: 3px;
-}
-
-.option-item.selected {
-    color: var(--vscode-list-activeSelectionForeground);
-    background-color: var(--vscode-list-activeSelectionBackground);
-}
-.option-item:hover:not(.selected) {
-    color: var(--vscode-list-hoverForeground);
-    background-color: var(--vscode-list-hoverBackground);
-}
-.option-item.disabled {
-    cursor: default;
-}
-
-body[data-vscode-theme-kind='vscode-high-contrast-light'] .option-item.selected,
-body[data-vscode-theme-kind='vscode-high-contrast'] .option-item.selected {
-    outline: 1px dashed var(--vscode-contrastActiveBorder);
-    outline-offset: -1px;
+.item {
+    line-height: 1.2;
 }
 
 /* Option item content */
 .option-item {
     display: flex;
     flex-direction: column;
-    gap: calc(0.75*var(--item-padding-y));
+    gap: 0.2rem;
+    overflow: hidden;
 }
 .option-item-title, .option-item-description, .option-item-warning {
     white-space: nowrap;
@@ -105,8 +44,4 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .option-item.selected {
 .option-item-warning {
     font-size: var(--description-font-size);
     opacity: 0.7;
-}
-
-.title-help-icon {
-    margin-left: 0.25rem;
 }

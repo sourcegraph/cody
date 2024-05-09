@@ -2,6 +2,7 @@ import { PromptString, type TerminalOutputArguments, logDebug, ps } from '@sourc
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import type { ChatCommandResult } from '../../main'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
 import { executeChat } from './ask'
 

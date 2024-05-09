@@ -1,7 +1,8 @@
 import * as vscode from 'vscode'
+import type { TutorialSource } from './commands'
 import { findRangeOfText } from './utils'
 
-export class ChatLinkProvider implements vscode.DocumentLinkProvider {
+export class TutorialLinkProvider implements vscode.DocumentLinkProvider {
     constructor(public editor: vscode.TextEditor) {}
 
     provideDocumentLinks(
@@ -12,17 +13,40 @@ export class ChatLinkProvider implements vscode.DocumentLinkProvider {
             return []
         }
 
-        const linkRange = findRangeOfText(document, 'Start a Chat')
-        if (!linkRange) {
-            return []
+        const links: vscode.DocumentLink[] = []
+
+        const editRange = findRangeOfText(document, 'Start an Edit')
+        if (editRange) {
+            const params = [document, 'link' satisfies TutorialSource]
+            links.push(
+                new vscode.DocumentLink(
+                    editRange,
+                    vscode.Uri.parse(
+                        `command:cody.tutorial.edit?${encodeURIComponent(JSON.stringify(params))}`
+                    )
+                )
+            )
         }
 
-        const decorationType = vscode.window.createTextEditorDecorationType({
+        const chatRange = findRangeOfText(document, 'Start a Chat')
+        if (chatRange) {
+            const params = [document, 'link' satisfies TutorialSource]
+            links.push(
+                new vscode.DocumentLink(
+                    chatRange,
+                    vscode.Uri.parse(
+                        `command:cody.tutorial.chat?${encodeURIComponent(JSON.stringify(params))}`
+                    )
+                )
+            )
+        }
+
+        const linkDecoration = vscode.window.createTextEditorDecorationType({
             color: new vscode.ThemeColor('textLink.activeForeground'),
         })
-        this.editor.setDecorations(decorationType, [{ range: linkRange }])
+        this.editor.setDecorations(linkDecoration, links)
 
-        return [new vscode.DocumentLink(linkRange, vscode.Uri.parse('command:cody.tutorial.chat'))]
+        return links
     }
 }
 

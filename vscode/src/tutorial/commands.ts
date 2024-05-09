@@ -1,6 +1,7 @@
-import { ps } from '@sourcegraph/cody-shared'
+import { ps, telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { executeEdit } from '../edit/execute'
+import { type TextChange, updateRangeMultipleChanges } from '../non-stop/tracked-range'
 import { CodyTaskState } from '../non-stop/utils'
 import { TODO_DECORATION } from './constants'
 import type { TutorialStep } from './content'
@@ -25,6 +26,8 @@ export const setFixDiagnostic = (
     ])
 }
 
+export type TutorialSource = 'link' | 'editor'
+
 /**
  * States at which we consider an Edit to be "terminated" for the purposes of the tutorial.
  * Considers both "Applied" and "Error" to be terminal, so that we can encourage the user along
@@ -34,40 +37,69 @@ const TERMINAL_EDIT_STATES = [CodyTaskState.Applied, CodyTaskState.Finished, Cod
 
 export const registerEditTutorialCommand = (
     editor: vscode.TextEditor,
-    onComplete: () => void
-): vscode.Disposable => {
-    const disposable = vscode.commands.registerCommand('cody.tutorial.edit', async document => {
-        // Clear the existing decoration, the user has actioned this step,
-        // we're just waiting for the response.
-        editor.setDecorations(TODO_DECORATION, [])
-
-        const task = await executeEdit({
-            configuration: {
-                document: editor.document,
-                preInstruction: ps`Function that finds logs in a dir`,
-            },
-        })
-
-        if (!task) {
+    onComplete: () => void,
+    range: vscode.Range
+): vscode.Disposable[] => {
+    let trackedRange = range
+    const rangeTracker = vscode.workspace.onDidChangeTextDocument(event => {
+        if (event.document !== editor.document) {
             return
         }
 
-        // Poll for task.state being applied
-        const interval = setInterval(async () => {
-            if (TERMINAL_EDIT_STATES.includes(task.state)) {
-                clearInterval(interval)
-                onComplete()
-            }
-        }, 100)
+        const changes = new Array<TextChange>(...event.contentChanges)
+        const updatedRange = updateRangeMultipleChanges(trackedRange, changes)
+        if (!updatedRange.isEqual(trackedRange)) {
+            trackedRange = updatedRange
+        }
     })
-    return disposable
+
+    const editCommand = vscode.commands.registerCommand(
+        'cody.tutorial.edit',
+        async (_document: vscode.TextDocument, source: TutorialSource = 'editor') => {
+            telemetryRecorder.recordEvent('cody.interactiveTutorial', 'edit', {
+                privateMetadata: { source },
+            })
+
+            // Clear the existing decoration, the user has actioned this step,
+            // we're just waiting for the response.
+            editor.setDecorations(TODO_DECORATION, [])
+
+            const task = await executeEdit({
+                configuration: {
+                    document: editor.document,
+                    range: trackedRange,
+                    preInstruction: ps`Function that finds logs in a dir`,
+                },
+            })
+
+            if (!task) {
+                return
+            }
+
+            // Poll for task.state being applied
+            const interval = setInterval(async () => {
+                if (TERMINAL_EDIT_STATES.includes(task.state)) {
+                    clearInterval(interval)
+                    onComplete()
+                }
+            }, 100)
+        }
+    )
+
+    return [rangeTracker, editCommand]
 }
 
 export const registerChatTutorialCommand = (onComplete: () => void): vscode.Disposable => {
-    const disposable = vscode.commands.registerCommand('cody.tutorial.chat', async () => {
-        await vscode.commands.executeCommand('cody.chat.panel.new')
-        onComplete()
-    })
+    const disposable = vscode.commands.registerCommand(
+        'cody.tutorial.chat',
+        async (_document: vscode.TextDocument, source: TutorialSource = 'editor') => {
+            telemetryRecorder.recordEvent('cody.interactiveTutorial', 'chat', {
+                privateMetadata: { source },
+            })
+            await vscode.commands.executeCommand('cody.chat.panel.new')
+            onComplete()
+        }
+    )
     return disposable
 }
 

@@ -692,10 +692,13 @@ export class FileSystemError extends Error {
     public code = 'FileSystemError'
 }
 
+export const vscodeWorkspaceTextDocuments: vscode_types.TextDocument[] = []
+
 export const vsCodeMocks = {
     FileSystemError,
     FileType,
     Range,
+    Selection,
     Position,
     InlineCompletionItem,
     EventEmitter,
@@ -747,7 +750,7 @@ export const vsCodeMocks = {
                         case 'cody.debug.filter':
                             return '.*'
                         default:
-                            return ''
+                            return undefined
                     }
                 },
                 update(): void {},
@@ -765,6 +768,7 @@ export const vsCodeMocks = {
         onDidChangeTextDocument() {},
         onDidRenameFiles() {},
         onDidDeleteFiles() {},
+        textDocuments: vscodeWorkspaceTextDocuments,
     },
     ConfigurationTarget: {
         Global: undefined,

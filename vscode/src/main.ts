@@ -14,6 +14,7 @@ import {
     githubClient,
     graphqlClient,
     newPromptMixin,
+    setClientNameVersion,
     setLogger,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -45,6 +46,7 @@ import { executeUsageExamplesCommand } from './commands/execute/usage-examples'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
+import { createInlineCompletionItemFromMultipleProviders } from './completions/create-multi-model-inline-completion-provider'
 import { getConfiguration, getFullConfig } from './configuration'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
 import { exposeOpenCtxExtensionAPIHandle } from './context/openctx'
@@ -138,6 +140,7 @@ const register = async (
     disposable: vscode.Disposable
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => Promise<void>
 }> => {
+    setClientNameVersion(platform.extensionClient.clientName, platform.extensionClient.clientVersion)
     const authProvider = new AuthProvider(initialConfig)
 
     const disposables: vscode.Disposable[] = []
@@ -605,7 +608,9 @@ const register = async (
         // For register sidebar clicks
         vscode.commands.registerCommand('cody.sidebar.click', (name: string, command: string) => {
             const source: EventSource = 'sidebar'
-            telemetryService.log(`CodyVSCodeExtension:command:${name}:clicked`, { source })
+            telemetryService.log(`CodyVSCodeExtension:command:${name}:clicked`, {
+                source,
+            })
             telemetryRecorder.recordEvent(`cody.command.${name}`, 'clicked', {
                 privateMetadata: { source },
             })
@@ -658,9 +663,23 @@ const register = async (
                     'cody-autocomplete',
                     setupAutocomplete
                 )
-                autocompleteDisposables.push({ dispose: autocompleteFeatureFlagChangeSubscriber })
+                autocompleteDisposables.push({
+                    dispose: autocompleteFeatureFlagChangeSubscriber,
+                })
                 autocompleteDisposables.push(
                     await createInlineCompletionItemProvider({
+                        config,
+                        client: codeCompletionsClient,
+                        statusBar,
+                        authProvider,
+                        triggerNotice: notice => {
+                            void chatManager.triggerNotice(notice)
+                        },
+                        createBfgRetriever: platform.createBfgRetriever,
+                    })
+                )
+                autocompleteDisposables.push(
+                    await createInlineCompletionItemFromMultipleProviders({
                         config,
                         client: codeCompletionsClient,
                         statusBar,

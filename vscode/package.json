@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI",
-  "version": "1.16.1",
+  "version": "1.16.4",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -417,6 +417,12 @@
         "when": "cody.activated && config.cody.autocomplete && editorHasFocus && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
       },
       {
+        "command": "cody.multi-model-autocomplete.manual-trigger",
+        "category": "Cody",
+        "title": "Get Completions for multiple autocomplete models",
+        "when": "cody.activated && config.cody.autocomplete.experimental.multiModelCompletions && config.cody.autocomplete && editorHasFocus && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
+      },
+      {
         "command": "cody.chat.panel.new",
         "category": "Cody",
         "title": "New Chat",
@@ -642,6 +648,11 @@
       {
         "command": "cody.autocomplete.manual-trigger",
         "key": "alt+\\",
+        "when": "editorTextFocus && !editorHasSelection && config.cody.autocomplete.enabled && !inlineSuggestionsVisible"
+      },
+      {
+        "command": "cody.multi-model-autocomplete.manual-trigger",
+        "key": "alt+m",
         "when": "editorTextFocus && !editorHasSelection && config.cody.autocomplete.enabled && !inlineSuggestionsVisible"
       },
       {
@@ -1336,22 +1347,29 @@
     "@opentelemetry/sdk-trace-base": "^1.18.1",
     "@opentelemetry/sdk-trace-node": "^1.18.1",
     "@opentelemetry/semantic-conventions": "^1.18.1",
+    "@radix-ui/react-dialog": "^1.0.5",
+    "@radix-ui/react-popover": "^1.0.7",
+    "@radix-ui/react-slot": "^1.0.2",
     "@sentry/browser": "^7.107.0",
     "@sentry/core": "^7.107.0",
     "@sentry/node": "^7.107.0",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/telemetry": "^0.16.0",
     "@sourcegraph/tree-sitter-wasms": "^0.1.9",
+    "@types/he": "^1.2.3",
     "@vscode/codicons": "^0.0.35",
     "@vscode/webview-ui-toolkit": "^1.2.2",
     "async-mutex": "^0.4.0",
     "axios": "^1.3.6",
-    "classnames": "^2.3.2",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
+    "cmdk": "^1.0.0",
     "crypto-js": "^4.2.0",
     "detect-indent": "^7.0.1",
     "diff": "^5.2.0",
     "fast-xml-parser": "^4.3.2",
     "glob": "^7.2.3",
+    "he": "^1.2.0",
     "ini": "^4.1.2",
     "isomorphic-fetch": "^3.0.0",
     "js-levenshtein": "^1.1.6",
@@ -1364,6 +1382,8 @@
     "proxy-agent": "^6.4.0",
     "semver": "^7.5.4",
     "socks-proxy-agent": "^8.0.1",
+    "tailwind-merge": "^2.3.0",
+    "tailwindcss": "^3.4.3",
     "unzipper": "^0.10.14",
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",
@@ -1412,6 +1432,7 @@
     "pako": "^2.1.0",
     "path-browserify": "^1.0.1",
     "playwright": "1.39.0",
+    "postcss": "^8.4.38",
     "progress": "^2.0.3",
     "yaml": "^2.3.4"
   }

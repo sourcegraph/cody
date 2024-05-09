@@ -73,6 +73,7 @@ import type {
     ProtocolTextDocument,
     TextEdit,
 } from './protocol-alias'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
 import * as vscode_shim from './vscode-shim'
 
@@ -244,7 +245,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     throw new Error('Not implemented')
                 },
             })
-            return this.request('textDocument/edit', { uri: uri.toString(), edits, options })
+            return this.request('textDocument/edit', {
+                uri: uri.toString(),
+                edits,
+                options,
+            })
         },
     })
 
@@ -375,25 +380,26 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerNotification('textDocument/didFocus', (document: ProtocolTextDocument) => {
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
             this.workspace.setActiveTextEditor(
-                this.workspace.newTextEditor(this.workspace.addDocument(documentWithUri))
+                this.workspace.newTextEditor(this.workspace.loadDocument(documentWithUri))
             )
         })
 
         this.registerNotification('textDocument/didOpen', document => {
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
-            const textDocument = this.workspace.addDocument(documentWithUri)
+            const textDocument = this.workspace.loadDocument(documentWithUri)
             vscode_shim.onDidOpenTextDocument.fire(textDocument)
             this.workspace.setActiveTextEditor(this.workspace.newTextEditor(textDocument))
         })
 
         this.registerNotification('textDocument/didChange', document => {
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
-            const textDocument = this.workspace.addDocument(documentWithUri)
+            const { document: textDocument, contentChanges } =
+                this.workspace.loadDocumentWithChanges(documentWithUri)
             const textEditor = this.workspace.newTextEditor(textDocument)
             this.workspace.setActiveTextEditor(textEditor)
             vscode_shim.onDidChangeTextDocument.fire({
                 document: textDocument,
-                contentChanges: [], // TODO: implement this. It was only used by recipes, not autocomplete.
+                contentChanges,
                 reason: undefined,
             })
 
@@ -476,7 +482,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
         this.registerAuthenticatedRequest('testing/requestErrors', async () => {
             const requests = this.params?.requestErrors ?? []
-            return { errors: requests.map(({ request, error }) => ({ url: request.url, error })) }
+            return {
+                errors: requests.map(({ request, error }) => ({
+                    url: request.url,
+                    error,
+                })),
+            }
         })
         this.registerAuthenticatedRequest('testing/progress', async ({ title }) => {
             const thenable = await vscode.window.withProgress(
@@ -798,7 +809,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('editCommands/code', params => {
             const instruction = PromptString.unsafe_fromUserQuery(params.instruction)
-            const args: ExecuteEditArguments = { configuration: { instruction, model: params.model } }
+            const args: ExecuteEditArguments = {
+                configuration: { instruction, model: params.model },
+            }
             return this.createEditTask(executeEdit(args).then(task => task && { type: 'edit', task }))
         })
 
@@ -881,7 +894,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
             if (localHistory != null) {
                 return Object.entries(localHistory?.chat)
                     .filter(([chatID, chatTranscript]) => chatTranscript.interactions.length > 0)
-                    .map(([chatID, chatTranscript]) => ({ chatID: chatID, transcript: chatTranscript }))
+                    .map(([chatID, chatTranscript]) => ({
+                        chatID: chatID,
+                        transcript: chatTranscript,
+                    }))
             }
 
             return []
@@ -889,7 +905,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('chat/remoteRepos', async ({ id }) => {
             const panel = this.webPanels.getPanelOrError(id)
-            await this.receiveWebviewMessage(id, { command: 'context/get-remote-search-repos' })
+            await this.receiveWebviewMessage(id, {
+                command: 'context/get-remote-search-repos',
+            })
             return { remoteRepos: panel.remoteRepos }
         })
 
@@ -1043,6 +1061,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
         )
 
         return vscode.Disposable.from(...disposables)
+    }
+
+    get clientName(): string {
+        return this.clientInfo?.name.toLowerCase() || 'uninitialized-agent'
+    }
+
+    get clientVersion(): string {
+        return this.clientInfo?.version || '0.0.0'
     }
 
     /**
@@ -1271,11 +1297,17 @@ export class Agent extends MessageHandler implements ExtensionClient {
         const result = (await commandResult) ?? { type: 'empty-command-result' }
 
         if (result?.type === 'chat') {
-            return { type: 'chat', chatResult: await this.createChatPanel(commandResult) }
+            return {
+                type: 'chat',
+                chatResult: await this.createChatPanel(commandResult),
+            }
         }
 
         if (result?.type === 'edit') {
-            return { type: 'edit', editResult: await this.createEditTask(commandResult) }
+            return {
+                type: 'edit',
+                editResult: await this.createEditTask(commandResult),
+            }
         }
 
         throw new Error('Invalid custom command result')
@@ -1299,7 +1331,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
     ): Promise<boolean> {
         if (edit instanceof AgentWorkspaceEdit) {
             if (this.clientInfo?.capabilities?.editWorkspace === 'enabled') {
-                return this.request('workspace/edit', { operations: edit.operations, metadata })
+                return this.request('workspace/edit', {
+                    operations: edit.operations,
+                    metadata,
+                })
             }
             logError(
                 'Agent',

@@ -5,7 +5,7 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: 03d466855b0746c7f8469dd1989fa621
+    - _id: ada5c2978cc3df0d2b99237693f055e1
       _order: 0
       cache: {}
       request:
@@ -23,7 +23,7 @@ log:
             value: rateLimitedClient / v1
           - name: host
             value: sourcegraph.com
-        headersSize: 281
+        headersSize: 329
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -43,7 +43,11 @@ log:
         queryString:
           - name: api-version
             value: "1"
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1
+          - name: client-name
+            value: ratelimitedclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=ratelimitedclient&client-version=v1
       response:
         bodySize: 0
         content:
@@ -52,7 +56,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Apr 2024 14:24:10 GMT
+            value: Thu, 02 May 2024 11:24:41 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -66,14 +70,14 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: retry-after
-            value: Fri, 26 Apr 2024 23:43:54 UTC
+            value: Thu, 02 May 2024 11:24:39 UTC
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-cloud-trace-context
-            value: 615cec0673a23c8d5c5f50776243cd41
+            value: d7b5838ddc107e1884b55e52c46f81cd
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
@@ -91,7 +95,7 @@ log:
         redirectURL: ""
         status: 429
         statusText: OK
-      startedDateTime: 2024-04-26T14:24:09.873Z
+      startedDateTime: 2024-05-02T11:24:41.183Z
       time: 0
       timings:
         blocked: -1

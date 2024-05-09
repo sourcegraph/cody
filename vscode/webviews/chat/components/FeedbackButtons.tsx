@@ -1,5 +1,5 @@
 import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 import { useCallback, useState } from 'react'
 import { CODY_FEEDBACK_URL } from '../../../src/chat/protocol'
 import styles from './FeedbackButtons.module.css'
@@ -25,11 +25,11 @@ export const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({
     )
 
     return (
-        <div className={classNames(styles.feedbackButtons, className)}>
+        <div className={clsx(styles.feedbackButtons, className)}>
             {!feedbackSubmitted && (
                 <>
                     <VSCodeButton
-                        className={classNames(styles.feedbackButton)}
+                        className={clsx(styles.feedbackButton)}
                         appearance="icon"
                         type="button"
                         onClick={() => onFeedbackBtnSubmit('thumbsUp')}
@@ -37,7 +37,7 @@ export const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({
                         <i className="codicon codicon-thumbsup" />
                     </VSCodeButton>
                     <VSCodeButton
-                        className={classNames(styles.feedbackButton)}
+                        className={clsx(styles.feedbackButton)}
                         appearance="icon"
                         type="button"
                         onClick={() => onFeedbackBtnSubmit('thumbsDown')}
@@ -48,7 +48,7 @@ export const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({
             )}
             {feedbackSubmitted === 'thumbsUp' && (
                 <VSCodeButton
-                    className={classNames(styles.feedbackButton)}
+                    className={clsx(styles.feedbackButton)}
                     appearance="icon"
                     type="button"
                     disabled={true}
@@ -61,7 +61,7 @@ export const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({
             {feedbackSubmitted === 'thumbsDown' && (
                 <span className={styles.thumbsDownFeedbackContainer}>
                     <VSCodeButton
-                        className={classNames(styles.feedbackButton)}
+                        className={clsx(styles.feedbackButton)}
                         appearance="icon"
                         type="button"
                         disabled={true}

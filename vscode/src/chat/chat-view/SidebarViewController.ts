@@ -8,6 +8,7 @@ import type { startTokenReceiver } from '../../auth/token-receiver'
 import { logDebug } from '../../log'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
 import { openExternalLinks } from '../../services/utils/workspace-action'
 import type { ContextProvider } from '../ContextProvider'

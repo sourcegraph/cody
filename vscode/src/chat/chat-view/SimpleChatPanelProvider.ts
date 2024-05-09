@@ -20,7 +20,6 @@ import {
     ModelProvider,
     ModelUsage,
     PromptString,
-    type RangeData,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     Typewriter,
@@ -47,6 +46,7 @@ import type { LocalEmbeddingsController } from '../../local-context/local-embedd
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import type { AuthProvider } from '../../services/AuthProvider'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
 import type { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 import {
@@ -60,7 +60,6 @@ import { countGeneratedCode } from '../utils'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import type { URI } from 'vscode-uri'
 import { getContextFileFromUri } from '../../commands/context/file-path'
@@ -71,6 +70,7 @@ import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { chatModel } from '../../models'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
+import { gitCommitIdFromGitExtension } from '../../repository/git-extension-api'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import type { MessageErrorType } from '../MessageProvider'
 import { getChatContextItemsForMention } from '../context/chatContext'
@@ -286,7 +286,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 this.postChatModels()
                 break
             case 'getUserContext':
-                await this.handleGetUserContextFilesCandidates(message.query, message.range)
+                await this.handleGetUserContextFilesCandidates(message.query)
                 break
             case 'insert':
                 await handleCodeFromInsertAtCursor(message.text)
@@ -415,6 +415,18 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.initDoer.signalInitialized()
     }
 
+    private async getRepoMetadataIfPublic(): Promise<string> {
+        const currentCodebase = await this.codebaseStatusProvider.currentCodebase()
+        if (currentCodebase?.isPublic) {
+            const gitMetadata = {
+                githubUrl: currentCodebase?.remote,
+                commit: gitCommitIdFromGitExtension(currentCodebase?.localFolder),
+            }
+            return JSON.stringify(gitMetadata)
+        }
+        return ''
+    }
+
     /**
      * Handles user input text for both new and edit submissions
      */
@@ -430,7 +442,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     ): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
             span.setAttribute('sampled', true)
-
             const authStatus = this.authProvider.getAuthStatus()
             const sharedProperties = {
                 requestID,
@@ -454,6 +465,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // the condition below is an additional safeguard measure
                     promptText:
                         authStatus.isDotCom && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
+                    gitMetadata:
+                        authStatus.isDotCom && addEnhancedContext
+                            ? await this.getRepoMetadataIfPublic()
+                            : '',
                 },
             })
 
@@ -597,7 +612,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         await chatModel.set(modelID)
     }
 
-    private async handleGetUserContextFilesCandidates(query: string, range?: RangeData): Promise<void> {
+    private async handleGetUserContextFilesCandidates(query: string): Promise<void> {
         // Cancel previously in-flight query.
         const cancellation = new vscode.CancellationTokenSource()
         this.contextFilesQueryCancellation?.cancel()
@@ -625,8 +640,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             const items = await getChatContextItemsForMention(
                 query,
                 cancellation.token,
-                scopedTelemetryRecorder,
-                range
+                scopedTelemetryRecorder
             )
             if (cancellation.token.isCancellationRequested) {
                 return
@@ -652,20 +666,30 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     public async handleGetUserEditorContext(uri?: URI): Promise<void> {
-        const selected = uri ? await getContextFileFromUri(uri) : await getContextFileFromCursor()
+        // Get selection from the active editor
+        const selection = vscode.window.activeTextEditor?.selection
+
+        // Determine context based on URI presence
+        const contextItem = uri
+            ? await getContextFileFromUri(uri, selection)
+            : await getContextFileFromCursor()
+
         const { input, context } = this.chatModel.contextWindow
         const userContextSize = context?.user ?? input
-        const contextItems = selected.map(f => ({
-            ...f,
-            content: undefined,
-            isTooLarge: f.size ? f.size > userContextSize : undefined,
-            source: ContextItemSource.User,
-        }))
+
         void this.postMessage({
             type: 'chat-input-context',
-            items: contextItems,
+            items: contextItem.map(f => ({
+                ...f,
+                // Remove content to avoid sending large data to the webview
+                content: undefined,
+                isTooLarge: f.size ? f.size > userContextSize : undefined,
+                source: ContextItemSource.User,
+                range: f.range,
+            })),
         })
-        // Makes sure to reveal the webview panel in case the panel is hidden.
+
+        // Reveal the webview panel if it is hidden
         this.webviewPanel?.reveal()
     }
 
@@ -831,20 +855,20 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         prompter: IPrompter,
         sendTelemetry?: (contextSummary: any, privateContextStats?: any) => void
     ): Promise<Message[]> {
-        const { prompt, newContextUsed, newContextIgnored } = await prompter.makePrompt(
+        const { prompt, context } = await prompter.makePrompt(
             this.chatModel,
             this.authProvider.getAuthStatus().codyApiVersion
         )
 
         // Update UI based on prompt construction
         // Includes the excluded context items to display in the UI
-        this.chatModel.setLastMessageContext([...newContextUsed, ...newContextIgnored])
+        this.chatModel.setLastMessageContext([...context.used, ...context.ignored])
 
         if (sendTelemetry) {
             // Create a summary of how many code snippets of each context source are being
             // included in the prompt
             const contextSummary: { [key: string]: number } = {}
-            for (const { source } of newContextUsed) {
+            for (const { source } of context.used) {
                 if (!source) {
                     continue
                 }
@@ -864,10 +888,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 }
             // NOTE: The private context stats are only logged for DotCom users
             const privateContextStats = {
-                included: getContextStats(newContextUsed.filter(f => f.source === 'user')),
-                excluded: getContextStats(newContextIgnored.filter(f => f.source === 'user')),
+                included: getContextStats(context.used.filter(f => f.source === 'user')),
+                excluded: getContextStats(context.ignored.filter(f => f.source === 'user')),
             }
-
             sendTelemetry(contextSummary, privateContextStats)
         }
 
