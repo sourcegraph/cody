@@ -19,6 +19,7 @@ import { countCode } from '../services/utils/code-count'
 
 import { PersistenceTracker } from '../common/persistence-tracker'
 import { lines } from '../completions/text-processing'
+import { sleep } from '../completions/utils'
 import { getInput } from '../edit/input/get-input'
 import type { ExtensionClient } from '../extension-client'
 import type { AuthProvider } from '../services/AuthProvider'
@@ -889,7 +890,7 @@ export class FixupController
                         ),
                     }
                 ),
-                new Promise<void>(resolve => setTimeout(resolve, formattingTimeout)),
+                sleep(formattingTimeout),
             ])) || []
 
         const formattingChangesInRange = formattingChanges.filter(change =>
