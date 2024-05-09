@@ -6,4 +6,5 @@
     color: var(--vscode-inputOption-activeForeground);
     align-items: center;
     justify-content: center;
+    height: fit-content;
 }
