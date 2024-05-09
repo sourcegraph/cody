@@ -358,6 +358,10 @@ export class AuthProvider {
         const isLoggedIn = isAuthenticated(authStatus)
         authStatus.isLoggedIn = isLoggedIn
 
+        await this.storeAuthInfo(url, token)
+        this.syncAuthStatus(authStatus)
+        await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn)
+
         // If the extension is authenticated on startup, it can't be a user's first
         // ever authentication. We store this to prevent logging first-ever events
         // for already existing users.
@@ -367,9 +371,6 @@ export class AuthProvider {
             this.handleFirstEverAuthentication()
         }
 
-        await this.storeAuthInfo(url, token)
-        this.syncAuthStatus(authStatus)
-        await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn)
         return { authStatus, isLoggedIn }
     }
 
