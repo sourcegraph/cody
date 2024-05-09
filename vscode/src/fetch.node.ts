@@ -1,11 +1,13 @@
 import http from 'node:http'
 import https from 'node:https'
 import { parse as parseUrl } from 'node:url'
-import { agent, registerLocalCertificates } from '@sourcegraph/cody-shared'
+import { agent } from '@sourcegraph/cody-shared'
 import type { Configuration } from '@sourcegraph/cody-shared'
 import { HttpProxyAgent } from 'http-proxy-agent'
 import { HttpsProxyAgent } from 'https-proxy-agent'
 import { SocksProxyAgent } from 'socks-proxy-agent'
+// @ts-ignore
+import { registerLocalCertificates } from './certs'
 import { getConfiguration } from './configuration'
 
 // The path to the exported class can be found in the npm contents
