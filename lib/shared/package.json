@@ -19,8 +19,8 @@
   },
   "dependencies": {
     "@microsoft/fetch-event-source": "^2.0.1",
-    "@openctx/client": "^0.0.8",
     "@octokit/core": "5.2.0",
+    "@openctx/client": "^0.0.8",
     "@opentelemetry/api": "^1.7.0",
     "@sourcegraph/telemetry": "^0.16.0",
     "crypto-js": "^4.2.0",
@@ -41,6 +41,7 @@
   },
   "devDependencies": {
     "@octokit/types": "^13.5.0",
+    "@sourcegraph/cody-context-filters-test-dataset": "^0.0.1",
     "@types/crypto-js": "^4.2.2",
     "@types/dedent": "^0.7.0",
     "@types/diff": "^5.0.9",
