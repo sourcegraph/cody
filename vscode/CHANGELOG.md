@@ -10,6 +10,16 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+## [1.16.5]
+
+### Added
+
+### Fixed
+
+- Tutorial: Fixed a bug where the tutorial would not open on first authentication. [pull/4108](https://github.com/sourcegraph/cody/pull/4108)
+
+### Changed
+
 ## [1.16.4]
 
 ### Added
