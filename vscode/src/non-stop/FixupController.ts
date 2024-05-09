@@ -870,15 +870,32 @@ export class FixupController
             return false
         }
 
+        /**
+         * Maximum amount of time to spend formatting.
+         * If the formatter takes longer than this then we will skip formatting completely.
+         */
+        const formattingTimeout = 1000
         const formattingChanges =
-            (await vscode.commands.executeCommand<vscode.TextEdit[]>(
-                'vscode.executeFormatDocumentProvider',
-                document.uri,
-                {
-                    tabSize: document.uri,
-                    insertSpaces: getEditorInsertSpaces(document.uri, vscode.workspace, vscode.window),
-                }
-            )) || []
+            (await Promise.race([
+                vscode.commands.executeCommand<vscode.TextEdit[]>(
+                    'vscode.executeFormatDocumentProvider',
+                    document.uri,
+                    {
+                        tabSize: document.uri,
+                        insertSpaces: getEditorInsertSpaces(
+                            document.uri,
+                            vscode.workspace,
+                            vscode.window
+                        ),
+                    }
+                ),
+                new Promise<void>(resolve =>
+                    setTimeout(() => {
+                        telemetryRecorder.recordEvent('cody.fixup.formatting', 'timedOut')
+                        resolve()
+                    }, formattingTimeout)
+                ),
+            ])) || []
 
         const formattingChangesInRange = formattingChanges.filter(change =>
             rangeToFormat.contains(change.range)
