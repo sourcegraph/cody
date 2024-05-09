@@ -11,13 +11,10 @@ import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.LogicalPosition
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import com.intellij.util.io.createFile
-import com.intellij.util.io.exists
 import com.intellij.util.withScheme
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentCodebase
@@ -266,7 +263,7 @@ abstract class FixupSession(
 
     for (op in workspaceEditParams.operations) {
 
-      op.uri?.let { createAndSwitchFileIfNeeded(it) }
+      op.uri?.let { updateEditorIfNeeded(it) }
 
       // TODO: We need to support the file-level operations.
       when (op.type) {
@@ -294,22 +291,21 @@ abstract class FixupSession(
     }
   }
 
-  private fun createAndSwitchFileIfNeeded(path: String) {
+  private fun updateEditorIfNeeded(path: String) {
     val uri = URI.create(path).withScheme("file")
-    if (!uri.toPath().exists()) uri.toPath().createFile()
+    val vf = LocalFileSystem.getInstance().findFileByNioFile(uri.toPath()) ?: return
+    val documentForFile = FileDocumentManager.getInstance().getDocument(vf)
 
-    val vf = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(uri.toPath()) ?: return
-    if (FileDocumentManager.getInstance().getFile(document) == vf) {
-      return
-    }
+    if (document != documentForFile) {
+      CodyEditorUtil.getAllOpenEditors()
+          .firstOrNull { it.document == documentForFile }
+          ?.let { newEditor -> editor = newEditor }
 
-    ApplicationManager.getApplication().invokeAndWait { CodyEditorUtil.showDocument(project, path) }
-    editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return
-    val textFile = ProtocolTextDocument.fromVirtualFile(editor, vf)
-
-    CodyAgentService.withAgent(project) { agent ->
-      ensureSelectionRange(agent, textFile)
-      runInEdt { showWorkingGroup() }
+      val textFile = ProtocolTextDocument.fromVirtualFile(editor, vf)
+      CodyAgentService.withAgent(project) { agent ->
+        ensureSelectionRange(agent, textFile)
+        runInEdt { showWorkingGroup() }
+      }
     }
   }
 

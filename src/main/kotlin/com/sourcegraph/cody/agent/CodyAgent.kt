@@ -115,7 +115,8 @@ private constructor(
                               editWorkspace = "enabled",
                               codeLenses = "enabled",
                               showDocument = "enabled",
-                              ignore = "enabled")))
+                              ignore = "enabled",
+                              untitledDocuments = "enabled")))
               .thenApply { info ->
                 logger.warn("Connected to Cody agent " + info.name)
                 server.initialized()

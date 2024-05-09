@@ -7,6 +7,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
+import com.intellij.util.withScheme
 import com.sourcegraph.cody.chat.AgentChatSessionService
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.context.RemoteRepoSearcher
@@ -15,6 +16,7 @@ import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.cody.listeners.CodyFileEditorListener
 import com.sourcegraph.cody.statusbar.CodyStatusService
 import com.sourcegraph.utils.CodyEditorUtil
+import java.net.URI
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -69,9 +71,19 @@ class CodyAgentService(project: Project) : Disposable {
       agent.client.onTextDocumentShow = Function { params ->
         CodyEditorUtil.showDocument(
             project,
-            params.uri,
+            URI.create(params.uri).withScheme("file"),
             params.options?.selection?.toVSCodeRange(),
             params.options?.preserveFocus)
+      }
+
+      agent.client.onOpenUntitledDocument = Function { params ->
+        val uri = URI.create(params.uri).withScheme("file")
+        if (CodyEditorUtil.createFileIfNeeded(project, uri, params.content) == null)
+            return@Function false
+        ApplicationManager.getApplication().invokeAndWait {
+          CodyEditorUtil.showDocument(project, uri)
+        }
+        return@Function true
       }
 
       agent.client.onRemoteRepoDidChange = Consumer {
