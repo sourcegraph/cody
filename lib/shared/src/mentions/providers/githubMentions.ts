@@ -125,7 +125,6 @@ class GithubContextMentionProvider implements ContextMentionProvider<typeof Gith
                 : await githubClient.request('GET /issues', {
                       per_page: 10,
                       pulls: false,
-                      filter: 'all',
                   })
 
             signal?.throwIfAborted?.()
