@@ -306,6 +306,9 @@ importers:
       '@octokit/types':
         specifier: ^13.5.0
         version: 13.5.0
+      '@sourcegraph/cody-context-filters-test-dataset':
+        specifier: ^0.0.1
+        version: 0.0.1
       '@types/crypto-js':
         specifier: ^4.2.2
         version: 4.2.2
@@ -4464,6 +4467,10 @@ packages:
       commander: 4.1.1
       ignore: 5.3.1
       p-map: 4.0.0
+    dev: true
+
+  /@sourcegraph/cody-context-filters-test-dataset@0.0.1:
+    resolution: {integrity: sha512-Z8ozYA1VdXJYXglgann0elVT3B5DgMtlwwZfUJiKr3+xG7HcM1obxxjNvj9eizGi+TSpukvwiPeFWr0BLzMPfg==}
     dev: true
 
   /@sourcegraph/telemetry@0.16.0:
