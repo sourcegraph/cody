@@ -249,7 +249,7 @@ export class SearchViewProvider implements vscode.Disposable {
         quickPick.placeholder = 'Searching...'
         quickPick.matchOnDescription = true
         quickPick.matchOnDetail = true
-        quickPick.ignoreFocusOut = false
+        quickPick.ignoreFocusOut = true
         quickPick.buttons = searchQuickPickButtons
         quickPick.onDidAccept(() => (quickPick.selectedItems[0] as SymfResultQuickPickItem)?.onSelect())
 
