@@ -88,7 +88,7 @@ export const getInput = async (
     }
 
     telemetryService.log('CodyVSCodeExtension:menu:edit:clicked', { source }, { hasV2Event: true })
-    telemetryRecorder.recordEvent('cody.menu:edit', 'clicked', { privateMetadata: { source } })
+    telemetryRecorder.recordEvent('cody.menu.edit', 'clicked', { privateMetadata: { source } })
 
     const initialCursorPosition = editor.selection.active
     let activeRange = initialValues.initialExpandedRange || initialValues.initialRange
