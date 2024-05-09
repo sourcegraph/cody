@@ -63,7 +63,7 @@ import { captureException } from '@sentry/core'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import type { URI } from 'vscode-uri'
 import { getContextFileFromUri } from '../../commands/context/file-path'
-import { getContextFileFromCursor } from '../../commands/context/selection'
+import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
@@ -89,7 +89,7 @@ import { InitDoer } from './InitDoer'
 import { SimpleChatModel, prepareChatMessage } from './SimpleChatModel'
 import { getChatPanelTitle, openFile } from './chat-helpers'
 import { getEnhancedContext } from './context'
-import { DefaultPrompter, type IPrompter } from './prompt'
+import { DefaultPrompter } from './prompt'
 
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
@@ -489,11 +489,16 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
                 this.postEmptyMessageInProgress()
 
+                // Add user's current selection as context for chat messages.
+                const selectionContext = source === 'chat' ? await getContextFileFromSelection() : []
+                userContextFiles.push(...selectionContext)
+
                 const userContextItems: ContextItemWithContent[] = await resolveContextItems(
                     this.editor,
                     userContextFiles || [],
                     inputText
                 )
+
                 span.setAttribute('strategy', this.config.useContext)
                 const prompter = new DefaultPrompter(
                     userContextItems,
@@ -852,7 +857,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
      * Constructs the prompt and updates the UI with the context used in the prompt.
      */
     private async buildPrompt(
-        prompter: IPrompter,
+        prompter: DefaultPrompter,
         sendTelemetry?: (contextSummary: any, privateContextStats?: any) => void
     ): Promise<Message[]> {
         const { prompt, context } = await prompter.makePrompt(

@@ -4,6 +4,7 @@ import {
     type ContextMessage,
     type ContextTokenUsageType,
     PromptString,
+    displayPath,
     populateCodeContextTemplate,
     populateContextTemplateFromText,
     populateCurrentSelectedCodeContextTemplate,
@@ -13,31 +14,39 @@ import {
 import { URI } from 'vscode-uri'
 
 export function renderContextItem(contextItem: ContextItem): ContextMessage | null {
-    const promptContext = PromptString.fromContextItem(contextItem)
+    const { source } = contextItem
+    const { content, repoName } = PromptString.fromContextItem(contextItem)
     // Do not create context item for empty file
-    if (!promptContext.content?.trim()?.length) {
+    if (!content?.trim()?.length) {
         return null
     }
 
+    const uri = getContextItemLocalUri(contextItem)
+
     let messageText: PromptString
-    const uri =
-        contextItem.source === ContextItemSource.Unified
-            ? URI.parse(contextItem.title || '')
-            : contextItem.uri
-    if (contextItem.source === ContextItemSource.Selection) {
-        messageText = populateCurrentSelectedCodeContextTemplate(promptContext.content, uri)
-    } else if (contextItem.source === ContextItemSource.Editor) {
-        // This template text works best with prompts in our commands
-        // Using populateCodeContextTemplate here will cause confusion to Cody
-        const templateText = ps`Codebase context from file path {fileName}: `
-        messageText = populateContextTemplateFromText(templateText, promptContext.content, uri)
-    } else if (contextItem.source === ContextItemSource.Terminal) {
-        messageText = promptContext.content
-    } else if (contextItem.source === ContextItemSource.History) {
-        messageText = promptContext.content
-    } else {
-        messageText = populateCodeContextTemplate(promptContext.content, uri, promptContext.repoName)
+
+    switch (source) {
+        case ContextItemSource.Selection:
+            messageText = populateCurrentSelectedCodeContextTemplate(content, uri)
+            break
+        case ContextItemSource.Editor:
+            // This template text works best with prompts in our commands
+            // Using populateCodeContextTemplate here will cause confusion to Cody
+            messageText = populateContextTemplateFromText(
+                ps`Codebase context from file path {displayPath}: `,
+                content,
+                uri
+            )
+            break
+        case ContextItemSource.Terminal:
+        case ContextItemSource.History:
+            messageText = content
+            break
+        default:
+            messageText = populateCodeContextTemplate(content, uri, repoName)
+            break
     }
+
     return { speaker: 'human', text: messageText, file: contextItem }
 }
 
@@ -49,4 +58,18 @@ export function getContextItemTokenUsageType(item: ContextItem): ContextTokenUsa
         default:
             return 'enhanced'
     }
+}
+
+/**
+ * Returns the display path for a context item.
+ *
+ * For unified items, the title is used as the display path.
+ * For other items, the URI is used.
+ */
+export function getContextItemDisplayPath(item: ContextItem): string {
+    return displayPath(getContextItemLocalUri(item))
+}
+
+function getContextItemLocalUri(item: ContextItem): URI {
+    return item.source === ContextItemSource.Unified ? URI.parse(item.title || '') : item.uri
 }

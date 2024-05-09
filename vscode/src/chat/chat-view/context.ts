@@ -286,32 +286,6 @@ const userAttentionRegexps: RegExp[] = [
     /have\s+open/,
 ]
 
-function getCurrentSelectionContext(editor: VSCodeEditor): ContextItem[] {
-    const selection = editor.getActiveTextEditorSelection()
-    if (!selection?.selectedText) {
-        return []
-    }
-    let range: vscode.Range | undefined
-    if (selection.selectionRange) {
-        range = new vscode.Range(
-            selection.selectionRange.start.line,
-            selection.selectionRange.start.character,
-            selection.selectionRange.end.line,
-            selection.selectionRange.end.character
-        )
-    }
-
-    return [
-        {
-            type: 'file',
-            content: selection.selectedText,
-            uri: selection.fileUri,
-            range,
-            source: ContextItemSource.Selection,
-        },
-    ]
-}
-
 function getVisibleEditorContext(editor: VSCodeEditor): ContextItem[] {
     return wrapInActiveSpan('chat.context.visibleEditorContext', () => {
         const visible = editor.getActiveTextEditorVisibleContent()
@@ -340,10 +314,7 @@ async function getPriorityContext(
 ): Promise<ContextItem[]> {
     return wrapInActiveSpan('chat.context.priority', async () => {
         const priorityContext: ContextItem[] = []
-        const selectionContext = getCurrentSelectionContext(editor)
-        if (selectionContext.length > 0) {
-            priorityContext.push(...selectionContext)
-        } else if (needsUserAttentionContext(text)) {
+        if (needsUserAttentionContext(text)) {
             // Query refers to current editor
             priorityContext.push(...getVisibleEditorContext(editor))
         } else if (needsReadmeContext(editor, text)) {

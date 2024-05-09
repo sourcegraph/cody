@@ -1,5 +1,6 @@
 import type { URI } from 'vscode-uri'
 
+import type { RangeData } from '../common/range'
 import type { ActiveTextEditorDiagnostic } from '../editor'
 import { displayPath } from '../editor/displayPath'
 import { PromptString, ps } from './prompt-string'
@@ -53,23 +54,15 @@ const SELECTED_CODE_CONTEXT_TEMPLATE = ps`My selected {languageName} code from f
 {code}
 </selected>`
 
-const SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO = ps`My selected {languageName} code from file \`{filePath}\` in \`{repoName}\` repository:
-<selected>
-{code}
-</selected>`
-
 export function populateCurrentSelectedCodeContextTemplate(
     code: PromptString,
     fileUri: URI,
+    range?: RangeData,
     repoName?: PromptString
 ): PromptString {
-    return (
-        repoName
-            ? SELECTED_CODE_CONTEXT_TEMPLATE_WITH_REPO.replace('{repoName}', repoName)
-            : SELECTED_CODE_CONTEXT_TEMPLATE
-    )
-        .replace('{code}', code)
-        .replaceAll('{filePath}', PromptString.fromDisplayPath(fileUri))
+    return SELECTED_CODE_CONTEXT_TEMPLATE.replace('{code}', code)
+        .replace('{codebase}', repoName ? ps` in \`{repoName}\` repository` : ps``)
+        .replaceAll('{filePath}', PromptString.fromDisplayPathLineRange(fileUri, range))
         .replace('{languageName}', PromptString.fromMarkdownCodeBlockLanguageIDForFilename(fileUri))
 }
 
@@ -88,9 +81,12 @@ export function populateListOfFilesContextTemplate(fileList: string, fileUri?: U
 export function populateContextTemplateFromText(
     templateText: PromptString,
     content: PromptString,
-    fileUri: URI
+    fileUri: URI,
+    range?: RangeData
 ): PromptString {
-    return templateText.replace('{fileName}', PromptString.fromDisplayPath(fileUri)).concat(content)
+    return templateText
+        .replace('{displayPath}', PromptString.fromDisplayPathLineRange(fileUri, range))
+        .concat(content)
 }
 
 const FILE_IMPORTS_TEMPLATE = ps`{fileName} has imported the following: `

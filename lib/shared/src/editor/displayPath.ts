@@ -1,6 +1,7 @@
 import { URI } from 'vscode-uri'
 
 import { pathFunctionsForURI, posixFilePaths, windowsFilePaths } from '../common/path'
+import { type RangeData, displayLineRange } from '../common/range'
 
 /**
  * Convert an absolute URI to a (possibly shorter) path to display to the user. The display path is
@@ -25,6 +26,18 @@ import { pathFunctionsForURI, posixFilePaths, windowsFilePaths } from '../common
 export function displayPath(location: URI): string {
     const result = _displayPath(location, checkEnvInfo())
     return typeof result === 'string' ? result : result.toString()
+}
+
+/**
+ * Displays the path of a URI {@link displayPath} with zero-based line values extracted from range.
+ * Example: `src/foo/bar.ts:5-10`
+ *
+ * @param location - The URI to display the path for.
+ * @param range - The line range data to display.
+ * @returns The formatted path with the start and end lines of the range appended to it.
+ */
+export function displayPathWithLines(location: URI, range: RangeData): string {
+    return `${displayPath(location)}:${displayLineRange(range)}`
 }
 
 /**

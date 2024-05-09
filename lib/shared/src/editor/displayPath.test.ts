@@ -2,12 +2,12 @@ import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { URI } from 'vscode-uri'
 
 import { isWindows } from '../common/platform'
-
 import {
     type DisplayPathEnvInfo,
     displayPath,
     displayPathBasename,
     displayPathDirname,
+    displayPathWithLines,
     setDisplayPathEnvInfo,
     uriHasPrefix,
 } from './displayPath'
@@ -412,4 +412,56 @@ describe('setDisplayPathEnvInfo', () => {
             displayPath(URI.parse('file:///a/b.ts'))
         }).toThrowError('no environment info for displayPath')
     })
+})
+
+describe('displayPathWithLines', () => {
+    const testCases = [
+        ...DISPLAY_PATH_TEST_CASES.flatMap(({ name, tests: { nonWindows, windows, all } }) => [
+            ...(nonWindows
+                ? [
+                      {
+                          name: `nonWindows: ${name}`,
+                          envInfo: { ...nonWindows.envInfo, isWindows: false },
+                          cases: nonWindows.cases,
+                      },
+                  ]
+                : []),
+            ...(windows
+                ? [
+                      {
+                          name: `windows: ${name}`,
+                          envInfo: { ...windows.envInfo, isWindows: true },
+                          cases: windows.cases,
+                      },
+                  ]
+                : []),
+            ...(all
+                ? [
+                      {
+                          name: `all nonWindows: ${name}`,
+                          envInfo: { ...all.envInfo, isWindows: false },
+                          cases: all.cases,
+                      },
+                      {
+                          name: `all windows: ${name}`,
+                          envInfo: { ...all.envInfo, isWindows: true },
+                          cases: all.cases,
+                      },
+                  ]
+                : []),
+        ]),
+    ]
+
+    for (const { name, envInfo, cases } of testCases) {
+        describe(name, () => {
+            for (const { input, expected } of cases) {
+                const range = { start: { line: 0, character: 5 }, end: { line: 99, character: 0 } }
+                test(`${input.fsPath} -> ${expected}:1-99`, () => {
+                    expect(withEnvInfo(envInfo, () => displayPathWithLines(input, range))).toBe(
+                        `${expected}:1-99`
+                    )
+                })
+            }
+        })
+    }
 })
