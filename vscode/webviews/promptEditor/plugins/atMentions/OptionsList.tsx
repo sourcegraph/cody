@@ -13,9 +13,11 @@ import {
     FILE_HELP_LABEL,
     FILE_RANGE_TOOLTIP_LABEL,
     GENERAL_HELP_LABEL,
+    GITHUB_HELP_LABEL,
     IGNORED_FILE_WARNING_LABEL,
     LARGE_FILE_WARNING_LABEL,
     NO_FILE_MATCHES_LABEL,
+    NO_GITHUB_MATCHES_LABEL,
     NO_PACKAGE_MATCHES_LABEL,
     NO_SYMBOL_MATCHES_HELP_LABEL,
     NO_SYMBOL_MATCHES_LABEL,
@@ -108,6 +110,8 @@ function getHelpText(mentionQuery: MentionQuery, options: MentionTypeaheadOption
             return options.length > 0 || mentionQuery.text.length < 3
                 ? PACKAGE_HELP_LABEL
                 : NO_PACKAGE_MATCHES_LABEL
+        case 'github':
+            return options.length > 0 ? GITHUB_HELP_LABEL : NO_GITHUB_MATCHES_LABEL
         case 'symbol':
             return options.length > 0 || !mentionQuery.text.length
                 ? SYMBOL_HELP_LABEL
