@@ -70,7 +70,7 @@ export function createOllamaClient(
 
                 buffer += chunk.toString()
 
-                for (const chunkString of chunk.toString().split(RESPONSE_SEPARATOR).filter(Boolean)) {
+                for (const chunkString of buffer.split(RESPONSE_SEPARATOR).filter(Boolean)) {
                     let line: OllamaGenerateResponse
 
                     try {
