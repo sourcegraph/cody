@@ -30,6 +30,7 @@ import { AuthMenu, showAccessTokenInputBox, showInstanceURLInputBox } from './Au
 import { getAuthReferralCode } from './AuthProviderSimplified'
 import { localStorage } from './LocalStorageProvider'
 import { secretStorage } from './SecretStorageProvider'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from './telemetry'
 
 type Listener = (authStatus: AuthStatus) => void

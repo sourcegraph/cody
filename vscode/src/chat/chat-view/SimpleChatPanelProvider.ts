@@ -46,6 +46,7 @@ import type { LocalEmbeddingsController } from '../../local-context/local-embedd
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import type { AuthProvider } from '../../services/AuthProvider'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
 import type { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 import {

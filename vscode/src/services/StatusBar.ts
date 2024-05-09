@@ -13,6 +13,7 @@ import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import type { CodyIgnoreType } from '../cody-ignore/notification'
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
 import { FeedbackOptionItems, SupportOptionItems } from './FeedbackOptions'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from './telemetry'
 import { enableVerboseDebugMode } from './utils/export-logs'
 
