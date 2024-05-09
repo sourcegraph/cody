@@ -12,14 +12,24 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
   - `New Chat with File Content`: Opens a new chat with the file content when no existing chat panel is open.
 - Chat: New optimization for prompt quality and token usage, deduplicating context items, and optimizing token allocation. [pull/3929](https://github.com/sourcegraph/cody/pull/3929)
 - Document Code/Generate Tests: User selections are now matched against known symbol ranges, and adjusted in cases where a user selection in a suitable subset of one of these ranges. [pull/4031](https://github.com/sourcegraph/cody/pull/4031)
-- Edit: Added a maximum timeout to the formatting logic, so the Edit does not appear stuck if the users' formatter takes a particularly long amount of tiem. [pull/4113](https://github.com/sourcegraph/cody/pull/4113)
 - Extension: Added the `vscode.git` extension to the `extensionDependencies` list. [pull/4110](https://github.com/sourcegraph/cody/pull/4110)
 
 ### Fixed
 
 - Autocomplete: Handle incomplete Ollama response chunks gracefully. [pull/4066](https://github.com/sourcegraph/cody/pull/4066)
 - Edit: Improved handling of responses that contain HTML entities. [pull/4085](https://github.com/sourcegraph/cody/pull/4085)
-- Edit: Fixes cases where the formatting on an Edit would not respect the editor tab size with certain formatters. [pull/4111](https://github.com/sourcegraph/cody/pull/4111)
+
+### Changed
+
+## [1.16.6]
+
+### Added
+
+- Edit: Added a maximum timeout to the formatting logic, so the Edit does not appear stuck if the users' formatter takes a particularly long amount of tiem. [pull/4113](https://github.com/sourcegraph/cody/pull/4113)
+
+### Fixed
+
+- Edit: Fixed cases where the formatting of an Edit would not respect the editor tab size with certain formatters. [pull/4111](https://github.com/sourcegraph/cody/pull/4111)
 
 ### Changed
 
