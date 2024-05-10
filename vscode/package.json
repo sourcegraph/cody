@@ -345,14 +345,14 @@
       {
         "command": "cody.command.generate-commit",
         "category": "Cody Command",
-        "title": "Generate Commit (Experimental)",
+        "title": "Generate Commit Message (Experimental)",
         "icon": "$(cody-logo)",
         "when": "cody.activated && config.git.enabled && scmProvider == git && !cody.isGeneratingCommit"
       },
       {
         "command": "cody.command.abort-commit",
         "category": "Cody Command",
-        "title": "Stop Cody from Generating Commit (Experimental)",
+        "title": "Stop Generating",
         "icon": "$(debug-stop)",
         "when": "cody.activated && cody.isGeneratingCommit"
       },
