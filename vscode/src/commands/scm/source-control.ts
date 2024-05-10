@@ -97,8 +97,15 @@ export class CodySourceControl implements vscode.Disposable {
             return
         }
 
-        // Check for Commit Template and set it if available
-        this.commitTemplate = this.commitTemplate ?? scm?.commitTemplate
+        // Get Commit Template from config and set it when available.
+        if (!this.commitTemplate) {
+            const [localTemplate, globalTemplate] = await Promise.all([
+                repository.getConfig('commit.template'),
+                repository.getGlobalConfig('commit.template'),
+            ])
+
+            this.commitTemplate = scm?.commitTemplate ?? localTemplate ?? globalTemplate
+        }
 
         // Open the vscode source control view to show the progress.
         void vscode.commands.executeCommand('workbench.view.scm')
