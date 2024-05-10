@@ -25,9 +25,9 @@ export async function executeGitHubPullFixupCommand(
             type: 'edit',
             task: await executeEdit({
                 configuration: {
-                    //preInstruction: prompt,
-                    mode: 'insert',
-                    range: new vscode.Range(selection.start, selection.end),
+                    preInstruction: prompt,
+                    mode: 'edit',
+                    range: selection,
                     document,
                 },
                 source: args?.source,
