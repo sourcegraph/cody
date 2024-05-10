@@ -119,7 +119,7 @@ interface SharedEventPayload extends InteractionIDPayload {
     otherCompletionProviders: string[]
 
     /** The median of the last upstream requests */
-    medianUpstreamLatency: number
+    medianUpstreamLatency?: number
 }
 
 /**
@@ -831,7 +831,7 @@ function getSharedParams(event: CompletionBookkeepingEvent): SharedEventPayload 
         items: event.items.map(i => ({ ...i })),
         otherCompletionProviderEnabled: otherCompletionProviders.length > 0,
         otherCompletionProviders,
-        medianUpstreamLatency: upstreamHealthProvider.getMedianDuration() ?? -1,
+        medianUpstreamLatency: upstreamHealthProvider.getMedianDuration(),
     }
 }
 

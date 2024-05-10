@@ -28,7 +28,7 @@ export class UpstreamHealthProvider implements vscode.Disposable {
 
     public getMedianDuration(): number | undefined {
         if (!this.config) {
-            throw new Error('UpstreamHealthProvider not initialized')
+            return undefined
         }
         if (this.recentDurations.length === 0) {
             return undefined
