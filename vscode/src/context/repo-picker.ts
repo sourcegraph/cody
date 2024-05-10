@@ -176,7 +176,7 @@ export class RemoteRepoPicker implements vscode.Disposable {
             const inWorkspace = workspaceRepos.has(repo.id)
             const shortName = repo.name.slice(repo.name.lastIndexOf('/') + 1)
             const item = {
-                label: `${isIgnored ? '$(warning) ' : ''}${shortName}`,
+                label: `${shortName}${isIgnored ? ' - $(warning) Ignored' : ''}`,
                 name: repo.name,
                 id: repo.id,
                 description: inWorkspace ? 'In your workspace' : '',

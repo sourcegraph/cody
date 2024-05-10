@@ -43,7 +43,11 @@ export async function gitAPIinit(): Promise<vscode.Disposable> {
     }
     // Initialize the git extension if it is available
     try {
-        await extension?.activate().then(() => init())
+        if (!extension?.isActive) {
+            await extension?.activate()
+        }
+
+        init()
     } catch (error) {
         vscodeGitAPI = undefined
         // Display error message if git extension is disabled

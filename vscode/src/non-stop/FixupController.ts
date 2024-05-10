@@ -7,6 +7,7 @@ import {
     type PromptString,
     displayPathBasename,
     getEditorInsertSpaces,
+    getEditorTabSize,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 
@@ -19,6 +20,7 @@ import { countCode } from '../services/utils/code-count'
 
 import { PersistenceTracker } from '../common/persistence-tracker'
 import { lines } from '../completions/text-processing'
+import { sleep } from '../completions/utils'
 import { getInput } from '../edit/input/get-input'
 import type { ExtensionClient } from '../extension-client'
 import type { AuthProvider } from '../services/AuthProvider'
@@ -830,15 +832,27 @@ export class FixupController
             return false
         }
 
+        /**
+         * Maximum amount of time to spend formatting.
+         * If the formatter takes longer than this then we will skip formatting completely.
+         */
+        const formattingTimeout = 1000
         const formattingChanges =
-            (await vscode.commands.executeCommand<vscode.TextEdit[]>(
-                'vscode.executeFormatDocumentProvider',
-                document.uri,
-                {
-                    tabSize: document.uri,
-                    insertSpaces: getEditorInsertSpaces(document.uri, vscode.workspace, vscode.window),
-                }
-            )) || []
+            (await Promise.race([
+                vscode.commands.executeCommand<vscode.TextEdit[]>(
+                    'vscode.executeFormatDocumentProvider',
+                    document.uri,
+                    {
+                        tabSize: getEditorTabSize(document.uri, vscode.workspace, vscode.window),
+                        insertSpaces: getEditorInsertSpaces(
+                            document.uri,
+                            vscode.workspace,
+                            vscode.window
+                        ),
+                    }
+                ),
+                sleep(formattingTimeout),
+            ])) || []
 
         const formattingChangesInRange = formattingChanges.filter(change =>
             rangeToFormat.contains(change.range)

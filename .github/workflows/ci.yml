@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Sets a variable that is used to determine the matrix to run e2e tests on.
+  # Sets a variable that is used to determine the matrix to run fast tests (unit & integration) on.
   # Everything runs on ubuntu and windows, only commits to main run on macos.
-  main_commit_matrix_prep:
+  fast_tests_matrix_prep:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
@@ -25,11 +25,11 @@ jobs:
           fi
 
   test-unit:
-    needs: main_commit_matrix_prep
+    needs: fast_tests_matrix_prep
     strategy:
       fail-fast: false
       matrix:
-        runner: ${{ fromJson(needs.main_commit_matrix_prep.outputs.matrix) }}
+        runner: ${{ fromJson(needs.fast_tests_matrix_prep.outputs.matrix) }}
         # Run on the most recently supported version of node for all bots.
         node: [20]
         include:
@@ -62,11 +62,11 @@ jobs:
           CODY_NODE_VERSION: ${{ matrix.node }}
 
   test-integration:
-    needs: main_commit_matrix_prep
+    needs: fast_tests_matrix_prep
     strategy:
       fail-fast: false
       matrix:
-        runner: ${{ fromJson(needs.main_commit_matrix_prep.outputs.matrix) }}
+        runner: ${{ fromJson(needs.fast_tests_matrix_prep.outputs.matrix) }}
     runs-on: ${{ matrix.runner }}-latest
     timeout-minutes: 15
     steps:
@@ -90,25 +90,29 @@ jobs:
       - run: pnpm -C vscode run test:integration
         if: matrix.runner == 'windows' || matrix.runner == 'macos'
 
+  # Sets a variable that is used to determine the matrix to run slow tests (e2e) on.
+  # Everything runs on ubuntu, only commits to main run on macos and windows.
+  slow_tests_matrix_prep:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          if [ "$GITHUB_EVENT_NAME" == "push" ] && [ "$GITHUB_REF" == "refs/heads/main" ]; then
+            echo 'matrix=[{"runner":"ubuntu"},{"runner":"windows"},{"runner":"macos"}]' >> $GITHUB_OUTPUT
+          else
+            echo 'matrix=[{"runner":"ubuntu","shard":"1/5"},{"runner":"ubuntu","shard":"2/5"},{"runner":"ubuntu","shard":"3/5"},{"runner":"ubuntu","shard":"4/5"},{"runner":"ubuntu","shard":"5/5"}]' >> $GITHUB_OUTPUT
+          fi
+
   test-e2e:
+    needs: slow_tests_matrix_prep
     strategy:
       fail-fast: false
       matrix:
-        include:
-          # only shard ubuntu
-          - runner: windows
-          - runner: ubuntu
-            shard: 1/5
-          - runner: ubuntu
-            shard: 2/5
-          - runner: ubuntu
-            shard: 3/5
-          - runner: ubuntu
-            shard: 4/5
-          - runner: ubuntu
-            shard: 5/5
+        include: ${{ fromJson(needs.slow_tests_matrix_prep.outputs.matrix) }}
     runs-on: ${{ matrix.runner }}-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     permissions:
       id-token: write
       contents: read
@@ -140,53 +144,6 @@ jobs:
         if: matrix.runner == 'ubuntu'
       - run: pnpm -C vscode run test:e2e
         if: matrix.runner != 'ubuntu'
-      - uses: actions/upload-artifact@v3
-        if: ${{ failure() }}
-        with:
-          name: playwright-recordings ${{ matrix.runner }}
-          path: playwright/**/*.webm
-
-  # Use a single large mac for e2e tests as it runs in 4m instead of 6m (as of
-  # 2023-12-06)
-  #
-  # fixme(toolmantim): We should dedupe this Mac job with the above job using a
-  # matrix after Cody 1.0.0. It wasn't done beforehand because it requires
-  # updating the required status checks for merging PRs. Ideally it would just
-  # be https://github.com/sourcegraph/cody/blob/21a40be7297da70f310350e2557a069ea06326ce/.github/workflows/ci.yml#L76
-  test-e2e-macos:
-    needs: build
-    runs-on: macos-latest-large
-    name: 'test-e2e (macos)'
-    if: github.event_name == 'push' && github.ref =='refs/heads/main'
-    timeout-minutes: 15
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version-file: .tool-versions
-      - uses: pnpm/action-setup@d882d12c64e032187b2edb46d3a0d003b7a43598 # SECURITY: pin third-party action hashes
-      - id: auth
-        uses: google-github-actions/auth@v0
-        # Skip auth if PR is from a fork
-        if: ${{ !github.event.pull_request.head.repo.fork }}
-        with:
-          workload_identity_provider: ${{ secrets.DATA_TEAM_PROVIDER_NAME }}
-          service_account: ${{ secrets.DATA_TEAM_SA_EMAIL }}
-      - uses: google-github-actions/setup-gcloud@v0
-      - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-        shell: bash
-        id: pnpm-cache
-      - name: Cache pnpm store
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-pnpm-store-
-      - run: pnpm install
-      - run: pnpm -C vscode run test:e2e
       - uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:

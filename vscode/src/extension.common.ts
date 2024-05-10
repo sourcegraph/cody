@@ -21,7 +21,6 @@ import type { ContextRankerConfig, ContextRankingController } from './local-cont
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
-import type { RemoteUrlGetter } from './repository/enterprise-repo-name-resolver'
 import type {
     OpenTelemetryService,
     OpenTelemetryServiceConfig,
@@ -48,7 +47,6 @@ export interface PlatformContext {
     ) => SourcegraphCompletionsClient
     createSentryService?: (config: Pick<ConfigurationWithAccessToken, 'serverEndpoint'>) => SentryService
     createOpenTelemetryService?: (config: OpenTelemetryServiceConfig) => OpenTelemetryService
-    getRemoteUrlGetters?: () => RemoteUrlGetter[]
     startTokenReceiver?: typeof startTokenReceiver
     onConfigurationChange?: (configuration: Configuration) => void
     extensionClient: ExtensionClient

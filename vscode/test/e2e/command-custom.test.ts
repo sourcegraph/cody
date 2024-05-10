@@ -49,7 +49,7 @@ test.extend<ExpectedEvents>({
         'cody.auth.signin.token:clicked',
         'cody.auth:connected',
         'cody.sidebar.custom:clicked',
-        'cody.menu:command:custom:clicked',
+        'cody.menu.command.custom:clicked',
         'cody.menu.custom.build:clicked',
         'cody.command.custom.build:executed',
         'cody.command.custom:executed',
@@ -182,7 +182,7 @@ test.extend<ExpectedEvents>({
         'cody.auth.login:firstEver',
         'cody.auth.signin.token:clicked',
         'cody.sidebar.custom:clicked',
-        'cody.menu:command:custom:clicked',
+        'cody.menu.command.custom:clicked',
         'cody.command.custom:executed',
         'cody.chat-question:submitted',
         'cody.chat-question:executed',
@@ -296,8 +296,8 @@ test.extend<ExpectedEvents>({
         'cody.auth.signin.token:clicked',
         'cody.auth:connected',
         'cody.sidebar.custom:clicked',
-        'cody.menu:command:custom:clicked',
-        'cody.menu:command:config:clicked',
+        'cody.menu.command.custom:clicked',
+        'cody.menu.command.config:clicked',
     ],
 })('open and delete cody.json from the custom command menu', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)

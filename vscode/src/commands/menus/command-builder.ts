@@ -4,6 +4,7 @@ import type { CodyCommand } from '@sourcegraph/cody-shared'
 
 import { type CodyCommandMode, CustomCommandType } from '@sourcegraph/cody-shared'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
 import { fromSlashCommand } from '../utils/common'
 import { CommandModeMenuOptions, customPromptsContextOptions } from './items/menu'
@@ -104,7 +105,7 @@ export class CustomCommandsBuilderMenu {
             title: 'New Custom Cody Command: Prompt',
             prompt: 'Enter the instructions for Cody to follow and answer.',
             placeHolder: 'e.g. Create five different test cases for the selected code',
-            ignoreFocusOut: false,
+            ignoreFocusOut: true,
             validateInput: (input: string) => (input.length ? null : 'Command prompt cannot be empty.'),
         })
         return prompt ? this.addContext({ prompt }) : null
