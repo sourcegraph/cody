@@ -42,7 +42,6 @@ import {
     executeTestEditCommand,
 } from './commands/execute'
 import { executeExplainHistoryCommand } from './commands/execute/explain-history'
-import { executeGitHubPullFixupCommand } from './commands/execute/github-pull-fixup'
 import { executeUsageExamplesCommand } from './commands/execute/usage-examples'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
@@ -393,9 +392,6 @@ const register = async (
         vscode.commands.registerCommand('cody.command.unit-tests', a => executeTestEditCommand(a)),
         vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a)),
         vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a)),
-        vscode.commands.registerCommand('cody.command.github-pull-fixup', a =>
-            executeGitHubPullFixupCommand(a)
-        ),
         vscode.commands.registerCommand('cody.command.usageExamples', a =>
             executeUsageExamplesCommand(a)
         )

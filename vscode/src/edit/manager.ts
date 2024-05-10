@@ -17,6 +17,7 @@ import type { FixupTask } from '../non-stop/FixupTask'
 import { DEFAULT_EVENT_SOURCE } from '@sourcegraph/cody-shared'
 import { isUriIgnoredByContextFilterWithNotification } from '../cody-ignore/context-filter'
 import { showCodyIgnoreNotification } from '../cody-ignore/notification'
+import { executeGitHubPullFixupCommand } from '../commands/execute/github-pull-fixup'
 import type { ExtensionClient } from '../extension-client'
 import { editModel } from '../models'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
@@ -74,7 +75,17 @@ export class EditManager implements vscode.Disposable {
                 provider.startEdit()
             }
         )
-        this.disposables.push(this.controller, editCommand, startCommand)
+
+        // TODO I need to get hold of this.controller such that I can track
+        // FixupTasks for a file. In particular I if a user does a retry I need
+        // to find the new FixupTask. Maybe instead of EditManager creating the
+        // FixupController, it can be passed in?
+        const githubPullFixupCommand = vscode.commands.registerCommand(
+            'cody.command.github-pull-fixup',
+            a => executeGitHubPullFixupCommand(this.controller, a)
+        )
+
+        this.disposables.push(this.controller, editCommand, startCommand, githubPullFixupCommand)
     }
 
     public syncAuthStatus(authStatus: AuthStatus): void {
