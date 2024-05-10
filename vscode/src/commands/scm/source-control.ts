@@ -7,6 +7,7 @@ import {
     type ModelContextWindow,
     ModelProvider,
     ModelUsage,
+    Typewriter,
     getDotComDefaultModels,
     getSimplePreamble,
     pluralize,
@@ -242,6 +243,14 @@ async function streaming(
 ): Promise<void> {
     // Ensure commitText is defined outside the loop for scope retention
     let commitText = ''
+    const typewriter = new Typewriter({
+        update(content): void {
+            updateInputBox(content)
+        },
+        close() {
+            updateInputBox(commitText, true)
+        },
+    })
 
     for await (const message of stream) {
         // Keep using the streamed value on abort.
@@ -254,13 +263,14 @@ async function streaming(
         switch (message.type) {
             case 'change':
                 commitText = message.text
-                updateInputBox(message.text)
+                typewriter.update(commitText)
                 break
             case 'complete':
-                updateInputBox(commitText, true)
+                typewriter.close()
                 progress.report({ message: 'Complete' })
                 break
             case 'error':
+                typewriter.close()
                 throw new Error(message?.error?.message)
         }
     }
