@@ -422,7 +422,7 @@ interface ClientCapabilities {
     progressBars?: 'none' | 'enabled'
     edit?: 'none' | 'enabled'
     editWorkspace?: 'none' | 'enabled'
-    untitledDocuments?: 'none' | 'enabled' | 'partial'
+    untitledDocuments?: 'none' | 'enabled'
     showDocument?: 'none' | 'enabled'
     codeLenses?: 'none' | 'enabled'
     showWindowMessage?: 'notification' | 'request'
