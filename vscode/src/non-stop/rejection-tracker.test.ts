@@ -30,16 +30,17 @@ describe('trackRejection', () => {
     let onDidChangeTextDocument: (event: vscode.TextDocumentChangeEvent) => void
     let onDidDeleteFiles: (event: vscode.FileDeleteEvent) => void
 
-    const mockWorkspace = {
-        onDidChangeTextDocument(listener) {
-            onDidChangeTextDocument = listener
-            return { dispose: () => {} }
-        },
-        onDidDeleteFiles(listener) {
-            onDidDeleteFiles = listener
-            return { dispose: () => {} }
-        },
-    }
+    const mockWorkspace: Pick<typeof vscode.workspace, 'onDidChangeTextDocument' | 'onDidDeleteFiles'> =
+        {
+            onDidChangeTextDocument(listener) {
+                onDidChangeTextDocument = listener
+                return { dispose: () => {} }
+            },
+            onDidDeleteFiles(listener) {
+                onDidDeleteFiles = listener
+                return { dispose: () => {} }
+            },
+        }
     const mockDocument = document('Hello, world!')
     const mockTask = {
         id: 'task-id',
