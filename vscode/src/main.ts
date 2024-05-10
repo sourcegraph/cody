@@ -349,6 +349,7 @@ const register = async (
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)
+    repoNameResolver.init(authProvider)
 
     // Execute Cody Commands and Cody Custom Commands
     const executeCommand = (
