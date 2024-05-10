@@ -30,7 +30,6 @@ function getCustomAgent({ proxy }: Configuration): ({ protocol }: Pick<URL, 'pro
         const proxyURL = proxy || getSystemProxyURI(protocol, process.env)
         if (!proxyURL) {
             if (protocol === 'http:') {
-                console.log('No proxy set for HTTP requests')
                 return httpAgent
             }
             return httpsAgent
