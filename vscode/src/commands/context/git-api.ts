@@ -38,14 +38,13 @@ export async function getContextFilesFromGitApi(
 async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<ContextItem[]> {
     try {
         // We first try to get only staged changed. Otherwise we simply try to get all unstaged changes
-        const cachedDiff = await gitRepo?.diff(true)
-        const isCached = !!cachedDiff?.trim()
-        const diffOutput = isCached ? cachedDiff : await gitRepo?.diff(false)
+        const hasStagedChanges = gitRepo?.state?.indexChanges?.length > 0
+        const diffOutput = await gitRepo?.diff(hasStagedChanges)
         if (!diffOutput) {
             throw new Error('Empty git diff output.')
         }
 
-        const command = `git diff${isCached ? ' --cached' : ''}`
+        const command = `git diff${hasStagedChanges ? ' --cached' : ''}`
         const diffs: ContextItem[] = []
         const diffOutputByFiles = diffOutput.trim().split('diff --git ')
 
