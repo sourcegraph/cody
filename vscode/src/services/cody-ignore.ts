@@ -9,6 +9,7 @@ import {
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { logDebug } from '../log'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from './telemetry'
 
 const utf8 = new TextDecoder('utf-8')

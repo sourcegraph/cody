@@ -4,7 +4,7 @@ import path from 'node:path'
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
-import { extensionForLanguage, logDebug, logError, setClientNameVersion } from '@sourcegraph/cody-shared'
+import { logDebug, logError, setClientNameVersion } from '@sourcegraph/cody-shared'
 
 // <VERY IMPORTANT - PLEASE READ>
 // This file must not import any module that transitively imports from 'vscode'.
@@ -291,52 +291,11 @@ const _workspace: typeof vscode.workspace = {
         if (!workspaceDocuments) {
             throw new Error('workspaceDocuments is uninitialized')
         }
-        if (typeof uriOrString === 'string') {
-            return workspaceDocuments.openTextDocument(Uri.file(uriOrString))
-        }
-        if (uriOrString instanceof Uri) {
-            return workspaceDocuments.openTextDocument(uriOrString)
-        }
 
-        if (
-            typeof uriOrString === 'object' &&
-            ((uriOrString as any)?.language || (uriOrString as any)?.content) &&
-            agent
-        ) {
-            const language: string = (uriOrString as any)?.language ?? ''
-            const content: string = (uriOrString as any)?.content ?? ''
-            const extension = extensionForLanguage(language) ?? language
-            const untitledUri = Uri.from({
-                scheme: 'untitled',
-                path: `${uuid.v4()}.${extension}`,
-            })
-            if (clientInfo?.capabilities?.untitledDocuments !== 'enabled') {
-                const errorMessage =
-                    'Client does not support untitled documents. To fix this problem, set `untitledDocuments: "enabled"` in client capabilities'
-                logError('vscode.workspace.openTextDocument', 'unsupported operation', errorMessage)
-                throw new Error(errorMessage)
-            }
-            const result = await agent.request('textDocument/openUntitledDocument', {
-                uri: untitledUri.toString(),
-                content,
-                language,
-            })
-
-            if (!result) {
-                throw new Error(
-                    `client returned false from textDocument/openUntitledDocument: ${JSON.stringify(
-                        uriOrString
-                    )}`
-                )
-            }
-            const document = await workspaceDocuments.openTextDocument(untitledUri)
-            if (document.getText() !== content) {
-                throw new Error(
-                    'untitled document has mismatched content. ' +
-                        JSON.stringify({ expected: content, obtained: document.getText() }, null, 2)
-                )
-            }
-            return document
+        const uri = toUri(uriOrString)
+        if (uri) {
+            if (uri.scheme === 'untitled') await openUntitledDocument(uri)
+            return workspaceDocuments.openTextDocument(uri)
         }
         return Promise.reject(
             new Error(`workspace.openTextDocument:unsupported argument ${JSON.stringify(uriOrString)}`)
@@ -487,6 +446,46 @@ const defaultTreeView: vscode.TreeView<any> = {
     description: undefined,
     message: undefined,
     title: undefined,
+}
+
+function toUri(
+    uriOrString: string | vscode.Uri | { language?: string; content?: string } | undefined
+): Uri | undefined {
+    if (typeof uriOrString === 'string') {
+        return Uri.file(uriOrString)
+    }
+    if (uriOrString instanceof Uri) {
+        return uriOrString
+    }
+    if (
+        typeof uriOrString === 'object' &&
+        ((uriOrString as any)?.language || (uriOrString as any)?.content)
+    ) {
+        return Uri.from({ scheme: 'untitled', path: `${uuid.v4()}` })
+    }
+    return
+}
+
+async function openUntitledDocument(uri: Uri, content?: string, language?: string) {
+    if (clientInfo?.capabilities?.untitledDocuments !== 'enabled') {
+        const errorMessage =
+            'Client does not support untitled documents. To fix this problem, set `untitledDocuments: "enabled"` in client capabilities'
+        logError('vscode.workspace.openTextDocument', 'unsupported operation', errorMessage)
+        throw new Error(errorMessage)
+    }
+    if (agent) {
+        const result = await agent.request('textDocument/openUntitledDocument', {
+            uri: uri.toString(),
+            content,
+            language,
+        })
+
+        if (!result) {
+            throw new Error(
+                `client returned false from textDocument/openUntitledDocument: ${uri.toString()}`
+            )
+        }
+    }
 }
 
 function outputChannel(name: string): vscode.LogOutputChannel {

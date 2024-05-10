@@ -36,6 +36,7 @@ export const createQuickPick = ({
     value = '',
 }: QuickPickConfiguration): QuickPick => {
     const quickPick = vscode.window.createQuickPick()
+    quickPick.ignoreFocusOut = true
     quickPick.title = title
     quickPick.placeholder = placeHolder
     quickPick.value = value

@@ -6,6 +6,7 @@ import { CustomCommandType } from '@sourcegraph/cody-shared'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { CodyCommandMenuItems } from '..'
 import { executeEdit } from '../../edit/execute'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
 import { executeChat } from '../execute/ask'
 import { openCustomCommandDocsLink } from '../services/custom-commands'
@@ -30,7 +31,7 @@ export async function showCommandMenu(
         { source },
         { hasV2Event: true }
     )
-    telemetryRecorder.recordEvent(`cody.menu:command:${type}`, 'clicked', {
+    telemetryRecorder.recordEvent(`cody.menu.command.${type}`, 'clicked', {
         privateMetadata: { source },
     })
 
