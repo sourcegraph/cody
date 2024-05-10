@@ -15,7 +15,6 @@ import * as vscode from 'vscode'
 import { PromptBuilder } from '../../prompt-builder'
 import type { API, GitExtension, InputBox, Repository } from '../../repository/builtinGitExtension'
 import type { AuthProvider } from '../../services/AuthProvider'
-import { telemetryService } from '../../services/telemetry'
 import { getContextFilesFromGitApi as getContext } from '../context/git-api'
 import { commitPrompts } from './prompts'
 
@@ -74,7 +73,6 @@ export class CodySourceControl implements vscode.Disposable {
      * @param scm - The source control instance to use for the commit message generation.
      */
     public async generate(scm?: vscode.SourceControl): Promise<void> {
-        telemetryService.log('CodyVSCodeExtension:command:commit:executed', { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.command.commit', 'executed')
 
         const currentWorkspaceUri = vscode.workspace.workspaceFolders?.[0]?.uri
