@@ -60,8 +60,8 @@ import { getChatModelsFromConfiguration, syncModelProviders } from './models/uti
 import type { FixupTask } from './non-stop/FixupTask'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
-import { enterpriseRepoNameResolver } from './repository/enterprise-repo-name-resolver'
-import { gitAPIinit } from './repository/git-extension-api'
+import { initVSCodeGitApi } from './repository/git-extension-api'
+import { repoNameResolver } from './repository/repo-name-resolver'
 import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
@@ -148,8 +148,7 @@ const register = async (
     // from the subsequent initialization.
     disposables.push(manageDisplayPathEnvInfoForExtension())
 
-    // Set codyignore list after git extension startup
-    disposables.push(await gitAPIinit())
+    disposables.push(await initVSCodeGitApi())
 
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
@@ -216,9 +215,9 @@ const register = async (
     )
     disposables.push(contextFiltersProvider)
     disposables.push(contextProvider)
-    const bindedRepoNamesResolver =
-        enterpriseRepoNameResolver.getRepoNamesFromWorkspaceUri.bind(enterpriseRepoNameResolver)
-    await contextFiltersProvider.init(bindedRepoNamesResolver).then(() => contextProvider.init())
+    await contextFiltersProvider
+        .init(repoNameResolver.getRepoNamesFromWorkspaceUri)
+        .then(() => contextProvider.init())
 
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
@@ -270,10 +269,9 @@ const register = async (
         githubClient.onConfigurationChange({ authToken: initialConfig.experimentalGithubAccessToken })
         promises.push(
             contextFiltersProvider
-                .init(bindedRepoNamesResolver)
+                .init(repoNameResolver.getRepoNamesFromWorkspaceUri)
                 .then(() => contextProvider.onConfigurationChange(newConfig))
         )
-        promises.push(contextFiltersProvider.init(bindedRepoNamesResolver))
         externalServicesOnDidConfigurationChange(newConfig)
         promises.push(configureEventsInfra(newConfig, isExtensionModeDevOrTest, authProvider))
         platform.onConfigurationChange?.(newConfig)

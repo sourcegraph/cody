@@ -1,6 +1,7 @@
 import { graphqlClient, isError, logDebug } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { getCodebaseFromWorkspaceUri, gitAPI } from '../repository/git-extension-api'
+import { vscodeGitAPI } from '../repository/git-extension-api'
+import { repoNameResolver } from '../repository/repo-name-resolver'
 import type { CodebaseRepoIdMapper } from './enterprise-context-factory'
 import { RemoteSearch } from './remote-search'
 import type { Repo } from './repo-fetcher'
@@ -95,7 +96,9 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
                 undefined,
                 this.disposables
             )
-            gitAPI()?.onDidOpenRepository(
+            // TODO: Only works in the VS Code extension where the Git extension is available.
+            // https://github.com/sourcegraph/cody/issues/4138
+            vscodeGitAPI?.onDidOpenRepository(
                 async () => {
                     logDebug('WorkspaceRepoMapper', 'vscode.git repositories changed, updating repos')
                     setTimeout(async () => await this.updateRepos(), GIT_REFRESH_DELAY)
@@ -137,18 +140,19 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
     // Given a set of workspace folders, looks up their git remotes and finds the related repo IDs,
     // if any.
     private async findRepos(folders: readonly vscode.WorkspaceFolder[]): Promise<Repo[]> {
-        const repoNames = new Set(
-            folders.flatMap(folder => {
-                const codebase = getCodebaseFromWorkspaceUri(folder.uri)
-                return codebase ? [codebase] : []
+        const repoNames = await Promise.all(
+            folders.map(folder => {
+                return repoNameResolver.getRepoNamesFromWorkspaceUri(folder.uri)
             })
         )
-        if (repoNames.size === 0) {
+
+        const uniqueRepoNames = new Set(repoNames.flat())
+        if (uniqueRepoNames.size === 0) {
             // Otherwise we fetch the first 10 repos from the Sourcegraph instance
             return []
         }
         const repos = await graphqlClient.getRepoIds(
-            [...repoNames.values()],
+            [...uniqueRepoNames.values()],
             RemoteSearch.MAX_REPO_COUNT
         )
         if (isError(repos)) {

@@ -414,7 +414,6 @@ interface ClientCapabilities {
     completions?: 'none'
     //  When 'streaming', handles 'chat/updateMessageInProgress' streaming notifications.
     chat?: 'none' | 'streaming'
-    git?: 'none' | 'disabled'
     // If 'enabled', the client must implement the progress/start,
     // progress/report, and progress/end notification endpoints.
     progressBars?: 'none' | 'enabled'
