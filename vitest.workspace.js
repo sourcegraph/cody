@@ -1,3 +1,3 @@
 // @ts-check
 
-export default ['agent', 'cli', 'lib/shared', 'vscode']
+export default ['agent', 'cli', 'lib/shared', 'lib/logtrace', 'vscode']
