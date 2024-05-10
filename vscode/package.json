@@ -1490,6 +1490,7 @@
     "playwright": "1.39.0",
     "postcss": "^8.4.38",
     "progress": "^2.0.3",
+    "react-head": "^3.4.2",
     "yaml": "^2.3.4"
   }
 }

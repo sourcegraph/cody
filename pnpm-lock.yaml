@@ -676,6 +676,9 @@ importers:
       progress:
         specifier: ^2.0.3
         version: 2.0.3
+      react-head:
+        specifier: ^3.4.2
+        version: 3.4.2(react-dom@18.2.0)(react@18.2.0)
       yaml:
         specifier: ^2.3.4
         version: 2.3.4
@@ -12164,6 +12167,17 @@ packages:
       '@babel/runtime': 7.24.5
       react: 18.2.0
     dev: false
+
+  /react-head@3.4.2(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-mnl6u7E0SSzY9w+mExKGVz8vW/oObUTnj+vpRaZF6jcdjFcCGs0vl8MRwlRws56dye3f1CpzU7C/hz3b3S2BBA==}
+    peerDependencies:
+      react: '>=16.3'
+      react-dom: '>=16.3'
+    dependencies:
+      '@babel/runtime': 7.24.5
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
+    dev: true
 
   /react-is@16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
