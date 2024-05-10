@@ -13,6 +13,19 @@ interface TargetTask {
     undoEvent: vscode.EventEmitter<FixupTaskID>
 }
 
+/**
+ * Given a target document and task, tracks the rejection of a Fixup based
+ * on the next related (to this file) action the user takes.
+ *
+ * We log acceptance if, after the task is applied:
+ * - The user types somewhere in the document (and the task has not been undone)
+ *
+ * We log rejection if, after the task is applied:
+ * - The user undo's the task, (and then types somewhere in the document.
+ * - The user deletes the file (assuming they did not type in the document beforehand)
+ * - The user explicitly clicks the "Undo" CTA for the FixupTask.
+ * - For test: the user closes a created test file without saving it
+ */
 export const trackRejection = (
     document: vscode.TextDocument,
     workspace: Pick<
