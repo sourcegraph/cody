@@ -18,13 +18,15 @@ import { PromptBuilder } from '../../prompt-builder'
 import type { API, GitExtension, InputBox, Repository } from '../../repository/builtinGitExtension'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { getContextFilesFromGitApi as getContext } from '../context/git-api'
-import { commitPrompts } from './prompts'
+import { COMMIT_COMMAND_PROMPTS } from './prompts'
 
 export class CodySourceControl implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private gitAPI: API | undefined
     private abortController: AbortController | undefined
     private modelProvider = getDotComDefaultModels()[0]
+
+    private commitTemplate?: string
 
     constructor(
         private readonly authProvider: AuthProvider,
@@ -63,9 +65,9 @@ export class CodySourceControl implements vscode.Disposable {
 
         // TODO update the model on AuthStatus change.
         const authStatus = this.authProvider.getAuthStatus()
-        this.modelProvider =
-            ModelProvider.getProviders(ModelUsage.Chat, !authStatus.userCanUpgrade)?.[0] ??
-            this.modelProvider
+        const providers = ModelProvider.getProviders(ModelUsage.Chat, !authStatus.userCanUpgrade)
+        const preferredProvider = providers?.find(p => p.model.includes('haiku'))
+        this.modelProvider = preferredProvider ?? providers[0]
         this.disposables.push(onConfigChange, onEnablementChange?.dispose())
     }
 
@@ -94,6 +96,9 @@ export class CodySourceControl implements vscode.Disposable {
             vscode.window.showInformationMessage('Your source control provider is not supported.')
             return
         }
+
+        // Check for Commit Template and set it if available
+        this.commitTemplate = this.commitTemplate ?? scm?.commitTemplate
 
         // Open the vscode source control view to show the progress.
         void vscode.commands.executeCommand('workbench.view.scm')
@@ -124,9 +129,9 @@ export class CodySourceControl implements vscode.Disposable {
         this.statusUpdate(abortController)
 
         const initialInputBoxValue = sourceControlInputbox.value
+        const initialPlaceholder = (sourceControlInputbox as vscode.SourceControlInputBox).placeholder
 
         const generatingCommitTitle = 'Generating commit message...'
-        const initialPlaceholder = (sourceControlInputbox as vscode.SourceControlInputBox).placeholder
         if (initialPlaceholder !== undefined) {
             sourceControlInputbox.value = ''
             ;(sourceControlInputbox as vscode.SourceControlInputBox).placeholder = generatingCommitTitle
@@ -142,9 +147,9 @@ export class CodySourceControl implements vscode.Disposable {
             })
 
             const { model, contextWindow } = this.modelProvider
-            const { prompt, ignoredContext } = await buildPrompt(
+            const { prompt, ignoredContext } = await this.buildPrompt(
                 contextWindow,
-                getSimplePreamble(model, 1, commitPrompts.intro),
+                getSimplePreamble(model, 1, COMMIT_COMMAND_PROMPTS.intro),
                 await getContext(repository, commitTemplate).catch(() => [])
             ).catch(error => {
                 sourceControlInputbox.value = `${error}`
@@ -188,6 +193,29 @@ export class CodySourceControl implements vscode.Disposable {
         }
     }
 
+    private async buildPrompt(
+        contextWindow: ModelContextWindow,
+        preamble: Message[],
+        context: ContextItem[]
+    ): Promise<{ prompt: Message[]; ignoredContext: ContextItem[] }> {
+        if (!context.length) {
+            throw new Error('Failed to get git output.')
+        }
+
+        const templatePrompt = this.commitTemplate
+            ? COMMIT_COMMAND_PROMPTS.template
+            : COMMIT_COMMAND_PROMPTS.noTemplate
+        const text = COMMIT_COMMAND_PROMPTS.instruction.replace('{COMMIT_TEMPLATE}', templatePrompt)
+        const transcript: ChatMessage[] = [{ speaker: 'human', text }]
+
+        const promptBuilder = new PromptBuilder(contextWindow)
+        promptBuilder.tryAddToPrefix(preamble)
+        promptBuilder.tryAddMessages(transcript.reverse())
+
+        const { ignored: ignoredContext } = await promptBuilder.tryAddContext('user', context)
+        return { prompt: promptBuilder.build(), ignoredContext }
+    }
+
     /**
      * Updates the commit generation state and sets the corresponding context status.
      * If an `abortController` is provided, it is used to abort the current commit generation.
@@ -209,25 +237,6 @@ export class CodySourceControl implements vscode.Disposable {
         }
         this.disposables = []
     }
-}
-
-async function buildPrompt(
-    contextWindow: ModelContextWindow,
-    preamble: Message[],
-    context: ContextItem[]
-): Promise<{ prompt: Message[]; ignoredContext: ContextItem[] }> {
-    if (!context.length) {
-        throw new Error('Failed to get git output.')
-    }
-
-    const transcript: ChatMessage[] = [{ speaker: 'human', text: commitPrompts.message }]
-    const promptBuilder = new PromptBuilder(contextWindow)
-    promptBuilder.tryAddToPrefix(preamble)
-    promptBuilder.tryAddMessages(transcript.reverse())
-
-    const { ignored: ignoredContext } = await promptBuilder.tryAddContext('user', context)
-
-    return { prompt: promptBuilder.build(), ignoredContext }
 }
 
 async function streaming(

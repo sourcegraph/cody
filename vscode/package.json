@@ -989,7 +989,7 @@
         },
         {
           "command": "cody.command.abort-commit",
-          "when": "cody.activated && cody.isGeneratingCommit",
+          "when": "cody.activated && scmProvider == git && cody.isGeneratingCommit",
           "group": "navigation@1"
         }
       ]

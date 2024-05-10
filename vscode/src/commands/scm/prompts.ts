@@ -1,15 +1,32 @@
 import { ps } from '@sourcegraph/cody-shared'
 
-const gitCommitIntro = ps`Review the following git command output to understand the changes you are about to generate a commit message for.`
+const COMMIT_INTRO = ps`Review the following git command output to understand the changes you are about to generate a commit message for.`
 
-const gitCommitMessage = ps`Suggest an informative commit message along with a details by summarizing the code changes shown in the provided git diff output.
-The commit message should follow the conventional commit format and the title should match the style of the shared commit titles when provided. Your goal is to provide meaningful context and a test plan for future code readers based on the shared context.
+const COMMIT_INSTRUCTION = ps`Provide an informative commit message and detailed summary by reviewing the code changes outlined in the shared git diff output.
+Ensure the commit title aligns with the style of the shared commit titles if provided.
+{COMMIT_TEMPLATE}
+The goal is to offer substantial context for code reviewers.
 Do not enclose the suggested commit message in backticks. Skip preamble. Only respond with the commit message.`
 
-export const commitPrompts = {
+const COMMMIT_TEMPLATE = ps`The commit message should strictly adhere to the commit format from the shared git commit template.`
+
+const COMMMIT_TEMPLATE_NOT_FOUNT = ps`The commit message should adhere to the conventional commit format and include a test plan outlining the implemented changes.`
+
+export const COMMIT_COMMAND_PROMPTS = {
     /**
      * Use as pre-instructions before the context prompts.
      */
-    intro: gitCommitIntro,
-    message: gitCommitMessage,
+    intro: COMMIT_INTRO,
+    /**
+     * The instruction prompt for the commit command.
+     */
+    instruction: COMMIT_INSTRUCTION,
+    /**
+     * The prompt when there is a COMMIT_TEMPLATE found.
+     */
+    template: COMMMIT_TEMPLATE,
+    /**
+     * The prompt when COMMIT_TEMPLATE is not found.
+     */
+    noTemplate: COMMMIT_TEMPLATE_NOT_FOUNT,
 }
