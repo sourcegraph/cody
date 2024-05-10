@@ -1,15 +1,20 @@
 package com.sourcegraph.cody.edit
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.edit.sessions.DocumentCodeSession
 import com.sourcegraph.cody.edit.sessions.FixupSession
 import com.sourcegraph.cody.edit.sessions.TestCodeSession
+import com.sourcegraph.cody.ignore.ActionInIgnoredFileNotification
+import com.sourcegraph.cody.ignore.IgnoreOracle
+import com.sourcegraph.cody.ignore.IgnorePolicy
 import com.sourcegraph.config.ConfigUtil.isCodyEnabled
 import com.sourcegraph.utils.CodyEditorUtil
 import java.util.concurrent.atomic.AtomicReference
@@ -27,29 +32,43 @@ class FixupService(val project: Project) : Disposable {
 
   /** Entry point for the inline edit command, called by the action handler. */
   fun startCodeEdit(editor: Editor) {
-    if (!isEligibleForInlineEdit(editor)) return
-    currentEditPrompt.set(EditCommandPrompt(this, editor, "Edit Code with Cody"))
+    runInEdt {
+      if (isEligibleForInlineEdit(editor)) {
+        currentEditPrompt.set(EditCommandPrompt(this, editor, "Edit Code with Cody"))
+      }
+    }
   }
 
   /** Entry point for the document code command, called by the action handler. */
   fun startDocumentCode(editor: Editor) {
-    if (!isEligibleForInlineEdit(editor)) return
-    DocumentCodeSession(this, editor, editor.project ?: return)
+    runInEdt {
+      if (isEligibleForInlineEdit(editor)) {
+        editor.project?.let { project -> DocumentCodeSession(this, editor, project) }
+      }
+    }
   }
 
   /** Entry point for the test code command, called by the action handler. */
   fun startTestCode(editor: Editor) {
-    if (!isEligibleForInlineEdit(editor)) return
-    TestCodeSession(this, editor, editor.project ?: return)
+    if (isEligibleForInlineEdit(editor)) {
+      TestCodeSession(this, editor, editor.project ?: return)
+    }
   }
 
+  @RequiresEdt
   fun isEligibleForInlineEdit(editor: Editor): Boolean {
     if (!isCodyEnabled()) {
       logger.warn("Edit code invoked when Cody not enabled")
       return false
     }
     if (!CodyEditorUtil.isEditorValidForAutocomplete(editor)) {
-      logger.warn("Inline edit invoked when editing not available")
+      logger.warn("Edit code invoked when editing not available")
+      return false
+    }
+    val policy = IgnoreOracle.getInstance(project).policyForEditor(editor)
+    if (policy != IgnorePolicy.USE) {
+      runInEdt { ActionInIgnoredFileNotification().notify(project) }
+      logger.warn("Ignoring file for inline edits: $editor, policy=$policy")
       return false
     }
     return true

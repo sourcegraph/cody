@@ -414,6 +414,47 @@ All tests involving prompt history should end with
 1. Each Action should have a valid tooltip.
 2. Typing that action's advertised key sequence activates the lens.
 
+### Cody Ignore
+
+For Cody Ignore tests, ensure that you have set the environment variable
+`CODY_JETBRAINS_FEATURES=cody.feature.internals-menu=true` to show
+an "Internals" submenu at the bottom of your IDE window, next to Cody.
+
+Ensure that if the file is ignored, no inline edits can be performed.
+
+1. Open a source file in any project. 
+2. Open the Internals submenu.
+3. Check the box to override for testing.
+4. Change the repo to match whatever repo the source file is in.
+5. Close the submenu.
+6. Click somewhere in the code and initiate an Inline Edit (control-shift-enter)
+7. Observe that it tells you the file is ignored in a notification, and no Edit dialog appears.
+
+Ensure that if you have an active edit, an ignore update makes it go away.
+
+Leave the repository exclusion alone from the previous test.
+It should be the same repo as the source file you're testing with.
+
+1. Open the Internals menu again and un-check the override-for-testing checkbox.
+2. Start an Inline Edit (e.g., Document Code) somewhere in the source file.
+3. Observe that the edit is working, as the override is currently off.
+4. Leave the Accept lens group up.
+5. Check the menu box to enable Override for Testing again.
+6. The Accept lens group should disappear and clean up after itself.
+
+#### Expected behavior
+
+No matter what combination of enabling/disabling policies you use,
+all of the following should be true for each test:
+
+1. Whenever the current repo/file is ignored, inline edits should stop working.
+   - The Edit Instructions dialog should not display, and disappear if active.
+   - The Document Code function should not work at all (via keyboard or menu).
+2. If an edit is in progress, with code lenses displaying, and its file becomes
+   ignored, then the edit in progress should cancel/undo.
+3. When the current file's policy changes back to non-ignored, inline edits
+   should start working again.
+
 ## Multi-repo context
 
 ### Free/pro accounts:

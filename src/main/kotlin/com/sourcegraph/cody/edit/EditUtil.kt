@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.edit
 
+import com.intellij.openapi.diagnostic.Logger
 import com.sourcegraph.config.ThemeUtil
 import java.awt.Color
 import javax.swing.AbstractButton
@@ -10,6 +11,7 @@ import javax.swing.JPanel
 import javax.swing.UIManager
 
 object EditUtil {
+  private val logger = Logger.getInstance(EditUtil::class.java)
 
   // Puts `name` as a client property on a component.
   // This can be very useful for debugging mouse, keyboard and focus issues,

@@ -251,7 +251,12 @@ abstract class FixupSession(
 
     ApplicationManager.getApplication().executeOnPooledThread {
       FixupService.getInstance(project).waitUntilActiveSessionIsFinished()
-      runInEdt { EditCommandPrompt(controller, editor, "Edit instructions and Retry", instruction) }
+      runInEdt {
+        // Close loophole where you can keep retrying after the ignore policy changes.
+        if (controller.isEligibleForInlineEdit(editor)) {
+          EditCommandPrompt(controller, editor, "Edit instructions and Retry", instruction)
+        }
+      }
     }
   }
 

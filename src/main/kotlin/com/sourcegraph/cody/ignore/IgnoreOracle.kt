@@ -4,6 +4,8 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.util.containers.SLRUMap
@@ -27,11 +29,6 @@ enum class IgnorePolicy(val value: String) {
  */
 @Service(Service.Level.PROJECT)
 class IgnoreOracle(private val project: Project) {
-  companion object {
-    fun getInstance(project: Project): IgnoreOracle {
-      return project.service<IgnoreOracle>()
-    }
-  }
 
   private val cache = SLRUMap<String, IgnorePolicy>(100, 100)
   @Volatile private var focusedPolicy: IgnorePolicy? = null
@@ -39,8 +36,8 @@ class IgnoreOracle(private val project: Project) {
   private val fileListeners: MutableList<FocusedFileIgnorePolicyListener> = mutableListOf()
 
   init {
-    // Synthesize a focus event for the current editor, if any, to fetch and cache ignore state for
-    // it.
+    // Synthesize a focus event for the current editor, if any,
+    // to fetch and cache ignore state for it.
     runInEdt {
       val editor = FileEditorManager.getInstance(project).selectedTextEditor
       if (willFocusUri == null && editor != null) {
@@ -116,14 +113,25 @@ class IgnoreOracle(private val project: Project) {
   /** Like `policyForUri(String)` but reuses the current thread and supplied Agent handle. */
   fun policyForUri(uri: String, agent: CodyAgent): CompletableFuture<IgnorePolicy> {
     return agent.server.ignoreTest(IgnoreTestParams(uri)).thenApply {
-      val policy =
+      val newPolicy =
           when (it.policy) {
             "ignore" -> IgnorePolicy.IGNORE
             "use" -> IgnorePolicy.USE
             else -> throw IllegalStateException("invalid ignore policy value")
           }
-      synchronized(cache) { cache.put(uri, policy) }
-      policy
+      synchronized(cache) { cache.put(uri, newPolicy) }
+      newPolicy
+    }
+  }
+
+  /** Like `policyForUri(String)` but fetches the uri from the passed Editor's Document. */
+  fun policyForEditor(editor: Editor): IgnorePolicy? {
+    val url = FileDocumentManager.getInstance().getFile(editor.document)?.url ?: return null
+    val completable = policyForUri(url)
+    return try {
+      completable.get(16, TimeUnit.MILLISECONDS)
+    } catch (timedOut: TimeoutException) {
+      null
     }
   }
 
@@ -131,6 +139,7 @@ class IgnoreOracle(private val project: Project) {
    * Gets whether `uri` should be ignored for autocomplete, etc. If the result is not available
    * quickly, returns null and invokes `orElse` on a pooled thread when the result is available.
    */
+  @Suppress("unused")
   fun policyForUriOrElse(uri: String, orElse: (policy: IgnorePolicy) -> Unit): IgnorePolicy? {
     val completable = policyForUri(uri)
     try {
@@ -143,5 +152,11 @@ class IgnoreOracle(private val project: Project) {
 
   interface FocusedFileIgnorePolicyListener {
     fun focusedFileIgnorePolicyChanged(policy: IgnorePolicy)
+  }
+
+  companion object {
+    fun getInstance(project: Project): IgnoreOracle {
+      return project.service<IgnoreOracle>()
+    }
   }
 }

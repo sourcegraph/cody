@@ -248,6 +248,8 @@
         <action id="cody.documentCodeAction"
                 class="com.sourcegraph.cody.edit.actions.DocumentCodeAction">
             <add-to-group group-id="CodyEditorActions" anchor="first"/>
+            <keyboard-shortcut first-keystroke="ctrl shift H" keymap="$default"/>
+            <keyboard-shortcut first-keystroke="ctrl shift H" keymap="Mac OS X 10.5+"/>
         </action>
 
         <action id="cody.testCodeAction"
