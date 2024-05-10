@@ -350,7 +350,6 @@ const register = async (
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)
-    enterpriseRepoNameResolver.init(platform.getRemoteUrlGetters?.())
 
     // Execute Cody Commands and Cody Custom Commands
     const executeCommand = (
