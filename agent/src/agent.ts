@@ -73,6 +73,7 @@ import type {
     ProtocolTextDocument,
     TextEdit,
 } from './protocol-alias'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
 import * as vscode_shim from './vscode-shim'
 

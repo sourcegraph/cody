@@ -14,6 +14,7 @@ import { logDebug } from '../log'
 
 import type { AuthProvider } from './AuthProvider'
 import { localStorage } from './LocalStorageProvider'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { getExtensionDetails } from './telemetry'
 
 /**

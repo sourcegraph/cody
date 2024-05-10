@@ -1,12 +1,12 @@
 {
   "name": "cody-ai",
   "private": true,
-  "displayName": "Cody AI",
-  "version": "1.16.4",
+  "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
+  "version": "1.16.7",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
-  "description": "Code AI with codebase context",
+  "description": "AI coding assistant that understands your codebase. Cody brings autocomplete, chat, and commands to your IDE, helping you generate code, write unit tests, create documentation, and explain complex or legacy code using AI. Choose from several LLMs including GPT-3.5 Turbo, GPT-4 Turbo, and Claude 3, or run local models using Ollama. Cody supports all major languages including JavaScript, TypeScript, Python, Java, Go, and C/C++.",
   "scripts": {
     "postinstall": "pnpm download-wasm",
     "dev": "pnpm run -s dev:desktop",
@@ -46,6 +46,7 @@
     "assistant",
     "chatbot",
     "chat",
+    "code completion",
     "refactor",
     "documentation",
     "test",
@@ -66,7 +67,8 @@
     "java",
     "php",
     "swift",
-    "kotlin"
+    "kotlin",
+    "ollama"
   ],
   "repository": {
     "type": "git",
@@ -90,6 +92,7 @@
   "main": "./dist/extension.node.js",
   "browser": "./dist/extension.web.js",
   "activationEvents": ["onLanguage", "onStartupFinished", "onWebviewPanel:cody.chatPanel"],
+  "extensionDependencies": ["vscode.git"],
   "contributes": {
     "walkthroughs": [
       {
@@ -1001,10 +1004,6 @@
           "markdownDeprecationMessage": "**Deprecated**: Please sign in via the UI instead. If you are already signed in, you can empty this field to remove this warning.",
           "deprecationMessage": "Deprecated: Please sign in via the UI instead."
         },
-        "cody.proxy": {
-          "type": "string",
-          "markdownDeprecationMessage": "The SOCKS proxy endpoint to access server endpoint. This is only supported with some autocomplete providers and only for use with the Cody Agent (for instance with JetBrains plugin). For VS Code please use http.proxy instead."
-        },
         "cody.codebase": {
           "order": 2,
           "type": "string",
@@ -1404,12 +1403,15 @@
     "fast-xml-parser": "^4.3.2",
     "glob": "^7.2.3",
     "he": "^1.2.0",
+    "http-proxy-agent": "^7.0.2",
+    "https-proxy-agent": "^7.0.4",
     "ini": "^4.1.2",
     "isomorphic-fetch": "^3.0.0",
     "js-levenshtein": "^1.1.6",
     "lexical": "^0.13.1",
     "lodash": "^4.17.21",
     "lru-cache": "^10.0.0",
+    "mac-ca": "^2.0.3",
     "mkdirp": "^3.0.1",
     "os-browserify": "^0.3.0",
     "parse-git-diff": "^0.0.14",

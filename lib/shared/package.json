@@ -19,8 +19,8 @@
   },
   "dependencies": {
     "@microsoft/fetch-event-source": "^2.0.1",
-    "@openctx/client": "^0.0.8",
     "@octokit/core": "5.2.0",
+    "@openctx/client": "^0.0.8",
     "@opentelemetry/api": "^1.7.0",
     "@sourcegraph/telemetry": "^0.16.0",
     "crypto-js": "^4.2.0",
@@ -34,13 +34,16 @@
     "js-tiktoken": "^1.0.10",
     "lodash": "^4.17.21",
     "lru-cache": "^10.0.0",
+    "mac-ca": "^2.0.3",
     "marked": "^4.0.16",
     "re2js": "^0.4.1",
     "semver": "^7.5.4",
-    "vscode-uri": "^3.0.7"
+    "vscode-uri": "^3.0.7",
+    "win-ca": "^3.5.1"
   },
   "devDependencies": {
     "@octokit/types": "^13.5.0",
+    "@sourcegraph/cody-context-filters-test-dataset": "^1.0.0",
     "@types/crypto-js": "^4.2.2",
     "@types/dedent": "^0.7.0",
     "@types/diff": "^5.0.9",

@@ -46,6 +46,7 @@ import type { LocalEmbeddingsController } from '../../local-context/local-embedd
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import type { AuthProvider } from '../../services/AuthProvider'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
 import type { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 import {
@@ -813,17 +814,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     private postContextStatus(): void {
-        logDebug(
-            'SimpleChatPanelProvider',
-            'postContextStatusToWebView',
-            JSON.stringify(this.contextStatusAggregator.status)
-        )
+        const { status } = this.contextStatusAggregator
         void this.postMessage({
             type: 'enhanced-context',
-            enhancedContextStatus: {
-                groups: this.contextStatusAggregator.status,
-            },
+            enhancedContextStatus: { groups: status },
         })
+        // Only log non-empty status to reduce noises.
+        if (status.length > 0) {
+            logDebug('SimpleChatPanelProvider', 'postContextStatus', JSON.stringify(status))
+        }
     }
 
     /**
