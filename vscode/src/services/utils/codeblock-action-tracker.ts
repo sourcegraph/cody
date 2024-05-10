@@ -109,7 +109,7 @@ export function handleCodeFromSaveToNewFile(text: string): void {
 export async function handleCopiedCode(text: string, isButtonClickEvent: boolean): Promise<void> {
     // If it's a Button event, then the text is already passed in from the whole code block
     const copiedCode = isButtonClickEvent ? text : await vscode.env.clipboard.readText()
-    const eventName = isButtonClickEvent ? 'copyButton' : 'keyDown:Copy'
+    const eventName = isButtonClickEvent ? 'copyButton' : 'keyDown.Copy'
     // Set for tracking
     if (copiedCode) {
         setLastStoredCode(copiedCode, eventName)

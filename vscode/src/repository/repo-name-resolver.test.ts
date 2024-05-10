@@ -6,6 +6,7 @@ import { URI } from 'vscode-uri'
 import { graphqlClient } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { EnterpriseRepoNameResolver, gitRemoteUrlsFromTreeWalk } from './enterprise-repo-name-resolver'
+import * as gitExtensionAPI from './git-extension-api'
 
 interface MockFsCallsParams {
     filePath: string
@@ -258,7 +259,9 @@ describe('gitRemoteUrlFromTreeWalk', () => {
 describe('getRepoNamesFromWorkspaceUri', () => {
     it('resolves the repo name using graphql', async () => {
         const resolver = new EnterpriseRepoNameResolver()
-        resolver.init([() => Promise.resolve(['git@github.com:sourcegraph/cody.git'])])
+        vi.spyOn(gitExtensionAPI, 'gitRemoteUrlsFromGitExtension').mockReturnValue([
+            'git@github.com:sourcegraph/cody.git',
+        ])
 
         const { fileUri } = mockFsCalls({
             filePath: '/repo/submodule/foo.ts',

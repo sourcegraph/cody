@@ -105,7 +105,7 @@ export class CustomCommandsBuilderMenu {
             title: 'New Custom Cody Command: Prompt',
             prompt: 'Enter the instructions for Cody to follow and answer.',
             placeHolder: 'e.g. Create five different test cases for the selected code',
-            ignoreFocusOut: false,
+            ignoreFocusOut: true,
             validateInput: (input: string) => (input.length ? null : 'Command prompt cannot be empty.'),
         })
         return prompt ? this.addContext({ prompt }) : null

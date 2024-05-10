@@ -103,7 +103,6 @@ query Repositories($first: Int!, $after: String) {
         nodes {
             id
             name
-            url
         }
         pageInfo {
             endCursor

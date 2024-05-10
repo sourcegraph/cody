@@ -31,7 +31,7 @@ export async function showCommandMenu(
         { source },
         { hasV2Event: true }
     )
-    telemetryRecorder.recordEvent(`cody.menu:command:${type}`, 'clicked', {
+    telemetryRecorder.recordEvent(`cody.menu.command.${type}`, 'clicked', {
         privateMetadata: { source },
     })
 

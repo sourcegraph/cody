@@ -12,17 +12,17 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
   - `New Chat with File Content`: Opens a new chat with the file content when no existing chat panel is open.
 - Chat: New optimization for prompt quality and token usage, deduplicating context items, and optimizing token allocation. [pull/3929](https://github.com/sourcegraph/cody/pull/3929)
 - Document Code/Generate Tests: User selections are now matched against known symbol ranges, and adjusted in cases where a user selection in a suitable subset of one of these ranges. [pull/4031](https://github.com/sourcegraph/cody/pull/4031)
-- Edit: Added a maximum timeout to the formatting logic, so the Edit does not appear stuck if the users' formatter takes a particularly long amount of tiem. [pull/4113](https://github.com/sourcegraph/cody/pull/4113)
 - Extension: Added the `vscode.git` extension to the `extensionDependencies` list. [pull/4110](https://github.com/sourcegraph/cody/pull/4110)
 
 ### Fixed
 
 - Autocomplete: Handle incomplete Ollama response chunks gracefully. [pull/4066](https://github.com/sourcegraph/cody/pull/4066)
 - Edit: Improved handling of responses that contain HTML entities. [pull/4085](https://github.com/sourcegraph/cody/pull/4085)
-- Edit: Fixes cases where the formatting on an Edit would not respect the editor tab size with certain formatters. [pull/4111](https://github.com/sourcegraph/cody/pull/4111)
+- Chat: Fixed an issue where the chat message editor field was not able to be scrolled with the mouse or trackpad. [pull/4127](https://github.com/sourcegraph/cody/pull/4127)
 
 ### Changed
 
+- Extension has been renamed from `Cody AI` to `Cody: AI Coding Assistant with Autocomplete & Chat`. [pull/4079](https://github.com/sourcegraph/cody/pull/4079)
 - Search: Cody's Natural Language Search has been moved to a new quick pick interface, and the search box has been removed from the sidebar. [pull/3991](https://github.com/sourcegraph/cody/pull/3991)
 - Editor Context Menu: Updated the existing `Cody Chat: Add context` command to handle selected code from the editor as @-mention . [pull/4000](https://github.com/sourcegraph/cody/pull/4000)
   - `Add Code to Chat`: Add selected code to the current opened chat, or new chat if no panel is opened.
@@ -30,6 +30,28 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Fixes an issue where triggering a recipe with no open editor window will cause unexpected behavior. [pull/3911](https://github.com/sourcegraph/cody/pull/3911)
 - Edit: The "Document Code" and "Generate Tests" commands now execute with a single click/action, rather than requiring the user to specify the range first. The range can be modified from the normal Edit input. [pull/4071](https://github.com/sourcegraph/cody/pull/4071)
 - Chat: The model selector now groups chat model choices by characteristics (such as "More Accurate", "Balanced", "Faster", and "Ollama") and indicates the default choice. [pull/4033](https://github.com/sourcegraph/cody/pull/4033)
+
+## [1.16.7]
+
+### Added
+
+### Fixed
+
+- Chat: Fixed a bug where the chat model dropdown would not work on first click. [pull/](https://github.com/sourcegraph/cody/pull/)
+
+### Changed
+
+## [1.16.6]
+
+### Added
+
+- Edit: Added a maximum timeout to the formatting logic, so the Edit does not appear stuck if the users' formatter takes a particularly long amount of time. [pull/4113](https://github.com/sourcegraph/cody/pull/4113)
+
+### Fixed
+
+- Edit: Fixed cases where the formatting of an Edit would not respect the editor tab size with certain formatters. [pull/4111](https://github.com/sourcegraph/cody/pull/4111)
+
+### Changed
 
 ## [1.16.5]
 

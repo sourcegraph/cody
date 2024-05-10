@@ -36,7 +36,7 @@ export const ModelSelectField: React.FunctionComponent<{
 
     const onModelSelect = useCallback(
         (model: ModelProvider): void => {
-            if (showCodyProBadge && selectedModel.codyProOnly) {
+            if (showCodyProBadge && model.codyProOnly) {
                 getVSCodeAPI().postMessage({
                     command: 'links',
                     value: 'https://sourcegraph.com/cody/subscription',
@@ -51,11 +51,11 @@ export const ModelSelectField: React.FunctionComponent<{
             getVSCodeAPI().postMessage({
                 command: 'event',
                 eventName: 'CodyVSCodeExtension:chooseLLM:clicked',
-                properties: { LLM_provider: selectedModel.model },
+                properties: { LLM_provider: model.model },
             })
             parentOnModelSelect(model)
         },
-        [showCodyProBadge, selectedModel, parentOnModelSelect]
+        [showCodyProBadge, parentOnModelSelect]
     )
 
     const onPopoverOpen = useCallback((): void => {
@@ -86,7 +86,11 @@ export const ModelSelectField: React.FunctionComponent<{
                             />
                         ),
                         filterKeywords: [m.title, m.provider],
-                        disabled: modelAvailability(userInfo, m) !== 'available',
+                        // needs-cody-pro models should be clickable (not disabled) so the user can
+                        // be taken to the upgrade page.
+                        disabled: !['available', 'needs-cody-pro'].includes(
+                            modelAvailability(userInfo, m)
+                        ),
                         group: m.uiGroup ?? 'Other',
                     }) satisfies SelectListOption
             ),

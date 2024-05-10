@@ -24,6 +24,7 @@ import type {
     PersistenceRemovedEventPayload,
 } from '../common/persistence-tracker/types'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
+import { upstreamHealthProvider } from '../services/UpstreamHealthProvider'
 import { completionProviderConfig } from './completion-provider-config'
 import type { ContextSummary } from './context/context-mixer'
 import type { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
@@ -116,6 +117,9 @@ interface SharedEventPayload extends InteractionIDPayload {
 
     /** A list of known completion providers that are also enabled with this user. */
     otherCompletionProviders: string[]
+
+    /** The median of the last upstream requests */
+    medianUpstreamLatency?: number
 }
 
 /**
@@ -343,7 +347,7 @@ export interface CompletionBookkeepingEvent {
     id: CompletionLogID
     params: Omit<
         SharedEventPayload,
-        'items' | 'otherCompletionProviderEnabled' | 'otherCompletionProviders'
+        'items' | 'otherCompletionProviderEnabled' | 'otherCompletionProviders' | 'medianUpstreamLatency'
     >
     // The timestamp when the completion request started
     startedAt: number
@@ -827,6 +831,7 @@ function getSharedParams(event: CompletionBookkeepingEvent): SharedEventPayload 
         items: event.items.map(i => ({ ...i })),
         otherCompletionProviderEnabled: otherCompletionProviders.length > 0,
         otherCompletionProviders,
+        medianUpstreamLatency: upstreamHealthProvider.getMedianDuration(),
     }
 }
 
