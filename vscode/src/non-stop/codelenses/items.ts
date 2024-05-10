@@ -34,6 +34,7 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             const skip = getFormattingSkipLens(codeLensRange, task.id)
             return [title, skip]
         }
+        case CodyTaskState.Reverting:
         case CodyTaskState.Applied: {
             const accept = getAcceptLens(codeLensRange, task.id)
             const retry = getRetryLens(codeLensRange, task.id)

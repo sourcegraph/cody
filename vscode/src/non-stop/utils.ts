@@ -33,6 +33,11 @@ export enum CodyTaskState {
      */
     Applied = 'Applied',
     /**
+     * The response has been applied to the document, and we are satisfied enough to present it to the user.
+     * This is a transitional state from Applied to a terminal state which is triggered by a user undoing or retrying a change.
+     */
+    Reverting = 'Reverting',
+    /**
      * Terminal state. The response has been "accepted" by the user. This is either by:
      * - Clicking "Accept" via the CodeLens
      * - Saving the document
