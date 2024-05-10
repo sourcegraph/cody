@@ -103,7 +103,6 @@ export const trackRejection = (
      * was deleted before we marked the task as "accepted".
      */
     const rejectionFileListener = workspace.onDidDeleteFiles(event => {
-        console.log(event.files)
         if (event.files.some(uri => uri.toString() !== document.uri.toString())) {
             // Irrelevant deletion, ignore
             return
