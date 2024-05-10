@@ -692,6 +692,8 @@ export class FileSystemError extends Error {
     public code = 'FileSystemError'
 }
 
+export const vscodeWorkspaceTextDocuments: vscode_types.TextDocument[] = []
+
 export const vsCodeMocks = {
     FileSystemError,
     FileType,
@@ -748,7 +750,7 @@ export const vsCodeMocks = {
                         case 'cody.debug.filter':
                             return '.*'
                         default:
-                            return ''
+                            return undefined
                     }
                 },
                 update(): void {},
@@ -766,6 +768,7 @@ export const vsCodeMocks = {
         onDidChangeTextDocument() {},
         onDidRenameFiles() {},
         onDidDeleteFiles() {},
+        textDocuments: vscodeWorkspaceTextDocuments,
     },
     ConfigurationTarget: {
         Global: undefined,
@@ -811,7 +814,7 @@ export class MockFeatureFlagProvider extends FeatureFlagProvider {
 export const emptyMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>())
 
 export const DEFAULT_VSCODE_SETTINGS = {
-    proxy: null,
+    proxy: undefined,
     codebase: '',
     customHeaders: {},
     chatPreInstruction: ps``,

@@ -1,6 +1,5 @@
 import ts from 'typescript'
 import { declarationName } from './SymbolFormatter'
-import { getTSSymbolAtLocation } from './getTSSymbolAtLocation'
 
 /**
  * Returns a list of identifier nodes that should be added to the Cody context.
@@ -38,46 +37,48 @@ export function pushTypeIdentifiers(result: ts.Node[], checker: ts.TypeChecker, 
             pushDescendentIdentifiers(result, node.type)
         }
     } else if (ts.isCallExpression(node)) {
-        const symbol = getTSSymbolAtLocation(checker, node.expression)
-        for (const declaration of symbol?.declarations ?? []) {
-            pushTypeIdentifiers(result, checker, declaration)
-        }
-    } else if (ts.isVariableDeclaration(node)) {
-        if (node.type) {
-            pushTypeIdentifiers(result, checker, node.type)
-        }
-    } else if (ts.isTypeLiteralNode(node)) {
-        for (const member of node.members) {
-            pushTypeIdentifiers(result, checker, member)
-        }
+        result.push(...rightmostIdentifier(node.expression))
     } else if (ts.isPropertyAccessExpression(node)) {
-        pushTypeDefinition(result, checker, node.expression)
+        result.push(...rightmostIdentifier(node.expression))
     } else {
-        // Uncomment below to debug what kind of if (ts.isX) case to handle
-        // console.log({ text: node.getText(), kindString: ts.SyntaxKind[node.kind] })
+        const name = declarationName(node)
+        if (name) {
+            result.push(name)
+        } else {
+            // Uncomment below to debug what kind of if (ts.isX) case to handle
+            // console.log({ text: node.getText(), kindString: ts.SyntaxKind[node.kind] })
+        }
     }
 }
 
-// Equivalent to doing "Go to Type Definition" on an expression and adding the
-// type definition to the Cody context.
-export function pushTypeDefinition(result: ts.Node[], checker: ts.TypeChecker, node: ts.Node): void {
-    const tpe = checker.getTypeAtLocation(node)
-    const declaration = tpe?.symbol?.declarations?.[0]
-    const name = declaration ? declarationName(declaration) : undefined
-    if (name) {
-        result.push(name)
-    }
+// A hacky way to get the `ts.Identifier` node furthest to the right.  Ideally,
+// we should match on the main common node types to get this directly, but it's
+// easy to not handle all cases so this works a bit more reliably at the cost of
+// some performance overhead.
+function rightmostIdentifier(node: ts.Node): ts.Node[] {
+    let result: ts.Node | undefined
+    walkTSNode(node, child => {
+        if (!ts.isIdentifier(child)) {
+            return
+        }
+        if (result === undefined) result = child
+        else if (child.getStart() > result.getStart()) {
+            result = child
+        }
+    })
+    return result ? [result] : []
 }
 
-function walk(node: ts.Node, handler: (node: ts.Node) => void): void {
+export function walkTSNode(node: ts.Node, handler: (node: ts.Node) => void): void {
+    handler(node)
     ts.forEachChild(node, child => {
         handler(child)
-        walk(child, handler)
+        walkTSNode(child, handler)
     })
 }
 
 function pushDescendentIdentifiers(result: ts.Node[], node: ts.Node): void {
-    walk(node, child => {
+    walkTSNode(node, child => {
         if (ts.isIdentifier(child)) {
             result.push(child)
         }

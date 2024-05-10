@@ -101,6 +101,7 @@
 
 .content p {
     word-break: break-word;
+    margin-block: 1rem;
 }
 
 .content pre {
@@ -110,6 +111,7 @@
     border-width: 1px;
     border-color: var(--vscode-sideBarSectionHeader-border);
     border-bottom: none;
+    margin: 1rem 0;
 }
 
 .content code,
