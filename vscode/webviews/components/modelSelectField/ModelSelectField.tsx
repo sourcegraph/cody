@@ -86,7 +86,11 @@ export const ModelSelectField: React.FunctionComponent<{
                             />
                         ),
                         filterKeywords: [m.title, m.provider],
-                        disabled: modelAvailability(userInfo, m) !== 'available',
+                        // needs-cody-pro models should be clickable (not disabled) so the user can
+                        // be taken to the upgrade page.
+                        disabled: !['available', 'needs-cody-pro'].includes(
+                            modelAvailability(userInfo, m)
+                        ),
                         group: m.uiGroup ?? 'Other',
                     }) satisfies SelectListOption
             ),
