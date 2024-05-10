@@ -345,6 +345,7 @@
       {
         "command": "cody.command.generate-commit",
         "category": "Cody Command",
+        "group": "Commit",
         "title": "Generate Commit Message (Experimental)",
         "icon": "$(cody-logo)",
         "when": "cody.activated && config.git.enabled && scmProvider == git && !cody.isGeneratingCommit"
@@ -352,6 +353,7 @@
       {
         "command": "cody.command.abort-commit",
         "category": "Cody Command",
+        "group": "Commit",
         "title": "Stop Generating",
         "icon": "$(debug-stop)",
         "when": "cody.activated && cody.isGeneratingCommit"
