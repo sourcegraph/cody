@@ -10,7 +10,12 @@
     padding: 0.4375rem 50px 0.5625rem 0.5rem;
     font: inherit;
     width: 100%;
-    overflow: hidden;
+
+    /* Scroll */
+    overflow: auto;
+
+    /* A visible scrollbar interferes with the EnhancedContextSettings element. It's still scrollable with the mouse/trackpad and arrow keys. */
+    scrollbar-width: none;
 
     /* Don't allow the input box to become larger than the webview to avoid submit buttons going off the screen */
     max-height: 80vh; /* 80% of viewport height */
