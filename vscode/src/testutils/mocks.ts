@@ -785,6 +785,7 @@ export const vsCodeMocks = {
     CodeActionKind,
     DiagnosticSeverity,
     ViewColumn,
+    TextDocumentChangeReason,
 } as const
 
 export enum ProgressLocation {
