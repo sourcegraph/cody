@@ -14,5 +14,7 @@ export {
     LogSinkInput,
     TraceSpanErrorSink,
     TraceSpanErrorSinkOptions,
+    LogMessage,
 } from './logging'
+export * from './logging/items'
 export {} from './logging/items/message'

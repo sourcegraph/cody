@@ -33,7 +33,7 @@ export function log(message: LogMessage<Readonly<[]>>, opts?: MessageWithoutData
 export function log<M = any>(
     message: M extends LogMessage<any> ? M : never,
     opts: M extends LogMessage<infer LV>
-        ? MessageWithDataOptions<`msg.${Exclude<keyof Readonly<LV>, keyof any[]> & string}`>
+        ? MessageWithDataOptions<`msg.${Exclude<keyof Readonly<LV>, keyof any[]> & string}`, never>
         : never
 ): void
 export function log<M = any, D = any>(
@@ -41,8 +41,8 @@ export function log<M = any, D = any>(
     data: D extends JsonifiableObject ? D : never,
     opts: M extends LogMessage<infer LV>
         ? MessageWithDataOptions<
-              | `data.${AllPossiblePaths<Jsonify<D>>}`
-              | `msg.${Exclude<keyof Readonly<LV>, keyof any[]> & string}`
+              `msg.${Exclude<keyof Readonly<LV>, keyof any[]> & string}`,
+              `data.${AllPossiblePaths<Jsonify<D>>}`
           >
         : never
 ): void
@@ -53,7 +53,7 @@ export function log(
 ): void {
     // if data is defined as "data" then opts must be set.
     const data = maybeOpts !== undefined ? (dataOrOpts as JsonifiableObject) : undefined
-    const opts = maybeOpts !== undefined ? (dataOrOpts as MessageOptions) : maybeOpts
+    const opts = maybeOpts ?? (dataOrOpts as MessageOptions)
 
     const callsiteDepth = (opts?.callsite || 0) + DEFAULT_CALLSITE_DEPTH
     const callsite = !opts?.callsite !== false ? new Callsite(callsiteDepth) : undefined
@@ -109,14 +109,17 @@ type MessageWithoutDataOptions = MessageBaseOptions & {
     privateExcept?: never
     verbose?: never
 }
-type MessageWithDataOptions<K extends string = string> = MessageBaseOptions & {
-    verbose?: K[]
+type MessageWithDataOptions<
+    MsgKeys extends string = string,
+    DataKeys extends string = string,
+> = MessageBaseOptions & {
+    verbose?: DataKeys[]
 } & (
         | {
-              publicExcept: K[]
+              publicExcept: (MsgKeys | DataKeys)[]
               privateExcept?: never
           }
-        | { publicExcept?: never; privateExcept: K[] }
+        | { publicExcept?: never; privateExcept: (MsgKeys | DataKeys)[] }
     )
 
 type AllowedPrimitiveLogMessageValues = number | boolean | string | Date
@@ -128,6 +131,7 @@ export interface LogMessage<V extends LogMessageValues = any> {
     vars: V
 }
 
+// #region: Severity helpers
 export function debug<V extends LogMessageValues>(
     template: TemplateStringsArray,
     ...vars: V

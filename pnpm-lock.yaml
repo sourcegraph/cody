@@ -240,61 +240,6 @@ importers:
         specifier: ^3.23.1
         version: 3.23.1
 
-  lib/logtrace:
-    dependencies:
-      '@opentelemetry/api':
-        specifier: ^1.7.0
-        version: 1.7.0
-      crypto-js:
-        specifier: ^4.2.0
-        version: 4.2.0
-      date-fns:
-        specifier: ^2.30.0
-        version: 2.30.0
-      dedent:
-        specifier: ^0.7.0
-        version: 0.7.0
-      diff:
-        specifier: ^5.2.0
-        version: 5.2.0
-      lodash:
-        specifier: ^4.17.21
-        version: 4.17.21
-      source-map-support:
-        specifier: ^0.5.21
-        version: 0.5.21
-      ulidx:
-        specifier: ^2.3.0
-        version: 2.3.0
-      vscode-uri:
-        specifier: ^3.0.7
-        version: 3.0.7
-    devDependencies:
-      '@types/crypto-js':
-        specifier: ^4.2.2
-        version: 4.2.2
-      '@types/dedent':
-        specifier: ^0.7.0
-        version: 0.7.0
-      '@types/diff':
-        specifier: ^5.0.9
-        version: 5.0.9
-      '@types/isomorphic-fetch':
-        specifier: ^0.0.39
-        version: 0.0.39
-      '@types/lodash':
-        specifier: ^4.14.195
-        version: 4.14.195
-      '@types/marked':
-        specifier: ^5.0.0
-        version: 5.0.0
-      '@types/node-fetch':
-        specifier: ^2.6.4
-        version: 2.6.4
-      type-fest:
-        specifier: ^4.17.0
-        version: 4.17.0
-
   lib/shared:
     dependencies:
       '@microsoft/fetch-event-source':
@@ -511,6 +456,9 @@ importers:
       crypto-js:
         specifier: ^4.2.0
         version: 4.2.0
+      date-fns:
+        specifier: ^2.30.0
+        version: 2.30.0
       detect-indent:
         specifier: ^7.0.1
         version: 7.0.1

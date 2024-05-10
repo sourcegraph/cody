@@ -68,7 +68,9 @@ class Logger {
         const sinkInputs = jsonBuffer.concat(
             zip(serializedItemBuffer, itemBuffer).map(
                 ([serialized, original]) =>
-                    Object.assign(serialized!, { original: original! }) satisfies LogSinkInput
+                    Object.assign(serialized!, {
+                        original: original!,
+                    }) as LogSinkInput
             )
         )
 

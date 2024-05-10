@@ -1,5 +1,5 @@
 import { produce } from 'immer'
-import type { JsonObject, JsonValue, Jsonifiable } from 'type-fest'
+import type { IsAny, JsonObject, JsonValue, Jsonifiable } from 'type-fest'
 import type { KeysOfUnion } from 'type-fest'
 import { monotonicFactory } from 'ulidx'
 
@@ -137,12 +137,15 @@ export type AllPossiblePaths<T> =
  *
  * Paths are in the format as allowed by @link{AllPossiblePaths} such as `a.b.[].c`
  */
-export function withPathsReplaced<infer, D extends Record<string, unknown> = any>(
+export function withPathsReplaced<D extends Record<string, unknown> = any>(
     objOrObjs: D | D[],
-    pathOrPaths: `${AllPossiblePaths<D>}`[],
+    pathOrPaths: IsAny<D> extends true ? string[] : `${AllPossiblePaths<D>}`[],
     replacement: JsonValue | JsonObject | ((v: unknown) => JsonValue)
 ): Record<string, unknown>[] {
     const paths = [pathOrPaths].flat()
+    if (paths.length === 0) {
+        return [objOrObjs].flat()
+    }
     const newValues: any[] = [objOrObjs].flat().map(obj => {
         return produce(obj, (draft: any) => {
             replacePathsIfSet(draft, paths, replacement)
@@ -151,17 +154,6 @@ export function withPathsReplaced<infer, D extends Record<string, unknown> = any
 
     return newValues
 }
-
-// export function log<M = any, D = any>(
-//     message: M extends LogMessage<any> ? M : never,
-//     data: D extends JsonifiableObject ? D : never,
-//     opts: M extends LogMessage<infer LV>
-//         ? MessageWithDataOptions<
-//               | `data.${AllPossiblePaths<Jsonify<D>>}`
-//               | `msg.${Exclude<keyof Readonly<LV>, keyof any[]> & string}`
-//           >
-//         : never
-// ): void
 
 function replacePathsIfSet(
     obj: Record<string, unknown>,

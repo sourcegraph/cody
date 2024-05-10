@@ -7,6 +7,7 @@ export {
     debug,
     info,
     warn,
+    LogMessage,
 } from './items/message'
 export {
     ConsoleLogMessageSink,

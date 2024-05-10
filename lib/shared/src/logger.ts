@@ -3,6 +3,8 @@
 // process. Be very conservative about adding imports to modules that perform
 // any kind of side effect.
 
+import { alert, debug, log } from './logtrace'
+
 /**
  * Interface that mirrors the `logDebug` and `logError` functions in
  * vscode/src/log.ts but is available inside @sourcegraph/cody-shared.
@@ -31,10 +33,15 @@ export function setLogger(newLogger: CodyLogger): void {
     _logger = newLogger
 }
 
+/** @deprecated use LogTrace instead */
 export function logDebug(filterLabel: string, text: string, ...args: unknown[]): void {
+    //calsite is bumped +1 because we are double wrapped
     _logger.logDebug(filterLabel, text, ...args)
+    log(debug`${text}`, { callsite: 1, publicExcept: [] })
 }
 
+/** @deprecated use LogTrace instead */
 export function logError(filterLabel: string, text: string, ...args: unknown[]): void {
     _logger.logError(filterLabel, text, ...args)
+    log(alert`${text}`, { callsite: 1, publicExcept: [] })
 }

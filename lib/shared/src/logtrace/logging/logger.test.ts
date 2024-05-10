@@ -39,7 +39,10 @@ describe('logger', () => {
                 user, //handles toJSON objects
                 array: [{ sheldon: 3 }, { cooper: 'hello' }, { bleh: [{ a: 6 }] }], // handles heterogenous arrays
             },
-            { privateExcept: ['data.array', 'msg.0', 'data.user.jsonName', 'data.array.[].bleh.[].a'] }
+            {
+                privateExcept: ['data.array', 'msg.0', 'data.user.jsonName', 'data.array.[].bleh.[].a'],
+                verbose: ['data.user'],
+            }
         )
 
         logger.flush()

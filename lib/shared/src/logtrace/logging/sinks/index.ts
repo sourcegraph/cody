@@ -1,11 +1,16 @@
-import type { ReadonlyDeep } from 'type-fest'
-import type { LogItem, LogItemJson } from '../items'
+import { type LogItem, type LogItemJson, MessageLogItem } from '../items'
 import type { LogLevel } from '../items/message'
 
 // The original is set if the log item was emitted on the same process
 // This allows sinks like Sentry that run in the same process to leverage
 // Raw error objects before they are transformed into JSON
-export type LogSinkInput = ReadonlyDeep<LogItemJson & { original?: LogItem }>
+//TODO(rnauta): type this to match J & O
+export type LogSinkInput<J extends LogItemJson = LogItemJson> = J extends { _type: infer T }
+    ? J & {
+          original?: Extract<LogItem, { _type: T }>
+      }
+    : never
+// J & { original: Extract<LogItem, { _type: J['_type'] }> }
 
 export interface LogSink {
     log: (items: LogSinkInput[]) => void
@@ -51,7 +56,10 @@ export class ConsoleLogMessageSink implements LogSink {
 
     private logOne(item: LogSinkInput) {
         if (item.message) {
-            const message = `${item.timestamp}\t${item.message}`
+            const message = MessageLogItem.formatMessage({
+                message: item.message,
+                visibility: undefined,
+            })
             switch (item.level) {
                 case 'alert':
                     console.error(message)
