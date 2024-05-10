@@ -10,7 +10,8 @@ import type * as vscode from 'vscode'
 
 // We choose an interval that gives us a reasonable aggregate without causing
 // too many requests
-export const PING_INTERVAL = 10 * 60 * 1000 // 10 minutes
+const PING_INTERVAL_MS = 10 * 60 * 1000 // 10 minutes
+const TWO_HOURS_MS = 2 * 60 * 60 * 1000
 
 /**
  * A provider that regularly pings the connected Sourcegraph instance to
@@ -19,29 +20,30 @@ export const PING_INTERVAL = 10 * 60 * 1000 // 10 minutes
  * You can query it to get aggregates of the most recent pings.
  */
 export class UpstreamHealthProvider implements vscode.Disposable {
+    // Array sorted by duration for easy median calculation
+    private recentDurationsSorted: { timestamp: number; duration: number }[] = []
+
     private config: Pick<
         ConfigurationWithAccessToken,
         'serverEndpoint' | 'customHeaders' | 'accessToken'
     > | null = null
-    private recentDurations: { timestamp: number; duration: number }[] = []
     private nextTimeoutId: NodeJS.Timeout | null = null
 
     public getMedianDuration(): number | undefined {
         if (!this.config) {
             return undefined
         }
-        if (this.recentDurations.length === 0) {
+        if (this.recentDurationsSorted.length === 0) {
             return undefined
         }
-        const sorted = this.recentDurations.sort((a, b) => a.duration - b.duration)
-        return sorted[Math.floor(sorted.length / 2)].duration
+        return this.recentDurationsSorted[Math.floor(this.recentDurationsSorted.length / 2)].duration
     }
 
     public onConfigurationChange(
         newConfig: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'customHeaders' | 'accessToken'>
     ): this {
         this.config = newConfig
-        this.recentDurations = []
+        this.recentDurationsSorted = []
         this.measure()
         return this
     }
@@ -67,18 +69,20 @@ export class UpstreamHealthProvider implements vscode.Disposable {
             addCustomUserAgent(headers)
             const url = new URL('/healthz', this.config.serverEndpoint)
 
-            // We use a HEAD request since we do not want to consume the body
-            // and do not want to have the request garbage-collected.
+            // We use a GET request even though we do not want to consume the
+            // body to avoid internal networks interfering with the request.
+            //
+            // To make sure the content is garbage collected, we'll ensure that
+            // the body is consumed. We don't use undici yet but that might
+            // change in the future:
             //
             // https://undici.nodejs.org/#/?id=garbage-collection
-            const response = await fetch(url.toString(), { method: 'HEAD', headers })
+            const response = await fetch(url.toString(), { method: 'GET', headers })
+            void response.arrayBuffer() // consume the body
 
             const duration = Date.now() - start
-            this.recentDurations.push({ timestamp: Date.now(), duration })
-            // Delete items that are older than 2 hours
-            this.recentDurations = this.recentDurations.filter(
-                item => Date.now() - item.timestamp < 2 * 60 * 60 * 1000
-            )
+            this.pushDuration(duration)
+
             logDebug(
                 'UpstreamHealth',
                 `Ping took ${Math.round(duration)}ms (Median: ${Math.round(
@@ -100,13 +104,29 @@ export class UpstreamHealthProvider implements vscode.Disposable {
             if (this.nextTimeoutId) {
                 clearTimeout(this.nextTimeoutId)
             }
-            this.nextTimeoutId = setTimeout(this.measure.bind(this), PING_INTERVAL)
+            this.nextTimeoutId = setTimeout(this.measure.bind(this), PING_INTERVAL_MS)
         }
     }
 
     public dispose(): void {
         if (this.nextTimeoutId) {
             clearTimeout(this.nextTimeoutId)
+        }
+    }
+
+    private pushDuration(duration: number): void {
+        const entry = { timestamp: Date.now(), duration }
+
+        // Delete items that are older than 2 hours
+        this.recentDurationsSorted = this.recentDurationsSorted.filter(
+            item => Date.now() - item.timestamp < TWO_HOURS_MS
+        )
+
+        const position = this.recentDurationsSorted.findIndex(item => item.duration > duration)
+        if (position === -1) {
+            this.recentDurationsSorted.push(entry)
+        } else {
+            this.recentDurationsSorted.splice(position, 0, entry)
         }
     }
 }
