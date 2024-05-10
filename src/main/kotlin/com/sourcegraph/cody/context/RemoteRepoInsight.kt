@@ -39,13 +39,24 @@ import com.sourcegraph.common.CodyBundle.fmt
 import javax.swing.Icon
 import org.jetbrains.annotations.NonNls
 
-data class RemoteRepo(val name: String) {
+enum class RepoInclusion {
+  AUTO,
+  MANUAL,
+}
+
+data class RemoteRepo(
+    val name: String,
+    val isEnabled: Boolean? = null,
+    val isIgnored: Boolean? = null,
+    val inclusion: RepoInclusion? = null
+) {
   val displayName: String
     get() = name.substring(name.indexOf('/') + 1) // Note, works for names without / => full name.
 
   val icon: Icon?
     get() =
         when {
+          isIgnored == true -> Icons.RepoIgnored
           name.startsWith("github.com/") -> Icons.RepoHostGitHub
           name.startsWith("gitlab.com/") -> Icons.RepoHostGitlab
           name.startsWith("bitbucket.org/") -> Icons.RepoHostBitbucket
@@ -369,6 +380,8 @@ class RemoteRepoCompletionContributor : CompletionContributor(), DumbAware {
             prefixedResult.restartCompletionOnAnyPrefixChange()
             try {
               runBlockingCancellable {
+                // TODO: Extend repo search to consult Cody Ignore and denote repositories that are
+                // ignored.
                 for (repos in searcher.search(query)) {
                   blockingContext { // addElement uses ProgressManager.checkCancelled
                     for (repo in repos) {

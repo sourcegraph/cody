@@ -6,7 +6,9 @@ import com.intellij.ui.JBColor
 import com.intellij.ui.components.AnActionLink
 import com.sourcegraph.cody.agent.protocol.ContextItemFile
 import java.awt.Color
+import java.awt.Font
 import java.awt.Graphics
+import java.awt.font.TextAttribute
 
 class ContextFileActionLink(
     project: Project,
@@ -18,7 +20,20 @@ class ContextFileActionLink(
 
   init {
     text = contextItemFile.getLinkActionText(project.basePath)
-    toolTipText = contextItemFile.uri.path
+    font =
+        when {
+          contextItemFile.isIgnored == true || contextItemFile.isTooLarge == true ->
+              Font(
+                  super.getFont().attributes +
+                      (TextAttribute.STRIKETHROUGH to TextAttribute.STRIKETHROUGH_ON))
+          else -> super.getFont()
+        }
+    toolTipText =
+        when {
+          contextItemFile.isIgnored == true -> "File ignored by an admin setting"
+          contextItemFile.isTooLarge == true -> "Excluded due to context window limit"
+          else -> contextItemFile.uri.path
+        }
   }
 
   override fun paintComponent(g: Graphics) {

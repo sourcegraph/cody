@@ -39,6 +39,7 @@ data class ExtensionMessage(
     val errors: String?,
     val query: String? = null,
     val configFeatures: ConfigFeatures? = null,
+    val enhancedContextStatus: EnhancedContextContextT? = null,
 ) {
 
   object Type {
@@ -46,6 +47,7 @@ data class ExtensionMessage(
     const val ERRORS = "errors"
     const val USER_CONTEXT_FILES = "userContextFiles"
     const val SET_CONFIG_FEATURES = "setConfigFeatures"
+    const val ENHANCED_CONTEXT_STATUS = "enhanced-context"
   }
 }
 
@@ -53,4 +55,27 @@ data class WebviewPostMessageParams(val id: String, val message: ExtensionMessag
 
 data class ConfigFeatures(
     val attribution: Boolean,
+)
+
+data class EnhancedContextContextT(val groups: List<ContextGroup>)
+
+data class ContextGroup(
+    val dir: String? = null, // URI
+    val displayName: String,
+    val providers: List<ContextProvider>
+)
+
+// This is a subset of the ContextProvider type in lib/shared/src/codebase-context/context-status.ts
+// It covers remote search repositories.
+data class ContextProvider(
+    val kind: String, // "embeddings", "search"
+
+    // if kind is "search"
+    val type: String? = null, // "local", "remote"
+
+    // if kind is "search" and type is "remote"
+    val state: String? = null, // "ready", "no-match",
+    val id: String? = null,
+    val inclusion: String? = null, // "auto" or "manual"
+    val isIgnored: Boolean? = null,
 )

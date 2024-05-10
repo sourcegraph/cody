@@ -64,7 +64,8 @@ data class ContextItemFile(
         null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection,
     // terminal
     val content: String? = null,
-    val isTooLarge: Boolean? = null
+    val isTooLarge: Boolean? = null,
+    val isIgnored: Boolean? = null,
 ) : ContextItem() {
 
   fun isLocal() = repoName == null

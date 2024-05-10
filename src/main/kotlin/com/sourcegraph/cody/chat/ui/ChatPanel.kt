@@ -41,7 +41,7 @@ class ChatPanel(
   private val messagesPanel = MessagesPanel(project, chatSession)
   private val chatPanel = ChatScrollPane(messagesPanel)
 
-  private val contextView: EnhancedContextPanel = EnhancedContextPanel.create(project, chatSession)
+  internal val contextView: EnhancedContextPanel = EnhancedContextPanel.create(project, chatSession)
 
   private val stopGeneratingButton =
       object : JButton("Stop generating", IconUtil.desaturate(AllIcons.Actions.Suspend)) {

@@ -12,11 +12,13 @@ import com.intellij.ui.CheckedTreeNode
 import com.intellij.ui.ToolbarDecorator.createDecorator
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.vcs.commit.NonModalCommitPanel.Companion.showAbove
+import com.sourcegraph.cody.agent.EnhancedContextContextT
 import com.sourcegraph.cody.agent.WebviewMessage
 import com.sourcegraph.cody.chat.ChatSession
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.context.RemoteRepo
 import com.sourcegraph.cody.context.RemoteRepoUtils
+import com.sourcegraph.cody.context.RepoInclusion
 import com.sourcegraph.cody.history.HistoryService
 import com.sourcegraph.cody.history.state.EnhancedContextState
 import com.sourcegraph.cody.history.state.RemoteRepositoryState
@@ -111,19 +113,18 @@ constructor(protected val project: Project, protected val chatSession: ChatSessi
 
   /** The tree component. */
   protected val tree = run {
-    val checkPolicy =
-        CheckboxTreeBase.CheckPolicy(
-            /* checkChildrenWithCheckedParent = */ true,
-            /* uncheckChildrenWithUncheckedParent = */ true,
-            /* checkParentWithCheckedChild = */ true,
-            /* uncheckParentWithUncheckedChild = */ false)
-    object : CheckboxTree(ContextRepositoriesCheckboxRenderer(), treeRoot, checkPolicy) {
+    val checkPolicy = createCheckboxPolicy()
+    object :
+        CheckboxTree(
+            ContextRepositoriesCheckboxRenderer(enhancedContextEnabled), treeRoot, checkPolicy) {
       // When collapsed, the horizontal scrollbar obscures the Chat Context summary & checkbox.
       // Prefer to clip. Users
       // can resize the sidebar if desired.
       override fun getScrollableTracksViewportWidth(): Boolean = true
     }
   }
+
+  protected abstract fun createCheckboxPolicy(): CheckboxTreeBase.CheckPolicy
 
   /** The toolbar decorator component. */
   protected val toolbar = run {
@@ -192,6 +193,8 @@ constructor(protected val project: Project, protected val chatSession: ChatSessi
       expandAllNodes(tree.rowCount)
     }
   }
+
+  abstract fun updateFromAgent(enhancedContextStatus: EnhancedContextContextT)
 }
 
 class EnterpriseEnhancedContextPanel(project: Project, chatSession: ChatSession) :
@@ -216,6 +219,36 @@ class EnterpriseEnhancedContextPanel(project: Project, chatSession: ChatSession)
     }
     toolbar.addExtraAction(HelpButton())
     return toolbar.createPanel()
+  }
+
+  override fun createCheckboxPolicy(): CheckboxTreeBase.CheckPolicy =
+      CheckboxTreeBase.CheckPolicy(
+          /* checkChildrenWithCheckedParent = */ false,
+          /* uncheckChildrenWithUncheckedParent = */ false,
+          /* checkParentWithCheckedChild = */ false,
+          /* uncheckParentWithUncheckedChild = */ false)
+
+  override fun updateFromAgent(enhancedContextStatus: EnhancedContextContextT) {
+    val repos = mutableListOf<RemoteRepo>()
+
+    for (group in enhancedContextStatus.groups) {
+      val provider = group.providers.firstOrNull() ?: continue
+      val name = group.displayName
+      val enabled = provider.state == "ready"
+      val ignored = provider.isIgnored == true
+      val inclusion =
+          when (provider.inclusion) {
+            "auto" -> RepoInclusion.AUTO
+            "explicit" -> RepoInclusion.MANUAL
+            else -> null
+          }
+      repos.add(RemoteRepo(name, isEnabled = enabled, isIgnored = ignored, inclusion = inclusion))
+    }
+
+    runInEdt {
+      updateTree(repos)
+      resize()
+    }
   }
 
   private val remotesNode = ContextTreeRemotesNode()
@@ -245,35 +278,32 @@ class EnterpriseEnhancedContextPanel(project: Project, chatSession: ChatSession)
     treeModel.reload()
     resize()
 
-    // Update the extension-side state for this chat.
+    // Update the Agent-side state for this chat.
     val enabledRepos = cleanedRepos.filter { it.isEnabled }.mapNotNull { it.codebaseName }
     RemoteRepoUtils.resolveReposWithErrorNotification(
-        project, enabledRepos.map { it -> CodebaseName(it) }) { repos ->
-          runInEdt {
-            updateTree(repos.map { it.name })
-            resize()
-          }
+        project, enabledRepos.map { CodebaseName(it) }) { repos ->
           chatSession.sendWebviewMessage(
               WebviewMessage(command = "context/choose-remote-search-repo", explicitRepos = repos))
         }
   }
 
   @RequiresEdt
-  private fun updateTree(repoNames: List<String>) {
+  private fun updateTree(repos: List<RemoteRepo>) {
     // TODO: When Kotlin @RequiresEdt annotations are instrumented, remove this manual assertion.
     ApplicationManager.getApplication().assertIsDispatchThread()
 
     val remotesPath = treeModel.getTreePath(remotesNode.userObject)
     val wasExpanded = remotesPath != null && tree.isExpanded(remotesPath)
     remotesNode.removeAllChildren()
-    repoNames.forEach { repoName ->
-      val node =
-          ContextTreeRemoteRepoNode(RemoteRepo(repoName)) { checked ->
-            setRepoEnabledInContextState(repoName, checked)
+    repos
+        .map { repo ->
+          ContextTreeRemoteRepoNode(repo) { checked ->
+            setRepoEnabledInContextState(repo.name, checked)
           }
-      remotesNode.add(node)
-    }
-    contextRoot.numRepos = repoNames.size
+        }
+        .forEach { remotesNode.add(it) }
+    // TODO: Count the enabled repos, not all repos; count the ignored repos.
+    contextRoot.numRepos = repos.count { it.isIgnored != true }
     treeModel.reload(contextRoot)
     if (wasExpanded) {
       tree.expandPath(remotesPath)
@@ -299,11 +329,7 @@ class EnterpriseEnhancedContextPanel(project: Project, chatSession: ChatSession)
                   })
             }
 
-            // Update the UI.
-            updateTree(trimmedRepos.map { it -> it.name })
-            resize()
-
-            // Update the extension state.
+            // Update the Agent state. This triggers the tree view update.
             chatSession.sendWebviewMessage(
                 WebviewMessage(
                     command = "context/choose-remote-search-repo", explicitRepos = trimmedRepos))
@@ -369,6 +395,17 @@ class ConsumerEnhancedContextPanel(project: Project, chatSession: ChatSession) :
     toolbar.addExtraAction(ReindexButton(project))
     toolbar.addExtraAction(HelpButton())
     return toolbar.createPanel()
+  }
+
+  override fun createCheckboxPolicy(): CheckboxTreeBase.CheckPolicy =
+      CheckboxTreeBase.CheckPolicy(
+          /* checkChildrenWithCheckedParent = */ true,
+          /* uncheckChildrenWithUncheckedParent = */ true,
+          /* checkParentWithCheckedChild = */ true,
+          /* uncheckParentWithUncheckedChild = */ false)
+
+  override fun updateFromAgent(enhancedContextStatus: EnhancedContextContextT) {
+    // No-op. The consumer panel relies solely on JetBrains-side state.
   }
 
   init {
