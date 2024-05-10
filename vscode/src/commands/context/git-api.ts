@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { type ContextItem, ContextItemSource, TokenCounter, displayPath } from '@sourcegraph/cody-shared'
 import { logError } from '../../log'
 import type { Repository } from '../../repository/builtinGitExtension'
+import { doesFileExist } from '../utils/workspace-files'
 
 /**
  * Generates context files from the git diff and git log of a given repository.
@@ -59,11 +60,7 @@ async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<ContextI
             const uri = vscode.Uri.joinPath(gitRepo.rootUri, uriFromOutput.trim())
 
             // Verify the file exists before adding it as context.
-            const fileStat = await vscode.workspace.fs.stat(uri)?.then(
-                stat => stat,
-                error => undefined
-            )
-            if (!fileStat) {
+            if (!(await doesFileExist(uri))) {
                 continue
             }
 

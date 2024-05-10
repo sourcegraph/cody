@@ -95,11 +95,6 @@ export class CodySourceControl implements vscode.Disposable {
             return
         }
 
-        // Stage all changes when there is unstaged changes only.
-        const stagedChanges = repository?.state?.indexChanges?.length
-        const unstagedChanges = repository?.state?.workingTreeChanges?.length
-        !stagedChanges && unstagedChanges && (await vscode.commands.executeCommand('git.stageAll'))
-
         // Open the vscode source control view to show the progress.
         void vscode.commands.executeCommand('workbench.view.scm')
         // Focus the workbench view to show the progress.
