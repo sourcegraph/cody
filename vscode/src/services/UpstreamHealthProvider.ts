@@ -49,7 +49,6 @@ export class UpstreamHealthProvider implements vscode.Disposable {
     }
 
     private async measure() {
-        console.log('measure')
         if (this.nextTimeoutId) {
             clearTimeout(this.nextTimeoutId)
         }
