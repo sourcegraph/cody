@@ -9,6 +9,7 @@ import {
     ModelUsage,
     getDotComDefaultModels,
     getSimplePreamble,
+    pluralize,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -138,7 +139,7 @@ export class CodySourceControl implements vscode.Disposable {
             })
 
             const { model, contextWindow } = this.modelProvider
-            const prompt = await buildPrompt(
+            const { prompt, ignoredContext } = await buildPrompt(
                 contextWindow,
                 getSimplePreamble(model, 1, commitPrompts.intro),
                 await getContext(repository, commitTemplate).catch(() => [])
@@ -160,6 +161,16 @@ export class CodySourceControl implements vscode.Disposable {
             }
 
             await streaming(stream, abortController, updateInputBox, progress)
+
+            if (ignoredContext.length > 0) {
+                await vscode.window.showInformationMessage(
+                    `Cody was forced to skip ${ignoredContext.length} ${pluralize(
+                        'file',
+                        ignoredContext.length,
+                        'files'
+                    )} when generating the commit message.`
+                )
+            }
         } catch (error) {
             this.statusUpdate()
             progress.report({ message: 'Error' })
@@ -197,7 +208,7 @@ async function buildPrompt(
     contextWindow: ModelContextWindow,
     preamble: Message[],
     context: ContextItem[]
-): Promise<Message[]> {
+): Promise<{ prompt: Message[]; ignoredContext: ContextItem[] }> {
     if (!context.length) {
         throw new Error('Failed to get git output.')
     }
@@ -207,12 +218,9 @@ async function buildPrompt(
     promptBuilder.tryAddToPrefix(preamble)
     promptBuilder.tryAddMessages(transcript.reverse())
 
-    const { ignored } = await promptBuilder.tryAddContext('user', context)
-    if (ignored.length) {
-        throw new Error('Cody cannot generate commit for ignored files.')
-    }
+    const { ignored: ignoredContext } = await promptBuilder.tryAddContext('user', context)
 
-    return promptBuilder.build()
+    return { prompt: promptBuilder.build(), ignoredContext }
 }
 
 async function streaming(

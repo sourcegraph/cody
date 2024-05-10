@@ -146,12 +146,6 @@ function getGitCommitTemplateContextFile(template: string): ContextItem {
     }
 }
 
-const previousMessagesTemplate = `Here are a few previous commit messages:
-<messages>
-{messages}
-</messages>
-`
-
 const diffTemplate = `Here is the '{command}' output:
 <output>
 {output}
