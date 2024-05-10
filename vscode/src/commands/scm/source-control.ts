@@ -128,8 +128,15 @@ export class CodySourceControl implements vscode.Disposable {
         this.statusUpdate(abortController)
 
         const initialInputBoxValue = sourceControlInputbox.value
+
         const generatingCommitTitle = 'Generating commit message...'
-        sourceControlInputbox.value = generatingCommitTitle
+        const initialPlaceholder = (sourceControlInputbox as vscode.SourceControlInputBox).placeholder
+        if (initialPlaceholder !== undefined) {
+            sourceControlInputbox.value = ''
+            ;(sourceControlInputbox as vscode.SourceControlInputBox).placeholder = generatingCommitTitle
+        } else {
+            sourceControlInputbox.value = generatingCommitTitle
+        }
 
         progress.report({ message: generatingCommitTitle })
         try {
@@ -163,7 +170,7 @@ export class CodySourceControl implements vscode.Disposable {
             await streaming(stream, abortController, updateInputBox, progress)
 
             if (ignoredContext.length > 0) {
-                await vscode.window.showInformationMessage(
+                vscode.window.showInformationMessage(
                     `Cody was forced to skip ${ignoredContext.length} ${pluralize(
                         'file',
                         ignoredContext.length,
@@ -177,6 +184,10 @@ export class CodySourceControl implements vscode.Disposable {
             if (error instanceof Error && error.message) {
                 sourceControlInputbox.value = initialInputBoxValue // Revert to initial value on error
                 vscode.window.showInformationMessage(`Generate commit message failed: ${error.message}`)
+            }
+        } finally {
+            if (initialPlaceholder !== undefined) {
+                ;(sourceControlInputbox as vscode.SourceControlInputBox).placeholder = initialPlaceholder
             }
         }
     }
