@@ -36,7 +36,7 @@ export const ModelSelectField: React.FunctionComponent<{
 
     const onModelSelect = useCallback(
         (model: ModelProvider): void => {
-            if (showCodyProBadge && selectedModel.codyProOnly) {
+            if (showCodyProBadge && model.codyProOnly) {
                 getVSCodeAPI().postMessage({
                     command: 'links',
                     value: 'https://sourcegraph.com/cody/subscription',
@@ -51,11 +51,11 @@ export const ModelSelectField: React.FunctionComponent<{
             getVSCodeAPI().postMessage({
                 command: 'event',
                 eventName: 'CodyVSCodeExtension:chooseLLM:clicked',
-                properties: { LLM_provider: selectedModel.model },
+                properties: { LLM_provider: model.model },
             })
             parentOnModelSelect(model)
         },
-        [showCodyProBadge, selectedModel, parentOnModelSelect]
+        [showCodyProBadge, parentOnModelSelect]
     )
 
     const onPopoverOpen = useCallback((): void => {
