@@ -17,16 +17,24 @@ export const trackRejection = (
     document: vscode.TextDocument,
     workspace: Pick<
         typeof vscode.workspace,
-        'onDidChangeTextDocument' | 'onDidDeleteFiles' | 'onDidCloseTextDocument'
+        | 'onDidChangeTextDocument'
+        | 'onDidDeleteFiles'
+        | 'onDidCloseTextDocument'
+        | 'onDidSaveTextDocument'
     >,
     { onAccepted, onRejected }: TrackerCallbacks,
     task: TargetTask
 ) => {
+    // Note: This may change if we are using the `test` intent, as saving an 'untitled' file
+    // will update the uri
+    let targetUri = document.uri
+
     const stopTrackingRejection = () => {
         rejectionEditListener.dispose()
         rejectionFileDeletionListener.dispose()
         commandUndoListener.dispose()
         rejectionFileCloseListener?.dispose()
+        testUriUpdateListener?.dispose()
     }
 
     /**
@@ -60,7 +68,7 @@ export const trackRejection = (
      */
     const rejectionEditListener = workspace.onDidChangeTextDocument(event => {
         if (
-            event.document.uri.toString() !== document.uri.toString() ||
+            event.document.uri.toString() !== targetUri.toString() ||
             event.contentChanges.length === 0
         ) {
             // Irrelevant change, ignore
@@ -109,7 +117,7 @@ export const trackRejection = (
      * was deleted before we marked the task as "accepted".
      */
     const rejectionFileDeletionListener = workspace.onDidDeleteFiles(event => {
-        if (event.files.some(uri => uri.toString() !== document.uri.toString())) {
+        if (event.files.some(uri => uri.toString() !== targetUri.toString())) {
             // Irrelevant deletion, ignore
             return
         }
@@ -122,11 +130,30 @@ export const trackRejection = (
     })
 
     let rejectionFileCloseListener: vscode.Disposable
+    let testUriUpdateListener: vscode.Disposable
     if (task.intent === 'test') {
-        // The test command generates new files, we want to intercept if these are closed
-        // without being saved, as this is a signal that the user rejects the newly created file.
+        /**
+         * When saving an "untitled" file, VS Code will update the Uri scheme.
+         * We need to ensure we update `targetUri` in this case, so the other listeners
+         * work correctly after this file has been saved
+         */
+        testUriUpdateListener = workspace.onDidSaveTextDocument(savedDocument => {
+            const expectedDocumentUri = targetUri.with({ scheme: 'file' })
+            if (savedDocument.uri.toString() !== expectedDocumentUri.toString()) {
+                // Irrelevant change, ignore
+                return
+            }
+
+            // Update the targetUri to match what the newly updated test file Uri
+            targetUri = expectedDocumentUri
+        })
+
+        /**
+         * The test command generates new files, we want to intercept if these are closed
+         * without being saved, as this is a signal that the user rejects the newly created file.
+         */
         rejectionFileCloseListener = workspace.onDidCloseTextDocument(closedDocument => {
-            if (closedDocument.uri.toString() !== document.uri.toString()) {
+            if (closedDocument.uri.toString() !== targetUri.toString()) {
                 // Irrelevant change, ignore
                 return
             }
@@ -135,6 +162,9 @@ export const trackRejection = (
                 // Document closed without being saved or modified, reject
                 onRejected()
             }
+
+            // We no longer need to track this change, so dispose of our listener
+            stopTrackingRejection()
         })
     }
 }

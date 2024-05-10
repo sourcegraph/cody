@@ -33,7 +33,10 @@ describe('trackRejection', () => {
 
     const mockWorkspace: Pick<
         typeof vscode.workspace,
-        'onDidChangeTextDocument' | 'onDidDeleteFiles' | 'onDidCloseTextDocument'
+        | 'onDidChangeTextDocument'
+        | 'onDidDeleteFiles'
+        | 'onDidCloseTextDocument'
+        | 'onDidSaveTextDocument'
     > = {
         onDidChangeTextDocument(listener) {
             onDidChangeTextDocument = listener
@@ -45,6 +48,9 @@ describe('trackRejection', () => {
         },
         onDidCloseTextDocument(listener) {
             onDidCloseTextDocument = listener
+            return { dispose: () => {} }
+        },
+        onDidSaveTextDocument(listener) {
             return { dispose: () => {} }
         },
     }
