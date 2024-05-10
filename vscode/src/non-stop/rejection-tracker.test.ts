@@ -29,21 +29,29 @@ describe('trackRejection', () => {
     // Mock workspace APIs to trigger document changes
     let onDidChangeTextDocument: (event: vscode.TextDocumentChangeEvent) => void
     let onDidDeleteFiles: (event: vscode.FileDeleteEvent) => void
+    let onDidCloseTextDocument: (event: vscode.TextDocument) => void
 
-    const mockWorkspace: Pick<typeof vscode.workspace, 'onDidChangeTextDocument' | 'onDidDeleteFiles'> =
-        {
-            onDidChangeTextDocument(listener) {
-                onDidChangeTextDocument = listener
-                return { dispose: () => {} }
-            },
-            onDidDeleteFiles(listener) {
-                onDidDeleteFiles = listener
-                return { dispose: () => {} }
-            },
-        }
+    const mockWorkspace: Pick<
+        typeof vscode.workspace,
+        'onDidChangeTextDocument' | 'onDidDeleteFiles' | 'onDidCloseTextDocument'
+    > = {
+        onDidChangeTextDocument(listener) {
+            onDidChangeTextDocument = listener
+            return { dispose: () => {} }
+        },
+        onDidDeleteFiles(listener) {
+            onDidDeleteFiles = listener
+            return { dispose: () => {} }
+        },
+        onDidCloseTextDocument(listener) {
+            onDidCloseTextDocument = listener
+            return { dispose: () => {} }
+        },
+    }
     const mockDocument = document('Hello, world!')
     const mockTask = {
         id: 'task-id',
+        intent: 'edit',
         undoEvent: new vscode.EventEmitter(),
     }
 
@@ -82,6 +90,37 @@ describe('trackRejection', () => {
             // Other file deleted, do nothing
             expect(onAcceptedSpy).not.toHaveBeenCalled()
             expect(onRejectedSpy).not.toHaveBeenCalled()
+        })
+
+        it('for the test intent should call onRejected when document is closed without being saved', () => {
+            trackRejection(
+                mockDocument,
+                mockWorkspace,
+                { onAccepted: onAcceptedSpy, onRejected: onRejectedSpy },
+                { ...mockTask, intent: 'test' } as any
+            )
+
+            Object.assign(mockDocument, { isUntitled: true })
+            onDidCloseTextDocument(mockDocument)
+
+            // File closed without being saved, mark task as rejected
+            expect(onAcceptedSpy).not.toHaveBeenCalled()
+            expect(onRejectedSpy).toHaveBeenCalled()
+        })
+
+        it('for the test intent should not call onRejected when document is closed after being saved', () => {
+            trackRejection(
+                mockDocument,
+                mockWorkspace,
+                { onAccepted: onAcceptedSpy, onRejected: onRejectedSpy },
+                { ...mockTask, intent: 'test' } as any
+            )
+
+            onDidCloseTextDocument(mockDocument)
+
+            // File closed without being saved, mark task as rejected
+            expect(onAcceptedSpy).not.toHaveBeenCalled()
+            expect(onRejectedSpy).toHaveBeenCalled()
         })
     })
 

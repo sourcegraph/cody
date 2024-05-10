@@ -541,6 +541,7 @@ export class FixupController
             },
             {
                 id: task.id,
+                intent: task.intent,
                 undoEvent: this.undoCommandEvent,
             }
         )

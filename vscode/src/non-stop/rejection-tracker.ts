@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import type { EditIntent } from '../edit/types'
 import type { FixupTaskID } from './FixupTask'
 
 interface TrackerCallbacks {
@@ -8,19 +9,24 @@ interface TrackerCallbacks {
 
 interface TargetTask {
     id: FixupTaskID
+    intent: EditIntent
     undoEvent: vscode.EventEmitter<FixupTaskID>
 }
 
 export const trackRejection = (
     document: vscode.TextDocument,
-    workspace: Pick<typeof vscode.workspace, 'onDidChangeTextDocument' | 'onDidDeleteFiles'>,
+    workspace: Pick<
+        typeof vscode.workspace,
+        'onDidChangeTextDocument' | 'onDidDeleteFiles' | 'onDidCloseTextDocument'
+    >,
     { onAccepted, onRejected }: TrackerCallbacks,
     task: TargetTask
 ) => {
     const stopTrackingRejection = () => {
         rejectionEditListener.dispose()
-        rejectionFileListener.dispose()
+        rejectionFileDeletionListener.dispose()
         commandUndoListener.dispose()
+        rejectionFileCloseListener?.dispose()
     }
 
     /**
@@ -102,7 +108,7 @@ export const trackRejection = (
      * Tracks the rejection of a Fixup task through if the source file
      * was deleted before we marked the task as "accepted".
      */
-    const rejectionFileListener = workspace.onDidDeleteFiles(event => {
+    const rejectionFileDeletionListener = workspace.onDidDeleteFiles(event => {
         if (event.files.some(uri => uri.toString() !== document.uri.toString())) {
             // Irrelevant deletion, ignore
             return
@@ -114,4 +120,21 @@ export const trackRejection = (
         // We no longer need to track this change, so dispose of our listeners
         stopTrackingRejection()
     })
+
+    let rejectionFileCloseListener: vscode.Disposable
+    if (task.intent === 'test') {
+        // The test command generates new files, we want to intercept if these are closed
+        // without being saved, as this is a signal that the user rejects the newly created file.
+        rejectionFileCloseListener = workspace.onDidCloseTextDocument(closedDocument => {
+            if (closedDocument.uri.toString() !== document.uri.toString()) {
+                // Irrelevant change, ignore
+                return
+            }
+
+            if (closedDocument.isUntitled) {
+                // Document closed without being saved or modified, reject
+                onRejected()
+            }
+        })
+    }
 }
