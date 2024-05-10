@@ -1,7 +1,8 @@
-import { logDebug, ps, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import { type PromptString, logDebug, ps, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
+import { executeEdit } from '../../edit/execute'
 import type { EditCommandResult } from '../../main'
+import type { FixupTask } from '../../non-stop/FixupTask'
 import type { CodyCommandArgs } from '../types'
 
 export async function executeGitHubPullFixupCommand(
@@ -11,29 +12,40 @@ export async function executeGitHubPullFixupCommand(
         span.setAttribute('sampled', true)
         logDebug('executeGitHubPullFixupCommand', 'executing', args)
 
-        const commentPath = 'vscode/src/repository/repo-metadata-from-git-api.ts'
-        const lineStart = 54
-        const lineEnd = 61
-
-        const document = await findDocument(commentPath)
-        const startPos = document.lineAt(lineStart - 1).range.start
-        const endPos = document.lineAt(lineEnd - 1).range.end.translate({ characterDelta: -1 })
-
-        const prompt = ps`@hitesh-1997 this implementation won't handle a bunch of cases, eg SSH clone URLs. Luckily we already have a pretty robust function for massaging a gitURL convertGitCloneURLToCodebaseName`
-
         return {
             type: 'edit',
-            task: await executeEdit({
-                configuration: {
-                    preInstruction: prompt,
-                    mode: 'edit',
-                    range: new vscode.Selection(startPos, endPos),
-                    document,
-                },
-                source: args?.source,
-            } satisfies ExecuteEditArguments),
+            task: await startCommentFixup({
+                comment: ps`@hitesh-1997 this implementation won't handle a bunch of cases, eg SSH clone URLs. Luckily we already have a pretty robust function for massaging a gitURL convertGitCloneURLToCodebaseName`,
+                path: 'vscode/src/repository/repo-metadata-from-git-api.ts',
+                lineStart: 54,
+                lineEnd: 61,
+            }),
         }
     })
+}
+
+async function startCommentFixup(comment: {
+    comment: PromptString
+    /** relative to repo root */
+    path: string
+    /** 1-based */
+    lineStart: number
+    /** 1-based */
+    lineEnd: number
+}): Promise<FixupTask | undefined> {
+    const document = await findDocument(comment.path)
+    const startPos = document.lineAt(comment.lineStart - 1).range.start
+    const endPos = document.lineAt(comment.lineEnd - 1).range.end.translate({ characterDelta: -1 })
+    const range = new vscode.Selection(startPos, endPos)
+
+    return await executeEdit({
+        configuration: {
+            preInstruction: comment.comment,
+            mode: 'edit',
+            range,
+            document,
+        },
+    }) // source?
 }
 
 async function findDocument(relativePath: string): Promise<vscode.TextDocument> {
