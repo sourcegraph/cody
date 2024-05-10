@@ -37,17 +37,19 @@ export async function getContextFilesFromGitApi(
  */
 async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<ContextItem[]> {
     try {
-        const diffOutput = await gitRepo?.diff(true)
-        if (!diffOutput?.trim()) {
+        // We first try to get only staged changed. Otherwise we simply try to get all unstaged changes
+        const cachedDiff = await gitRepo?.diff(true)
+        const isCached = !!cachedDiff?.trim()
+        const diffOutput = isCached ? cachedDiff : await gitRepo?.diff(false)
+        if (!diffOutput) {
             throw new Error('Empty git diff output.')
         }
 
-        const command = 'git diff --cached'
+        const command = `git diff${isCached ? ' --cached' : ''}`
         const diffs: ContextItem[] = []
         const diffOutputByFiles = diffOutput.trim().split('diff --git ')
 
         for (const output of diffOutputByFiles) {
-            console.log(output.match(/^a\/(.+?)\s+b\//), 'output.match(/^a/(.+?)s+b//)')
             // Use regex match to get the text between 'a/' and ' b/' for the file path.
             const [, uriFromOutput] = output.match(/^a\/(.+?)\s+b\//) || []
             if (!uriFromOutput) {
@@ -81,7 +83,8 @@ async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<ContextI
             })
         }
 
-        return diffs
+        // we sort by shortest diffs first so that we include as many changed files as possible
+        return diffs.toSorted((a, b) => a.size! - b.size!)
     } catch (error) {
         logError('getContextFileFromGitDiff', 'failed', { verbose: error })
         throw new Error('Failed to get git diff.')
@@ -142,6 +145,12 @@ function getGitCommitTemplateContextFile(template: string): ContextItem {
         size: TokenCounter.countTokens(content),
     }
 }
+
+const previousMessagesTemplate = `Here are a few previous commit messages:
+<messages>
+{messages}
+</messages>
+`
 
 const diffTemplate = `Here is the '{command}' output:
 <output>
