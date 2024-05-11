@@ -49,6 +49,14 @@ interface ContextItemCommon {
 
     /**
      * Whether the content of the item is too large to be included as context.
+     *
+     * @deprecated Whether a {@link ContextItem} is too large is a function of many things (the
+     * model's context window size, the user's current message input, the size of the other
+     * at-mentioned context items, etc.), and it is not a property of a context item per se. The
+     * `isTooLarge` field should be computed much later (closer to where it's used and where the
+     * latest UI state is known) and should not be a field here. For past messages stored in the
+     * {@link SerializedChatTranscript}, the `isTooLarge` makes more sense, but we should separate
+     * serialized context items into a different type altogether.
      */
     isTooLarge?: boolean
 

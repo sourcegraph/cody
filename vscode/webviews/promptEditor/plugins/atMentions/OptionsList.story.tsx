@@ -4,7 +4,7 @@ import { URI } from 'vscode-uri'
 import type { ContextItem } from '@sourcegraph/cody-shared'
 import { VSCodeDecorator } from '../../../storybook/VSCodeStoryDecorator'
 import { OptionsList } from './OptionsList'
-import { MentionTypeaheadOption } from './atMentions'
+import { createMentionMenuOption } from './atMentions'
 
 const meta: Meta<typeof OptionsList> = {
     title: 'cody/OptionsList',
@@ -28,8 +28,8 @@ const meta: Meta<typeof OptionsList> = {
 
 export default meta
 
-function toOptions(items: ContextItem[]): MentionTypeaheadOption[] {
-    return items.map(item => new MentionTypeaheadOption(item))
+function toOptions(items: ContextItem[]): ReturnType<typeof createMentionMenuOption>[] {
+    return items.map(item => createMentionMenuOption(item))
 }
 
 export const FileSearchEmpty: StoryObj<typeof OptionsList> = {

@@ -183,7 +183,6 @@ describe('PromptBuilder', () => {
                 {
                     ...fileWithSameUri,
                     content: 'This is a file that exceeds the token limit',
-                    isTooLarge: true,
                     size: 20,
                 },
             ]
@@ -253,7 +252,6 @@ describe('PromptBuilder', () => {
                 content: 'This is a file that exceeds the token limit',
                 range: { start: { line: 0, character: 0 }, end: { line: 10, character: 1 } },
                 source: ContextItemSource.Search,
-                isTooLarge: true,
             }
 
             const contextTranscript = generateContextTranscript([innerRange, outterRange, innerRange])
@@ -281,7 +279,6 @@ describe('PromptBuilder', () => {
                 size: 2,
                 content: 'This has full file content.',
                 source: ContextItemSource.User,
-                isTooLarge: true,
             }
 
             const contextTranscript = generateContextTranscript([partialFile, fullFile, partialFile])
@@ -306,7 +303,6 @@ describe('PromptBuilder', () => {
                 size: 2,
                 content: 'This has full file content.',
                 source: ContextItemSource.User,
-                isTooLarge: true,
             }
 
             const contextTranscript = generateContextTranscript([selection, fullFile, selection])
@@ -331,7 +327,6 @@ describe('PromptBuilder', () => {
                 size: 2,
                 content: 'This has full file content.',
                 source: ContextItemSource.User,
-                isTooLarge: true,
             }
 
             const userContext = generateContextTranscript([selection])

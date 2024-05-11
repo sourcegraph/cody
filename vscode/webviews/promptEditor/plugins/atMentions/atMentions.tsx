@@ -1,15 +1,13 @@
 import { FloatingPortal, flip, offset, shift, useFloating } from '@floating-ui/react'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { LexicalTypeaheadMenuPlugin, MenuOption } from '@lexical/react/LexicalTypeaheadMenuPlugin'
+import { LexicalTypeaheadMenuPlugin, type MenuOption } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import { $createTextNode, COMMAND_PRIORITY_NORMAL, type TextNode } from 'lexical'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import styles from './atMentions.module.css'
 
 import {
     type ContextItem,
-    ContextItemSource,
     FAST_CHAT_INPUT_TOKEN_BUDGET,
-    displayPath,
     scanForMentionTriggerInUserTextInput,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
@@ -22,24 +20,22 @@ import {
 } from '../../nodes/ContextItemMentionNode'
 import { OptionsList } from './OptionsList'
 import { useChatContextItems } from './chatContextClient'
+import { contextItemID, prepareContextItemForMentionMenu } from './util'
 
 const SUGGESTION_LIST_LENGTH_LIMIT = 20
 
-export class MentionTypeaheadOption extends MenuOption {
-    public displayPath: string
+export interface MentionMenuOption extends MenuOption {
+    item: ContextItem
+}
 
-    constructor(public readonly item: ContextItem) {
-        super(
-            JSON.stringify([
-                `${item.type}`,
-                `${item.uri.toString()}`,
-                `${item.type === 'symbol' ? item.symbolName : ''}`,
-                item.range
-                    ? `${item.range.start.line}:${item.range.start.character}-${item.range.end.line}:${item.range.end.character}`
-                    : '',
-            ])
-        )
-        this.displayPath = displayPath(item.uri)
+export function createMentionMenuOption(item: ContextItem): MentionMenuOption {
+    return {
+        item,
+        key: contextItemID(item),
+
+        // This is not used by LexicalMenu or LexicalTypeaheadMenuPlugin, so we can just make it a
+        // noop.
+        setRefElement: () => {},
     }
 }
 
@@ -48,6 +44,9 @@ export default function MentionsPlugin(): JSX.Element | null {
 
     const [query, setQuery] = useState<string | null>(null)
 
+    /**
+     * Total sum of tokens represented by all of the @-mentioned items.
+     */
     const [tokenAdded, setTokenAdded] = useState<number>(0)
 
     const { x, y, refs, strategy, update } = useFloating({
@@ -63,17 +62,13 @@ export default function MentionsPlugin(): JSX.Element | null {
             model?.contextWindow?.context?.user ||
             model?.contextWindow?.input ||
             FAST_CHAT_INPUT_TOKEN_BUDGET
+        const remainingTokenBudget = limit - tokenAdded
         return (
             results
-                ?.map(r => {
-                    if (r.size) {
-                        r.isTooLarge = r.size > limit - tokenAdded
-                    }
-                    // All @-mentions should have a source of `User`.
-                    r.source = ContextItemSource.User
-                    return new MentionTypeaheadOption(r)
-                })
-                .slice(0, SUGGESTION_LIST_LENGTH_LIMIT) ?? []
+                ?.slice(0, SUGGESTION_LIST_LENGTH_LIMIT)
+                .map(item =>
+                    createMentionMenuOption(prepareContextItemForMentionMenu(item, remainingTokenBudget))
+                ) ?? []
         )
     }, [results, model, tokenAdded])
 
@@ -85,23 +80,19 @@ export default function MentionsPlugin(): JSX.Element | null {
     useEffect(() => {
         // Listen for changes to ContextItemMentionNode to update the token count.
         // This updates the token count when a mention is added or removed.
-        const unregister = editor.registerMutationListener(ContextItemMentionNode, node => {
+        const unregister = editor.registerMutationListener(ContextItemMentionNode, () => {
             const items = toSerializedPromptEditorValue(editor)?.contextItems
             if (!items?.length) {
                 setTokenAdded(0)
                 return
             }
-            setTokenAdded(items?.reduce((acc, item) => acc + (item.size ? item.size : 0), 0) ?? 0)
+            setTokenAdded(items?.reduce((acc, item) => acc + (item.size ?? 0), 0) ?? 0)
         })
         return unregister
     }, [editor])
 
     const onSelectOption = useCallback(
-        (
-            selectedOption: MentionTypeaheadOption,
-            nodeToReplace: TextNode | null,
-            closeMenu: () => void
-        ) => {
+        (selectedOption: MentionMenuOption, nodeToReplace: TextNode | null, closeMenu: () => void) => {
             editor.update(() => {
                 const currentInputText = nodeToReplace?.__text
                 if (!currentInputText) {
@@ -131,11 +122,9 @@ export default function MentionsPlugin(): JSX.Element | null {
         [editor]
     )
 
-    const onQueryChange = useCallback((query: string | null) => setQuery(query), [])
-
     return (
-        <LexicalTypeaheadMenuPlugin<MentionTypeaheadOption>
-            onQueryChange={onQueryChange}
+        <LexicalTypeaheadMenuPlugin<MentionMenuOption>
+            onQueryChange={setQuery}
             onSelectOption={onSelectOption}
             triggerFn={scanForMentionTriggerInUserTextInput}
             options={options}

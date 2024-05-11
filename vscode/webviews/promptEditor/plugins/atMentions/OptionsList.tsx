@@ -24,11 +24,11 @@ import {
 } from '../../../../src/chat/context/constants'
 import { Command, CommandGroup, CommandItem, CommandList } from '../../../components/shadcn/ui/command'
 import styles from './OptionsList.module.css'
-import type { MentionTypeaheadOption } from './atMentions'
+import type { MentionMenuOption } from './atMentions'
 
 export const OptionsList: FunctionComponent<
-    { query: string; options: MentionTypeaheadOption[] } & Pick<
-        Parameters<MenuRenderFn<MentionTypeaheadOption>>[1],
+    { query: string; options: MentionMenuOption[] } & Pick<
+        Parameters<MenuRenderFn<MentionMenuOption>>[1],
         'selectedIndex' | 'setHighlightedIndex' | 'selectOptionAndCleanUp'
     >
 > = ({ query, options, selectedIndex, setHighlightedIndex, selectOptionAndCleanUp }) => {
@@ -100,7 +100,7 @@ function unsetAriaHidden(element: HTMLDivElement | null): void {
     element?.querySelector('[cmdk-group-heading]')?.removeAttribute('aria-hidden')
 }
 
-function getHelpText(mentionQuery: MentionQuery, options: MentionTypeaheadOption[]): string {
+function getHelpText(mentionQuery: MentionQuery, options: MentionMenuOption[]): string {
     switch (mentionQuery.provider) {
         case 'default':
             return GENERAL_HELP_LABEL
@@ -122,7 +122,7 @@ function getHelpText(mentionQuery: MentionQuery, options: MentionTypeaheadOption
     }
 }
 
-function getDescription(item: MentionTypeaheadOption['item'], query: MentionQuery): string {
+function getDescription(item: MentionMenuOption['item'], query: MentionQuery): string {
     const range = query.range ?? item.range
     switch (item.type) {
         case 'github_issue':
@@ -139,7 +139,7 @@ function getDescription(item: MentionTypeaheadOption['item'], query: MentionQuer
 
 const ItemContent: FunctionComponent<{
     query: MentionQuery
-    option: MentionTypeaheadOption
+    option: MentionMenuOption
 }> = ({ query, option }) => {
     const item = option.item
     const isFileType = item.type === 'file'

@@ -648,10 +648,18 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 return
             }
             const { input, context } = this.chatModel.contextWindow
-            const userContextFiles = items.map(f => ({
-                ...f,
-                isTooLarge: f.size ? f.size > (context?.user || input) : undefined,
-            }))
+            const userContextFiles: ContextItem[] = items.map(
+                f =>
+                    ({
+                        ...f,
+
+                        // NOTE: This calculation of `isTooLarge` does not take into account the user's
+                        // input or other @-mentioned context items. There's also a divergence in how this
+                        // is used: the VS Code extension's webview overrides this with its own calculation,
+                        // but JetBrains does not.
+                        isTooLarge: f.size ? f.size > (context?.user ?? input) : undefined,
+                    }) satisfies ContextItem
+            )
             void this.postMessage({
                 type: 'userContextFiles',
                 userContextFiles,
