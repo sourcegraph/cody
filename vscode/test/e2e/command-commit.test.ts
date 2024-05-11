@@ -17,7 +17,7 @@ testGitWorkspace.extend<ExpectedEvents>({
         'CodyVSCodeExtension:sidebar:commit:clicked',
         'CodyVSCodeExtension:command:commit:executed',
     ],
-    expectedV2Events: ['cody.sidebar.commit:clicked', 'cody.command.commit:executed'],
+    expectedV2Events: ['cody.sidebar.commit:clicked', 'cody.command.generate-commit:executed'],
 })('use terminal output as context', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 

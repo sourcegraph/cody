@@ -69,7 +69,7 @@ export class CodySourceControl implements vscode.Disposable {
      * @param scm - The source control instance to use for the commit message generation.
      */
     public async generate(scm?: vscode.SourceControl): Promise<void> {
-        telemetryRecorder.recordEvent('cody.command.commit', 'executed')
+        telemetryRecorder.recordEvent('cody.command.generate-commit', 'executed')
 
         const currentWorkspaceUri = vscode.workspace.workspaceFolders?.[0]?.uri
         if (!this.gitAPI || !currentWorkspaceUri) {
