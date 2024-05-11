@@ -72,7 +72,7 @@ export async function getContextFileFromSelection(): Promise<ContextItem[]> {
             const document = editor?.document
             const selection = editor?.selection
             if (!document || !selection) {
-                throw new Error('No active selection in active editor')
+                return []
             }
 
             if (await contextFiltersProvider.isUriIgnored(document.uri)) {
