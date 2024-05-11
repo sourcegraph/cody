@@ -38,41 +38,51 @@ export async function getContextFilesFromGitApi(
  */
 async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<ContextItem[]> {
     try {
-        // We first try to get only staged changed. Otherwise we simply try to get all unstaged changes
-        const hasStagedChanges = gitRepo?.state?.indexChanges?.length > 0
+        // Get the list of files that currently have staged and unstaged changes.
+        const [stagedFiles, unstagedFiles] = await Promise.all([
+            gitRepo.diffIndexWithHEAD(),
+            gitRepo.diffWithHEAD(),
+        ])
+
+        // Get the diff output for staged changes if there is any,
+        // otherwise, get the diff output for unstaged changes.
+        const hasStagedChanges = Boolean(stagedFiles?.length)
+        const command = `git diff${hasStagedChanges ? ' --cached' : ''}`
+
+        // A list of file uris to use for comparison with the diff output.
+        const diffFiles = hasStagedChanges ? stagedFiles : unstagedFiles
+
+        // Split diff output by files: diff --git a/$FILE b/$FILE\n$DIFF
         const diffOutput = await gitRepo?.diff(hasStagedChanges)
-        if (!diffOutput) {
+        const diffOutputByFiles = diffOutput.split(/diff --git a\/.+? b\//).filter(Boolean)
+        // Compare the diff files to the diff output to ensure they match,
+        // if the numbers are different, we can't trust the diff output were split correctly.
+        if (!diffFiles.length || !diffOutput || diffOutputByFiles.length !== diffFiles.length) {
             throw new Error('Empty git diff output.')
         }
 
-        const command = `git diff${hasStagedChanges ? ' --cached' : ''}`
         const diffs: ContextItem[] = []
-        const diffOutputByFiles = diffOutput.trim().split('diff --git ')
-
-        for (const output of diffOutputByFiles) {
-            // Use regex match to get the text between 'a/' and ' b/' for the file path.
-            const [, uriFromOutput] = output.match(/^a\/(.+?)\s+b\//) || []
-            if (!uriFromOutput) {
+        for (const diff of diffOutputByFiles) {
+            if (!diff) {
                 continue // Skip this iteration if no file path is found
             }
 
-            // URI enables Cody Ignore checks during prompt-building step.
-            const uri = vscode.Uri.joinPath(gitRepo.rootUri, uriFromOutput.trim())
-
             // Verify the file exists before adding it as context.
-            if (!(await doesFileExist(uri))) {
+            const uri = diffFiles.find(p => diff.startsWith(displayPath(p.uri)))?.uri
+            if (!uri || !(await doesFileExist(uri))) {
                 continue
             }
 
             const content = diffTemplate
                 .replace('{command}', command)
                 .replace('<output>', `<output file="${displayPath(uri)}">`)
-                .replace('{output}', output.trim())
+                .replace('{output}', diffOutput.trim())
 
             diffs.push({
                 type: 'file',
                 content,
                 title: command,
+                // Using the uri by file enables Cody Ignore checks during prompt-building step.
                 uri,
                 source: ContextItemSource.Terminal,
                 size: TokenCounter.countTokens(content),

@@ -10,7 +10,7 @@ Do not enclose the suggested commit message in backticks. Skip preamble. Only re
 
 const COMMMIT_TEMPLATE = ps`The commit message should strictly adhere to the commit format from the shared git commit template.`
 
-const COMMMIT_TEMPLATE_NOT_FOUNT = ps`The commit message should adhere to the conventional commit format and include a test plan outlining the implemented changes.`
+const COMMMIT_TEMPLATE_NOT_FOUNT = ps`The commit message should adhere to the conventional commit format`
 
 export const COMMIT_COMMAND_PROMPTS = {
     /**

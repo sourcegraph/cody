@@ -1,4 +1,5 @@
 import {
+    type AuthStatus,
     type ChatClient,
     type ChatMessage,
     type CompletionGeneratorValue,
@@ -16,7 +17,6 @@ import {
 import * as vscode from 'vscode'
 import { PromptBuilder } from '../../prompt-builder'
 import type { API, GitExtension, InputBox, Repository } from '../../repository/builtinGitExtension'
-import type { AuthProvider } from '../../services/AuthProvider'
 import { getContextFilesFromGitApi as getContext } from '../context/git-api'
 import { COMMIT_COMMAND_PROMPTS } from './prompts'
 
@@ -28,10 +28,7 @@ export class CodySourceControl implements vscode.Disposable {
 
     private commitTemplate?: string
 
-    constructor(
-        private readonly authProvider: AuthProvider,
-        private readonly chatClient: ChatClient
-    ) {
+    constructor(private readonly chatClient: ChatClient) {
         // Register commands
         this.disposables.push(
             vscode.commands.registerCommand('cody.command.generate-commit', scm => this.generate(scm)),
@@ -63,11 +60,6 @@ export class CodySourceControl implements vscode.Disposable {
             }
         })
 
-        // TODO update the model on AuthStatus change.
-        const authStatus = this.authProvider.getAuthStatus()
-        const providers = ModelProvider.getProviders(ModelUsage.Chat, !authStatus.userCanUpgrade)
-        const preferredProvider = providers?.find(p => p.model.includes('haiku'))
-        this.modelProvider = preferredProvider ?? providers[0]
         this.disposables.push(onConfigChange, onEnablementChange?.dispose())
     }
 
@@ -236,6 +228,12 @@ export class CodySourceControl implements vscode.Disposable {
 
         this.abortController?.abort()
         this.abortController = abortController
+    }
+
+    public syncAuthStatus(authStatus: AuthStatus): void {
+        const providers = ModelProvider.getProviders(ModelUsage.Chat, !authStatus.userCanUpgrade)
+        const preferredProvider = providers?.find(p => p.model.includes('claude-3-haiku'))
+        this.modelProvider = preferredProvider ?? providers[0]
     }
 
     public dispose(): void {
