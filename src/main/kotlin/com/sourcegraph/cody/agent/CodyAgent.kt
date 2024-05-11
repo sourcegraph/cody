@@ -6,6 +6,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.SystemInfoRt
+import com.intellij.util.net.HttpConfigurable
 import com.intellij.util.system.CpuArch
 import com.sourcegraph.cody.agent.protocol.*
 import com.sourcegraph.cody.vscode.CancellationToken
@@ -166,7 +167,19 @@ private constructor(
         processBuilder.environment()["CODY_LOG_EVENT_MODE"] = "connected-instance-only"
       }
 
+      val proxy = HttpConfigurable.getInstance()
+      val proxyUrl = proxy.PROXY_HOST + ":" + proxy.PROXY_PORT
+      if (proxy.PROXY_TYPE_IS_SOCKS) {
+        processBuilder.environment()["HTTP_PROXY"] = "socks://$proxyUrl"
+      } else {
+        processBuilder.environment()["HTTP_PROXY"] = "http://$proxyUrl"
+        processBuilder.environment()["HTTPS_PROXY"] = "https://$proxyUrl"
+      }
+
       logger.info("starting Cody agent ${command.joinToString(" ")}")
+      logger.info(
+          "Cody agent proxyUrl ${proxyUrl} PROXY_TYPE_IS_SOCKS ${proxy.PROXY_TYPE_IS_SOCKS}")
+
       val process =
           processBuilder
               .redirectErrorStream(false)
