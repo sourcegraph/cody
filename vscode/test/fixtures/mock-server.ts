@@ -480,7 +480,6 @@ export class MockServer {
                         break
                     }
                     default:
-                        console.log(`Unhandled operation: ${operation}`)
                         res.status(400).send(
                             JSON.stringify({
                                 errors: [
