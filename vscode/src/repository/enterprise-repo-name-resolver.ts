@@ -14,16 +14,8 @@ type RemoteUrl = string
 type UriFsPath = string
 
 export class EnterpriseRepoNameResolver {
-    private platformSpecificGitRemoteGetters: RemoteUrlGetter[] = []
     private fsPathToRepoNameCache = new LRUCache<UriFsPath, RepoName[]>({ max: 1000 })
     private remoteUrlToRepoNameCache = new LRUCache<RemoteUrl, Promise<RepoName | null>>({ max: 1000 })
-
-    /**
-     * Currently is used to set node specific remote url getters on the extension init.
-     */
-    public init(platformSpecificGitRemoteGetters: RemoteUrlGetter[] = []) {
-        this.platformSpecificGitRemoteGetters = platformSpecificGitRemoteGetters
-    }
 
     /**
      * Gets the repo names for a file URI.
@@ -48,16 +40,6 @@ export class EnterpriseRepoNameResolver {
 
             if (remoteUrls === undefined || remoteUrls.length === 0) {
                 remoteUrls = await gitRemoteUrlsFromTreeWalk(uri)
-            }
-
-            if (remoteUrls === undefined || remoteUrls.length === 0) {
-                for (const getter of this.platformSpecificGitRemoteGetters) {
-                    remoteUrls = await getter(uri)
-
-                    if (remoteUrls?.length !== 0) {
-                        break
-                    }
-                }
             }
 
             if (remoteUrls) {

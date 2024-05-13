@@ -3,9 +3,6 @@ import { diffChars } from 'diff'
 import * as vscode from 'vscode'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
-import { getConfiguration } from '../configuration'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { getExtensionDetails, logPrefix, telemetryService } from './telemetry'
 
 export const LOG_INTERVAL = 30 * 60 * 1000 // 30 minutes
 
@@ -27,15 +24,6 @@ export class CharactersLogger implements vscode.Disposable {
         this.inserted = 0
         this.deleted = 0
 
-        const extDetails = getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration()))
-        telemetryService.log(
-            `${logPrefix(extDetails.ide)}:characters`,
-            { insertedCharacters, deletedCharacters },
-            {
-                agent: true,
-                hasV2Event: true,
-            }
-        )
         telemetryRecorder.recordEvent('cody.characters', 'flush', {
             metadata: { insertedCharacters, deletedCharacters },
         })

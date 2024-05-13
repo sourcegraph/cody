@@ -9,9 +9,7 @@ import {
     isDefined,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-
 import { logDebug } from '../../log'
-
 import { PromptBuilder } from '../../prompt-builder'
 import type { SimpleChatModel } from './SimpleChatModel'
 
@@ -28,11 +26,7 @@ interface PromptInfo {
     }
 }
 
-export interface IPrompter {
-    makePrompt(chat: SimpleChatModel, codyApiVersion: number): Promise<PromptInfo>
-}
-
-export class DefaultPrompter implements IPrompter {
+export class DefaultPrompter {
     constructor(
         private explicitContext: ContextItemWithContent[],
         private getEnhancedContext?: (query: PromptString) => Promise<ContextItem[]>
@@ -72,7 +66,7 @@ export class DefaultPrompter implements IPrompter {
             // Counter for context items categorized by source
             const ignoredContext = { user: 0, enhanced: 0, transcript: 0 }
 
-            // Add context from new user-specified context items, e.g. @-mentions, @-uri
+            // Add context from new user-specified context items, e.g. @-mentions, active selection, etc.
             const newUserContext = await promptBuilder.tryAddContext('user', this.explicitContext)
             ignoredContext.user += newUserContext.ignored.length
 
