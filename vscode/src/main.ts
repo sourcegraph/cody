@@ -678,6 +678,7 @@ const register = async (
                             void chatManager.triggerNotice(notice)
                         },
                         createBfgRetriever: platform.createBfgRetriever,
+                        createTscRetriever: platform.createTscRetriever,
                     })
                 )
                 autocompleteDisposables.push(
@@ -689,6 +690,7 @@ const register = async (
                         triggerNotice: notice => {
                             void chatManager.triggerNotice(notice)
                         },
+                        createTscRetriever: platform.createTscRetriever,
                         createBfgRetriever: platform.createBfgRetriever,
                     })
                 )

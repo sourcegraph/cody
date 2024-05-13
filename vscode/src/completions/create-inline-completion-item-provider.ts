@@ -12,6 +12,7 @@ import type { CodyStatusBar } from '../services/StatusBar'
 
 import { completionProviderConfig } from './completion-provider-config'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
+import type { TscRetriever } from './context/retrievers/tsc/tsc-retriever'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProviderConfig } from './providers/create-provider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
@@ -23,6 +24,7 @@ export interface InlineCompletionItemProviderArgs {
     authProvider: AuthProvider
     triggerNotice: ((notice: { key: string }) => void) | null
     createBfgRetriever?: () => BfgRetriever
+    createTscRetriever?: () => TscRetriever
 }
 
 /**
@@ -48,6 +50,7 @@ export async function createInlineCompletionItemProvider({
     authProvider,
     triggerNotice,
     createBfgRetriever,
+    createTscRetriever,
 }: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
     const authStatus = authProvider.getAuthStatus()
     if (!authStatus.isLoggedIn) {
@@ -87,6 +90,7 @@ export async function createInlineCompletionItemProvider({
             triggerNotice,
             isRunningInsideAgent: config.isRunningInsideAgent,
             createBfgRetriever,
+            createTscRetriever,
             isDotComUser: isDotCom(authStatus.endpoint || ''),
         })
 

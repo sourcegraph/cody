@@ -15,6 +15,7 @@ import { onActivationDevelopmentHelpers } from './dev/helpers'
 import './editor/displayPathEnvInfo' // import for side effects
 
 import type { CommandsProvider } from './commands/services/provider'
+import type { TscRetriever } from './completions/context/retrievers/tsc/tsc-retriever'
 import { ExtensionApi } from './extension-api'
 import type { ExtensionClient } from './extension-client'
 import type { ContextRankerConfig, ContextRankingController } from './local-context/context-ranking'
@@ -41,6 +42,7 @@ export interface PlatformContext {
     createContextRankingController?: (config: ContextRankerConfig) => ContextRankingController
     createSymfRunner?: Constructor<typeof SymfRunner>
     createBfgRetriever?: () => BfgRetriever
+    createTscRetriever?: () => TscRetriever
     createCompletionsClient: (
         config: CompletionsClientConfig,
         logger?: CompletionLogger

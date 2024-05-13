@@ -6,6 +6,10 @@ import * as vscode from 'vscode'
 import { startTokenReceiver } from './auth/token-receiver'
 import { CommandsProvider } from './commands/services/provider'
 import { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever'
+import {
+    TscRetriever,
+    defaultTscRetrieverOptions,
+} from './completions/context/retrievers/tsc/tsc-retriever'
 import { SourcegraphNodeCompletionsClient } from './completions/nodeClient'
 import type { ExtensionApi } from './extension-api'
 import { type ExtensionClient, defaultVSCodeExtensionClient } from './extension-client'
@@ -55,6 +59,7 @@ export function activate(
         createCommandsProvider: () => new CommandsProvider(),
         createSymfRunner: (...args) => new SymfRunner(...args),
         createBfgRetriever: () => new BfgRetriever(context),
+        createTscRetriever: () => new TscRetriever(defaultTscRetrieverOptions(), context),
         createSentryService: (...args) => new NodeSentryService(...args),
         createOpenTelemetryService: (...args) => new OpenTelemetryService(...args),
         startTokenReceiver: (...args) => startTokenReceiver(...args),

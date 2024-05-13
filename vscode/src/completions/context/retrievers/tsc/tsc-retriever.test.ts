@@ -7,11 +7,16 @@ import { getCurrentDocContext } from '../../../get-current-doc-context'
 import { documentAndPosition } from '../../../test-helpers'
 import { TscRetriever, defaultTscRetrieverOptions } from './tsc-retriever'
 
+import { execSync } from 'node:child_process'
 import { type AutocompleteContextSnippet, isWindows } from '@sourcegraph/cody-shared'
 
 // TODO: fix Windows tests CODY-1280
 describe.skipIf(isWindows())('TscRetriever', () => {
-    const retriever = new TscRetriever({
+    const cwd = process.cwd()
+    const rootDir = path.basename(cwd) === 'vscode' ? path.dirname(cwd) : cwd
+    const codylsp = path.join(rootDir, 'vscode', 'dist', 'codylsp.js')
+    execSync('pnpm -C vscodee _build:esbuild:codylsp', { cwd: rootDir })
+    const retriever = new TscRetriever(codylsp, {
         ...defaultTscRetrieverOptions(),
         includeSymbolsInCurrentFile: true,
         maxNodeMatches: 1,

@@ -69,6 +69,7 @@ export async function createInlineCompletionItemFromMultipleProviders({
     authProvider,
     triggerNotice,
     createBfgRetriever,
+    createTscRetriever,
 }: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
     // Creates multiple providers to get completions from.
     // The primary purpose of this method is to get the completions generated from multiple providers,
@@ -131,6 +132,7 @@ export async function createInlineCompletionItemFromMultipleProviders({
                 triggerNotice,
                 isRunningInsideAgent: config.isRunningInsideAgent,
                 createBfgRetriever,
+                createTscRetriever,
                 isDotComUser: isDotCom(authStatus.endpoint || ''),
                 noInlineAccept: true,
             })

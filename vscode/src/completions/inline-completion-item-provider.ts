@@ -23,6 +23,7 @@ import { completionProviderConfig } from './completion-provider-config'
 import { ContextMixer } from './context/context-mixer'
 import { DefaultContextStrategyFactory } from './context/context-strategy'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
+import type { TscRetriever } from './context/retrievers/tsc/tsc-retriever'
 import { getCompletionIntent } from './doc-context-getters'
 import { FirstCompletionDecorationHandler } from './first-completion-decoration-handler'
 import { formatCompletion } from './format-completion'
@@ -68,6 +69,7 @@ interface CodyCompletionItemProviderConfig {
     authStatus: AuthStatus
     isDotComUser?: boolean
 
+    createTscRetriever?: () => TscRetriever
     createBfgRetriever?: () => BfgRetriever
 
     // Settings
@@ -105,7 +107,10 @@ export class InlineCompletionItemProvider
     private lastManualCompletionTimestamp: number | null = null
     // private reportedErrorMessages: Map<string, number> = new Map()
 
-    private readonly config: Omit<Required<CodyCompletionItemProviderConfig>, 'createBfgRetriever'>
+    private readonly config: Omit<
+        Required<CodyCompletionItemProviderConfig>,
+        'createBfgRetriever' | 'createTscRetriever'
+    >
 
     private requestManager: RequestManager
     private contextMixer: ContextMixer
@@ -133,6 +138,7 @@ export class InlineCompletionItemProvider
         disableInsideComments = false,
         tracer = null,
         createBfgRetriever,
+        createTscRetriever,
         ...config
     }: CodyCompletionItemProviderConfig) {
         this.config = {
@@ -169,6 +175,7 @@ export class InlineCompletionItemProvider
         this.contextMixer = new ContextMixer(
             new DefaultContextStrategyFactory(
                 completionProviderConfig.contextStrategy,
+                createTscRetriever,
                 createBfgRetriever
             )
         )

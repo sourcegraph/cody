@@ -11,8 +11,10 @@ import {
 } from '@sourcegraph/cody-shared'
 import ts from 'typescript'
 import * as vscode from 'vscode'
+import type { LanguageClient } from 'vscode-languageclient/node'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { SymbolFormatter, isStdLibNode } from './SymbolFormatter'
+import { startCodyLspServer } from './codylsp-client'
 import { getTSSymbolAtLocation } from './getTSSymbolAtLocation'
 import { type NodeMatchKind, relevantTypeIdentifiers } from './relevantTypeIdentifiers'
 
@@ -102,8 +104,13 @@ interface DocumentSnapshot {
  */
 export class TscRetriever implements ContextRetriever {
     public identifier = 'tsc'
+    client: LanguageClient
 
-    constructor(private options: TscRetrieverOptions = defaultTscRetrieverOptions()) {
+    constructor(
+        codylspServer: string,
+        private options: TscRetrieverOptions = defaultTscRetrieverOptions()
+    ) {
+        this.client = startCodyLspServer(codylspServer)
         this.disposables.push(
             vscode.workspace.onDidChangeTextDocument(event => {
                 this.snapshots.delete(event.document.fileName)
@@ -132,7 +139,6 @@ export class TscRetriever implements ContextRetriever {
         if (fromCache) {
             return fromCache
         }
-        logDebug('tsc-retriever', `Reading ${fileName}`)
         for (const document of vscode.workspace.textDocuments) {
             if (isFileURI(document.uri) && document.uri.fsPath === fileName) {
                 return { text: document.getText(), version: document.version.toString() }
@@ -310,12 +316,7 @@ export class TscRetriever implements ContextRetriever {
     }
 
     public isSupportedForLanguageId(languageId: string): boolean {
-        return (
-            languageId === 'typescript' ||
-            languageId === 'typescriptreact' ||
-            languageId === 'javascript' ||
-            languageId === 'javascriptreact'
-        )
+        return supportedLanguages.has(languageId)
     }
     public dispose() {
         vscode.Disposable.from(...this.disposables).dispose()
@@ -404,7 +405,10 @@ class SymbolCollector {
         private contextOptions: ContextRetrieverOptions,
         position: vscode.Position
     ) {
-        this.formatter = new SymbolFormatter(this.compiler.checker, this.options.maxSymbolDepth)
+        this.formatter = this.formatter = new SymbolFormatter(
+            this.compiler.checker,
+            this.options.maxSymbolDepth
+        )
         this.offset = this.compiler.sourceFile.getPositionOfLineAndCharacter(
             position.line,
             position.character
