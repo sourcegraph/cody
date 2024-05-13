@@ -434,7 +434,7 @@ class EditCommandPrompt(
       val (line, col) = editor.offsetToLogicalPosition(offset).let { Pair(it.line, it.column) }
       val virtualFile = FileDocumentManager.getInstance().getFile(editor.document)
       val file = getFormattedFilePath(virtualFile)
-      filePathLabel.text = "$file at $line:$col"
+      filePathLabel.text = "$file at ${line + 1}:${col + 1}"
       filePathLabel.toolTipText = virtualFile?.path
       add(filePathLabel, BorderLayout.CENTER)
       titleBar = this
