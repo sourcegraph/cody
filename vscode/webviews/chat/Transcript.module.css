@@ -28,6 +28,6 @@
 }
 
 .model-select-field-container {
-    padding: 8px 10px 5px 12px;
+    padding: 8px 10px 8px 12px;
     border-bottom: solid 1px var(--vscode-sideBarSectionHeader-border);
 }
