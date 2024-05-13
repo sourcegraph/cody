@@ -29,7 +29,7 @@ testGitWorkspace.extend<ExpectedEvents>({
 
     // Click on the command in the sidebar to verify it opens the source control panel.
     await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
-    await page.getByText('Generate Commit (Experimental)', { exact: true }).click()
+    await page.getByText('Generate Commit Message (Experimental)', { exact: true }).click()
 
     // await page.getByRole('heading', { name: 'Source Control' }).hover()
 
@@ -57,7 +57,7 @@ testGitWorkspace.extend<ExpectedEvents>({
     await page.getByRole('button', { name: 'Stage Changes' }).click()
 
     // Execute the command again from the Cody icon located inside the Source Control view.
-    await page.getByRole('button', { name: 'Generate Commit (Experimental)' }).click()
+    await page.getByRole('button', { name: 'Generate Commit Message (Experimental)' }).click()
 
     // Verify a commit message is generated without error for the staged file.
     await expect(scmInputBox.filter({ hasText: 'hello from the assistant' }).first()).toBeVisible()
