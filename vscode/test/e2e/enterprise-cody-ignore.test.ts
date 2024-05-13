@@ -14,33 +14,9 @@ import {
 test
     .extend<ExpectedEvents>({
         // list of events we expect this test to log, add to this list as needed
-        expectEvents: [
-            // 'CodyInstalled',
-            // 'CodyVSCodeExtension:codyIgnore:hasFile',
-            // 'CodyVSCodeExtension:Auth:failed',
-            // 'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-            // 'CodyVSCodeExtension:login:clicked',
-            // 'CodyVSCodeExtension:auth:selectSigninMenu',
-            // 'CodyVSCodeExtension:auth:fromToken',
-            // 'CodyVSCodeExtension:Auth:connected',
-            // 'CodyVSCodeExtension:chat-question:submitted',
-            // 'CodyVSCodeExtension:chat-question:executed',
-            // 'CodyVSCodeExtension:command:explain:clicked',
-            // 'CodyVSCodeExtension:command:explain:executed',
-        ],
+        expectEvents: ['CodyInstalled'],
         expectedV2Events: [
             // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-            // 'cody.extension:savedLogin',
-            // 'cody.codyIgnore:hasFile',
-            // 'cody.auth:failed',
-            // 'cody.auth.login:clicked',
-            // 'cody.auth.signin.menu:clicked',
-            // 'cody.auth.login:firstEver',
-            // 'cody.auth.signin.token:clicked',
-            // 'cody.auth:connected',
-            // 'cody.chat-question:submitted',
-            // 'cody.chat-question:executed',
-            // 'cody.chatResponse:noCode',
         ],
     })
     .extend<WorkspaceDirectory>({
