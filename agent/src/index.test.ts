@@ -950,8 +950,12 @@ describe('Agent', () => {
             const untitledDocuments = client.workspace
                 .allUris()
                 .filter(uri => vscode.Uri.parse(uri).scheme === 'untitled')
+            const fileDocuments = client.workspace
+                .allUris()
+                .filter(uri => vscode.Uri.parse(uri).scheme === 'file')
             expect(untitledDocuments).toHaveLength(2)
-            const [untitledDocument] = untitledDocuments
+            expect(fileDocuments).toHaveLength(1)
+            const [untitledDocument] = untitledDocuments.slice(1)
             const testDocument = client.workspace.getDocument(vscode.Uri.parse(untitledDocument))
             expect(trimEndOfLine(testDocument?.getText())).toMatchInlineSnapshot(
                 `
