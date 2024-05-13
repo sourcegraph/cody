@@ -201,8 +201,10 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
             return `@github:pull:${contextItem.owner}/${contextItem.repoName}/${contextItem.pullNumber}`
 
         case 'github_issue':
-            return `@github:pull:${contextItem.owner}/${contextItem.repoName}/${contextItem.issueNumber}`
+            return `@github:issue:${contextItem.owner}/${contextItem.repoName}/${contextItem.issueNumber}`
     }
+    // @ts-ignore
+    throw new Error(`unrecognized context item type ${contextItem.type}`)
 }
 
 export function $createContextItemMentionNode(
