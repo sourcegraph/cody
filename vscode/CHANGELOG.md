@@ -29,7 +29,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
   - `New Chat with Code`: Opens a new chat with the selected code when no existing chat panel is open and code is selected in the editor.
 - Fixes an issue where triggering a recipe with no open editor window will cause unexpected behavior. [pull/3911](https://github.com/sourcegraph/cody/pull/3911)
 - Edit: The "Document Code" and "Generate Tests" commands now execute with a single click/action, rather than requiring the user to specify the range first. The range can be modified from the normal Edit input. [pull/4071](https://github.com/sourcegraph/cody/pull/4071)
-- Chat: The model selector now groups chat model choices by characteristics (such as "More Accurate", "Balanced", "Faster", and "Ollama") and indicates the default choice. [pull/4033](https://github.com/sourcegraph/cody/pull/4033)
+- Chat: The model selector now groups chat model choices by characteristics (such as "Optimized for Accuracy", "Balanced", "Optimized for Speed", and "Ollama") and indicates the default choice. [pull/4033](https://github.com/sourcegraph/cody/pull/4033) and [pull/4133](https://github.com/sourcegraph/cody/pull/4133)
 
 ## [1.16.7]
 
