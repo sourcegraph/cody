@@ -37,7 +37,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
-- Chat: Fixed a bug where the chat model dropdown would not work on first click. [pull/](https://github.com/sourcegraph/cody/pull/)
+- Chat: Fixed a bug where the chat model dropdown would not work on first click. [pull/4122](https://github.com/sourcegraph/cody/pull/4122)
 
 ### Changed
 
