@@ -1,7 +1,6 @@
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
-import type { ModelContextWindow } from './types'
-import type { ModelUsage } from './types'
+import type { ModelContextWindow, ModelUsage } from './types'
 import { getModelInfo } from './utils'
 
 /**
@@ -10,8 +9,17 @@ import { getModelInfo } from './utils'
  * retrieve and select between them.
  */
 export class ModelProvider {
-    // Whether the model is the default model
+    /**
+     * Whether the model is the default model for new chats and edits. The user can change their
+     * default model.
+     */
     public default = false
+
+    /**
+     * Whether the model is the server-set initial default for new users.
+     */
+    public initialDefault? = false
+
     // Whether the model is only available to Pro users
     public codyProOnly = false
     // The name of the provider of the model, e.g. "Anthropic"
@@ -52,7 +60,8 @@ export class ModelProvider {
              * The API endpoint for the model
              */
             apiEndpoint?: string
-        }
+        },
+        public readonly uiGroup?: string
     ) {
         const { provider, title } = getModelInfo(model)
         this.provider = provider

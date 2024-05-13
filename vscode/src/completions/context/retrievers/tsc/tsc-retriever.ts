@@ -11,7 +11,7 @@ import {
 import ts from 'typescript'
 import * as vscode from 'vscode'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
-import { SymbolFormatter, declarationName } from './SymbolFormatter'
+import { SymbolFormatter, isStdLibNode } from './SymbolFormatter'
 import { getTSSymbolAtLocation } from './getTSSymbolAtLocation'
 import { relevantTypeIdentifiers } from './relevantTypeIdentifiers'
 
@@ -24,10 +24,60 @@ interface LoadedCompiler {
 
 const path = defaultPathFunctions()
 
-const MAX_SYMBOL_RESULTS = vscode.workspace
-    .getConfiguration('sourcegraph')
-    .get<number>('cody.autocomplete.experimental.maxTscResults', 10)
+interface TscRetrieverOptions {
+    /**
+     * If true, we include symbols that are already defined in the open file.
+     * If false (default), we exclude symbols if they are already present in the
+     * current file. We default to false because it's redundant to include context
+     * that is already present in the file.
+     */
+    includeSymbolsInCurrentFile: boolean
 
+    /**
+     * The "node match" counter increases for every language construct that
+     * we've detected as relevant for the requets location. Examples that
+     * increment the node match count (even if those matches emit multiple
+     * symbols):
+     *
+     * - All symbols related to `qualifier` in the pattern `qualifier.CURSOR`.
+     * - All symbols related to function declaration parameters and return type.
+     * - All toplevel imports of a source file
+     */
+    maxNodeMatches: number
+
+    /**
+     * The "symbol depth" determines how many nested layers of signatures we
+     * want to emit for a given symbol. For example,
+     *
+     * - Depth 0: does nothing
+     * - Depth 1: emit the signature of the symbols that are referenced in the
+     *   open source file. For example, if you reference `Animal` as a parameter type
+     *   then we include the definition of `Animal` in the context.
+     * - Depth 2: same as depth 1 except we also expand the types of symbols that are
+     *   referenced inside the `Animal` type.
+     *
+     * Recursively expanding all referenced types quickly goes out of hand.
+     * However, we leave out a lot of important information by having depth=1.
+     * Ideally, we can use depth=2 combined with some smart local ranking to
+     * eliminate potential noise.
+     */
+    maxSymbolDepth: number
+}
+
+export function defaultTscRetrieverOptions(): TscRetrieverOptions {
+    return {
+        includeSymbolsInCurrentFile: false,
+        maxNodeMatches: vscode.workspace
+            .getConfiguration('sourcegraph')
+            .get<number>('cody.autocomplete.experimental.maxTscResults', 1),
+        maxSymbolDepth: 1,
+    }
+}
+
+interface TscLanguageService {
+    service: ts.LanguageService
+    host: TscLanguageServiceHost
+}
 /**
  * The tsc retriever uses the TypeScript compiler API to retrieve contextual
  * information about the autocomplete request location.
@@ -35,7 +85,9 @@ const MAX_SYMBOL_RESULTS = vscode.workspace
 export class TscRetriever implements ContextRetriever {
     public identifier = 'tsc'
 
-    private servicesByTsconfigPath = new Map<string, ts.LanguageService>()
+    constructor(private options: TscRetrieverOptions = defaultTscRetrieverOptions()) {}
+
+    private servicesByTsconfigPath = new Map<string, TscLanguageService>()
     private baseCompilerHost: ts.FormatDiagnosticsHost = ts.createCompilerHost({})
     private disposables: vscode.Disposable[] = []
     private documentRegistry = ts.createDocumentRegistry(isMacOS() || isWindows(), currentDirectory())
@@ -65,12 +117,14 @@ export class TscRetriever implements ContextRetriever {
         }
         const parsedCommandLine = loadConfigFile(config)
         const path = defaultPathFunctions()
-        const currentDirectory = config ? path.dirname(config) : ts.sys.getExecutingFilePath()
+        const currentDirectory = config ? path.dirname(config) : process.cwd()
         const formatHost: ts.FormatDiagnosticsHost = ts.createCompilerHost(parsedCommandLine.options)
-        const serviceHost: ts.LanguageServiceHost = {
+        const sourceFileNames: string[] = parsedCommandLine.fileNames
+        const serviceHost: TscLanguageServiceHost = {
             ...formatHost,
+            addSourceFile: fileName => sourceFileNames.push(fileName),
             getCompilationSettings: (): ts.CompilerOptions => parsedCommandLine.options,
-            getScriptFileNames: (): string[] => parsedCommandLine.fileNames,
+            getScriptFileNames: (): string[] => sourceFileNames,
             getScriptVersion: (fileName: string): string => {
                 return this.readDocument(fileName).version.toString()
             },
@@ -110,7 +164,7 @@ export class TscRetriever implements ContextRetriever {
             fileExists: (path: string): boolean => ts.sys.fileExists(path),
         }
         const service = ts.createLanguageService(serviceHost, this.documentRegistry)
-        this.servicesByTsconfigPath.set(config ?? 'DEFAULT', service)
+        this.servicesByTsconfigPath.set(currentDirectory, { service, host: serviceHost })
     }
 
     private findConfigFile(file: FileURI): string | undefined {
@@ -122,28 +176,57 @@ export class TscRetriever implements ContextRetriever {
         }
         return config
     }
+    private tryGetCompiler(service: ts.LanguageService, file: FileURI): LoadedCompiler | undefined {
+        const program = service.getProgram()
+        if (!program) {
+            return undefined
+        }
+        const sourceFile = program.getSourceFile(file.fsPath)
+        if (sourceFile === undefined) {
+            return undefined
+        }
+        const diagnostics = program.getGlobalDiagnostics()
+        if (diagnostics.length > 0) {
+            console.log(ts.formatDiagnostics(diagnostics, this.baseCompilerHost))
+        }
+        return {
+            service,
+            program,
+            checker: program.getTypeChecker(),
+            sourceFile,
+        }
+    }
+
     private getCompiler(file: FileURI): LoadedCompiler | undefined {
-        for (const service of this.servicesByTsconfigPath.values()) {
-            const program = service.getProgram()
-            if (!program) {
-                continue
-            }
-            const sourceFile = program.getSourceFile(file.fsPath)
-            if (sourceFile === undefined) {
-                continue
-            }
-            const diagnostics = program.getGlobalDiagnostics()
-            if (diagnostics.length > 0) {
-                console.log(ts.formatDiagnostics(diagnostics, this.baseCompilerHost))
-            }
-            return {
-                service,
-                program,
-                checker: program.getTypeChecker(),
-                sourceFile,
+        for (const { service } of this.servicesByTsconfigPath.values()) {
+            const compiler = this.tryGetCompiler(service, file)
+            if (compiler) {
+                return compiler
             }
         }
+
+        const defaultService = this.findClosestService(file)
+        if (defaultService) {
+            const { service, host } = defaultService
+            host.addSourceFile(file.fsPath)
+            return this.tryGetCompiler(service, file)
+        }
         return undefined
+    }
+
+    private findClosestService(file: FileURI): TscLanguageService | undefined {
+        let closest: string | undefined
+        let result: TscLanguageService | undefined
+        for (const [dir, service] of this.servicesByTsconfigPath) {
+            if (!file.fsPath.startsWith(dir)) {
+                continue
+            }
+            if (closest === undefined || closest.length > dir.length) {
+                closest = dir
+                result = service
+            }
+        }
+        return result ?? this.servicesByTsconfigPath.get(process.cwd())
     }
 
     private doBlockingRetrieve(options: ContextRetrieverOptions): AutocompleteContextSnippet[] {
@@ -156,93 +239,11 @@ export class TscRetriever implements ContextRetriever {
             return []
         }
         try {
-            const result = this.relevantSymbols(compiler, options.position)
-            result.reverse()
-
-            return result
+            return new SymbolCollector(compiler, this.options, options.position).relevantSymbols()
         } catch (error) {
-            console.log('boom', error)
+            logError('tsc-retriever', 'unexpected error', error)
             return []
         }
-    }
-
-    private relevantSymbols(
-        compiler: LoadedCompiler,
-        position: vscode.Position
-    ): AutocompleteContextSnippet[] {
-        const result: AutocompleteContextSnippet[] = []
-        const formatter = new SymbolFormatter(compiler.checker)
-        const offset = compiler.sourceFile.getPositionOfLineAndCharacter(
-            position.line,
-            position.character
-        )
-        const isAdded = new Set<ts.Symbol>()
-        function addSymbol(symbol: ts.Symbol): void {
-            if (isAdded.has(symbol)) {
-                return
-            }
-            isAdded.add(symbol)
-            // Symbols with multiple declarations are normally overloaded
-            // functions, in which case we want to show all available
-            // signatures.
-            for (const declaration of symbol.declarations ?? []) {
-                if (isStdLibNode(declaration)) {
-                    // Skip stdlib types because the LLM most likely knows how
-                    // it works anyways.
-                    continue
-                }
-                if (ts.isTypeParameterDeclaration(declaration) || ts.isParameter(declaration)) {
-                    continue
-                }
-                if (result.length >= MAX_SYMBOL_RESULTS) {
-                    continue
-                }
-                const name = declarationName(declaration)
-                if (!name) {
-                    continue
-                }
-                const sourceFile = declaration.getSourceFile()
-                const start = sourceFile.getLineAndCharacterOfPosition(declaration.getStart())
-                const end = sourceFile.getLineAndCharacterOfPosition(declaration.getEnd())
-                const content = formatter.formatSymbol(name, symbol)
-                const snippet: AutocompleteContextSnippet = {
-                    symbol: symbol.name,
-                    content,
-                    startLine: start.line,
-                    endLine: end.line,
-                    uri: vscode.Uri.file(sourceFile.fileName),
-                }
-                result.push(snippet)
-            }
-        }
-        function loop(n: ts.Node): void {
-            if (result.length >= MAX_SYMBOL_RESULTS) {
-                return
-            }
-
-            // Loop on children first to boost symbol results that are closer to the cursor location.
-            ts.forEachChild(n, loop)
-
-            if (result.length >= MAX_SYMBOL_RESULTS) {
-                return
-            }
-
-            if (offset < n.getStart() || n.getEnd() < offset) {
-                return
-            }
-
-            for (const identifier of relevantTypeIdentifiers(compiler.checker, n)) {
-                const symbol = getTSSymbolAtLocation(compiler.checker, identifier)
-                if (symbol && !isAdded.has(symbol)) {
-                    addSymbol(symbol)
-                    for (const queued of formatter.queuedSymbols) {
-                        addSymbol(queued)
-                    }
-                }
-            }
-        }
-        loop(compiler.sourceFile)
-        return result
     }
 
     public retrieve(options: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
@@ -310,14 +311,6 @@ function loadConfigFile(file: string | undefined): ts.ParsedCommandLine {
     return result
 }
 
-// Returns true if this node is defined in the TypeScript stdlib.
-function isStdLibNode(node: ts.Node): boolean {
-    const basename = path.basename(node.getSourceFile().fileName)
-    // HACK: this solution has false positives. We should use the
-    // scip-typescript package logic to determine this reliably.
-    return basename.startsWith('lib.') && basename.endsWith('.d.ts')
-}
-
 function defaultCompilerOptions(configFileName?: string): ts.CompilerOptions {
     const options: ts.CompilerOptions =
         // Not a typo, jsconfig.json is a thing https://sourcegraph.com/search?q=context:global+file:jsconfig.json&patternType=literal
@@ -339,4 +332,134 @@ function currentDirectory(): string | undefined {
         return uri.fsPath
     }
     return undefined
+}
+
+type TscLanguageServiceHost = ts.LanguageServiceHost & {
+    addSourceFile(fileName: string): void
+}
+
+class SymbolCollector {
+    private snippets: AutocompleteContextSnippet[] = []
+    private toplevelNodes = new Set<ts.Node>()
+    private isDone = () => this.toplevelNodes.size >= this.options.maxNodeMatches
+    private isAdded = new Set<ts.Symbol>()
+    private formatter: SymbolFormatter
+    private offset: number
+    constructor(
+        private readonly compiler: LoadedCompiler,
+        private options: TscRetrieverOptions,
+        position: vscode.Position
+    ) {
+        this.formatter = new SymbolFormatter(this.compiler.checker)
+        this.offset = this.compiler.sourceFile.getPositionOfLineAndCharacter(
+            position.line,
+            position.character
+        )
+    }
+
+    public relevantSymbols(): AutocompleteContextSnippet[] {
+        this.loop(this.compiler.sourceFile)
+        return this.snippets
+    }
+
+    private addSymbol(sym: ts.Symbol, depth: number): boolean {
+        if (depth > this.options.maxSymbolDepth) {
+            return false
+        }
+        if (this.isAdded.has(sym)) {
+            return false
+        }
+        if (this.formatter.isRendered.has(sym)) {
+            // Skip this symbol if it's a child of a symbol that we have already
+            // formatted.  For example, if we render `interface A { a: number }`
+            // then we don't need to render `(property) A.a: number` separately
+            // because it's redunant with the interface declaration.
+            return false
+        }
+        this.isAdded.add(sym)
+        // Symbols with multiple declarations are normally overloaded
+        // functions, in which case we want to show all available
+        // signatures.
+        let isAdded = false
+        for (const declaration of sym.declarations ?? []) {
+            if (isStdLibNode(declaration)) {
+                // Skip stdlib types because the LLM most likely knows how
+                // it works anyways.
+                continue
+            }
+            if (
+                !this.options.includeSymbolsInCurrentFile &&
+                declaration.getSourceFile() === this.compiler.sourceFile
+            ) {
+                continue
+            }
+            switch (declaration.kind) {
+                case ts.SyntaxKind.TypeParameter:
+                case ts.SyntaxKind.Parameter:
+                case ts.SyntaxKind.ImportDeclaration:
+                case ts.SyntaxKind.ImportClause:
+                case ts.SyntaxKind.ImportSpecifier:
+                case ts.SyntaxKind.ImportAttribute:
+                case ts.SyntaxKind.ImportAttributes:
+                case ts.SyntaxKind.NamedImports:
+                case ts.SyntaxKind.NamespaceImport:
+                    continue
+            }
+            if (this.isDone()) {
+                continue
+            }
+            const sourceFile = declaration.getSourceFile()
+            const start = sourceFile.getLineAndCharacterOfPosition(declaration.getStart())
+            const end = sourceFile.getLineAndCharacterOfPosition(declaration.getEnd())
+            const { formatted: content, queue } = this.formatter.formatSymbolWithQueue(sym)
+            if (!ts.isModuleDeclaration(declaration)) {
+                // Skip module declarations because they can be too large.
+                // We still format them to queue the referenced types.
+                const snippet: AutocompleteContextSnippet = {
+                    symbol: sym.name,
+                    content,
+                    startLine: start.line,
+                    endLine: end.line,
+                    uri: vscode.Uri.file(sourceFile.fileName),
+                }
+                this.snippets.push(snippet)
+            }
+            for (const queued of queue) {
+                this.addSymbol(queued, depth + 1)
+            }
+            isAdded = true
+        }
+
+        return isAdded
+    }
+
+    private loop(node: ts.Node): void {
+        if (this.isDone()) {
+            return
+        }
+
+        // Loop on children first to boost symbol results that are closer to the
+        // cursor location.
+        ts.forEachChild(node, child => this.loop(child))
+
+        if (this.isDone()) {
+            return
+        }
+
+        if (this.offset < node.getStart() || this.offset > node.getEnd()) {
+            return
+        }
+
+        let isAdded = false
+        for (const identifier of relevantTypeIdentifiers(this.compiler.checker, node)) {
+            const symbol = getTSSymbolAtLocation(this.compiler.checker, identifier)
+            if (symbol) {
+                const gotAdded = this.addSymbol(symbol, 0)
+                isAdded ||= gotAdded
+            }
+        }
+        if (isAdded) {
+            this.toplevelNodes.add(node)
+        }
+    }
 }

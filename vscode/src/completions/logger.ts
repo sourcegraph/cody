@@ -24,6 +24,7 @@ import type {
     PersistenceRemovedEventPayload,
 } from '../common/persistence-tracker/types'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
+import { upstreamHealthProvider } from '../services/UpstreamHealthProvider'
 import { completionProviderConfig } from './completion-provider-config'
 import type { ContextSummary } from './context/context-mixer'
 import type { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
@@ -116,6 +117,9 @@ interface SharedEventPayload extends InteractionIDPayload {
 
     /** A list of known completion providers that are also enabled with this user. */
     otherCompletionProviders: string[]
+
+    /** The median of the last upstream requests */
+    medianUpstreamLatency?: number
 }
 
 /**
@@ -191,6 +195,7 @@ function logCompletionSuggestedEvent(params: SuggestedEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(
+        null,
         'suggested',
         {
             version: 0,
@@ -204,6 +209,7 @@ function logCompletionAcceptedEvent(params: AcceptedEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(
+        null,
         'accepted',
         {
             version: 0,
@@ -217,6 +223,7 @@ function logCompletionPartiallyAcceptedEvent(params: PartiallyAcceptedEventPaylo
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(
+        null,
         'partiallyAccepted',
         {
             version: 0,
@@ -230,7 +237,8 @@ export function logCompletionPersistencePresentEvent(params: PersistencePresentE
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(
-        'persistence:present',
+        'persistence',
+        'present',
         {
             version: 0,
             metadata,
@@ -243,7 +251,8 @@ export function logCompletionPersistenceRemovedEvent(params: PersistenceRemovedE
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(
-        'persistence:present',
+        'persistence',
+        'removed',
         {
             version: 0,
             metadata,
@@ -255,17 +264,17 @@ export function logCompletionPersistenceRemovedEvent(params: PersistenceRemovedE
 function logCompletionNoResponseEvent(params: NoResponseEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
-    writeCompletionEvent('noResponse', { version: 0, metadata, privateMetadata }, params)
+    writeCompletionEvent(null, 'noResponse', { version: 0, metadata, privateMetadata }, params)
 }
 function logCompletionErrorEvent(params: ErrorEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
-    writeCompletionEvent('error', { version: 0, metadata, privateMetadata }, params)
+    writeCompletionEvent(null, 'error', { version: 0, metadata, privateMetadata }, params)
 }
 export function logCompletionFormatEvent(params: FormatEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
-    writeCompletionEvent('format', { version: 0, metadata, privateMetadata }, params)
+    writeCompletionEvent(null, 'format', { version: 0, metadata, privateMetadata }, params)
 }
 /**
  * The following events are added to ensure the logging bookkeeping works as expected in production
@@ -281,29 +290,39 @@ export function logCompletionBookkeepingEvent(
         | 'containsOpeningTag'
         | 'synthesizedFromParallelRequest'
 ): void {
-    writeCompletionEvent(name)
+    writeCompletionEvent(null, name)
 }
 
 /**
  * writeCompletionEvent is the underlying helper for various logCompletion*
  * functions. It writes telemetry in the appropriate format to both the v1
  * and v2 telemetry.
+ *
+ * @param subfeature Subfeature can optionally be provided to be added as part of the event feature.
+ * e.g. 'cody.completion.subfeature'. DO NOT include a 'cody.*' prefix.
+ *  MUST start with lower case and ONLY have letters and '.'.
+ * @param action action is required to represent the verb associated with an event occurrence.
+ * e.g. 'executed', MUST start with lower case and ONLY have letters and '.'.
+ * @param params Telemetry V2 parameters
+ * @param legacyParam legacyParams are passed through as-is the legacy event logger for backwards
+ * compatibility. All relevant arguments should also be set on the params
+ * object.
  */
-function writeCompletionEvent<Name extends string, LegacyParams extends {}>(
-    name: KnownString<Name>,
+function writeCompletionEvent<SubFeature extends string, Action extends string, LegacyParams extends {}>(
+    subfeature: KnownString<SubFeature> | null,
+    action: KnownString<Action>,
     params?: TelemetryEventParameters<{ [key: string]: number }, BillingProduct, BillingCategory>,
-    /**
-     * legacyParams are passed through as-is the legacy event logger for backwards
-     * compatibility. All relevant arguments should also be set on the params
-     * object.
-     */
     legacyParams?: LegacyParams
 ): void {
     const extDetails = getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration()))
-    telemetryService.log(`${logPrefix(extDetails.ide)}:completion:${name}`, legacyParams, {
-        agent: true,
-        hasV2Event: true, // this helper translates the event for us
-    })
+    telemetryService.log(
+        `${logPrefix(extDetails.ide)}:completion:${subfeature ? `${subfeature}:` : ''}${action}`,
+        legacyParams,
+        {
+            agent: true,
+            hasV2Event: true, // this helper translates the event for us
+        }
+    )
     /**
      * Extract interaction ID from the full legacy params for convenience
      */
@@ -314,15 +333,21 @@ function writeCompletionEvent<Name extends string, LegacyParams extends {}>(
      * New telemetry automatically adds extension context - we do not need to
      * include platform in the name of the event. However, we MUST prefix the
      * event with 'cody.' to have the event be categorized as a Cody event.
+     *
+     * We use an if/else statement here because the typechecker gets confused.
      */
-    telemetryRecorder.recordEvent('cody.completion', name, params)
+    if (subfeature) {
+        telemetryRecorder.recordEvent(`cody.completion.${subfeature}`, action, params)
+    } else {
+        telemetryRecorder.recordEvent('cody.completion', action, params)
+    }
 }
 
 export interface CompletionBookkeepingEvent {
     id: CompletionLogID
     params: Omit<
         SharedEventPayload,
-        'items' | 'otherCompletionProviderEnabled' | 'otherCompletionProviders'
+        'items' | 'otherCompletionProviderEnabled' | 'otherCompletionProviders' | 'medianUpstreamLatency'
     >
     // The timestamp when the completion request started
     startedAt: number
@@ -806,6 +831,7 @@ function getSharedParams(event: CompletionBookkeepingEvent): SharedEventPayload 
         items: event.items.map(i => ({ ...i })),
         otherCompletionProviderEnabled: otherCompletionProviders.length > 0,
         otherCompletionProviders,
+        medianUpstreamLatency: upstreamHealthProvider.getMedianDuration(),
     }
 }
 

@@ -24,17 +24,15 @@ class GithubContextMentionProvider implements ContextMentionProvider<typeof Gith
          * - github:issue:1234
          * - github:issue:sourcegraph/cody/1234
          */
-        const [_, kind, id] = query.split(':')
-
-        if (!kind || !id) {
+        const [_, kind, id = ''] = query.split(':')
+        if (!kind) {
             return []
         }
+
         const [ownerOrNumber = '', repoName = '', numberText = ''] = id.split('/')
 
-        const number = ownerOrNumber && repoName ? Number(numberText) : Number(ownerOrNumber)
-        if (!number) {
-            return []
-        }
+        const number =
+            (ownerOrNumber && repoName ? Number(numberText) : Number(ownerOrNumber)) || undefined
 
         let codebases: { owner: string; repoName: string }[] = []
 
@@ -77,71 +75,74 @@ class GithubContextMentionProvider implements ContextMentionProvider<typeof Gith
     }
 
     private async getPullRequestItems(
-        details: { owner: string; repoName: string; pullNumber: number },
+        details: { owner: string; repoName: string; pullNumber?: number },
         signal?: AbortSignal
     ): Promise<ContextItemFromProvider<typeof GithubContextId>[]> {
         try {
-            const pullRequest = await githubClient.request(
-                'GET /repos/{owner}/{repo}/pulls/{pull_number}',
-                {
-                    owner: details.owner,
-                    repo: details.repoName,
-                    pull_number: details.pullNumber,
-                }
-            )
+            const pullRequests = details.pullNumber
+                ? [
+                      await githubClient.request('GET /repos/{owner}/{repo}/pulls/{pull_number}', {
+                          owner: details.owner,
+                          repo: details.repoName,
+                          pull_number: details.pullNumber,
+                      }),
+                  ]
+                : await githubClient.request('GET /repos/{owner}/{repo}/pulls', {
+                      owner: details.owner,
+                      repo: details.repoName,
+                      per_page: 10,
+                  })
 
             signal?.throwIfAborted?.()
 
-            if (!pullRequest) {
-                return []
-            }
-
-            return [
-                {
-                    ...details,
-                    type: 'github_pull_request',
-                    uri: URI.parse(pullRequest.html_url),
-                    title: `#${pullRequest.number} ${pullRequest.title}`,
-                    source: ContextItemSource.Github,
-                    provider: 'github',
-                },
-            ]
+            return pullRequests.map(pullRequest => ({
+                ...details,
+                pullNumber: pullRequest.number,
+                type: 'github_pull_request',
+                uri: URI.parse(pullRequest.html_url),
+                title: `#${pullRequest.number} ${pullRequest.title}`,
+                source: ContextItemSource.Github,
+                provider: 'github',
+            }))
         } catch (error) {
             return []
         }
     }
 
     private async getIssueItems(
-        details: { owner: string; repoName: string; issueNumber: number },
+        details: { owner: string; repoName: string; issueNumber?: number },
         signal?: AbortSignal
     ): Promise<ContextItemFromProvider<typeof GithubContextId>[]> {
         try {
-            const issue = await githubClient.request('GET /repos/{owner}/{repo}/issues/{issue_number}', {
-                owner: details.owner,
-                repo: details.repoName,
-                issue_number: details.issueNumber,
-            })
+            const issues = details.issueNumber
+                ? [
+                      await githubClient.request('GET /repos/{owner}/{repo}/issues/{issue_number}', {
+                          owner: details.owner,
+                          repo: details.repoName,
+                          issue_number: details.issueNumber,
+                      }),
+                  ]
+                : await githubClient.request('GET /issues', {
+                      per_page: 10,
+                      pulls: false,
+                  })
 
             signal?.throwIfAborted?.()
 
-            if (!issue) {
-                return []
-            }
-
-            return [
-                {
-                    ...details,
-                    type: 'github_issue',
-                    uri: URI.parse(issue.html_url),
-                    title: `#${issue.number} ${issue.title}`,
-                    source: ContextItemSource.Github,
-                    provider: 'github',
-                },
-            ]
+            return issues.map(issue => ({
+                ...details,
+                issueNumber: issue.number,
+                type: 'github_issue',
+                uri: URI.parse(issue.html_url),
+                title: `#${issue.number} ${issue.title}`,
+                source: ContextItemSource.Github,
+                provider: 'github',
+            }))
         } catch {
             return []
         }
     }
+
     private async getPullRequestItemsWithContent(
         details: { owner: string; repoName: string; pullNumber: number },
         signal?: AbortSignal

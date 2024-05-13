@@ -46,6 +46,7 @@ import { executeUsageExamplesCommand } from './commands/execute/usage-examples'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
+import { createInlineCompletionItemFromMultipleProviders } from './completions/create-multi-model-inline-completion-provider'
 import { getConfiguration, getFullConfig } from './configuration'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
 import { exposeOpenCtxExtensionAPIHandle } from './context/openctx'
@@ -71,6 +72,7 @@ import { localStorage } from './services/LocalStorageProvider'
 import { VSCodeSecretStorage, getAccessToken, secretStorage } from './services/SecretStorageProvider'
 import { registerSidebarCommands } from './services/SidebarCommands'
 import { createStatusBar } from './services/StatusBar'
+import { upstreamHealthProvider } from './services/UpstreamHealthProvider'
 import { setUpCodyIgnore } from './services/cody-ignore'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
@@ -266,6 +268,7 @@ const register = async (
 
         promises.push(featureFlagProvider.syncAuthStatus())
         graphqlClient.onConfigurationChange(newConfig)
+        upstreamHealthProvider.onConfigurationChange(newConfig)
         githubClient.onConfigurationChange({ authToken: initialConfig.experimentalGithubAccessToken })
         promises.push(
             contextFiltersProvider
@@ -350,7 +353,6 @@ const register = async (
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)
-    enterpriseRepoNameResolver.init(platform.getRemoteUrlGetters?.())
 
     // Execute Cody Commands and Cody Custom Commands
     const executeCommand = (
@@ -621,7 +623,8 @@ const register = async (
         vscode.commands.registerCommand('cody.debug.outputChannel', () => openCodyOutputChannel()),
         vscode.commands.registerCommand('cody.debug.enable.all', () => enableVerboseDebugMode()),
         vscode.commands.registerCommand('cody.debug.reportIssue', () => openCodyIssueReporter()),
-        new CharactersLogger()
+        new CharactersLogger(),
+        upstreamHealthProvider.onConfigurationChange(initialConfig)
     )
 
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
@@ -667,6 +670,18 @@ const register = async (
                 })
                 autocompleteDisposables.push(
                     await createInlineCompletionItemProvider({
+                        config,
+                        client: codeCompletionsClient,
+                        statusBar,
+                        authProvider,
+                        triggerNotice: notice => {
+                            void chatManager.triggerNotice(notice)
+                        },
+                        createBfgRetriever: platform.createBfgRetriever,
+                    })
+                )
+                autocompleteDisposables.push(
+                    await createInlineCompletionItemFromMultipleProviders({
                         config,
                         client: codeCompletionsClient,
                         statusBar,

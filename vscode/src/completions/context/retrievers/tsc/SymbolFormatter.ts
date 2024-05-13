@@ -1,8 +1,12 @@
+import { defaultPathFunctions } from '@sourcegraph/cody-shared'
 // Copy-pasted and adapted code from scip-typescript
-import * as ts from 'typescript'
+import ts from 'typescript'
 import { CodePrinter } from './CodePrinter'
 import { getTSSymbolAtLocation } from './getTSSymbolAtLocation'
+import { walkTSNode } from './relevantTypeIdentifiers'
 import * as ts_internals from './ts-internals'
+
+const path = defaultPathFunctions()
 
 /**
  * Does a best-effort to render useful symbol signatures for the LLM. Goals:
@@ -22,189 +26,167 @@ import * as ts_internals from './ts-internals'
  * `ts.{Symbol,Type}`).
  */
 export class SymbolFormatter {
-    public queuedSymbols = new Set<ts.Symbol>()
+    private queue = new Set<ts.Symbol>()
+    public isRendered = new Set<ts.Symbol>()
     constructor(private checker: ts.TypeChecker) {}
 
-    public formatSymbol(
-        identifier: ts.Node,
-        sym: ts.Symbol,
-        params?: { printValidSyntax: boolean }
-    ): string {
-        const kind = scriptElementKind(identifier, sym)
-        const type = (): string => {
-            if (ts.isSourceFile(identifier)) {
-                return ''
-            }
-            return this.checker.typeToString(this.checker.getTypeAtLocation(identifier))
-        }
-        const description = (text: string): string => {
-            if (!params?.printValidSyntax) {
-                return ''
-            }
-            return text
-        }
-        const asSignatureDeclaration = (
-            node: ts.Node,
-            sym: ts.Symbol
-        ): ts.SignatureDeclaration | undefined => {
-            const declaration = sym.declarations?.[0]
-            if (!declaration) {
-                return undefined
-            }
-            return ts.isConstructorDeclaration(node)
-                ? node
-                : ts.isFunctionDeclaration(declaration)
-                  ? declaration
-                  : ts.isMethodDeclaration(declaration)
-                    ? declaration
-                    : undefined
-        }
-        const signature = (): string | undefined => {
-            const signatureDeclaration = asSignatureDeclaration(identifier, sym)
-            if (!signatureDeclaration) {
-                return undefined
-            }
-            const signature = this.checker.getSignatureFromDeclaration(signatureDeclaration)
-            return signature ? this.checker.signatureToString(signature) : undefined
-        }
-        switch (kind) {
-            case ts.ScriptElementKind.localVariableElement:
-            case ts.ScriptElementKind.variableElement: {
-                return 'var ' + this.safeGetText(identifier) + ': ' + type()
-            }
-            case ts.ScriptElementKind.memberVariableElement: {
-                return description('(property) ') + this.safeGetText(identifier) + ': ' + type()
-            }
-            case ts.ScriptElementKind.parameterElement: {
-                return description('(parameter) ') + this.safeGetText(identifier) + ': ' + type()
-            }
-            case ts.ScriptElementKind.constElement: {
-                return 'const ' + this.safeGetText(identifier) + ': ' + type()
-            }
-            case ts.ScriptElementKind.letElement: {
-                return 'let ' + this.safeGetText(identifier) + ': ' + type()
-            }
-            case ts.ScriptElementKind.alias: {
-                return this.typeAlias(sym)
-            }
-            case ts.ScriptElementKind.constructorImplementationElement:
-                return 'constructor' + (signature() || '')
-            case ts.ScriptElementKind.classElement:
-            case ts.ScriptElementKind.localClassElement: {
-                if (ts.isConstructorDeclaration(identifier)) {
-                    return 'constructor' + (signature() || '')
-                }
-                return 'class ' + this.safeGetText(identifier) + this.simplifiedObjectType(sym)
-            }
-            case ts.ScriptElementKind.interfaceElement: {
-                return 'interface ' + this.safeGetText(identifier) + this.simplifiedObjectType(sym)
-            }
-            case ts.ScriptElementKind.enumElement: {
-                for (const decl of sym.declarations ?? []) {
-                    return this.safeGetText(decl) // TODO: print from signature
-                }
-                return 'enum ' + this.safeGetText(identifier)
-            }
-            case ts.ScriptElementKind.enumMemberElement: {
-                let suffix = ''
-                const declaration = sym.declarations?.[0]
-                if (declaration && ts.isEnumMember(declaration)) {
-                    const constantValue = this.checker.getConstantValue(declaration)
-                    if (constantValue) {
-                        suffix = ' = ' + constantValue.toString()
-                    }
-                }
-                return description('(enum member) ') + this.safeGetText(identifier) + suffix
-            }
-            case ts.ScriptElementKind.functionElement: {
-                return 'function ' + this.safeGetText(identifier) + (signature() || type())
-            }
-            case ts.ScriptElementKind.memberFunctionElement: {
-                return description('(method) ') + this.safeGetText(identifier) + (signature() || type())
-            }
-            case ts.ScriptElementKind.memberGetAccessorElement: {
-                return 'get ' + this.safeGetText(identifier) + ': ' + type()
-            }
-            case ts.ScriptElementKind.memberSetAccessorElement: {
-                return 'set ' + this.safeGetText(identifier) + type()
-            }
-        }
-        return this.safeGetText(identifier) + ': ' + type()
+    public formatSymbolWithQueue(sym: ts.Symbol): { formatted: string; queue: ts.Symbol[] } {
+        const formatted = this.formatSymbol(sym)
+        this.queueRelatedSymbols(sym)
+
+        // TODO: return a queue of symbols that got added in this function call,
+        // not accumulated list
+        return { formatted, queue: [...this.queue] }
     }
 
-    private typeAlias(sym: ts.Symbol): string {
-        for (const decl of sym.declarations ?? []) {
-            // Shortcut, just show the original code
-            return this.safeGetText(decl)
-        }
-        return 'type ' + sym.name
-    }
-
-    public queueDeclaration(decl: ts.Declaration): void {
-        if (ts.isClassLike(decl) || ts.isInterfaceDeclaration(decl)) {
-            for (const heritage of decl.heritageClauses ?? []) {
-                this.queueIdentifiers(heritage)
-            }
-        } else if (
-            ts.isSetAccessorDeclaration(decl) ||
-            ts.isGetAccessorDeclaration(decl) ||
-            ts.isConstructorDeclaration(decl) ||
-            ts.isFunctionDeclaration(decl) ||
-            ts.isMethodDeclaration(decl)
-        ) {
-            decl.typeParameters?.forEach(this.queueIdentifiers)
-            decl.parameters.forEach(this.queueIdentifiers)
-            if (decl.type) this.queueIdentifiers(decl.type)
-        } else if (
-            ts.isParameter(decl) ||
-            ts.isPropertyDeclaration(decl) ||
-            ts.isPropertySignature(decl) ||
-            ts.isVariableDeclaration(decl)
-        ) {
-            if (decl.type) {
-                this.queueIdentifiers(decl.type)
-            }
-        }
-    }
-
-    public queueIdentifiers(node: ts.Node): void {
-        if (ts.isIdentifier(node)) {
-            const symbol = getTSSymbolAtLocation(this.checker, node)
-            if (symbol) {
-                this.queuedSymbols.add(symbol)
-            }
-        }
-        node.forEachChild(child => child && this?.queueIdentifiers?.(child))
-    }
-
-    public simplifiedObjectType(sym: ts.Symbol): string {
+    public formatSymbol(sym: ts.Symbol, params?: { stripEnclosingInformation?: boolean }): string {
         const declaration = sym.declarations?.[0]
         if (!declaration) {
             return ''
         }
-        const p = new CodePrinter()
+
         if (ts.isClassLike(declaration) || ts.isInterfaceDeclaration(declaration)) {
-            const heritageClauses = declaration.heritageClauses ?? []
-            if (heritageClauses.length > 0) p.text(' ')
-            p.text(heritageClauses.map(clause => this.safeGetText(clause)).join(', '))
-            for (const clause of heritageClauses) {
-                this.queueIdentifiers(clause)
+            return this.formatClassOrInterface(declaration, sym)
+        }
+
+        if (ts.isEnumDeclaration(declaration)) {
+            return this.formatEnumDeclaration(declaration, sym)
+        }
+
+        if (ts.isTypeAliasDeclaration(declaration)) {
+            return this.formatTypeAlias(declaration, sym)
+        }
+
+        if (isSignatureDeclaration(declaration)) {
+            return this.formatSignature(declaration, sym)
+        }
+
+        return ts_internals.formatSymbol(this.checker, declaration, sym, params)
+    }
+
+    private queueRelatedSymbols(sym: ts.Symbol): void {
+        const walkNode = (node: ts.Node | undefined): void => {
+            if (!node) {
+                return
+            }
+
+            walkTSNode(node, child => {
+                if (ts.isIdentifier(child)) {
+                    const childSymbol = getTSSymbolAtLocation(this.checker, child)
+                    if (childSymbol) {
+                        this.queueSingleSymbol(childSymbol)
+                    }
+                }
+            })
+        }
+        for (const decl of sym.declarations ?? []) {
+            walkNode(decl)
+            if (
+                ts.isSetAccessorDeclaration(decl) ||
+                ts.isGetAccessorDeclaration(decl) ||
+                ts.isConstructorDeclaration(decl) ||
+                ts.isFunctionDeclaration(decl) ||
+                ts.isMethodSignature(decl) ||
+                ts.isMethodDeclaration(decl)
+            ) {
+                for (const parameter of decl.parameters) {
+                    walkNode(parameter.type)
+                }
+                walkNode(decl.type)
+            } else if (
+                ts.isParameter(decl) ||
+                ts.isPropertyDeclaration(decl) ||
+                ts.isPropertySignature(decl) ||
+                ts.isVariableDeclaration(decl)
+            ) {
+                walkNode(decl.type)
             }
         }
-        p.line(' {')
+    }
+
+    private queueSingleSymbol(s: ts.Symbol): void {
+        if (isStdLibSymbol(s)) {
+            return
+        }
+        this.queue.add(s)
+    }
+
+    private registerRenderedNode(node: ts.Node): void {
+        const symbol = getTSSymbolAtLocation(this.checker, node)
+        if (symbol) {
+            this.isRendered.add(symbol)
+        }
+    }
+
+    private formatEnumDeclaration(declaration: ts.EnumDeclaration, sym: ts.Symbol): string {
+        const p = new CodePrinter()
+        p.line(`enum ${sym.name} {`)
+        p.block(() => {
+            for (const member of declaration.members) {
+                this.registerRenderedNode(member.name)
+                if (member.initializer) {
+                    p.line(`${member.name.getText()} = ${member.initializer.getText()}`)
+                } else {
+                    p.line(member.name.getText())
+                }
+            }
+        })
+        p.line('}')
+        return p.build()
+    }
+
+    private formatTypeAlias(declaration: ts.TypeAliasDeclaration, sym: ts.Symbol): string {
+        const parameters =
+            declaration.typeParameters && declaration.typeParameters.length > 0
+                ? `<${declaration.typeParameters.map(t => t.getText())}>`
+                : ''
+        return `type ${sym.name}${parameters} = ${this.checker.typeToString(
+            this.checker.getTypeFromTypeNode(declaration.type),
+            declaration,
+            ts.TypeFormatFlags.InTypeAlias
+        )}`
+    }
+
+    private formatSignature(declaration: ts.SignatureDeclaration, sym: ts.Symbol): string {
+        const signature = this.checker.getSignatureFromDeclaration(declaration)
+        if (!signature) {
+            return ''
+        }
+        const name = ts.isConstructorDeclaration(declaration) ? 'constructor' : sym.name
+        const prefix = ts.isFunctionDeclaration(declaration) ? 'function ' : ''
+        return prefix + name + this.checker.signatureToString(signature)
+    }
+
+    private formatClassOrInterface(
+        declaration: ts.ClassLikeDeclaration | ts.InterfaceDeclaration,
+        sym: ts.Symbol
+    ): string {
+        const p = new CodePrinter()
+        const heritageClauses = declaration.heritageClauses ?? []
+        const keyword = ts.isClassLike(declaration) ? 'class' : 'interface'
+        p.text(keyword)
+        p.text(' ')
+        p.text(sym.name)
+        p.text(' ')
+        if (heritageClauses.length > 0) {
+            p.text(heritageClauses.map(clause => this.safeGetText(clause)).join(', '))
+            p.text(' ')
+        }
+        p.line('{')
         p.block(() => {
             for (const [memberName, member] of sym.members ?? []) {
+                this.isRendered.add(member)
+                this.queueSingleSymbol(member)
+                this.queueRelatedSymbols(member)
                 const decl = member.declarations?.[0]
                 if (!decl) {
                     continue
                 }
                 const name = declarationName(decl)
                 if (name) {
-                    this.queueDeclaration(decl)
-                    p.line(this.formatSymbol(name, member))
+                    p.line(this.formatSymbol(member, { stripEnclosingInformation: true }))
                 } else if (memberName === ts.InternalSymbolName.Constructor) {
-                    this.queueDeclaration(decl)
-                    p.line(this.formatSymbol(decl, member))
+                    p.line(this.formatSymbol(member, { stripEnclosingInformation: true }))
                 }
             }
         })
@@ -218,56 +200,6 @@ export class SymbolFormatter {
         // TODO: come up with better default
         return node.pos >= 0 ? node.getText() : `${node}`
     }
-}
-
-function scriptElementKind(node: ts.Node, sym: ts.Symbol): ts.ScriptElementKind {
-    const flags = sym.getFlags()
-    if (flags & ts.SymbolFlags.TypeAlias) {
-        return ts.ScriptElementKind.alias
-    }
-    if (flags & ts.SymbolFlags.Class) {
-        return ts.ScriptElementKind.classElement
-    }
-    if (flags & ts.SymbolFlags.Interface) {
-        return ts.ScriptElementKind.interfaceElement
-    }
-    if (flags & ts.SymbolFlags.Enum) {
-        return ts.ScriptElementKind.enumElement
-    }
-    if (flags & ts.SymbolFlags.EnumMember) {
-        return ts.ScriptElementKind.enumMemberElement
-    }
-    if (flags & ts.SymbolFlags.Method) {
-        return ts.ScriptElementKind.memberFunctionElement
-    }
-    if (flags & ts.SymbolFlags.GetAccessor) {
-        return ts.ScriptElementKind.memberGetAccessorElement
-    }
-    if (flags & ts.SymbolFlags.SetAccessor) {
-        return ts.ScriptElementKind.memberSetAccessorElement
-    }
-    if (flags & ts.SymbolFlags.Constructor) {
-        return ts.ScriptElementKind.constructorImplementationElement
-    }
-    if (flags & ts.SymbolFlags.Function) {
-        return ts.ScriptElementKind.functionElement
-    }
-    if (flags & ts.SymbolFlags.Variable) {
-        if (ts_internals.isParameter(sym)) {
-            return ts.ScriptElementKind.parameterElement
-        }
-        if (node.flags & ts.NodeFlags.Const) {
-            return ts.ScriptElementKind.constElement
-        }
-        if (node.flags & ts.NodeFlags.Let) {
-            return ts.ScriptElementKind.letElement
-        }
-        return ts.ScriptElementKind.variableElement
-    }
-    if (flags & ts.SymbolFlags.ClassMember) {
-        return ts.ScriptElementKind.memberVariableElement
-    }
-    return ts.ScriptElementKind.unknown
 }
 
 export function declarationName(node: ts.Node): ts.Node | undefined {
@@ -307,4 +239,32 @@ export function declarationName(node: ts.Node): ts.Node | undefined {
         }
     }
     return undefined
+}
+
+// Returns true if this node is defined in the TypeScript stdlib.
+export function isStdLibNode(node: ts.Node): boolean {
+    const basename = path.basename(node.getSourceFile().fileName)
+    // HACK: this solution has false positives. We should use the
+    // scip-typescript package logic to determine this reliably.
+    return basename.startsWith('lib.') && basename.endsWith('.d.ts')
+}
+
+export function isStdLibSymbol(sym: ts.Symbol): boolean {
+    for (const decl of sym.declarations ?? []) {
+        return isStdLibNode(decl)
+    }
+    return false
+}
+
+const isSignatureDeclaration = (declaration: ts.Node): declaration is ts.SignatureDeclaration => {
+    const _typechecks: ts.SignatureDeclaration | undefined =
+        ts.isIndexSignatureDeclaration(declaration) ||
+        ts.isCallSignatureDeclaration(declaration) ||
+        ts.isMethodSignature(declaration) ||
+        ts.isConstructorDeclaration(declaration) ||
+        ts.isFunctionDeclaration(declaration) ||
+        ts.isMethodDeclaration(declaration)
+            ? declaration
+            : undefined
+    return _typechecks !== undefined
 }

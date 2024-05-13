@@ -20,7 +20,7 @@ export const getStepContent = (step: TutorialStepKey): string => {
                 """
                 def greet(name, surname):
                     """Greets a user with a simple message"""
-                    p
+                    
                 #    ^ Autocomplete: Place cursor above
                 # When you see a suggestion, press Tab to accept or Opt+\ to generate another.
             `
@@ -34,7 +34,7 @@ export const getStepContent = (step: TutorialStepKey): string => {
                 We've pre-filled the instruction, all you need to do is choose Submit.
                 """
 
-                # ^ Edit: Place cursor above and press Opt+K
+                # ^ Start an Edit (Opt+K)
             `
             break
         case 'fix':
@@ -99,7 +99,7 @@ export const getStepData = (
             }
         }
         case 'edit': {
-            const triggerText = findRangeOfText(document, '^ Edit:')
+            const triggerText = findRangeOfText(document, 'Start an Edit')
             if (!triggerText) {
                 return null
             }

@@ -25,10 +25,12 @@ import { logDebug } from '../log'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { closeAuthProgressIndicator } from '../auth/auth-progress-indicator'
+import { maybeStartInteractiveTutorial } from '../tutorial/helpers'
 import { AuthMenu, showAccessTokenInputBox, showInstanceURLInputBox } from './AuthMenus'
 import { getAuthReferralCode } from './AuthProviderSimplified'
 import { localStorage } from './LocalStorageProvider'
 import { secretStorage } from './SecretStorageProvider'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from './telemetry'
 
 type Listener = (authStatus: AuthStatus) => void
@@ -356,6 +358,10 @@ export class AuthProvider {
         const isLoggedIn = isAuthenticated(authStatus)
         authStatus.isLoggedIn = isLoggedIn
 
+        await this.storeAuthInfo(url, token)
+        this.syncAuthStatus(authStatus)
+        await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn)
+
         // If the extension is authenticated on startup, it can't be a user's first
         // ever authentication. We store this to prevent logging first-ever events
         // for already existing users.
@@ -365,9 +371,6 @@ export class AuthProvider {
             this.handleFirstEverAuthentication()
         }
 
-        await this.storeAuthInfo(url, token)
-        this.syncAuthStatus(authStatus)
-        await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn)
         return { authStatus, isLoggedIn }
     }
 
@@ -498,8 +501,8 @@ export class AuthProvider {
             return
         }
         telemetryRecorder.recordEvent('cody.auth.login', 'firstEver')
-        void vscode.commands.executeCommand('cody.tutorial.start')
         this.setHasAuthenticatedBefore()
+        void maybeStartInteractiveTutorial()
     }
 
     private setHasAuthenticatedBefore() {

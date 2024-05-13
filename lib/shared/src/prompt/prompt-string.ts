@@ -5,11 +5,12 @@ import type { ContextItem } from '../codebase-context/messages'
 import type { ContextFiltersProvider } from '../cody-ignore/context-filters-provider'
 import type { TerminalOutputArguments } from '../commands/types'
 import { markdownCodeBlockLanguageIDForFilename } from '../common/languages'
+import type { RangeData } from '../common/range'
 import type { AutocompleteContextSnippet, DocumentContext } from '../completions/types'
 import type { ConfigGetter } from '../configuration'
 import type { ActiveTextEditorDiagnostic } from '../editor'
 import { createGitDiff } from '../editor/create-git-diff'
-import { displayPath } from '../editor/displayPath'
+import { displayPath, displayPathWithLines } from '../editor/displayPath'
 import { getEditorInsertSpaces, getEditorTabSize } from '../editor/utils'
 import { logDebug } from '../logger'
 import { telemetryRecorder } from '../telemetry-v2/singleton'
@@ -235,6 +236,11 @@ export class PromptString {
 
     public static fromDisplayPath(uri: vscode.Uri) {
         return internal_createPromptString(displayPath(uri), [uri])
+    }
+
+    public static fromDisplayPathLineRange(uri: vscode.Uri, range?: RangeData) {
+        const pathToDisplay = range ? displayPathWithLines(uri, range) : displayPath(uri)
+        return internal_createPromptString(pathToDisplay, [uri])
     }
 
     public static fromDocumentText(document: vscode.TextDocument, range?: vscode.Range): PromptString {

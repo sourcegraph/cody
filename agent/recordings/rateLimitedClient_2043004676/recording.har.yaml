@@ -1504,5 +1504,131 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 635bd88b29afc0d3a63da8a994fc93c3
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 0
+        cookies: []
+        headers:
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: rateLimitedClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.com
+        headersSize: 198
+        httpVersion: HTTP/1.1
+        method: GET
+        queryString: []
+        url: https://sourcegraph.com/healthz
+      response:
+        bodySize: 34
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 34
+          text: 273635_2024-05-09_5.4-e37a78bbd300
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 10 May 2024 16:13:00 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "34"
+          - name: connection
+            value: keep-alive
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: x-content-type-options
+            value: nosniff
+        headersSize: 939
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-05-10T16:13:00.166Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: aecd680f6680c3f9f29acc2db0370621
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 0
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: rateLimitedClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.com
+        headersSize: 282
+        httpVersion: HTTP/1.1
+        method: GET
+        queryString: []
+        url: https://sourcegraph.com/healthz
+      response:
+        bodySize: 34
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 34
+          text: 273635_2024-05-09_5.4-e37a78bbd300
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 10 May 2024 16:13:00 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "34"
+          - name: connection
+            value: keep-alive
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: x-content-type-options
+            value: nosniff
+        headersSize: 939
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-05-10T16:13:00.221Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
   pages: []
   version: "1.2"
