@@ -1,13 +1,11 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { type Frame, type Page, expect } from '@playwright/test'
-import type { ContextFilters } from '@sourcegraph/cody-shared'
+import { type Page, expect } from '@playwright/test'
 import { sidebarExplorer, sidebarSignin } from './common'
 import {
     type ExpectedEvents,
     type WorkspaceDirectory,
     executeCommandInPalette,
-    getMetaKeyByOS,
     spawn,
     test,
     withTempDir,
@@ -70,10 +68,20 @@ test
     })(
     'using actively invoked commands and autocomplete shows a error',
     async ({ page, server, sidebar }) => {
-        await setUpAndOverwriteContextFilters(page, sidebar, {
-            include: [],
-            exclude: [{ repoNamePattern: '^github.com/sourcegraph/sourcegraph$' }],
+        server.onGraphQl('ContextFilters').replyJson({
+            data: {
+                site: {
+                    codyContextFilters: {
+                        raw: {
+                            include: [],
+                            exclude: [{ repoNamePattern: '^github.com/sourcegraph/sourcegraph$' }],
+                        },
+                    },
+                },
+            },
         })
+
+        await sidebarSignin(page, sidebar, true)
 
         server
             .onGraphQl('ResolveRepoName')
@@ -103,6 +111,14 @@ test
             )
         ).toBeVisible()
 
+        // Manually invoking autocomplete should show an error
+        await page.getByText('function foo() {').click()
+        await executeCommandInPalette(page, 'Cody: Trigger Autocomplete at Cursor')
+        await expectNotificationToBeVisible(
+            page,
+            'Failed to generate autocomplete: file is ignored (due to cody.contextFilters Enterprise configuration setting)'
+        )
+
         await clearAllNotifications(page)
 
         // Manually invoking commands should show an error
@@ -127,35 +143,8 @@ test
             await page.locator('.notification-list-item').hover()
             await page.getByRole('button', { name: 'Clear Notification' }).click()
         }
-
-        // Manually invoking autocomplete should show an error
-        await page.getByText('function foo() {').click()
-        await page.keyboard.press('Alt+\\')
-        await expectNotificationToBeVisible(
-            page,
-            'Failed to generate autocomplete: file is ignored (due to cody.contextFilters Enterprise configuration setting)'
-        )
-
-        // Chat
     }
 )
-
-async function setUpAndOverwriteContextFilters(
-    page: Page,
-    sidebar: Frame | null,
-    filters: ContextFilters
-) {
-    // Sign into Cody
-    await sidebarSignin(page, sidebar, true)
-
-    // Enable overwrite policy
-    const metaKey = getMetaKeyByOS()
-    await page.keyboard.press(`${metaKey}+Shift+P`)
-    await executeCommandInPalette(page, '[Internal] Set Context Filters Overwrite')
-    await page.keyboard.insertText(JSON.stringify(filters))
-    await page.keyboard.press('Enter')
-    await page.waitForTimeout(200) // Give the updates some time to settle
-}
 
 async function clearAllNotifications(page: Page) {
     await executeCommandInPalette(page, 'Notifications: Clear All Notifications')
