@@ -24,6 +24,12 @@ export interface ExecuteEditArguments {
          */
         range?: vscode.Range
         /**
+         * The range in the document in which to apply the edit.
+         * Support expanding the selection range for intents where it is useful.
+         * Defaults to the active selection rnage.
+         */
+        expandedRange?: vscode.Range
+        /**
          * A pre-set instruction that will be used to create the edit.
          * This will skip prompting the user for any other instruction.
          */

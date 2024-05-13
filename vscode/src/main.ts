@@ -42,6 +42,7 @@ import {
     executeTestEditCommand,
 } from './commands/execute'
 import { executeExplainHistoryCommand } from './commands/execute/explain-history'
+import { UpdateCallsitesProvider } from './commands/execute/update-callsites'
 import { executeUsageExamplesCommand } from './commands/execute/usage-examples'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
@@ -383,6 +384,9 @@ const register = async (
         return await executeCodyCommand(id, newCodyCommandArgs(args))
     }
 
+    const updateCallsitesProvider = new UpdateCallsitesProvider(editorManager)
+    disposables.push(updateCallsitesProvider)
+
     // Register Cody Commands
     disposables.push(
         vscode.commands.registerCommand('cody.action.command', (id, a) => executeCommand(id, a)),
@@ -395,6 +399,9 @@ const register = async (
         vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a)),
         vscode.commands.registerCommand('cody.command.usageExamples', a =>
             executeUsageExamplesCommand(a)
+        ),
+        vscode.commands.registerCommand('cody.command.updateCallsites', a =>
+            updateCallsitesProvider.executeUpdateCallsitesCommand(a)
         )
     )
 

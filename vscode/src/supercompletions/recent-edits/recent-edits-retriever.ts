@@ -24,7 +24,10 @@ export class RecentEditsRetriever implements vscode.Disposable {
         this.disposables.push(workspace.onDidDeleteFiles(this.onDidDeleteFiles.bind(this)))
     }
 
-    public async getDiff(uri: vscode.Uri): Promise<PromptString | null> {
+    public async getDiff(
+        uri: vscode.Uri,
+        withinRange: vscode.Range | null = null
+    ): Promise<PromptString | null> {
         if (await contextFiltersProvider.isUriIgnored(uri)) {
             return null
         }
@@ -37,7 +40,8 @@ export class RecentEditsRetriever implements vscode.Disposable {
         const oldContent = trackedDocument.content
         const newContent = applyChanges(
             oldContent,
-            trackedDocument.changes.map(c => c.change)
+            trackedDocument.changes.map(c => c.change),
+            withinRange
         )
 
         return PromptString.fromGitDiff(uri, oldContent, newContent)
@@ -109,8 +113,18 @@ export class RecentEditsRetriever implements vscode.Disposable {
     }
 }
 
-function applyChanges(content: string, changes: vscode.TextDocumentContentChangeEvent[]): string {
+function applyChanges(
+    content: string,
+    changes: vscode.TextDocumentContentChangeEvent[],
+    withinRange: vscode.Range | null = null
+): string {
     for (const change of changes) {
+        const skip = withinRange && !withinRange.contains(change.range)
+
+        if (skip) {
+            continue
+        }
+
         content =
             content.slice(0, change.rangeOffset) +
             change.text +

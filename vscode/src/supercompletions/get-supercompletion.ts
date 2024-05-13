@@ -215,7 +215,10 @@ function buildInteraction(document: vscode.TextDocument, diff: PromptString): Me
     return [
         ...preamble,
         { speaker: 'human', text: HUMAN_EXAMPLE.replaceAll('____', indentation) },
-        { speaker: 'assistant', text: ASSISTANT_EXAMPLE.replaceAll('____', indentation) },
+        {
+            speaker: 'assistant',
+            text: ASSISTANT_EXAMPLE.replaceAll('____', indentation),
+        },
         { speaker: 'human', text: prompt },
     ]
 }

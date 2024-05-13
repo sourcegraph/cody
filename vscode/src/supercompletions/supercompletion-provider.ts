@@ -58,7 +58,6 @@ export class SupercompletionProvider implements vscode.Disposable {
             for await (const supercompletion of getSupercompletions({
                 document,
                 abortSignal: abortController.signal,
-
                 recentEditsRetriever: this.recentEditsRetriever,
                 chat: this.config.chat,
             })) {

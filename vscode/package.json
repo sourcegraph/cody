@@ -38,7 +38,12 @@
     "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts",
     "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts"
   },
-  "categories": ["Programming Languages", "Machine Learning", "Snippets", "Education"],
+  "categories": [
+    "Programming Languages",
+    "Machine Learning",
+    "Snippets",
+    "Education"
+  ],
   "keywords": [
     "ai",
     "openai",
@@ -91,8 +96,14 @@
   },
   "main": "./dist/extension.node.js",
   "browser": "./dist/extension.web.js",
-  "activationEvents": ["onLanguage", "onStartupFinished", "onWebviewPanel:cody.chatPanel"],
-  "extensionDependencies": ["vscode.git"],
+  "activationEvents": [
+    "onLanguage",
+    "onStartupFinished",
+    "onWebviewPanel:cody.chatPanel"
+  ],
+  "extensionDependencies": [
+    "vscode.git"
+  ],
   "contributes": {
     "walkthroughs": [
       {
@@ -329,6 +340,12 @@
         "title": "Custom Commands Settings",
         "icon": "$(gear)",
         "when": "cody.activated"
+      },
+      {
+        "command": "cody.command.updateCallsites",
+        "category": "Cody Command",
+        "title": "Update Callsites",
+        "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle"
       },
       {
         "command": "cody.command.usageExamples",
@@ -680,13 +697,17 @@
       },
       {
         "command": "cody.supercompletion.jumpTo",
-        "args": ["next"],
+        "args": [
+          "next"
+        ],
         "key": "shift+ctrl+down",
         "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
       },
       {
         "command": "cody.supercompletion.jumpTo",
-        "args": ["previous"],
+        "args": [
+          "previous"
+        ],
         "key": "shift+ctrl+up",
         "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
       }
@@ -718,6 +739,10 @@
         {
           "command": "cody.command.document-code",
           "when": "cody.activated && editorIsOpen"
+        },
+        {
+          "command": "cody.command.updateCallsites",
+          "when": "cody.activated && editorIsOpen && config.cody.experimental.noodle"
         },
         {
           "command": "cody.command.usageExamples",
@@ -788,6 +813,11 @@
           "command": "cody.chat.panel.new",
           "when": "cody.activated",
           "group": "ask"
+        },
+        {
+          "command": "cody.command.updateCallsites",
+          "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle",
+          "group": "command"
         },
         {
           "command": "cody.command.usageExamples",
@@ -974,12 +1004,20 @@
           "order": 2,
           "type": "string",
           "markdownDescription": "A Git repository URL to use instead of allowing Cody to infer the Git repository from the workspace.",
-          "examples": ["https://github.com/sourcegraph/cody", "ssh://git@github.com/sourcegraph/cody"]
+          "examples": [
+            "https://github.com/sourcegraph/cody",
+            "ssh://git@github.com/sourcegraph/cody"
+          ]
         },
         "cody.useContext": {
           "order": 99,
           "type": "string",
-          "enum": ["embeddings", "keyword", "blended", "none"],
+          "enum": [
+            "embeddings",
+            "keyword",
+            "blended",
+            "none"
+          ],
           "default": "blended",
           "markdownDescription": "Controls which context providers Cody uses for chat, commands and inline edits. Use 'blended' for best results. For debugging other context sources, 'embeddings' will use an embeddings-based index if available. 'keyword' will use a search-based index. 'none' will not use embeddings or search-based indexes."
         },
@@ -1037,13 +1075,17 @@
           "order": 6,
           "type": "string",
           "markdownDescription": "A custom instruction to be included at the start of all chat messages (e.g. \"Answer all my questions in Spanish.\")",
-          "examples": ["Answer all my questions in Spanish."]
+          "examples": [
+            "Answer all my questions in Spanish."
+          ]
         },
         "cody.edit.preInstruction": {
           "order": 7,
           "type": "string",
           "markdownDescription": "A custom instruction to be included at the end of all instructions for edit commands (e.g. \"Write all unit tests with Jest instead of detected framework.\")",
-          "examples": ["Write all unit tests with Jest instead of detected framework."]
+          "examples": [
+            "Write all unit tests with Jest instead of detected framework."
+          ]
         },
         "cody.codeActions.enabled": {
           "order": 11,
@@ -1102,8 +1144,14 @@
         "cody.telemetry.level": {
           "order": 99,
           "type": "string",
-          "enum": ["all", "off"],
-          "enumDescriptions": ["Sends usage data and errors.", "Disables all extension telemetry."],
+          "enum": [
+            "all",
+            "off"
+          ],
+          "enumDescriptions": [
+            "Sends usage data and errors.",
+            "Disables all extension telemetry."
+          ],
           "markdownDescription": "Controls the telemetry about Cody usage and errors. See [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).",
           "default": "all"
         },
@@ -1131,7 +1179,12 @@
         "cody.autocomplete.advanced.model": {
           "type": "string",
           "default": null,
-          "enum": [null, "starcoder-16b", "starcoder-7b", "llama-code-13b"],
+          "enum": [
+            null,
+            "starcoder-16b",
+            "starcoder-7b",
+            "llama-code-13b"
+          ],
           "markdownDescription": "Overwrite the  model used for code autocompletion inference. This is only supported with the `fireworks` provider"
         },
         "cody.autocomplete.completeSuggestWidgetSelection": {
@@ -1151,7 +1204,10 @@
         },
         "cody.experimental.foldingRanges": {
           "type": "string",
-          "enum": ["lsp", "indentation-based"],
+          "enum": [
+            "lsp",
+            "indentation-based"
+          ],
           "enumDescriptions": [
             "Use folding ranges that are enabled by default in VS Code, and are usually powered by LSP",
             "Use custom implementation of folding ranges that is indentation based. This is the implementation that is used by other Cody clients like the JetBrains plugin"
@@ -1172,7 +1228,13 @@
         "cody.autocomplete.experimental.graphContext": {
           "type": "string",
           "default": null,
-          "enum": [null, "bfg", "bfg-mixed", "tsc", "tsc-mixed"],
+          "enum": [
+            null,
+            "bfg",
+            "bfg-mixed",
+            "tsc",
+            "tsc-mixed"
+          ],
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
         },
         "cody.autocomplete.experimental.fireworksOptions": {
