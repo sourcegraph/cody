@@ -612,6 +612,7 @@ export class SourcegraphGraphQLAPIClient {
         const insiderBuild = version.length > 12 || version.includes('dev')
         const isValidVersion = insiderBuild || semver.gte(version, minimumVersion)
         if (!enabled || !isValidVersion) {
+            console.log('NO?')
             return INCLUDE_EVERYTHING_CONTEXT_FILTERS
         }
 
@@ -619,6 +620,7 @@ export class SourcegraphGraphQLAPIClient {
             await this.fetchSourcegraphAPI<APIResponse<ContextFiltersResponse | null>>(
                 CONTEXT_FILTERS_QUERY
             )
+        console.log({ response })
 
         const result = extractDataOrError(response, data => {
             if (data?.site?.codyContextFilters?.raw === null) {
