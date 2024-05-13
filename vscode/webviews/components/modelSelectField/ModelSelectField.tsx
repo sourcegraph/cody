@@ -176,6 +176,11 @@ const ModelTitleWithIcon: FunctionComponent<{
         {model.provider === 'Ollama' && (
             <span className={clsx(styles.badge, styles.otherBadge)}>Experimental</span>
         )}
+        {(model.title === 'Claude 3 Opus' || model.title === 'GPT-4 Turbo') && !model.initialDefault ? (
+            <span className={clsx(styles.badge, styles.otherBadge, styles.recommendedBadge)}>
+                Recommended
+            </span>
+        ) : null}
     </span>
 )
 
