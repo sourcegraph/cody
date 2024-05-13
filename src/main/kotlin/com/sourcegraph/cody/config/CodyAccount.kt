@@ -13,7 +13,7 @@ data class CodyAccount(
     @NlsSafe @Attribute("name") override var name: String = "",
     @Attribute("displayName") var displayName: String? = name,
     @Property(style = Property.Style.ATTRIBUTE, surroundWithTag = false)
-    override val server: SourcegraphServerPath =
+    override var server: SourcegraphServerPath =
         SourcegraphServerPath.from(ConfigUtil.DOTCOM_URL, ""),
     @Attribute("id") override var id: String = generateId(),
 ) : ServerAccount() {

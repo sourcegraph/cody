@@ -249,8 +249,8 @@ class SettingsMigration : Activity {
           .submitIOTask(progressIndicator) {
             runCatching {
               SourcegraphApiRequests.CurrentUser(
-                      requestExecutorFactory.create(accessToken), progressIndicator)
-                  .getDetails(server)
+                      requestExecutorFactory.create(server, accessToken), progressIndicator)
+                  .getDetails()
             }
           }
           .successOnEdt(progressIndicator.modalityState) { accountDetailsResult ->

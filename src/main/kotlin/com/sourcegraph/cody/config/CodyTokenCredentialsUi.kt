@@ -103,15 +103,16 @@ internal class CodyTokenCredentialsUi(
     return runCatching { SourcegraphServerPath.from(text, "") }.getOrNull() != null
   }
 
-  override fun createExecutor() = factory.create(tokenTextField.text)
+  override fun createExecutor(server: SourcegraphServerPath): SourcegraphApiRequestExecutor {
+    return factory.create(server, tokenTextField.text)
+  }
 
   override fun acquireDetailsAndToken(
-      server: SourcegraphServerPath,
       executor: SourcegraphApiRequestExecutor,
       indicator: ProgressIndicator,
       authMethod: SsoAuthMethod
   ): Pair<CodyAccountDetails, String> {
-    val details = acquireDetails(server, executor, indicator, isAccountUnique, fixedLogin)
+    val details = acquireDetails(executor, indicator, isAccountUnique, fixedLogin)
     return details to tokenTextField.text
   }
 
@@ -133,19 +134,17 @@ internal class CodyTokenCredentialsUi(
   companion object {
 
     fun acquireDetails(
-        server: SourcegraphServerPath,
         executor: SourcegraphApiRequestExecutor,
         indicator: ProgressIndicator,
         isAccountUnique: UniqueLoginPredicate,
         fixedLogin: String?
     ): CodyAccountDetails {
-      val accountDetails =
-          SourcegraphApiRequests.CurrentUser(executor, indicator).getDetails(server)
+      val accountDetails = SourcegraphApiRequests.CurrentUser(executor, indicator).getDetails()
 
       val login = accountDetails.username
       if (fixedLogin != null && fixedLogin != login)
           throw SourcegraphAuthenticationException("Token should match username \"$fixedLogin\"")
-      if (!isAccountUnique(login, server)) throw LoginNotUniqueException(login)
+      if (!isAccountUnique(login, executor.server)) throw LoginNotUniqueException(login)
 
       return accountDetails
     }

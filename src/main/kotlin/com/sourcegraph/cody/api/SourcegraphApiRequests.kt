@@ -2,7 +2,6 @@ package com.sourcegraph.cody.api
 
 import com.intellij.openapi.progress.ProgressIndicator
 import com.sourcegraph.cody.config.CodyAccountDetails
-import com.sourcegraph.cody.config.SourcegraphServerPath
 import java.awt.Image
 
 object SourcegraphApiRequests {
@@ -10,12 +9,12 @@ object SourcegraphApiRequests {
       private val executor: SourcegraphApiRequestExecutor,
       private val progressIndicator: ProgressIndicator
   ) {
-    fun getDetails(server: SourcegraphServerPath): CodyAccountDetails {
+    fun getDetails(): CodyAccountDetails {
       return executor
           .execute(
               progressIndicator,
               SourcegraphApiRequest.Post.GQLQuery(
-                  server.toGraphQLUrl(),
+                  executor.server.toGraphQLUrl(),
                   SourcegraphGQLQueries.getUserDetails,
                   null,
                   CurrentUserWrapper::class.java))

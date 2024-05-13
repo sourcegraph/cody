@@ -22,19 +22,19 @@ class CodyAuthCredentialsUi(
 
   override fun getValidator(): Validator = { null }
 
-  override fun createExecutor(): SourcegraphApiRequestExecutor = factory.create("")
+  override fun createExecutor(server: SourcegraphServerPath): SourcegraphApiRequestExecutor =
+      factory.create(server, "")
 
   override fun acquireDetailsAndToken(
-      server: SourcegraphServerPath,
       executor: SourcegraphApiRequestExecutor,
       indicator: ProgressIndicator,
       authMethod: SsoAuthMethod
   ): Pair<CodyAccountDetails, String> {
     val token = acquireToken(indicator, authMethod)
-    executor.token = token
-
-    val details =
-        CodyTokenCredentialsUi.acquireDetails(server, executor, indicator, isAccountUnique, null)
+    // The token has changed, so create a new executor to talk to the same server with the new
+    // token.
+    val executor = factory.create(executor.server, token)
+    val details = CodyTokenCredentialsUi.acquireDetails(executor, indicator, isAccountUnique, null)
     return details to token
   }
 

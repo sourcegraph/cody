@@ -103,11 +103,11 @@ class CodyLoginPanel(
     tokenAcquisitionError = null
 
     val server = getServer()
-    val executor = currentUi.createExecutor()
+    val executor = currentUi.createExecutor(server)
 
     return service<ProgressManager>()
         .submitIOTask(progressIndicator) {
-          currentUi.acquireDetailsAndToken(server, executor, it, authMethod)
+          currentUi.acquireDetailsAndToken(executor, it, authMethod)
         }
         .completionOnEdt(progressIndicator.modalityState) { setBusy(false) }
         .errorOnEdt(progressIndicator.modalityState) { setError(it) }

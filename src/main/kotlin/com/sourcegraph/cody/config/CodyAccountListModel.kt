@@ -28,7 +28,6 @@ class CodyAccountListModel(private val project: Project) :
   }
 
   override fun editAccount(parentComponent: JComponent, account: CodyAccount) {
-
     val token = newCredentials[account] ?: getOldToken(account)
     val authData =
         CodyAuthenticationManager.getInstance(project)
@@ -46,8 +45,8 @@ class CodyAccountListModel(private val project: Project) :
     if (authData == null) return
 
     account.name = authData.login
-    account.server.url = authData.server.url
-    account.server.customRequestHeaders = authData.server.customRequestHeaders
+    account.server =
+        SourcegraphServerPath(authData.server.url, authData.server.customRequestHeaders)
     newCredentials[account] = authData.token
     notifyCredentialsChanged(account)
   }

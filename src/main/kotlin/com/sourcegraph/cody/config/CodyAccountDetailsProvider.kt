@@ -28,10 +28,10 @@ class CodyAccountDetailsProvider(
               accountsModel.newCredentials.getOrElse(account) {
                 accountManager.findCredentials(account)
               } ?: return@submitIOTask noToken()
-          val executor = service<SourcegraphApiRequestExecutor.Factory>().create(token)
+          val executor =
+              service<SourcegraphApiRequestExecutor.Factory>().create(account.server, token)
 
-          val accountDetails =
-              SourcegraphApiRequests.CurrentUser(executor, indicator).getDetails(account.server)
+          val accountDetails = SourcegraphApiRequests.CurrentUser(executor, indicator).getDetails()
           val image =
               accountDetails.avatarURL?.let { url ->
                 CachingCodyUserAvatarLoader.getInstance().requestAvatar(executor, url).join()

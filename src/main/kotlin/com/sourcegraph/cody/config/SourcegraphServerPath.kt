@@ -9,8 +9,8 @@ import java.util.regex.Pattern
 
 @Tag("server")
 data class SourcegraphServerPath(
-    @Attribute("url") var url: String = "",
-    @Attribute("customRequestHeaders") var customRequestHeaders: String = ""
+    @Attribute("url") val url: String = "",
+    @Attribute("customRequestHeaders") val customRequestHeaders: String = ""
 ) : ServerPath {
 
   private val GRAPHQL_API_SUFFIX = ".api/graphql"

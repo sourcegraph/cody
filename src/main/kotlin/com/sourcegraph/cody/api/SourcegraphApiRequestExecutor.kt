@@ -11,16 +11,23 @@ import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.io.HttpRequests
 import com.intellij.util.io.HttpSecurityUtil
 import com.intellij.util.io.RequestBuilder
+import com.sourcegraph.cody.config.SourcegraphServerPath
 import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.io.Reader
 import java.net.HttpURLConnection
+import java.net.URI
 import java.util.zip.GZIPInputStream
 import org.jetbrains.annotations.CalledInAny
 import org.jetbrains.annotations.TestOnly
 
-class SourcegraphApiRequestExecutor(var token: String, private val useProxy: Boolean) {
+class SourcegraphApiRequestExecutor
+private constructor(
+    val server: SourcegraphServerPath,
+    val token: String,
+    private val useProxy: Boolean
+) {
 
   @RequiresBackgroundThread
   @Throws(IOException::class, ProcessCanceledException::class)
@@ -28,8 +35,11 @@ class SourcegraphApiRequestExecutor(var token: String, private val useProxy: Boo
     indicator.checkCanceled()
     return createRequestBuilder(request)
         .tuner { connection ->
-          request.additionalHeaders.forEach(connection::addRequestProperty)
-          connection.addRequestProperty(HttpSecurityUtil.AUTHORIZATION_HEADER_NAME, "token $token")
+          if (URI.create(request.url).host == URI.create(server.url).host) {
+            request.additionalHeaders.forEach(connection::addRequestProperty)
+            connection.addRequestProperty(
+                HttpSecurityUtil.AUTHORIZATION_HEADER_NAME, "token $token")
+          }
         }
         .useProxy(useProxy)
         .execute(request, indicator)
@@ -130,8 +140,8 @@ class SourcegraphApiRequestExecutor(var token: String, private val useProxy: Boo
   @Service
   class Factory {
     @CalledInAny
-    fun create(token: String): SourcegraphApiRequestExecutor {
-      return SourcegraphApiRequestExecutor(token, true)
+    fun create(server: SourcegraphServerPath, token: String): SourcegraphApiRequestExecutor {
+      return SourcegraphApiRequestExecutor(server, token, true)
     }
 
     companion object {

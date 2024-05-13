@@ -16,10 +16,9 @@ abstract class CodyCredentialsUi {
 
   abstract fun getValidator(): Validator
 
-  abstract fun createExecutor(): SourcegraphApiRequestExecutor
+  abstract fun createExecutor(server: SourcegraphServerPath): SourcegraphApiRequestExecutor
 
   abstract fun acquireDetailsAndToken(
-      server: SourcegraphServerPath,
       executor: SourcegraphApiRequestExecutor,
       indicator: ProgressIndicator,
       authMethod: SsoAuthMethod
