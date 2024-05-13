@@ -57,6 +57,17 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         uiGroup: ModelUIGroup.Speed,
     },
     {
+        title: 'GPT-4o',
+        model: 'openai/gpt-4o',
+        provider: 'OpenAI',
+        default: false,
+        codyProOnly: true,
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
+        deprecated: false,
+        uiGroup: ModelUIGroup.Balanced,
+    },
+    {
         title: 'GPT-4 Turbo',
         model: 'openai/gpt-4-turbo',
         provider: 'OpenAI',
