@@ -93,7 +93,7 @@ function extractRepoAndNumberFromLink(
             link
         )
     if (!matches?.groups) {
-        throw new Error(`Malformed link: ${link}`)
+        return undefined
     }
     return {
         owner: matches.groups.owner,
@@ -142,6 +142,9 @@ async function main(): Promise<void> {
                 if (json?.user?.login) {
                     author = json.user.login
                 }
+            } else {
+                console.warn(`Could not extract owner/repo/number from link: ${change.link}`)
+                continue
             }
         }
 
