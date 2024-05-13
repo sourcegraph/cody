@@ -71,6 +71,7 @@ object Constants {
   const val Applying = "Applying"
   const val Formatting = "Formatting"
   const val Applied = "Applied"
+  const val Reverting = "Reverting"
   const val Finished = "Finished"
   const val Error = "Error"
   const val Pending = "Pending"
