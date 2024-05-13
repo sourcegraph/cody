@@ -454,6 +454,10 @@ const defaultTreeView: vscode.TreeView<any> = {
     title: undefined,
 }
 
+/**
+ * @returns An object with a URI and a boolean indicating whether the URI should be opened in the client.
+ * This object with UUID path is used only when we want to create in-memory temp files, and those we do not want to send to the clients.
+ */
 function toUri(
     uriOrString: string | vscode.Uri | { language?: string; content?: string } | undefined
 ): { uri: Uri; shouldOpenInClient: boolean } | undefined {
