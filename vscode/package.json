@@ -285,7 +285,7 @@
         "command": "cody.command.edit-code",
         "category": "Cody Command",
         "title": "Edit Code",
-        "when": "cody.activated && editorTextFocus",
+        "enablement": "cody.activated",
         "icon": "$(wand)"
       },
       {
@@ -293,54 +293,54 @@
         "category": "Cody Command",
         "title": "Explain Code",
         "icon": "$(output)",
-        "when": "cody.activated && editorFocus"
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.command.unit-tests",
         "category": "Cody Command",
         "title": "Generate Unit Tests",
         "icon": "$(package)",
-        "when": "cody.activated && editorTextFocus"
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.command.document-code",
         "category": "Cody Command",
         "title": "Document Code",
         "icon": "$(book)",
-        "when": "cody.activated && editorTextFocus"
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.command.smell-code",
         "category": "Cody Command",
         "title": "Find Code Smells",
         "icon": "$(checklist)",
-        "when": "cody.activated && editorFocus"
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.menu.custom-commands",
         "category": "Cody Menu",
         "title": "Custom Commands",
         "icon": "$(tools)",
-        "when": "cody.activated && workspaceFolderCount > 0"
+        "enablement": "cody.activated && workspaceFolderCount > 0"
       },
       {
         "command": "cody.menu.commands-settings",
         "category": "Cody Settings",
         "title": "Custom Commands Settings",
         "icon": "$(gear)",
-        "when": "cody.activated"
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.command.usageExamples",
         "category": "Cody Command",
         "title": "Usage Examples",
-        "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle && (editorLangId === typescript || editorLangId === typescriptreact)"
+        "enablement": "cody.activated && config.cody.experimental.noodle && (editorLangId === typescript || editorLangId === typescriptreact)"
       },
       {
         "command": "cody.command.explain-history",
         "category": "Cody Command",
         "title": "Explain Code History",
-        "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle"
+        "enablement": "cody.activated && config.cody.experimental.noodle"
       },
       {
         "command": "cody.command.generate-commit",
@@ -394,21 +394,21 @@
         "title": "Cody Settings",
         "group": "Cody",
         "icon": "$(settings-gear)",
-        "when": "cody.activated"
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.show-page",
         "category": "Cody",
         "title": "Open Account Page",
         "group": "Cody",
-        "when": "cody.activated"
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.show-rate-limit-modal",
         "category": "Cody",
         "title": "Show Rate Limit Modal",
         "group": "Cody",
-        "when": "cody.activated"
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.guardrails.debug",
@@ -420,32 +420,32 @@
         "command": "cody.menu.commands",
         "category": "Cody Menu",
         "title": "Cody Commands",
-        "when": "cody.activated",
+        "enablement": "cody.activated",
         "icon": "$(cody-logo)"
       },
       {
         "command": "cody.autocomplete.openTraceView",
         "category": "Cody",
         "title": "Open Autocomplete Trace View",
-        "when": "cody.activated && config.cody.autocomplete && editorHasFocus && !editorReadonly"
+        "enablement": "cody.activated && config.cody.autocomplete.enabled"
       },
       {
         "command": "cody.autocomplete.manual-trigger",
         "category": "Cody",
         "title": "Trigger Autocomplete at Cursor",
-        "when": "cody.activated && config.cody.autocomplete && editorHasFocus && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
+        "enablement": "cody.activated && config.cody.autocomplete.enabled && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
       },
       {
         "command": "cody.multi-model-autocomplete.manual-trigger",
         "category": "Cody",
         "title": "Get Completions for multiple autocomplete models",
-        "when": "cody.activated && config.cody.autocomplete.experimental.multiModelCompletions && config.cody.autocomplete && editorHasFocus && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
+        "enablement": "cody.activated && config.cody.autocomplete.experimental.multiModelCompletions && config.cody.autocomplete.enabled && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
       },
       {
         "command": "cody.chat.panel.new",
         "category": "Cody",
         "title": "New Chat",
-        "when": "cody.activated",
+        "enablement": "cody.activated",
         "group": "Cody",
         "icon": "$(new-comment-icon)"
       },
@@ -453,7 +453,7 @@
         "command": "workbench.action.moveEditorToNewWindow",
         "category": "Cody",
         "title": "Pop out",
-        "when": "cody.activated",
+        "enablement": "cody.activated",
         "group": "Cody",
         "icon": "$(link-external)"
       },
@@ -470,7 +470,7 @@
         "title": "Rename Chat",
         "group": "Cody",
         "icon": "$(edit)",
-        "when": "cody.activated && cody.hasChatHistory"
+        "enablement": "cody.activated && cody.hasChatHistory"
       },
       {
         "command": "cody.chat.history.clear",
@@ -478,7 +478,7 @@
         "title": "Delete All Chats",
         "group": "Cody",
         "icon": "$(trash)",
-        "when": "cody.activated && cody.hasChatHistory"
+        "enablement": "cody.activated && cody.hasChatHistory"
       },
       {
         "command": "cody.chat.history.delete",
@@ -486,7 +486,7 @@
         "title": "Delete Chat",
         "group": "Cody",
         "icon": "$(trash)",
-        "when": "cody.activated && cody.hasChatHistory"
+        "enablement": "cody.activated && cody.hasChatHistory"
       },
       {
         "command": "cody.chat.history.export",
@@ -494,7 +494,7 @@
         "title": "Export Chats as JSON",
         "group": "Cody",
         "icon": "$(arrow-circle-down)",
-        "when": "cody.activated && cody.hasChatHistory"
+        "enablement": "cody.activated && cody.hasChatHistory"
       },
       {
         "command": "cody.chat.history.panel",
@@ -502,7 +502,7 @@
         "title": "Chat History",
         "group": "Cody",
         "icon": "$(list-unordered)",
-        "when": "cody.activated && cody.hasChatHistory"
+        "enablement": "cody.activated && cody.hasChatHistory"
       },
       {
         "command": "cody.search.index-update",
@@ -510,7 +510,7 @@
         "group": "Cody",
         "title": "Update search index for current workspace folder",
         "icon": "$(refresh)",
-        "when": "cody.activated"
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.mention.selection",
@@ -518,7 +518,7 @@
         "group": "Chat",
         "title": "Add Selection to Cody Chat",
         "icon": "$(mention)",
-        "when": "cody.activated && editorHasSelection && !explorerViewletFocus && cody.hasNewChatOpened"
+        "enablement": "cody.activated && editorHasSelection && !explorerViewletFocus && cody.hasNewChatOpened"
       },
       {
         "command": "cody.mention.selection.new",
@@ -526,7 +526,7 @@
         "group": "Chat",
         "title": "New Chat with Selection",
         "icon": "$(mention)",
-        "when": "cody.activated && editorHasSelection && !explorerViewletFocus && !cody.hasNewChatOpened"
+        "enablement": "cody.activated && editorHasSelection && !explorerViewletFocus && !cody.hasNewChatOpened"
       },
       {
         "command": "cody.mention.file",
@@ -534,7 +534,7 @@
         "group": "Chat",
         "title": "Add File to Cody Chat",
         "icon": "$(mention)",
-        "when": "cody.activated && resourceScheme == file && cody.hasNewChatOpened"
+        "enablement": "cody.activated && resourceScheme == file && cody.hasNewChatOpened"
       },
       {
         "command": "cody.mention.file.new",
@@ -542,7 +542,7 @@
         "group": "Chat",
         "title": "New Chat with File",
         "icon": "$(mention)",
-        "when": "cody.activated && resourceScheme == file && !cody.hasNewChatOpened"
+        "enablement": "cody.activated && resourceScheme == file && !cody.hasNewChatOpened"
       },
       {
         "command": "cody.chat.panel.reset",
@@ -550,12 +550,12 @@
         "title": "New Chat Session",
         "group": "Cody",
         "icon": "$(clear-all)",
-        "when": "cody.activated && cody.hasChatHistory"
+        "enablement": "cody.activated && cody.hasChatHistory"
       },
       {
         "command": "cody.embeddings.resolveIssue",
         "title": "Cody Embeddings",
-        "when": "cody.embeddings.hasIssue"
+        "enablement": "cody.activated && cody.embeddings.hasIssue"
       },
       {
         "command": "cody.debug.export.logs",
@@ -574,7 +574,7 @@
         "category": "Cody Debug",
         "group": "Debug",
         "title": "Enable Debug Mode",
-        "when": "!config.cody.debug.verbose"
+        "enablement": "!config.cody.debug.verbose"
       },
       {
         "command": "cody.debug.reportIssue",
@@ -595,12 +595,12 @@
         "group": "Search",
         "icon": "$(search)",
         "title": "Natural Language Search Code (Beta)",
-        "when": "cody.activated && workspaceFolderCount > 0"
+        "enablement": "cody.activated && workspaceFolderCount > 0"
       },
       {
         "command": "cody.test.set-context-filters",
         "title": "[Internal] Set Context Filters Overwrite",
-        "when": "cody.activated && cody.devOrTest"
+        "enablement": "cody.activated && cody.devOrTest"
       }
     ],
     "keybindings": [

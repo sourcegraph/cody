@@ -28,7 +28,7 @@
       }
     },
     "countDirFiles": {
-      "prompt": "How many file context have I shared with you?",
+      "prompt": "How many file context have I shared with you? Reply single number. Skip preamble.",
       "context": {
         "currentDir": true
       }

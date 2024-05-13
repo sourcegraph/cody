@@ -162,7 +162,7 @@ const ModelTitleWithIcon: FunctionComponent<{
     >
         {showIcon && <ChatModelIcon model={model.model} className={styles.modelIcon} />}
         <span className={styles.modelText}>
-            <span className={styles.modelName}>{capitalize(model.title)}</span>
+            <span className={styles.modelName}>{model.title}</span>
             <span className={styles.modelProvider}>
                 {showProvider && model.provider !== 'Ollama' && `by ${capitalize(model.provider)}`}
             </span>
@@ -176,6 +176,13 @@ const ModelTitleWithIcon: FunctionComponent<{
         {model.provider === 'Ollama' && (
             <span className={clsx(styles.badge, styles.otherBadge)}>Experimental</span>
         )}
+        {(model.title === 'Claude 3 Opus' || model.title === 'GPT-4 Turbo') &&
+        !model.initialDefault &&
+        modelAvailability !== 'needs-cody-pro' ? (
+            <span className={clsx(styles.badge, styles.otherBadge, styles.recommendedBadge)}>
+                Recommended
+            </span>
+        ) : null}
     </span>
 )
 

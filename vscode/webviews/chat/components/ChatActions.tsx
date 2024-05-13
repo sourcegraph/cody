@@ -129,11 +129,12 @@ export const ChatActions: React.FunctionComponent<{
         })
     }, [isMessageInProgress, isEditing, setInputFocus])
 
+    const activeItems = actions.filter(item => item.when)
+
     return (
-        <div className={styles.chatActionsContainer}>
-            {actions
-                .filter(item => item.when)
-                .map(action => (
+        activeItems.length > 0 && (
+            <div className={styles.chatActionsContainer}>
+                {activeItems.map(action => (
                     <button
                         key={action.name}
                         ref={isMessageInProgress && action.focus ? buttonRef : undefined}
@@ -149,6 +150,7 @@ export const ChatActions: React.FunctionComponent<{
                         </span>
                     </button>
                 ))}
-        </div>
+            </div>
+        )
     )
 }

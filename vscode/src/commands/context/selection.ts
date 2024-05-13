@@ -11,14 +11,15 @@ import { getEditor } from '../../editor/active-editor'
 import { getSmartSelection } from '../../editor/utils'
 
 import { type Position, Selection } from 'vscode'
+
 /**
- * Gets context file content from the current editor selection.
+ * Gets context file content from the cursor position in the active editor.
  *
  * When no selection is made, try getting the smart selection based on the cursor position.
  * If no smart selection is found, use the visible range of the editor instead.
  */
 export async function getContextFileFromCursor(newCursorPosition?: Position): Promise<ContextItem[]> {
-    return wrapInActiveSpan('commands.context.selection', async span => {
+    return wrapInActiveSpan('commands.context.cursor', async span => {
         try {
             const editor = getEditor()
             const document = editor?.active?.document
@@ -52,6 +53,41 @@ export async function getContextFileFromCursor(newCursorPosition?: Position): Pr
                     source: ContextItemSource.Selection,
                     range: toRangeData(selection),
                     size,
+                } satisfies ContextItemFile,
+            ]
+        } catch (error) {
+            logError('getContextFileFromCursor', 'failed', { verbose: error })
+            return []
+        }
+    })
+}
+
+/**
+ * Gets context file content from the current selection in the active editor if any.
+ */
+export async function getContextFileFromSelection(): Promise<ContextItem[]> {
+    return wrapInActiveSpan('commands.context.selection', async span => {
+        try {
+            const editor = getEditor()?.active
+            const document = editor?.document
+            const selection = editor?.selection
+            if (!document || !selection) {
+                return []
+            }
+
+            if (await contextFiltersProvider.isUriIgnored(document.uri)) {
+                return []
+            }
+
+            const content = editor.document.getText(selection)
+            return [
+                {
+                    type: 'file',
+                    uri: document.uri,
+                    content,
+                    source: ContextItemSource.Selection,
+                    range: toRangeData(selection),
+                    size: TokenCounter.countTokens(content),
                 } satisfies ContextItemFile,
             ]
         } catch (error) {

@@ -73,6 +73,7 @@ import { localStorage } from './services/LocalStorageProvider'
 import { VSCodeSecretStorage, getAccessToken, secretStorage } from './services/SecretStorageProvider'
 import { registerSidebarCommands } from './services/SidebarCommands'
 import { createStatusBar } from './services/StatusBar'
+import { upstreamHealthProvider } from './services/UpstreamHealthProvider'
 import { setUpCodyIgnore } from './services/cody-ignore'
 import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
@@ -268,6 +269,7 @@ const register = async (
 
         promises.push(featureFlagProvider.syncAuthStatus())
         graphqlClient.onConfigurationChange(newConfig)
+        upstreamHealthProvider.onConfigurationChange(newConfig)
         githubClient.onConfigurationChange({ authToken: initialConfig.experimentalGithubAccessToken })
         promises.push(
             contextFiltersProvider
@@ -626,7 +628,8 @@ const register = async (
         vscode.commands.registerCommand('cody.debug.outputChannel', () => openCodyOutputChannel()),
         vscode.commands.registerCommand('cody.debug.enable.all', () => enableVerboseDebugMode()),
         vscode.commands.registerCommand('cody.debug.reportIssue', () => openCodyIssueReporter()),
-        new CharactersLogger()
+        new CharactersLogger(),
+        upstreamHealthProvider.onConfigurationChange(initialConfig)
     )
 
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution

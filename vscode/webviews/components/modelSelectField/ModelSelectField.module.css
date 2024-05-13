@@ -1,6 +1,5 @@
 .model-title-with-icon {
     flex: 1;
-
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
@@ -9,15 +8,18 @@
     .model-name {
         font-weight: 500;
     }
+
     .model-provider {
         margin-left: 0.25rem;
         opacity: 0.65;
         font-size: 85%;
     }
+
     &.disabled {
         .model-icon {
             opacity: 0.3;
         }
+
         .model-name, .model-provider {
             opacity: 0.6;
         }
@@ -28,19 +30,21 @@
     }
 }
 
-
 .badge  {
     margin-left: auto;
-    line-height: 1;
+    line-height: 16px;
     font-size: 11px;
-    border-radius: 3px;
-    padding: 3px 5px;
-    margin-bottom: -1px;
+    border-radius: 2px;
+    padding: 0 5px;
+    border: 1px solid var(--vscode-contrastBorder);
 }
 
 .cody-pro-badge {
     background: linear-gradient(135deg, #60D5E7 14.14%, #CD8BFA 49.5%, #F4897D 70.71%);
-    color: black;
+    color: #000000;
+    font-weight: 500;
+    text-shadow: rgb(255 240 255) 0 0 3px;
+    letter-spacing: -0.025em;
 }
 
 .other-badge {
@@ -50,7 +54,7 @@
 
 /* Only show provider name and Default badge in dropdown menu, not in the button. */
 button > .model-title-with-icon {
-    .model-provider, .default-badge {
+    .model-provider, .badge {
         display: none;
     }
 }

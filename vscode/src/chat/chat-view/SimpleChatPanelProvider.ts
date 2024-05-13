@@ -89,7 +89,7 @@ import { InitDoer } from './InitDoer'
 import { SimpleChatModel, prepareChatMessage } from './SimpleChatModel'
 import { getChatPanelTitle, openFile } from './chat-helpers'
 import { getEnhancedContext } from './context'
-import { DefaultPrompter, type IPrompter } from './prompt'
+import { DefaultPrompter } from './prompt'
 
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
@@ -494,6 +494,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     userContextFiles || [],
                     inputText
                 )
+
                 span.setAttribute('strategy', this.config.useContext)
                 const prompter = new DefaultPrompter(
                     userContextItems,
@@ -594,7 +595,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 'user',
                 contextFiles,
                 editorState,
-                addEnhancedContext
+                addEnhancedContext,
+                'chat'
             )
         } catch {
             this.postError(new Error('Failed to edit prompt'), 'transcript')
@@ -850,7 +852,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
      * Constructs the prompt and updates the UI with the context used in the prompt.
      */
     private async buildPrompt(
-        prompter: IPrompter,
+        prompter: DefaultPrompter,
         sendTelemetry?: (contextSummary: any, privateContextStats?: any) => void
     ): Promise<Message[]> {
         const { prompt, context } = await prompter.makePrompt(

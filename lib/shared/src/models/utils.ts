@@ -29,8 +29,8 @@ export function getModelInfo(modelID: string): {
 
 /** Common {@link ModelProvider.uiGroup} values. */
 export const ModelUIGroup: Record<string, string> = {
-    Accuracy: 'More Accurate',
-    Balanced: 'Balanced (Fast & Accurate)',
-    Speed: 'Faster',
+    Accuracy: 'Optimized for Accuracy',
+    Balanced: 'Balanced (Speed & Accuracy)',
+    Speed: 'Optimized for Speed',
     Ollama: 'Ollama (Local)',
 }
