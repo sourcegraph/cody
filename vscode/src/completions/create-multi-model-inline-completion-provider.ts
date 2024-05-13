@@ -83,13 +83,13 @@ export async function createInlineCompletionItemFromMultipleProviders({
     const disposables: vscode.Disposable[] = []
 
     const multiModelConfigsList: MultimodelSingleModelConfig[] = []
-    for (const curretProviderConfig of config.autocompleteExperimentalMultiModelCompletions) {
-        if (curretProviderConfig.provider && curretProviderConfig.model) {
+    for (const currentProviderConfig of config.autocompleteExperimentalMultiModelCompletions) {
+        if (currentProviderConfig.provider && currentProviderConfig.model) {
             multiModelConfigsList.push({
-                provider: curretProviderConfig.provider,
-                model: curretProviderConfig.model,
+                provider: currentProviderConfig.provider,
+                model: currentProviderConfig.model,
                 enableExperimentalFireworksOverrides:
-                    curretProviderConfig.enableExperimentalFireworksOverrides ?? false,
+                    currentProviderConfig.enableExperimentalFireworksOverrides ?? false,
             })
         }
     }
@@ -100,13 +100,13 @@ export async function createInlineCompletionItemFromMultipleProviders({
         }
     }
 
-    const allPromises = multiModelConfigsList.map(async curretProviderConfig => {
+    const allPromises = multiModelConfigsList.map(async currentProviderConfig => {
         const newConfig = _.cloneDeep(config)
         // Override some config to ensure we are not logging extra events.
         newConfig.telemetryLevel = 'off'
         // We should only override the fireworks "cody.autocomplete.experimental.fireworksOptions" when added in the config.
         newConfig.autocompleteExperimentalFireworksOptions =
-            curretProviderConfig.enableExperimentalFireworksOverrides
+            currentProviderConfig.enableExperimentalFireworksOverrides
                 ? config.autocompleteExperimentalFireworksOptions
                 : undefined
         // Don't use the advanced provider config to get the model
@@ -115,8 +115,8 @@ export async function createInlineCompletionItemFromMultipleProviders({
         const providerConfig = await createProviderConfigFromVSCodeConfig(
             client,
             authStatus,
-            curretProviderConfig.model,
-            curretProviderConfig.provider,
+            currentProviderConfig.model,
+            currentProviderConfig.provider,
             newConfig
         )
         if (providerConfig) {
@@ -135,8 +135,8 @@ export async function createInlineCompletionItemFromMultipleProviders({
                 noInlineAccept: true,
             })
             return {
-                providerName: curretProviderConfig.provider,
-                modelName: curretProviderConfig.model,
+                providerName: currentProviderConfig.provider,
+                modelName: currentProviderConfig.model,
                 completionsProvider: completionsProvider,
             }
         }
