@@ -162,7 +162,7 @@ const ModelTitleWithIcon: FunctionComponent<{
     >
         {showIcon && <ChatModelIcon model={model.model} className={styles.modelIcon} />}
         <span className={styles.modelText}>
-            <span className={styles.modelName}>{capitalize(model.title)}</span>
+            <span className={styles.modelName}>{model.title}</span>
             <span className={styles.modelProvider}>
                 {showProvider && model.provider !== 'Ollama' && `by ${capitalize(model.provider)}`}
             </span>
