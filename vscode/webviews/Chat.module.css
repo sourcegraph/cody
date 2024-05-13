@@ -58,7 +58,7 @@
 
 .submit-button,
 .submit-button-disabled {
-    margin-bottom: 0;
+    margin-bottom: 0.125rem;
 }
 
 .submit-button[disabled] {
