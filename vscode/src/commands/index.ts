@@ -70,7 +70,7 @@ export const CodyCommandMenuItems = [
     },
     {
         key: 'commit',
-        description: 'Generate Commit (Experimental)',
+        description: 'Generate Commit Message (Experimental)',
         icon: 'git-commit',
         command: { command: 'cody.command.generate-commit' },
         keybinding: '',
