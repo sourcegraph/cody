@@ -285,62 +285,53 @@
         "command": "cody.command.edit-code",
         "category": "Cody Command",
         "title": "Edit Code",
-        "when": "cody.activated && editorTextFocus",
         "icon": "$(wand)"
       },
       {
         "command": "cody.command.explain-code",
         "category": "Cody Command",
         "title": "Explain Code",
-        "icon": "$(output)",
-        "when": "cody.activated && editorFocus"
+        "icon": "$(output)"
       },
       {
         "command": "cody.command.unit-tests",
         "category": "Cody Command",
         "title": "Generate Unit Tests",
-        "icon": "$(package)",
-        "when": "cody.activated && editorTextFocus"
+        "icon": "$(package)"
       },
       {
         "command": "cody.command.document-code",
         "category": "Cody Command",
         "title": "Document Code",
-        "icon": "$(book)",
-        "when": "cody.activated && editorTextFocus"
+        "icon": "$(book)"
       },
       {
         "command": "cody.command.smell-code",
         "category": "Cody Command",
         "title": "Find Code Smells",
-        "icon": "$(checklist)",
-        "when": "cody.activated && editorFocus"
+        "icon": "$(checklist)"
       },
       {
         "command": "cody.menu.custom-commands",
         "category": "Cody Menu",
         "title": "Custom Commands",
-        "icon": "$(tools)",
-        "when": "cody.activated && workspaceFolderCount > 0"
+        "icon": "$(tools)"
       },
       {
         "command": "cody.menu.commands-settings",
         "category": "Cody Settings",
         "title": "Custom Commands Settings",
-        "icon": "$(gear)",
-        "when": "cody.activated"
+        "icon": "$(gear)"
       },
       {
         "command": "cody.command.usageExamples",
         "category": "Cody Command",
-        "title": "Usage Examples",
-        "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle && (editorLangId === typescript || editorLangId === typescriptreact)"
+        "title": "Usage Examples"
       },
       {
         "command": "cody.command.explain-history",
         "category": "Cody Command",
-        "title": "Explain Code History",
-        "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle"
+        "title": "Explain Code History"
       },
       {
         "command": "cody.auth.signout",
@@ -377,22 +368,19 @@
         "category": "Cody",
         "title": "Cody Settings",
         "group": "Cody",
-        "icon": "$(settings-gear)",
-        "when": "cody.activated"
+        "icon": "$(settings-gear)"
       },
       {
         "command": "cody.show-page",
         "category": "Cody",
         "title": "Open Account Page",
-        "group": "Cody",
-        "when": "cody.activated"
+        "group": "Cody"
       },
       {
         "command": "cody.show-rate-limit-modal",
         "category": "Cody",
         "title": "Show Rate Limit Modal",
-        "group": "Cody",
-        "when": "cody.activated"
+        "group": "Cody"
       },
       {
         "command": "cody.guardrails.debug",
@@ -404,32 +392,27 @@
         "command": "cody.menu.commands",
         "category": "Cody Menu",
         "title": "Cody Commands",
-        "when": "cody.activated",
         "icon": "$(cody-logo)"
       },
       {
         "command": "cody.autocomplete.openTraceView",
         "category": "Cody",
-        "title": "Open Autocomplete Trace View",
-        "when": "cody.activated && config.cody.autocomplete && editorHasFocus && !editorReadonly"
+        "title": "Open Autocomplete Trace View"
       },
       {
         "command": "cody.autocomplete.manual-trigger",
         "category": "Cody",
-        "title": "Trigger Autocomplete at Cursor",
-        "when": "cody.activated && config.cody.autocomplete && editorHasFocus && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
+        "title": "Trigger Autocomplete at Cursor"
       },
       {
         "command": "cody.multi-model-autocomplete.manual-trigger",
         "category": "Cody",
-        "title": "Get Completions for multiple autocomplete models",
-        "when": "cody.activated && config.cody.autocomplete.experimental.multiModelCompletions && config.cody.autocomplete && editorHasFocus && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
+        "title": "Get Completions for multiple autocomplete models"
       },
       {
         "command": "cody.chat.panel.new",
         "category": "Cody",
         "title": "New Chat",
-        "when": "cody.activated",
         "group": "Cody",
         "icon": "$(new-comment-icon)"
       },
@@ -437,7 +420,6 @@
         "command": "workbench.action.moveEditorToNewWindow",
         "category": "Cody",
         "title": "Pop out",
-        "when": "cody.activated",
         "group": "Cody",
         "icon": "$(link-external)"
       },
@@ -461,85 +443,74 @@
         "category": "Cody",
         "title": "Delete All Chats",
         "group": "Cody",
-        "icon": "$(trash)",
-        "when": "cody.activated && cody.hasChatHistory"
+        "icon": "$(trash)"
       },
       {
         "command": "cody.chat.history.delete",
         "category": "Cody",
         "title": "Delete Chat",
         "group": "Cody",
-        "icon": "$(trash)",
-        "when": "cody.activated && cody.hasChatHistory"
+        "icon": "$(trash)"
       },
       {
         "command": "cody.chat.history.export",
         "category": "Cody",
         "title": "Export Chats as JSON",
         "group": "Cody",
-        "icon": "$(arrow-circle-down)",
-        "when": "cody.activated && cody.hasChatHistory"
+        "icon": "$(arrow-circle-down)"
       },
       {
         "command": "cody.chat.history.panel",
         "category": "Cody",
         "title": "Chat History",
         "group": "Cody",
-        "icon": "$(list-unordered)",
-        "when": "cody.activated && cody.hasChatHistory"
+        "icon": "$(list-unordered)"
       },
       {
         "command": "cody.search.index-update",
         "category": "Cody",
         "group": "Cody",
         "title": "Update search index for current workspace folder",
-        "icon": "$(refresh)",
-        "when": "cody.activated"
+        "icon": "$(refresh)"
       },
       {
         "command": "cody.mention.selection",
         "category": "Cody",
         "group": "Chat",
         "title": "Add Selection to Cody Chat",
-        "icon": "$(mention)",
-        "when": "cody.activated && editorHasSelection && !explorerViewletFocus && cody.hasNewChatOpened"
+        "icon": "$(mention)"
       },
       {
         "command": "cody.mention.selection.new",
         "category": "Cody",
         "group": "Chat",
         "title": "New Chat with Selection",
-        "icon": "$(mention)",
-        "when": "cody.activated && editorHasSelection && !explorerViewletFocus && !cody.hasNewChatOpened"
+        "icon": "$(mention)"
       },
       {
         "command": "cody.mention.file",
         "category": "Cody",
         "group": "Chat",
         "title": "Add File to Cody Chat",
-        "icon": "$(mention)",
-        "when": "cody.activated && resourceScheme == file && cody.hasNewChatOpened"
+        "icon": "$(mention)"
       },
       {
         "command": "cody.mention.file.new",
         "category": "Cody",
         "group": "Chat",
         "title": "New Chat with File",
-        "icon": "$(mention)",
-        "when": "cody.activated && resourceScheme == file && !cody.hasNewChatOpened"
+        "icon": "$(mention)"
       },
       {
         "command": "cody.chat.panel.reset",
         "category": "Cody",
         "title": "New Chat Session",
         "group": "Cody",
-        "icon": "$(clear-all)",
-        "when": "cody.activated && cody.hasChatHistory"
+        "icon": "$(clear-all)"
       },
       {
         "command": "cody.embeddings.resolveIssue",
-        "title": "Cody Embeddings",
-        "when": "cody.embeddings.hasIssue"
+        "title": "Cody Embeddings"
       },
       {
         "command": "cody.debug.export.logs",
@@ -557,8 +528,7 @@
         "command": "cody.debug.enable.all",
         "category": "Cody Debug",
         "group": "Debug",
-        "title": "Enable Debug Mode",
-        "when": "!config.cody.debug.verbose"
+        "title": "Enable Debug Mode"
       },
       {
         "command": "cody.debug.reportIssue",
@@ -578,13 +548,11 @@
         "category": "Cody",
         "group": "Search",
         "icon": "$(search)",
-        "title": "Natural Language Search Code (Beta)",
-        "when": "cody.activated && workspaceFolderCount > 0"
+        "title": "Natural Language Search Code (Beta)"
       },
       {
         "command": "cody.test.set-context-filters",
-        "title": "[Internal] Set Context Filters Overwrite",
-        "when": "cody.activated && cody.devOrTest"
+        "title": "[Internal] Set Context Filters Overwrite"
       }
     ],
     "keybindings": [
@@ -755,6 +723,10 @@
         {
           "command": "cody.test.set-context-filters",
           "when": "cody.activated && cody.devOrTest"
+        },
+        {
+          "command": "cody.multi-model-autocomplete.manual-trigger",
+          "when": "config.cody.autocomplete.enabled && config.cody.autocomplete.experimental.multiModelCompletions"
         }
       ],
       "editor/context": [
