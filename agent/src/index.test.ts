@@ -1055,6 +1055,38 @@ describe('Agent', () => {
                     explainPollyError
                 )
             }, 20_000)
+
+            it('editCommand/code (generate from cursor)', async () => {
+                const uri = workspace.file('src', 'Heading.tsx')
+                await client.openFile(uri)
+                const task = await client.request('editCommands/code', {
+                    instruction: 'Generate a component for this file',
+                    model: ModelProvider.getProviderByModelSubstringOrError('anthropic/claude-3-opus')
+                        .model,
+                })
+                await client.acceptEditTask(uri, task)
+                expect(client.documentText(uri)).toMatchInlineSnapshot(
+                    `
+                  "import React from 'react';
+
+                  type HeadingProps = {
+                    level: 1 | 2 | 3 | 4 | 5 | 6;
+                    children: React.ReactNode;
+                    className?: string;
+                  };
+
+                  const Heading: React.FC<HeadingProps> = ({ level, children, className }) => {
+                    const HeadingTag = \`h\${level}\` as keyof JSX.IntrinsicElements;
+
+                    return <HeadingTag className={className}>{children}</HeadingTag>;
+                  };
+
+                  export default Heading;
+                  export default Heading;"
+                `,
+                    explainPollyError
+                )
+            }, 20_000)
         })
 
         describe('Document code', () => {

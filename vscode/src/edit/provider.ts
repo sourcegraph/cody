@@ -19,7 +19,6 @@ import { isNetworkError } from '../services/AuthProvider'
 
 import { workspace } from 'vscode'
 import { doesFileExist } from '../commands/utils/workspace-files'
-import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import { CodyTaskState } from '../non-stop/utils'
 import { telemetryService } from '../services/telemetry'
 import { splitSafeMetadata } from '../services/telemetry-v2'
@@ -215,20 +214,6 @@ export class EditProvider {
             })
         }
 
-        if (isRunningInsideAgent() && this.config.task.intent === 'add') {
-            // TODO: We have disabled running `handleStreamedFixupInsert` through Agent
-            // as we are running into a blocking issue where this results in duplicate
-            // chunks of text from the LLM being inserted into the document.
-            // Issue to fix: https://github.com/sourcegraph/jetbrains/issues/1449
-
-            if (isMessageInProgress) {
-                // Response hasn't finished, disable until we have the full response
-                return
-            }
-
-            return this.handleFixupInsert(response, isMessageInProgress)
-        }
-
         const intentsForInsert = ['add', 'test']
         return intentsForInsert.includes(this.config.task.intent)
             ? this.handleStreamedFixupInsert(response, isMessageInProgress)
@@ -329,13 +314,10 @@ export class EditProvider {
             if (!fileIsFound) {
                 newFileUri = newFileUri.with({ scheme: 'untitled' })
             }
-            this.insertionPromise = this.config.controller.didReceiveNewFileRequest(task.id, newFileUri)
             try {
-                await this.insertionPromise
+                await this.config.controller.didReceiveNewFileRequest(task.id, newFileUri)
             } catch (error) {
                 this.handleError(new Error('Cody failed to generate unit tests', { cause: error }))
-            } finally {
-                this.insertionPromise = null
             }
         }
     }

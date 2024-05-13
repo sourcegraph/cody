@@ -46,16 +46,14 @@ log:
             maxTokensToSample: 256
             messages:
               - speaker: human
-                text:
-                  You are a code completion AI designed to take the surrounding code and
+                text: You are a code completion AI designed to take the surrounding code and
                   shared context into account in order to predict and suggest
                   high-quality code to complete the code enclosed in <CODE5711>
                   tags. You only respond with code that works and fits
                   seamlessly with surrounding code if any or use best practice
                   and nothing else.
               - speaker: assistant
-                text:
-                  I am a code completion AI with exceptional context-awareness designed to
+                text: I am a code completion AI with exceptional context-awareness designed to
                   auto-complete nested code blocks with high-quality code that
                   seamlessly integrates with surrounding code.
               - speaker: human
@@ -80,7 +78,7 @@ log:
             model: anthropic/claude-instant-1
             stopSequences:
               - |-
-
+                
 
                 Human:
               - </CODE5711>
@@ -484,8 +482,7 @@ log:
               - speaker: human
                 text: My name is Lars Monsen.
               - speaker: assistant
-                text:
-                  It's nice to meet you, Lars! I'm an AI assistant created by Sourcegraph.
+                text: It's nice to meet you, Lars! I'm an AI assistant created by Sourcegraph.
                   I'm here to help with any coding or technical questions you
                   might have. Feel free to ask me about programming languages,
                   tools, libraries, algorithms, or really any computer science
@@ -693,8 +690,7 @@ log:
               - speaker: human
                 text: What model are you?
               - speaker: assistant
-                text:
-                  I am an AI model called Claude, created by Anthropic. I don't have
+                text: I am an AI model called Claude, created by Anthropic. I don't have
                   detailed information about the specific architecture or
                   training process used to create me.
               - speaker: human
@@ -1244,8 +1240,7 @@ log:
               - speaker: system
                 text: You are Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text:
-                  Did I share any code with you? If yes, reply single word 'yes'. If none,
+                text: Did I share any code with you? If yes, reply single word 'yes'. If none,
                   reply 'no'.
             model: anthropic/claude-3-sonnet-20240229
             temperature: 0
@@ -1581,582 +1576,6 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-05-07T01:11:24.398Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: fe002a989c710881ca80b80185a847dc
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 797
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 321
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/TestClass.ts:
-                  ```typescript
-                      public functionName() {
-                          if (this.shouldGreet) {
-                              console.log(/* CURSOR */ 'Hello World!')
-                          }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  My selected typescript code from file
-                  `src/multiple-selections.ts`:
-
-                  <selected>
-
-
-                  function anotherFunction() {}
-
-
-                  </selected>
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text:
-                  What is the name of the function that I have selected? Only answer with
-                  the name of the function, nothing else
-            model: anthropic/claude-3-sonnet-20240229
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 367
-        content:
-          mimeType: text/event-stream
-          size: 367
-          text: |+
-            event: completion
-            data: {"completion":"anotherFunction","stopReason":"end_turn"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 07 May 2024 01:11:28 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-07T01:11:27.673Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 31245d9e06fc039b1794703eaa5d9775
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 802
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 321
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/TestClass.ts:
-                  ```typescript
-                      public functionName() {
-                          if (this.shouldGreet) {
-                              console.log(/* CURSOR */ 'Hello World!')
-                          }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  My selected typescript code from file
-                  `src/multiple-selections.ts`:
-
-                  <selected>
-
-                      return function inner() {}
-
-
-
-                  </selected>
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text:
-                  What is the name of the function that I have selected? Only answer with
-                  the name of the function, nothing else
-            model: anthropic/claude-3-sonnet-20240229
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 158
-        content:
-          mimeType: text/event-stream
-          size: 158
-          text: |+
-            event: completion
-            data: {"completion":"inner","stopReason":"end_turn"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 07 May 2024 01:11:29 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-07T01:11:28.706Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 1ee1b566999991623c3cb8710d01e820
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 1349
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 321
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: |-
-                  My selected typescript code from file `src/animal.ts`:
-                  <selected>
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-
-                  </selected>
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text:
-                  "Explain what @src/animal.ts:1-6  does in simple terms. Assume the
-                  audience is a beginner programmer who has just learned the
-                  language features and basic syntax. Focus on explaining: 1)
-                  The purpose of the code 2) What input(s) it takes 3) What
-                  output(s) it produces 4) How it achieves its purpose through
-                  the logic and algorithm. 5) Any important logic flows or data
-                  transformations happening. Use simple language a beginner
-                  could understand. Include enough detail to give a full picture
-                  of what the code aims to accomplish without getting too
-                  technical. Format the explanation in coherent paragraphs,
-                  using proper punctuation and grammar. Write the explanation
-                  assuming no prior context about the code is known. Do not make
-                  assumptions about variables or functions not shown in the
-                  shared code. Start the answer with the name of the code that
-                  is being explained."
-            model: anthropic/claude-3-sonnet-20240229
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 380254
-        content:
-          mimeType: text/event-stream
-          size: 380254
-          text: >+
-            event: completion
-
-            data: {"completion":"`@src/animal.ts:1-6` is a TypeScript code snippet that defines an interface called `Animal`. An interface in TypeScript is a way to define the shape, or structure, of an object. It specifies the properties and methods that an object must have to be considered an instance of that interface.\n\nIn this case, the `Animal` interface has three properties:\n\n1. `name`: This is a string property that represents the name of the animal.\n2. `makeAnimalSound()`: This is a method that returns a string, representing the sound the animal makes.\n3. `isMammal`: This is a boolean property that indicates whether the animal is a mammal or not.\n\nThe purpose of this code is to provide a blueprint or contract for any object that needs to represent an animal in the application. It does not take any direct input, but it specifies the requirements for an object to be considered an `Animal`.\n\nThe output of this code is not a value, but rather a definition or specification that can be used throughout the application to ensure that any object representing an animal adheres to this structure.\n\nThe code achieves its purpose by defining the `Animal` interface with the specified properties and methods. Any object that needs to be an instance of `Animal` must have these properties and methods defined, with the correct types and return types.\n\nFor example, if you were to create an object representing a dog, it would need to have a `name` property of type string, a `makeAnimalSound()` method that returns a string (e.g., \"Woof!\"), and a `isMammal` property of type boolean (which would be true for dogs).\n\nThere is no complex logic or data transformation happening in this code snippet. It is simply a definition or contract that other parts of the application can use to ensure consistency and type safety when working with animal objects.","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 07 May 2024 01:11:31 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-07T01:11:30.007Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: d2148c2a6646fde320ab433c83ff92ef
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 3207
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 321
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/TestLogger.ts: const foo =
-                  42
-
-                  export const TestLogger = {
-                      startLogging: () => {
-                          // Do some stuff
-
-                          function recordLog() {
-                              console.log(/* CURSOR */ 'Recording the log')
-                          }
-
-                          recordLog()
-                      },
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/TestClass.ts: const foo =
-                  42
-
-
-                  export class TestClass {
-                      constructor(private shouldGreet: boolean) {}
-
-                      public functionName() {
-                          if (this.shouldGreet) {
-                              console.log(/* CURSOR */ 'Hello World!')
-                          }
-                      }
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example.test.ts: import {
-                  expect } from 'vitest'
-
-                  import { it } from 'vitest'
-
-                  import { describe } from 'vitest'
-
-
-                  describe('test block', () => {
-                      it('does 1', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does 2', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does something else', () => {
-                          // This line will error due to incorrect usage of `performance.now`
-                          const startTime = performance.now(/* CURSOR */)
-                      })
-                  })
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  My selected typescript code from file `src/animal.ts`:
-                  <selected>
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-
-                  </selected>
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text:
-                  Review the shared code context and configurations to identify the test
-                  framework and libraries in use. Then, generate a suite of
-                  multiple unit tests for the functions in <selected> using the
-                  detected test framework and libraries. Be sure to import the
-                  function being tested. Follow the same patterns as any shared
-                  context. Only add packages, imports, dependencies, and
-                  assertions if they are used in the shared code. Pay attention
-                  to the file path of each shared context to see if test for
-                  <selected> already exists. If one exists, focus on generating
-                  new unit tests for uncovered cases. If none are detected,
-                  import common unit test libraries for {languageName}. Focus on
-                  validating key functionality with simple and complete
-                  assertions. Only include mocks if one is detected in the
-                  shared code. Before writing the tests, identify which test
-                  libraries and frameworks to import, e.g. 'No new imports
-                  needed - using existing libs' or 'Importing test framework
-                  that matches shared context usage' or 'Importing the defined
-                  framework', etc. Then briefly summarize test coverage and any
-                  limitations. At the end, enclose the full completed code for
-                  the new unit tests, including all necessary imports, in a
-                  single markdown codeblock. No fragments or TODO. The new tests
-                  should validate expected functionality and cover edge cases
-                  for <selected> with all required imports, including importing
-                  the function being tested. Do not repeat existing tests.
-            model: anthropic/claude-3-sonnet-20240229
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 637322
-        content:
-          mimeType: text/event-stream
-          size: 637322
-          text: >+
-            event: completion
-
-            data: {"completion":"Based on the shared code context, the test framework being used is Vitest. It appears to be following the same testing patterns as Jest, with `describe` blocks for test suites and `it` blocks for individual test cases.\n\nNo new imports needed - using existing libs (vitest and its existing imports).\n\nThe provided code snippet defines an `Animal` interface with three properties: `name` of type string, `makeAnimalSound` which is a function that returns a string, and `isMammal` of type boolean.\n\nTest coverage summary:\n- The tests will cover the properties and expected behavior of the `Animal` interface.\n- No actual implementation of the `makeAnimalSound` function is provided, so the tests will have to make assumptions about its expected behavior.\n- Edge cases like handling empty or invalid inputs for the `name` property can be tested.\n\nHere is a suite of unit tests for the `Animal` interface:\n\n```typescript\nimport { describe, it, expect } from 'vitest'\nimport { Animal } from './animal'\n\ndescribe('Animal', () =\u003e {\n  it('should have a name property', () =\u003e {\n    const animal: Animal = {\n      name: 'Tiger',\n      makeAnimalSound: () =\u003e 'Roar',\n      isMammal: true\n    }\n\n    expect(animal.name).toBe('Tiger')\n  })\n\n  it('should have a isMammal property', () =\u003e {\n    const animal: Animal = {\n      name: 'Crocodile',\n      makeAnimalSound: () =\u003e 'Hiss',\n      isMammal: false\n    }\n\n    expect(animal.isMammal).toBe(false)\n  })\n\n  it('should have a makeAnimalSound function', () =\u003e {\n    const animal: Animal = {\n      name: 'Elephant',\n      makeAnimalSound: () =\u003e 'Trumpet',\n      isMammal: true\n    }\n\n    expect(typeof animal.makeAnimalSound).toBe('function')\n  })\n\n  it('should handle empty name', () =\u003e {\n    const animal: Animal = {\n      name: '',\n      makeAnimalSound: () =\u003e 'Meow',\n      isMammal: true\n    }\n\n    expect(animal.name).toBe('')\n  })\n})\n```\n\nThese tests cover the basic properties and behavior of the `Animal` interface, including checking for the presence of the required properties, testing the `makeAnimalSound` function type, and handling edge cases like an empty name.","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 07 May 2024 01:11:39 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-07T01:11:38.307Z
       time: 0
       timings:
         blocked: -1
@@ -2827,8 +2246,7 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text:
-                  Write a class Dog that implements the Animal interface in my workspace.
+                text: Write a class Dog that implements the Animal interface in my workspace.
                   Show the code only, no explanation needed.
             model: anthropic/claude-3-sonnet-20240229
             temperature: 0
@@ -2949,8 +2367,7 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text:
-                  What is the name of the function that I have selected? Only answer with
+                text: What is the name of the function that I have selected? Only answer with
                   the name of the function, nothing else
             model: anthropic/claude-3-sonnet-20240229
             temperature: 0
@@ -3068,8 +2485,7 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text:
-                  What is the name of the function that I have selected? Only answer with
+                text: What is the name of the function that I have selected? Only answer with
                   the name of the function, nothing else
             model: anthropic/claude-3-sonnet-20240229
             temperature: 0
@@ -3180,8 +2596,7 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text:
-                  "Explain what @src/animal.ts:1-6  does in simple terms. Assume the
+                text: "Explain what @src/animal.ts:1-6  does in simple terms. Assume the
                   audience is a beginner programmer who has just learned the
                   language features and basic syntax. Focus on explaining: 1)
                   The purpose of the code 2) What input(s) it takes 3) What
@@ -3369,8 +2784,7 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text:
-                  Review the shared code context and configurations to identify the test
+                text: Review the shared code context and configurations to identify the test
                   framework and libraries in use. Then, generate a suite of
                   multiple unit tests for the functions in <selected> using the
                   detected test framework and libraries. Be sure to import the
@@ -3506,8 +2920,7 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text:
-                  Please review and analyze @src/animal.ts:1-6  and identify potential areas
+                text: Please review and analyze @src/animal.ts:1-6  and identify potential areas
                   for improvement related to code smells, readability,
                   maintainability, performance, security, etc. Do not list
                   issues already addressed in the given code. Focus on providing
@@ -4295,8 +3708,7 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text:
-                  How many file context have I shared with you? Reply single number. Skip
+                text: How many file context have I shared with you? Reply single number. Skip
                   preamble.
             model: anthropic/claude-3-sonnet-20240229
             temperature: 0
@@ -4364,6 +3776,137 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 063d340f7e0478c5c518047fad112f8c
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1926
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - name: user-agent
+            value: defaultClient / v1
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 345
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph. - You
+                  are an AI programming assistant who is an expert in adding new
+                  code by following instructions.
+
+                  - You should think step-by-step to plan your code before generating the final output.
+
+                  - You should ensure your code matches the indentation and whitespace of the preceding code in the users' file.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - You will be provided with code that is above the users' cursor, enclosed in <PRECEDINGCODE3493></PRECEDINGCODE3493> XML tags. You must use this code to help you plan your updated code. You must not repeat this code in your output unless necessary.
+
+                  - You will be provided with code that is below the users' cursor, enclosed in <FOLLOWINGCODE2472></FOLLOWINGCODE2472> XML tags. You must use this code to help you plan your updated code. You must not repeat this code in your output unless necessary.
+
+                  - You will be provided with instructions on what to generate, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the code you added. Only respond with the generated code.
+              - speaker: human
+                text: |-
+                  The user is currently in the file: src/Heading.tsx
+
+                  Provide your generated code using the following instructions:
+                  <INSTRUCTIONS7390>
+                  Generate a component for this file
+                  </INSTRUCTIONS7390>
+              - speaker: assistant
+                text: <CODE5711>
+            model: anthropic/claude-3-opus-20240229
+            stopSequences:
+              - </CODE5711>
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 31778
+        content:
+          mimeType: text/event-stream
+          size: 31778
+          text: >+
+            event: completion
+
+            data: {"completion":"import React from 'react';\n\ntype HeadingProps = {\n  level: 1 | 2 | 3 | 4 | 5 | 6;\n  children: React.ReactNode;\n  className?: string;\n};\n\nconst Heading: React.FC\u003cHeadingProps\u003e = ({ level, children, className }) =\u003e {\n  const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;\n\n  return \u003cHeadingTag className={className}\u003e{children}\u003c/HeadingTag\u003e;\n};\n\nexport default Heading;\n","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 13 May 2024 15:57:02 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-05-13T15:56:58.925Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: 103cb6e8af45413f322d6e624f9343fb
       _order: 0
       cache: {}
@@ -4397,8 +3940,7 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text:
-                  "You are helping the user search over a codebase. List some filename
+                text: "You are helping the user search over a codebase. List some filename
                   fragments that would match files relevant to read to answer
                   the user's query. Present your results in an XML list in the
                   following format: <keywords><keyword><value>a single
@@ -5404,8 +4946,7 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text:
-                  "You are helping the user search over a codebase. List some filename
+                text: "You are helping the user search over a codebase. List some filename
                   fragments that would match files relevant to read to answer
                   the user's query. Present your results in an XML list in the
                   following format: <keywords><keyword><value>a single
@@ -7064,9 +6605,8 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text:
-                  'The magic word is "kramer". If I say the magic word, respond with a
-                  single word: "quone".'
+                text: "The magic word is \"kramer\". If I say the magic word, respond with a
+                  single word: \"quone\"."
             model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
             temperature: 0
             topK: -1
@@ -7201,9 +6741,8 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text:
-                  'The magic word is "kramer". If I say the magic word, respond with a
-                  single word: "quone".'
+                text: "The magic word is \"kramer\". If I say the magic word, respond with a
+                  single word: \"quone\"."
               - speaker: assistant
                 text: >-
                   Quone.
@@ -7471,9 +7010,8 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text:
-                  'Another magic word is "georgey". If I say the magic word, respond with
-                  a single word: "festivus".'
+                text: "Another magic word is \"georgey\". If I say the magic word, respond with
+                  a single word: \"festivus\"."
             model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
             temperature: 0
             topK: -1
@@ -7593,12 +7131,10 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text:
-                  'Another magic word is "georgey". If I say the magic word, respond with
-                  a single word: "festivus".'
+                text: "Another magic word is \"georgey\". If I say the magic word, respond with
+                  a single word: \"festivus\"."
               - speaker: assistant
-                text:
-                  Sure, I can do that! If you say the word "georgey", I will respond with
+                text: Sure, I can do that! If you say the word "georgey", I will respond with
                   "festivus".
               - speaker: human
                 text: kramer
@@ -7766,12 +7302,10 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text:
-                  'Another magic word is "georgey". If I say the magic word, respond with
-                  a single word: "festivus".'
+                text: "Another magic word is \"georgey\". If I say the magic word, respond with
+                  a single word: \"festivus\"."
               - speaker: assistant
-                text:
-                  Sure, I can do that! If you say the word "georgey", I will respond with
+                text: Sure, I can do that! If you say the word "georgey", I will respond with
                   "festivus".
               - speaker: human
                 text: kramer
@@ -8097,8 +7631,7 @@ log:
               - speaker: human
                 text: I have a turtle named "potter", reply single "ok" if you understand.
               - speaker: assistant
-                text:
-                  Ok, I understand that you have a turtle named "potter". If you have any
+                text: Ok, I understand that you have a turtle named "potter". If you have any
                   questions or need help with coding, I'm here to assist you!
               - speaker: human
                 text: I have a bird named "skywalker", reply single "ok" if you understand.
@@ -8228,14 +7761,12 @@ log:
               - speaker: human
                 text: I have a turtle named "potter", reply single "ok" if you understand.
               - speaker: assistant
-                text:
-                  Ok, I understand that you have a turtle named "potter". If you have any
+                text: Ok, I understand that you have a turtle named "potter". If you have any
                   questions or need help with coding, I'm here to assist you!
               - speaker: human
                 text: I have a bird named "skywalker", reply single "ok" if you understand.
               - speaker: assistant
-                text:
-                  Ok, I understand that you have a bird named "skywalker" as well. I'm here
+                text: Ok, I understand that you have a bird named "skywalker" as well. I'm here
                   to help you with any coding questions or issues you may have.
                   If you need anything, just let me know!
               - speaker: human
@@ -8376,8 +7907,7 @@ log:
               - speaker: human
                 text: I have a turtle named "potter", reply single "ok" if you understand.
               - speaker: assistant
-                text:
-                  Ok, I understand that you have a turtle named "potter". If you have any
+                text: Ok, I understand that you have a turtle named "potter". If you have any
                   questions or need help with coding, I'm here to assist you!
               - speaker: human
                 text: I have a tiger named "zorro", reply single "ok" if you understand
@@ -8502,14 +8032,12 @@ log:
               - speaker: human
                 text: I have a turtle named "potter", reply single "ok" if you understand.
               - speaker: assistant
-                text:
-                  Ok, I understand that you have a turtle named "potter". If you have any
+                text: Ok, I understand that you have a turtle named "potter". If you have any
                   questions or need help with coding, I'm here to assist you!
               - speaker: human
                 text: I have a tiger named "zorro", reply single "ok" if you understand
               - speaker: assistant
-                text:
-                  Ok, I understand that you also have a tiger named "zorro". If you have any
+                text: Ok, I understand that you also have a tiger named "zorro". If you have any
                   questions or need help with coding, I'm here to assist you!
               - speaker: human
                 text: What pets do I have?
@@ -8633,8 +8161,7 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text:
-                  "You are helping the user search over a codebase. List some filename
+                text: "You are helping the user search over a codebase. List some filename
                   fragments that would match files relevant to read to answer
                   the user's query. Present your results in an XML list in the
                   following format: <keywords><keyword><value>a single
@@ -9358,7 +8885,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {
@@ -9380,8 +8907,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 163
-          text:
-            "[\"H4sIAAAAAAAAAwAAAP//\",\"PIvBCoAgEAX/Zc99gVeh/9h0LSHd0OchxH8PCzoNDDOd\
+          text: "[\"H4sIAAAAAAAAAwAAAP//\",\"PIvBCoAgEAX/Zc99gVeh/9h0LSHd0OchxH8PCzoNDDOd\
             PIPJdKoRMunU31ZziPsqjFakvvZgkEFpshA3qNV0nTKPzzlNibOvfwOUuDVEzWQCn1X\
             GGOMBAAD//wMAh84uQm4AAAA=\"]"
         cookies: []
@@ -9460,7 +8986,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query ContextFilters {
                   site {
                       codyContextFilters(version: V1) {
@@ -9479,8 +9005,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 114
-          text:
-            "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdHJ+SmVzvl5JakVJW6ZOSWpRcUg0aLE\
+          text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdHJ+SmVzvl5JakVJW6ZOSWpRcUg0aLE\
             ciWrvNKcnNra2loAAAAA//8=\",\"AwA2LshlNQAAAA==\"]"
         cookies: []
         headers:
@@ -9562,7 +9087,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query ContextFilters {
                   site {
                       codyContextFilters(version: V1) {
@@ -9581,8 +9106,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 107
-          text:
-            "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdHJ+SmVzvl5JakVJW6ZOSWpRcUg0aLE\
+          text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdHJ+SmVzvl5JakVJW6ZOSWpRcUg0aLE\
             ciWrvNKcnNra2loAAAAA//8DADYuyGU1AAAA\"]"
         cookies: []
         headers:
@@ -9664,7 +9188,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -9766,7 +9290,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -9790,8 +9314,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 212
-          text:
-            "[\"H4sIAAAAAAAAA4zOsQqDMBDG8Xe5WW10a1ZXs/UFjiTW0PROzAktkncvulgylE4HH39+3\
+          text: "[\"H4sIAAAAAAAAA4zOsQqDMBDG8Xe5WW10a1ZXs/UFjiTW0PROzAktkncvulgylE4HH39+3\
             AYOBUFvkIL4/Vp272EwPdMY7uuCEpiOfUIx7HwEDUgyLTwHe7ERV+frrlFQnYnB140f\
             nhLotlNKVTBikv6XECgJktQtFPGXdT0oy885+v2tv7AiL7icc/4AAAD//wMAqZjCzQQ\
             BAAA=\"]"
@@ -9885,7 +9408,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -9987,7 +9510,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -10084,7 +9607,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -10103,8 +9626,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 128
-          text:
-            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8s\
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8s\
             syU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//AwAfFAXARQAAAA==\"]"
           textDecoded:
             data:
@@ -10191,7 +9713,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -10288,7 +9810,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentUser {
                   currentUser {
                       id
@@ -10390,7 +9912,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentUser {
                   currentUser {
                       id
@@ -10414,8 +9936,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 348
-          text:
-            "[\"H4sIAAAAAAAAA2RPy06DQBT9l7uGgmm0MEkTbW1dVImPlNTlZbiFAYbBeVQp4d8bUhMX7\
+          text: "[\"H4sIAAAAAAAAA2RPy06DQBT9l7uGgmm0MEkTbW1dVImPlNTlZbiFAYbBeVQp4d8bUhMX7\
             s7JOTmPAXK0CGwA7rSm1u4N6YmKHBikh6ThlTonj283LxVfggclmpS0OArKNxJFA8xq\
             Rx7kwnQN9glKAgYfymlOhcauXCnrx2EYggfOkG6vBvNnyJSNa//YfksHHuAJLer9+zM\
             wKK3tDAuCppzPCqWKhqYErlpLrZ1xJQMMHtZFpPhui1/ZJ7lVnVW3+XZz/omyQxrhQs\
@@ -10511,7 +10032,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentUser {
                   currentUser {
                       id
@@ -10613,7 +10134,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentUserCodySubscription {
                   currentUser {
                       codySubscription {
@@ -10636,8 +10157,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 224
-          text:
-            "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5cwtt2ilbkQ6CYGmrg1tsMgRqEm5uhlLy7qIgqOP5+\
+          text: "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5cwtt2ilbkQ6CYGmrg1tsMgRqEm5uhlLy7qIgqOP5+\
             Tg7tGIFuWNJRMbxJRp6T6+3Kd3jQjaw9e7VIitOERLdYT5eexQIq3KQGMYzCqgQ1m0g\
             Pyo2J/uwHCGZkik+34Mh6/XEirhjSIhKtGXVlHU7CyHrWjbihj/dO/1l21+bc85PAAA\
             A//8DACprgLLCAAAA\"]"
@@ -10730,7 +10250,7 @@ log:
           params: []
           textJSON:
             query: >-
-
+              
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -10841,7 +10361,7 @@ log:
           params: []
           textJSON:
             query: >-
-
+              
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String) {
                   logEvent(
               		event: $event
@@ -10949,7 +10469,7 @@ log:
           params: []
           textJSON:
             query: >-
-
+              
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -10981,7 +10501,7 @@ log:
         content:
           mimeType: application/json
           size: 26
-          text: '{"data":{"logEvent":null}}'
+          text: "{\"data\":{\"logEvent\":null}}"
         cookies: []
         headers:
           - name: date
@@ -11060,7 +10580,7 @@ log:
           params: []
           textJSON:
             query: >-
-
+              
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -11171,7 +10691,7 @@ log:
           params: []
           textJSON:
             query: >-
-
+              
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -11203,7 +10723,7 @@ log:
         content:
           mimeType: application/json
           size: 26
-          text: '{"data":{"logEvent":null}}'
+          text: "{\"data\":{\"logEvent\":null}}"
         cookies: []
         headers:
           - name: date
@@ -11282,7 +10802,7 @@ log:
           params: []
           textJSON:
             query: >-
-
+              
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
                   logEvent(
               		event: $event
@@ -11314,7 +10834,7 @@ log:
         content:
           mimeType: application/json
           size: 26
-          text: '{"data":{"logEvent":null}}'
+          text: "{\"data\":{\"logEvent\":null}}"
         cookies: []
         headers:
           - name: date
@@ -11393,7 +10913,7 @@ log:
           params: []
           textJSON:
             query: >-
-
+              
               mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String) {
                   logEvent(
               		event: $event
@@ -11497,7 +11017,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query Repository($name: String!) {
               	repository(name: $name) {
               		id
@@ -11515,8 +11035,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 120
-          text:
-            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8\
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwtK1ND8\
             o18Q3wr/UJ8K/0dbW2VamtrAQAAAP//AwDHAhygPQAAAA==\"]"
           textDecoded:
             data:
@@ -11598,7 +11117,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteIdentification {
               	site {
               		siteID
@@ -11620,8 +11139,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 212
-          text:
-            "[\"H4sIAAAAAAAAAzTLsQ6CMBCA4Xe52YX2rgVmF+PI4HztXaWJAdKWwRDf3WDiv/zTd4BwY\
+          text: "[\"H4sIAAAAAAAAAzTLsQ6CMBCA4Xe52YX2rgVmF+PI4HztXaWJAdKWwRDf3WDiv/zTd4BwY\
             xgPqLnp/7crjDCte4n6LLzNDw1wga2sssc27aHGkreW1+UErxx1qT87c51V7vqGEYbo\
             u9AZm/okmgxi70QZlZzzqNEaJOMNReocCdkgiCk4j4btwJwIPmdfAAAA//8DABj2u36\
             gAAAA\"]"
@@ -11712,7 +11230,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteIdentification {
               	site {
               		siteID
@@ -11812,7 +11330,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteIdentification {
               	site {
               		siteID
@@ -11834,8 +11352,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 215
-          text:
-            "[\"H4sIAAAAAAAAAzTLsQ6C\",\"MBCA4Xe52YX2rgVmF+PI4HztXaWJAdKWwRDf3WDiv/zT\
+          text: "[\"H4sIAAAAAAAAAzTLsQ6C\",\"MBCA4Xe52YX2rgVmF+PI4HztXaWJAdKWwRDf3WDiv/zT\
             d4BwYxgPqLnp/7crjDCte4n6LLzNDw1wga2sssc27aHGkreW1+UErxx1qT87c51V7vq\
             GEYbou9AZm/okmgxi70QZlZzzqNEaJOMNReocCdkgiCk4j4btwJwIPmdfAAAA//8DAB\
             j2u36gAAAA\"]"
@@ -11919,7 +11436,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteIdentification {
               	site {
               		siteID
@@ -12019,7 +11536,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteProductVersion {
                   site {
                       productVersion
@@ -12114,7 +11631,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteProductVersion {
                   site {
                       productVersion
@@ -12131,8 +11648,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 139
-          text:
-            "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkZmpoZm\
+          text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkZmpoZm\
             FvFGBkYmugbGuoYm8aZ6xrqWSUnJqQbGyeaJJuZKtbW1AAAAAP//AwDxPpaOSQAAAA==\
             \"]"
         cookies: []
@@ -12215,7 +11731,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteProductVersion {
                   site {
                       productVersion
@@ -12306,7 +11822,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteProductVersion {
                   site {
                       productVersion
@@ -12323,8 +11839,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 136
-          text:
-            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkbmRuaGhvFGB\
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkbmRuaGhvFGB\
             kYmugamugZm8aZ6xrophpYWxokWyYmGSRZKtbW1AAAAAP//AwBIjGtHSQAAAA==\"]"
           textDecoded:
             data:
