@@ -22,6 +22,14 @@ object InlayModelUtil {
 
   @JvmStatic
   fun getAllInlaysForEditor(editor: Editor): List<Inlay<*>> {
-    return getAllInlays(editor.inlayModel, 0, editor.document.textLength)
+    val inlayModel =
+        try {
+          editor.inlayModel
+        } catch (e: UnsupportedOperationException) {
+          // Not all editors, for example ImaginaryEditor used in Intention Previews, support
+          // inlays.
+          return emptyList()
+        }
+    return getAllInlays(inlayModel, 0, editor.document.textLength)
   }
 }
