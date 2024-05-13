@@ -285,7 +285,7 @@
         "command": "cody.command.edit-code",
         "category": "Cody Command",
         "title": "Edit Code",
-        "enablement": "cody.activated && editorTextFocus",
+        "enablement": "cody.activated",
         "icon": "$(wand)"
       },
       {
@@ -293,28 +293,28 @@
         "category": "Cody Command",
         "title": "Explain Code",
         "icon": "$(output)",
-        "enablement": "cody.activated && editorFocus"
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.command.unit-tests",
         "category": "Cody Command",
         "title": "Generate Unit Tests",
         "icon": "$(package)",
-        "enablement": "cody.activated && editorTextFocus"
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.command.document-code",
         "category": "Cody Command",
         "title": "Document Code",
         "icon": "$(book)",
-        "enablement": "cody.activated && editorTextFocus"
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.command.smell-code",
         "category": "Cody Command",
         "title": "Find Code Smells",
         "icon": "$(checklist)",
-        "enablement": "cody.activated && editorFocus"
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.menu.custom-commands",
@@ -334,13 +334,13 @@
         "command": "cody.command.usageExamples",
         "category": "Cody Command",
         "title": "Usage Examples",
-        "enablement": "cody.activated && editorTextFocus && config.cody.experimental.noodle && (editorLangId === typescript || editorLangId === typescriptreact)"
+        "enablement": "cody.activated && config.cody.experimental.noodle && (editorLangId === typescript || editorLangId === typescriptreact)"
       },
       {
         "command": "cody.command.explain-history",
         "category": "Cody Command",
         "title": "Explain Code History",
-        "enablement": "cody.activated && editorTextFocus && config.cody.experimental.noodle"
+        "enablement": "cody.activated && config.cody.experimental.noodle"
       },
       {
         "command": "cody.auth.signout",
@@ -411,19 +411,19 @@
         "command": "cody.autocomplete.openTraceView",
         "category": "Cody",
         "title": "Open Autocomplete Trace View",
-        "enablement": "cody.activated && config.cody.autocomplete.enabled && editorFocus && !editorReadonly"
+        "enablement": "cody.activated && config.cody.autocomplete.enabled"
       },
       {
         "command": "cody.autocomplete.manual-trigger",
         "category": "Cody",
         "title": "Trigger Autocomplete at Cursor",
-        "enablement": "cody.activated && config.cody.autocomplete.enabled && editorFocus && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
+        "enablement": "cody.activated && config.cody.autocomplete.enabled && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
       },
       {
         "command": "cody.multi-model-autocomplete.manual-trigger",
         "category": "Cody",
         "title": "Get Completions for multiple autocomplete models",
-        "enablement": "cody.activated && config.cody.autocomplete.experimental.multiModelCompletions && config.cody.autocomplete.enabled && editorFocus && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
+        "enablement": "cody.activated && config.cody.autocomplete.experimental.multiModelCompletions && config.cody.autocomplete.enabled && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
       },
       {
         "command": "cody.chat.panel.new",
@@ -539,7 +539,7 @@
       {
         "command": "cody.embeddings.resolveIssue",
         "title": "Cody Embeddings",
-        "enablement": "cody.embeddings.hasIssue"
+        "enablement": "cody.activated && cody.embeddings.hasIssue"
       },
       {
         "command": "cody.debug.export.logs",
