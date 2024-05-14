@@ -365,7 +365,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     /**
-     * If set, anonymousUID is trasmitted as 'X-Sourcegraph-Actor-Anonymous-UID'
+     * If set, anonymousUID is transmitted as 'X-Sourcegraph-Actor-Anonymous-UID'
      * which is automatically picked up by Sourcegraph backends 5.2+
      */
     public setAnonymousUserID(anonymousUID: string): void {
