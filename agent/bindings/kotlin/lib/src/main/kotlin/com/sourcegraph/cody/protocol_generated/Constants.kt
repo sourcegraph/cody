@@ -134,7 +134,6 @@ object Constants {
   const val Invoke = "Invoke"
   const val none = "none"
   const val streaming = "streaming"
-  const val disabled = "disabled"
   const val enabled = "enabled"
   const val notification = "notification"
   const val request = "request"

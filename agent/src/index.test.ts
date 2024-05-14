@@ -63,7 +63,7 @@ describe('Agent', () => {
         ModelProvider.setProviders(getDotComDefaultModels())
         await workspace.beforeAll()
 
-        // Init a repo in the workspace to make the tree-walk repo-name resolver work for Cody Ignore tests.
+        // Init a repo in the workspace to make the parent-dirs repo-name resolver work for Cody Ignore tests.
         spawnSync('git', ['init'], { cwd: workspace.rootPath, stdio: 'inherit' })
         spawnSync('git', ['remote', 'add', 'origin', 'git@github.com:sourcegraph/cody.git'], {
             cwd: workspace.rootPath,
