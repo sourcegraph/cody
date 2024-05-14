@@ -348,7 +348,7 @@
         "group": "Commit",
         "title": "Generate Commit Message (Experimental)",
         "icon": "$(cody-logo)",
-        "when": "cody.activated && config.git.enabled && scmProvider == git && !cody.isGeneratingCommit"
+        "when": "cody.activated && config.cody.experimental.commitMessage && config.git.enabled && scmProvider == git && !cody.isGeneratingCommit"
       },
       {
         "command": "cody.command.abort-commit",
@@ -745,7 +745,7 @@
         },
         {
           "command": "cody.command.generate-commit",
-          "when": "cody.activated && config.git.enabled && scmProvider == git && !cody.isGeneratingCommit"
+          "when": "cody.activated && config.cody.experimental.commitMessage && config.git.enabled && scmProvider == git && !cody.isGeneratingCommit"
         },
         {
           "command": "cody.command.abort-commit",
@@ -984,7 +984,7 @@
       "scm/title": [
         {
           "command": "cody.command.generate-commit",
-          "when": "cody.activated && config.git.enabled && scmProvider == git && !cody.isGeneratingCommit",
+          "when": "cody.activated && config.cody.experimental.commitMessage && config.git.enabled && scmProvider == git && !cody.isGeneratingCommit",
           "group": "navigation@1"
         },
         {
@@ -1123,6 +1123,12 @@
           "order": 99,
           "type": "boolean",
           "markdownDescription": "Enable OpenTelemetry tracing",
+          "default": false
+        },
+        "cody.experimental.commitMessage": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "Enable commit message generation",
           "default": false
         },
         "cody.debug.verbose": {

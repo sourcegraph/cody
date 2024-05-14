@@ -138,6 +138,7 @@ export function getConfiguration(
         autocompleteExperimentalGraphContext,
         experimentalSimpleChatContext: getHiddenSetting('experimental.simpleChatContext', true),
         experimentalSymfContext: getHiddenSetting('experimental.symfContext', true),
+        experimentalCommitMessage: getHiddenSetting('experimental.commitMessage', true),
 
         experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
