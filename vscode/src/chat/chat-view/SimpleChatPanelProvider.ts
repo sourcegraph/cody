@@ -1036,13 +1036,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         // Count code generated from response
         const generatedCode = countGeneratedCode(messageText.toString())
-        const responseEventName = generatedCode.charCount > 0 ? 'hasCode' : 'noCode'
+        const responseEventAction = generatedCode.charCount > 0 ? 'hasCode' : 'noCode'
         telemetryService.log(
-            `CodyVSCodeExtension:chatResponse:${responseEventName}`,
+            `CodyVSCodeExtension:chatResponse:${responseEventAction}`,
             { ...generatedCode, requestID, chatModel: this.chatModel.modelID },
             { hasV2Event: true }
         )
-        telemetryRecorder.recordEvent('cody.chatResponse', responseEventName, {
+        telemetryRecorder.recordEvent('cody.chatResponse', responseEventAction, {
             version: 2, // increment for major changes to this event
             interactionID: requestID,
             metadata: {
