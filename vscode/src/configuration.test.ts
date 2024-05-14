@@ -20,8 +20,6 @@ describe('getConfiguration', () => {
                 switch (key) {
                     case 'cody.serverEndpoint':
                         return 'http://example.com'
-                    case 'cody.proxy':
-                        return 'socks5://127.0.0.1:9999'
                     case 'cody.codebase':
                         return 'my/codebase'
                     case 'cody.useContext':
@@ -54,6 +52,8 @@ describe('getConfiguration', () => {
                     case 'cody.experimental.symfContext':
                         return true
                     case 'cody.experimental.tracing':
+                        return true
+                    case 'cody.experimental.commitMessage':
                         return true
                     case 'cody.debug.verbose':
                         return true
@@ -112,7 +112,7 @@ describe('getConfiguration', () => {
             },
         }
         expect(getConfiguration(config)).toEqual({
-            proxy: 'socks5://127.0.0.1:9999',
+            proxy: undefined,
             codebase: 'my/codebase',
             useContext: 'keyword',
             customHeaders: {
@@ -132,6 +132,7 @@ describe('getConfiguration', () => {
             experimentalTracing: true,
             experimentalGuardrails: true,
             experimentalOllamaChat: true,
+            experimentalCommitMessage: true,
             experimentalGithubAccessToken: '',
             codeActions: true,
             commandHints: true,
@@ -146,6 +147,7 @@ describe('getConfiguration', () => {
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteFormatOnAccept: true,
             autocompleteDisableInsideComments: false,
+            autocompleteExperimentalFireworksOptions: undefined,
             autocompleteExperimentalHotStreak: false,
             autocompleteExperimentalGraphContext: 'bfg',
             autocompleteExperimentalSmartThrottle: false,

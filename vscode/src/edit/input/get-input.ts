@@ -88,7 +88,7 @@ export const getInput = async (
     }
 
     telemetryService.log('CodyVSCodeExtension:menu:edit:clicked', { source }, { hasV2Event: true })
-    telemetryRecorder.recordEvent('cody.menu:edit', 'clicked', { privateMetadata: { source } })
+    telemetryRecorder.recordEvent('cody.menu.edit', 'clicked', { privateMetadata: { source } })
 
     const initialCursorPosition = editor.selection.active
     let activeRange = initialValues.initialExpandedRange || initialValues.initialRange
@@ -195,9 +195,6 @@ export const getInput = async (
                 telemetryRecorder.recordEvent('cody.fixup.input.model', 'selected')
 
                 if (acceptedItem.codyProOnly && !isCodyPro) {
-                    // Temporarily ignore focus out, so that the user can return to the quick pick if desired.
-                    modelInput.input.ignoreFocusOut = true
-
                     const option = await vscode.window.showInformationMessage(
                         'Upgrade to Cody Pro',
                         {
@@ -213,8 +210,6 @@ export const getInput = async (
                         void vscode.env.openExternal(vscode.Uri.parse(ACCOUNT_UPGRADE_URL.toString()))
                     }
 
-                    // Restore the default focus behaviour
-                    modelInput.input.ignoreFocusOut = false
                     return
                 }
 

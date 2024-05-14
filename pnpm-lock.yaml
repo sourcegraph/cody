@@ -20,6 +20,9 @@ importers:
       ignore:
         specifier: ^5.3.1
         version: 5.3.1
+      mac-ca:
+        specifier: ^2.0.3
+        version: 2.0.3
       react:
         specifier: 18.2.0
         version: 18.2.0
@@ -29,6 +32,9 @@ importers:
       vscode-jsonrpc:
         specifier: ^8.2.0
         version: 8.2.0
+      win-ca:
+        specifier: ^3.5.1
+        version: 3.5.1
     devDependencies:
       '@biomejs/biome':
         specifier: 1.7.2
@@ -290,6 +296,9 @@ importers:
       lru-cache:
         specifier: ^10.0.0
         version: 10.0.0
+      mac-ca:
+        specifier: ^2.0.3
+        version: 2.0.3
       marked:
         specifier: ^4.0.16
         version: 4.0.16
@@ -302,13 +311,16 @@ importers:
       vscode-uri:
         specifier: ^3.0.7
         version: 3.0.7
+      win-ca:
+        specifier: ^3.5.1
+        version: 3.5.1
     devDependencies:
       '@octokit/types':
         specifier: ^13.5.0
         version: 13.5.0
       '@sourcegraph/cody-context-filters-test-dataset':
-        specifier: ^0.0.1
-        version: 0.0.1
+        specifier: ^1.0.0
+        version: 1.0.0
       '@types/crypto-js':
         specifier: ^4.2.2
         version: 4.2.2
@@ -465,6 +477,12 @@ importers:
       he:
         specifier: ^1.2.0
         version: 1.2.0
+      http-proxy-agent:
+        specifier: ^7.0.2
+        version: 7.0.2
+      https-proxy-agent:
+        specifier: ^7.0.4
+        version: 7.0.4
       ini:
         specifier: ^4.1.2
         version: 4.1.2
@@ -483,6 +501,9 @@ importers:
       lru-cache:
         specifier: ^10.0.0
         version: 10.0.0
+      mac-ca:
+        specifier: ^2.0.3
+        version: 2.0.3
       mkdirp:
         specifier: ^3.0.1
         version: 3.0.1
@@ -4469,8 +4490,8 @@ packages:
       p-map: 4.0.0
     dev: true
 
-  /@sourcegraph/cody-context-filters-test-dataset@0.0.1:
-    resolution: {integrity: sha512-Z8ozYA1VdXJYXglgann0elVT3B5DgMtlwwZfUJiKr3+xG7HcM1obxxjNvj9eizGi+TSpukvwiPeFWr0BLzMPfg==}
+  /@sourcegraph/cody-context-filters-test-dataset@1.0.0:
+    resolution: {integrity: sha512-Uf7wMo5Fu3+g03gl2jvU2qHMaDp0p9RK9U2ucmy6VxWaavxALCC8iy47JL5GdgR5qG3ekEd5mAQV0dIIfoKELA==}
     dev: true
 
   /@sourcegraph/telemetry@0.16.0:

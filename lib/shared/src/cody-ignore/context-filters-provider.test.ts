@@ -39,6 +39,7 @@ describe('ContextFiltersProvider', () => {
         vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockResolvedValue(
             apiResponseForFilters(contextFilters)
         )
+        vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
         await provider.init(getRepoNamesFromWorkspaceUri)
     }
 
@@ -331,10 +332,21 @@ describe('ContextFiltersProvider', () => {
 
         it('excludes everything on network errors', async () => {
             vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockRejectedValue(new Error('network error'))
+            vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(false)
             await provider.init(getRepoNamesFromWorkspaceUri)
 
             const uri = getTestURI({ repoName: 'whatever', filePath: 'foo/bar.ts' })
             expect(await provider.isUriIgnored(uri)).toBe('repo:github.com/sourcegraph/whatever')
+        })
+
+        it('includes everything on dotcom when initial fetch is not complete', async () => {
+            const foreverPromise = new Promise(() => {}) // We will never resolve this
+            vi.spyOn(graphqlClient, 'fetchSourcegraphAPI').mockReturnValue(foreverPromise)
+            vi.spyOn(graphqlClient, 'isDotCom').mockReturnValue(true)
+            provider.init(getRepoNamesFromWorkspaceUri) // We do not wait for this to finish
+
+            const uri = getTestURI({ repoName: 'whatever', filePath: 'foo/bar.ts' })
+            expect(await provider.isUriIgnored(uri)).toBe(false)
         })
 
         it('excludes everything on unknown API errors', async () => {

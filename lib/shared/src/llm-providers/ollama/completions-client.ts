@@ -41,6 +41,7 @@ export function createOllamaClient(
                 }),
                 headers: {
                     'Content-Type': 'application/json',
+                    Connection: 'keep-alive',
                 },
                 signal,
             })

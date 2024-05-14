@@ -1,9 +1,5 @@
-import {
-    type ContextItem,
-    type RangeData,
-    displayPath as getDisplayPath,
-} from '@sourcegraph/cody-shared'
-import { getContextItemTokenUsageType } from './utils'
+import type { ContextItem, RangeData } from '@sourcegraph/cody-shared'
+import { getContextItemDisplayPath, getContextItemTokenUsageType } from './utils'
 
 /**
  * Filters exisiting context items for uniqueness.
@@ -94,16 +90,6 @@ function rangeContainsLines(outerRange: RangeData, innerRange: RangeData): boole
  */
 function rangesOnSameLines(range1: RangeData, range2: RangeData): boolean {
     return range1.start?.line === range2.start?.line && range1.end?.line === range2.end?.line
-}
-
-/**
- * Returns the display path for a context item.
- *
- * For unified items, the title is used as the display path.
- * For other items, the URI is used.
- */
-function getContextItemDisplayPath(item: ContextItem): string {
-    return item.source === 'unified' && item.title ? item.title : getDisplayPath(item.uri)
 }
 
 /**

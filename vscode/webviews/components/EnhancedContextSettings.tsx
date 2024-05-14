@@ -282,7 +282,7 @@ function contextProviderState(provider: ContextProvider): React.ReactNode {
                     case 'not-a-git-repo':
                         return (
                             <p className={styles.providerExplanatoryText}>
-                                Folder is not a Git repository.
+                                Folder is not a Git repository root.
                             </p>
                         )
                     case 'git-repo-has-no-remote':

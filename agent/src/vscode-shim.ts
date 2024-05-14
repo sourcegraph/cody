@@ -315,6 +315,8 @@ const _workspace: typeof vscode.workspace = {
             name: workspaceDocuments.workspaceRootUri?.path,
         }
     },
+    // TODO: used by `WorkspaceRepoMapper` and will be used by `git.onDidOpenRepository`
+    // https://github.com/sourcegraph/cody/issues/4136
     onDidChangeWorkspaceFolders: emptyEvent(),
     onDidOpenTextDocument: onDidOpenTextDocument.event,
     onDidChangeConfiguration: onDidChangeConfiguration.event,
@@ -346,7 +348,9 @@ const _workspace: typeof vscode.workspace = {
         }
         return relativePath
     },
-    createFileSystemWatcher: () => emptyFileWatcher, // TODO: used for codyignore and custom commands
+    // TODO: used for Cody Ignore, WorkspaceRepoMapper and custom commands
+    // https://github.com/sourcegraph/cody/issues/4136
+    createFileSystemWatcher: () => emptyFileWatcher,
     getConfiguration: (section, scope): vscode.WorkspaceConfiguration => {
         if (section !== undefined) {
             if (scope === undefined) {
@@ -847,12 +851,12 @@ const _extensions: typeof vscode.extensions = {
     all: [gitExtension],
     onDidChange: emptyEvent(),
     getExtension: (extensionId: string) => {
-        const shouldActivateGitExtension =
-            clientInfo !== undefined && clientInfo?.capabilities?.git !== 'disabled'
-        if (shouldActivateGitExtension && extensionId === 'vscode.git') {
-            const extension: vscode.Extension<any> = gitExtension
-            return extension
+        if (clientInfo?.capabilities?.git === 'enabled' && extensionId === 'vscode.git') {
+            throw new Error(
+                'The git extension is not fully implemented. See https://github.com/sourcegraph/cody/issues/4165'
+            )
         }
+
         return undefined
     },
 }

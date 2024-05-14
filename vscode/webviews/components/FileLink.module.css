@@ -19,6 +19,12 @@
     overflow: hidden;
 }
 
+/* In light high contrast, --vscode-textLink-foreground provides little
+   contrast; instead inherit the --code-foreground color from the container. */
+body[data-vscode-theme-kind='vscode-high-contrast-light'] .link-button {
+    color: inherit;
+}
+
 .path {
     white-space: nowrap;
     text-overflow: ellipsis;
