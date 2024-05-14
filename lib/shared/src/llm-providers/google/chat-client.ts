@@ -1,5 +1,5 @@
 import type { GeminiCompletionResponse } from '.'
-import { getCompletionsModelConfig } from '../..'
+import { getCompletionsModelConfig, logDebug } from '../..'
 import { onAbort } from '../../common/abortController'
 import { CompletionStopReason } from '../../inferenceClient/misc'
 import type { CompletionLogger } from '../../sourcegraph-api/completions/client'
@@ -73,6 +73,19 @@ export async function googleChatClient(
             // Handles the response stream to accumulate the full completion text.
             while (true) {
                 if (!response.ok) {
+                    let body: string | undefined
+                    try {
+                        const textDecoder = new TextDecoder()
+                        body = textDecoder.decode((await reader.read()).value)
+                    } catch (error) {
+                        logDebug('googleChatClient', `error reading body: ${error}`)
+                    }
+                    logDebug(
+                        'googleChatClient',
+                        `HTTP ${response.status} Error: ${response.statusText}${
+                            body ? ` — body: ${JSON.stringify(body)}` : ''
+                        }`
+                    )
                     throw new Error(`HTTP ${response.status} Error: ${response.statusText}`)
                 }
 
