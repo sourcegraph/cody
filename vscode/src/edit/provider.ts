@@ -19,7 +19,6 @@ import { isNetworkError } from '../services/AuthProvider'
 
 import { workspace } from 'vscode'
 import { doesFileExist } from '../commands/utils/workspace-files'
-import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import { CodyTaskState } from '../non-stop/utils'
 import { telemetryService } from '../services/telemetry'
 import { splitSafeMetadata } from '../services/telemetry-v2'
@@ -213,20 +212,6 @@ export class EditProvider {
                     responseText: endpoint && isDotCom(endpoint) ? response : undefined,
                 },
             })
-        }
-
-        if (isRunningInsideAgent() && this.config.task.intent === 'add') {
-            // TODO: We have disabled running `handleStreamedFixupInsert` through Agent
-            // as we are running into a blocking issue where this results in duplicate
-            // chunks of text from the LLM being inserted into the document.
-            // Issue to fix: https://github.com/sourcegraph/jetbrains/issues/1449
-
-            if (isMessageInProgress) {
-                // Response hasn't finished, disable until we have the full response
-                return
-            }
-
-            return this.handleFixupInsert(response, isMessageInProgress)
         }
 
         const intentsForInsert = ['add', 'test']

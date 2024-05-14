@@ -615,6 +615,9 @@ export class FixupController
                     })
             })
 
+            // TODO: Remove, see if it works
+            await new Promise(resolve => setTimeout(resolve, 5000))
+
             // TODO: See if we can discard a FixupFile now.
             this.setTaskState(task, CodyTaskState.Applied)
             this.logTaskCompletion(task, document, editOk)

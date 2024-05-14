@@ -1055,6 +1055,36 @@ describe('Agent', () => {
                     explainPollyError
                 )
             }, 20_000)
+
+            it.only('editCommand/code (generate new code)', async () => {
+                const uri = workspace.file('src', 'Heading.tsx')
+                await client.openFile(uri)
+                const task = await client.request('editCommands/code', {
+                    instruction: 'Create and export a Heading component that uses these props',
+                    model: ModelProvider.getProviderByModelSubstringOrError('anthropic/claude-3-opus')
+                        .model,
+                })
+                await client.acceptEditTask(uri, task)
+                expect(client.documentText(uri)).toMatchInlineSnapshot(
+                    `
+                  "import React = require("react");
+
+                  interface HeadingProps {
+                      text: string;
+                      level?: number;
+                  }
+
+                  const Heading: React.FC<HeadingProps> = ({ text, level = 1 }) => {
+                    const Tag = \`h\${level}\` as keyof JSX.IntrinsicElements;
+                    return <Tag>{text}</Tag>;
+                  };
+
+                  export default Heading;
+                  "
+                `,
+                    explainPollyError
+                )
+            }, 20_000)
         })
 
         describe('Document code', () => {
@@ -1184,17 +1214,18 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "Based on the codebase context you have provided, here are the file names:
+              "Based on the code snippets you've shared, the file names are:
 
               1. \`src/TestLogger.ts\`
               2. \`src/TestClass.ts\`
               3. \`src/sum.ts\`
               4. \`src/squirrel.ts\`
               5. \`src/multiple-selections.ts\`
-              6. \`src/example.test.ts\`
-              7. \`src/ChatColumn.tsx\`
-              8. \`src/animal.ts\`
-              9. \`src/trickyLogic.ts\`"
+              6. \`src/Heading.tsx\`
+              7. \`src/example.test.ts\`
+              8. \`src/ChatColumn.tsx\`
+              9. \`src/animal.ts\`
+              10. \`src/trickyLogic.ts\`"
             `,
                 explainPollyError
             )
@@ -1278,7 +1309,7 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
             const reply = trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')
             expect(reply).not.includes('.cody/ignore') // file that's not located in the src/directory
-            expect(reply).toMatchInlineSnapshot(`"9"`, explainPollyError)
+            expect(reply).toMatchInlineSnapshot(`"8"`, explainPollyError)
         }, 30_000)
 
         it('commands/custom, edit command, insert mode', async () => {
