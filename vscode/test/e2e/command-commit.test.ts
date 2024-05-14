@@ -2,7 +2,12 @@ import { expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 
 import { sidebarSignin } from './common'
-import { type DotcomUrlOverride, type ExpectedEvents, test as baseTest } from './helpers'
+import {
+    type DotcomUrlOverride,
+    type ExpectedEvents,
+    type ExtraWorkspaceSettings,
+    test as baseTest,
+} from './helpers'
 import { testGitWorkspace } from './utils/gitWorkspace'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
@@ -11,11 +16,17 @@ test.beforeEach(() => {
     mockServer.resetLoggedEvents()
 })
 
-testGitWorkspace.extend<ExpectedEvents>({
-    // list of events we expect this test to log, add to this list as needed
-    expectedEvents: ['CodyVSCodeExtension:sidebar:commit:clicked'],
-    expectedV2Events: ['cody.sidebar.commit:clicked'],
-})('use terminal output as context', async ({ page, sidebar }) => {
+testGitWorkspace
+    .extend<ExpectedEvents>({
+        // list of events we expect this test to log, add to this list as needed
+        expectedEvents: ['CodyVSCodeExtension:sidebar:commit:clicked'],
+        expectedV2Events: ['cody.sidebar.commit:clicked'],
+    })
+    .extend<ExtraWorkspaceSettings>({
+        extraWorkspaceSettings: {
+            'cody.experimental.commitMessage': true,
+        },
+    })('use terminal output as context', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     // Open the Source Control View to confirm this is a git workspace
