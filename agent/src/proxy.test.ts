@@ -4,6 +4,7 @@ import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credenti
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 
+// For setup steps of this look for the notion document "Proxy Setup and Networking changes in Cody"
 describe('HTTP Proxy', () => {
     const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
     const client = TestClient.create({
