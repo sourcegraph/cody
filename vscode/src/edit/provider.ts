@@ -213,20 +213,6 @@ export class EditProvider {
             })
         }
 
-        // if (isRunningInsideAgent() && this.config.task.intent === 'add') {
-        //     // TODO: We have disabled running `handleStreamedFixupInsert` through Agent
-        //     // as we are running into a blocking issue where this results in duplicate
-        //     // chunks of text from the LLM being inserted into the document.
-        //     // Issue to fix: https://github.com/sourcegraph/jetbrains/issues/1449
-
-        //     if (isMessageInProgress) {
-        //         // Response hasn't finished, disable until we have the full response
-        //         return
-        //     }
-
-        //     return this.handleFixupInsert(response, isMessageInProgress)
-        // }
-
         const intentsForInsert = ['add', 'test']
         if (intentsForInsert.includes(this.config.task.intent)) {
             this.queueInsertion(response, isMessageInProgress)
