@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process'
 import path from 'node:path'
 
 import * as uuid from 'uuid'
@@ -20,6 +21,7 @@ import { logDebug, logError, setClientNameVersion } from '@sourcegraph/cody-shar
 //     at Module._compile (pkg/prelude/bootstrap.js:1926:22)
 // </VERY IMPORTANT>
 import type { InlineCompletionItemProvider } from '../../vscode/src/completions/inline-completion-item-provider'
+import type { API, GitExtension, Repository } from '../../vscode/src/repository/builtinGitExtension'
 import { AgentEventEmitter as EventEmitter } from '../../vscode/src/testutils/AgentEventEmitter'
 import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
 import {
@@ -28,6 +30,7 @@ import {
     CommentThreadCollapsibleState,
     // It's OK to import the VS Code mocks because they don't depend on the 'vscode' module.
     Disposable,
+    ExtensionKind,
     FileType,
     LogLevel,
     ProgressLocation,
@@ -749,11 +752,111 @@ const _window: typeof vscode.window = {
 }
 
 export const window = _window
+const gitRepositories: Repository[] = []
+
+export function gitRepository(uri: vscode.Uri, headCommit: string): Repository {
+    const repo: Partial<Repository> = {
+        rootUri: uri,
+        ui: { selected: false, onDidChange: emptyEvent() },
+        add: () => Promise.resolve(),
+        addRemote: () => Promise.resolve(),
+        apply: () => Promise.resolve(),
+        checkout: () => Promise.resolve(),
+        clean: () => Promise.resolve(),
+        commit: () => Promise.resolve(),
+        createBranch: () => Promise.resolve(),
+        deleteBranch: () => Promise.resolve(),
+        deleteTag: () => Promise.resolve(),
+        pull: () => Promise.resolve(),
+        push: () => Promise.resolve(),
+        diffBlobs: () => Promise.resolve(''),
+        detectObjectType: () => Promise.resolve({ mimetype: 'mimetype' }),
+        diffIndexWith: () => Promise.resolve([]) as any,
+        diff: () => Promise.resolve(''),
+        diffBetween: () => Promise.resolve('') as any,
+        blame: () => Promise.resolve(''),
+        // buffer: () => Promise.resolve(Buffer.apply('', 'utf-8')),
+        buffer: () => Promise.resolve(Buffer.alloc(0)),
+        diffIndexWithHEAD: () => Promise.resolve('') as any,
+        state: {
+            refs: [],
+            indexChanges: [],
+            mergeChanges: [],
+            onDidChange: emptyEvent(),
+            remotes: [],
+            submodules: [],
+            workingTreeChanges: [],
+            rebaseCommit: undefined,
+            HEAD: {
+                type: /* RefType.Head */ 0, // Can't reference RefType.Head because it's from a d.ts file
+                commit: headCommit,
+            },
+        },
+    }
+    return repo as Repository
+}
+export function addGitRepository(uri: vscode.Uri, headCommit: string): void {
+    gitRepositories.push(gitRepository(uri, headCommit))
+}
+
+const gitExports: GitExtension = {
+    enabled: true,
+    onDidChangeEnablement: emptyEvent(),
+    getAPI(version) {
+        const api: Partial<API> = {
+            repositories: gitRepositories,
+            onDidChangeState: emptyEvent(),
+            onDidCloseRepository: emptyEvent(),
+            onDidOpenRepository: emptyEvent(),
+            onDidPublish: emptyEvent(),
+            getRepository(uri) {
+                try {
+                    const cwd = uri.fsPath
+                    const toplevel = execSync('git rev-parse --show-toplevel', {
+                        cwd,
+                        stdio: 'pipe',
+                    })
+                        .toString()
+                        .trim()
+                    if (toplevel !== uri.fsPath) {
+                        return null
+                    }
+                    const commit = execSync('git rev-parse --abbrev-ref HEAD', {
+                        cwd,
+                        stdio: 'pipe',
+                    })
+                        .toString()
+                        .trim()
+                    return gitRepository(Uri.file(toplevel), commit)
+                } catch {
+                    return null
+                }
+            },
+        }
+        return api as API
+    },
+}
+const gitExtension: vscode.Extension<GitExtension> = {
+    activate: () => Promise.resolve(gitExports),
+    extensionKind: ExtensionKind.Workspace,
+    extensionPath: 'extensionPath.doNotReadFromHere',
+    extensionUri: Uri.file('extensionPath.doNotReadFromHere'),
+    id: 'vscode.git',
+    packageJSON: {},
+    isActive: true,
+    exports: gitExports,
+}
 
 const _extensions: typeof vscode.extensions = {
-    all: [],
+    all: [gitExtension],
     onDidChange: emptyEvent(),
     getExtension: (extensionId: string) => {
+        if (clientInfo?.capabilities?.git === 'enabled' && extensionId === 'vscode.git') {
+            throw new Error(
+                'The git extension is not fully implemented. See https://github.com/sourcegraph/cody/issues/4165'
+            )
+        }
+
         return undefined
     },
 }

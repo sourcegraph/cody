@@ -414,6 +414,9 @@ interface ClientCapabilities {
     completions?: 'none'
     //  When 'streaming', handles 'chat/updateMessageInProgress' streaming notifications.
     chat?: 'none' | 'streaming'
+    // TODO: allow clients to implement the necessary parts of the git extension.
+    // https://github.com/sourcegraph/cody/issues/4165
+    git?: 'none' | 'enabled'
     // If 'enabled', the client must implement the progress/start,
     // progress/report, and progress/end notification endpoints.
     progressBars?: 'none' | 'enabled'
