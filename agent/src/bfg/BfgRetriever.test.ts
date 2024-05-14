@@ -54,7 +54,10 @@ describe('BfgRetriever', async () => {
     })
 
     const rootUri = vscode.Uri.from({ scheme: 'file', path: gitdir })
-    vscode_shim.addGitRepository(rootUri, 'asdf')
+    // TODO: git extension APIs used in the BFG retriever are not supported by the agent.
+    // To fix this test the following functionality should be implemented:
+    // - https://github.com/sourcegraph/cody/issues/4137
+    // - https://github.com/sourcegraph/cody/issues/4138
     const agent = await newEmbeddedAgentClient({
         name: 'BfgContextFetcher',
         version: '0.1.0',

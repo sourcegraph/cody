@@ -43,6 +43,7 @@ import {
 } from './commands/execute'
 import { executeExplainHistoryCommand } from './commands/execute/explain-history'
 import { executeUsageExamplesCommand } from './commands/execute/usage-examples'
+import { CodySourceControl } from './commands/scm/source-control'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
@@ -60,8 +61,8 @@ import { getChatModelsFromConfiguration, syncModelProviders } from './models/uti
 import type { FixupTask } from './non-stop/FixupTask'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
-import { enterpriseRepoNameResolver } from './repository/enterprise-repo-name-resolver'
-import { gitAPIinit } from './repository/git-extension-api'
+import { initVSCodeGitApi } from './repository/git-extension-api'
+import { repoNameResolver } from './repository/repo-name-resolver'
 import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
@@ -149,8 +150,7 @@ const register = async (
     // from the subsequent initialization.
     disposables.push(manageDisplayPathEnvInfoForExtension())
 
-    // Set codyignore list after git extension startup
-    disposables.push(await gitAPIinit())
+    disposables.push(await initVSCodeGitApi())
 
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
@@ -217,9 +217,9 @@ const register = async (
     )
     disposables.push(contextFiltersProvider)
     disposables.push(contextProvider)
-    const bindedRepoNamesResolver =
-        enterpriseRepoNameResolver.getRepoNamesFromWorkspaceUri.bind(enterpriseRepoNameResolver)
-    await contextFiltersProvider.init(bindedRepoNamesResolver).then(() => contextProvider.init())
+    await contextFiltersProvider
+        .init(repoNameResolver.getRepoNamesFromWorkspaceUri)
+        .then(() => contextProvider.init())
 
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
@@ -272,10 +272,9 @@ const register = async (
         githubClient.onConfigurationChange({ authToken: initialConfig.experimentalGithubAccessToken })
         promises.push(
             contextFiltersProvider
-                .init(bindedRepoNamesResolver)
+                .init(repoNameResolver.getRepoNamesFromWorkspaceUri)
                 .then(() => contextProvider.onConfigurationChange(newConfig))
         )
-        promises.push(contextFiltersProvider.init(bindedRepoNamesResolver))
         externalServicesOnDidConfigurationChange(newConfig)
         promises.push(configureEventsInfra(newConfig, isExtensionModeDevOrTest, authProvider))
         platform.onConfigurationChange?.(newConfig)
@@ -303,6 +302,7 @@ const register = async (
     )
 
     const statusBar = createStatusBar()
+    const sourceControl = new CodySourceControl(chatClient)
 
     // Important to respect `config.experimentalSymfContext`. The agent
     // currently crashes with a cryptic error when running with symf enabled so
@@ -341,6 +341,7 @@ const register = async (
         parallelPromises.push(setupAutocomplete())
         await Promise.all(parallelPromises)
         statusBar.syncAuthStatus(authStatus)
+        sourceControl.syncAuthStatus(authStatus)
     })
 
     // Sync initial auth status
@@ -350,9 +351,11 @@ const register = async (
     editorManager.syncAuthStatus(initAuthStatus)
     ModelProvider.onConfigChange(initialConfig.experimentalOllamaChat)
     statusBar.syncAuthStatus(initAuthStatus)
+    sourceControl.syncAuthStatus(initAuthStatus)
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)
+    repoNameResolver.init(authProvider)
 
     // Execute Cody Commands and Cody Custom Commands
     const executeCommand = (
@@ -396,7 +399,8 @@ const register = async (
         vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a)),
         vscode.commands.registerCommand('cody.command.usageExamples', a =>
             executeUsageExamplesCommand(a)
-        )
+        ),
+        sourceControl // Generate Commit Message command
     )
 
     // Internal-only test commands

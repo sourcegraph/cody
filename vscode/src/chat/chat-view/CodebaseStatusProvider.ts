@@ -15,8 +15,8 @@ import { getConfiguration } from '../../configuration'
 import type { CodebaseRepoIdMapper } from '../../context/enterprise-context-factory'
 import { getEditor } from '../../editor/active-editor'
 import type { SymfRunner } from '../../local-context/symf'
-import { getCodebaseFromWorkspaceUri } from '../../repository/git-extension-api'
 import { RepoMetadatafromGitApi } from '../../repository/repo-metadata-from-git-api'
+import { repoNameResolver } from '../../repository/repo-name-resolver'
 
 interface CodebaseIdentifiers {
     localFolder: vscode.Uri
@@ -157,7 +157,9 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
             // Always use the codebase from config as this is manually set by the user
             newCodebase.remote =
                 config.codebase ||
-                (currentFile ? getCodebaseFromWorkspaceUri(currentFile) : config.codebase)
+                (currentFile
+                    ? (await repoNameResolver.getRepoNamesFromWorkspaceUri(currentFile))[0]
+                    : config.codebase)
             if (newCodebase.remote) {
                 newCodebase.remoteRepoId = (
                     await this.codebaseRepoIdMapper?.repoForCodebase(newCodebase.remote)

@@ -568,7 +568,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 }
 
 const submitButtonTypes = {
-    user: { icon: 'codicon codicon-arrow-up', title: 'Send Message' },
+    user: { icon: `codicon codicon-arrow-up ${styles.sendIconArrowUp}`, title: 'Send Message' },
     edit: { icon: 'codicon codicon-check', title: 'Update Message' },
     'user-newchat': {
         icon: 'codicon codicon-add',

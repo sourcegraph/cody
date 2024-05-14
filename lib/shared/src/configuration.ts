@@ -63,6 +63,7 @@ export interface Configuration {
     experimentalOllamaChat: boolean
     experimentalSupercompletions: boolean
     experimentalGithubAccessToken: string
+    experimentalCommitMessage: boolean
 
     /**
      * Unstable Features for internal testing only

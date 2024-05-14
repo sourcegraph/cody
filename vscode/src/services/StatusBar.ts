@@ -22,6 +22,7 @@ interface StatusBarError {
     description: string
     errorType: StatusBarErrorName
     removeAfterSelected: boolean
+    removeAfterEpoch?: number
     onShow?: () => void
     onSelect?: () => void
 }
@@ -347,7 +348,10 @@ export function createStatusBar(): CodyStatusBar {
         const now = Date.now()
         for (let i = errors.length - 1; i >= 0; i--) {
             const error = errors[i]
-            if (now - error.createdAt >= ONE_HOUR) {
+            if (
+                now - error.createdAt >= ONE_HOUR ||
+                (error.error.removeAfterEpoch && now - error.error.removeAfterEpoch >= 0)
+            ) {
                 errors.splice(i, 1)
             }
         }
@@ -378,9 +382,16 @@ export function createStatusBar(): CodyStatusBar {
             return stopLoading
         },
         addError(error: StatusBarError) {
-            const errorObject = { error, createdAt: Date.now() }
+            const now = Date.now()
+            const errorObject = { error, createdAt: now }
             errors.push(errorObject)
-            setTimeout(clearOutdatedErrors, ONE_HOUR)
+
+            if (error.removeAfterEpoch && error.removeAfterEpoch > now) {
+                setTimeout(clearOutdatedErrors, Math.min(ONE_HOUR, error.removeAfterEpoch - now))
+            } else {
+                setTimeout(clearOutdatedErrors, ONE_HOUR)
+            }
+
             rerender()
 
             return () => {
