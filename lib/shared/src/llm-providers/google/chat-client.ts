@@ -22,14 +22,14 @@ const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/
  * Calls the Google API for chat completions with history.
  * REF: https://ai.google.dev/tutorials/rest_quickstart#multi-turn_conversations_chat
  */
-export function googleChatClient(
+export async function googleChatClient(
     params: CompletionParameters,
     cb: CompletionCallbacks,
     // This is used for logging as the completions request is sent to the provider's API
     completionsEndpoint: string,
     logger?: CompletionLogger,
     signal?: AbortSignal
-): void {
+): Promise<void> {
     if (!params.model) {
         return
     }
@@ -49,7 +49,7 @@ export function googleChatClient(
     apiEndpoint.searchParams.append('key', config.key)
 
     // Construct the messages array for the API
-    const messages = constructGeminiChatMessages(params.messages)
+    const messages = await constructGeminiChatMessages(params.messages)
 
     // Sends the completion parameters and callbacks to the API.
     fetch(apiEndpoint, {

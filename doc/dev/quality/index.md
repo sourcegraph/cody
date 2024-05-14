@@ -46,12 +46,12 @@ This feature is intended solely for internal QA testing and development purposes
 
 ## Getting Started
 
-1. Obtain an API key from the provider you wish to test Cody with:
+First, obtain an API key from the provider you wish to test Cody with:
 
 - Google Gemini: https://makersuite.google.com/app/apikey
 - Groq: https://console.groq.com/keys
 
-2. Update your VS Code User Settings JSON file following the format shown in the example below:
+Configure the dev models to use in your VS Code user settings:
 
 ```json
 {
@@ -87,5 +87,4 @@ This feature is intended solely for internal QA testing and development purposes
 }
 ```
 
-4. Build Cody from main and run it in debug mode.
-5. You should now find the new models available in your chat panel!
+You should now find the new models available in your chat panel. (You may need to reload VS Code fro the changes to take effect.)
