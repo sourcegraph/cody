@@ -1074,11 +1074,10 @@ describe('Agent', () => {
                       level?: number;
                   }
 
-                  export const Heading: React.FC<HeadingProps> = ({ text, level = 1 }) => {
+                  export function Heading({ text, level = 1 }: HeadingProps) {
                       const HeadingTag = \`h\${level}\` as keyof JSX.IntrinsicElements;
                       return <HeadingTag>{text}</HeadingTag>;
-                  };
-
+                  }
                   "
                 `,
                     explainPollyError
@@ -1213,17 +1212,18 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "Based on the codebase context you have provided, here are the file names:
+              "Here are the file names you have shared with me so far:
 
               1. \`src/TestLogger.ts\`
               2. \`src/TestClass.ts\`
               3. \`src/sum.ts\`
               4. \`src/squirrel.ts\`
               5. \`src/multiple-selections.ts\`
-              6. \`src/example.test.ts\`
-              7. \`src/ChatColumn.tsx\`
-              8. \`src/animal.ts\`
-              9. \`src/trickyLogic.ts\`"
+              6. \`src/Heading.tsx\`
+              7. \`src/example.test.ts\`
+              8. \`src/ChatColumn.tsx\`
+              9. \`src/animal.ts\`
+              10. \`src/trickyLogic.ts\`"
             `,
                 explainPollyError
             )
