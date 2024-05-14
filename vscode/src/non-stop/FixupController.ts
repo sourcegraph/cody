@@ -682,32 +682,28 @@ export class FixupController
         let editOk: boolean
         if (edit instanceof vscode.WorkspaceEdit) {
             edit.replace(document.uri, task.selectionRange, replacement)
-            editOk = await vscode.workspace.applyEdit(edit)
+            editOk = (await vscode.workspace.applyEdit(edit)) !== false
         } else {
-            editOk = await edit(editBuilder => {
-                editBuilder.replace(task.selectionRange, replacement)
-            }, applyEditOptions)
+            editOk =
+                (await edit(editBuilder => {
+                    editBuilder.replace(task.selectionRange, replacement)
+                }, applyEditOptions)) !== false
         }
 
         if (editOk) {
-            const insertedLines = replacement.split(/\r\n|\r|\n/m).length - 1
+            const insertedLines = replacement.split('\n')
+            const lastLineLength = insertedLines.at(-1)?.length || 0
+
             // Expand the selection range to accompany the edit
-            const updatedRange = task.selectionRange.with(
+            task.selectionRange = new vscode.Range(
                 task.selectionRange.start,
-                task.selectionRange.end.translate({
-                    lineDelta:
-                        task.selectionRange.start.line - task.selectionRange.end.line + insertedLines,
-                    characterDelta: insertedLines < 1 ? replacement.length : 0,
-                })
+                insertedLines.length === 1
+                    ? task.selectionRange.start.translate(0, lastLineLength)
+                    : new vscode.Position(
+                          task.selectionRange.start.line + insertedLines.length - 1,
+                          lastLineLength
+                      )
             )
-            const documentRange = new vscode.Range(
-                document.lineAt(0).range.start,
-                document.lineAt(document.lineCount - 1).range.end
-            )
-            console.log('Streamed edit has been inserted into the document...')
-            console.log('The expected range that our edit now covers', updatedRange)
-            console.log('Full document range at this point:', documentRange)
-            task.selectionRange = updatedRange
         }
     }
 

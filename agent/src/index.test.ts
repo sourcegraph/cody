@@ -1031,7 +1031,7 @@ describe('Agent', () => {
                       const HeadingTag = \`h\${level}\` as keyof JSX.IntrinsicElements;
                       return <HeadingTag>{text}</HeadingTag>;
                   };
-                  };
+
                   "
                 `,
                     explainPollyError
