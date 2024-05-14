@@ -691,7 +691,7 @@ export class FixupController
         }
 
         if (editOk) {
-            const insertedLines = replacement.split('\n')
+            const insertedLines = replacement.split(/\r\n|\r|\n/m)
             const lastLineLength = insertedLines.at(-1)?.length || 0
 
             // Expand the selection range to accompany the edit
