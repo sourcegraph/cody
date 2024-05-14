@@ -1052,7 +1052,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 recordsPrivateMetadataTranscript: authStatus.isDotCom ? 1 : 0,
             },
             privateMetadata: {
-                requestID,
                 // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
                 // V2 telemetry exports privateMetadata only for DotCom users
                 // the condition below is an aditional safegaurd measure
