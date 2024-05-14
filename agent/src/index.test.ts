@@ -1027,9 +1027,10 @@ describe('Agent', () => {
                       level?: number;
                   }
 
-                  export const Heading: React.FunctionComponent<HeadingProps> = ({ text, level = 1 }) => {
+                  export const Heading: React.FC<HeadingProps> = ({ text, level = 1 }) => {
                       const HeadingTag = \`h\${level}\` as keyof JSX.IntrinsicElements;
                       return <HeadingTag>{text}</HeadingTag>;
+                  };
                   };
                   "
                 `,
@@ -1164,17 +1165,18 @@ describe('Agent', () => {
             expect(result.type).toBe('chat')
             const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(`
-              "Based on the code snippets you've shared, the files I've seen so far are:
+              "Based on the code snippets you shared, the file names are:
 
               1. \`src/TestLogger.ts\`
               2. \`src/TestClass.ts\`
               3. \`src/sum.ts\`
               4. \`src/squirrel.ts\`
               5. \`src/multiple-selections.ts\`
-              6. \`src/example.test.ts\`
-              7. \`src/ChatColumn.tsx\`
-              8. \`src/animal.ts\`
-              9. \`src/trickyLogic.ts\`"
+              6. \`src/Heading.tsx\`
+              7. \`src/example.test.ts\`
+              8. \`src/ChatColumn.tsx\`
+              9. \`src/animal.ts\`
+              10. \`src/trickyLogic.ts\`"
             `)
         }, 30_000)
 
@@ -1278,7 +1280,7 @@ describe('Agent', () => {
             const reply = trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')
             expect(reply).not.includes('.cody/ignore') // file that's not located in the src/directory
             expect(reply).toMatchInlineSnapshot(
-                `"You have shared code contexts from 9 different files."`,
+                `"You have shared codebase contexts from 9 different files."`,
                 explainPollyError
             )
         }, 30_000)

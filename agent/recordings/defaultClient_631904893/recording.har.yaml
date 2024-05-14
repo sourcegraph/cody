@@ -2309,6 +2309,7 @@ log:
 
                       return function inner() {}
 
+
                       
                   </selected>
               - speaker: assistant
@@ -3279,11 +3280,148 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: f42cb42f4c14d285b6b85ed091ac5ed0
+    - _id: 37f4083104ecb03d9c6e4553f76cfe91
       _order: 0
       cache: {}
       request:
-        bodySize: 3580
+        bodySize: 2099
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - name: user-agent
+            value: defaultClient / v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 321
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph. - You
+                  are an AI programming assistant who is an expert in adding new
+                  code by following instructions.
+
+                  - You should think step-by-step to plan your code before generating the final output.
+
+                  - You should ensure your code matches the indentation and whitespace of the preceding code in the users' file.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - You will be provided with code that is above the users' cursor, enclosed in <PRECEDINGCODE3493></PRECEDINGCODE3493> XML tags. You must use this code to help you plan your updated code. You must not repeat this code in your output unless necessary.
+
+                  - You will be provided with code that is below the users' cursor, enclosed in <FOLLOWINGCODE2472></FOLLOWINGCODE2472> XML tags. You must use this code to help you plan your updated code. You must not repeat this code in your output unless necessary.
+
+                  - You will be provided with instructions on what to generate, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the code you added. Only respond with the generated code.
+              - speaker: human
+                text: |-
+                  The user is currently in the file: src/Heading.tsx
+
+                  Provide your generated code using the following instructions:
+                  <INSTRUCTIONS7390>
+                  Create and export a Heading component that uses these props
+                  </INSTRUCTIONS7390>
+              - speaker: assistant
+                text: |-
+                  <PRECEDINGCODE3493>import React = require("react");
+
+                  interface HeadingProps {
+                      text: string;
+                      level?: number;
+                  }
+
+                  </PRECEDINGCODE3493><CODE5711>
+            model: anthropic/claude-3-opus-20240229
+            stopSequences:
+              - </CODE5711>
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 11892
+        content:
+          mimeType: text/event-stream
+          size: 11892
+          text: >+
+            event: completion
+
+            data: {"completion":"export const Heading: React.FC\u003cHeadingProps\u003e = ({ text, level = 1 }) =\u003e {\n    const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;\n    return \u003cHeadingTag\u003e{text}\u003c/HeadingTag\u003e;\n};\n","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 14 May 2024 15:03:26 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-05-14T15:03:23.207Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 07d6f145841437b12813bce946d72c83
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 3801
         cookies: []
         headers:
           - name: content-type
@@ -3375,6 +3513,18 @@ log:
                   function anotherFunction() {}
 
                   /* SELECTION_2_END */
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file path src/Heading.tsx: import React
+                  = require("react");
+
+
+                  interface HeadingProps {
+                      text: string;
+                      level?: number;
+                  }
               - speaker: assistant
                 text: Ok.
               - speaker: human
@@ -3484,14 +3634,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 24885
+        bodySize: 26066
         content:
           mimeType: text/event-stream
-          size: 24885
+          size: 26066
           text: >+
             event: completion
 
-            data: {"completion":"Based on the code snippets you've shared, the files I've seen so far are:\n\n1. `src/TestLogger.ts`\n2. `src/TestClass.ts`\n3. `src/sum.ts`\n4. `src/squirrel.ts`\n5. `src/multiple-selections.ts`\n6. `src/example.test.ts`\n7. `src/ChatColumn.tsx`\n8. `src/animal.ts`\n9. `src/trickyLogic.ts`","stopReason":"end_turn"}
+            data: {"completion":"Based on the code snippets you shared, the file names are:\n\n1. `src/TestLogger.ts`\n2. `src/TestClass.ts`\n3. `src/sum.ts`\n4. `src/squirrel.ts`\n5. `src/multiple-selections.ts`\n6. `src/Heading.tsx`\n7. `src/example.test.ts`\n8. `src/ChatColumn.tsx`\n9. `src/animal.ts`\n10. `src/trickyLogic.ts`","stopReason":"end_turn"}
 
 
             event: done
@@ -3501,7 +3651,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 07 May 2024 01:11:58 GMT
+            value: Tue, 14 May 2024 15:03:32 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -3530,7 +3680,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-07T01:11:56.857Z
+      startedDateTime: 2024-05-14T15:03:30.379Z
       time: 0
       timings:
         blocked: -1
@@ -3540,11 +3690,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: fea1abd09f6342d3c86032d4981682a7
+    - _id: 0c6a05ac28e802e24f46ae76abcb27eb
       _order: 0
       cache: {}
       request:
-        bodySize: 3501
+        bodySize: 3555
         cookies: []
         headers:
           - name: content-type
@@ -3606,14 +3756,6 @@ log:
                 text: Ok.
               - speaker: human
                 text: >
-                  Codebase context from file path src/sum.ts: export function
-                  sum(a: number, b: number): number {
-                      /* CURSOR */
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
                   Codebase context from file path src/squirrel.ts: /**
                    * Squirrel is an interface that mocks something completely unrelated to squirrels.
                    * It is related to the implementation of precise code navigation in Sourcegraph.
@@ -3636,6 +3778,21 @@ log:
                   function anotherFunction() {}
 
                   /* SELECTION_2_END */
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/Heading.tsx: import React
+                  = require("react");
+
+
+                  interface HeadingProps {
+                      text: string;
+                      level?: number;
+                  }
+
+
+                  /* CURSOR */
               - speaker: assistant
                 text: Ok.
               - speaker: human
@@ -3739,14 +3896,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 1217
+        bodySize: 1412
         content:
           mimeType: text/event-stream
-          size: 1217
+          size: 1412
           text: >+
             event: completion
 
-            data: {"completion":"You have shared code contexts from 9 different files.","stopReason":"end_turn"}
+            data: {"completion":"You have shared codebase contexts from 9 different files.","stopReason":"end_turn"}
 
 
             event: done
@@ -3756,7 +3913,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 07 May 2024 01:12:02 GMT
+            value: Tue, 14 May 2024 15:03:35 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -3785,7 +3942,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-07T01:12:00.363Z
+      startedDateTime: 2024-05-14T15:03:34.099Z
       time: 0
       timings:
         blocked: -1
