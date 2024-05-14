@@ -143,7 +143,11 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     public async isUriIgnored(uri: vscode.Uri): Promise<IsIgnored> {
-        if (allowedSchemes.has(uri.scheme) || this.hasAllowEverythingFilters()) {
+        if (
+            allowedSchemes.has(uri.scheme) ||
+            (this.lastContextFiltersResponse === null && graphqlClient.isDotCom()) ||
+            this.hasAllowEverythingFilters()
+        ) {
             return false
         }
         if (this.hasIgnoreEverythingFilters()) {
