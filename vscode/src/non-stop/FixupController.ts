@@ -644,12 +644,11 @@ export class FixupController
         let editOk: boolean
         if (edit instanceof vscode.WorkspaceEdit) {
             edit.replace(document.uri, task.selectionRange, replacement)
-            editOk = (await vscode.workspace.applyEdit(edit)) !== false
+            editOk = await vscode.workspace.applyEdit(edit)
         } else {
-            editOk =
-                (await edit(editBuilder => {
-                    editBuilder.replace(task.selectionRange, replacement)
-                }, applyEditOptions)) !== false
+            editOk = await edit(editBuilder => {
+                editBuilder.replace(task.selectionRange, replacement)
+            }, applyEditOptions)
         }
 
         if (editOk) {
