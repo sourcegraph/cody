@@ -32,6 +32,7 @@ import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type FixupTaskID, type FixupTelemetryMetadata } from './FixupTask'
 import { type Diff, computeDiff } from './diff'
+import { trackRejection } from './rejection-tracker'
 import type { FixupActor, FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
 import { CodyTaskState, getMinimumDistanceToRangeBoundary } from './utils'
 
@@ -533,60 +534,19 @@ export class FixupController
             })
         }
 
-        /**
-         * Tracks when a user clicks "Undo" in the Edit codelens.
-         * This is important as VS Code doesn't let us easily differentiate between
-         * document changes made by specific commands.
-         *
-         * This logic ensures we can still mark as task as rejected if a user clicks "Undo".
-         */
-        const commandUndoListener = this.undoCommandEvent.event(id => {
-            if (id !== task.id) {
-                return
+        trackRejection(
+            document,
+            vscode.workspace,
+            {
+                onAccepted: () => logAcceptance('accepted'),
+                onRejected: () => logAcceptance('rejected'),
+            },
+            {
+                id: task.id,
+                intent: task.intent,
+                undoEvent: this.undoCommandEvent,
             }
-
-            // Immediately dispose of the rejectionListener, otherwise this will also run
-            // and mark the "Undo" change here as an "acccepted" change made by the user.
-            rejectionListener.dispose()
-            commandUndoListener.dispose()
-
-            // If a user manually clicked "Undo", we can be confident that they reject the fixup.
-            logAcceptance('rejected')
-        })
-        let undoCount = 0
-        /**
-         * Tracks the rejection of a Fixup task via the users' next action.
-         * As in, if the user immediately undos the change via the system undo command,
-         * or if they persist to make new edits to the file.
-         *
-         * Will listen for changes to the text document and tracks whether the Edit changes were undone or redone.
-         * When a change is made, it logs telemetry about whether the change was rejected or accepted.
-         */
-        const rejectionListener = vscode.workspace.onDidChangeTextDocument(event => {
-            if (event.document.uri !== document.uri || event.contentChanges.length === 0) {
-                // Irrelevant change, ignore
-                return
-            }
-
-            if (event.reason === vscode.TextDocumentChangeReason.Undo) {
-                // Set state, but don't fire telemetry yet as the user could still "Redo".
-                undoCount += 1
-                return
-            }
-
-            if (event.reason === vscode.TextDocumentChangeReason.Redo) {
-                // User re-did the change, so reset state
-                undoCount = Math.max(0, undoCount - 1)
-                return
-            }
-
-            // User has made a change, we can now fire our stored state as to if the change was undone or not
-            logAcceptance(undoCount > 0 ? 'rejected' : 'accepted')
-
-            // We no longer need to track this change, so dispose of our listeners
-            rejectionListener.dispose()
-            commandUndoListener.dispose()
-        })
+        )
     }
 
     private async streamTask(task: FixupTask, state: 'streaming' | 'complete'): Promise<void> {
