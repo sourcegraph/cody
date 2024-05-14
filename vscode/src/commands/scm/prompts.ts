@@ -2,10 +2,9 @@ import { ps } from '@sourcegraph/cody-shared'
 
 const COMMIT_INTRO = ps`Review the following git command output to understand the changes you are about to generate a commit message for.`
 
-const COMMIT_INSTRUCTION = ps`Provide an informative commit message and detailed summary by reviewing the code changes outlined in the shared git diff output.
-Ensure the commit title aligns with the style of the shared commit titles if provided.
+const COMMIT_INSTRUCTION = ps`Provide an informative commit message for only the code changes outlined in the shared git diff output.
+If provided, the title of the commit message must align with the style of the shared previous commit titles.
 {COMMIT_TEMPLATE}
-The goal is to offer substantial context for code reviewers.
 Do not enclose the suggested commit message in backticks. Skip preamble. Only respond with the commit message.`
 
 const COMMMIT_TEMPLATE = ps`The commit message should strictly adhere to the commit format from the shared git commit template.`

@@ -68,7 +68,16 @@ async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<ContextI
             }
 
             // Verify the file exists before adding it as context.
-            const uri = diffFiles.find(p => diff.startsWith(displayPath(p.uri)))?.uri
+            // we do this by checking the reverse path because of how nested workspaces might add unknown prefixes
+            const uri = diffFiles.find(p => {
+                //todo: maybe better with a proper diff parser
+                const diffPath = diff.split('\n')[0]
+                return diffPath
+                    .split('')
+                    .reverse()
+                    .join('')
+                    .startsWith(displayPath(p.uri).split('').reverse().join(''))
+            })?.uri
             if (!uri || !(await doesFileExist(uri))) {
                 continue
             }
@@ -87,6 +96,10 @@ async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<ContextI
                 source: ContextItemSource.Terminal,
                 size: TokenCounter.countTokens(content),
             })
+        }
+
+        if (diffs.length === 0) {
+            throw new Error('Empty git diff output.')
         }
 
         // we sort by shortest diffs first so that we include as many changed files as possible
@@ -157,5 +170,5 @@ const diffTemplate = `Here is the '{command}' output:
 {output}
 </output>`
 
-const logTemplate = `Here are the titles of the last {maxEntries} commits:
+const logTemplate = `Here are the titles of the previous {maxEntries} commits:
 {output}`
