@@ -692,7 +692,7 @@ export class FixupController
         if (editOk) {
             const insertedLines = replacement.split(/\r\n|\r|\n/m).length - 1
             // Expand the selection range to accompany the edit
-            task.selectionRange = task.selectionRange.with(
+            const updatedRange = task.selectionRange.with(
                 task.selectionRange.start,
                 task.selectionRange.end.translate({
                     lineDelta:
@@ -700,6 +700,14 @@ export class FixupController
                     characterDelta: insertedLines < 1 ? replacement.length : 0,
                 })
             )
+            const documentRange = new vscode.Range(
+                document.lineAt(0).range.start,
+                document.lineAt(document.lineCount - 1).range.end
+            )
+            console.log('Streamed edit has been inserted into the document...')
+            console.log('The expected range that our edit now covers', updatedRange)
+            console.log('Full document range at this point:', documentRange)
+            task.selectionRange = updatedRange
         }
     }
 

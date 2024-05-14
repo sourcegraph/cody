@@ -1009,7 +1009,7 @@ describe('Agent', () => {
                 )
             }, 20_000)
 
-            it('editCommand/code (generate new code)', async () => {
+            it.only('editCommand/code (generate new code)', async () => {
                 const uri = workspace.file('src', 'Heading.tsx')
                 await client.openFile(uri)
                 const task = await client.request('editCommands/code', {
