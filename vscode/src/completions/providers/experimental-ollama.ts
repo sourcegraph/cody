@@ -24,6 +24,7 @@ import {
     Provider,
     type ProviderConfig,
     type ProviderOptions,
+    standardContextSizeHints,
 } from './provider'
 
 interface OllamaPromptContext {
@@ -75,20 +76,21 @@ class ExperimentalOllamaProvider extends Provider {
             snippets.map(snippet => {
                 const contextPrompts = PromptString.fromAutocompleteContextSnippet(snippet)
 
-                return fileNameLine(uri, commentStart).concat(
-                    PromptString.join(
-                        contextPrompts.content.split('\n').map(line => ps`${commentStart} ${line}`),
-                        ps`\n`
-                    )
-                )
+                return ps`<file_sep>${PromptString.fromDisplayPath(uri)}\n${contextPrompts.content}`
+                // return fileNameLine(uri, commentStart).concat(
+                //     PromptString.join(
+                //         contextPrompts.content.split('\n').map(line => ps`${commentStart} ${line}`),
+                //         ps`\n`
+                //     )
+                // )
             }),
-            ps`\n\n`
+            ps``
         )
 
         const currentFileNameComment = fileNameLine(uri, commentStart)
 
         const prompt: OllamaPromptContext = {
-            snippets: [],
+            snippets,
             uri,
             languageId,
             context,
@@ -98,24 +100,24 @@ class ExperimentalOllamaProvider extends Provider {
             suffix: getSuffixAfterFirstNewline(suffix),
         }
 
-        if (process.env.OLLAMA_CONTEXT_SNIPPETS) {
-            // TODO(valery): find the balance between using context and keeping a good perf.
-            const maxPromptChars = 1234
+        // if (process.env.OLLAMA_CONTEXT_SNIPPETS) {
+        // TODO(valery): find the balance between using context and keeping a good perf.
+        // const maxPromptChars = 1234
 
-            for (const snippet of snippets) {
-                const extendedSnippets = [...prompt.snippets, snippet]
-                const promptLengthWithSnippet = modelHelpers.getPrompt({
-                    ...prompt,
-                    snippets: extendedSnippets,
-                }).length
+        // for (const snippet of snippets) {
+        // const extendedSnippets = [...prompt.snippets, snippet]
+        // const promptLengthWithSnippet = modelHelpers.getPrompt({
+        //     ...prompt,
+        //     snippets: extendedSnippets,
+        // }).length
 
-                if (promptLengthWithSnippet > maxPromptChars) {
-                    break
-                }
+        // if (promptLengthWithSnippet > maxPromptChars) {
+        //     break
+        // }
 
-                prompt.snippets = extendedSnippets
-            }
-        }
+        // prompt.snippets = extendedSnippets
+        // }
+        // }
 
         return prompt
     }
@@ -192,23 +194,7 @@ export function createProviderConfig(ollamaOptions: OllamaOptions): ProviderConf
                 ollamaOptions
             )
         },
-        contextSizeHints: {
-            // We don't use other files as context yet in Ollama, so this doesn't matter.
-            totalChars: 0,
-
-            // Ollama evaluates the prompt at ~50 tok/s for codellama:7b-code on a MacBook Air M2.
-            // If the prompt has a common prefix across inference requests, subsequent requests do
-            // not incur prompt reevaluation and are therefore much faster. So, we want a large
-            // document prefix that covers the entire document (except in cases where the document
-            // is very, very large, in which case Ollama would not work well anyway).
-            prefixChars: 10000,
-
-            // For the same reason above, we want a very small suffix because otherwise Ollama needs to
-            // reevaluate more tokens in the prompt. This is because the prompt is (roughly) `prefix
-            // (cursor position) suffix`, so even typing a single character at the cursor position
-            // invalidates the LLM's cache of the suffix.
-            suffixChars: 100,
-        },
+        contextSizeHints: standardContextSizeHints(2048),
         identifier: PROVIDER_IDENTIFIER,
         model: ollamaOptions.model,
     }

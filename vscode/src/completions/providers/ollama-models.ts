@@ -3,7 +3,7 @@ import type * as vscode from 'vscode'
 import {
     type AutocompleteContextSnippet,
     type OllamaGenerateParameters,
-    type PromptString,
+    PromptString,
     ps,
 } from '@sourcegraph/cody-shared'
 
@@ -106,13 +106,17 @@ class CodeLlama extends DefaultOllamaModel {
 
 class StarCoder2 extends DefaultOllamaModel {
     getPrompt(ollamaPrompt: OllamaPromptContext): PromptString {
-        const { context, prefix, suffix } = ollamaPrompt
+        const { context, prefix, suffix, uri } = ollamaPrompt
+
+        console.log({ context, filename: PromptString.fromDisplayPath(uri) })
 
         // `currentFileNameComment` is not included because it causes StarCoder2 to output
         // invalid suggestions.
-        const infillPrefix = context.concat(prefix)
+        // const infillPrefix = context.concat(prefix)
 
-        return ps`<fim_prefix>${infillPrefix}<fim_suffix>${suffix}<fim_middle>`
+        return ps`${context}<file_sep><fim_prefix>${PromptString.fromDisplayPath(
+            uri
+        )}\n${prefix}<fim_suffix>${suffix}<fim_middle>`
     }
 
     getRequestOptions(isMultiline: boolean): OllamaGenerateParameters {
@@ -121,6 +125,7 @@ class StarCoder2 extends DefaultOllamaModel {
         const params = {
             stop: ['\n', ...stop],
             temperature: 0.2,
+            repeat_penalty: 1.0,
             top_k: -1,
             top_p: -1,
             num_predict: 256,
