@@ -2,10 +2,10 @@ import { describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { gitRemoteUrlsFromTreeWalk } from './remote-urls-from-tree-walk'
+import { gitRemoteUrlsFromParentDirs } from './remote-urls-from-parent-dirs'
 import { mockFsCalls } from './test-helpers'
 
-describe('gitRemoteUrlFromTreeWalk', () => {
+describe('gitRemoteUrlsFromParentDirs', () => {
     it('finds remote urls in the `.git/config` file with one remote', async () => {
         const { fileUri, statMock, readFileMock } = mockFsCalls({
             filePath: '/repo/src/dir/foo.ts',
@@ -26,7 +26,7 @@ describe('gitRemoteUrlFromTreeWalk', () => {
             `,
         })
 
-        const remoteUrls = await gitRemoteUrlsFromTreeWalk(fileUri)
+        const remoteUrls = await gitRemoteUrlsFromParentDirs(fileUri)
 
         expect(statMock).toBeCalledTimes(4)
         expect(readFileMock).toBeCalledTimes(1)
@@ -64,7 +64,7 @@ describe('gitRemoteUrlFromTreeWalk', () => {
             `,
         })
 
-        const remoteUrls = await gitRemoteUrlsFromTreeWalk(fileUri)
+        const remoteUrls = await gitRemoteUrlsFromParentDirs(fileUri)
         expect(remoteUrls).toEqual([
             'https://github.com/username/yourproject.git',
             'https://github.com/originalauthor/yourproject.git',
@@ -89,7 +89,7 @@ describe('gitRemoteUrlFromTreeWalk', () => {
             `,
         })
 
-        const remoteUrls = await gitRemoteUrlsFromTreeWalk(fileUri)
+        const remoteUrls = await gitRemoteUrlsFromParentDirs(fileUri)
         expect(remoteUrls).toBe(undefined)
     })
 
@@ -100,7 +100,7 @@ describe('gitRemoteUrlFromTreeWalk', () => {
             .mockRejectedValue(new vscode.FileSystemError('file does not exist'))
 
         const uri = URI.file('repo/src/dir/foo.ts')
-        const remoteUrls = await gitRemoteUrlsFromTreeWalk(uri)
+        const remoteUrls = await gitRemoteUrlsFromParentDirs(uri)
 
         expect(statMock).toBeCalledTimes(5)
         expect(remoteUrls).toBe(undefined)
@@ -132,7 +132,7 @@ describe('gitRemoteUrlFromTreeWalk', () => {
             `,
         })
 
-        const remoteUrls = await gitRemoteUrlsFromTreeWalk(fileUri)
+        const remoteUrls = await gitRemoteUrlsFromParentDirs(fileUri)
         expect(remoteUrls).toEqual(['https://github.com/example/submodule.git'])
     })
 
@@ -162,7 +162,7 @@ describe('gitRemoteUrlFromTreeWalk', () => {
             `,
         })
 
-        const remoteUrls = await gitRemoteUrlsFromTreeWalk(fileUri)
+        const remoteUrls = await gitRemoteUrlsFromParentDirs(fileUri)
         expect(remoteUrls).toEqual(['https://github.com/nested/submodule.git'])
     })
 
@@ -189,7 +189,7 @@ describe('gitRemoteUrlFromTreeWalk', () => {
             `,
         })
 
-        const remoteUrls = await gitRemoteUrlsFromTreeWalk(fileUri)
+        const remoteUrls = await gitRemoteUrlsFromParentDirs(fileUri)
         expect(remoteUrls).toBe(undefined)
     })
 })

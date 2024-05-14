@@ -9,7 +9,7 @@ const textDecoder = new TextDecoder('utf-8')
  * Walks the tree from the current directory to find the `.git` folder and
  * extracts remote URLs.
  */
-export async function gitRemoteUrlsFromTreeWalk(uri: vscode.Uri): Promise<string[] | undefined> {
+export async function gitRemoteUrlsFromParentDirs(uri: vscode.Uri): Promise<string[] | undefined> {
     if (!isFileURI(uri)) {
         return undefined
     }
@@ -17,7 +17,7 @@ export async function gitRemoteUrlsFromTreeWalk(uri: vscode.Uri): Promise<string
     const isFile = (await vscode.workspace.fs.stat(uri)).type === vscode.FileType.File
     const dirUri = isFile ? vscode.Uri.joinPath(uri, '..') : uri
 
-    const gitRepoURIs = await gitRepoURIsFromTreeWalk(dirUri)
+    const gitRepoURIs = await gitRepoURIsFromParentDirs(dirUri)
     return gitRepoURIs ? gitRemoteUrlsFromGitConfigUri(gitRepoURIs.gitConfigUri) : undefined
 }
 
@@ -26,7 +26,7 @@ interface GitRepoURIs {
     gitConfigUri: vscode.Uri
 }
 
-async function gitRepoURIsFromTreeWalk(uri: vscode.Uri): Promise<GitRepoURIs | undefined> {
+async function gitRepoURIsFromParentDirs(uri: vscode.Uri): Promise<GitRepoURIs | undefined> {
     const gitConfigUri = await resolveGitConfigUri(uri)
 
     if (!gitConfigUri) {
@@ -35,7 +35,7 @@ async function gitRepoURIsFromTreeWalk(uri: vscode.Uri): Promise<GitRepoURIs | u
             return undefined
         }
 
-        return gitRepoURIsFromTreeWalk(parentUri)
+        return gitRepoURIsFromParentDirs(parentUri)
     }
 
     return { rootUri: uri, gitConfigUri }

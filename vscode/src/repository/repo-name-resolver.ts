@@ -12,7 +12,7 @@ import { logDebug } from '../log'
 import type { AuthProvider } from '../services/AuthProvider'
 
 import { gitRemoteUrlsFromGitExtension } from './git-extension-api'
-import { gitRemoteUrlsFromTreeWalk } from './remote-urls-from-tree-walk'
+import { gitRemoteUrlsFromParentDirs } from './remote-urls-from-parent-dirs'
 
 export type RemoteUrlGetter = (uri: vscode.Uri) => Promise<string[] | undefined>
 type RepoName = string
@@ -78,7 +78,7 @@ export class RepoNameResolver {
             let remoteUrls = gitRemoteUrlsFromGitExtension(uri)
 
             if (remoteUrls === undefined || remoteUrls.length === 0) {
-                remoteUrls = await gitRemoteUrlsFromTreeWalk(uri)
+                remoteUrls = await gitRemoteUrlsFromParentDirs(uri)
             }
 
             return remoteUrls || []
