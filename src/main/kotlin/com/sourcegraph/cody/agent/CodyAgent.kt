@@ -171,7 +171,8 @@ private constructor(
       val proxyUrl = proxy.PROXY_HOST + ":" + proxy.PROXY_PORT
       if (proxy.PROXY_TYPE_IS_SOCKS) {
         processBuilder.environment()["HTTP_PROXY"] = "socks://$proxyUrl"
-      } else {
+      }
+      if (proxy.USE_HTTP_PROXY) {
         processBuilder.environment()["HTTP_PROXY"] = "http://$proxyUrl"
         processBuilder.environment()["HTTPS_PROXY"] = "https://$proxyUrl"
       }
