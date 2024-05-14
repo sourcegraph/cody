@@ -833,6 +833,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     experimentalSymfContext: true,
     experimentalTracing: false,
     experimentalGithubAccessToken: '',
+    experimentalCommitMessage: true,
     codeActions: true,
     commandHints: false,
     isRunningInsideAgent: false,

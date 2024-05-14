@@ -53,6 +53,8 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.tracing':
                         return true
+                    case 'cody.experimental.commitMessage':
+                        return true
                     case 'cody.debug.verbose':
                         return true
                     case 'cody.debug.filter':
@@ -130,6 +132,7 @@ describe('getConfiguration', () => {
             experimentalTracing: true,
             experimentalGuardrails: true,
             experimentalOllamaChat: true,
+            experimentalCommitMessage: true,
             experimentalGithubAccessToken: '',
             codeActions: true,
             commandHints: true,

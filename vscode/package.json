@@ -343,6 +343,22 @@
         "enablement": "cody.activated && config.cody.experimental.noodle"
       },
       {
+        "command": "cody.command.generate-commit",
+        "category": "Cody Command",
+        "group": "Commit",
+        "title": "Generate Commit Message (Experimental)",
+        "icon": "$(cody-logo)",
+        "when": "cody.activated && config.cody.experimental.commitMessage && config.git.enabled && scmProvider == git && !cody.isGeneratingCommit"
+      },
+      {
+        "command": "cody.command.abort-commit",
+        "category": "Cody Command",
+        "group": "Commit",
+        "title": "Stop Generating",
+        "icon": "$(debug-stop)",
+        "when": "cody.activated && cody.isGeneratingCommit"
+      },
+      {
         "command": "cody.auth.signout",
         "category": "Cody",
         "title": "Sign Out",
@@ -728,6 +744,14 @@
           "when": "cody.activated && editorIsOpen && config.cody.experimental.noodle"
         },
         {
+          "command": "cody.command.generate-commit",
+          "when": "cody.activated && config.cody.experimental.commitMessage && config.git.enabled && scmProvider == git && !cody.isGeneratingCommit"
+        },
+        {
+          "command": "cody.command.abort-commit",
+          "when": "cody.activated && cody.isGeneratingCommit"
+        },
+        {
           "command": "cody.menu.custom-commands",
           "when": "cody.activated"
         },
@@ -956,6 +980,18 @@
           "group": "0_cody",
           "when": "cody.activated && resourceScheme == file && !cody.hasNewChatOpened"
         }
+      ],
+      "scm/title": [
+        {
+          "command": "cody.command.generate-commit",
+          "when": "cody.activated && config.cody.experimental.commitMessage && config.git.enabled && scmProvider == git && !cody.isGeneratingCommit",
+          "group": "navigation@1"
+        },
+        {
+          "command": "cody.command.abort-commit",
+          "when": "cody.activated && scmProvider == git && cody.isGeneratingCommit",
+          "group": "navigation@1"
+        }
       ]
     },
     "configuration": {
@@ -1087,6 +1123,12 @@
           "order": 99,
           "type": "boolean",
           "markdownDescription": "Enable OpenTelemetry tracing",
+          "default": false
+        },
+        "cody.experimental.commitMessage": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "Enable commit message generation",
           "default": false
         },
         "cody.debug.verbose": {

@@ -43,6 +43,7 @@ import {
 } from './commands/execute'
 import { executeExplainHistoryCommand } from './commands/execute/explain-history'
 import { executeUsageExamplesCommand } from './commands/execute/usage-examples'
+import { CodySourceControl } from './commands/scm/source-control'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
@@ -301,6 +302,7 @@ const register = async (
     )
 
     const statusBar = createStatusBar()
+    const sourceControl = new CodySourceControl(chatClient)
 
     // Important to respect `config.experimentalSymfContext`. The agent
     // currently crashes with a cryptic error when running with symf enabled so
@@ -339,6 +341,7 @@ const register = async (
         parallelPromises.push(setupAutocomplete())
         await Promise.all(parallelPromises)
         statusBar.syncAuthStatus(authStatus)
+        sourceControl.syncAuthStatus(authStatus)
     })
 
     // Sync initial auth status
@@ -348,6 +351,7 @@ const register = async (
     editorManager.syncAuthStatus(initAuthStatus)
     ModelProvider.onConfigChange(initialConfig.experimentalOllamaChat)
     statusBar.syncAuthStatus(initAuthStatus)
+    sourceControl.syncAuthStatus(initAuthStatus)
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)
@@ -395,7 +399,8 @@ const register = async (
         vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a)),
         vscode.commands.registerCommand('cody.command.usageExamples', a =>
             executeUsageExamplesCommand(a)
-        )
+        ),
+        sourceControl // Generate Commit Message command
     )
 
     // Internal-only test commands
