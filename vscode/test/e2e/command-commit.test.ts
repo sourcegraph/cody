@@ -38,13 +38,6 @@ testGitWorkspace.extend<ExpectedEvents>({
     const scmInputBox = page.getByLabel('Source Control Input')
     await expect(scmInputBox.filter({ hasText: 'hello from the assistant' }).first()).toBeVisible()
 
-    //we reset the text in the commit box
-    scmInputBox
-        .getByLabel(
-            'The editor is not accessible at this time. To enable screen reader optimized mode, use Shift+Option+F1'
-        )
-        .fill('')
-
     // Ensure that no notification is shown
     await expect(page.getByLabel('Cody was forced to skip').first()).not.toBeVisible({ timeout: 1000 })
 
@@ -57,11 +50,12 @@ testGitWorkspace.extend<ExpectedEvents>({
             .first()
     ).toBeVisible()
 
+    // Commit the change so we empty the input box
+    page.getByRole('button', { name: 'Commit' })
+
     // await page.getByRole('heading', { name: 'Source Control' }).hover()
-    await page.getByText('Staged Changes').click()
-    await page.getByLabel('Unstage All Changes').click()
-    await page.getByText('Changes4').click()
-    await page.getByLabel('Stage All Changes').click()
+    await page.getByText('Changes3').click()
+    await page.getByText('Changes3').getByLabel('Stage All Changes').click()
 
     await page.getByRole('button', { name: 'Generate Commit Message (Experimental)' }).click()
 
