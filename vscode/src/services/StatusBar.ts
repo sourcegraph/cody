@@ -382,9 +382,16 @@ export function createStatusBar(): CodyStatusBar {
             return stopLoading
         },
         addError(error: StatusBarError) {
-            const errorObject = { error, createdAt: Date.now() }
+            const now = Date.now()
+            const errorObject = { error, createdAt: now }
             errors.push(errorObject)
-            setTimeout(clearOutdatedErrors, Math.min(ONE_HOUR, error.removeAfterEpoch || ONE_HOUR))
+
+            if (error.removeAfterEpoch && error.removeAfterEpoch > now) {
+                setTimeout(clearOutdatedErrors, Math.min(ONE_HOUR, error.removeAfterEpoch - now))
+            } else {
+                setTimeout(clearOutdatedErrors, ONE_HOUR)
+            }
+
             rerender()
 
             return () => {
