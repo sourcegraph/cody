@@ -72,7 +72,9 @@ export class OpenTelemetryService {
 
         // Add the default tracer exporter used in production.
         this.tracerProvider.addSpanProcessor(
-            new BatchSpanProcessor(new CodyTraceExporter(traceUrl, this.isTracingEnabled))
+            new BatchSpanProcessor(
+                new CodyTraceExporter({ traceUrl, isTracingEnabled: this.isTracingEnabled })
+            )
         )
 
         // Add the console exporter used in development for verbose logging and debugging.
