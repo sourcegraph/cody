@@ -75,7 +75,6 @@ export const CodyCommandMenuItems = [
         command: { command: 'cody.command.generate-commit' },
         keybinding: '',
         type: 'default',
-        configuration: 'cody.internal.unstable',
     },
     {
         key: 'custom',
