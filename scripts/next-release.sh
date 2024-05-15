@@ -13,7 +13,7 @@ if [ "$#" -ne 1 ]; then
   exit 1
 fi
 
-LAST_MAJOR_MINOR_ZERO_RELEASE=$(git tag -l | grep "v\d*\\.\d*\\.\d*" | uniq | sort | tail -1)
+LAST_MAJOR_MINOR_ZERO_RELEASE=$(git tag -l | grep "v\d*\\.\d*\\.\d*" | uniq | sort -V | tail -1)
 MAJOR=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | sed 's/v//' | cut -d. -f1)
 MINOR=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | sed 's/v//' | cut -d. -f2)
 PATCH=$(echo $LAST_MAJOR_MINOR_ZERO_RELEASE | sed 's/v//' | cut -d. -f3)
