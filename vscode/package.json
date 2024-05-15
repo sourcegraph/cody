@@ -92,7 +92,6 @@
   "main": "./dist/extension.node.js",
   "browser": "./dist/extension.web.js",
   "activationEvents": ["onLanguage", "onStartupFinished", "onWebviewPanel:cody.chatPanel"],
-  "extensionDependencies": ["vscode.git"],
   "contributes": {
     "walkthroughs": [
       {
