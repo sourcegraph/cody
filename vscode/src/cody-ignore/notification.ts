@@ -10,7 +10,7 @@ export async function showCodyIgnoreNotification(
     vscode.window.showErrorMessage(
         `${
             feature === 'autocomplete'
-                ? ' Failed to generate autocomplete'
+                ? 'Failed to generate autocomplete'
                 : feature === 'edit'
                   ? 'Edit failed to run'
                   : feature === 'test'
