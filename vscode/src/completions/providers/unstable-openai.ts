@@ -63,7 +63,7 @@ class UnstableOpenAIProvider extends Provider {
     }
 
     public emptyPromptLength(): number {
-        const promptNoSnippets = [this.instructions, this.createPromptPrefix()].join('\n\n')
+        const promptNoSnippets = [this.createPromptPrefix()].join('\n\n')
         return promptNoSnippets.length - 10 // extra 10 chars of buffer cuz who knows
     }
 
@@ -90,11 +90,10 @@ class UnstableOpenAIProvider extends Provider {
         const infillSuffix = suffix
         const relativeFilePath = PromptString.fromDisplayPath(this.options.document.uri)
 
-        return ps`Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:\n\`\`\`\n${
-            infillPrefix ? infillPrefix : ''
-        }${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}\n\`\`\`
-
-${OPENING_CODE_TAG}${infillBlock}`
+        return ps`<existing_code>
+              ${prefix}{{cursor}}${suffix}
+            </existing_code>
+`
     }
 
     // Creates the resulting prompt and adds as many snippets from the reference
@@ -126,7 +125,7 @@ ${OPENING_CODE_TAG}${infillBlock}`
             remainingChars -= numSnippetChars
         }
 
-        const messages = [this.instructions, ...referenceSnippetMessages, prefix]
+        const messages = [...referenceSnippetMessages, prefix]
         return PromptString.join(messages, ps`\n\n`)
     }
 
@@ -140,10 +139,82 @@ ${OPENING_CODE_TAG}${infillBlock}`
             lineNumberDependentCompletionParams,
         })
 
+        const { uri } = this.options.document
+        const relativeFilePath = PromptString.fromDisplayPath(uri)
+        const languageId = PromptString.fromMarkdownCodeBlockLanguageIDForFilename(uri)
+
+        const examplesArray = [
+            {
+                example: ps`\n      function calculateArea(radius: number): number {\n        return Math.PI * radius * radius;\n      }\n\n      function calculateCircumference(radius: number): number {\n        {{cursor}}\n      }\n    `,
+                response: ps`\n      return 2 * Math.PI * radius;\n    </new_code>\n  `,
+            },
+            {
+                example: ps`\n      class Car {\n        private speed: number;\n\n        constructor(speed: number) {\n          this.speed = speed;\n        }\n\n        getSpeed(): number {\n          return this.speed;\n        }\n\n        setSpeed(newSpeed: number): void {\n          {{cursor}}\n        }\n      }\n    `,
+                response: ps`\n      this.speed = newSpeed;\n    </new_code>\n  `,
+            },
+            {
+                example: ps`\n      interface Shape {\n        getArea(): number;\n        getPerimeter(): number;\n      }\n\n      class Rectangle implements Shape {\n        private width: number;\n        private height: number;\n\n        constructor(width: number, height: number) {\n          this.width = width;\n          this.height = height;\n        }\n\n        getArea(): number {\n          return this.width * this.height;\n        }\n\n        getPerimeter(): number {\n          {{cursor}}\n        }\n      }\n    `,
+                response: ps`\n      return 2 * (this.width + this.height);\n    </new_code>\n  `,
+            },
+            {
+                example: ps`\n      const person = {\n        firstName: 'John',\n        lastName: 'Doe',\n        age: 30,\n        getFullName: function() {\n          {{cursor}}\n        }\n      };\n    `,
+                response: ps`\n      return this.firstName + ' ' + this.lastName;\n    </new_code>\n  `,
+            },
+            {
+                example: ps`\n      enum Direction {\n        North,\n        South,\n        East,\n        {{cursor}}\n      }\n    `,
+                response: ps`\n      West\n    </new_code>\n  `,
+            },
+        ]
+
+        const examples = ps`
+Here are a few examples of successfully generated code:
+
+<examples>
+${PromptString.join(
+    examplesArray.map(example => {
+        return ps`
+<example>
+H: <existing_code>
+    ${example.example}
+    </existing_code>
+
+A: ${example.response}
+</example>
+`
+    }),
+    ps`\n`
+)}
+</examples>`
+
         const requestParams: CodeCompletionsParams = {
             ...partialRequestParams,
-            messages: [{ speaker: 'human', text: this.createPrompt(snippets) }],
+            messages: [
+                {
+                    speaker: 'system',
+                    text: ps`
+You are a tremendously accurate and skilled coding autocomplete agent. We want to generate new ${languageId} code inside the file '${relativeFilePath}'.
+The existing code is provided in <existing_code></existing_code> tags.
+The new code you will generate will start at the position of the cursor, which is currently indicated by the {{cursor}} tag.
+In your process, first, review the existing code to understand its logic and format. Then, try to determine the best code to generate at the cursor position.
+When generating the new code, please ensure the following:
+1. It is valid ${languageId} code.
+2. It matches the existing code's variable, parameter and function names.
+3. It does not repeat any existing code. Do not repeat code that comes before or after the cursor tags. This includes cases where the cursor is in the middle of a word.
+4. If the cursor is in the middle of a word, it finishes the word instead of repeating code before the cursor tag.
+Return new code enclosed in <new_code></new_code> tags. We will then insert this at the {{cursor}} position.
+If you are not able to write code based on the given instructions return an empty result like <new_code></new_code>
+
+${examples}`,
+                },
+                { speaker: 'human', text: this.createPrompt(snippets) },
+                {
+                    speaker: 'assistant',
+                    text: ps`<new_code>`,
+                },
+            ],
             topP: 0.5,
+            temperature: 0.2,
+            model: 'openai/gpt-4o',
         }
 
         tracer?.params(requestParams)
@@ -172,6 +243,8 @@ ${OPENING_CODE_TAG}${infillBlock}`
 
     private postProcess = (rawResponse: string): string => {
         let completion = extractFromCodeBlock(rawResponse)
+        completion = completion.replaceAll('<new_code>', '')
+        completion = completion.slice(0, completion.indexOf('</new_code>'))
 
         const trimmedPrefixContainNewline = this.options.docContext.prefix
             .slice(this.options.docContext.prefix.trimEnd().length)
