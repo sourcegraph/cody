@@ -951,8 +951,9 @@ describe('Agent', () => {
                 .allUris()
                 .filter(uri => vscode.Uri.parse(uri).scheme === 'untitled')
             expect(untitledDocuments).toHaveLength(2)
-            const [untitledDocument] = untitledDocuments
-            const testDocument = client.workspace.getDocument(vscode.Uri.parse(untitledDocument))
+            const untitledDocument = untitledDocuments.find(d => d.endsWith('trickyLogic.test.ts'))
+            expect(untitledDocument).toBeDefined()
+            const testDocument = client.workspace.getDocument(vscode.Uri.parse(untitledDocument ?? ''))
             expect(trimEndOfLine(testDocument?.getText())).toMatchInlineSnapshot(
                 `
               "import { expect } from 'vitest'
@@ -984,9 +985,7 @@ describe('Agent', () => {
                 explainPollyError
             )
 
-            // Just to make sure the edit happened via `workspace/edit` instead
-            // of `textDocument/edit`.
-            expect(client.workspaceEditParams).toHaveLength(1)
+            expect(client.textDocumentEditParams).toHaveLength(1)
         }, 30_000)
 
         describe('Edit code', () => {

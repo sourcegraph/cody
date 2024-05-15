@@ -64,15 +64,15 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             // TODO - Centralize this logic in a single place
             const [provider] = params.model?.split('/') ?? []
             if (provider === 'ollama') {
-                ollamaChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
+                await ollamaChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
                 return
             }
             if (provider === 'google') {
-                googleChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
+                await googleChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
                 return
             }
             if (provider === 'groq') {
-                groqChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
+                await groqChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
                 return
             }
 

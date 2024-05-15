@@ -1,26 +1,43 @@
 import ts from 'typescript'
 import { declarationName } from './SymbolFormatter'
 
+export type NodeMatchKind =
+    | 'imports'
+    | 'call-expression'
+    | 'property-access'
+    | 'function-declaration'
+    | 'declaration'
+    | 'none'
+
 /**
  * Returns a list of identifier nodes that should be added to the Cody context.
  *
  * The logic for this function is going to be evolving as we add support for
  * more syntax constructs where we want to inject graph context.
  */
-export function relevantTypeIdentifiers(checker: ts.TypeChecker, node: ts.Node): ts.Node[] {
-    const result: ts.Node[] = []
-    pushTypeIdentifiers(result, checker, node)
-    return result
+export function relevantTypeIdentifiers(
+    checker: ts.TypeChecker,
+    node: ts.Node
+): { kind: NodeMatchKind; nodes: ts.Node[] } {
+    const nodes: ts.Node[] = []
+    const kind = pushTypeIdentifiers(nodes, checker, node)
+    return { kind, nodes }
 }
 
-export function pushTypeIdentifiers(result: ts.Node[], checker: ts.TypeChecker, node: ts.Node): void {
+export function pushTypeIdentifiers(
+    result: ts.Node[],
+    checker: ts.TypeChecker,
+    node: ts.Node
+): NodeMatchKind {
     if (ts.isSourceFile(node)) {
         ts.forEachChild(node, child => {
             if (ts.isImportDeclaration(child)) {
                 pushDescendentIdentifiers(result, child)
             }
         })
-    } else if (
+        return 'imports'
+    }
+    if (
         ts.isSetAccessorDeclaration(node) ||
         ts.isGetAccessorDeclaration(node) ||
         ts.isConstructorDeclaration(node) ||
@@ -36,19 +53,24 @@ export function pushTypeIdentifiers(result: ts.Node[], checker: ts.TypeChecker, 
         if (node.type) {
             pushDescendentIdentifiers(result, node.type)
         }
-    } else if (ts.isCallExpression(node)) {
-        result.push(...rightmostIdentifier(node.expression))
-    } else if (ts.isPropertyAccessExpression(node)) {
-        result.push(...rightmostIdentifier(node.expression))
-    } else {
-        const name = declarationName(node)
-        if (name) {
-            result.push(name)
-        } else {
-            // Uncomment below to debug what kind of if (ts.isX) case to handle
-            // console.log({ text: node.getText(), kindString: ts.SyntaxKind[node.kind] })
-        }
+        return 'function-declaration'
     }
+    if (ts.isCallExpression(node)) {
+        result.push(...rightmostIdentifier(node.expression))
+        return 'call-expression'
+    }
+    if (ts.isPropertyAccessExpression(node)) {
+        result.push(...rightmostIdentifier(node.expression))
+        return 'property-access'
+    }
+    const name = declarationName(node)
+    if (name) {
+        result.push(name)
+        return 'declaration'
+    }
+    // Uncomment below to debug what kind of if (ts.isX) case to handle
+    // console.log({ text: node.getText(), kindString: ts.SyntaxKind[node.kind] })
+    return 'none'
 }
 
 // A hacky way to get the `ts.Identifier` node furthest to the right.  Ideally,
