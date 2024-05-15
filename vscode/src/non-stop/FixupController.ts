@@ -34,7 +34,7 @@ import { FixupTask, type FixupTaskID, type FixupTelemetryMetadata } from './Fixu
 import { type Diff, computeDiff } from './diff'
 import { trackRejection } from './rejection-tracker'
 import type { FixupActor, FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
-import { CodyTaskState, getMinimumDistanceToRangeBoundary } from './utils'
+import { CodyTaskState, expandRangeToInsertedText, getMinimumDistanceToRangeBoundary } from './utils'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
@@ -652,16 +652,8 @@ export class FixupController
         }
 
         if (editOk) {
-            const insertedLines = replacement.split(/\r\n|\r|\n/m).length - 1
             // Expand the selection range to accompany the edit
-            task.selectionRange = task.selectionRange.with(
-                task.selectionRange.start,
-                task.selectionRange.end.translate({
-                    lineDelta:
-                        task.selectionRange.start.line - task.selectionRange.end.line + insertedLines,
-                    characterDelta: insertedLines < 1 ? replacement.length : 0,
-                })
-            )
+            task.selectionRange = expandRangeToInsertedText(task.selectionRange, replacement)
         }
     }
 
