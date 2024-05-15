@@ -178,6 +178,7 @@ export class TestClient extends MessageHandler {
     public readonly name: string
     public workspace = new AgentWorkspaceDocuments()
     public workspaceEditParams: WorkspaceEditParams[] = []
+    public textDocumentEditParams: TextDocumentEditParams[] = []
 
     get serverEndpoint(): string {
         return this.params.credentials.serverEndpoint
@@ -330,6 +331,7 @@ export class TestClient extends MessageHandler {
             return Promise.resolve(true)
         })
         this.registerRequest('textDocument/edit', params => {
+            this.textDocumentEditParams.push(params)
             return Promise.resolve(this.editDocument(params).success)
         })
         this.registerRequest('textDocument/show', () => {

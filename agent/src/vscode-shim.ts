@@ -4,7 +4,7 @@ import path from 'node:path'
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
-import { logDebug, logError, setClientNameVersion } from '@sourcegraph/cody-shared'
+import { extensionForLanguage, logDebug, logError, setClientNameVersion } from '@sourcegraph/cody-shared'
 
 // <VERY IMPORTANT - PLEASE READ>
 // This file must not import any module that transitively imports from 'vscode'.
@@ -292,10 +292,12 @@ const _workspace: typeof vscode.workspace = {
             throw new Error('workspaceDocuments is uninitialized')
         }
 
-        const uri = toUri(uriOrString)
-        if (uri) {
-            if (uri.scheme === 'untitled') await openUntitledDocument(uri)
-            return workspaceDocuments.openTextDocument(uri)
+        const result = toUri(uriOrString)
+        if (result) {
+            if (result.uri.scheme === 'untitled' && result.shouldOpenInClient) {
+                await openUntitledDocument(result.uri)
+            }
+            return workspaceDocuments.openTextDocument(result.uri)
         }
         return Promise.reject(
             new Error(`workspace.openTextDocument:unsupported argument ${JSON.stringify(uriOrString)}`)
@@ -452,20 +454,32 @@ const defaultTreeView: vscode.TreeView<any> = {
     title: undefined,
 }
 
+/**
+ * @returns An object with a URI and a boolean indicating whether the URI should be opened in the client.
+ * This object with UUID path is used only when we want to create in-memory temp files, and those we do not want to send to the clients.
+ */
 function toUri(
     uriOrString: string | vscode.Uri | { language?: string; content?: string } | undefined
-): Uri | undefined {
+): { uri: Uri; shouldOpenInClient: boolean } | undefined {
     if (typeof uriOrString === 'string') {
-        return Uri.file(uriOrString)
+        return { uri: Uri.file(uriOrString), shouldOpenInClient: true }
     }
     if (uriOrString instanceof Uri) {
-        return uriOrString
+        return { uri: uriOrString, shouldOpenInClient: true }
     }
     if (
         typeof uriOrString === 'object' &&
         ((uriOrString as any)?.language || (uriOrString as any)?.content)
     ) {
-        return Uri.from({ scheme: 'untitled', path: `${uuid.v4()}` })
+        const language = (uriOrString as any)?.language ?? ''
+        const extension = extensionForLanguage(language) ?? language
+        return {
+            uri: Uri.from({
+                scheme: 'untitled',
+                path: `${uuid.v4()}.${extension}`,
+            }),
+            shouldOpenInClient: false,
+        }
     }
     return
 }
