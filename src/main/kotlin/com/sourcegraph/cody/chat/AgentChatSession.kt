@@ -13,7 +13,13 @@ import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.ExtensionMessage
 import com.sourcegraph.cody.agent.WebviewMessage
 import com.sourcegraph.cody.agent.WebviewReceiveMessageParams
-import com.sourcegraph.cody.agent.protocol.*
+import com.sourcegraph.cody.agent.protocol.ChatError
+import com.sourcegraph.cody.agent.protocol.ChatMessage
+import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
+import com.sourcegraph.cody.agent.protocol.ChatRestoreParams
+import com.sourcegraph.cody.agent.protocol.ChatSubmitMessageParams
+import com.sourcegraph.cody.agent.protocol.ContextItem
+import com.sourcegraph.cody.agent.protocol.Speaker
 import com.sourcegraph.cody.chat.ui.ChatPanel
 import com.sourcegraph.cody.commands.CommandId
 import com.sourcegraph.cody.config.CodyAuthenticationManager
@@ -299,7 +305,6 @@ private constructor(
             when (commandId) {
               CommandId.Explain -> agent.server.legacyCommandsExplain()
               CommandId.Smell -> agent.server.legacyCommandsSmell()
-              CommandId.Test -> agent.server.legacyCommandsTest()
             }
           }
 

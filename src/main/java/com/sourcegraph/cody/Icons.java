@@ -51,6 +51,7 @@ public interface Icons {
 
   interface Edit {
     Icon Error = IconLoader.getIcon("/icons/edit/error.svg", Icons.class);
+    Icon Beta = IconLoader.getIcon("/icons/edit/beta.svg", Icons.class);
   }
 
   interface LLM {

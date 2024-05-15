@@ -12,7 +12,6 @@
     - [ ] [General commands availability in Cody tool window](#general-commands-availability-in-cody-tool-window)
     - [ ] [General commands availability in context menu](#general-commands-availability-in-context-menu)
     - [ ] [Explain Selected Code](#explain-code)
-    - [ ] [Generate Test](#generate-test)
     - [ ] [Smell Code](#smell-code)
 - Chat
     - [ ] [Autoscroll to latest message](#autoscroll-to-latest-message)
@@ -146,11 +145,10 @@ automatically.
 
 ### General commands availability from keyboard shortcuts
 
-| Command       | Windows / Linux                                  | MacOs                                                |
-|---------------|--------------------------------------------------|------------------------------------------------------|
-| Explain Code  | <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>1</kbd> | <kbd>control</kbd> + <kbd>Shift</kbd> + <kbd>E</kbd> |
-| Smell Code    | <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>2</kbd> | <kbd>control</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd> |
-| Generate Test | <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>3</kbd> | <kbd>control</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd> |
+| Command      | Windows / Linux                                  | MacOs                                                |
+|--------------|--------------------------------------------------|------------------------------------------------------|
+| Explain Code | <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>1</kbd> | <kbd>control</kbd> + <kbd>Shift</kbd> + <kbd>E</kbd> |
+| Smell Code   | <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>2</kbd> | <kbd>control</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd> |
 
 #### Expected behaviour
 
@@ -179,28 +177,6 @@ automatically.
 * User is automatically switched to `Chat` tab.
 * Chat responds with a description of the selected code and will elaborate on the fields, classes, and
   methods, going into technical details, often structuring the text in bullet points.
-
-### Generate Test
-
-1. Paste following Java function:
-    ```java
-    public static String greet(String name) {
-        return "Hello, " + name + "!";
-    }
-    ```
-2. Select function and use `Cody | Commands | Generate Test`.
-
-#### Expected behaviour
-
-* User is automatically switched to `Chat` tab.
-* Chat responds with generated documentation similar to this:
-    ```java
-    @Test
-    public void testGreet() {
-      String result = greet("Alice");
-      assertEquals("Hello, Alice!", result);
-    }
-    ```
 
 ### Smell Code
 
@@ -324,7 +300,7 @@ Unless otherwise specified, all tests for the dialog begin with
 
 1. Open any source file.
 2. Right-click in the file to bring up the code context menu.
-   - alternatively, position your caret in the editor and type ctrl+shift+enter
+    - alternatively, position your caret in the editor and type ctrl+shift+enter
 3. Choose Cody, then Edit Code. Confirm that the dialog appears.
 
 All tests involving prompt history should end with
@@ -334,74 +310,88 @@ All tests involving prompt history should end with
 #### Appearance and behavior
 
 1. Open the dialog and check its position.
-  -  Dialog should always appear beneath the line you chose/clicked on.
-  -  The horizontal position of the dialog is always the same, indented a bit from the left edge.
-  -  Dialog always remains floating on top of the IDE and is not obsured by other IDE windows.
+
+- Dialog should always appear beneath the line you chose/clicked on.
+- The horizontal position of the dialog is always the same, indented a bit from the left edge.
+- Dialog always remains floating on top of the IDE and is not obsured by other IDE windows.
+
 2. Observe the dialog's appearance.
-  -  Dialog has rounded corners.
+
+- Dialog has rounded corners.
+
 3. Switch IDE themes by going to Settings and choosing a new theme.
-  -  Dialog's colors should change to match the new theme.
+
+- Dialog's colors should change to match the new theme.
+
 4. Check the dialog's mouse interaction and modality:
-  -  Dialog is non-modal and you can put the focus back into the IDE without closing it.
-  -  Dialog can be dragged by clicking and dragging in the "title bar" area.
-  -  Dialog can be resized by carefully positioning the cursor at the corners and dragging.
+
+- Dialog is non-modal and you can put the focus back into the IDE without closing it.
+- Dialog can be dragged by clicking and dragging in the "title bar" area.
+- Dialog can be resized by carefully positioning the cursor at the corners and dragging.
+
 5. Close the dialog, and press Ctrl+Shift+Enter (Command+Shift+Enter on Mac)
-  - Dialog should appear, just as if it had been opened with the context menu
+
+- Dialog should appear, just as if it had been opened with the context menu
 
 #### Layout
 
 1. Open the dialog and check the layout.
-  - The file path suffix is displayed, truncated with ellipsis if needed.
-  - The instructions field is empty and is displaying the "ghost text" help.
-  - The history widget is not shown in the bottom center.
-  - The Edit Code button is initially disabled.
+
+- The file path suffix is displayed, truncated with ellipsis if needed.
+- The instructions field is empty and is displaying the "ghost text" help.
+- The history widget is not shown in the bottom center.
+- The Edit Code button is initially disabled.
+
 2. Type some non-whitespace text into the text field.
-   - The Edit Code button is enabled.
+    - The Edit Code button is enabled.
 3. Delete all the text in the text field.
-   - The Edit Code button is disabled.
+    - The Edit Code button is disabled.
 4. Click the expansion icon at the right of the text field.
-  - The text field expands to allow more of your instructions to be visible.
-  - You can collapse it to return to the regular view.
+
+- The text field expands to allow more of your instructions to be visible.
+- You can collapse it to return to the regular view.
 
 #### File Path
 
 1. Open a project file with a pathname of 80+ characters, then the Instructions dialog.
-   - The tail end of the path should be displayed, with the first part replaced with "…".
+    - The tail end of the path should be displayed, with the first part replaced with "…".
 2. Hover over the truncated file path.
-   - It should pop up a tooltip with the full/absolute file path.
+    - It should pop up a tooltip with the full/absolute file path.
 
 #### Closing
 
 1. Press the ESC key while the dialog has the focus.
-   - Dialog should always close, no matter which component in the dialog has the focus.
+    - Dialog should always close, no matter which component in the dialog has the focus.
 2. Mouse-click the "[esc] to cancel" label in the lower left.
-   - Dialog should close.
+    - Dialog should close.
 3. Close the editor tab from which the dialog was opened.
-   - Dialog should close along with the tab.
+    - Dialog should close along with the tab.
 4. With text in the instructions field, press the OS-specific hotkey shown next to Edit Code.
-  - The dialog should close and initiate an Edit request.
+
+- The dialog should close and initiate an Edit request.
 
 #### History
 
 1. Type "one" into the text field (or anything you like as the first history item).
 2. Click Edit Code to submit the edit command, which closes the dialog.
-   - Then cancel the running command with the Cancel code lens.
+    - Then cancel the running command with the Cancel code lens.
 3. Reopen the instructions dialog anywhere in the document (or even another tab).
-   - The text field should now contain the text "one".
-   - The `↑↓ for history` label should now appear at the bottom of the dialog.
-   - Typing the up/down the arrows at this point only moves the cursor.
+    - The text field should now contain the text "one".
+    - The `↑↓ for history` label should now appear at the bottom of the dialog.
+    - Typing the up/down the arrows at this point only moves the cursor.
 4. Replace the text with "two", then oncce again Edit Code, cancel op, and reopen dialog.
-   - Text field contents should now be "two".
-   - Up/down arrows should cycle between "one" and "two".
+    - Text field contents should now be "two".
+    - Up/down arrows should cycle between "one" and "two".
 5. Type "my long instruction" into the text field. (Anything longer than 10 characters.)
-   - Up-arrow should take you to the most recent history item.
-   - Cycling the arrows, you should now also find "my long instruction" in the history.
+    - Up-arrow should take you to the most recent history item.
+    - Cycling the arrows, you should now also find "my long instruction" in the history.
 
 #### Model dropdown
 
 1. Click the model dropdown.
-  - Ensure that it shows the same models as the dropdown in the Chat window.
-  
+
+- Ensure that it shows the same models as the dropdown in the Chat window.
+
 ### Code Lenses
 
 1. Open Inline Edit, enter a valid instruction such as "add comment", and press Edit Code.
@@ -422,7 +412,7 @@ an "Internals" submenu at the bottom of your IDE window, next to Cody.
 
 Ensure that if the file is ignored, no inline edits can be performed.
 
-1. Open a source file in any project. 
+1. Open a source file in any project.
 2. Open the Internals submenu.
 3. Check the box to override for testing.
 4. Change the repo to match whatever repo the source file is in.
@@ -448,8 +438,8 @@ No matter what combination of enabling/disabling policies you use,
 all of the following should be true for each test:
 
 1. Whenever the current repo/file is ignored, inline edits should stop working.
-   - The Edit Instructions dialog should not display, and disappear if active.
-   - The Document Code function should not work at all (via keyboard or menu).
+    - The Edit Instructions dialog should not display, and disappear if active.
+    - The Document Code function should not work at all (via keyboard or menu).
 2. If an edit is in progress, with code lenses displaying, and its file becomes
    ignored, then the edit in progress should cancel/undo.
 3. When the current file's policy changes back to non-ignored, inline edits
@@ -484,7 +474,8 @@ all of the following should be true for each test:
     - Go to Chat History tab and open previous chats one by one. Check if both history and context settings are properly
       preserved.
     - Open new chat and check if it properly inherits all setting from previously opened historical chat
-    - If `sourcegraph/sourcegraph` repo was previously added please remove it clicking the [✏️] (pencil) icon and removing the 'sourcegraph/sourcegraph' line
+    - If `sourcegraph/sourcegraph` repo was previously added please remove it clicking the [✏️] (pencil) icon and
+      removing the 'sourcegraph/sourcegraph' line
     - Ask question about squirrel. It should again describe you an animal or have no context.
 
 ## Code Search
@@ -605,7 +596,9 @@ To open the context menu:
 8. Change account to different one and then back to your pro account
 9. Open `What model are you?` chat from the history
 10. Send again message
+
 > What model are you?
+
 11. User should again get the response that model is ChatGPT
 
 #### Commands
@@ -692,18 +685,21 @@ Write a prompt and click "OK".
 ### Show Diff
 
 The "Show Diff" feature should present two sides:
-- Right-Hand Side: This should display the current state of the editor, including all changes made by Cody and any user edits.
-- Left-Hand Side: This should display the state of the editor including all user changes made at various stages:
-  - Before triggering Cody's inline edit.
-  - After triggering Cody's inline edit but before Cody started writing.
-  - While Cody is writing (before Cody finished).
-  - After Cody has finished writing.
 
-In other words, the left-hand side should show the right hand side WITHOUT Cody Inline Edit changes. 
+- Right-Hand Side: This should display the current state of the editor, including all changes made by Cody and any user
+  edits.
+- Left-Hand Side: This should display the state of the editor including all user changes made at various stages:
+    - Before triggering Cody's inline edit.
+    - After triggering Cody's inline edit but before Cody started writing.
+    - While Cody is writing (before Cody finished).
+    - After Cody has finished writing.
+
+In other words, the left-hand side should show the right hand side WITHOUT Cody Inline Edit changes.
 
 #### Scenario 1: User Adds/Removes a Line Above the Selected Area Before Triggering the Inline Edit
 
 **Steps**:
+
 1. Above the area that you want to apply the inline edit, add or remove one or more lines.
 2. Trigger the `Cody Inline Edit`.
 3. Trigger the `Show Diff`.
@@ -711,6 +707,7 @@ In other words, the left-hand side should show the right hand side WITHOUT Cody 
 #### Scenario 2: User Adds/Removes a Line Above the Selected Area After Triggering the Inline Edit But Before Cody Starts Writing
 
 **Steps**:
+
 1. Trigger the `Cody Inline Edit`.
 2. Before Cody starts writing, add or remove lines above the selected area.
 3. Allow Cody to complete its edits.
@@ -719,6 +716,7 @@ In other words, the left-hand side should show the right hand side WITHOUT Cody 
 #### Scenario 3: User Adds/Removes a Line Above the Selected Area After Cody Starts Writing But Before It Finishes
 
 **Steps**:
+
 1. Trigger the `Cody Inline Edit`.
 2. While Cody is writing, add or remove lines above the targeted edit area.
 3. Allow Cody to complete its edits.
@@ -727,13 +725,15 @@ In other words, the left-hand side should show the right hand side WITHOUT Cody 
 #### Scenario 4: User Adds/Removes a Line Above the Selected Area After Cody Finishes Writing
 
 **Steps**:
+
 1. Trigger the `Cody Inline Edit`.
 2. After Cody's edits are done, add or remove lines above the edited area.
 3. Trigger the `Show Diff`.
 
 #### Scenario 5: Scenarios 1, 2, 3, 4 But With Lines Addition/Removal Between the Inline Edit Changed lines
 
-`Inline Edit` can modify some particular line in the selected "target" area but leave the other lines unchanged (in that area). 
+`Inline Edit` can modify some particular line in the selected "target" area but leave the other lines unchanged (in that
+area).
 The changes to the lines unmodified by Cody should not be reflected in the `Show Diff`.
 
 #### Scenario 6: Scenarios 1, 2, 3, 4 But With Lines Addition/Removal After the Inline Edit Changed lines
