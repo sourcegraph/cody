@@ -315,14 +315,10 @@ function writeCompletionEvent<SubFeature extends string, Action extends string, 
     legacyParams?: LegacyParams
 ): void {
     const extDetails = getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration()))
-    telemetryService.log(
-        `${logPrefix(extDetails.ide)}:completion:${subfeature ? `${subfeature}:` : ''}${action}`,
-        legacyParams,
-        {
-            agent: true,
-            hasV2Event: true, // this helper translates the event for us
-        }
-    )
+    telemetryService.log(`${logPrefix(extDetails.ide)}:completion:${name}`, legacyParams, {
+        agent: true,
+        hasV2Event: true, // this helper translates the event for us
+    })
     /**
      * Extract interaction ID from the full legacy params for convenience
      */
