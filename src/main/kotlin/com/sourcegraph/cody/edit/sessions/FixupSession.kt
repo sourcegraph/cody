@@ -37,6 +37,7 @@ import com.sourcegraph.cody.edit.fixupActions.InsertUndoableAction
 import com.sourcegraph.cody.edit.fixupActions.ReplaceUndoableAction
 import com.sourcegraph.cody.edit.widget.LensGroupFactory
 import com.sourcegraph.cody.edit.widget.LensWidgetGroup
+import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.utils.CodyEditorUtil
 import java.net.URI
 import java.util.concurrent.CancellationException
@@ -72,11 +73,30 @@ abstract class FixupSession(
   // it enables us to show the user what we sent and let them hand-edit it.
   var instruction: String? = null
 
+  private val cancellationToken = CancellationToken()
+
   private val performedActions: MutableList<FixupUndoableAction> = mutableListOf()
 
   init {
     triggerFixupAsync()
+
     runInEdt { Disposer.register(controller, this) }
+
+    cancellationToken.onFinished {
+      try {
+        controller.clearActiveSession()
+      } catch (x: Exception) {
+        logger.debug("Session cleanup error", x)
+      }
+
+      runInEdt {
+        try { // Disposing inlay requires EDT.
+          Disposer.dispose(this)
+        } catch (x: Exception) {
+          logger.warn("Error disposing fixup session $this", x)
+        }
+      }
+    }
   }
 
   private val document
@@ -91,8 +111,7 @@ abstract class FixupSession(
     CodyAgentService.withAgent(project) { agent ->
       workAroundUninitializedCodebase()
 
-      // All this because we can get the workspace/edit before the request returns!
-      fixupService.setActiveSession(this)
+      fixupService.startNewSession(this)
 
       // Spend a turn to get folding ranges before showing lenses.
       ensureSelectionRange(agent, textFile)
@@ -142,6 +161,7 @@ abstract class FixupSession(
 
   fun update(task: EditTask) {
     task.instruction?.let { instruction = it }
+
     when (task.state) {
       // This is an internal state (parked/ready tasks) and we should never see it.
       CodyTaskState.Idle -> {}
@@ -156,15 +176,10 @@ abstract class FixupSession(
       // Tasks remain in this state until explicit accept/undo/cancel.
       CodyTaskState.Applied -> showAcceptGroup()
       // Then they transition to finished.
-      CodyTaskState.Finished -> finish()
-      CodyTaskState.Error -> finish()
+      CodyTaskState.Finished -> cancellationToken.dispose()
+      CodyTaskState.Error -> cancellationToken.dispose()
       CodyTaskState.Pending -> {}
     }
-  }
-
-  /** Notification that the Agent has deleted the task. Clean up if we haven't yet. */
-  fun taskDeleted() {
-    finish()
   }
 
   // N.B. Blocks calling thread until the lens group is shown,
@@ -173,6 +188,7 @@ abstract class FixupSession(
   private fun showLensGroup(group: LensWidgetGroup) {
     lensGroup?.let { if (!it.isDisposed.get()) Disposer.dispose(it) }
     lensGroup = group
+
     var range = selectionRange
     if (range == null) {
       // Be defensive, as the protocol has been fragile with respect to selection ranges.
@@ -193,6 +209,8 @@ abstract class FixupSession(
     if (!ApplicationManager.getApplication().isDispatchThread) { // integration test
       future.get()
     }
+
+    controller.notifySessionStateChanged()
   }
 
   private fun showWorkingGroup() {
@@ -205,21 +223,6 @@ abstract class FixupSession(
 
   private fun showErrorGroup(hoverText: String) {
     showLensGroup(LensGroupFactory(this).createErrorGroup(hoverText))
-  }
-
-  fun finish() {
-    try {
-      controller.clearActiveSession()
-    } catch (x: Exception) {
-      logger.debug("Session cleanup error", x)
-    }
-    runInEdt {
-      try { // Disposing inlay requires EDT.
-        Disposer.dispose(this)
-      } catch (x: Exception) {
-        logger.warn("Error disposing fixup session $this", x)
-      }
-    }
   }
 
   /** Subclass sends a fixup command to the agent, and returns the initial task. */
@@ -245,12 +248,7 @@ abstract class FixupSession(
   }
 
   fun retry() {
-    val instruction = instruction
-
-    undo()
-
-    ApplicationManager.getApplication().executeOnPooledThread {
-      FixupService.getInstance(project).waitUntilActiveSessionIsFinished()
+    cancellationToken.onFinished {
       runInEdt {
         // Close loophole where you can keep retrying after the ignore policy changes.
         if (controller.isEligibleForInlineEdit(editor)) {
@@ -258,10 +256,11 @@ abstract class FixupSession(
         }
       }
     }
+    undo()
   }
 
   fun dismiss() {
-    finish()
+    cancellationToken.dispose()
   }
 
   fun performWorkspaceEdit(workspaceEditParams: WorkspaceEditParams) {
@@ -375,6 +374,10 @@ abstract class FixupSession(
   override fun dispose() {
     if (project.isDisposed) return
     performedActions.forEach { it.dispose() }
+  }
+
+  fun isShowingWorkingLens(): Boolean {
+    return lensGroup?.isInWorkingGroup == true
   }
 
   /** Returns true if the Accept lens group is currently active. */

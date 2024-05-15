@@ -93,6 +93,7 @@ class LensWidgetGroup(val session: FixupSession, parentComponent: Editor) :
 
   private var prevCursor: Cursor? = null
 
+  var isInWorkingGroup = false
   var isAcceptGroup = false
   var isErrorGroup = false
 

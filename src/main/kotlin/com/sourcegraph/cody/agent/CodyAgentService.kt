@@ -75,7 +75,7 @@ class CodyAgentService(private val project: Project) : Disposable {
 
       agent.client.onEditTaskDidDelete = Consumer { params ->
         FixupService.getInstance(project).getActiveSession()?.let {
-          if (params.id == it.taskId) it.taskDeleted()
+          if (params.id == it.taskId) it.dismiss()
         }
       }
 

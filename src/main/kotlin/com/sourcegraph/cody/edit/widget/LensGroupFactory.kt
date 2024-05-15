@@ -18,6 +18,7 @@ class LensGroupFactory(val session: FixupSession) {
       addSeparator(this)
       addAction(this, "Cancel", FixupSession.ACTION_CANCEL)
       registerWidgets()
+      isInWorkingGroup = true
     }
   }
 

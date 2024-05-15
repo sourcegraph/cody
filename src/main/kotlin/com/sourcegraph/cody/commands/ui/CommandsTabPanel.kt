@@ -13,6 +13,10 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBPanelWithEmptyText
 import com.sourcegraph.cody.commands.CommandId
 import com.sourcegraph.cody.config.CodyApplicationSettings
+import com.sourcegraph.cody.edit.FixupService
+import com.sourcegraph.cody.edit.actions.DocumentCodeAction
+import com.sourcegraph.cody.edit.actions.EditCodeAction
+import com.sourcegraph.cody.edit.actions.TestCodeAction
 import com.sourcegraph.cody.ignore.CommandPanelIgnoreBanner
 import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.cody.ignore.IgnorePolicy
@@ -22,7 +26,6 @@ import java.awt.Dimension
 import java.awt.GridLayout
 import javax.swing.BoxLayout
 import javax.swing.JButton
-import javax.swing.JComponent
 import javax.swing.plaf.ButtonUI
 
 class CommandsTabPanel(
@@ -30,9 +33,14 @@ class CommandsTabPanel(
     private val executeCommand: (CommandId) -> Unit
 ) :
     JBPanelWithEmptyText(GridLayout(/* rows = */ 0, /* cols = */ 1)),
-    IgnoreOracle.FocusedFileIgnorePolicyListener {
+    IgnoreOracle.FocusedFileIgnorePolicyListener,
+    FixupService.ActiveFixupSessionStateListener {
   private val ignoreBanner = CommandPanelIgnoreBanner()
-  private val buttons = mutableListOf<JComponent>()
+  private val buttons = mutableMapOf<String, JButton>()
+
+  @Volatile private var ignorePolicy: IgnorePolicy = IgnorePolicy.USE
+
+  @Volatile private var isInlineEditInProgress: Boolean = false
 
   init {
     layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -41,25 +49,18 @@ class CommandsTabPanel(
 
     if (ConfigUtil.isFeatureFlagEnabled("cody.feature.inline-edits") ||
         CodyApplicationSettings.instance.isInlineEditionEnabled) {
-      addInlineEditActionButton("cody.editCodeAction")
-      addInlineEditActionButton("cody.documentCodeAction")
-      addInlineEditActionButton("cody.testCodeAction")
+      addInlineEditActionButton(EditCodeAction.ID)
+      addInlineEditActionButton(DocumentCodeAction.ID)
+      addInlineEditActionButton(TestCodeAction.ID)
     }
 
-    addHierarchyListener {
-      if (!project.isDisposed) {
-        if (it.component.isShowing) {
-          IgnoreOracle.getInstance(project).addListener(this)
-        } else {
-          IgnoreOracle.getInstance(project).removeListener(this)
-        }
-      }
-    }
+    IgnoreOracle.getInstance(project).addListener(this)
+    FixupService.getInstance(project).addListener(this)
   }
 
   private fun addInlineEditActionButton(actionId: String) {
     val action = ActionManagerEx.getInstanceEx().getAction(actionId)
-    addButton(action.templatePresentation.text, action.templatePresentation.mnemonic) {
+    addButton(actionId, action.templatePresentation.text, action.templatePresentation.mnemonic) {
       val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return@addButton
       val dataContext = (editor as? EditorEx)?.dataContext ?: return@addButton
       val managerEx = ActionManagerEx.getInstanceEx()
@@ -70,10 +71,10 @@ class CommandsTabPanel(
   }
 
   private fun addCommandButton(commandId: CommandId) {
-    addButton(commandId.displayName, commandId.mnemonic) { executeCommand(commandId) }
+    addButton(commandId.id, commandId.displayName, commandId.mnemonic) { executeCommand(commandId) }
   }
 
-  private fun addButton(displayName: String, mnemonic: Int, action: () -> Unit) {
+  private fun addButton(actionId: String, displayName: String, mnemonic: Int, action: () -> Unit) {
     val button = JButton(displayName)
     button.mnemonic = mnemonic
     button.displayedMnemonicIndex = displayName.indexOfFirst { it.code == mnemonic }
@@ -84,15 +85,21 @@ class CommandsTabPanel(
     button.addActionListener { action() }
     add(button)
 
-    buttons.add(button)
+    buttons[actionId] = button
   }
 
-  private fun update(policy: IgnorePolicy) {
+  private fun update() {
     // Dis/enable all the buttons.
-    for (button in buttons) {
-      button.isEnabled = policy == IgnorePolicy.USE
+    for ((actionId, button) in buttons) {
+      // We block only DocumentCodeAction and TestCodeAction, for EditCodeAction we will block the
+      // button on the edit dialog
+      val shouldBlockInlineEditAction =
+          isInlineEditInProgress &&
+              (actionId == DocumentCodeAction.ID || actionId == TestCodeAction.ID)
+      button.isEnabled = ignorePolicy == IgnorePolicy.USE && !shouldBlockInlineEditAction
     }
-    when (policy) {
+
+    when (ignorePolicy) {
       IgnorePolicy.USE -> {
         remove(ignoreBanner)
       }
@@ -105,6 +112,12 @@ class CommandsTabPanel(
   }
 
   override fun focusedFileIgnorePolicyChanged(policy: IgnorePolicy) {
-    runInEdt { update(policy) }
+    this.ignorePolicy = policy
+    runInEdt { update() }
+  }
+
+  override fun fixupSessionStateChanged(isInProgress: Boolean) {
+    this.isInlineEditInProgress = isInProgress
+    runInEdt { update() }
   }
 }

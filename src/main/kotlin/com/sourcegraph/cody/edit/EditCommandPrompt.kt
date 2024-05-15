@@ -80,7 +80,7 @@ class EditCommandPrompt(
     val editor: Editor,
     dialogTitle: String,
     instruction: String? = null
-) : JFrame(), Disposable {
+) : JFrame(), Disposable, FixupService.ActiveFixupSessionStateListener {
   private val logger = Logger.getInstance(EditCommandPrompt::class.java)
 
   private val offset = editor.caretModel.primaryCaret.offset
@@ -321,6 +321,8 @@ class EditCommandPrompt(
     // Close dialog if window loses focus.
     addWindowFocusListener(windowFocusListener)
     addFocusListener(focusListener)
+
+    FixupService.getInstance(controller.project).addListener(this)
   }
 
   override fun setBounds(x: Int, y: Int, width: Int, height: Int) {
@@ -359,7 +361,9 @@ class EditCommandPrompt(
 
   @RequiresEdt
   private fun updateOkButtonState() {
-    okButton.isEnabled = instructionsField.text.isNotBlank()
+    okButton.isEnabled =
+        instructionsField.text.isNotBlank() &&
+            !FixupService.getInstance(controller.project).isEditInProgress()
   }
 
   @RequiresEdt
@@ -686,5 +690,9 @@ class EditCommandPrompt(
 
       return sb.toString()
     }
+  }
+
+  override fun fixupSessionStateChanged(isInProgress: Boolean) {
+    runInEdt { okButton.isEnabled = !isInProgress }
   }
 }
