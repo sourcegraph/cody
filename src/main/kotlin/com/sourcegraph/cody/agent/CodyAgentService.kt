@@ -79,8 +79,14 @@ class CodyAgentService(private val project: Project) : Disposable {
         }
       }
 
-      agent.client.onWorkspaceEdit = Consumer { params ->
-        FixupService.getInstance(project).getActiveSession()?.performWorkspaceEdit(params)
+      agent.client.onWorkspaceEdit = Function { params ->
+        try {
+          FixupService.getInstance(project).getActiveSession()?.performWorkspaceEdit(params)
+          true
+        } catch (e: RuntimeException) {
+          logger.error(e)
+          false
+        }
       }
 
       agent.client.onTextDocumentEdit = Function { params ->

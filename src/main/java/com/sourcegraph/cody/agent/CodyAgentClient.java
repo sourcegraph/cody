@@ -46,7 +46,7 @@ public class CodyAgentClient {
   @Nullable Function<UntitledTextDocument, Boolean> onOpenUntitledDocument;
 
   // Callback for the "workspace/edit" request from the agent.
-  @Nullable Consumer<WorkspaceEditParams> onWorkspaceEdit;
+  @Nullable Function<WorkspaceEditParams, Boolean> onWorkspaceEdit;
 
   @JsonNotification("editTask/didUpdate")
   public CompletableFuture<Void> editTaskDidUpdate(EditTask params) {
@@ -106,7 +106,7 @@ public class CodyAgentClient {
   }
 
   @JsonRequest("workspace/edit")
-  public CompletableFuture<Void> workspaceEdit(WorkspaceEditParams params) {
+  public CompletableFuture<Boolean> workspaceEdit(WorkspaceEditParams params) {
     return acceptOnEventThread("workspace/edit", onWorkspaceEdit, params);
   }
 
