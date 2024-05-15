@@ -47,7 +47,7 @@ describe.skipIf(isWindows())('TscRetriever', () => {
             docContext,
             document,
             position,
-            hints: { maxChars: 1000, maxMs: 100 },
+            hints: { maxChars: 10_000, maxMs: 100 },
         })
         return { snippets: result, moduleName, namespaceName }
     }
@@ -57,6 +57,28 @@ describe.skipIf(isWindows())('TscRetriever', () => {
     }
 
     it('imports', async () => {
+        expect(
+            await retrieveText(dedent`
+            import { execFileSync } from 'child_process'
+            const a = █
+    `)
+            // TODO: drill into Holder
+        ).toMatchInlineSnapshot(`
+          [
+            "function execFileSync(file: string): Buffer",
+            "function execFileSync(file: string, options: ExecFileSyncOptionsWithStringEncoding): string",
+            "function execFileSync(file: string, options: ExecFileSyncOptionsWithBufferEncoding): Buffer",
+            "function execFileSync(file: string, options?: ExecFileSyncOptions | undefined): string | Buffer",
+            "function execFileSync(file: string, args: readonly string[]): Buffer",
+            "function execFileSync(file: string, args: readonly string[], options: ExecFileSyncOptionsWithStringEncoding): string",
+            "function execFileSync(file: string, args: readonly string[], options: ExecFileSyncOptionsWithBufferEncoding): Buffer",
+            "function execFileSync(file: string, args?: readonly string[] | undefined, options?: ExecFileSyncOptions | undefined): string | Buffer",
+            "const a: any",
+          ]
+        `)
+    })
+
+    it('imports2', async () => {
         const { moduleName } = await retrieve(
             dedent`
             export interface Holder { bananas: number }
@@ -254,7 +276,9 @@ describe.skipIf(isWindows())('TscRetriever', () => {
             interface A { value: number }
             interface B { a(): A }
             const b: B = {}
-            b.a().█
+            function foo() {
+              b.a().█
+            }
     `)
         ).toMatchInlineSnapshot(`
           [
