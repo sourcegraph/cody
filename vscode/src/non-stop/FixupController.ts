@@ -34,7 +34,7 @@ import { FixupTask, type FixupTaskID, type FixupTelemetryMetadata } from './Fixu
 import { type Diff, computeDiff } from './diff'
 import { trackRejection } from './rejection-tracker'
 import type { FixupActor, FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
-import { CodyTaskState, getMinimumDistanceToRangeBoundary } from './utils'
+import { CodyTaskState, expandRangeToInsertedText, getMinimumDistanceToRangeBoundary } from './utils'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
@@ -652,19 +652,8 @@ export class FixupController
         }
 
         if (editOk) {
-            const insertedLines = replacement.split(/\r\n|\r|\n/m)
-            const lastLineLength = insertedLines.at(-1)?.length || 0
-
             // Expand the selection range to accompany the edit
-            task.selectionRange = new vscode.Range(
-                task.selectionRange.start,
-                insertedLines.length === 1
-                    ? task.selectionRange.start.translate(0, lastLineLength)
-                    : new vscode.Position(
-                          task.selectionRange.start.line + insertedLines.length - 1,
-                          lastLineLength
-                      )
-            )
+            task.selectionRange = expandRangeToInsertedText(task.selectionRange, replacement)
         }
     }
 
