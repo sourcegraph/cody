@@ -203,8 +203,10 @@ abstract class FixupSession(
     val future = group.show(range)
     // Make sure the lens is visible.
     ApplicationManager.getApplication().invokeLater {
-      val logicalPosition = LogicalPosition(range.start.line, range.start.character)
-      editor.scrollingModel.scrollTo(logicalPosition, ScrollType.CENTER)
+      if (!editor.isDisposed) {
+        val logicalPosition = LogicalPosition(range.start.line, range.start.character)
+        editor.scrollingModel.scrollTo(logicalPosition, ScrollType.CENTER)
+      }
     }
     if (!ApplicationManager.getApplication().isDispatchThread) { // integration test
       future.get()

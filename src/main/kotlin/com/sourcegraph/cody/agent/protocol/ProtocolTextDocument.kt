@@ -3,7 +3,8 @@ package com.sourcegraph.cody.agent.protocol
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.vfs.VirtualFile
-import com.sourcegraph.cody.agent.protocol.util.Rfc3986UriEncoder
+import java.nio.file.FileSystems
+import java.util.Locale
 
 class ProtocolTextDocument
 private constructor(
@@ -47,8 +48,13 @@ private constructor(
       return ProtocolTextDocument(uriFor(file), text, selection)
     }
 
-    fun uriFor(file: VirtualFile): String {
-      return Rfc3986UriEncoder.encode(file.url)
+    private fun uriFor(file: VirtualFile): String {
+      val uri = FileSystems.getDefault().getPath(file.path).toUri().toString()
+      return uri.replace(Regex("file:///(\\w):/")) {
+        val driveLetter =
+            it.groups[1]?.value?.lowercase(Locale.getDefault()) ?: return@replace it.value
+        "file:///$driveLetter%3A/"
+      }
     }
   }
 }
