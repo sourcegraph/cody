@@ -5,7 +5,7 @@ import type { Config, ContextProvider } from '../chat/ContextProvider'
 import { DocumentCodeAction } from './document'
 import { EditCodeAction } from './edit'
 import { ExplainCodeAction } from './explain'
-import { FixupCodeAction } from './fixup'
+import { FixupCodeAction } from './fix'
 import { TestCodeAction } from './test'
 
 interface CodeActionProviderOptions {

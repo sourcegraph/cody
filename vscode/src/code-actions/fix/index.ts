@@ -1,8 +1,9 @@
 import * as vscode from 'vscode'
 
 import { PromptString, ps } from '@sourcegraph/cody-shared'
-import type { ExecuteEditArguments } from '../edit/execute'
-import { getSmartSelection } from '../editor/utils'
+import type { ExecuteEditArguments } from '../../edit/execute'
+import { getSmartSelection } from '../../editor/utils'
+import { getDiagnosticCode } from './utils'
 
 const FIX_PROMPT_TOPICS = {
     SOURCE: ps`PROBLEMCODE4179`,
@@ -56,6 +57,7 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
             PromptString.fromDocumentText(document, range),
             diagnostics
         )
+        console.log(instruction)
         const source = 'code-action:fix'
         action.command = {
             command: 'cody.command.edit-code',
@@ -139,13 +141,4 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         }
         return prompt
     }
-}
-
-function getDiagnosticCode(diagnosticCode: vscode.Diagnostic['code']): string | undefined {
-    if (!diagnosticCode) {
-        return
-    }
-
-    const code = typeof diagnosticCode === 'object' ? diagnosticCode.value : diagnosticCode
-    return code.toString()
 }
