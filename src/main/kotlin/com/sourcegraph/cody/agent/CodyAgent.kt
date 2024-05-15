@@ -174,7 +174,7 @@ private constructor(
       }
       if (proxy.USE_HTTP_PROXY) {
         processBuilder.environment()["HTTP_PROXY"] = "http://$proxyUrl"
-        processBuilder.environment()["HTTPS_PROXY"] = "https://$proxyUrl"
+        processBuilder.environment()["HTTPS_PROXY"] = "http://$proxyUrl"
       }
 
       logger.info("starting Cody agent ${command.joinToString(" ")}")
