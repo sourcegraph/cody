@@ -5,6 +5,7 @@ on:
       - '**.kt'
       - '**.java'
       - '**.kts'
+      - '.github/workflows/scip-java.yml'
 jobs:
   scip-java:
     if: github.repository == 'sourcegraph/jetbrains'
@@ -40,7 +41,14 @@ jobs:
       - name: Install src
         run: yarn global add @sourcegraph/src
 
-      - name: Upload SCIP file
-        run: src code-intel upload -github-token $GITHUB_TOKEN
+      - name: Upload SCIP to Cloud
+        run: src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SRC_ENDPOINT: https://sourcegraph.com/
+          SRC_ACCESS_TOKEN: ${{ secrets.SRC_ACCESS_TOKEN_DOTCOM }}
+
+      - name: Upload SCIP to S2
+        run: src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress
+        env:
+          SRC_ENDPOINT: https://sourcegraph.sourcegraph.com/
+          SRC_ACCESS_TOKEN: ${{ secrets.SRC_ACCESS_TOKEN_S2 }}
