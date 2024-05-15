@@ -506,14 +506,16 @@ export class LocalEmbeddingsController
         this.lastHealth = health
         const hasIssue = health.numItemsNeedEmbedding > 0
         if (hasIssue) {
-            if (!this.canAutoIndex() || this.lastError) {
-                await vscode.commands.executeCommand('setContext', 'cody.embeddings.hasIssue', hasIssue)
-                this.updateIssueStatusBar()
-                return
+            const canRetry = this.canAutoIndex() && !this.lastError
+            let retrySucceeded = true
+            if (canRetry) {
+                try {
+                    await this.indexRetry()
+                } catch {
+                    retrySucceeded = false
+                }
             }
-            try {
-                await this.indexRetry()
-            } catch {
+            if (!canRetry || !retrySucceeded) {
                 await vscode.commands.executeCommand('setContext', 'cody.embeddings.hasIssue', hasIssue)
                 this.updateIssueStatusBar()
             }
