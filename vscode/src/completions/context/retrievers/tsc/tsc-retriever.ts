@@ -5,16 +5,19 @@ import {
     isFileURI,
     isMacOS,
     isWindows,
+    logDebug,
     logError,
     tracer,
 } from '@sourcegraph/cody-shared'
 import ts from 'typescript'
 import * as vscode from 'vscode'
+import type { ProtocolDiagnostic } from '../../../../jsonrpc/agent-protocol'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { nextTick } from '../section-history/nextTick'
 import { SymbolFormatter, isStdLibNode } from './SymbolFormatter'
 import { getTSSymbolAtLocation } from './getTSSymbolAtLocation'
 import { type NodeMatchKind, relevantTypeIdentifiers } from './relevantTypeIdentifiers'
+import { supportedTscLanguages } from './supportedTscLanguages'
 
 interface LoadedCompiler {
     service: ts.LanguageService
@@ -128,7 +131,6 @@ export class TscRetriever implements ContextRetriever {
             return fromCache
         }
         this.loadCompiler(file)
-        this.documentRegistry.updateDocument
         return this.getCompiler(file)
     }
 
@@ -147,14 +149,28 @@ export class TscRetriever implements ContextRetriever {
         return result
     }
 
+    private defaultWorkingDirectory() {
+        const uri = vscode.workspace.workspaceFolders?.[0]?.uri
+        if (uri && isFileURI(uri)) {
+            return uri.fsPath
+        }
+        return undefined
+    }
     private loadCompiler(file: FileURI): undefined {
         const config = this.findConfigFile(file)
         if (!config) {
             logError('tsc-retriever', `Could not find tsconfig.json for URI ${file}`)
         }
         const parsedCommandLine = loadConfigFile(config)
+        parsedCommandLine.options.strict = false
         const path = defaultPathFunctions()
-        const currentDirectory = config ? path.dirname(config) : process.cwd()
+        const currentDirectory = config
+            ? path.dirname(config)
+            : this.defaultWorkingDirectory() ?? process.cwd()
+        logDebug(
+            'tsc-retriever',
+            `Loading compiler for ${file} with config ${config} in directory ${currentDirectory}`
+        )
         const formatHost: ts.FormatDiagnosticsHost = ts.createCompilerHost(parsedCommandLine.options)
         const sourceFileNames: string[] = parsedCommandLine.fileNames
         const serviceHost: TscLanguageServiceHost = {
@@ -194,6 +210,18 @@ export class TscRetriever implements ContextRetriever {
                     'lib',
                     fileName
                 )
+                if (!ts.sys.fileExists(result)) {
+                    const fallback = path.resolve(path.dirname(ts.sys.getExecutingFilePath()), fileName)
+                    // logError(
+                    //     'tsc-retriever',
+                    //     `Could not find default lib at ${result}. Using ${fallback}`
+                    // )
+                    if (!ts.sys.fileExists(fallback)) {
+                        throw new Error(`Could not find default lib at ${fallback}`)
+                    }
+                    return fallback
+                }
+                logDebug('tsc-retriever', result)
                 return result
             },
             readFile: (path: string, encoding?: string | undefined): string | undefined =>
@@ -224,7 +252,7 @@ export class TscRetriever implements ContextRetriever {
         }
         const diagnostics = program.getGlobalDiagnostics()
         if (diagnostics.length > 0) {
-            console.log(ts.formatDiagnostics(diagnostics, this.baseCompilerHost))
+            logDebug('tsc-retriever', ts.formatDiagnostics(diagnostics, this.baseCompilerHost))
         }
         return {
             service,
@@ -284,6 +312,41 @@ export class TscRetriever implements ContextRetriever {
         return new SymbolCollector(compiler, this.options, options, options.position).relevantSymbols()
     }
 
+    public diagnostics(uri: FileURI): ProtocolDiagnostic[] {
+        const compiler = this.getOrLoadCompiler(uri)
+        if (!compiler) {
+            logDebug('tsc-retriever', 'No compiler')
+            return []
+        }
+        const diagnostics = compiler.program.getSemanticDiagnostics(compiler.sourceFile)
+        if (diagnostics.length > 0) {
+            logDebug('tsc-retriever', ts.formatDiagnostics(diagnostics, this.baseCompilerHost))
+        } else {
+            logDebug('tsc-retriever', 'No diagnostics')
+        }
+        const result: ProtocolDiagnostic[] = []
+        for (const diagnostic of diagnostics) {
+            const { file, start, length, messageText, code, source } = diagnostic
+            if (file && start) {
+                const { line, character } = file.getLineAndCharacterOfPosition(start)
+                result.push({
+                    location: {
+                        uri: file.fileName,
+                        range: {
+                            start: { line, character },
+                            end: { line, character: character + (length ?? 1) },
+                        },
+                    },
+                    message: typeof messageText === 'string' ? messageText : messageText.messageText,
+                    severity: 'error',
+                    code: String(code),
+                    source,
+                })
+            }
+        }
+        return result
+    }
+
     public async retrieve(options: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
         return tracer.startActiveSpan('graph-context.tsc', async span => {
             span.setAttribute('sampled', true)
@@ -299,12 +362,7 @@ export class TscRetriever implements ContextRetriever {
     }
 
     public isSupportedForLanguageId(languageId: string): boolean {
-        return (
-            languageId === 'typescript' ||
-            languageId === 'typescriptreact' ||
-            languageId === 'javascript' ||
-            languageId === 'javascriptreact'
-        )
+        return supportedTscLanguages.has(languageId)
     }
     public dispose() {}
 }

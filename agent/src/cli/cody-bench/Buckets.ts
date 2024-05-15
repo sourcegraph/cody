@@ -2,17 +2,17 @@ export class Buckets<T extends string = string> {
     constructor(private readonly maxCountPerKey: number) {}
     private map = new Map<T, number>()
     public count(key: T): number {
-        return this.map.get(key) ?? 0
+        return this.map.get(key) ?? 1
     }
     public peek(key: T): boolean {
         return this.count(key) < this.maxCountPerKey
     }
     public acquire(key: T): boolean {
-        let count = this.count(key)
-        count++
-        if (count > this.maxCountPerKey) {
+        if (!this.peek(key)) {
             return false
         }
+        let count = this.count(key)
+        count++
         this.map.set(key, count)
         return true
     }

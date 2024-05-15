@@ -19,6 +19,7 @@ import {
     featureFlagProvider,
     graphqlClient,
     isError,
+    isFileURI,
     isRateLimitError,
     logDebug,
     logError,
@@ -29,6 +30,7 @@ import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import { SimpleChatModel } from '../../vscode/src/chat/chat-view/SimpleChatModel'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
+import { supportedTscLanguages } from '../../vscode/src/completions/context/retrievers/tsc/supportedTscLanguages'
 import { activate } from '../../vscode/src/extension.node'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
@@ -43,6 +45,7 @@ import {
     type MessageWriter,
 } from 'vscode-jsonrpc'
 import { ModelUsage } from '../../lib/shared/src/models/types'
+import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
 import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/execute'
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
@@ -60,6 +63,7 @@ import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import type { PollyRequestError } from './cli/jsonrpc'
 import { MessageHandler, type RequestCallback, type RequestMethodName } from './jsonrpc-alias'
+import { getLanguageForFileName } from './language'
 import type {
     AutocompleteItem,
     ClientInfo,
@@ -449,6 +453,20 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 requests: requests.map(req => ({ url: req.url, body: req.body })),
             }
         })
+
+        this.registerAuthenticatedRequest('testing/diagnostics', async params => {
+            const uri = vscode.Uri.parse(params.uri)
+            const language = getLanguageForFileName(uri.fsPath)
+            const retriever = loadTscRetriever()
+            if (!isFileURI(uri) || !supportedTscLanguages.has(language) || !retriever) {
+                console.log(`nah ${uri}`)
+                return { diagnostics: [] }
+            }
+            return {
+                diagnostics: retriever.diagnostics(uri),
+            }
+        })
+
         this.registerAuthenticatedRequest('testing/closestPostData', async ({ url, postData }) => {
             const polly = this.params?.polly
             let closestDistance = Number.MAX_VALUE

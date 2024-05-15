@@ -24,7 +24,7 @@ async function runCommand(command: string | undefined, cwd: string): Promise<boo
 
 // Same as runCommand but rejects the promise instead of returning false
 // Does nothing when command is undefined
-async function runVoidCommand(command: string | undefined, cwd: string): Promise<void> {
+export async function runVoidCommand(command: string | undefined, cwd: string): Promise<void> {
     const ok = await runCommand(command, cwd)
     if (!ok) {
         throw new Error(`Command failed: ${command}`)

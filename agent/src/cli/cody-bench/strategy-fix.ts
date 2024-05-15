@@ -3,6 +3,7 @@ import type { MessageHandler } from '../../jsonrpc-alias'
 import { AggregateBuckets, Buckets } from './Buckets'
 import type { EvaluateAutocompleteOptions } from './cody-bench'
 import { evaluateEachFile } from './evaluateEachFile'
+import { runVoidCommand } from './testTypecheck'
 
 type DiagnosticCode = '2322' | '2345' | '2339'
 
@@ -11,14 +12,58 @@ export async function evaluateFixStrategy(
     options: EvaluateAutocompleteOptions
 ): Promise<void> {
     console.log({ options })
+    let totalCandidates = 0
     const globalBuckets = new Buckets<DiagnosticCode>(1_000)
+    let counter = options.testCount
+    let correctDiagnostics = 0
+    let totalDiagnostics = 0
+    await runVoidCommand(options.installCommand, options.workspace)
     await evaluateEachFile(options, async params => {
+        if (counter <= 0) {
+            return
+        }
         const file = params.uri.fsPath
         const sourceFile = ts.createSourceFile(file, params.content, ts.ScriptTarget.Latest, true)
         const candidates = fixCandidates(sourceFile, globalBuckets)
-        console.log({ candidates: candidates.length })
+        client.notify('textDocument/didOpen', { uri: params.uri.toString(), content: params.content })
+        totalCandidates += candidates.length
+        for (const candidate of candidates) {
+            console.log(`${file}:${candidate.impactedLine} CODE:${candidate.expectedDiagnosticCode}`)
+            console.log(
+                candidate.newContent
+                    .split('\n')
+                    .slice(candidate.impactedLine - 1, candidate.impactedLine + 4)
+                    .join('\n')
+            )
+            client.notify('textDocument/didChange', {
+                uri: params.uri.toString(),
+                content: candidate.newContent,
+            })
+            const { diagnostics: originalDiagnostics } = await client.request('testing/diagnostics', {
+                uri: params.uri.toString(),
+            })
+            const diagnostics = originalDiagnostics.filter(d => d.code !== '2307')
+            totalDiagnostics += diagnostics.length
+            counter -= diagnostics.length
+            if (diagnostics.length === 0) {
+                // console.log({ noDiagnostic: candidate })
+            } else if (diagnostics.length === 1) {
+                const diagnostic = diagnostics[0]
+                if (diagnostic.code !== candidate.expectedDiagnosticCode) {
+                    console.log({ wrongDiagnostic: diagnostic })
+                } else {
+                    correctDiagnostics++
+                }
+            } else {
+                console.log({
+                    multipleDiagnostic: diagnostics,
+                    expected: candidate.expectedDiagnosticCode,
+                })
+            }
+        }
         return undefined
     })
+    console.log({ correctDiagnostics, totalDiagnostics, totalCandidates })
 }
 
 interface FixCandidate {
@@ -34,31 +79,30 @@ function fixCandidates(
     globalBuckets: Buckets<DiagnosticCode>
 ): FixCandidate[] {
     sourceFile.statements
-    const localBuckets = new Buckets<DiagnosticCode>(10)
+    const localBuckets = new Buckets<DiagnosticCode>(20)
     const b = new AggregateBuckets([globalBuckets, localBuckets])
     const result: FixCandidate[] = []
     const loop = (node: ts.Node): void => {
         if (ts.isFunctionDeclaration(node) && node.type && isBasicTypeRef(node.type) && b.peek('2322')) {
             const returnNode = findReturn(node)
-            if (returnNode?.expression) {
-                b.acquire('2322')
+            if (returnNode?.expression && b.acquire('2322')) {
                 result.push({
                     impactedLine: sourceFile.getLineAndCharacterOfPosition(returnNode.expression.pos)
                         .line,
                     newContent: [
                         sourceFile.text.slice(0, returnNode.expression.pos),
                         " 'never gonna give you up'",
-                        sourceFile.text.slice(returnNode.expression.pos),
+                        sourceFile.text.slice(returnNode.expression.end),
                     ].join(''),
                     expectedDiagnosticCode: '2322',
                 })
             }
-        } else if (ts.isBlock(node) && b.peek('2322')) {
+        }
+        if (ts.isBlock(node) && b.peek('2322')) {
             let previousType: ts.Node | undefined
             for (const statement of node.statements) {
                 if (ts.isVariableDeclaration(statement) && statement.type) {
-                    if (previousType) {
-                        b.acquire('2322')
+                    if (previousType && b.acquire('2322')) {
                         result.push({
                             impactedLine: sourceFile.getLineAndCharacterOfPosition(statement.type.pos)
                                 .line,
@@ -74,7 +118,8 @@ function fixCandidates(
                     previousType = statement.type
                 }
             }
-        } else if (
+        }
+        if (
             ts.isCallExpression(node) &&
             node.arguments.length > 2 &&
             node.arguments[0].getText() !== node.arguments[1].getText() &&
@@ -90,7 +135,9 @@ function fixCandidates(
                 ].join(''),
                 expectedDiagnosticCode: '2345',
             })
-        } else if (ts.isPropertyAccessChain(node) && b.acquire('2345')) {
+        }
+
+        if (ts.isPropertyAccessChain(node) && b.acquire('2339')) {
             result.push({
                 impactedLine: sourceFile.getLineAndCharacterOfPosition(node.name.pos).line,
                 newContent: [
@@ -98,11 +145,11 @@ function fixCandidates(
                     'neverGonnaLetMeDown',
                     sourceFile.text.slice(node.name.getEnd()),
                 ].join(''),
-                expectedDiagnosticCode: '2345',
+                expectedDiagnosticCode: '2339',
             })
-        } else {
-            ts.forEachChild(node, child => loop(child))
         }
+
+        ts.forEachChild(node, child => loop(child))
     }
     loop(sourceFile)
 
