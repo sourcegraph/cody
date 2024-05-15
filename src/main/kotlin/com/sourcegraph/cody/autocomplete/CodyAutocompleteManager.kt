@@ -25,10 +25,16 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.Icons
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol.*
+import com.sourcegraph.cody.agent.protocol.AutocompleteItem
+import com.sourcegraph.cody.agent.protocol.AutocompleteParams
+import com.sourcegraph.cody.agent.protocol.AutocompleteResult
+import com.sourcegraph.cody.agent.protocol.AutocompleteTriggerKind
+import com.sourcegraph.cody.agent.protocol.CompletionItemParams
+import com.sourcegraph.cody.agent.protocol.ErrorCode
 import com.sourcegraph.cody.agent.protocol.ErrorCodeUtils.toErrorCode
 import com.sourcegraph.cody.agent.protocol.Position
 import com.sourcegraph.cody.agent.protocol.RateLimitError.Companion.toRateLimitError
+import com.sourcegraph.cody.agent.protocol.SelectedCompletionInfo
 import com.sourcegraph.cody.autocomplete.render.AutocompleteRendererType
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteBlockElementRenderer
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer
@@ -41,7 +47,9 @@ import com.sourcegraph.cody.ignore.IgnorePolicy
 import com.sourcegraph.cody.statusbar.CodyStatus
 import com.sourcegraph.cody.statusbar.CodyStatusService.Companion.notifyApplication
 import com.sourcegraph.cody.statusbar.CodyStatusService.Companion.resetApplication
-import com.sourcegraph.cody.vscode.*
+import com.sourcegraph.cody.vscode.CancellationToken
+import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
+import com.sourcegraph.cody.vscode.IntelliJTextDocument
 import com.sourcegraph.cody.vscode.Range
 import com.sourcegraph.cody.vscode.TextDocument
 import com.sourcegraph.common.CodyBundle
@@ -244,7 +252,6 @@ class CodyAutocompleteManager {
         runInEdt { ActionInIgnoredFileNotification().notify(project) }
         resetApplication(project)
         resultOuter.cancel(true)
-        null
       } else {
         val completions = agent.server.autocompleteExecute(params)
 
@@ -347,7 +354,7 @@ class CodyAutocompleteManager {
   @RequiresEdt
   fun displayAgentAutocomplete(
       editor: Editor,
-      offset: Int,
+      cursorOffset: Int,
       items: List<AutocompleteItem>,
       inlayModel: InlayModel,
       triggerKind: InlineCompletionTriggerKind,
@@ -357,13 +364,13 @@ class CodyAutocompleteManager {
     val range = getTextRange(editor.document, defaultItem.range)
     val originalText = editor.document.getText(range)
 
-    val formattedInsertText =
+    val formattedCompletionText =
         if (project == null ||
             System.getProperty("cody.autocomplete.enableFormatting") == "false") {
           defaultItem.insertText
         } else {
           CodyFormatter.formatStringBasedOnDocument(
-              defaultItem.insertText, project, editor.document, range, offset)
+              defaultItem.insertText, project, editor.document, range, cursorOffset)
         }
 
     // Run Myers diff between the existing text in the document and the `insertText` that is
@@ -387,12 +394,25 @@ class CodyAutocompleteManager {
       }
     }
 
-    defaultItem.insertText = formattedInsertText
-    val cursorPositionInOriginalText = offset - range.startOffset
-    val originalTextBeforeCursor = originalText.substring(0, cursorPositionInOriginalText)
-    val originalTextAfterCursor = originalText.substring(cursorPositionInOriginalText)
+    defaultItem.insertText = formattedCompletionText
+    val cursorOffsetInOriginalText = cursorOffset - range.startOffset
+
+    if (cursorOffsetInOriginalText > originalText.length) {
+      logger.warn(
+          """Skipping autocomplete because cursor position is outside of text range:
+            |Original text: `$originalText`
+            |Completion range: $range
+            |Cursor offset: $cursorOffset
+            |Cursor offset in completion text: $cursorOffsetInOriginalText
+          """
+              .trimMargin())
+      return
+    }
+
+    val originalTextBeforeCursor = originalText.substring(0, cursorOffsetInOriginalText)
+    val originalTextAfterCursor = originalText.substring(cursorOffsetInOriginalText)
     val completionText =
-        formattedInsertText
+        formattedCompletionText
             .removePrefix(originalTextBeforeCursor)
             .removeSuffix(originalTextAfterCursor)
     if (completionText.trim().isBlank()) return
@@ -405,7 +425,8 @@ class CodyAutocompleteManager {
       val renderer =
           CodyAutocompleteSingleLineRenderer(
               completionText.lines().first(), items, editor, AutocompleteRendererType.INLINE)
-      inlay = inlayModel.addInlineElement(offset, /* relatesToPrecedingText = */ true, renderer)
+      inlay =
+          inlayModel.addInlineElement(cursorOffset, /* relatesToPrecedingText = */ true, renderer)
     }
     val lines = completionText.lines()
     if (lines.size > 1) {
@@ -414,7 +435,7 @@ class CodyAutocompleteManager {
       val renderer = CodyAutocompleteBlockElementRenderer(text, items, editor)
       val inlay2 =
           inlayModel.addBlockElement(
-              /* offset = */ offset,
+              /* offset = */ cursorOffset,
               /* relatesToPrecedingText = */ true,
               /* showAbove = */ false,
               /* priority = */ Int.MAX_VALUE,
