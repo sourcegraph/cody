@@ -6,6 +6,7 @@
 import http from 'node:http'
 import https from 'node:https'
 
+import { agent } from '@sourcegraph/cody-shared'
 import {
     type CompletionCallbacks,
     type CompletionParameters,
@@ -63,15 +64,15 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             // TODO - Centralize this logic in a single place
             const [provider] = params.model?.split('/') ?? []
             if (provider === 'ollama') {
-                ollamaChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
+                await ollamaChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
                 return
             }
             if (provider === 'google') {
-                googleChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
+                await googleChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
                 return
             }
             if (provider === 'groq') {
-                groqChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
+                await groqChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
                 return
             }
 
@@ -122,9 +123,11 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         ...(customUserAgent ? { 'User-Agent': customUserAgent } : null),
                         ...this.config.customHeaders,
                         ...getTraceparentHeaders(),
+                        Connection: 'keep-alive',
                     },
                     // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
                     rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0',
+                    agent: agent.current?.(url),
                 },
                 (res: http.IncomingMessage) => {
                     const { 'set-cookie': _setCookie, ...safeHeaders } = res.headers

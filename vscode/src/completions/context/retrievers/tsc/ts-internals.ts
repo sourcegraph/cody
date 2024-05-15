@@ -62,3 +62,58 @@ export function getTextOfJsxAttributeName(node: ts.JsxAttributeName): string {
         ? ts.idText(node)
         : `${ts.idText(node.namespace)}:${ts.idText(node.name)}`
 }
+
+const internal_ts = ts as any
+
+export function formatSymbol(
+    checker: ts.TypeChecker,
+    declaration: ts.Node,
+    sym: ts.Symbol,
+    params?: { stripEnclosingInformation?: boolean }
+): string {
+    let displayParts: { text?: string; kind: string }[] =
+        internal_ts?.SymbolDisplay?.getSymbolDisplayPartsDocumentationAndSymbolKind?.(
+            checker,
+            sym,
+            declaration.getSourceFile(),
+            undefined,
+            declaration
+        )?.displayParts
+    const isName = (value: string): boolean => {
+        switch (value) {
+            case 'className':
+            case 'interfaceName':
+                return true
+            default:
+                return false
+        }
+    }
+    if (
+        params?.stripEnclosingInformation &&
+        displayParts.length > 6 &&
+        displayParts[0].text === '(' &&
+        displayParts[1].kind === 'text' &&
+        displayParts[2].text === ')' &&
+        displayParts[3].text === ' ' &&
+        isName(displayParts[4].kind) &&
+        displayParts[5].text === '.'
+    ) {
+        displayParts = displayParts.slice(6)
+    }
+    const displayText = displayParts?.map(({ text }) => text).join('')
+    return displayText ?? ''
+}
+
+export interface SymbolWalker {
+    walkType: (tpe: ts.Type) => void
+    walkSymbol: (tpe: ts.Symbol) => void
+}
+
+// Not used at the moment, but might be helpful in the future if we feel like
+// we're missing this functionality.
+export function getSymbolWalker(
+    checker: ts.TypeChecker,
+    visitor: (sym: ts.Symbol) => void
+): SymbolWalker | undefined {
+    return (checker as any).getSymbolWalker?.(visitor)
+}

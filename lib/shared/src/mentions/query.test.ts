@@ -4,6 +4,7 @@ import type { ContextMentionProvider } from './api'
 import {
     type MentionQuery,
     type MentionTrigger,
+    extractRangeFromFileMention,
     parseMentionQuery,
     scanForMentionTriggerInUserTextInput,
 } from './query'
@@ -20,6 +21,32 @@ describe('parseMentionQuery', () => {
         expect(parseMentionQuery('foo', [])).toEqual<MentionQuery>({
             provider: 'file',
             text: 'foo',
+            maybeHasRangeSuffix: false,
+            range: undefined,
+        })
+    })
+
+    test('file query with range', () => {
+        expect(parseMentionQuery('foo:', [])).toEqual<MentionQuery>({
+            provider: 'file',
+            text: 'foo',
+            maybeHasRangeSuffix: true,
+        })
+        expect(parseMentionQuery('foo:1', [])).toEqual<MentionQuery>({
+            provider: 'file',
+            text: 'foo',
+            maybeHasRangeSuffix: true,
+        })
+        expect(parseMentionQuery('foo:1-', [])).toEqual<MentionQuery>({
+            provider: 'file',
+            text: 'foo',
+            maybeHasRangeSuffix: true,
+        })
+        expect(parseMentionQuery('foo:1-2', [])).toEqual<MentionQuery>({
+            provider: 'file',
+            text: 'foo',
+            range: { start: { line: 0, character: 0 }, end: { line: 2, character: 0 } },
+            maybeHasRangeSuffix: true,
         })
     })
 
@@ -36,6 +63,7 @@ describe('parseMentionQuery', () => {
         expect(parseMentionQuery('@baz', [])).toEqual<MentionQuery>({
             provider: 'file',
             text: '@baz',
+            maybeHasRangeSuffix: false,
         })
     })
 
@@ -121,6 +149,68 @@ describe('scanForMentionTriggerInUserTextInput', () => {
             leadOffset: 2,
             matchingString: 'b/c:12-34',
             replaceableString: '@b/c:12-34',
+        })
+    })
+})
+
+describe('extractRangeFromFileMention', () => {
+    test('invalid line ranges', () => {
+        expect(extractRangeFromFileMention('')).toEqual({
+            textWithoutRange: '',
+            maybeHasRangeSuffix: false,
+        })
+        expect(extractRangeFromFileMention('foo')).toEqual({
+            textWithoutRange: 'foo',
+            maybeHasRangeSuffix: false,
+        })
+        expect(extractRangeFromFileMention('foo:')).toEqual({
+            textWithoutRange: 'foo',
+            maybeHasRangeSuffix: true,
+        })
+        expect(extractRangeFromFileMention('foo:1')).toEqual({
+            textWithoutRange: 'foo',
+            maybeHasRangeSuffix: true,
+        })
+        expect(extractRangeFromFileMention('foo:1-')).toEqual({
+            textWithoutRange: 'foo',
+            maybeHasRangeSuffix: true,
+        })
+        expect(extractRangeFromFileMention('foo:-1')).toEqual({
+            textWithoutRange: 'foo:-1',
+            maybeHasRangeSuffix: false,
+        })
+    })
+
+    test('line range', () => {
+        expect(extractRangeFromFileMention('foo:12-34')).toEqual({
+            textWithoutRange: 'foo',
+            range: {
+                start: { line: 11, character: 0 },
+                end: { line: 34, character: 0 },
+            },
+            maybeHasRangeSuffix: true,
+        })
+    })
+
+    test('single line range', () => {
+        expect(extractRangeFromFileMention('foo:12-12')).toEqual({
+            textWithoutRange: 'foo',
+            range: {
+                start: { line: 11, character: 0 },
+                end: { line: 12, character: 0 },
+            },
+            maybeHasRangeSuffix: true,
+        })
+    })
+
+    test('reversed line range', () => {
+        expect(extractRangeFromFileMention('foo:34-12')).toEqual({
+            textWithoutRange: 'foo',
+            range: {
+                start: { line: 11, character: 0 },
+                end: { line: 34, character: 0 },
+            },
+            maybeHasRangeSuffix: true,
         })
     })
 })

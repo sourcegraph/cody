@@ -98,9 +98,10 @@ export function getConfiguration(
             !!getHiddenSetting<number | undefined>('testing.localEmbeddings.dimension', undefined)
         )
     }
+    const vsCodeConfig = vscode.workspace.getConfiguration()
 
     return {
-        proxy: config.get<string | null>(CONFIG_KEY.proxy, null),
+        proxy: vsCodeConfig.get<string>('http.proxy'),
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
         customHeaders: config.get<object>(CONFIG_KEY.customHeaders, {}) as Record<string, string>,
         useContext: config.get<ConfigurationUseContext>(CONFIG_KEY.useContext) || 'embeddings',
@@ -137,6 +138,7 @@ export function getConfiguration(
         autocompleteExperimentalGraphContext,
         experimentalSimpleChatContext: getHiddenSetting('experimental.simpleChatContext', true),
         experimentalSymfContext: getHiddenSetting('experimental.symfContext', true),
+        experimentalCommitMessage: getHiddenSetting('experimental.commitMessage', true),
 
         experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
@@ -166,6 +168,10 @@ export function getConfiguration(
         autocompleteExperimentalSmartThrottle: getHiddenSetting(
             'autocomplete.experimental.smartThrottle',
             false
+        ),
+        autocompleteExperimentalMultiModelCompletions: getHiddenSetting(
+            'autocomplete.experimental.multiModelCompletions',
+            undefined
         ),
 
         // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.

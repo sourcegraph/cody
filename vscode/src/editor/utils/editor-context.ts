@@ -21,6 +21,7 @@ import {
     isCodyIgnoredFile,
     isDefined,
     isWindows,
+    toRangeData,
 } from '@sourcegraph/cody-shared'
 
 import { getOpenTabsUris } from '.'
@@ -226,7 +227,7 @@ async function createContextFileFromUri(
         return []
     }
 
-    const range = selectionRange ? createContextFileRange(selectionRange) : selectionRange
+    const range = toRangeData(selectionRange)
     return [
         type === 'file'
             ? {
@@ -245,19 +246,6 @@ async function createContextFileFromUri(
                   kind: kind!,
               },
     ]
-}
-
-function createContextFileRange(selectionRange: vscode.Range): ContextItem['range'] {
-    return {
-        start: {
-            line: selectionRange.start.line,
-            character: selectionRange.start.character,
-        },
-        end: {
-            line: selectionRange.end.line,
-            character: selectionRange.end.character,
-        },
-    }
 }
 
 /**

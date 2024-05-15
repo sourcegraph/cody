@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
 import { ContentProvider } from '../FixupContentStore'
 import type { FixupFile } from '../FixupFile'

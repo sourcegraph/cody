@@ -1,10 +1,13 @@
 import http from 'node:http'
 import https from 'node:https'
-
+import { parse as parseUrl } from 'node:url'
+import { agent } from '@sourcegraph/cody-shared'
+import type { Configuration } from '@sourcegraph/cody-shared'
+import { HttpProxyAgent } from 'http-proxy-agent'
+import { HttpsProxyAgent } from 'https-proxy-agent'
 import { SocksProxyAgent } from 'socks-proxy-agent'
-
-import { type Configuration, agent } from '@sourcegraph/cody-shared'
-
+// @ts-ignore
+import { registerLocalCertificates } from './certs'
 import { getConfiguration } from './configuration'
 
 // The path to the exported class can be found in the npm contents
@@ -19,20 +22,52 @@ const pacProxyAgent = 'PacProxyAgent'
 let httpAgent: http.Agent
 let httpsAgent: https.Agent
 let socksProxyAgent: SocksProxyAgent
+let httpProxyAgent: HttpProxyAgent<string>
+let httpsProxyAgent: HttpsProxyAgent<string>
 
 function getCustomAgent({ proxy }: Configuration): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
     return ({ protocol }) => {
-        if (proxy?.startsWith('socks') && !socksProxyAgent) {
-            socksProxyAgent = new SocksProxyAgent(proxy, {
-                keepAlive: true,
-                keepAliveMsecs: 60000,
-            })
+        const proxyURL = proxy || getSystemProxyURI(protocol, process.env)
+        if (!proxyURL) {
+            if (protocol === 'http:') {
+                return httpAgent
+            }
+            return httpsAgent
+        }
+
+        if (proxyURL?.startsWith('socks')) {
+            if (!socksProxyAgent) {
+                socksProxyAgent = new SocksProxyAgent(proxyURL, {
+                    keepAlive: true,
+                    keepAliveMsecs: 60000,
+                })
+            }
             return socksProxyAgent
         }
-        if (protocol === 'http:') {
-            return httpAgent
+        const proxyEndpoint = parseUrl(proxyURL)
+
+        const opts = {
+            host: proxyEndpoint.hostname || '',
+            port:
+                (proxyEndpoint.port ? +proxyEndpoint.port : 0) ||
+                (proxyEndpoint.protocol === 'https' ? 443 : 80),
+            auth: proxyEndpoint.auth,
+            rejectUnauthorized: true,
+            keepAlive: true,
+            keepAliveMsecs: 60000,
+            ...https.globalAgent.options,
         }
-        return httpsAgent
+        if (protocol === 'http:') {
+            if (!httpProxyAgent) {
+                httpProxyAgent = new HttpProxyAgent(proxyURL, opts)
+            }
+            return httpProxyAgent
+        }
+
+        if (!httpsProxyAgent) {
+            httpsProxyAgent = new HttpsProxyAgent(proxyURL, opts)
+        }
+        return httpsProxyAgent
     }
 }
 
@@ -43,13 +78,29 @@ export function setCustomAgent(
     return agent.current as ({ protocol }: Pick<URL, 'protocol'>) => http.Agent
 }
 
+function getSystemProxyURI(protocol: string, env: typeof process.env): string | null {
+    if (protocol === 'http:') {
+        return env.HTTP_PROXY || env.http_proxy || null
+    }
+    if (protocol === 'https:') {
+        return env.HTTPS_PROXY || env.https_proxy || env.HTTP_PROXY || env.http_proxy || null
+    }
+    if (protocol.startsWith('socks')) {
+        return env.SOCKS_PROXY || env.socks_proxy || null
+    }
+    return null
+}
+
 export function initializeNetworkAgent(): void {
+    // This is to load certs for HTTPS requests
+    registerLocalCertificates()
     httpAgent = new http.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
     httpsAgent = new https.Agent({
         ...https.globalAgent.options,
         keepAlive: true,
         keepAliveMsecs: 60000,
     })
+
     const customAgent = setCustomAgent(getConfiguration())
 
     /**
@@ -66,7 +117,7 @@ export function initializeNetworkAgent(): void {
      */
     try {
         const PacProxyAgent =
-            (globalThis as any)?.[nodeModules]?.[proxyAgentPath]?.[pacProxyAgent] ?? undefined
+            (globalThis as any)?.[nodeModules]?.[proxyAgentPath]?.[pacProxyAgent] ?? customAgent
         if (PacProxyAgent) {
             const originalConnect = PacProxyAgent.prototype.connect
             // Patches the implementation defined here:

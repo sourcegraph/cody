@@ -7,6 +7,7 @@ import {
 } from '../token/constants'
 
 import { ModelUsage } from './types'
+import { ModelUIGroup } from './utils'
 
 // The models must first be added to the custom chat models list in https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
 const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
@@ -16,6 +17,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         model: 'anthropic/claude-3-sonnet-20240229',
         provider: 'Anthropic',
         default: true,
+        initialDefault: true,
         codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         // Has a higher context window with a seperated limit for user-context.
@@ -25,6 +27,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
             context: { user: CLAUDE3_USER_CONTEXT_TOKEN_BUDGET },
         },
         deprecated: false,
+        uiGroup: ModelUIGroup.Balanced,
     },
     {
         title: 'Claude 3 Opus',
@@ -40,6 +43,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
             context: { user: CLAUDE3_USER_CONTEXT_TOKEN_BUDGET },
         },
         deprecated: false,
+        uiGroup: ModelUIGroup.Accuracy,
     },
     {
         title: 'Claude 3 Haiku',
@@ -50,6 +54,18 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
         deprecated: false,
+        uiGroup: ModelUIGroup.Speed,
+    },
+    {
+        title: 'GPT-4o',
+        model: 'openai/gpt-4o',
+        provider: 'OpenAI',
+        default: false,
+        codyProOnly: true,
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
+        deprecated: false,
+        uiGroup: ModelUIGroup.Accuracy,
     },
     {
         title: 'GPT-4 Turbo',
@@ -60,6 +76,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
         deprecated: false,
+        uiGroup: ModelUIGroup.Accuracy,
     },
     {
         title: 'GPT-3.5 Turbo',
@@ -70,6 +87,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
         deprecated: false,
+        uiGroup: ModelUIGroup.Speed,
     },
     // TODO (tom) Improve prompt for Mixtral + Edit to see if we can use it there too.
     {
@@ -81,6 +99,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         usage: [ModelUsage.Chat],
         contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
         deprecated: false,
+        uiGroup: ModelUIGroup.Speed,
     },
     {
         title: 'Mixtral 8x22B',
@@ -91,6 +110,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         usage: [ModelUsage.Chat],
         contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
         deprecated: false,
+        uiGroup: ModelUIGroup.Accuracy,
     },
     // NOTE: Models soon to be deprecated.
     {

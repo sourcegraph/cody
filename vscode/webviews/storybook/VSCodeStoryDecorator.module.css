@@ -7,17 +7,14 @@
 
 body {
     background-color: var(--vscode-editor-background);
-}
-
-vscode-button::part(control) {
-    font-size: inherit;
-}
-
-.container {
     font-size: var(--vscode-font-size);
     font-family: var(--vscode-font-family);
     color: var(--vscode-editor-foreground);
     height: 100%;
+}
+
+vscode-button::part(control) {
+    font-size: inherit;
 }
 
 .container a {

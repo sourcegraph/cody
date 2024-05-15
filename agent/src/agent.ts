@@ -1,5 +1,4 @@
 import { spawn } from 'node:child_process'
-import * as fspromises from 'node:fs/promises'
 import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
@@ -73,6 +72,7 @@ import type {
     ProtocolTextDocument,
     TextEdit,
 } from './protocol-alias'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
 import * as vscode_shim from './vscode-shim'
 
@@ -84,13 +84,6 @@ export async function initializeVscodeExtension(
     extensionClient: ExtensionClient
 ): Promise<void> {
     const paths = envPaths('Cody')
-    try {
-        const gitdirPath = path.join(workspaceRoot.fsPath, '.git')
-        await fspromises.stat(gitdirPath)
-        vscode_shim.addGitRepository(workspaceRoot, 'fake_vscode_shim_commit')
-    } catch {
-        /* ignore */
-    }
     const context: vscode.ExtensionContext = {
         asAbsolutePath(relativePath) {
             return path.resolve(workspaceRoot.fsPath, relativePath)

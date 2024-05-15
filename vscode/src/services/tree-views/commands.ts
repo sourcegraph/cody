@@ -12,6 +12,11 @@ export function getCommandTreeItems(customCommands: CodyCommand[]): CodyTreeItem
     // Create a CodyTreeItem for each group and add to treeNodes
     // Log all event source as 'sidebar'
     for (const item of CodyCommandMenuItems) {
+        if (item.requires?.setting && !vscode.workspace.getConfiguration().get(item.requires.setting)) {
+            // Skip items that are missing the correct setting
+            continue
+        }
+
         const treeItem = new CodyTreeItem(
             item.key,
             item.description,

@@ -9,6 +9,8 @@ import {
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { logDebug } from '../log'
+import { TestSupport } from '../test-support'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from './telemetry'
 
 const utf8 = new TextDecoder('utf-8')
@@ -20,6 +22,10 @@ const utf8 = new TextDecoder('utf-8')
  * NOTE: Execute ONCE at extension activation time.
  */
 export function setUpCodyIgnore(config: ConfigurationWithAccessToken): vscode.Disposable[] {
+    if (TestSupport.instance) {
+        TestSupport.instance.ignoreHelper.set(ignores)
+    }
+
     ignores.setActiveState(config.internalUnstable)
     if (!config.internalUnstable) {
         return []

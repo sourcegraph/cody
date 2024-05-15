@@ -16,7 +16,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import type { URI } from 'vscode-uri'
-import { getCodebaseFromWorkspaceUri } from '../repository/git-extension-api'
+import { repoNameResolver } from '../repository/repo-name-resolver'
 import type * as repofetcher from './repo-fetcher'
 
 export enum RepoInclusion {
@@ -131,7 +131,7 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
     // IRemoteSearch implementation. This is only used for inline edit context.
 
     public async setWorkspaceUri(uri: URI): Promise<void> {
-        const codebase = getCodebaseFromWorkspaceUri(uri)
+        const [codebase] = await repoNameResolver.getRepoNamesFromWorkspaceUri(uri)
         if (!codebase) {
             this.setRepos([], RepoInclusion.Automatic)
             return

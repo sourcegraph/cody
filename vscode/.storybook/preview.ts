@@ -1,5 +1,5 @@
-// Replace your-framework with the framework you are using (e.g., react, vue3)
 import type { Preview } from '@storybook/react'
+import '../webviews/components/shadcn/shadcn.css'
 
 const preview: Preview = {
     parameters: {

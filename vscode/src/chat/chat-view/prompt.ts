@@ -9,9 +9,7 @@ import {
     isDefined,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-
 import { logDebug } from '../../log'
-
 import { PromptBuilder } from '../../prompt-builder'
 import type { SimpleChatModel } from './SimpleChatModel'
 
@@ -28,11 +26,7 @@ interface PromptInfo {
     }
 }
 
-export interface IPrompter {
-    makePrompt(chat: SimpleChatModel, codyApiVersion: number): Promise<PromptInfo>
-}
-
-export class DefaultPrompter implements IPrompter {
+export class DefaultPrompter {
     constructor(
         private explicitContext: ContextItemWithContent[],
         private getEnhancedContext?: (query: PromptString) => Promise<ContextItem[]>
@@ -60,7 +54,7 @@ export class DefaultPrompter implements IPrompter {
             }
 
             // Add existing chat transcript messages
-            const reverseTranscript = [...chat.getMessages()].reverse()
+            const reverseTranscript = [...chat.getDehydratedMessages()].reverse()
             const transcriptLimitReached = promptBuilder.tryAddMessages(reverseTranscript)
             if (transcriptLimitReached) {
                 logDebug(
@@ -72,24 +66,21 @@ export class DefaultPrompter implements IPrompter {
             // Counter for context items categorized by source
             const ignoredContext = { user: 0, enhanced: 0, transcript: 0 }
 
-            // Add context from new user-specified context items, e.g. @-mentions, @-uri
-            const newUserContextMessages = await promptBuilder.tryAddContext(
-                'user',
-                this.explicitContext
-            )
-            ignoredContext.user += newUserContextMessages.ignored.length
+            // Add context from new user-specified context items, e.g. @-mentions, active selection, etc.
+            const newUserContext = await promptBuilder.tryAddContext('user', this.explicitContext)
+            ignoredContext.user += newUserContext.ignored.length
 
-            // NOTE: Only used for display excluded context from user-specifed context items in UI
-            const ignoredUserContext: ContextItem[] = newUserContextMessages.ignored.map(c => ({
-                ...c,
-                isTooLarge: true,
-            }))
+            // Lists of context items added from the last human message.
+            // NOTE: For UI display only, not used in the prompt.
+            const context: PromptInfo['context'] = { used: [], ignored: [] }
+            // List of valid context items added from the last human message
+            context.used.push(...newUserContext.added.map(c => ({ ...c, isTooLarge: false })))
+            // NOTE: Only used for display excluded context from user-specified context items in UI
+            context.ignored.push(...newUserContext.ignored.map(c => ({ ...c, isTooLarge: true })))
 
             // Add user and enhanced context from previous messages (chat transcript)
-            const historyContext = await promptBuilder.tryAddContext(
-                'history',
-                reverseTranscript.flatMap(m => m?.contextFiles).filter(isDefined)
-            )
+            const historyItems = reverseTranscript.flatMap(m => m?.contextFiles).filter(isDefined)
+            const historyContext = await promptBuilder.tryAddContext('history', historyItems.reverse())
             ignoredContext.transcript += historyContext.ignored.length
 
             // Get new enhanced context from current editor or broader search when enabled
@@ -104,6 +95,9 @@ export class DefaultPrompter implements IPrompter {
                     'enhanced',
                     newEnhancedContextItems
                 )
+                // Because this enhanced context is added for the last human message,
+                // we will also add it to the context list for display.
+                context.used.push(...newEnhancedMessages.added)
                 ignoredContext.enhanced += newEnhancedMessages.ignored.length
             }
 
@@ -114,10 +108,7 @@ export class DefaultPrompter implements IPrompter {
 
             return {
                 prompt: promptBuilder.build(),
-                context: {
-                    used: promptBuilder.contextItems,
-                    ignored: ignoredUserContext,
-                },
+                context,
             }
         })
     }

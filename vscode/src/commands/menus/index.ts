@@ -1,4 +1,5 @@
 import { type CodyCommand, PromptString } from '@sourcegraph/cody-shared'
+import * as vscode from 'vscode'
 import { commands, window } from 'vscode'
 import { CommandMenuOption, CustomCommandConfigMenuItems } from './items/menu'
 
@@ -6,6 +7,7 @@ import { CustomCommandType } from '@sourcegraph/cody-shared'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { CodyCommandMenuItems } from '..'
 import { executeEdit } from '../../edit/execute'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
 import { executeChat } from '../execute/ask'
 import { openCustomCommandDocsLink } from '../services/custom-commands'
@@ -30,7 +32,7 @@ export async function showCommandMenu(
         { source },
         { hasV2Event: true }
     )
-    telemetryRecorder.recordEvent(`cody.menu:command:${type}`, 'clicked', {
+    telemetryRecorder.recordEvent(`cody.menu.command.${type}`, 'clicked', {
         privateMetadata: { source },
     })
 
@@ -44,16 +46,25 @@ export async function showCommandMenu(
         // Add Default Commands
         if (type !== 'custom') {
             items.push(CommandMenuSeperator.commands)
-            for (const _command of CodyCommandMenuItems) {
+            for (const item of CodyCommandMenuItems) {
                 // Skip the 'Custom Commands' option
-                if (_command.key === 'custom') {
+                if (item.key === 'custom') {
                     continue
                 }
-                const key = _command.key
-                const label = `$(${_command.icon}) ${_command.description}`
-                const command = _command.command.command
+
+                if (
+                    item.requires?.setting &&
+                    !vscode.workspace.getConfiguration().get(item.requires?.setting)
+                ) {
+                    // Skip items that are missing the correct setting
+                    continue
+                }
+
+                const key = item.key
+                const label = `$(${item.icon}) ${item.description}`
+                const command = item.command.command
                 // Show keybind as description if present
-                const description = _command.keybinding ? _command.keybinding : ''
+                const description = item.keybinding ? item.keybinding : ''
                 const type = 'default'
                 items.push({ label, command, description, type, key })
             }

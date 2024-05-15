@@ -58,7 +58,7 @@
 
 .submit-button,
 .submit-button-disabled {
-    margin-bottom: 0;
+    margin-bottom: 0.0625rem;
 }
 
 .submit-button[disabled] {
@@ -68,6 +68,11 @@
 
 .submit-button svg {
     opacity: 1;
+}
+
+/* Put the up arrow in the exact center */
+.send-icon-arrow-up {
+    transform: translateX(-0.5px);
 }
 
 .text-area-container {

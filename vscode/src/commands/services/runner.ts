@@ -13,6 +13,7 @@ import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import type { EditMode } from '../../edit/types'
 import { logDebug } from '../../log'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
 
 import { sortContextFiles } from '../../chat/chat-view/agentContextSorting'

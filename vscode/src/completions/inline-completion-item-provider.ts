@@ -76,6 +76,17 @@ interface CodyCompletionItemProviderConfig {
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
+
+    // Flag to check if the current request is also triggered for multiple providers.
+    // When true it means the inlineCompletion are triggerd for multiple model for comparison purpose.
+    // Check `createInlineCompletionItemFromMultipleProviders` method in create-inline-completion-item-provider for more detail.
+    noInlineAccept?: boolean
+}
+
+export interface MultiModelCompletionsResults {
+    provider: string
+    model: string
+    completion?: string
 }
 
 interface CompletionRequest {
@@ -132,6 +143,7 @@ export class InlineCompletionItemProvider
             tracer,
             isRunningInsideAgent: config.isRunningInsideAgent ?? false,
             isDotComUser: config.isDotComUser ?? false,
+            noInlineAccept: config.noInlineAccept ?? false,
         }
 
         if (this.config.completeSuggestWidgetSelection) {
@@ -174,15 +186,18 @@ export class InlineCompletionItemProvider
             [this.config.providerConfig.identifier, this.config.providerConfig.model].join('/')
         )
 
-        this.disposables.push(
-            this.contextMixer,
-            vscode.commands.registerCommand(
-                'cody.autocomplete.inline.accepted',
-                ({ codyCompletion }: AutocompleteInlineAcceptedCommandArgs) => {
-                    void this.handleDidAcceptCompletionItem(codyCompletion)
-                }
+        this.disposables.push(this.contextMixer)
+        if (!this.config.noInlineAccept) {
+            // We don't want to accept and log items when we are doing completion comparison from different models.
+            this.disposables.push(
+                vscode.commands.registerCommand(
+                    'cody.autocomplete.inline.accepted',
+                    ({ codyCompletion }: AutocompleteInlineAcceptedCommandArgs) => {
+                        void this.handleDidAcceptCompletionItem(codyCompletion)
+                    }
+                )
             )
-        )
+        }
 
         // Warm caches for the config feature configuration to avoid the first completion call
         // having to block on this.
@@ -558,7 +573,6 @@ export class InlineCompletionItemProvider
         if (!completion) {
             return
         }
-
         CompletionLogger.suggested(completion.logId, completion.span)
     }
 
@@ -643,6 +657,7 @@ export class InlineCompletionItemProvider
                 description: `${error.userMessage} ${error.retryMessage ?? ''}`.trim(),
                 errorType: error.name,
                 removeAfterSelected: true,
+                removeAfterEpoch: error.retryAfterDate ? Number(error.retryAfterDate) : undefined,
                 onSelect: () => {
                     if (canUpgrade) {
                         telemetryService.log('CodyVSCodeExtension:upsellUsageLimitCTA:clicked', {
