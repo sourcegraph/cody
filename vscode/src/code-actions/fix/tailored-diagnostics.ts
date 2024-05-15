@@ -12,6 +12,7 @@ interface TailoredDiagnosticInformation {
      * - `provided`: use the range provided by the diagnostic.
      * - `expandedFunctionOrBlock`: expand the range to the nearest function or block.
      * - `expandedLines`: expand the range to include all characters from the provided range lines
+     * - `expandToFurtherIdentifierOrFunction`: expand the range to the furthest identifier definition, or the nearest function. Whichever comes first.`
      * - `top-of-file`: target the top of the file (possibly useful for import diagnostics)
      */
     targetRange: 'expandedFunctionOrBlock' | 'expandedLines' | 'provided' | 'top-of-file'
