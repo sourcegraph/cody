@@ -63,6 +63,7 @@ export interface Configuration {
     experimentalOllamaChat: boolean
     experimentalSupercompletions: boolean
     experimentalGithubAccessToken: string
+    experimentalCommitMessage: boolean
 
     /**
      * Unstable Features for internal testing only
@@ -77,6 +78,7 @@ export interface Configuration {
     autocompleteExperimentalOllamaOptions: OllamaOptions
     autocompleteExperimentalFireworksOptions?: FireworksOptions
     autocompleteExperimentalSmartThrottle?: boolean
+    autocompleteExperimentalMultiModelCompletions?: MultimodelSingleModelConfig[]
 
     /**
      * Hidden settings
@@ -235,6 +237,13 @@ export interface FireworksOptions {
         top_p?: number
         stop?: string[]
     }
+}
+
+export interface MultimodelSingleModelConfig {
+    provider: string
+    model: string
+    // This flag decides if to enable "cody.autocomplete.experimental.fireworksOptions" settings when creating a custom provider
+    enableExperimentalFireworksOverrides: boolean
 }
 
 export interface EmbeddingsModelConfig {

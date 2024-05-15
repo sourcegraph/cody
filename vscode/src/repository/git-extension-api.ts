@@ -1,95 +1,59 @@
 import * as vscode from 'vscode'
 
-import { convertGitCloneURLToCodebaseName, ignores } from '@sourcegraph/cody-shared'
-
-import { logDebug } from '../log'
-
-import { TestSupport } from '../test-support'
 import type { API, GitExtension } from './builtinGitExtension'
 
-export function gitAPI(): API | undefined {
-    const extension = vscode.extensions.getExtension<GitExtension>('vscode.git')
-    if (!extension) {
-        console.warn('Git extension not available')
-        return undefined
-    }
-    if (!extension.isActive) {
-        console.warn('Git extension not active')
-        return undefined
-    }
-
-    return extension.exports.getAPI(1)
-}
+/**
+ * ❗️ The Git extension API instance is only available in the VS Code extension. ️️❗️
+ *
+ * Product features dependent on the Git information need to implement Git-extension-agnostic helpers
+ * similar to {@link RepoNameResolver.getRepoRemoteUrlsFromWorkspaceUri} to enable the same behavior in the agent.
+ */
+export let vscodeGitAPI: API | undefined
+const GIT_EXTENSION_API_VERSION = 1
 
 /**
- * NOTE: This is for Chat and Commands where we use the git extension to get the codebase name.
- *
  * Initializes the Git API by activating the Git extension and getting the API instance.
- * Also sets up the .codyignore handler.
  */
-let vscodeGitAPI: API | undefined
-export async function gitAPIinit(): Promise<vscode.Disposable> {
-    const extension = vscode.extensions.getExtension<GitExtension>('vscode.git')
-    // Initializes the Git API by activating the Git extension and getting the API instance.
-    // Sets up the .codyignore handler.
-    function init(): void {
-        if (!vscodeGitAPI && extension?.isActive) {
-            if (TestSupport.instance) {
-                TestSupport.instance.ignoreHelper.set(ignores)
-            }
-            // This throws error if the git extension is disabled
-            vscodeGitAPI = extension.exports?.getAPI(1)
-        }
+export async function initVSCodeGitApi(): Promise<vscode.Disposable> {
+    // Should be available in the VS Code extension because of `"extensionDependencies": ["vscode.git"]`.
+    const gitExtension = vscode.extensions.getExtension<GitExtension>('vscode.git')
+
+    if (vscodeGitAPI) {
+        throw new Error('Git API already initialized')
     }
+
     // Initialize the git extension if it is available
     try {
-        await extension?.activate().then(() => init())
+        if (!gitExtension?.isActive) {
+            await gitExtension?.activate()
+        }
+
+        // This throws error if the git extension is disabled
+        vscodeGitAPI = gitExtension?.exports?.getAPI(GIT_EXTENSION_API_VERSION)
     } catch (error) {
-        vscodeGitAPI = undefined
         // Display error message if git extension is disabled
-        const errorMessage = `${error}`
-        if (extension?.isActive && errorMessage.includes('Git model not found')) {
+        if (gitExtension?.isActive && `${error}`.includes('Git model not found')) {
             console.warn(
                 'Git extension is not available. Please ensure it is enabled for Cody to work properly.'
             )
         }
     }
+
     // Update vscodeGitAPI when the extension becomes enabled/disabled
     return {
         dispose() {
-            extension?.exports?.onDidChangeEnablement(enabled => {
-                if (enabled) {
-                    return init()
-                }
-                vscodeGitAPI = undefined
+            gitExtension?.exports?.onDidChangeEnablement(isEnabled => {
+                vscodeGitAPI = isEnabled
+                    ? gitExtension.exports?.getAPI(GIT_EXTENSION_API_VERSION)
+                    : undefined
             })
         },
     }
 }
 
 /**
- * Gets the codebase name from a workspace / file URI.
- *
- * Checks if the Git API is initialized, initializes it if not.
- * Gets the Git repository for the given URI.
- * If found, gets the codebase name from the repository.
- * Returns the codebase name, or undefined if not found.
+ * ❗️ The Git extension API instance is only available in the VS Code extension. ️️❗️
  */
-export function getCodebaseFromWorkspaceUri(uri: vscode.Uri): string | undefined {
-    try {
-        const repository = vscodeGitAPI?.getRepository(uri)
-        const remoteOriginUrl =
-            repository?.state.remotes[0]?.pushUrl || repository?.state.remotes[0]?.fetchUrl
-
-        if (remoteOriginUrl) {
-            return convertGitCloneURLToCodebaseName(remoteOriginUrl) || undefined
-        }
-    } catch (error) {
-        logDebug('repositoryHelper:getCodebaseFromWorkspaceUri', 'error', { verbose: error })
-    }
-    return undefined
-}
-
 export function gitRemoteUrlsFromGitExtension(uri: vscode.Uri): string[] | undefined {
     const repository = vscodeGitAPI?.getRepository(uri)
     const remoteUrls = new Set<string>()
@@ -107,6 +71,10 @@ export function gitRemoteUrlsFromGitExtension(uri: vscode.Uri): string[] | undef
     return remoteUrls.size ? Array.from(remoteUrls) : undefined
 }
 
+/**
+ * ❗️ The Git extension API instance is only available in the VS Code extension. ️️❗️
+ * TODO: implement agent support in https://github.com/sourcegraph/cody/issues/4139
+ */
 export function gitCommitIdFromGitExtension(uri: vscode.Uri): string | undefined {
     const repository = vscodeGitAPI?.getRepository(uri)
     return repository?.state?.HEAD?.commit

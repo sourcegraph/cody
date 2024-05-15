@@ -114,7 +114,7 @@ test.extend<helpers.WorkspaceDirectory>({
     await expect(chatFrame.locator('.codicon-circle-slash')).toBeVisible({
         timeout: 60000,
     })
-    await expect(chatFrame.getByText('Folder is not a Git repository.')).toBeVisible()
+    await expect(chatFrame.getByText('Folder is not a Git repository root.')).toBeVisible()
 })
 
 test('git repositories without a remote should explain the issue', async ({ page, sidebar }) => {

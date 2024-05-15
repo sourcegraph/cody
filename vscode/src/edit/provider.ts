@@ -18,7 +18,6 @@ import { isNetworkError } from '../services/AuthProvider'
 
 import { workspace } from 'vscode'
 import { doesFileExist } from '../commands/utils/workspace-files'
-import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import { CodyTaskState } from '../non-stop/utils'
 import { telemetryService } from '../services/telemetry'
 import { splitSafeMetadata } from '../services/telemetry-v2'
@@ -37,9 +36,8 @@ export interface EditProviderOptions extends EditManagerOptions {
 // "tools" like directing the response into a specific file. Code is forwarded
 // to the FixupTask.
 export class EditProvider {
-    private insertionResponse: string | null = null
+    private insertionQueue: { response: string; isMessageInProgress: boolean }[] = []
     private insertionInProgress = false
-    private insertionPromise: Promise<void> | null = null
     private abortController: AbortController | null = null
 
     constructor(public config: EditProviderOptions) {}
@@ -213,24 +211,28 @@ export class EditProvider {
             })
         }
 
-        if (isRunningInsideAgent() && this.config.task.intent === 'add') {
-            // TODO: We have disabled running `handleStreamedFixupInsert` through Agent
-            // as we are running into a blocking issue where this results in duplicate
-            // chunks of text from the LLM being inserted into the document.
-            // Issue to fix: https://github.com/sourcegraph/jetbrains/issues/1449
-
-            if (isMessageInProgress) {
-                // Response hasn't finished, disable until we have the full response
-                return
-            }
-
-            return this.handleFixupInsert(response, isMessageInProgress)
-        }
-
         const intentsForInsert = ['add', 'test']
-        return intentsForInsert.includes(this.config.task.intent)
-            ? this.handleStreamedFixupInsert(response, isMessageInProgress)
-            : this.handleFixupEdit(response, isMessageInProgress)
+        if (intentsForInsert.includes(this.config.task.intent)) {
+            this.queueInsertion(response, isMessageInProgress)
+        } else {
+            this.handleFixupEdit(response, isMessageInProgress)
+        }
+    }
+
+    private queueInsertion(response: string, isMessageInProgress: boolean): void {
+        this.insertionQueue.push({ response, isMessageInProgress })
+        if (!this.insertionInProgress) {
+            this.processQueue()
+        }
+    }
+
+    private async processQueue(): Promise<void> {
+        this.insertionInProgress = true
+        while (this.insertionQueue.length > 0) {
+            const { response, isMessageInProgress } = this.insertionQueue.shift()!
+            await this.handleFixupInsert(response, isMessageInProgress)
+        }
+        this.insertionInProgress = false
     }
 
     /**
@@ -252,35 +254,9 @@ export class EditProvider {
     private async handleFixupInsert(response: string, isMessageInProgress: boolean): Promise<void> {
         return this.config.controller.didReceiveFixupInsertion(
             this.config.task.id,
-            responseTransformer(response, this.config.task, this.insertionInProgress),
-            this.insertionInProgress ? 'streaming' : 'complete'
+            responseTransformer(response, this.config.task, isMessageInProgress),
+            isMessageInProgress ? 'streaming' : 'complete'
         )
-    }
-
-    private async handleStreamedFixupInsert(
-        response: string,
-        isMessageInProgress: boolean
-    ): Promise<void> {
-        this.insertionResponse = response
-        this.insertionInProgress = isMessageInProgress
-
-        if (this.insertionPromise) {
-            // Already processing an insertion, wait for it to finish
-            return
-        }
-
-        while (this.insertionResponse !== null) {
-            const responseToSend = this.insertionResponse
-            this.insertionResponse = null
-
-            this.insertionPromise = this.handleFixupInsert(responseToSend, this.insertionInProgress)
-
-            try {
-                await this.insertionPromise
-            } finally {
-                this.insertionPromise = null
-            }
-        }
     }
 
     private async handleFileCreationResponse(text: string, isMessageInProgress: boolean): Promise<void> {
@@ -327,13 +303,10 @@ export class EditProvider {
             if (!fileIsFound) {
                 newFileUri = newFileUri.with({ scheme: 'untitled' })
             }
-            this.insertionPromise = this.config.controller.didReceiveNewFileRequest(task.id, newFileUri)
             try {
-                await this.insertionPromise
+                await this.config.controller.didReceiveNewFileRequest(task.id, newFileUri)
             } catch (error) {
                 this.handleError(new Error('Cody failed to generate unit tests', { cause: error }))
-            } finally {
-                this.insertionPromise = null
             }
         }
     }

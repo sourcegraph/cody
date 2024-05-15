@@ -13,14 +13,12 @@ export const MODEL_ITEM: vscode.QuickPickItem = {
 }
 
 export const DOCUMENT_ITEM: vscode.QuickPickItem = {
-    label: 'Document Code...',
-    detail: 'Add code documentation',
+    label: 'Document Code',
     alwaysShow: true,
 }
 
 export const TEST_ITEM: vscode.QuickPickItem = {
-    label: 'Generate Tests...',
-    detail: 'Generate unit tests',
+    label: 'Generate Tests',
     alwaysShow: true,
 }
 

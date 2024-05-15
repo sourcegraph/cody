@@ -291,52 +291,13 @@ const _workspace: typeof vscode.workspace = {
         if (!workspaceDocuments) {
             throw new Error('workspaceDocuments is uninitialized')
         }
-        if (typeof uriOrString === 'string') {
-            return workspaceDocuments.openTextDocument(Uri.file(uriOrString))
-        }
-        if (uriOrString instanceof Uri) {
-            return workspaceDocuments.openTextDocument(uriOrString)
-        }
 
-        if (
-            typeof uriOrString === 'object' &&
-            ((uriOrString as any)?.language || (uriOrString as any)?.content) &&
-            agent
-        ) {
-            const language: string = (uriOrString as any)?.language ?? ''
-            const content: string = (uriOrString as any)?.content ?? ''
-            const extension = extensionForLanguage(language) ?? language
-            const untitledUri = Uri.from({
-                scheme: 'untitled',
-                path: `${uuid.v4()}.${extension}`,
-            })
-            if (clientInfo?.capabilities?.untitledDocuments !== 'enabled') {
-                const errorMessage =
-                    'Client does not support untitled documents. To fix this problem, set `untitledDocuments: "enabled"` in client capabilities'
-                logError('vscode.workspace.openTextDocument', 'unsupported operation', errorMessage)
-                throw new Error(errorMessage)
+        const result = toUri(uriOrString)
+        if (result) {
+            if (result.uri.scheme === 'untitled' && result.shouldOpenInClient) {
+                await openUntitledDocument(result.uri)
             }
-            const result = await agent.request('textDocument/openUntitledDocument', {
-                uri: untitledUri.toString(),
-                content,
-                language,
-            })
-
-            if (!result) {
-                throw new Error(
-                    `client returned false from textDocument/openUntitledDocument: ${JSON.stringify(
-                        uriOrString
-                    )}`
-                )
-            }
-            const document = await workspaceDocuments.openTextDocument(untitledUri)
-            if (document.getText() !== content) {
-                throw new Error(
-                    'untitled document has mismatched content. ' +
-                        JSON.stringify({ expected: content, obtained: document.getText() }, null, 2)
-                )
-            }
-            return document
+            return workspaceDocuments.openTextDocument(result.uri)
         }
         return Promise.reject(
             new Error(`workspace.openTextDocument:unsupported argument ${JSON.stringify(uriOrString)}`)
@@ -356,6 +317,8 @@ const _workspace: typeof vscode.workspace = {
             name: workspaceDocuments.workspaceRootUri?.path,
         }
     },
+    // TODO: used by `WorkspaceRepoMapper` and will be used by `git.onDidOpenRepository`
+    // https://github.com/sourcegraph/cody/issues/4136
     onDidChangeWorkspaceFolders: emptyEvent(),
     onDidOpenTextDocument: onDidOpenTextDocument.event,
     onDidChangeConfiguration: onDidChangeConfiguration.event,
@@ -387,7 +350,9 @@ const _workspace: typeof vscode.workspace = {
         }
         return relativePath
     },
-    createFileSystemWatcher: () => emptyFileWatcher, // TODO: used for codyignore and custom commands
+    // TODO: used for Cody Ignore, WorkspaceRepoMapper and custom commands
+    // https://github.com/sourcegraph/cody/issues/4136
+    createFileSystemWatcher: () => emptyFileWatcher,
     getConfiguration: (section, scope): vscode.WorkspaceConfiguration => {
         if (section !== undefined) {
             if (scope === undefined) {
@@ -487,6 +452,58 @@ const defaultTreeView: vscode.TreeView<any> = {
     description: undefined,
     message: undefined,
     title: undefined,
+}
+
+/**
+ * @returns An object with a URI and a boolean indicating whether the URI should be opened in the client.
+ * This object with UUID path is used only when we want to create in-memory temp files, and those we do not want to send to the clients.
+ */
+function toUri(
+    uriOrString: string | vscode.Uri | { language?: string; content?: string } | undefined
+): { uri: Uri; shouldOpenInClient: boolean } | undefined {
+    if (typeof uriOrString === 'string') {
+        return { uri: Uri.file(uriOrString), shouldOpenInClient: true }
+    }
+    if (uriOrString instanceof Uri) {
+        return { uri: uriOrString, shouldOpenInClient: true }
+    }
+    if (
+        typeof uriOrString === 'object' &&
+        ((uriOrString as any)?.language || (uriOrString as any)?.content)
+    ) {
+        const language = (uriOrString as any)?.language ?? ''
+        const extension = extensionForLanguage(language) ?? language
+        return {
+            uri: Uri.from({
+                scheme: 'untitled',
+                path: `${uuid.v4()}.${extension}`,
+            }),
+            shouldOpenInClient: false,
+        }
+    }
+    return
+}
+
+async function openUntitledDocument(uri: Uri, content?: string, language?: string) {
+    if (clientInfo?.capabilities?.untitledDocuments !== 'enabled') {
+        const errorMessage =
+            'Client does not support untitled documents. To fix this problem, set `untitledDocuments: "enabled"` in client capabilities'
+        logError('vscode.workspace.openTextDocument', 'unsupported operation', errorMessage)
+        throw new Error(errorMessage)
+    }
+    if (agent) {
+        const result = await agent.request('textDocument/openUntitledDocument', {
+            uri: uri.toString(),
+            content,
+            language,
+        })
+
+        if (!result) {
+            throw new Error(
+                `client returned false from textDocument/openUntitledDocument: ${uri.toString()}`
+            )
+        }
+    }
 }
 
 function outputChannel(name: string): vscode.LogOutputChannel {
@@ -848,12 +865,12 @@ const _extensions: typeof vscode.extensions = {
     all: [gitExtension],
     onDidChange: emptyEvent(),
     getExtension: (extensionId: string) => {
-        const shouldActivateGitExtension =
-            clientInfo !== undefined && clientInfo?.capabilities?.git !== 'disabled'
-        if (shouldActivateGitExtension && extensionId === 'vscode.git') {
-            const extension: vscode.Extension<any> = gitExtension
-            return extension
+        if (clientInfo?.capabilities?.git === 'enabled' && extensionId === 'vscode.git') {
+            throw new Error(
+                'The git extension is not fully implemented. See https://github.com/sourcegraph/cody/issues/4165'
+            )
         }
+
         return undefined
     },
 }

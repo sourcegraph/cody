@@ -3,6 +3,7 @@ import type { AddressInfo } from 'node:net'
 import { expect } from '@playwright/test'
 import { isWindows } from '@sourcegraph/cody-shared'
 import {
+    atMentionMenuHeading,
     createEmptyChatPanel,
     expectContextCellCounts,
     getContextCell,
@@ -59,15 +60,13 @@ test.extend<ExpectedEvents>({
     await chatInput.focus()
     await page.keyboard.type('@')
     await expect(
-        chatPanelFrame.getByRole('heading', {
-            name: 'Search for a file to include, or type # for symbols...',
-        })
+        atMentionMenuHeading(chatPanelFrame, 'Search for a file to include, or type # for symbols...')
     ).toBeVisible()
     await page.keyboard.press('Backspace')
 
     // No results
     await chatInput.fill('@definitelydoesntexist')
-    await expect(chatPanelFrame.getByRole('heading', { name: 'No files found' })).toBeVisible()
+    await expect(atMentionMenuHeading(chatPanelFrame, 'No files found')).toBeVisible()
 
     // Clear the input so the next test doesn't detect the same text already visible from the previous
     // check (otherwise the test can pass even without the filter working).
@@ -79,7 +78,7 @@ test.extend<ExpectedEvents>({
     //   and assert that it contains `fixtures` to ensure this check isn't passing because the fixture folder no
     //   longer matches.
     await chatInput.fill('@fixtures') // fixture is in the test project folder name, but not in the relative paths.
-    await expect(chatPanelFrame.getByRole('heading', { name: 'No files found' })).toBeVisible()
+    await expect(atMentionMenuHeading(chatPanelFrame, 'No files found')).toBeVisible()
 
     // Includes dotfiles after just "."
     await chatInput.fill('@.')
@@ -195,7 +194,7 @@ test.extend<ExpectedEvents>({
     await expect(chatInput).toHaveText('Explain the @Main.java !file')
 
     //  "ArrowLeft" / "ArrowRight" keys alter the query input for @-mentions.
-    const noMatches = chatPanelFrame.getByRole('heading', { name: 'No files found' })
+    const noMatches = atMentionMenuHeading(chatPanelFrame, 'No files found')
     await chatInput.pressSequentially(' @abcdefg')
     await expect(chatInput).toHaveText('Explain the @Main.java ! @abcdefgfile')
     await noMatches.hover()
@@ -454,13 +453,11 @@ test.extend<ExpectedEvents>({
 
     // Symbol empty state shows tooltip to search for a symbol
     await chatInput.fill('@#')
-    await expect(
-        chatPanelFrame.getByRole('heading', { name: /^Search for a symbol to include/ })
-    ).toBeVisible()
+    await expect(atMentionMenuHeading(chatPanelFrame, /^Search for a symbol to include/)).toBeVisible()
 
     // Symbol empty symbol results updates tooltip title to show no symbols found
     await chatInput.fill('@#invalide')
-    await expect(chatPanelFrame.getByRole('heading', { name: /^No symbols found/ })).toBeVisible()
+    await expect(atMentionMenuHeading(chatPanelFrame, /^No symbols found/)).toBeVisible()
 
     // Clicking on a file in the selector should autocomplete the file in chat input with added space
     await chatInput.clear()

@@ -15,24 +15,24 @@ done.
 ## Telemetry
 
 To improve Cody, we record some events as people use Cody.
+All Telemetry should be recorded using our new framework, referred to as "V2 Telemetry" - legacy "event-logging" mechanisms ("V1 Telemetry") should no longer be used.
 
 ### Principles
 
 - Add enough Telemetry events for us to understand how Cody is used.
-
-- Name your events `cody.<feature>`. Do not include the client name in
-  the event name.
-
-- Design your events around numeric values, not arbitrary
-  strings. Understand "sensitive" data and use `privateMetadata` to
-  protect it. (See below.)
-
-- In VSCode, write e2e tests with `.extend<ExpectedEvents>({ ...` to
-  test your events are firing. Grep the codebase for examples.
-
-- In VSCode, record Telemetry events in the old and new system,
-  described below. In other clients, it is acceptable to record
-  Telemetry events in the "new" system only.
+- Legacy telemetry does NOT need to be recorded anymore - record Telemetry events in the "new" system only.
+- Event naming:
+  - Name your event "feature" parameter `cody.<feature>`. Do not include the client name in the event feature.
+  - Use the "action" parameter to indicate a verb corresponding to an event. Do not include event verbs in the "feature" parameter.
+- Event metadata:
+  - Design your events around numeric values, not arbitrary strings. Understand "sensitive" data and use `privateMetadata` to protect it. (See below.)
+- In VSCode, write e2e tests with `.extend<ExpectedEvents>({ ...` to test your events are firing. Grep the codebase for examples.
+- When handling transcripts in Telemetry:
+  - Transcript data can only be collected through V2 Telemetry and must be stored within the `privateMetadata` argument of the event
+  - Transcript data should be stored as top-level fields within `privateMetadata`, using the keys `promptText` or `responseText`
+  - Transcript data must include `recordsPrivateMetadataTranscript:1` in the safe `metadata` argument of the event
+  - Transcript data can only be collected for DotCom (Free) Users
+- Do not create wrappers around the `TelemetryRecorder` types exported from `lib/shared/src/telemetry-v2` - the exported interfaces implement type checks that intentionally make it harder to accidentally record sensitive data in safe `metadata`.
 
 ### Rationale
 
@@ -41,7 +41,7 @@ Events will eventually be migrated to [Sourcegraph's new telemetry events framew
 1. `feature`, a string denoting the feature that the event is associated with.
    1. **All events must use a `feature` that starts with `cody.`**, for example `cody.myFeature`
    2. The feature name should not include the name of the extension, as that is already included in the event metadata.
-2. `action`, a string denoting the action on the feature that the event is associated with.
+2. `action`, a string denoting the action on the feature that the event is associated with, typically a verb.
 3. `parameters`, which includes safe numeric `metadata` and [unsafe arbitrarily-shaped `privateMetadata`](https://sourcegraph.com/docs/dev/background-information/telemetry#sensitive-attributes).
 
 Extensive additional context is added by the extension itself (e.g. extension name and version) and the Sourcegraph backend (e.g. feature flags and actor information), so the event should only provide metadata about the specific action. Learn more in [events lifecycle](https://sourcegraph.com/docs/dev/background-information/telemetry#event-lifecycle).
@@ -49,19 +49,18 @@ Extensive additional context is added by the extension itself (e.g. extension na
 For now, all events in VSCode should be updated to use both the legacy event clients and the new clients, for example:
 
 ```ts
-// Legacy events client
-import { telemetryService } from "../services/telemetry";
 // New events client
 import { telemetryRecorder } from "@sourcegraph/cody-shared";
 
 // Legacy instrumentation
-telemetryService.log(
-  "CodyVSCodeExtension:fixup:applied",
-  { ...codeCount, source },
-  // Indicate the legacy instrumentation has a coexisting v2 instrumentation
-  { hasV2Event: true }
-);
-// New instrumentation, alonsgide the legacy instrumentation
+// telemetryService.log(
+//   "CodyVSCodeExtension:fixup:applied",
+//   { ...codeCount, source },
+//   // Indicate the legacy instrumentation has a coexisting v2 instrumentation
+//   { hasV2Event: true }
+// );
+
+// Equivalent in the new instrumentatiom
 telemetryRecorder.recordEvent("cody.fixup.apply", "succeeded", {
   metadata: {
     /**

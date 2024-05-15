@@ -4,7 +4,7 @@ import { spawnBfg } from '../../../../graph/bfg/spawn-bfg'
 import type { MessageHandler } from '../../../../jsonrpc/jsonrpc'
 import { logDebug } from '../../../../log'
 import type { Repository } from '../../../../repository/builtinGitExtension'
-import { gitAPI } from '../../../../repository/git-extension-api'
+import { vscodeGitAPI } from '../../../../repository/git-extension-api'
 import { captureException } from '../../../../services/sentry/sentry'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 
@@ -70,15 +70,22 @@ export class BfgRetriever implements ContextRetriever {
         }
     }
     private async indexGitRepositories(): Promise<void> {
-        const git = gitAPI()
-        if (!git) {
+        // TODO: Only works in the VS Code extension where the Git extension is available.
+        // We should implement fallbacks for the Git methods used below.
+        if (!vscodeGitAPI) {
             return
         }
-        for (const repository of git.repositories) {
+
+        // TODO: scan workspace folders for git repos to support this in the agent.
+        // https://github.com/sourcegraph/cody/issues/4137
+        for (const repository of vscodeGitAPI.repositories) {
             await this.didChangeGitExtensionRepository(repository)
         }
         this.context.subscriptions.push(
-            git.onDidOpenRepository(repository => this.didChangeGitExtensionRepository(repository))
+            // TODO: https://github.com/sourcegraph/cody/issues/4138
+            vscodeGitAPI.onDidOpenRepository(repository =>
+                this.didChangeGitExtensionRepository(repository)
+            )
         )
         this.context.subscriptions.push(
             vscode.workspace.onDidChangeWorkspaceFolders(() => this.indexInferredGitRepositories())

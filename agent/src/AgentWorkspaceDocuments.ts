@@ -155,7 +155,9 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     public async openTextDocument(uri: vscode.Uri): Promise<AgentTextDocument> {
         const document = ProtocolTextDocumentWithUri.from(uri)
         if (!this.agentDocuments.has(document.underlying.uri)) {
-            if (!doesFileExist(uri)) {
+            if (uri.scheme === 'untitled') {
+                document.underlying.content = ''
+            } else if (!(await doesFileExist(uri))) {
                 logError(
                     'AgentWorkspaceDocuments.openTextDocument()',
                     'File does not exist',

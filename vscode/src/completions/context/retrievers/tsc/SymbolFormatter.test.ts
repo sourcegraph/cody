@@ -19,7 +19,7 @@ describe('SymbolFormatter', () => {
         // quickly adds up, but it's good enough for now.
         const program = ts.createProgram(['test.ts'], {}, host)
         const checker = program.getTypeChecker()
-        const formatter = new SymbolFormatter(checker)
+        const formatter = new SymbolFormatter(checker, 10)
         const sourceFile = program.getSourceFile('test.ts')
         if (!sourceFile) {
             return []
@@ -34,7 +34,7 @@ describe('SymbolFormatter', () => {
             if (!symbol) {
                 continue
             }
-            result.push(formatter.formatSymbol(name, symbol))
+            result.push(formatter.formatSymbol(statement, symbol, 0))
         }
         return result
     }
@@ -126,7 +126,10 @@ describe('SymbolFormatter', () => {
             a: Record<string, number>
             b: string
             c: (c: string, d: string) => string
-            d: { a: string; b: number; }
+            d: {
+              a: string;
+              b: number;
+          }
           }
           ",
           ]
@@ -137,16 +140,19 @@ describe('SymbolFormatter', () => {
         expect(
             formatSymbols(`
             type Animal = Dog | Cat
-            type Dog = { kind: 'dog'; bark: string }
-            type Cat = { kind: 'cat'; meow: string }
+            type Dog = { kind: 'dog'; /* noisy comment */ bark: string }
+            type Cat = { kind: 'cat'; /* pew pie */ meow: string }
             type CustomStr = string & { __custom: never }
+            type TypeParams<S> = Map<string, S>
             `)
+            // Observe that we've left out the comments
         ).toMatchInlineSnapshot(`
           [
             "type Animal = Dog | Cat",
-            "type Dog = { kind: 'dog'; bark: string }",
-            "type Cat = { kind: 'cat'; meow: string }",
-            "type CustomStr = string & { __custom: never }",
+            "type Dog = { kind: 'dog'; bark: string; }",
+            "type Cat = { kind: 'cat'; meow: string; }",
+            "type CustomStr = string & { __custom: never; }",
+            "type TypeParams<S> = Map<string, S>",
           ]
         `)
     })
@@ -155,14 +161,35 @@ describe('SymbolFormatter', () => {
         expect(
             formatSymbols(`
             enum Weekend { Saturday, Sunday }
-            enum Color { Blue = 'blue', Red = 'red' }
-            enum Animal { Dog = 1, Cat = 2 }
+            enum Color { Blue = /* inline comment */ 'blue', Red = 'red' }
+            enum Animal { Dog = /* trivia */ 1, Cat = 2 }
+            enum Hex {
+                First        = 1 << 23 // Some comment
+                SecondFolder = 1 << 22
+            }
             `)
         ).toMatchInlineSnapshot(`
           [
-            "enum Weekend { Saturday, Sunday }",
-            "enum Color { Blue = 'blue', Red = 'red' }",
-            "enum Animal { Dog = 1, Cat = 2 }",
+            "enum Weekend {
+            Saturday
+            Sunday
+          }
+          ",
+            "enum Color {
+            Blue = 'blue'
+            Red = 'red'
+          }
+          ",
+            "enum Animal {
+            Dog = 1
+            Cat = 2
+          }
+          ",
+            "enum Hex {
+            First = 1 << 23
+            SecondFolder = 1 << 22
+          }
+          ",
           ]
         `)
     })
@@ -190,9 +217,9 @@ describe('SymbolFormatter', () => {
             `)
         ).toMatchInlineSnapshot(`
           [
-            "var values: number[]",
-            "var constValues: readonly [1, 2, 3]",
-            "var createStrings: () => string[]",
+            "const values: number[]",
+            "const constValues: readonly [1, 2, 3]",
+            "const createStrings: () => string[]",
           ]
         `)
     })
