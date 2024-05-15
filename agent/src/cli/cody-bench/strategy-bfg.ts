@@ -12,7 +12,7 @@ import { type AutocompleteMatchKind, AutocompleteMatcher } from './AutocompleteM
 import { EvaluationDocument } from './EvaluationDocument'
 import { Queries } from './Queries'
 import { SnapshotWriter } from './SnapshotWriter'
-import type { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
+import type { EvaluateAutocompleteOptions } from './cody-bench'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { testCleanup, testInstall } from './testTypecheck'
 import { triggerAutocomplete } from './triggerAutocomplete'

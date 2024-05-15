@@ -75,7 +75,7 @@ export class EvaluationDocument {
     }
 
     // This function is copy/pasted from the scip-typescript repository so that we
-    // can customize rendering for the `evaluate-autocomplete` command. For example,
+    // can customize rendering for the `cody-bench` command. For example,
     // we will need to come up with a good solution for multi-line completions that may not
     // be relevant for scip-typescript.
     public formatSnapshot(): string {
@@ -170,7 +170,7 @@ export class EvaluationDocument {
 
 /**
  * An AutocompleteItem represents one row in the final CSV file that
- * evaluate-autocomplete emits.
+ * cody-bench emits.
  */
 interface EvaluationItem {
     languageid: string

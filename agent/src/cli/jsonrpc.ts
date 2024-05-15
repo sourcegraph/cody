@@ -7,7 +7,7 @@ import { StreamMessageReader, StreamMessageWriter, createMessageConnection } fro
 import { startPollyRecording } from '../../../vscode/src/testutils/polly'
 import { Agent } from '../agent'
 
-import { booleanOption } from './evaluate-autocomplete/cli-parsers'
+import { booleanOption } from './cody-bench/cli-parsers'
 
 interface JsonrpcCommandOptions {
     expiresIn?: string | null | undefined

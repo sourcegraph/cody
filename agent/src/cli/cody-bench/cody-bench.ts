@@ -118,8 +118,8 @@ async function loadEvaluationConfig(
     return result
 }
 
-export const evaluateAutocompleteCommand = new commander.Command('evaluate-autocomplete')
-    .description('Evaluate Cody autocomplete by running the Agent in headless mode')
+export const codyBenchCommand = new commander.Command('cody-bench')
+    .description('Run Cody offline benchmarks')
     .option(
         '--workspace <path>',
         'The workspace directory where to run the autocomplete evaluation',
@@ -297,7 +297,7 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
     const workspaceRootUri = vscode.Uri.from({ scheme: 'file', path: options.workspace })
 
     const client = await newAgentClient({
-        name: 'evaluate-autocomplete',
+        name: 'cody-bench',
         version: '0.1.0',
         workspaceRootUri: workspaceRootUri.toString(),
         extensionConfiguration: {
@@ -315,7 +315,7 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
             await evaluateGitLogStrategy(client, options)
         }
     } catch (error) {
-        console.error('unexpected error running evaluate-autocomplete', error)
+        console.error('unexpected error running cody-bench', error)
     }
     await client.request('shutdown', null)
     client.notify('exit', null)

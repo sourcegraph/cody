@@ -5,7 +5,7 @@ import path from 'node:path'
 
 import type { TestParameters } from './TestParameters'
 import { Timer } from './Timer'
-import type { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
+import type { EvaluateAutocompleteOptions } from './cody-bench'
 
 async function runCommand(command: string | undefined, cwd: string): Promise<boolean> {
     return new Promise<boolean>(resolve => {
@@ -46,7 +46,7 @@ export async function testInstall(options: EvaluateAutocompleteOptions): Promise
             `options.worktree=${options.worktree} is already defined, expected it to be undefined`
         )
     }
-    options.worktree = await fspromises.mkdtemp(path.join(os.tmpdir(), 'evaluate-autocomplete-'))
+    options.worktree = await fspromises.mkdtemp(path.join(os.tmpdir(), 'cody-bench-'))
     await runVoidCommand('git diff --exit-code', options.workspace)
 
     // Create a git worktree so that we can run parallel evaluations. Without
