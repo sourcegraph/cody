@@ -951,8 +951,9 @@ describe('Agent', () => {
                 .allUris()
                 .filter(uri => vscode.Uri.parse(uri).scheme === 'untitled')
             expect(untitledDocuments).toHaveLength(2)
-            const untitledDocument = untitledDocuments.find(d => d.endsWith('trickyLogic.test.ts'))!!
-            const testDocument = client.workspace.getDocument(vscode.Uri.parse(untitledDocument))
+            const untitledDocument = untitledDocuments.find(d => d.endsWith('trickyLogic.test.ts'))
+            expect(untitledDocument).toBeDefined()
+            const testDocument = client.workspace.getDocument(vscode.Uri.parse(untitledDocument ?? ''))
             expect(trimEndOfLine(testDocument?.getText())).toMatchInlineSnapshot(
                 `
               "import { expect } from 'vitest'
