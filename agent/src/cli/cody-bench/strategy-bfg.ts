@@ -1,20 +1,12 @@
-import { execSync } from 'node:child_process'
-import * as fspromises from 'node:fs/promises'
 import * as path from 'node:path'
 
-import * as vscode from 'vscode'
-
-import { isSupportedLanguage } from '../../../../vscode/src/tree-sitter/grammars'
 import type { MessageHandler } from '../../jsonrpc-alias'
-import { getLanguageForFileName } from '../../language'
 
 import { type AutocompleteMatchKind, AutocompleteMatcher } from './AutocompleteMatcher'
 import { EvaluationDocument } from './EvaluationDocument'
-import { Queries } from './Queries'
-import { SnapshotWriter } from './SnapshotWriter'
 import type { EvaluateAutocompleteOptions } from './cody-bench'
+import { evaluateEachFile } from './evaluateEachFile'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
-import { testCleanup, testInstall } from './testTypecheck'
 import { triggerAutocomplete } from './triggerAutocomplete'
 
 /**
@@ -27,47 +19,11 @@ export async function evaluateBfgStrategy(
     client: MessageHandler,
     options: EvaluateAutocompleteOptions
 ): Promise<void> {
-    const { workspace } = options
-    const queries = new Queries(options.queriesDirectory)
-    const grammarDirectory = path.normalize(options.treeSitterGrammars)
-    const files = execSync('git ls-files', { cwd: workspace }).toString().split('\n')
-    files.sort()
     let remainingTests = options.testCount
-    const snapshots = new SnapshotWriter(options)
-    await testInstall(options)
-    try {
-        await snapshots.writeHeader()
-
-        const revision = execSync('git rev-parse HEAD', { cwd: workspace }).toString().trim()
-
-        const matchCounts = new Map<AutocompleteMatchKind, number>()
-
-        for (const file of files) {
-            if (
-                !matchesGlobPatterns(options.includeFilepath ?? [], options.excludeFilepath ?? [], file)
-            ) {
-                continue
-            }
-            const filePath = path.join(workspace, file)
-            const uri = vscode.Uri.file(filePath)
-            const stat = await fspromises.stat(filePath)
-            if (!stat.isFile()) {
-                continue
-            }
-            const content = (await fspromises.readFile(filePath)).toString()
-            const languageid = getLanguageForFileName(file)
-            if (!isSupportedLanguage(languageid)) {
-                continue
-            }
-            if (
-                !matchesGlobPatterns(
-                    options.includeLanguage ?? [],
-                    options.excludeLanguage ?? [],
-                    languageid
-                )
-            ) {
-                continue
-            }
+    const matchCounts = new Map<AutocompleteMatchKind, number>()
+    evaluateEachFile(
+        options,
+        async ({ file, content, uri, languageid, revision, queries, grammarDirectory }) => {
             const document = new EvaluationDocument(
                 {
                     languageid,
@@ -83,7 +39,7 @@ export async function evaluateBfgStrategy(
             const matcher = new AutocompleteMatcher(document.params, queries, grammarDirectory)
             const matches = await matcher.matches(content)
             if (matches === undefined) {
-                continue
+                return
             }
             client.notify('textDocument/didOpen', { uri: uri.toString(), content })
             const documentTestCountStart = remainingTests
@@ -146,9 +102,7 @@ export async function evaluateBfgStrategy(
                 remainingTests--
             }
 
-            await snapshots.writeDocument(document)
+            return document
         }
-    } finally {
-        await testCleanup(options)
-    }
+    )
 }

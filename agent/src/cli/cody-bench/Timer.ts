@@ -3,10 +3,10 @@ import prettyMs from 'pretty-ms'
 export class Timer {
     public readonly start: number
     constructor() {
-        this.start = Date.now()
+        this.start = performance.now()
     }
     public elapsed(): number {
-        return Date.now() - this.start
+        return performance.now() - this.start
     }
     public toString(): string {
         return prettyMs(this.elapsed())
