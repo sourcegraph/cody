@@ -1,4 +1,4 @@
-import { ChevronUpDownIcon } from '@heroicons/react/16/solid'
+import { ChevronsUpDownIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo, useState } from 'react'
 import { cn } from '../utils'
 import { Button } from './button'
@@ -101,7 +101,11 @@ export const ComboBox: FunctionComponent<{
                         ? options.find(option => option.value === value)?.title
                         : 'Select...'}
                     {!readOnly && (
-                        <ChevronUpDownIcon className="tw-ml-3 tw-h-5 tw-w-5 tw-shrink-0 tw-opacity-50" />
+                        <ChevronsUpDownIcon
+                            strokeWidth={1.25}
+                            size={12}
+                            className="tw-ml-3 tw-shrink-0 tw-opacity-50"
+                        />
                     )}
                 </Button>
             </PopoverTrigger>

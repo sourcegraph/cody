@@ -1,12 +1,4 @@
 import {
-    ArchiveBoxIcon,
-    ArrowRightIcon,
-    CircleStackIcon,
-    CodeBracketSquareIcon,
-    DocumentIcon,
-    LinkIcon,
-} from '@heroicons/react/16/solid'
-import {
     type ContextItem,
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
@@ -21,6 +13,15 @@ import {
     displayPathDirname,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
+import {
+    ArrowRightIcon,
+    DatabaseIcon,
+    FileTextIcon,
+    GithubIcon,
+    LinkIcon,
+    PackageIcon,
+    SquareFunctionIcon,
+} from 'lucide-react'
 import type { FunctionComponent } from 'react'
 import {
     IGNORED_FILE_WARNING_LABEL,
@@ -82,24 +83,27 @@ export const MentionMenuContextItemContent: FunctionComponent<{
 export const MentionMenuProviderItemContent: FunctionComponent<{
     provider: ContextMentionProviderMetadata
 }> = ({ provider }) => {
-    const Icon = iconForProvider[provider.id] ?? CircleStackIcon
+    const Icon = iconForProvider[provider.id] ?? DatabaseIcon
     return (
         <div className={styles.row}>
-            <Icon width={16} height={16} />
+            <Icon size={16} strokeWidth={1.25} />
             {provider.title ?? provider.id}
-            <ArrowRightIcon width={16} height={16} style={{ opacity: '0.3' }} />
+            <ArrowRightIcon size={16} strokeWidth={1.25} style={{ opacity: '0.5' }} />
         </div>
     )
 }
 
 const iconForProvider: Record<
     string,
-    React.ComponentType<{ width?: string | number; height?: string | number }>
+    React.ComponentType<{
+        size?: string | number
+        strokeWidth?: string | number
+    }>
 > = {
-    [FILE_CONTEXT_MENTION_PROVIDER.id]: DocumentIcon,
-    [SYMBOL_CONTEXT_MENTION_PROVIDER.id]: CodeBracketSquareIcon,
-    'src-search': SourcegraphLogo,
+    [FILE_CONTEXT_MENTION_PROVIDER.id]: FileTextIcon,
+    [SYMBOL_CONTEXT_MENTION_PROVIDER.id]: SquareFunctionIcon,
+    'src-search': props => <SourcegraphLogo width={props.size} height={props.size} {...props} />,
     [URL_CONTEXT_MENTION_PROVIDER.id]: LinkIcon,
-    [PACKAGE_CONTEXT_MENTION_PROVIDER.id]: ArchiveBoxIcon,
-    [GITHUB_CONTEXT_MENTION_PROVIDER.id]: () => <i className="codicon codicon-logo-github" />,
+    [PACKAGE_CONTEXT_MENTION_PROVIDER.id]: PackageIcon,
+    [GITHUB_CONTEXT_MENTION_PROVIDER.id]: GithubIcon,
 }
