@@ -87,7 +87,7 @@ automatically.
     System.out.
     ```
 2. Place a cursor at the end of the `System.out.` line.
-3. Trigger autocompletion with <kbd>Alt</kbd> + <kbd>\</kbd> (or <kbd>option</kbd> + <kbd>\</kbd> on Mac).
+3. Trigger autocompletion with <kbd>Alt</kbd> + `\` (or <kbd>option</kbd> + `\` on Mac).
 
 #### Expected behaviour
 
@@ -100,7 +100,7 @@ automatically.
     public void bubbleSort(int[] array) {
     ```
 2. Place the cursor at the end of the line.
-3. Trigger autocompletion with <kbd>Alt</kbd> + <kbd>\</kbd> (or <kbd>option</kbd> + <kbd>\</kbd> on Mac).
+3. Trigger autocompletion with <kbd>Alt</kbd> + `\` (or <kbd>option</kbd> + `\` on Mac).
 
 #### Expected behaviour
 
@@ -114,7 +114,7 @@ automatically.
     System.out.println("Hello World!");
     ```
 2. Place cursor at the end of the `// print ` line.
-3. Trigger autocompletion with <kbd>Alt</kbd> + <kbd>\</kbd> (or <kbd>option</kbd> + <kbd>\</kbd> on Mac).
+3. Trigger autocompletion with <kbd>Alt</kbd> + `\` (or <kbd>option</kbd> + `\` on Mac).
 
 #### Expected behaviour
 
@@ -127,7 +127,7 @@ automatically.
     public void bubbleSort(int[] array) {
     ```
 2. Place the cursor at the end of the line.
-3. Cycle forward with <kbd>Alt</kbd> + <kbd>]</kbd> or backward with <kbd>Alt</kbd> + <kbd>[</kbd>.
+3. Cycle forward with <kbd>Alt</kbd> + <kbd>]</kbd> or backward with <kbd>Alt</kbd> + <kbd>[</kbd>. (<kbd>option</kbd> + <kbd>[</kbd> or <kbd>]</kbd> for Mac)
 
 #### Expected behaviour
 
@@ -225,7 +225,7 @@ All tests involving prompt history should end with:
     - Dialog is non-modal and you can put the focus back into the IDE without closing it.
     - Dialog can be dragged by clicking and dragging in the "title bar" area.
     - Dialog can be resized by carefully positioning the cursor at the corners and dragging.
-5. Close the dialog, and press Ctrl+Shift+Enter (Command+Shift+Enter on Mac)
+5. Close the dialog, and press Ctrl+Shift+Enter (Mac)
     - Dialog should appear, just as if it had been opened with the context menu
 
 #### Layout
