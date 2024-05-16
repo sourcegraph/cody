@@ -1,14 +1,20 @@
 import type { RangeData } from '../common/range'
-import type { ContextMentionProvider, ContextMentionProviderID } from './api'
+import {
+    type ContextMentionProvider,
+    type ContextMentionProviderID,
+    FILE_CONTEXT_MENTION_PROVIDER,
+    SYMBOL_CONTEXT_MENTION_PROVIDER,
+} from './api'
 
 /**
  * The parsed representation of a user's (partial or complete) input of an @-mention query.
  */
 export interface MentionQuery {
     /**
-     * The type of context item to search for.
+     * The type of context item to search for, or null to find suggested items across (possibly) all
+     * providers.
      */
-    provider: 'file' | 'symbol' | 'default' | ContextMentionProviderID
+    provider: ContextMentionProviderID | null
 
     /**
      * The user's text input, to be interpreted as a fuzzy-matched query. It is stripped of any
@@ -42,11 +48,11 @@ export function parseMentionQuery(
     contextMentionProviders: Pick<ContextMentionProvider, 'id' | 'triggerPrefixes'>[]
 ): MentionQuery {
     if (query === '') {
-        return { provider: 'default', text: '' }
+        return { provider: null, text: '' }
     }
 
     if (query.startsWith('#')) {
-        return { provider: 'symbol', text: query.slice(1) }
+        return { provider: SYMBOL_CONTEXT_MENTION_PROVIDER.id, text: query.slice(1) }
     }
 
     for (const provider of contextMentionProviders) {
@@ -56,7 +62,12 @@ export function parseMentionQuery(
     }
 
     const { textWithoutRange, maybeHasRangeSuffix, range } = extractRangeFromFileMention(query)
-    return { provider: 'file', text: textWithoutRange, maybeHasRangeSuffix, range }
+    return {
+        provider: FILE_CONTEXT_MENTION_PROVIDER.id,
+        text: textWithoutRange,
+        maybeHasRangeSuffix,
+        range,
+    }
 }
 
 const RANGE_SUFFIX_REGEXP = /:(?:(\d+)-?)?(\d+)?$/

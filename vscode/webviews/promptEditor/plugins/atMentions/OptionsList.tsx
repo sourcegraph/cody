@@ -1,6 +1,9 @@
 import type { MenuRenderFn } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import {
+    GITHUB_CONTEXT_MENTION_PROVIDER,
     type MentionQuery,
+    PACKAGE_CONTEXT_MENTION_PROVIDER,
+    SYMBOL_CONTEXT_MENTION_PROVIDER,
     displayLineRange,
     displayPath,
     displayPathBasename,
@@ -104,15 +107,15 @@ function unsetAriaHidden(element: HTMLDivElement | null): void {
 
 function getHelpText(mentionQuery: MentionQuery, options: MentionTypeaheadOption[]): string {
     switch (mentionQuery.provider) {
-        case 'default':
+        case null:
             return GENERAL_HELP_LABEL
-        case 'package':
+        case PACKAGE_CONTEXT_MENTION_PROVIDER.id:
             return options.length > 0 || mentionQuery.text.length < 3
                 ? PACKAGE_HELP_LABEL
                 : NO_PACKAGE_MATCHES_LABEL
-        case 'github':
+        case GITHUB_CONTEXT_MENTION_PROVIDER.id:
             return options.length > 0 ? GITHUB_HELP_LABEL : NO_GITHUB_MATCHES_LABEL
-        case 'symbol':
+        case SYMBOL_CONTEXT_MENTION_PROVIDER.id:
             return options.length > 0 || !mentionQuery.text.length
                 ? SYMBOL_HELP_LABEL
                 : NO_SYMBOL_MATCHES_LABEL +

@@ -1,6 +1,7 @@
 import {
     type ContextItem,
     type ContextItemSymbol,
+    SYMBOL_CONTEXT_MENTION_PROVIDER,
     type SymbolKind,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
@@ -17,7 +18,7 @@ export const dummyChatContextClient: ChatContextClient = {
 
         query = query.toLowerCase()
         const mentionQuery = parseMentionQuery(query, [])
-        return mentionQuery.provider === 'symbol'
+        return mentionQuery.provider === SYMBOL_CONTEXT_MENTION_PROVIDER.id
             ? DUMMY_SYMBOLS.filter(
                   f =>
                       f.symbolName.toLowerCase().includes(query.slice(1)) ||

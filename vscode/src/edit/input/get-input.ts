@@ -2,8 +2,11 @@ import {
     type ContextItem,
     type EditModel,
     type EventSource,
+    FILE_CONTEXT_MENTION_PROVIDER,
     ModelProvider,
+    PACKAGE_CONTEXT_MENTION_PROVIDER,
     PromptString,
+    SYMBOL_CONTEXT_MENTION_PROVIDER,
     displayLineRange,
     parseMentionQuery,
     scanForMentionTriggerInUserTextInput,
@@ -357,11 +360,11 @@ export const getInput = async (
                         {
                             alwaysShow: true,
                             label:
-                                mentionQuery.provider === 'package'
+                                mentionQuery.provider === PACKAGE_CONTEXT_MENTION_PROVIDER.id
                                     ? mentionQuery.text.length < 3
                                         ? PACKAGE_HELP_LABEL
                                         : NO_PACKAGE_MATCHES_LABEL
-                                    : mentionQuery.provider === 'symbol'
+                                    : mentionQuery.provider === SYMBOL_CONTEXT_MENTION_PROVIDER.id
                                       ? mentionQuery.text.length === 0
                                           ? SYMBOL_HELP_LABEL
                                           : NO_SYMBOL_MATCHES_LABEL
@@ -410,11 +413,11 @@ export const getInput = async (
                     {
                         alwaysShow: true,
                         label:
-                            mentionQuery?.provider === 'package'
+                            mentionQuery?.provider === PACKAGE_CONTEXT_MENTION_PROVIDER.id
                                 ? PACKAGE_HELP_LABEL
-                                : mentionQuery?.provider === 'symbol'
+                                : mentionQuery?.provider === SYMBOL_CONTEXT_MENTION_PROVIDER.id
                                   ? SYMBOL_HELP_LABEL
-                                  : mentionQuery?.provider === 'file'
+                                  : mentionQuery?.provider === FILE_CONTEXT_MENTION_PROVIDER.id
                                     ? FILE_HELP_LABEL
                                     : GENERAL_HELP_LABEL,
                     },

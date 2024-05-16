@@ -28,7 +28,7 @@ export const URL_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'url'> = {
                     content,
                     title: tryGetHTMLDocumentTitle(content),
                     source: ContextItemSource.Uri,
-                    provider: 'url',
+                    provider: URL_CONTEXT_MENTION_PROVIDER.id,
                 },
             ]
         } catch (error) {

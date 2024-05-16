@@ -3,7 +3,11 @@ import {
     type ContextItem,
     type ContextItemProps,
     type ContextMentionProvider,
+    FILE_CONTEXT_MENTION_PROVIDER,
     type MentionQuery,
+    PACKAGE_CONTEXT_MENTION_PROVIDER,
+    SYMBOL_CONTEXT_MENTION_PROVIDER,
+    URL_CONTEXT_MENTION_PROVIDER,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -29,7 +33,7 @@ export async function getChatContextItemsForMention(
     // Logging: log when the at-mention starts, and then log when we know the type (after the 1st
     // character is typed). Don't log otherwise because we would be logging prefixes of the same
     // query repeatedly, which is not needed.
-    if (mentionQuery.provider === 'default') {
+    if (mentionQuery.provider === null) {
         telemetryRecorder?.empty()
     } else {
         telemetryRecorder?.withProvider(mentionQuery.provider)
@@ -37,12 +41,12 @@ export async function getChatContextItemsForMention(
 
     const MAX_RESULTS = 20
     switch (mentionQuery.provider) {
-        case 'default':
+        case null:
             return getOpenTabsContextFile()
-        case 'symbol':
+        case SYMBOL_CONTEXT_MENTION_PROVIDER.id:
             // It would be nice if the VS Code symbols API supports cancellation, but it doesn't
             return getSymbolContextFiles(mentionQuery.text, MAX_RESULTS)
-        case 'file': {
+        case FILE_CONTEXT_MENTION_PROVIDER.id: {
             const files = await getFileContextFiles(mentionQuery.text, MAX_RESULTS)
 
             // If a range is provided, that means user is trying to mention a specific line range.
@@ -89,8 +93,8 @@ export function getEnabledContextMentionProviders(): ContextMentionProvider[] {
     if (isURLProviderEnabled || isPackageProviderEnabled) {
         return CONTEXT_MENTION_PROVIDERS.filter(
             provider =>
-                (isURLProviderEnabled && provider.id === 'url') ||
-                (isPackageProviderEnabled && provider.id === 'package')
+                (isURLProviderEnabled && provider.id === URL_CONTEXT_MENTION_PROVIDER.id) ||
+                (isPackageProviderEnabled && provider.id === PACKAGE_CONTEXT_MENTION_PROVIDER.id)
         )
     }
     return []
