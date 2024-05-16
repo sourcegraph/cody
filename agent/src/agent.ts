@@ -37,6 +37,7 @@ import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 
 import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
+import * as uuid from 'uuid'
 import {
     AbstractMessageReader,
     AbstractMessageWriter,
@@ -133,10 +134,13 @@ export async function newAgentClient(
     clientInfo: ClientInfo & { codyAgentPath?: string; inheritStderr?: boolean }
 ): Promise<MessageHandler> {
     const asyncHandler = async (reject: (reason?: any) => void): Promise<MessageHandler> => {
-        const nodeArguments = process.argv0.endsWith('node') ? process.argv.slice(1, 2) : []
+        const nodeArguments = process.argv0.endsWith('node')
+            ? ['--enable-source-maps', ...process.argv.slice(1, 2)]
+            : []
         nodeArguments.push('jsonrpc')
         const arg0 = clientInfo.codyAgentPath ?? process.argv[0]
         const args = clientInfo.codyAgentPath ? [] : nodeArguments
+        console.log({ arg0, args })
         const child = spawn(arg0, args, {
             env: { ENABLE_SENTRY: 'false', ...process.env },
         })
@@ -467,7 +471,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
+        const codeActionById = new Map<string, agent_protocol.ProtocolCodeAction>()
         this.registerAuthenticatedRequest('codeActions/provide', async (params, token) => {
+            codeActionById.clear()
             const document = this.workspace.getDocument(vscode.Uri.parse(params.location.uri))
             if (!document) {
                 throw new Error(`codeActions/provide: document not found for ${params.location.uri}`)
@@ -475,7 +481,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
             const codeActions: agent_protocol.ProtocolCodeAction[] = []
             for (const providers of this.codeAction.providers()) {
                 const diagnostics = vscode.languages.getDiagnostics(document.uri)
-                console.log({ params, diagnostics })
                 const result = await providers.provideCodeActions(
                     document,
                     vscodeRange(params.location.range),
@@ -503,7 +508,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
                                 message: diagnostic.message,
                             })
                         }
-                        codeActions.push({
+                        const id = uuid.v4()
+                        const codeAction: agent_protocol.ProtocolCodeAction = {
+                            id,
                             title: action.title,
                             command: action.command
                                 ? {
@@ -514,11 +521,24 @@ export class Agent extends MessageHandler implements ExtensionClient {
                                   }
                                 : undefined,
                             diagnostics,
-                        })
+                        }
+                        codeActionById.set(id, codeAction)
+                        codeActions.push(codeAction)
                     }
                 }
             }
             return { codeActions }
+        })
+        this.registerAuthenticatedRequest('codeActions/trigger', async ({ id }) => {
+            const action = codeActionById.get(id)
+            if (!action || !action.command) {
+                throw new Error(`codeActions/trigger: unknown ID ${id}`)
+            }
+            await vscode.commands.executeCommand(
+                action.command.command,
+                ...(action.command.arguments ?? [])
+            )
+            return null
         })
 
         this.registerAuthenticatedRequest('testing/diagnostics', async params => {
@@ -534,7 +554,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('testing/publishDiagnostics', async params => {
-            console.log({ params })
             const result = new Map<string, vscode.Diagnostic[]>()
             for (const diagnostic of params.diagnostics) {
                 let diagnostics = result.get(diagnostic.location.uri)
@@ -558,7 +577,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     relatedInformation,
                 })
             }
-            console.log({ PUBLISH_RESULT: result })
             vscode_shim.diagnostics.publish(result)
             return null
         })

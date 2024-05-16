@@ -67,7 +67,17 @@ export async function evaluateFixStrategy(
                         location: diagnostic.location,
                         triggerKind: 'Invoke',
                     })
-                    console.log({ codeActions })
+                    const fixAction = codeActions.find(action => action.title === 'Ask Cody to Fix')
+                    if (!fixAction || !fixAction.command) {
+                        console.log('No fix action found')
+                        console.log(prettyDiagnostic(diagnostic))
+                        continue
+                    }
+                    const result = await client.request('codeActions/trigger', { id: fixAction.id })
+                    const newDiagnostics = await client.request('testing/diagnostics', {
+                        uri: params.uri.toString(),
+                    })
+                    console.log({ fixResult: result, newDiagnostics })
                     // TODO: publish diagnostic, trigger code actions
                     correctDiagnostics++
                 }
@@ -76,7 +86,6 @@ export async function evaluateFixStrategy(
         return undefined
     })
     console.log({ correctDiagnostics, totalDiagnostics, totalCandidates })
-    console.log(DiagnosticCode)
 }
 
 interface FixCandidate {

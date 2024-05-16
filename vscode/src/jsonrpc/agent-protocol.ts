@@ -106,6 +106,8 @@ export type ClientRequests = {
         { location: ProtocolLocation; triggerKind: CodeActionTriggerKind },
         { codeActions: ProtocolCodeAction[] },
     ]
+    // The ID from ProtcolCodeAction.id
+    'codeActions/trigger': [{ id: string }, null]
 
     'autocomplete/execute': [AutocompleteParams, AutocompleteResult]
 
@@ -818,6 +820,7 @@ export interface ProtocolRelatedInformationDiagnostic {
 export type DiagnosticSeverity = 'error' | 'warning' | 'info' | 'suggestion'
 export type CodeActionTriggerKind = 'Invoke' | 'Automatic'
 export interface ProtocolCodeAction {
+    id: string
     title: string
     // edit?: WorkspaceEdit
     diagnostics?: ProtocolDiagnostic[]

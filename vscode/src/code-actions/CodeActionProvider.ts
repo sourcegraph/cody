@@ -26,7 +26,6 @@ export class CodeActionProvider implements vscode.Disposable {
         vscode.Disposable.from(...this.actionProviders).dispose()
         this.actionProviders = []
 
-        console.log({ config: config.codeActions })
         if (!config.codeActions) {
             return
         }
