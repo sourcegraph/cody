@@ -2,6 +2,7 @@
 export class CodePrinter {
     public out: string[] = []
     public indent = 0
+    constructor(private params: { indentationSize: number } = { indentationSize: 2 }) {}
     private printIndent(): void {
         this.out.push(' '.repeat(this.indent))
     }
@@ -41,9 +42,9 @@ export class CodePrinter {
         this.out.push('\n')
     }
     public block(handler: () => void): void {
-        this.indent += 2
+        this.indent += this.params.indentationSize
         handler()
-        this.indent -= 2
+        this.indent -= this.params.indentationSize
     }
     public build(): string {
         return this.out.join('')

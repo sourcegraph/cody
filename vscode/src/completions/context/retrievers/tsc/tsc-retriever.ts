@@ -120,7 +120,6 @@ export class TscRetriever implements ContextRetriever {
     }
 
     private servicesByTsconfigPath = new Map<string, TscLanguageService>()
-    private baseCompilerHost: ts.FormatDiagnosticsHost = ts.createCompilerHost({})
     private disposables: vscode.Disposable[] = []
     private documentRegistry = ts.createDocumentRegistry(isMacOS() || isWindows(), currentDirectory())
     private snapshots = new Map<string, DocumentSnapshot>()
@@ -167,10 +166,10 @@ export class TscRetriever implements ContextRetriever {
         const currentDirectory = config
             ? path.dirname(config)
             : this.defaultWorkingDirectory() ?? process.cwd()
-        logDebug(
-            'tsc-retriever',
-            `Loading compiler for ${file} with config ${config} in directory ${currentDirectory}`
-        )
+        // logDebug(
+        //     'tsc-retriever',
+        //     `Loading compiler for ${file} with config ${config} in directory ${currentDirectory}`
+        // )
         const formatHost: ts.FormatDiagnosticsHost = ts.createCompilerHost(parsedCommandLine.options)
         const sourceFileNames: string[] = parsedCommandLine.fileNames
         const serviceHost: TscLanguageServiceHost = {
@@ -221,7 +220,6 @@ export class TscRetriever implements ContextRetriever {
                     }
                     return fallback
                 }
-                logDebug('tsc-retriever', result)
                 return result
             },
             readFile: (path: string, encoding?: string | undefined): string | undefined =>
@@ -249,10 +247,6 @@ export class TscRetriever implements ContextRetriever {
         const sourceFile = program.getSourceFile(file.fsPath)
         if (sourceFile === undefined) {
             return undefined
-        }
-        const diagnostics = program.getGlobalDiagnostics()
-        if (diagnostics.length > 0) {
-            logDebug('tsc-retriever', ts.formatDiagnostics(diagnostics, this.baseCompilerHost))
         }
         return {
             service,
@@ -319,11 +313,6 @@ export class TscRetriever implements ContextRetriever {
             return []
         }
         const diagnostics = compiler.program.getSemanticDiagnostics(compiler.sourceFile)
-        if (diagnostics.length > 0) {
-            logDebug('tsc-retriever', ts.formatDiagnostics(diagnostics, this.baseCompilerHost))
-        } else {
-            logDebug('tsc-retriever', 'No diagnostics')
-        }
         const result: ProtocolDiagnostic[] = []
         for (const diagnostic of diagnostics) {
             const { file, start, length, messageText, code, source } = diagnostic
