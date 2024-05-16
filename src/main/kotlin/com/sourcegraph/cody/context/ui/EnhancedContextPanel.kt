@@ -229,9 +229,9 @@ class EnterpriseEnhancedContextPanel(project: Project, chatSession: ChatSession)
 
   override fun createCheckboxPolicy(): CheckboxTreeBase.CheckPolicy =
       CheckboxTreeBase.CheckPolicy(
-          /* checkChildrenWithCheckedParent = */ false,
-          /* uncheckChildrenWithUncheckedParent = */ false,
-          /* checkParentWithCheckedChild = */ false,
+          /* checkChildrenWithCheckedParent = */ true,
+          /* uncheckChildrenWithUncheckedParent = */ true,
+          /* checkParentWithCheckedChild = */ true,
           /* uncheckParentWithUncheckedChild = */ false)
 
   override fun updateFromAgent(enhancedContextStatus: EnhancedContextContextT) {
@@ -308,23 +308,30 @@ class EnterpriseEnhancedContextPanel(project: Project, chatSession: ChatSession)
   }
 
   @RequiresEdt
-  private fun updateTree(repos: List<RemoteRepo>) {
+  private fun updateTree(enabledRepos: List<RemoteRepo>) {
     // TODO: When Kotlin @RequiresEdt annotations are instrumented, remove this manual assertion.
     ApplicationManager.getApplication().assertIsDispatchThread()
 
     val remotesPath = treeModel.getTreePath(remotesNode.userObject)
     val wasExpanded = remotesPath != null && tree.isExpanded(remotesPath)
-    remotesNode.removeAllChildren()
-    repos
-        .map { repo ->
-          ContextTreeRemoteRepoNode(repo) { checked ->
-            setRepoEnabledInContextState(repo.name, checked)
-          }
-        }
-        .forEach { remotesNode.add(it) }
+    val remoteNodes = remotesNode.children().toList().filterIsInstance<ContextTreeRemoteRepoNode>()
 
-    contextRoot.numRepos = repos.count { it.isIgnored != true }
-    contextRoot.numIgnoredRepos = repos.count { it.isIgnored == true }
+    remoteNodes.forEach { node ->
+      node.repo.isEnabled = enabledRepos.find { it.name == node.repo.name } != null
+    }
+
+    enabledRepos.forEach { repo ->
+      val remoteNode = remoteNodes.find { it.repo.name == repo.name }
+      if (remoteNode == null) {
+        remotesNode.add(
+            ContextTreeRemoteRepoNode(repo) { checked ->
+              setRepoEnabledInContextState(repo.name, checked)
+            })
+      }
+    }
+
+    contextRoot.numRepos = enabledRepos.count { it.isIgnored != true }
+    contextRoot.numIgnoredRepos = enabledRepos.count { it.isIgnored == true }
     treeModel.reload(contextRoot)
     if (wasExpanded) {
       tree.expandPath(remotesPath)
