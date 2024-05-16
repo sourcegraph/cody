@@ -73,30 +73,31 @@ abstract class FixupSession(
   // it enables us to show the user what we sent and let them hand-edit it.
   var instruction: String? = null
 
+  private val performedActions: MutableList<FixupUndoableAction> = mutableListOf()
+
   private val cancellationToken = CancellationToken()
 
-  private val performedActions: MutableList<FixupUndoableAction> = mutableListOf()
+  private val completionFuture: CompletableFuture<Void> =
+      cancellationToken.onFinished {
+        try {
+          controller.clearActiveSession()
+        } catch (x: Exception) {
+          logger.debug("Session cleanup error", x)
+        }
+
+        runInEdt {
+          try { // Disposing inlay requires EDT.
+            Disposer.dispose(this)
+          } catch (x: Exception) {
+            logger.warn("Error disposing fixup session $this", x)
+          }
+        }
+      }
 
   init {
     triggerFixupAsync()
 
     runInEdt { Disposer.register(controller, this) }
-
-    cancellationToken.onFinished {
-      try {
-        controller.clearActiveSession()
-      } catch (x: Exception) {
-        logger.debug("Session cleanup error", x)
-      }
-
-      runInEdt {
-        try { // Disposing inlay requires EDT.
-          Disposer.dispose(this)
-        } catch (x: Exception) {
-          logger.warn("Error disposing fixup session $this", x)
-        }
-      }
-    }
   }
 
   private val document
@@ -249,16 +250,17 @@ abstract class FixupSession(
     }
   }
 
-  fun retry() {
-    cancellationToken.onFinished {
-      runInEdt {
-        // Close loophole where you can keep retrying after the ignore policy changes.
-        if (controller.isEligibleForInlineEdit(editor)) {
-          EditCommandPrompt(controller, editor, "Edit instructions and Retry", instruction)
-        }
+  fun showRetryPrompt() {
+    runInEdt {
+      // Close loophole where you can keep retrying after the ignore policy changes.
+      if (controller.isEligibleForInlineEdit(editor)) {
+        EditCommandPrompt(controller, editor, "Edit instructions and Retry", instruction)
       }
     }
-    undo()
+  }
+
+  fun afterSessionFinished(action: Runnable) {
+    completionFuture.thenRun(action)
   }
 
   fun dismiss() {

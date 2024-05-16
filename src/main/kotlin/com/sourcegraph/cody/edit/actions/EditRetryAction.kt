@@ -6,6 +6,6 @@ import com.sourcegraph.cody.edit.FixupService
 
 class EditRetryAction : InlineEditAction() {
   override fun performAction(e: AnActionEvent, project: Project) {
-    FixupService.getInstance(project).getActiveSession()?.retry()
+    FixupService.getInstance(project).getActiveSession()?.showRetryPrompt()
   }
 }

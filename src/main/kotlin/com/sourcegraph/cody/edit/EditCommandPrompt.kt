@@ -556,8 +556,15 @@ class EditCommandPrompt(
         logger.warn("Project was null when trying to add an edit session")
         return
       }
-      // Kick off the editing command.
-      EditCodeSession(controller, editor, text, llmDropdown.item)
+
+      fun editCode() = runInEdt { EditCodeSession(controller, editor, text, llmDropdown.item) }
+      val activeSession = controller.getActiveSession()
+      if (activeSession != null) {
+        activeSession.afterSessionFinished { editCode() }
+        activeSession.undo()
+      } else {
+        editCode()
+      }
     }
     clearActivePrompt()
   }

@@ -18,8 +18,8 @@ public class CancellationToken {
         });
   }
 
-  public void onFinished(Consumer<Boolean> callback) {
-    this.cancelled.thenAccept(
+  public CompletableFuture<Void> onFinished(Consumer<Boolean> callback) {
+    return this.cancelled.thenAccept(
         (isCancelled) -> {
           try {
             callback.accept(isCancelled);
