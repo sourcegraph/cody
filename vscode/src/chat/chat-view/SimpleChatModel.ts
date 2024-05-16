@@ -67,6 +67,7 @@ export class SimpleChatModel {
             error = this.messages.pop()?.error
         }
         this.messages.push({
+            model: this.modelID,
             ...message,
             speaker: 'assistant',
             error,
@@ -80,6 +81,7 @@ export class SimpleChatModel {
             lastMessage?.speaker === 'assistant' ? this.messages.pop() : undefined
         // Then add a new assistant message with error added
         this.messages.push({
+            model: this.modelID,
             ...(lastAssistantMessage ?? {}),
             speaker: 'assistant',
             error: errorToChatError(error),
@@ -162,10 +164,12 @@ export class SimpleChatModel {
         }
         const result: SerializedChatTranscript = {
             id: this.sessionID,
-            chatModel: this.modelID,
             chatTitle: this.getCustomChatTitle(),
             lastInteractionTimestamp: this.sessionID,
             interactions,
+
+            // DEPRECATED: Write this for backcompat.
+            chatModel: this.modelID,
         }
         if (this.selectedRepos) {
             result.enhancedContext = {

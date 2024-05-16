@@ -9,6 +9,7 @@ data class SerializedChatMessage(
   val editorState: Any? = null,
   val speaker: SpeakerEnum, // Oneof: human, assistant, system
   val text: String? = null,
+  val model: String? = null,
 ) {
 
   enum class SpeakerEnum {

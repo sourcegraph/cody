@@ -187,19 +187,30 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
         'cody.chatResponse:noCode',
     ],
 })('chat model selector', async ({ page, sidebar }) => {
+    await fetch(`${mockServer.SERVER_URL}/.test/currentUser/codyProEnabled`, { method: 'POST' })
+
     await sidebarSignin(page, sidebar)
 
     const [chatFrame, chatInput] = await createEmptyChatPanel(page)
 
     const modelSelect = chatFrame.getByRole('combobox', { name: 'Choose a model' })
 
-    // Model selector is initially enabled.
     await expect(modelSelect).toBeEnabled()
+    await expect(modelSelect).toHaveText(/^Claude 3 Sonnet/)
 
-    // Immediately after submitting the first message, the model selector is disabled.
-    await chatInput.fill('Hello')
+    await chatInput.fill('to model1')
     await chatInput.press('Enter')
-    await expect(modelSelect).toBeDisabled()
+    await expect(chatFrame.getByRole('row').getByTitle('Claude 3 Sonnet by Anthropic')).toBeVisible()
+
+    // Change model and send another message.
+    await expect(modelSelect).toBeEnabled()
+    await modelSelect.click()
+    const modelChoices = chatFrame.getByRole('listbox', { name: 'Suggestions' })
+    await modelChoices.getByRole('option', { name: 'GPT-4o' }).click()
+    await expect(modelSelect).toHaveText(/^GPT-4o/)
+    await chatInput.fill('to model2')
+    await chatInput.press('Enter')
+    await expect(chatFrame.getByRole('row').getByTitle('GPT-4o by OpenAI')).toBeVisible()
 })
 
 test.extend<ExpectedEvents>({

@@ -15,6 +15,22 @@ export function useChatModelContext(): ChatModelContext {
     return useContext(context)
 }
 
+export function useChatModelByID(
+    model: string | undefined
+): Pick<ModelProvider, 'model' | 'title' | 'provider'> | undefined {
+    const { chatModels } = useChatModelContext()
+    return (
+        chatModels?.find(m => m.model === model) ??
+        (model
+            ? {
+                  model,
+                  title: model,
+                  provider: 'unknown',
+              }
+            : undefined)
+    )
+}
+
 export function useCurrentChatModel(): ModelProvider | undefined {
     const { chatModels } = useChatModelContext()
     return chatModels?.find(model => model.default) ?? chatModels?.[0]
