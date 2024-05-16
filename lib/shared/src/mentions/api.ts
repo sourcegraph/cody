@@ -77,3 +77,19 @@ export type ContextItemFromProvider<ID extends ContextMentionProviderID> = Conte
      */
     provider: ID
 }
+
+/**
+ * Metadata about a {@link ContextMentionProvider}.
+ */
+export interface ContextMentionProviderMetadata<ID extends ContextMentionProviderID>
+    extends Pick<ContextMentionProvider<ID>, 'id' | 'triggerPrefixes'> {}
+
+export const FILE_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata<'file'> = {
+    id: 'file',
+    triggerPrefixes: [],
+}
+
+export const SYMBOL_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata<'symbol'> = {
+    id: 'symbol',
+    triggerPrefixes: ['#'],
+}

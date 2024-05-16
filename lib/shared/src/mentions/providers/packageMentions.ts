@@ -73,7 +73,7 @@ export const PACKAGE_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'package'>
                               content: undefined,
                               source: ContextItemSource.Package,
                               repoID: node.repository.id,
-                              provider: 'package',
+                              provider: PACKAGE_CONTEXT_MENTION_PROVIDER.id,
                               name: node.name,
                               ecosystem,
                           } as ContextItemPackage)

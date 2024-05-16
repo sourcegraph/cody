@@ -2,14 +2,9 @@ import { XMLBuilder } from 'fast-xml-parser'
 import { URI } from 'vscode-uri'
 import { ContextItemSource, type ContextItemWithContent } from '../../codebase-context/messages'
 import { githubClient } from '../../githubClient'
-import type {
-    ContextItemFromProvider,
-    ContextItemProps,
-    ContextMentionProvider,
-    ContextMentionProviderID,
-} from '../api'
+import type { ContextItemFromProvider, ContextItemProps, ContextMentionProvider } from '../api'
 
-const GithubContextId: ContextMentionProviderID = 'github'
+const GithubContextId = 'github' as const
 
 const xmlBuilder = new XMLBuilder({
     format: true,
@@ -17,6 +12,7 @@ const xmlBuilder = new XMLBuilder({
 
 class GithubContextMentionProvider implements ContextMentionProvider<typeof GithubContextId> {
     public id = GithubContextId
+    public title = 'GitHub Issues & PRs'
     public triggerPrefixes = ['github:', 'gh:']
 
     async queryContextItems(query: string, props: ContextItemProps, signal?: AbortSignal) {
@@ -102,7 +98,7 @@ class GithubContextMentionProvider implements ContextMentionProvider<typeof Gith
                 uri: URI.parse(pullRequest.html_url),
                 title: `#${pullRequest.number} ${pullRequest.title}`,
                 source: ContextItemSource.Github,
-                provider: 'github',
+                provider: GITHUB_CONTEXT_MENTION_PROVIDER.id,
             }))
         } catch (error) {
             return []
@@ -136,7 +132,7 @@ class GithubContextMentionProvider implements ContextMentionProvider<typeof Gith
                 uri: URI.parse(issue.html_url),
                 title: `#${issue.number} ${issue.title}`,
                 source: ContextItemSource.Github,
-                provider: 'github',
+                provider: GITHUB_CONTEXT_MENTION_PROVIDER.id,
             }))
         } catch {
             return []
@@ -297,7 +293,7 @@ class GithubContextMentionProvider implements ContextMentionProvider<typeof Gith
                     uri: URI.parse(issue.html_url),
                     title: issue.title,
                     source: ContextItemSource.Github,
-                    provider: 'github',
+                    provider: GITHUB_CONTEXT_MENTION_PROVIDER.id,
                 },
             ]
         } catch {

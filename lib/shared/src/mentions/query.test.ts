@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'vitest'
 
-import type { ContextMentionProvider } from './api'
+import {
+    type ContextMentionProvider,
+    FILE_CONTEXT_MENTION_PROVIDER,
+    SYMBOL_CONTEXT_MENTION_PROVIDER,
+} from './api'
+import { URL_CONTEXT_MENTION_PROVIDER } from './providers/urlMentions'
 import {
     type MentionQuery,
     type MentionTrigger,
@@ -12,14 +17,14 @@ import {
 describe('parseMentionQuery', () => {
     test('empty query for empty string', () => {
         expect(parseMentionQuery('', [])).toEqual<MentionQuery>({
-            provider: 'default',
+            provider: null,
             text: '',
         })
     })
 
     test('file query without prefix', () => {
         expect(parseMentionQuery('foo', [])).toEqual<MentionQuery>({
-            provider: 'file',
+            provider: FILE_CONTEXT_MENTION_PROVIDER.id,
             text: 'foo',
             maybeHasRangeSuffix: false,
             range: undefined,
@@ -28,22 +33,22 @@ describe('parseMentionQuery', () => {
 
     test('file query with range', () => {
         expect(parseMentionQuery('foo:', [])).toEqual<MentionQuery>({
-            provider: 'file',
+            provider: FILE_CONTEXT_MENTION_PROVIDER.id,
             text: 'foo',
             maybeHasRangeSuffix: true,
         })
         expect(parseMentionQuery('foo:1', [])).toEqual<MentionQuery>({
-            provider: 'file',
+            provider: FILE_CONTEXT_MENTION_PROVIDER.id,
             text: 'foo',
             maybeHasRangeSuffix: true,
         })
         expect(parseMentionQuery('foo:1-', [])).toEqual<MentionQuery>({
-            provider: 'file',
+            provider: FILE_CONTEXT_MENTION_PROVIDER.id,
             text: 'foo',
             maybeHasRangeSuffix: true,
         })
         expect(parseMentionQuery('foo:1-2', [])).toEqual<MentionQuery>({
-            provider: 'file',
+            provider: FILE_CONTEXT_MENTION_PROVIDER.id,
             text: 'foo',
             range: { start: { line: 0, character: 0 }, end: { line: 2, character: 0 } },
             maybeHasRangeSuffix: true,
@@ -52,7 +57,7 @@ describe('parseMentionQuery', () => {
 
     test('symbol query without prefix', () => {
         expect(parseMentionQuery('#bar', [])).toEqual<MentionQuery>({
-            provider: 'symbol',
+            provider: SYMBOL_CONTEXT_MENTION_PROVIDER.id,
             text: 'bar',
         })
     })
@@ -61,7 +66,7 @@ describe('parseMentionQuery', () => {
         // Note: This means that the user is literally looking for a file whose name contains `@`.
         // This is a very rare case. See the docstring for `parseMentionQuery`.
         expect(parseMentionQuery('@baz', [])).toEqual<MentionQuery>({
-            provider: 'file',
+            provider: FILE_CONTEXT_MENTION_PROVIDER.id,
             text: '@baz',
             maybeHasRangeSuffix: false,
         })
@@ -70,16 +75,16 @@ describe('parseMentionQuery', () => {
     test('url query with http:// prefix', () => {
         const providers: Pick<ContextMentionProvider, 'id' | 'triggerPrefixes'>[] = [
             {
-                id: 'url',
+                id: URL_CONTEXT_MENTION_PROVIDER.id,
                 triggerPrefixes: ['http://', 'https://'],
             },
         ]
         expect(parseMentionQuery('http://example.com/p', providers)).toEqual<MentionQuery>({
-            provider: 'url',
+            provider: URL_CONTEXT_MENTION_PROVIDER.id,
             text: 'http://example.com/p',
         })
         expect(parseMentionQuery('https://example.com/p', providers)).toEqual<MentionQuery>({
-            provider: 'url',
+            provider: URL_CONTEXT_MENTION_PROVIDER.id,
             text: 'https://example.com/p',
         })
     })
