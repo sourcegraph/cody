@@ -238,8 +238,12 @@ abstract class FixupSession(
   }
 
   fun cancel() {
-    CodyAgentService.withAgent(project) { agent ->
-      agent.server.cancelEditTask(TaskIdParam(taskId!!))
+    if (taskId == null) {
+      dismiss()
+    } else {
+      CodyAgentService.withAgent(project) { agent ->
+        agent.server.cancelEditTask(TaskIdParam(taskId!!))
+      }
     }
   }
 
