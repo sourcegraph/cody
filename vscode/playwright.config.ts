@@ -9,6 +9,6 @@ export default defineConfig({
     testDir: 'test/e2e',
     timeout: 30000,
     expect: {
-        timeout: isWin ? 5000 : 5000,
+        timeout: isWin ? 5000 : 3000,
     },
 })
