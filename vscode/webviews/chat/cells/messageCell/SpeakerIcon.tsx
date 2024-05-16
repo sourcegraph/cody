@@ -11,7 +11,7 @@ import { UserAvatar } from '../../../components/UserAvatar'
 export const SpeakerIcon: FunctionComponent<{
     message: Pick<ChatMessage, 'speaker'>
     userInfo: UserAccountInfo
-    chatModel: ModelProvider | undefined
+    chatModel: Pick<ModelProvider, 'model' | 'title' | 'provider'> | undefined
     size: number
 }> = ({ message, userInfo: { user }, chatModel, size }) => {
     if (message.speaker === 'human') {
