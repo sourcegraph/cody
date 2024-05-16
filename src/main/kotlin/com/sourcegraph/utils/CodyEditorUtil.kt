@@ -23,7 +23,6 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings
-import com.intellij.psi.codeStyle.CommonCodeStyleSettings.IndentOptions
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.io.createFile
 import com.intellij.util.io.exists
@@ -53,30 +52,6 @@ object CodyEditorUtil {
    * disable autocomplete. If absent, assumes editors want autocomplete.
    */
   @JvmStatic val KEY_EDITOR_WANTS_AUTOCOMPLETE = Key.create<Boolean>("cody.editorWantsAutocomplete")
-
-  /**
-   * Returns a new String, using the given indentation settings to determine the tab size.
-   *
-   * @param inputText text with tabs to convert to spaces
-   * @param indentOptions relevant code style settings
-   * @return a new String with all '\t' characters replaced with spaces according to the configured
-   *   tab size
-   */
-  @JvmStatic
-  fun tabsToSpaces(inputText: String, indentOptions: IndentOptions): String {
-    val tabReplacement = " ".repeat(indentOptions.TAB_SIZE)
-    return inputText.replace("\t".toRegex(), tabReplacement)
-  }
-
-  /**
-   * @param editor given editor
-   * @return Indent options for the given editor, if null falls back to DEFAULT_INDENT_OPTIONS
-   */
-  @JvmStatic
-  fun indentOptions(editor: Editor): IndentOptions {
-    return Optional.ofNullable(codeStyleSettings(editor).indentOptions)
-        .orElse(IndentOptions.DEFAULT_INDENT_OPTIONS)
-  }
 
   /**
    * @param editor given editor
@@ -193,14 +168,6 @@ object CodyEditorUtil {
   @JvmStatic
   fun getVirtualFile(editor: Editor): VirtualFile? =
       FileDocumentManager.getInstance().getFile(editor.document)
-
-  fun getDocumentUrl(editor: Editor): String? {
-    return FileDocumentManager.getInstance().getFile(editor.document)?.url
-  }
-
-  fun getEditorForUri(uri: String): Editor? {
-    return getAllOpenEditors().firstOrNull { editor -> getDocumentUrl(editor) == uri }
-  }
 
   @JvmStatic
   @RequiresEdt

@@ -27,11 +27,10 @@ class AutoGrowingTextArea(private val minRows: Int, maxRows: Int, outerPanel: JC
   val textArea: JBTextArea
   val scrollPane: JBScrollPane
   private val initialPreferredSize: Dimension
-  private val autoGrowUpToRow: Int
-  val undoManager = UndoManager()
+  private val autoGrowUpToRow: Int = maxRows + 1
+  private val undoManager = UndoManager()
 
   init {
-    autoGrowUpToRow = maxRows + 1
     textArea = createTextArea()
     scrollPane = JBScrollPane(textArea)
     initialPreferredSize = scrollPane.preferredSize

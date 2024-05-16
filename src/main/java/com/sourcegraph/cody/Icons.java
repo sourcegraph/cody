@@ -8,14 +8,6 @@ public interface Icons {
   Icon CodyLogo = IconLoader.getIcon("/icons/codyLogo.svg", Icons.class);
   Icon HiImCody = IconLoader.getIcon("/icons/hiImCodyLogo.svg", Icons.class);
 
-  interface Repository {
-    Icon Indexed = IconLoader.getIcon("/icons/repositoryIndexed.svg", Icons.class);
-    Icon NoEmbedding = IconLoader.getIcon("/icons/repositoryNoEmbedding.svg", Icons.class);
-    Icon Missing = IconLoader.getIcon("/icons/repositoryMissing.svg", Icons.class);
-    Icon NotFoundOnInstance =
-        IconLoader.getIcon("/icons/repositoryNotFoundOnInstance.svg", Icons.class);
-  }
-
   interface Actions {
     Icon Hide = IconLoader.getIcon("/icons/actions/hide.svg", Icons.class);
     Icon Send = IconLoader.getIcon("/icons/actions/send.svg", Icons.class);
