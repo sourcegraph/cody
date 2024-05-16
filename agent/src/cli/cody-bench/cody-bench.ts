@@ -302,12 +302,16 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
         name: 'cody-bench',
         version: '0.1.0',
         workspaceRootUri: workspaceRootUri.toString(),
+        capabilities: {
+            codeActions: 'enabled',
+        },
         extensionConfiguration: {
             accessToken: options.srcAccessToken,
             serverEndpoint: options.srcEndpoint,
             customHeaders: {},
             customConfiguration: options.fixture.customConfiguration,
         },
+        inheritStderr: true,
         codyAgentPath: options.codyAgentBinary,
     })
     try {

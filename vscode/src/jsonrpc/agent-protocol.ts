@@ -102,6 +102,11 @@ export type ClientRequests = {
     // using this API in favor of high-level wrappers like 'chat/new'.
     'command/execute': [ExecuteCommandParams, any]
 
+    'codeActions/provide': [
+        { location: ProtocolLocation; triggerKind: CodeActionTriggerKind },
+        { codeActions: ProtocolCodeAction[] },
+    ]
+
     'autocomplete/execute': [AutocompleteParams, AutocompleteResult]
 
     'graphql/getRepoIds': [{ names: string[]; first: number }, { repos: { name: string; id: string }[] }]
@@ -144,6 +149,7 @@ export type ClientRequests = {
     'testing/requestErrors': [null, { errors: NetworkRequest[] }]
     'testing/closestPostData': [{ url: string; postData: string }, { closestBody: string }]
     'testing/diagnostics': [{ uri: string }, { diagnostics: ProtocolDiagnostic[] }]
+    'testing/publishDiagnostics': [{ diagnostics: ProtocolDiagnostic[] }, null]
 
     // Only used for testing purposes. This operation runs indefinitely unless
     // the client sends progress/cancel.
@@ -426,6 +432,7 @@ interface ClientCapabilities {
     untitledDocuments?: 'none' | 'enabled'
     showDocument?: 'none' | 'enabled'
     codeLenses?: 'none' | 'enabled'
+    codeActions?: 'none' | 'enabled'
     showWindowMessage?: 'notification' | 'request'
     ignore?: 'none' | 'enabled'
 }
@@ -724,7 +731,7 @@ export interface ProtocolCodeLens {
 export interface ProtocolCommand {
     title: {
         text: string
-        icons: {
+        icons?: {
             value: string
             position: number
         }[]
@@ -800,6 +807,29 @@ export interface ProtocolDiagnostic {
     severity: DiagnosticSeverity
     code?: string
     source?: string
+    relatedInformation?: ProtocolRelatedInformationDiagnostic[]
+}
+
+export interface ProtocolRelatedInformationDiagnostic {
+    location: ProtocolLocation
+    message: string
 }
 
 export type DiagnosticSeverity = 'error' | 'warning' | 'info' | 'suggestion'
+export type CodeActionTriggerKind = 'Invoke' | 'Automatic'
+export interface ProtocolCodeAction {
+    title: string
+    // edit?: WorkspaceEdit
+    diagnostics?: ProtocolDiagnostic[]
+    command?: ProtocolCommand
+    kind?: string
+    isPreferred?: boolean
+    disabled?: {
+        /**
+         * Human readable description of why the code action is currently disabled.
+         *
+         * This is displayed in the code actions UI.
+         */
+        readonly reason: string
+    }
+}

@@ -11,7 +11,10 @@ import {
 } from '@sourcegraph/cody-shared'
 import ts from 'typescript'
 import * as vscode from 'vscode'
-import type { ProtocolDiagnostic } from '../../../../jsonrpc/agent-protocol'
+import type {
+    ProtocolDiagnostic,
+    ProtocolRelatedInformationDiagnostic,
+} from '../../../../jsonrpc/agent-protocol'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { nextTick } from '../section-history/nextTick'
 import { SymbolFormatter, isStdLibNode } from './SymbolFormatter'
@@ -315,21 +318,45 @@ export class TscRetriever implements ContextRetriever {
         const diagnostics = compiler.program.getSemanticDiagnostics(compiler.sourceFile)
         const result: ProtocolDiagnostic[] = []
         for (const diagnostic of diagnostics) {
-            const { file, start, length, messageText, code, source } = diagnostic
+            const { file, start, code, source } = diagnostic
             if (file && start) {
+                const relatedInformation: ProtocolRelatedInformationDiagnostic[] = []
+                if (diagnostic.relatedInformation) {
+                    for (const info of diagnostic.relatedInformation) {
+                        if (!info.file || info.start === undefined) {
+                            continue
+                        }
+                        const start = info.file.getLineAndCharacterOfPosition(info.start)
+                        const end = info.file.getLineAndCharacterOfPosition(
+                            info.start + (info.length ?? 1)
+                        )
+                        relatedInformation.push({
+                            location: {
+                                uri: vscode.Uri.file(info.file.fileName).toString(),
+                                range: {
+                                    start: { line: start.line, character: start.character },
+                                    end: { line: end.line, character: end.character },
+                                },
+                            },
+                            message: formatMessageText(info.messageText),
+                        })
+                    }
+                }
+
                 const { line, character } = file.getLineAndCharacterOfPosition(start)
                 result.push({
                     location: {
-                        uri: file.fileName,
+                        uri: vscode.Uri.file(file.fileName).toString(),
                         range: {
                             start: { line, character },
-                            end: { line, character: character + (length ?? 1) },
+                            end: { line, character: character + (diagnostic.length ?? 1) },
                         },
                     },
-                    message: typeof messageText === 'string' ? messageText : messageText.messageText,
+                    message: formatMessageText(diagnostic.messageText),
                     severity: 'error',
                     code: String(code),
                     source,
+                    relatedInformation,
                 })
             }
         }
@@ -584,4 +611,21 @@ class SymbolCollector {
 enum SearchState {
     Done = 1,
     Continue = 2,
+}
+
+function formatMessageText(messageText: string | ts.DiagnosticMessageChain): string {
+    if (typeof messageText === 'string') {
+        return messageText
+    }
+    const messages: string[] = []
+    const loop = (chain: ts.DiagnosticMessageChain): void => {
+        messages.push(chain.messageText)
+        if (chain.next) {
+            for (const next of chain.next) {
+                loop(next)
+            }
+        }
+    }
+    loop(messageText)
+    return messages.join('\n')
 }

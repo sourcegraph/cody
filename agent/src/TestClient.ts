@@ -8,7 +8,6 @@ import path from 'node:path'
 import { type ContextItem, type SerializedChatMessage, logError } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { applyPatch } from 'fast-myers-diff'
-import { expect } from 'vitest'
 import * as vscode from 'vscode'
 import type { Uri } from 'vscode'
 import {
@@ -127,6 +126,17 @@ function buildAgentBinary(): void {
 }
 
 export class TestClient extends MessageHandler {
+    public static fromConnection(
+        conn: MessageConnection,
+        workspace: vscode.Uri,
+        name: string
+    ): TestClient {
+        return new TestClient(conn, {
+            workspaceRootUri: workspace,
+            name,
+            credentials: TESTING_CREDENTIALS.dotcom,
+        })
+    }
     public static create({ bin = 'node', ...params }: TestClientParams): TestClient {
         buildAgentBinary()
         const agentDir = getAgentDir()
@@ -383,7 +393,7 @@ export class TestClient extends MessageHandler {
 
     public openFile(
         uri: Uri,
-        params?: { selectionName?: string; removeCursor?: boolean }
+        params?: { text?: string; selectionName?: string; removeCursor?: boolean }
     ): Promise<void> {
         return this.textDocumentEvent(uri, 'textDocument/didOpen', params)
     }
@@ -620,7 +630,9 @@ export class TestClient extends MessageHandler {
     public async acceptEditTask(uri: vscode.Uri, task: EditTask): Promise<void> {
         await this.taskHasReachedAppliedPhase(task)
         const lenses = this.codeLenses.get(uri.toString()) ?? []
-        expect(lenses).toHaveLength(0) // Code lenses are now handled client side
+        if (lenses.length !== 0) {
+            throw new Error(`Expected no code lenses for ${uri}, but found ${lenses.length}`)
+        }
         await this.request('editTask/accept', { id: task.id })
     }
 
@@ -764,7 +776,9 @@ ${patch}`
 
     public async beforeAll() {
         const info = await this.initialize()
-        expect(info.authStatus?.isLoggedIn).toBeTruthy()
+        if (!info.authStatus?.isLoggedIn) {
+            throw new Error('Could not log in')
+        }
     }
     public async afterAll() {
         await this.shutdownAndExit()

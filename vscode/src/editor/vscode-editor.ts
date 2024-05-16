@@ -115,6 +115,7 @@ export class VSCodeEditor implements Editor {
             return null
         }
         const diagnostics = vscode.languages.getDiagnostics(activeEditor.document.uri)
+        vscode.workspace.onDidChangeNotebookDocument
         const selectionRange = new vscode.Range(
             new vscode.Position(start.line, start.character),
             new vscode.Position(end.line, end.character)

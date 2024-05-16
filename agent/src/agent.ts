@@ -33,6 +33,7 @@ import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/pro
 import { supportedTscLanguages } from '../../vscode/src/completions/context/retrievers/tsc/supportedTscLanguages'
 import { activate } from '../../vscode/src/extension.node'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
+import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 
 import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
@@ -56,7 +57,7 @@ import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
 import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
-import { AgentCodeLenses } from './AgentCodeLenses'
+import { AgentProviders } from './AgentCodeLenses'
 import { AgentFixupControls } from './AgentFixupControls'
 import { AgentGlobalState } from './AgentGlobalState'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
@@ -129,7 +130,7 @@ export async function initializeVscodeExtension(
 }
 
 export async function newAgentClient(
-    clientInfo: ClientInfo & { codyAgentPath?: string }
+    clientInfo: ClientInfo & { codyAgentPath?: string; inheritStderr?: boolean }
 ): Promise<MessageHandler> {
     const asyncHandler = async (reject: (reason?: any) => void): Promise<MessageHandler> => {
         const nodeArguments = process.argv0.endsWith('node') ? process.argv.slice(1, 2) : []
@@ -145,6 +146,9 @@ export async function newAgentClient(
                 reject?.(new Error(`exit: ${code}`))
             }
         })
+        if (clientInfo.inheritStderr) {
+            child.stderr.pipe(process.stderr)
+        }
 
         const conn = createMessageConnection(
             new StreamMessageReader(child.stdout),
@@ -205,7 +209,8 @@ export function errorToCodyError(error?: Error): CodyError | undefined {
 }
 
 export class Agent extends MessageHandler implements ExtensionClient {
-    public codeLenses = new AgentCodeLenses()
+    public codeLens = new AgentProviders<vscode.CodeLensProvider>()
+    public codeAction = new AgentProviders<vscode.CodeActionProvider>()
     public workspace = new AgentWorkspaceDocuments({
         edit: (uri, callback, options) => {
             if (this.clientInfo?.capabilities?.edit !== 'enabled') {
@@ -291,16 +296,24 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
             this.workspace.workspaceRootUri = vscode.Uri.parse(clientInfo.workspaceRootUri)
             vscode_shim.setWorkspaceDocuments(this.workspace)
+            if (clientInfo.capabilities?.codeActions === 'enabled') {
+                vscode_shim.onDidRegisterNewCodeActionProvider(codeActionProvider => {
+                    this.codeAction.addProvider(codeActionProvider, undefined)
+                })
+                vscode_shim.onDidUnregisterNewCodeActionProvider(codeActionProvider =>
+                    this.codeAction.removeProvider(codeActionProvider)
+                )
+            }
             if (clientInfo.capabilities?.codeLenses === 'enabled') {
                 vscode_shim.onDidRegisterNewCodeLensProvider(codeLensProvider => {
-                    this.codeLenses.add(
+                    this.codeLens.addProvider(
                         codeLensProvider,
                         codeLensProvider.onDidChangeCodeLenses?.(() => this.updateCodeLenses())
                     )
                     this.updateCodeLenses()
                 })
                 vscode_shim.onDidUnregisterNewCodeLensProvider(codeLensProvider =>
-                    this.codeLenses.remove(codeLensProvider)
+                    this.codeLens.removeProvider(codeLensProvider)
                 )
             }
             if (clientInfo.capabilities?.ignore === 'enabled') {
@@ -454,17 +467,100 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
+        this.registerAuthenticatedRequest('codeActions/provide', async (params, token) => {
+            const document = this.workspace.getDocument(vscode.Uri.parse(params.location.uri))
+            if (!document) {
+                throw new Error(`codeActions/provide: document not found for ${params.location.uri}`)
+            }
+            const codeActions: agent_protocol.ProtocolCodeAction[] = []
+            for (const providers of this.codeAction.providers()) {
+                const diagnostics = vscode.languages.getDiagnostics(document.uri)
+                console.log({ params, diagnostics })
+                const result = await providers.provideCodeActions(
+                    document,
+                    vscodeRange(params.location.range),
+                    {
+                        diagnostics,
+                        only: undefined,
+                        triggerKind:
+                            params.triggerKind === 'Automatic'
+                                ? vscode.CodeActionTriggerKind.Automatic
+                                : vscode.CodeActionTriggerKind.Invoke,
+                    },
+                    token
+                )
+                for (const action of result ?? []) {
+                    if (action instanceof vscode.CodeAction) {
+                        const diagnostics: agent_protocol.ProtocolDiagnostic[] = []
+                        for (const diagnostic of action.diagnostics ?? []) {
+                            diagnostics.push({
+                                location: {
+                                    uri: params.location.uri,
+                                    range: diagnostic.range,
+                                },
+                                severity: 'error',
+                                source: diagnostic.source,
+                                message: diagnostic.message,
+                            })
+                        }
+                        codeActions.push({
+                            title: action.title,
+                            command: action.command
+                                ? {
+                                      command: action.command.command,
+                                      title: { text: action.command.title },
+                                      arguments: action.command.arguments,
+                                      tooltip: action.command.tooltip,
+                                  }
+                                : undefined,
+                            diagnostics,
+                        })
+                    }
+                }
+            }
+            return { codeActions }
+        })
+
         this.registerAuthenticatedRequest('testing/diagnostics', async params => {
             const uri = vscode.Uri.parse(params.uri)
             const language = getLanguageForFileName(uri.fsPath)
             const retriever = loadTscRetriever()
             if (!isFileURI(uri) || !supportedTscLanguages.has(language) || !retriever) {
-                console.log(`nah ${uri}`)
-                return { diagnostics: [] }
+                throw new Error(`testing/diagnostics: unsupported file type ${language} for URI ${uri}`)
             }
             return {
                 diagnostics: retriever.diagnostics(uri),
             }
+        })
+
+        this.registerAuthenticatedRequest('testing/publishDiagnostics', async params => {
+            console.log({ params })
+            const result = new Map<string, vscode.Diagnostic[]>()
+            for (const diagnostic of params.diagnostics) {
+                let diagnostics = result.get(diagnostic.location.uri)
+                if (diagnostics === undefined) {
+                    diagnostics = []
+                    result.set(diagnostic.location.uri, diagnostics)
+                }
+                const relatedInformation: vscode.DiagnosticRelatedInformation[] = []
+                for (const related of diagnostic.relatedInformation ?? []) {
+                    relatedInformation.push({
+                        location: vscodeLocation(related.location),
+                        message: related.message,
+                    })
+                }
+                diagnostics.push({
+                    message: diagnostic.message,
+                    range: vscodeRange(diagnostic.location.range),
+                    severity: vscode.DiagnosticSeverity.Error,
+                    code: diagnostic.code,
+                    source: diagnostic.source,
+                    relatedInformation,
+                })
+            }
+            console.log({ PUBLISH_RESULT: result })
+            vscode_shim.diagnostics.publish(result)
+            return null
         })
 
         this.registerAuthenticatedRequest('testing/closestPostData', async ({ url, postData }) => {
@@ -1127,7 +1223,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.codeLensToken.cancel()
         this.codeLensToken = new vscode.CancellationTokenSource()
         const promises: Promise<vscode.CodeLens[]>[] = []
-        for (const provider of this.codeLenses.providers()) {
+        for (const provider of this.codeLens.providers()) {
             promises.push(this.provideCodeLenses(provider, document))
         }
         const lenses = (await Promise.all(promises)).flat()
@@ -1358,4 +1454,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         throw new TypeError(`Expected AgentWorkspaceEdit, got ${edit}`)
     }
+}
+
+function vscodeRange(range: agent_protocol.Range): vscode.Range {
+    return new vscode.Range(
+        new vscode.Position(range.start.line, range.start.character),
+        new vscode.Position(range.end.line, range.end.character)
+    )
+}
+function vscodeLocation(location: agent_protocol.ProtocolLocation): vscode.Location {
+    return new vscode.Location(vscode.Uri.parse(location.uri), vscodeRange(location.range))
 }

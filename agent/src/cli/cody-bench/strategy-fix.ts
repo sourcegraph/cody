@@ -1,48 +1,36 @@
 import ts from 'typescript'
 import * as vscode from 'vscode'
+import { TestClient } from '../../TestClient'
 import type { MessageHandler } from '../../jsonrpc-alias'
 import type { ProtocolDiagnostic } from '../../protocol-alias'
 import { AggregateBuckets, Buckets } from './Buckets'
 import { DiagnosticCode, isDiagnosticCode } from './DiagnosticCode'
 import type { EvaluateAutocompleteOptions } from './cody-bench'
 import { evaluateEachFile } from './evaluateEachFile'
-import { runVoidCommand } from './testTypecheck'
-
-function prettyDiagnostic(d: ProtocolDiagnostic): string {
-    const file = vscode.Uri.parse(d.location.uri).fsPath
-    return `${file}:${d.location.range.start.line + 1}:${d.location.range.start.character} ${d.code} ${
-        d.message
-    }`
-}
-
-function printCandidate(file: string, candidate: FixCandidate): void {
-    console.log(`${file}:${candidate.impactedLine} CODE:${candidate.expectedDiagnosticCode}`)
-    console.log(
-        candidate.newContent
-            .split('\n')
-            .slice(candidate.impactedLine - 1, candidate.impactedLine + 4)
-            .join('\n')
-    )
-}
 
 export async function evaluateFixStrategy(
-    client: MessageHandler,
+    messageHandler: MessageHandler,
     options: EvaluateAutocompleteOptions
 ): Promise<void> {
+    const client = TestClient.fromConnection(
+        messageHandler.conn,
+        vscode.Uri.file(options.workspace),
+        options.fixture.name
+    )
     let totalCandidates = 0
     const globalBuckets = new Buckets<DiagnosticCode>(1_000)
     let counter = options.testCount
     let correctDiagnostics = 0
     let totalDiagnostics = 0
-    await runVoidCommand(options.installCommand, options.workspace)
+    // await runVoidCommand(options.installCommand, options.workspace)
     await evaluateEachFile(options, async params => {
         if (counter <= 0) {
             return
         }
         const file = params.uri.fsPath
         const sourceFile = ts.createSourceFile(file, params.content, ts.ScriptTarget.Latest, true)
-        const candidates = fixCandidates(sourceFile, globalBuckets)
-        client.notify('textDocument/didOpen', { uri: params.uri.toString(), content: params.content })
+        const candidates = generateTotallyFakeDiagnostics(sourceFile, globalBuckets)
+        client.openFile(params.uri, { text: params.content })
         const { diagnostics: originalDiagnostics } = await client.request('testing/diagnostics', {
             uri: params.uri.toString(),
         })
@@ -52,10 +40,7 @@ export async function evaluateFixStrategy(
         }
         totalCandidates += candidates.length
         for (const candidate of candidates) {
-            client.notify('textDocument/didChange', {
-                uri: params.uri.toString(),
-                content: candidate.newContent,
-            })
+            client.changeFile(params.uri, { text: candidate.newContent })
             const { diagnostics } = await client.request('testing/diagnostics', {
                 uri: params.uri.toString(),
             })
@@ -72,10 +57,18 @@ export async function evaluateFixStrategy(
                     if (isRelated) {
                         // ignore
                     } else {
-                        printCandidate(file, candidate)
-                        console.log(prettyDiagnostic(diagnostic))
+                        // Wrong diagnostic kind. Ignore it, and optionally uncomment below to debug why
+                        // printCandidate(file, candidate)
+                        // console.log(prettyDiagnostic(diagnostic))
                     }
                 } else {
+                    await client.request('testing/publishDiagnostics', { diagnostics: [diagnostic] })
+                    const { codeActions } = await client.request('codeActions/provide', {
+                        location: diagnostic.location,
+                        triggerKind: 'Invoke',
+                    })
+                    console.log({ codeActions })
+                    // TODO: publish diagnostic, trigger code actions
                     correctDiagnostics++
                 }
             }
@@ -99,7 +92,11 @@ const relatedDiagnosticCodes: Partial<Record<DiagnosticCode, DiagnosticCode[]>> 
 
 // Attempt to synthesize diagnostics matching the examples in
 // https://linear.app/sourcegraph/issue/CODY-15/edit-fix-provide-tailored-prompt-information-for-the-most-popular#comment-b4cbeb4f
-function fixCandidates(
+// The current implementation is naive and generates obviously fake errors that
+// don't look like real-world production diagnostics (even if they have the
+// right diagnostic code). Ideally, we can build a large corpus of "real world" diagnostics
+// that we use instead.
+function generateTotallyFakeDiagnostics(
     sourceFile: ts.SourceFile,
     globalBuckets: Buckets<DiagnosticCode>
 ): FixCandidate[] {
@@ -218,4 +215,21 @@ function isBasicTypeRef(node: ts.TypeNode): boolean {
         return node.types.some(isBasicTypeRef)
     }
     return ts.isIdentifier(node) || ts.isTypeReferenceNode(node)
+}
+
+export function prettyDiagnostic(d: ProtocolDiagnostic): string {
+    const file = vscode.Uri.parse(d.location.uri).fsPath
+    return `${file}:${d.location.range.start.line + 1}:${d.location.range.start.character} ${d.code} ${
+        d.message
+    }`
+}
+
+export function printCandidate(file: string, candidate: FixCandidate): void {
+    console.log(`${file}:${candidate.impactedLine} CODE:${candidate.expectedDiagnosticCode}`)
+    console.log(
+        candidate.newContent
+            .split('\n')
+            .slice(candidate.impactedLine - 1, candidate.impactedLine + 4)
+            .join('\n')
+    )
 }

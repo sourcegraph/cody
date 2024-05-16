@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
 import type { Config, ContextProvider } from '../chat/ContextProvider'
-
 import { DocumentCodeAction } from './document'
 import { EditCodeAction } from './edit'
 import { ExplainCodeAction } from './explain'
@@ -27,6 +26,7 @@ export class CodeActionProvider implements vscode.Disposable {
         vscode.Disposable.from(...this.actionProviders).dispose()
         this.actionProviders = []
 
+        console.log({ config: config.codeActions })
         if (!config.codeActions) {
             return
         }
