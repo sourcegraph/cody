@@ -35,6 +35,7 @@ class ContextTreeLocalRepoNode(val project: Project, isEnhancedContextEnabled: A
 open class ContextTreeEnterpriseRootNode(
     var endpointName: String,
     var numRepos: Int,
+    var numIgnoredRepos: Int,
     onSetChecked: (Boolean) -> Unit
 ) :
     ContextTreeNode<Any>(

@@ -5,6 +5,7 @@ import com.intellij.ui.CheckboxTree
 import com.intellij.ui.CheckedTreeNode
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.util.ui.ThreeStateCheckBox
+import com.sourcegraph.cody.chat.ui.pluralize
 import com.sourcegraph.cody.context.RepoInclusion
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.CodyBundle.fmt
@@ -39,9 +40,24 @@ class ContextRepositoriesCheckboxRenderer(private val enhancedContextEnabled: At
       // Enterprise context node renderers
 
       is ContextTreeEnterpriseRootNode -> {
+        // Compute a complicated label counting repositories, for example:
+        // *Chat Context* 1 Repo on example.com
+        // *Chat Context* 2 Repos - 1 ignored on example.com
+        val ignoredRejoinder =
+            when {
+              node.numIgnoredRepos > 0 ->
+                  CodyBundle.getString("context-panel.tree.node-chat-context.detail-ignored-repos")
+                      .fmt(node.numIgnoredRepos.toString())
+              else -> ""
+            }
         textRenderer.appendHTML(
             CodyBundle.getString("context-panel.tree.node-chat-context.detailed")
-                .fmt(style, node.numRepos.toString(), node.endpointName),
+                .fmt(
+                    style,
+                    node.numRepos.toString(),
+                    "Repo".pluralize(node.numRepos),
+                    ignoredRejoinder,
+                    node.endpointName),
             SimpleTextAttributes.REGULAR_ATTRIBUTES)
         // The root element controls enhanced context which includes editor selection, etc. Do not
         // display unchecked/bar even if the child repos are unchecked.

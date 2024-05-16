@@ -20,6 +20,7 @@ import com.intellij.openapi.ui.popup.LightweightWindowEvent
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFileFactory
 import com.intellij.ui.SoftWrapsEditorCustomization
+import com.intellij.ui.popup.AbstractPopup
 import com.intellij.util.LocalTimeCounter
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.JBDimension
@@ -101,15 +102,35 @@ class RemoteRepoPopupController(val project: Project) {
 
     val panel = JPanel(BorderLayout()).apply { add(editor.component, BorderLayout.CENTER) }
     val shortcut = KeymapUtil.getShortcutsText(CommonShortcuts.CTRL_ENTER.shortcuts)
-    val scaledHeight = JBDimension(0, 100).height
-    val popup =
+    val scaledHeight = JBDimension(0, 160).height
+
+    var popup: JBPopup? = null
+    popup =
         (JBPopupFactory.getInstance()
                 .createComponentPopupBuilder(panel, editor.contentComponent)
                 .apply {
                   setAdText(
                       CodyBundle.getString("context-panel.remote-repo.select-repo-advertisement")
                           .fmt(MAX_REMOTE_REPOSITORY_COUNT.toString(), shortcut))
-                  setCancelOnClickOutside(true)
+                  setCancelOnClickOutside(true) // Do dismiss if the user clicks outside the popup.
+                  setCancelOnWindowDeactivation(false) // Don't dismiss on alt-tab away and back.
+                  setKeyEventHandler { event ->
+                    // Subtle: We want to OK the popup on CTRL+ENTER or clicks outside, but cancel
+                    // on ESC. Here's how it works:
+                    //
+                    // - Set the default result to OK. See setOk(true) below.
+                    // - Clicks outside get the default success result.
+                    // - If we intercept a close key event (ESC), we flip back to setOk(false).
+                    //
+                    // This relies on this JBPopupFactory creating an AbstractPopup. That is
+                    // documented, see JBPopupFactory "Types of popups in IntelliJ Platform". But if
+                    // the result is not an AbstractPopup, the dialog will still work: Clicks
+                    // outside will cancel instead of OK.
+                    if (AbstractPopup.isCloseRequest(event)) {
+                      (popup as? AbstractPopup)?.setOk(false)
+                    }
+                    false
+                  }
                   setMayBeParent(true)
                   setMinSize(Dimension(width, scaledHeight))
                   setRequestFocus(true)
@@ -117,19 +138,26 @@ class RemoteRepoPopupController(val project: Project) {
                   addListener(
                       object : JBPopupListener {
                         override fun onClosed(event: LightweightWindowEvent) {
+                          if (event.isOk) {
+                            // We don't use the Psi elements here, because the Annotator may be
+                            // slow, etc.
+                            onAccept(document.text)
+                          }
                           EditorFactory.getInstance().releaseEditor(editor)
                         }
                       })
                 })
             .createPopup()
 
+    // Set the default result to OK. This is needed to handle "OK on click away." See
+    // setKeyEventHandler above.
+    (popup as? AbstractPopup)?.setOk(true)
+
     val okAction =
         object : DumbAwareBGTAction() {
           override fun actionPerformed(event: AnActionEvent) {
             unregisterCustomShortcutSet(popup.content)
             popup.closeOk(event.inputEvent)
-            // We don't use the Psi elements here, because the Annotator may be slow, etc.
-            onAccept(document.text)
           }
         }
     okAction.registerCustomShortcutSet(CommonShortcuts.CTRL_ENTER, popup.content)
