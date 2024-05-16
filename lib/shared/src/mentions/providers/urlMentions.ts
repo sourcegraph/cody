@@ -4,6 +4,8 @@ import type { ContextMentionProvider } from '../api'
 
 export const URL_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'url'> = {
     id: 'url',
+    title: 'Web URL',
+    queryLabel: 'Type a URL to add a web page as context',
     triggerPrefixes: ['http://', 'https://'],
 
     /**

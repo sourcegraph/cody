@@ -8,7 +8,6 @@ import {
     PACKAGE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     URL_CONTEXT_MENTION_PROVIDER,
-    parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getContextFileFromUri } from '../../commands/context/file-path'
@@ -20,16 +19,13 @@ import {
 } from '../../editor/utils/editor-context'
 
 export async function getChatContextItemsForMention(
-    query: MentionQuery | string,
+    mentionQuery: MentionQuery,
     cancellationToken: vscode.CancellationToken,
     telemetryRecorder?: {
         empty: () => void
         withProvider: (type: MentionQuery['provider']) => void
     }
 ): Promise<ContextItem[]> {
-    const mentionQuery =
-        typeof query === 'string' ? parseMentionQuery(query, getEnabledContextMentionProviders()) : query
-
     // Logging: log when the at-mention starts, and then log when we know the type (after the 1st
     // character is typed). Don't log otherwise because we would be logging prefixes of the same
     // query repeatedly, which is not needed.

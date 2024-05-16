@@ -1,17 +1,24 @@
-import { type ContextItem, parseMentionQuery } from '@sourcegraph/cody-shared'
-import { type FunctionComponent, createContext, useContext, useEffect, useState } from 'react'
+import {
+    type ContextItem,
+    type ContextMentionProviderMetadata,
+    type MentionQuery,
+    parseMentionQuery,
+} from '@sourcegraph/cody-shared'
+import { LRUCache } from 'lru-cache'
+import { type FunctionComponent, createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { useContextProviders } from '../../../mentions/providers'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
 
 export interface ChatContextClient {
-    getChatContextItems(query: string): Promise<ContextItem[]>
+    getChatContextItems(query: MentionQuery): Promise<ContextItem[]>
 }
 
 const ChatContextClientContext: React.Context<ChatContextClient> = createContext({
-    getChatContextItems(query: string): Promise<ContextItem[]> {
+    getChatContextItems(query: MentionQuery): Promise<ContextItem[]> {
         // Adapt the VS Code webview messaging API to be RPC-like for ease of use by our callers.
         return new Promise<ContextItem[]>((resolve, reject) => {
             const vscodeApi = getVSCodeAPI()
-            vscodeApi.postMessage({ command: 'getUserContext', query })
+            vscodeApi.postMessage({ command: 'queryContextItems', query })
 
             const RESPONSE_MESSAGE_TYPE = 'userContextFiles' as const
 
@@ -42,14 +49,20 @@ export const WithChatContextClient: FunctionComponent<
     <ChatContextClientContext.Provider value={value}>{children}</ChatContextClientContext.Provider>
 )
 
-function useChatContextClient(): ChatContextClient {
-    return useContext(ChatContextClientContext)
-}
-
 /** Hook to get the chat context items for the given query. */
-export function useChatContextItems(query: string | null): ContextItem[] | undefined {
-    const chatContextClient = useChatContextClient()
+export function useChatContextItems(
+    query: string | null,
+    provider: ContextMentionProviderMetadata | null
+): ContextItem[] | undefined {
+    const unmemoizedClient = useContext(ChatContextClientContext)
+    const chatContextClient = useMemo(
+        () => memoizeChatContextClient(unmemoizedClient),
+        [unmemoizedClient]
+    )
     const [results, setResults] = useState<ContextItem[]>()
+    const [lastProvider, setLastProvider] = useState<ContextMentionProviderMetadata['id'] | null>(null)
+    const allProviders = useContextProviders()
+
     // biome-ignore lint/correctness/useExhaustiveDependencies: we only want to run this when query changes.
     useEffect(() => {
         // An empty query is a valid query that we use to get open tabs context,
@@ -61,10 +74,16 @@ export function useChatContextItems(query: string | null): ContextItem[] | undef
 
         // If user has typed an incomplete range, fetch new chat context items only if there are no
         // results.
-        const { maybeHasRangeSuffix, range } = parseMentionQuery(query, [])
-        if (results?.length && maybeHasRangeSuffix && !range) {
+        const mentionQuery = parseMentionQuery(query, provider, allProviders)
+        if (results?.length && mentionQuery.maybeHasRangeSuffix && !mentionQuery.range) {
             return
         }
+
+        // Invalidate results if the provider has changed because the results are certainly stale.
+        if (mentionQuery.provider !== lastProvider) {
+            setResults(undefined)
+        }
+        setLastProvider(mentionQuery.provider)
 
         // Track if the query changed since this request was sent (which would make our results
         // no longer valid).
@@ -72,7 +91,7 @@ export function useChatContextItems(query: string | null): ContextItem[] | undef
 
         if (chatContextClient) {
             chatContextClient
-                .getChatContextItems(query)
+                .getChatContextItems(mentionQuery)
                 .then(mentions => {
                     if (invalidated) {
                         return
@@ -88,6 +107,23 @@ export function useChatContextItems(query: string | null): ContextItem[] | undef
         return () => {
             invalidated = true
         }
-    }, [query])
+    }, [query, allProviders])
     return results
+}
+
+function memoizeChatContextClient(client: ChatContextClient): ChatContextClient {
+    const cache = new LRUCache<string, ContextItem[]>({ max: 10 })
+    return {
+        async getChatContextItems(query: MentionQuery): Promise<ContextItem[]> {
+            const key = JSON.stringify(query)
+            const cached = cache.get(key)
+            if (cached !== undefined) {
+                return cached
+            }
+
+            const result = await client.getChatContextItems(query)
+            cache.set(key, result)
+            return result
+        },
+    }
 }

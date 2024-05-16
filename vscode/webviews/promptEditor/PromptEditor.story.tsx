@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { type FunctionComponent, useState } from 'react'
-import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
+import { ContextProvidersDecorator, VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
 import styles from './BaseEditor.story.module.css'
 import { PromptEditor, type SerializedPromptEditorState } from './PromptEditor'
 import { FILE_MENTION_EDITOR_STATE_FIXTURE } from './fixtures'
@@ -15,7 +15,7 @@ const meta: Meta<typeof PromptEditor> = {
         editorClassName: styles.editor,
     } satisfies React.ComponentProps<typeof PromptEditor>,
 
-    decorators: [VSCodeStandaloneComponent],
+    decorators: [VSCodeStandaloneComponent, ContextProvidersDecorator],
 } as Meta
 
 export default meta

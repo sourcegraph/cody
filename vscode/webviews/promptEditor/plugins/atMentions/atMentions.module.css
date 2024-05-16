@@ -2,9 +2,8 @@
     overflow: hidden;
     background: var(--vscode-sideBar-background);
     color: var(--vscode-sideBar-foreground);
-    border: 1px solid var(--vscode-widget-border);
     box-shadow: 0 0 8px 2px var(--vscode-widget-shadow);
-    border-radius: 6px;
+    border-radius: 3px;
     max-width: 85vw;
 }
 

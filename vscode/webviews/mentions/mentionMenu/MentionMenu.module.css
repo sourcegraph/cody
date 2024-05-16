@@ -1,0 +1,26 @@
+.container {
+    min-width: 300px;
+    max-height: 330px;
+    border: 1px solid var(--vscode-widget-border);
+    border-radius: 3px;
+    outline: none;
+}
+
+/* Hide scroll bar. */
+.container [cmdk-list] {
+    scrollbar-width: none;
+}
+.container [cmdk-list]::-webkit-scrollbar {
+    display: none;
+}
+
+.item {
+    line-height: 1.2;
+
+    &.context-item {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 0.2rem;
+    }
+}

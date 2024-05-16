@@ -69,9 +69,26 @@ CommandList.displayName = CommandPrimitive.List.displayName
 const CommandEmpty = React.forwardRef<
     React.ElementRef<typeof CommandPrimitive.Empty>,
     React.ComponentPropsWithoutRef<typeof CommandPrimitive.Empty>
->((props, ref) => <CommandPrimitive.Empty ref={ref} className="tw-p-3 tw-text-md" {...props} />)
+>((props, ref) => (
+    <CommandPrimitive.Empty
+        ref={ref}
+        className="tw-p-4 tw-text-muted-foreground tw-font-medium tw-text-xs"
+        {...props}
+    />
+))
 
 CommandEmpty.displayName = CommandPrimitive.Empty.displayName
+
+const CommandLoading = React.forwardRef<
+    React.ElementRef<typeof CommandPrimitive.Loading>,
+    React.ComponentPropsWithoutRef<typeof CommandPrimitive.Loading>
+>((props, ref) => (
+    <CommandPrimitive.Loading
+        ref={ref}
+        className="tw-p-4 tw-text-muted-foreground tw-font-medium tw-text-xs"
+        {...props}
+    />
+))
 
 const CommandGroup = React.forwardRef<
     React.ElementRef<typeof CommandPrimitive.Group>,
@@ -136,6 +153,7 @@ export {
     CommandInput,
     CommandList,
     CommandEmpty,
+    CommandLoading,
     CommandGroup,
     CommandItem,
     CommandShortcut,

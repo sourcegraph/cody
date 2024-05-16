@@ -8,6 +8,7 @@ const TRIGGER_PREFIX = 'octx:'
 
 export const OPENCTX_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'openctx'> = {
     id: 'openctx',
+    title: 'OpenCtx',
     triggerPrefixes: [TRIGGER_PREFIX],
     async queryContextItems(query) {
         const openctxAPI = await getOpenCtxExtensionAPI()

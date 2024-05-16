@@ -338,6 +338,7 @@ export const getInput = async (
                 const mentionQuery = mentionTrigger
                     ? parseMentionQuery(
                           mentionTrigger.matchingString,
+                          null,
                           getEnabledContextMentionProviders()
                       )
                     : undefined

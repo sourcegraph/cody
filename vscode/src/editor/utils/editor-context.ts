@@ -130,6 +130,10 @@ export async function getSymbolContextFiles(
     query: string,
     maxResults = 20
 ): Promise<ContextItemSymbol[]> {
+    if (query.startsWith('#')) {
+        query = query.slice(1)
+    }
+
     if (!query.trim()) {
         return []
     }

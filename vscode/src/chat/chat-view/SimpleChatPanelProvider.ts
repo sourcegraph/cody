@@ -16,6 +16,7 @@ import {
     type EventSource,
     type FeatureFlagProvider,
     type Guardrails,
+    type MentionQuery,
     type Message,
     ModelProvider,
     ModelUsage,
@@ -28,6 +29,7 @@ import {
     isError,
     isFileURI,
     isRateLimitError,
+    parseMentionQuery,
     recordErrorToSpan,
     reformatBotMessageForChat,
     serializeChatMessage,
@@ -73,7 +75,7 @@ import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { gitCommitIdFromGitExtension } from '../../repository/git-extension-api'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import type { MessageErrorType } from '../MessageProvider'
-import { getChatContextItemsForMention } from '../context/chatContext'
+import { getChatContextItemsForMention, getEnabledContextMentionProviders } from '../context/chatContext'
 import type {
     ChatSubmitType,
     ConfigurationSubsetForWebview,
@@ -286,6 +288,11 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 this.postChatModels()
                 break
             case 'getUserContext':
+                await this.handleGetUserContextFilesCandidates(
+                    parseMentionQuery(message.query, null, getEnabledContextMentionProviders())
+                )
+                break
+            case 'queryContextItems':
                 await this.handleGetUserContextFilesCandidates(message.query)
                 break
             case 'insert':
@@ -614,7 +621,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         await chatModel.set(modelID)
     }
 
-    private async handleGetUserContextFilesCandidates(query: string): Promise<void> {
+    private async handleGetUserContextFilesCandidates(query: MentionQuery): Promise<void> {
         // Cancel previously in-flight query.
         const cancellation = new vscode.CancellationTokenSource()
         this.contextFilesQueryCancellation?.cancel()

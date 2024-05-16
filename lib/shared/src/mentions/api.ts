@@ -35,8 +35,23 @@ export interface ContextMentionProvider<ID extends ContextMentionProviderID = Co
     id: ID
 
     /**
+     * A short, human-readable display title for the provider, such as "Google Docs". If not given,
+     * `id` is used instead.
+     */
+    title?: string
+
+    /**
+     * Human-readable display string for when the user is querying items from this provider.
+     */
+    queryLabel?: string
+
+    /**
      * Prefix strings for the user input after the `@` that trigger this provider. For example, a
      * context mention provider with prefix `npm:` would be triggered when the user types `@npm:`.
+     *
+     * TODO(sqs): The MentionMenu appends the first trigger prefix if present, which means that
+     * other trigger prefixes must be entered manually by the user and are not discoverable. We need
+     * to rethink this part of the API and UX.
      */
     triggerPrefixes: string[]
 
@@ -81,15 +96,30 @@ export type ContextItemFromProvider<ID extends ContextMentionProviderID> = Conte
 /**
  * Metadata about a {@link ContextMentionProvider}.
  */
-export interface ContextMentionProviderMetadata<ID extends ContextMentionProviderID>
-    extends Pick<ContextMentionProvider<ID>, 'id' | 'triggerPrefixes'> {}
+export interface ContextMentionProviderMetadata<
+    ID extends ContextMentionProviderID = ContextMentionProviderID,
+> extends Pick<ContextMentionProvider<ID>, 'id' | 'title' | 'queryLabel' | 'triggerPrefixes'> {}
 
 export const FILE_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata<'file'> = {
     id: 'file',
+    title: 'Files',
     triggerPrefixes: [],
 }
 
 export const SYMBOL_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata<'symbol'> = {
     id: 'symbol',
+    title: 'Symbols',
     triggerPrefixes: ['#'],
+}
+
+/** Metadata for all registered {@link ContextMentionProvider}s. */
+export function allMentionProvidersMetadata(experimental = false): ContextMentionProviderMetadata[] {
+    return [
+        FILE_CONTEXT_MENTION_PROVIDER,
+        SYMBOL_CONTEXT_MENTION_PROVIDER,
+        // TODO!(sqs): exclude openctx because it is a meta-provider
+        ...(experimental
+            ? CONTEXT_MENTION_PROVIDERS.filter(({ id }) => id !== OPENCTX_CONTEXT_MENTION_PROVIDER.id)
+            : []),
+    ]
 }

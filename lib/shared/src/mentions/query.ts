@@ -2,8 +2,8 @@ import type { RangeData } from '../common/range'
 import {
     type ContextMentionProvider,
     type ContextMentionProviderID,
+    type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
-    SYMBOL_CONTEXT_MENTION_PROVIDER,
 } from './api'
 
 /**
@@ -17,8 +17,8 @@ export interface MentionQuery {
     provider: ContextMentionProviderID | null
 
     /**
-     * The user's text input, to be interpreted as a fuzzy-matched query. It is stripped of any
-     * prefix characters that indicate the {@link MentionQuery.provider}, such as `#` for symbols.
+     * The user's text input, to be interpreted as a fuzzy-matched query. It contains any
+     * triggerPrefixes that indicate the {@link MentionQuery.provider}, such as `#` for symbols.
      */
     text: string
 
@@ -45,17 +45,18 @@ export interface MentionQuery {
  */
 export function parseMentionQuery(
     query: string,
-    contextMentionProviders: Pick<ContextMentionProvider, 'id' | 'triggerPrefixes'>[]
+    provider: Pick<ContextMentionProviderMetadata, 'id'> | null,
+    allProviders: Pick<ContextMentionProvider, 'id' | 'triggerPrefixes'>[]
 ): MentionQuery {
+    if (provider) {
+        return { provider: provider.id, text: query }
+    }
+
     if (query === '') {
         return { provider: null, text: '' }
     }
 
-    if (query.startsWith('#')) {
-        return { provider: SYMBOL_CONTEXT_MENTION_PROVIDER.id, text: query.slice(1) }
-    }
-
-    for (const provider of contextMentionProviders) {
+    for (const provider of allProviders) {
         if (provider.triggerPrefixes.some(trigger => query.startsWith(trigger))) {
             return { provider: provider.id, text: query }
         }
