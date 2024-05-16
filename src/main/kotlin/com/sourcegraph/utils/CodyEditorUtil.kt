@@ -1,8 +1,11 @@
 package com.sourcegraph.utils
 
 import com.intellij.application.options.CodeStyle
+import com.intellij.ide.scratch.ScratchFileService
+import com.intellij.ide.scratch.ScratchRootType
 import com.intellij.injected.editor.EditorWindow
 import com.intellij.lang.Language
+import com.intellij.lang.LanguageUtil
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.command.WriteCommandAction
@@ -16,6 +19,8 @@ import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.fileEditor.TextEditor
+import com.intellij.openapi.fileTypes.FileTypeRegistry
+import com.intellij.openapi.fileTypes.PlainTextLanguage
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.util.Key
@@ -26,9 +31,11 @@ import com.intellij.psi.codeStyle.CommonCodeStyleSettings
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.io.createFile
 import com.intellij.util.io.exists
+import com.intellij.util.withScheme
 import com.sourcegraph.cody.vscode.Range
 import com.sourcegraph.config.ConfigUtil
 import java.net.URI
+import java.net.URISyntaxException
 import java.util.Optional
 import kotlin.io.path.toPath
 import kotlin.math.min
@@ -173,13 +180,11 @@ object CodyEditorUtil {
   @RequiresEdt
   fun showDocument(
       project: Project,
-      uri: URI,
+      vf: VirtualFile,
       selection: Range? = null,
       preserveFocus: Boolean? = false
   ): Boolean {
     try {
-      val vf =
-          LocalFileSystem.getInstance().refreshAndFindFileByNioFile(uri.toPath()) ?: return false
       if (selection == null) {
         OpenFileDescriptor(project, vf).navigate(/* requestFocus= */ preserveFocus != true)
       } else {
@@ -189,17 +194,66 @@ object CodyEditorUtil {
       }
       return true
     } catch (e: Exception) {
+      logger.error("Cannot switch view to file ${vf.path}", e)
+      return false
+    }
+  }
+
+  @JvmStatic
+  @RequiresEdt
+  fun showDocument(
+      project: Project,
+      uri: URI,
+      selection: Range? = null,
+      preserveFocus: Boolean? = false
+  ): Boolean {
+    try {
+      val vf =
+          LocalFileSystem.getInstance().refreshAndFindFileByNioFile(uri.toPath()) ?: return false
+      return showDocument(project, vf, selection, preserveFocus)
+    } catch (e: Exception) {
       logger.error("Cannot switch view to file $uri", e)
       return false
     }
   }
 
-  fun createFileIfNeeded(project: Project, uri: URI, content: String? = null): VirtualFile? {
-    if (!uri.toPath().exists()) uri.toPath().createFile()
-    val vf = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(uri.toPath())
-    content?.let {
-      WriteCommandAction.runWriteCommandAction(project) { vf?.setBinaryContent(it.toByteArray()) }
+  fun findFileOrScratch(project: Project, uriString: String): VirtualFile? {
+    try {
+      val uri = URI.create(uriString)
+      val fixedUri = if (uriString.startsWith("untitled")) uri.withScheme("file") else uri
+      return LocalFileSystem.getInstance().refreshAndFindFileByNioFile(fixedUri.toPath())
+    } catch (e: URISyntaxException) {
+      // Let's try scratch files
+      val fileName = uriString.substringAfterLast('/').substringAfterLast('\\')
+      return ScratchRootType.getInstance()
+          .findFile(project, fileName, ScratchFileService.Option.existing_only)
     }
-    return vf
+  }
+
+  fun createFileOrScratch(
+      project: Project,
+      uriString: String,
+      content: String? = null
+  ): VirtualFile? {
+    try {
+      val uri = URI.create(uriString).withScheme("file")
+      if (!uri.toPath().exists()) uri.toPath().createFile()
+      val vf = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(uri.toPath())
+      content?.let {
+        WriteCommandAction.runWriteCommandAction(project) { vf?.setBinaryContent(it.toByteArray()) }
+      }
+      return vf
+    } catch (e: URISyntaxException) {
+      val fileName = uriString.substringAfterLast('/').substringAfterLast('\\')
+      val fileType = FileTypeRegistry.getInstance().getFileTypeByFileName(fileName)
+      val language = LanguageUtil.getFileTypeLanguage(fileType) ?: PlainTextLanguage.INSTANCE
+      return ScratchRootType.getInstance()
+          .createScratchFile(
+              project,
+              fileName,
+              language,
+              content ?: "",
+              ScratchFileService.Option.create_if_missing)
+    }
   }
 }

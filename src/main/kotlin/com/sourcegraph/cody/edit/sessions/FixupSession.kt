@@ -13,9 +13,7 @@ import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import com.intellij.util.withScheme
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentCodebase
 import com.sourcegraph.cody.agent.CodyAgentService
@@ -39,12 +37,10 @@ import com.sourcegraph.cody.edit.widget.LensGroupFactory
 import com.sourcegraph.cody.edit.widget.LensWidgetGroup
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.utils.CodyEditorUtil
-import java.net.URI
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.concurrent.TimeUnit
-import kotlin.io.path.toPath
 
 /**
  * Common functionality for commands that let the agent edit the code inline, such as adding a doc
@@ -304,8 +300,9 @@ abstract class FixupSession(
   }
 
   private fun updateEditorIfNeeded(path: String) {
-    val uri = URI.create(path).withScheme("file")
-    val vf = LocalFileSystem.getInstance().findFileByNioFile(uri.toPath()) ?: return
+    val vf =
+        CodyEditorUtil.findFileOrScratch(project, path)
+            ?: throw IllegalArgumentException("Could not find file $path")
     val documentForFile = FileDocumentManager.getInstance().getDocument(vf)
 
     if (document != documentForFile) {

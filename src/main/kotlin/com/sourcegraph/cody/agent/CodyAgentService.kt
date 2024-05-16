@@ -8,7 +8,6 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.util.net.HttpConfigurable
-import com.intellij.util.withScheme
 import com.sourcegraph.cody.chat.AgentChatSessionService
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.context.RemoteRepoSearcher
@@ -17,8 +16,8 @@ import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.cody.listeners.CodyFileEditorListener
 import com.sourcegraph.cody.statusbar.CodyStatusService
 import com.sourcegraph.utils.CodyEditorUtil
-import java.net.URI
-import java.util.*
+import java.util.Timer
+import java.util.TimerTask
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -100,24 +99,24 @@ class CodyAgentService(private val project: Project) : Disposable {
       }
 
       agent.client.onTextDocumentShow = Function { params ->
-        CodyEditorUtil.showDocument(
-            project,
-            URI.create(params.uri).withScheme("file"),
-            params.options?.selection?.toVSCodeRange(),
-            params.options?.preserveFocus)
+        val selection = params.options?.selection?.toVSCodeRange()
+        val preserveFocus = params.options?.preserveFocus
+        val vf = CodyEditorUtil.findFileOrScratch(project, params.uri) ?: return@Function false
+        CodyEditorUtil.showDocument(project, vf, selection, preserveFocus)
+        true
       }
 
       agent.client.onOpenUntitledDocument = Function { params ->
         // We always get a file which does not start with file:// there.
         // They start with untitled:// which is VSCode-specific way
         // to say that files does not exist on the disk yet.
-        val uri = URI.create(params.uri).withScheme("file")
-        if (CodyEditorUtil.createFileIfNeeded(project, uri, params.content) == null)
-            return@Function false
+        val vf =
+            CodyEditorUtil.createFileOrScratch(project, params.uri, params.content)
+                ?: return@Function false
         ApplicationManager.getApplication().invokeAndWait {
-          CodyEditorUtil.showDocument(project, uri)
+          CodyEditorUtil.showDocument(project, vf)
         }
-        return@Function true
+        true
       }
 
       agent.client.onRemoteRepoDidChange = Consumer {
