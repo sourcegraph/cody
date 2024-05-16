@@ -36,7 +36,10 @@ export async function createLocalEmbeddingsController(
         ((await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyUseSourcegraphEmbeddings))
             ? sourcegraphModelConfig
             : openaiModelConfig)
-    return new LocalEmbeddingsController(context, config, modelConfig)
+    const autoIndexingEnabled = await featureFlagProvider.evaluateFeatureFlag(
+        FeatureFlag.CodyEmbeddingsAutoIndexing
+    )
+    return new LocalEmbeddingsController(context, config, modelConfig, autoIndexingEnabled)
 }
 
 export type LocalEmbeddingsConfig = Pick<
@@ -129,7 +132,8 @@ export class LocalEmbeddingsController
     constructor(
         private readonly context: vscode.ExtensionContext,
         config: LocalEmbeddingsConfig,
-        private readonly modelConfig: EmbeddingsModelConfig
+        private readonly modelConfig: EmbeddingsModelConfig,
+        private readonly autoIndexingEnabled: boolean
     ) {
         logDebug('LocalEmbeddingsController', 'constructor')
         this.disposables.push(this.changeEmitter, this.statusEmitter)
@@ -161,7 +165,13 @@ export class LocalEmbeddingsController
         await this.getService()
         const repoUri = vscode.workspace.workspaceFolders?.[0]?.uri
         if (repoUri && isFileURI(repoUri)) {
-            await this.eagerlyLoad(repoUri)
+            const loadedOk = await this.eagerlyLoad(repoUri)
+            if (!loadedOk) {
+                // failed to load the index, let's see if we should start indexing
+                if (this.canAutoIndex()) {
+                    this.index()
+                }
+            }
         }
     }
 
@@ -495,9 +505,20 @@ export class LocalEmbeddingsController
         }
         this.lastHealth = health
         const hasIssue = health.numItemsNeedEmbedding > 0
-        await vscode.commands.executeCommand('setContext', 'cody.embeddings.hasIssue', hasIssue)
         if (hasIssue) {
-            this.updateIssueStatusBar()
+            const canRetry = this.canAutoIndex() && !this.lastError
+            let retrySucceeded = true
+            if (canRetry) {
+                try {
+                    await this.indexRetry()
+                } catch {
+                    retrySucceeded = false
+                }
+            }
+            if (!canRetry || !retrySucceeded) {
+                await vscode.commands.executeCommand('setContext', 'cody.embeddings.hasIssue', hasIssue)
+                this.updateIssueStatusBar()
+            }
         }
     }
 
@@ -512,6 +533,11 @@ export class LocalEmbeddingsController
         return `${options?.prefix || ''}Cody Embeddings index for ${
             this.lastRepo?.dir || 'this repository'
         } is only ${percentDone.toFixed(0)}% complete.${options?.suffix || ''}`
+    }
+
+    // Check if auto-indexing is enabled and if we're using the Sourcegraph provider.
+    private canAutoIndex(): boolean {
+        return this.autoIndexingEnabled && this.modelConfig.provider === 'sourcegraph'
     }
 
     private updateIssueStatusBar(): void {
