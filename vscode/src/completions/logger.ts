@@ -348,7 +348,7 @@ export interface CompletionBookkeepingEvent {
     id: CompletionLogID
     params: Omit<
         SharedEventPayload,
-        'items' | 'otherCompletionProviderEnabled' | 'otherCompletionProviders' | 'upstreamRtt'
+        'items' | 'otherCompletionProviderEnabled' | 'otherCompletionProviders'
     >
     // The timestamp when the completion request started
     startedAt: number
