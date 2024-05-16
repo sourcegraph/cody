@@ -190,6 +190,7 @@ describe('Agent', () => {
             expect(lastMessage).toMatchInlineSnapshot(
                 `
               {
+                "model": "anthropic/claude-3-sonnet-20240229",
                 "speaker": "assistant",
                 "text": "Hello there! I'm Claude, an AI assistant created by Anthropic. It's nice to meet you. How can I help you today?",
               }
@@ -339,6 +340,7 @@ describe('Agent', () => {
   "interactions": [
     {
       "assistantMessage": {
+        "model": "anthropic/claude-2.0",
         "speaker": "assistant",
         "text": " I'm Claude, an AI assistant created by Anthropic.",
       },
