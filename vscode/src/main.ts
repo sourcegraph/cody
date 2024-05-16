@@ -19,10 +19,10 @@ import {
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 
+import type { CommandResult } from './CommandResult'
 import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
-import type { ChatSession } from './chat/chat-view/SimpleChatPanelProvider'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
@@ -58,7 +58,6 @@ import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { logDebug, logError } from './log'
 import { getChatModelsFromConfiguration, syncModelProviders } from './models/utils'
-import type { FixupTask } from './non-stop/FixupTask'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
 import { initVSCodeGitApi } from './repository/git-extension-api'
@@ -759,14 +758,4 @@ async function configureEventsInfra(
 ): Promise<void> {
     await createOrUpdateEventLogger(config, isExtensionModeDevOrTest, authProvider)
     await createOrUpdateTelemetryRecorderProvider(config, isExtensionModeDevOrTest, authProvider)
-}
-
-export type CommandResult = ChatCommandResult | EditCommandResult
-export interface ChatCommandResult {
-    type: 'chat'
-    session?: ChatSession
-}
-export interface EditCommandResult {
-    type: 'edit'
-    task?: FixupTask
 }

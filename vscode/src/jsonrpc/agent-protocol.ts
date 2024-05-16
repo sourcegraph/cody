@@ -107,7 +107,7 @@ export type ClientRequests = {
         { codeActions: ProtocolCodeAction[] },
     ]
     // The ID from ProtcolCodeAction.id
-    'codeActions/trigger': [{ id: string }, null]
+    'codeActions/trigger': [{ id: string }, EditTask]
 
     'autocomplete/execute': [AutocompleteParams, AutocompleteResult]
 
@@ -418,6 +418,17 @@ export interface ClientInfo {
     marketingTracking?: TelemetryEventMarketingTrackingInput
 }
 
+export const allClientCapabilitiesEnabled: ClientCapabilities = {
+    progressBars: 'enabled',
+    edit: 'enabled',
+    editWorkspace: 'enabled',
+    untitledDocuments: 'enabled',
+    showDocument: 'enabled',
+    codeLenses: 'enabled',
+    showWindowMessage: 'request',
+    ignore: 'enabled',
+    codeActions: 'enabled',
+}
 // The capability should match the name of the JSON-RPC methods.
 interface ClientCapabilities {
     completions?: 'none'

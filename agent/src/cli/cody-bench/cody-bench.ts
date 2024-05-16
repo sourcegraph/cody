@@ -6,6 +6,7 @@ import * as vscode from 'vscode'
 
 import { newAgentClient } from '../../agent'
 
+import { allClientCapabilitiesEnabled } from '../../protocol-alias'
 import { arrayOption, booleanOption, intOption } from './cli-parsers'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { evaluateBfgStrategy } from './strategy-bfg'
@@ -302,9 +303,7 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
         name: 'cody-bench',
         version: '0.1.0',
         workspaceRootUri: workspaceRootUri.toString(),
-        capabilities: {
-            codeActions: 'enabled',
-        },
+        capabilities: allClientCapabilitiesEnabled,
         extensionConfiguration: {
             accessToken: options.srcAccessToken,
             serverEndpoint: options.srcEndpoint,

@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { logDebug } from '../log'
 
-import type { CommandResult } from '../main'
+import type { CommandResult } from '../CommandResult'
 import { executeDefaultCommand, isDefaultChatCommand, isDefaultEditCommand } from './execute'
 import type { CommandsProvider } from './services/provider'
 import { CommandRunner } from './services/runner'

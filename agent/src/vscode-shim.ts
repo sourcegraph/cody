@@ -1020,7 +1020,6 @@ const _languages: Partial<typeof vscode.languages> = {
     },
     onDidChangeDiagnostics,
     getDiagnostics: ((resource: vscode.Uri) => {
-        console.log({ resource: resource.toString(), diagnostics })
         if (resource) {
             return diagnostics.forUri(resource)
         }

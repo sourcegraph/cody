@@ -15,6 +15,7 @@ import { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 
 import { DEFAULT_EVENT_SOURCE } from '@sourcegraph/cody-shared'
+import type { CommandResult } from '../CommandResult'
 import { isUriIgnoredByContextFilterWithNotification } from '../cody-ignore/context-filter'
 import { showCodyIgnoreNotification } from '../cody-ignore/notification'
 import type { ExtensionClient } from '../extension-client'
@@ -81,7 +82,7 @@ export class EditManager implements vscode.Disposable {
         this.models = getEditModelsForUser(authStatus)
     }
 
-    public async executeEdit(args: ExecuteEditArguments = {}): Promise<FixupTask | undefined> {
+    public async executeEdit(args: ExecuteEditArguments = {}): Promise<CommandResult | undefined> {
         const {
             configuration = {},
             /**
@@ -214,7 +215,13 @@ export class EditManager implements vscode.Disposable {
 
         const provider = this.getProviderForTask(task)
         await provider.startEdit()
-        return task
+        if (!task) {
+            return undefined
+        }
+        return {
+            type: 'edit',
+            task,
+        }
     }
 
     private getProviderForTask(task: FixupTask): EditProvider {

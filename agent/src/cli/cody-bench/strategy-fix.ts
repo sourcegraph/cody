@@ -73,11 +73,12 @@ export async function evaluateFixStrategy(
                         console.log(prettyDiagnostic(diagnostic))
                         continue
                     }
-                    const result = await client.request('codeActions/trigger', { id: fixAction.id })
+                    const editTask = await client.request('codeActions/trigger', { id: fixAction.id })
+                    await client.acceptEditTask(params.uri, editTask)
                     const newDiagnostics = await client.request('testing/diagnostics', {
                         uri: params.uri.toString(),
                     })
-                    console.log({ fixResult: result, newDiagnostics })
+                    console.log({ editTask, newDiagnostics })
                     // TODO: publish diagnostic, trigger code actions
                     correctDiagnostics++
                 }

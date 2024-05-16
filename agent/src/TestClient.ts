@@ -27,25 +27,26 @@ import {
 import { AgentTextDocument } from './AgentTextDocument'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { MessageHandler, type NotificationMethodName } from './jsonrpc-alias'
-import type {
-    AutocompleteParams,
-    AutocompleteResult,
-    ClientInfo,
-    CreateFileOperation,
-    DebugMessage,
-    DeleteFileOperation,
-    EditTask,
-    ExtensionConfiguration,
-    NetworkRequest,
-    ProgressReportParams,
-    ProgressStartParams,
-    ProtocolCodeLens,
-    RenameFileOperation,
-    ServerInfo,
-    ShowWindowMessageParams,
-    TextDocumentEditParams,
-    WebviewPostMessageParams,
-    WorkspaceEditParams,
+import {
+    type AutocompleteParams,
+    type AutocompleteResult,
+    type ClientInfo,
+    type CreateFileOperation,
+    type DebugMessage,
+    type DeleteFileOperation,
+    type EditTask,
+    type ExtensionConfiguration,
+    type NetworkRequest,
+    type ProgressReportParams,
+    type ProgressStartParams,
+    type ProtocolCodeLens,
+    type RenameFileOperation,
+    type ServerInfo,
+    type ShowWindowMessageParams,
+    type TextDocumentEditParams,
+    type WebviewPostMessageParams,
+    type WorkspaceEditParams,
+    allClientCapabilitiesEnabled,
 } from './protocol-alias'
 import { trimEndOfLine } from './trimEndOfLine'
 
@@ -253,6 +254,7 @@ export class TestClient extends MessageHandler {
         })
 
         this.registerRequest('workspace/edit', async params => {
+            console.log('workspace/edit', params)
             this.workspaceEditParams.push(params)
             // NOTE(olafurpg): this is a best-effort implementation of what an
             // editor would do.  For IDE client implementations like JetBrains,
@@ -341,6 +343,7 @@ export class TestClient extends MessageHandler {
             return Promise.resolve(true)
         })
         this.registerRequest('textDocument/edit', params => {
+            console.log('textDocument/edit', params)
             this.textDocumentEditParams.push(params)
             return Promise.resolve(this.editDocument(params).success)
         })
@@ -496,6 +499,7 @@ export class TestClient extends MessageHandler {
         return new Promise<void>((resolve, reject) => {
             disposables = [
                 this.onDidUpdateTask(({ id, state, error }) => {
+                    console.log({ id, state, error })
                     if (id === params.id) {
                         switch (state) {
                             case CodyTaskState.Applied:
@@ -628,6 +632,7 @@ export class TestClient extends MessageHandler {
     }
 
     public async acceptEditTask(uri: vscode.Uri, task: EditTask): Promise<void> {
+        console.log('Accepting edit task', task)
         await this.taskHasReachedAppliedPhase(task)
         const lenses = this.codeLenses.get(uri.toString()) ?? []
         if (lenses.length !== 0) {
@@ -856,16 +861,7 @@ ${patch}`
             version: 'v1',
             workspaceRootUri: this.params.workspaceRootUri.toString(),
             workspaceRootPath: this.params.workspaceRootUri.fsPath,
-            capabilities: {
-                progressBars: 'enabled',
-                edit: 'enabled',
-                editWorkspace: 'enabled',
-                untitledDocuments: 'enabled',
-                showDocument: 'enabled',
-                codeLenses: 'enabled',
-                showWindowMessage: 'request',
-                ignore: 'enabled',
-            },
+            capabilities: allClientCapabilitiesEnabled,
             extensionConfiguration: {
                 anonymousUserID: `${this.name}abcde1234`,
                 accessToken: this.params.credentials.token ?? this.params.credentials.redactedToken,

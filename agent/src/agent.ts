@@ -47,13 +47,13 @@ import {
     type MessageWriter,
 } from 'vscode-jsonrpc'
 import { ModelUsage } from '../../lib/shared/src/models/types'
+import type { CommandResult } from '../../vscode/src/CommandResult'
 import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
 import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/execute'
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
 import type { ExtensionClient, ExtensionObjects } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
-import type { CommandResult } from '../../vscode/src/main'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
@@ -140,7 +140,6 @@ export async function newAgentClient(
         nodeArguments.push('jsonrpc')
         const arg0 = clientInfo.codyAgentPath ?? process.argv[0]
         const args = clientInfo.codyAgentPath ? [] : nodeArguments
-        console.log({ arg0, args })
         const child = spawn(arg0, args, {
             env: { ENABLE_SENTRY: 'false', ...process.env },
         })
@@ -161,6 +160,9 @@ export async function newAgentClient(
         const serverHandler = new MessageHandler(conn)
         serverHandler.registerNotification('debug/message', params => {
             console.error(`${params.channel}: ${params.message}`)
+        })
+        serverHandler.registerRequest('window/showMessage', async (): Promise<null> => {
+            return null
         })
         conn.listen()
         serverHandler.conn.onClose(() => reject())
@@ -529,16 +531,18 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
             return { codeActions }
         })
+
         this.registerAuthenticatedRequest('codeActions/trigger', async ({ id }) => {
             const action = codeActionById.get(id)
             if (!action || !action.command) {
                 throw new Error(`codeActions/trigger: unknown ID ${id}`)
             }
-            await vscode.commands.executeCommand(
-                action.command.command,
-                ...(action.command.arguments ?? [])
+            return this.createEditTask(
+                vscode.commands.executeCommand<CommandResult | undefined>(
+                    action.command.command,
+                    ...(action.command.arguments ?? [])
+                )
             )
-            return null
         })
 
         this.registerAuthenticatedRequest('testing/diagnostics', async params => {
@@ -1383,7 +1387,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         const result = (await commandResult) ?? { type: 'empty-command-result' }
         if (result?.type !== 'edit' || result.task === undefined) {
             throw new TypeError(
-                `Expected a non-empty edit command result. Got ${JSON.stringify(result)}`
+                `Expected a non-empty edit command result. Got ${JSON.stringify(result, null, 2)}`
             )
         }
         return AgentFixupControls.serialize(result.task)

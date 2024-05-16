@@ -13,10 +13,10 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import type { ChatCommandResult } from '../../CommandResult'
 import { toVSCodeRange } from '../../common/range'
 import { getEditor } from '../../editor/active-editor'
 import { getSmartSelection } from '../../editor/utils'
-import type { ChatCommandResult } from '../../main'
 import type { CodyCommandArgs } from '../types'
 import { executeChat } from './ask'
 
