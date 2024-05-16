@@ -12,6 +12,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+- Chat: Pressing <kbd>Space</kbd> no longer accepts an @-mention item. Press <kbd>Tab</kbd> or <kbd>Enter</kbd> instead. [pull/4154](https://github.com/sourcegraph/cody/pull/4154)
+
 ## [1.18.0]
 
 ### Added
