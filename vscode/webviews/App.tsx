@@ -11,12 +11,13 @@ import {
     type ModelProvider,
     PromptString,
     type SerializedChatTranscript,
+    allMentionProvidersMetadata,
     isMacOS,
 } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from './Chat'
 import { EnhancedContextEnabled } from './chat/EnhancedContext'
 
-import type { AuthMethod, LocalEnv } from '../src/chat/protocol'
+import type { AuthMethod, ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
@@ -29,12 +30,13 @@ import {
     EnhancedContextContext,
     EnhancedContextEventHandlers,
 } from './components/EnhancedContextSettings'
+import { WithContextProviders } from './mentions/providers'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { createWebviewTelemetryRecorder, createWebviewTelemetryService } from './utils/telemetry'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<LocalEnv | null>(null)
+    const [config, setConfig] = useState<(LocalEnv & ConfigurationSubsetForWebview) | null>(null)
     const [view, setView] = useState<View | undefined>()
     // If the current webview is active (vs user is working in another editor tab)
     const [isWebviewActive, setIsWebviewActive] = useState<boolean>(true)
@@ -283,22 +285,30 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     <EnhancedContextContext.Provider value={enhancedContextStatus}>
                         <EnhancedContextEnabled.Provider value={enhancedContextEnabled}>
                             <ChatModelContextProvider value={chatModelContext}>
-                                <Chat
-                                    chatEnabled={chatEnabled}
-                                    userInfo={userAccountInfo}
-                                    messageInProgress={messageInProgress}
-                                    transcript={transcript}
-                                    vscodeAPI={vscodeAPI}
-                                    telemetryService={telemetryService}
-                                    telemetryRecorder={telemetryRecorder}
-                                    isTranscriptError={isTranscriptError}
-                                    welcomeMessage={welcomeMessageMarkdown}
-                                    guardrails={attributionEnabled ? guardrails : undefined}
-                                    chatIDHistory={chatIDHistory}
-                                    isWebviewActive={isWebviewActive}
-                                    isNewInstall={isNewInstall}
-                                    userContextFromSelection={userContextFromSelection}
-                                />
+                                <WithContextProviders
+                                    value={{
+                                        providers: allMentionProvidersMetadata(
+                                            config.experimentalNoodle
+                                        ),
+                                    }}
+                                >
+                                    <Chat
+                                        chatEnabled={chatEnabled}
+                                        userInfo={userAccountInfo}
+                                        messageInProgress={messageInProgress}
+                                        transcript={transcript}
+                                        vscodeAPI={vscodeAPI}
+                                        telemetryService={telemetryService}
+                                        telemetryRecorder={telemetryRecorder}
+                                        isTranscriptError={isTranscriptError}
+                                        welcomeMessage={welcomeMessageMarkdown}
+                                        guardrails={attributionEnabled ? guardrails : undefined}
+                                        chatIDHistory={chatIDHistory}
+                                        isWebviewActive={isWebviewActive}
+                                        isNewInstall={isNewInstall}
+                                        userContextFromSelection={userContextFromSelection}
+                                    />
+                                </WithContextProviders>
                             </ChatModelContextProvider>
                         </EnhancedContextEnabled.Provider>
                     </EnhancedContextContext.Provider>

@@ -10,7 +10,7 @@ export interface ContextProviderContext {
 }
 
 const context = createContext<ContextProviderContext>({
-    providers: allMentionProvidersMetadata(true /* TODO!(sqs) */),
+    providers: allMentionProvidersMetadata(false),
 })
 
 export const WithContextProviders = context.Provider

@@ -114,7 +114,6 @@ export function allMentionProvidersMetadata(experimental = false): ContextMentio
     return [
         FILE_CONTEXT_MENTION_PROVIDER,
         SYMBOL_CONTEXT_MENTION_PROVIDER,
-        // TODO!(sqs): exclude openctx because it is a meta-provider
         ...(experimental
             ? CONTEXT_MENTION_PROVIDERS.filter(({ id }) => id !== OPENCTX_CONTEXT_MENTION_PROVIDER.id)
             : []),

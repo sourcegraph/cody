@@ -385,6 +385,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
             serverEndpoint: config.serverEndpoint,
             experimentalGuardrails: config.experimentalGuardrails,
+            experimentalNoodle: config.experimentalNoodle,
         }
         const workspaceFolderUris =
             vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []

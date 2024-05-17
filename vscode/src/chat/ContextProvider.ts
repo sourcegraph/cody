@@ -36,6 +36,7 @@ export type Config = Pick<
     | 'experimentalSymfContext'
     | 'internalUnstable'
     | 'experimentalChatContextRanker'
+    | 'experimentalNoodle'
 >
 
 enum ContextEvent {
@@ -192,6 +193,7 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
                 uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
                 serverEndpoint: this.config.serverEndpoint,
                 experimentalGuardrails: this.config.experimentalGuardrails,
+                experimentalNoodle: this.config.experimentalNoodle,
             }
             const workspaceFolderUris =
                 vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []

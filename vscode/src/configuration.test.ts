@@ -104,6 +104,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.supercompletions':
                         return false
+                    case 'cody.experimental.noodle':
+                        return false
                     case 'cody.experimental.github.accessToken':
                         return ''
                     default:
@@ -133,6 +135,7 @@ describe('getConfiguration', () => {
             experimentalGuardrails: true,
             experimentalOllamaChat: true,
             experimentalCommitMessage: true,
+            experimentalNoodle: false,
             experimentalGithubAccessToken: '',
             codeActions: true,
             commandHints: true,
