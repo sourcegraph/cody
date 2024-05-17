@@ -224,7 +224,7 @@ object CodyEditorUtil {
       return LocalFileSystem.getInstance().refreshAndFindFileByNioFile(fixedUri.toPath())
     } catch (e: URISyntaxException) {
       // Let's try scratch files
-      val fileName = uriString.substringAfterLast('/').substringAfterLast('\\')
+      val fileName = uriString.substringAfterLast(':').trimStart('/', '\\')
       return ScratchRootType.getInstance()
           .findFile(project, fileName, ScratchFileService.Option.existing_only)
     }
@@ -244,7 +244,7 @@ object CodyEditorUtil {
       }
       return vf
     } catch (e: URISyntaxException) {
-      val fileName = uriString.substringAfterLast('/').substringAfterLast('\\')
+      val fileName = uriString.substringAfterLast(':').trimStart('/', '\\')
       val fileType = FileTypeRegistry.getInstance().getFileTypeByFileName(fileName)
       val language = LanguageUtil.getFileTypeLanguage(fileType) ?: PlainTextLanguage.INSTANCE
       return ScratchRootType.getInstance()
