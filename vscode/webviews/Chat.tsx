@@ -482,7 +482,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     const [isEditorFocused, setIsEditorFocused] = useState(false)
 
     const isNewChat = transcript.length === 0
-    const TIPS = '(@ for files, @# for symbols)'
+    const TIPS = '(@ for files and other context)'
     const placeholder = chatEnabled
         ? isNewChat
             ? `Message ${TIPS}`

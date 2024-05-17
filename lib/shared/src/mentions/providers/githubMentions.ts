@@ -13,7 +13,9 @@ const xmlBuilder = new XMLBuilder({
 class GithubContextMentionProvider implements ContextMentionProvider<typeof GithubContextId> {
     public id = GithubContextId
     public title = 'GitHub Issues & PRs'
-    public triggerPrefixes = ['github:', 'gh:']
+
+    public queryLabel = 'Search for a GitHub issue or PR...'
+    public emptyLabel = 'No issues or PRs found'
 
     async queryContextItems(query: string, props: ContextItemProps, signal?: AbortSignal) {
         /* supported query formats:

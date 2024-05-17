@@ -4,7 +4,6 @@ import {
     type EventSource,
     FILE_CONTEXT_MENTION_PROVIDER,
     ModelProvider,
-    PACKAGE_CONTEXT_MENTION_PROVIDER,
     PromptString,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     displayLineRange,
@@ -14,17 +13,7 @@ import {
 import * as vscode from 'vscode'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
-import { getEnabledContextMentionProviders } from '../../chat/context/chatContext'
-import {
-    FILE_HELP_LABEL,
-    GENERAL_HELP_LABEL,
-    LARGE_FILE_WARNING_LABEL,
-    NO_FILE_MATCHES_LABEL,
-    NO_PACKAGE_MATCHES_LABEL,
-    NO_SYMBOL_MATCHES_LABEL,
-    PACKAGE_HELP_LABEL,
-    SYMBOL_HELP_LABEL,
-} from '../../chat/context/constants'
+import { GENERAL_HELP_LABEL, LARGE_FILE_WARNING_LABEL } from '../../chat/context/constants'
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 import { executeDocCommand, executeTestEditCommand } from '../../commands/execute'
 import { getEditor } from '../../editor/active-editor'
@@ -336,10 +325,7 @@ export const getInput = async (
 
                 const mentionTrigger = scanForMentionTriggerInUserTextInput(value)
                 const mentionQuery = mentionTrigger
-                    ? parseMentionQuery(
-                          mentionTrigger.matchingString,
-                          getEnabledContextMentionProviders()
-                      )
+                    ? parseMentionQuery(mentionTrigger.matchingString, null)
                     : undefined
 
                 if (!mentionQuery) {
@@ -360,17 +346,13 @@ export const getInput = async (
                         {
                             alwaysShow: true,
                             label:
-                                mentionQuery.provider === PACKAGE_CONTEXT_MENTION_PROVIDER.id
-                                    ? mentionQuery.text.length < 3
-                                        ? PACKAGE_HELP_LABEL
-                                        : NO_PACKAGE_MATCHES_LABEL
-                                    : mentionQuery.provider === SYMBOL_CONTEXT_MENTION_PROVIDER.id
-                                      ? mentionQuery.text.length === 0
-                                          ? SYMBOL_HELP_LABEL
-                                          : NO_SYMBOL_MATCHES_LABEL
-                                      : mentionQuery.text.length === 0
-                                        ? FILE_HELP_LABEL
-                                        : NO_FILE_MATCHES_LABEL,
+                                (mentionQuery.provider === SYMBOL_CONTEXT_MENTION_PROVIDER.id
+                                    ? mentionQuery.text.length === 0
+                                        ? SYMBOL_CONTEXT_MENTION_PROVIDER.queryLabel
+                                        : SYMBOL_CONTEXT_MENTION_PROVIDER.emptyLabel
+                                    : mentionQuery.text.length === 0
+                                      ? FILE_CONTEXT_MENTION_PROVIDER.queryLabel
+                                      : FILE_CONTEXT_MENTION_PROVIDER.emptyLabel) ?? '',
                         },
                     ]
                     return
@@ -413,13 +395,11 @@ export const getInput = async (
                     {
                         alwaysShow: true,
                         label:
-                            mentionQuery?.provider === PACKAGE_CONTEXT_MENTION_PROVIDER.id
-                                ? PACKAGE_HELP_LABEL
-                                : mentionQuery?.provider === SYMBOL_CONTEXT_MENTION_PROVIDER.id
-                                  ? SYMBOL_HELP_LABEL
-                                  : mentionQuery?.provider === FILE_CONTEXT_MENTION_PROVIDER.id
-                                    ? FILE_HELP_LABEL
-                                    : GENERAL_HELP_LABEL,
+                            (mentionQuery?.provider === SYMBOL_CONTEXT_MENTION_PROVIDER.id
+                                ? SYMBOL_CONTEXT_MENTION_PROVIDER.queryLabel
+                                : mentionQuery?.provider === FILE_CONTEXT_MENTION_PROVIDER.id
+                                  ? FILE_CONTEXT_MENTION_PROVIDER.queryLabel
+                                  : GENERAL_HELP_LABEL) ?? '',
                     },
                 ]
             },
@@ -442,12 +422,11 @@ export const getInput = async (
                     case TEST_ITEM.label:
                         input.hide()
                         return executeTestEditCommand({ range: activeRange, source: 'menu' })
-                    case FILE_HELP_LABEL:
+                    case FILE_CONTEXT_MENTION_PROVIDER.queryLabel:
+                    case FILE_CONTEXT_MENTION_PROVIDER.emptyLabel:
+                    case SYMBOL_CONTEXT_MENTION_PROVIDER.queryLabel:
+                    case SYMBOL_CONTEXT_MENTION_PROVIDER.emptyLabel:
                     case LARGE_FILE_WARNING_LABEL:
-                    case SYMBOL_HELP_LABEL:
-                    case PACKAGE_HELP_LABEL:
-                    case NO_FILE_MATCHES_LABEL:
-                    case NO_SYMBOL_MATCHES_LABEL:
                     case GENERAL_HELP_LABEL:
                         // Noop, the user has actioned an item that is non intended to be actionable.
                         return

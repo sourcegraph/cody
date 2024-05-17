@@ -35,16 +35,26 @@ export interface ContextMentionProvider<ID extends ContextMentionProviderID = Co
     id: ID
 
     /**
-     * Prefix strings for the user input after the `@` that trigger this provider. For example, a
-     * context mention provider with prefix `npm:` would be triggered when the user types `@npm:`.
+     * A short, human-readable display title for the provider, such as "Google Docs". If not given,
+     * `id` is used instead.
      */
-    triggerPrefixes: string[]
+    title?: string
+
+    /**
+     * Human-readable display string for when the user is querying items from this provider.
+     */
+    queryLabel?: string
+
+    /**
+     * Human-readable display string for when the provider has no items for the query.
+     */
+    emptyLabel?: string
 
     /**
      * Get a list of possible context items to show (in a completion menu) when the user triggers
      * this provider while typing `@` in a chat message.
      *
-     * {@link query} omits the `@` but includes the trigger prefix from {@link triggerPrefixes}.
+     * {@link query} omits the `@`.
      */
     queryContextItems(
         query: string,
@@ -81,15 +91,32 @@ export type ContextItemFromProvider<ID extends ContextMentionProviderID> = Conte
 /**
  * Metadata about a {@link ContextMentionProvider}.
  */
-export interface ContextMentionProviderMetadata<ID extends ContextMentionProviderID>
-    extends Pick<ContextMentionProvider<ID>, 'id' | 'triggerPrefixes'> {}
+export interface ContextMentionProviderMetadata<
+    ID extends ContextMentionProviderID = ContextMentionProviderID,
+> extends Pick<ContextMentionProvider<ID>, 'id' | 'title' | 'queryLabel' | 'emptyLabel'> {}
 
 export const FILE_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata<'file'> = {
     id: 'file',
-    triggerPrefixes: [],
+    title: 'Files',
+    queryLabel: 'Search for a file to include...',
+    emptyLabel: 'No files found',
 }
 
 export const SYMBOL_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata<'symbol'> = {
     id: 'symbol',
-    triggerPrefixes: ['#'],
+    title: 'Symbols',
+    queryLabel: 'Search for a symbol to include...',
+    emptyLabel: 'No symbols found',
+}
+
+/** Metadata for all registered {@link ContextMentionProvider}s. */
+export function allMentionProvidersMetadata(experimental = false): ContextMentionProviderMetadata[] {
+    return [
+        FILE_CONTEXT_MENTION_PROVIDER,
+        SYMBOL_CONTEXT_MENTION_PROVIDER,
+        // TODO!(sqs): exclude openctx because it is a meta-provider
+        ...(experimental
+            ? CONTEXT_MENTION_PROVIDERS.filter(({ id }) => id !== OPENCTX_CONTEXT_MENTION_PROVIDER.id)
+            : []),
+    ]
 }

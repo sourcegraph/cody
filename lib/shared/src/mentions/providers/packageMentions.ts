@@ -37,7 +37,9 @@ function toPackageKind(value: PackageEcosystem): PackageKind {
 const MAX_PAKCAGE_LIST_CANDIDATES = 10
 export const PACKAGE_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'package'> = {
     id: 'package',
-    triggerPrefixes: Object.values(PackageEcosystem).map(prefix => prefix + ':'),
+    title: 'NPM Packages',
+    queryLabel: 'Search for a package (npm:, go:, etc)...',
+    emptyLabel: 'No packages found',
 
     async queryContextItems(query, _, signal) {
         const [ecosystemName = '', name = ''] = query.split(':')

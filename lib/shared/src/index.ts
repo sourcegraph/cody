@@ -272,6 +272,7 @@ export {
     CONTEXT_MENTION_PROVIDERS,
     type ContextMentionProvider,
     type ContextItemProps,
+    allMentionProvidersMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type ContextMentionProviderMetadata,

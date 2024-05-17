@@ -1,9 +1,9 @@
 import * as http from 'node:http'
 import type { AddressInfo } from 'node:net'
-import { expect } from '@playwright/test'
+import { type FrameLocator, type Locator, expect } from '@playwright/test'
 import { isWindows } from '@sourcegraph/cody-shared'
 import {
-    atMentionMenuHeading,
+    atMentionMenuItem,
     createEmptyChatPanel,
     expectContextCellCounts,
     getContextCell,
@@ -59,14 +59,12 @@ test.extend<ExpectedEvents>({
     await chatInput.dblclick()
     await chatInput.focus()
     await page.keyboard.type('@')
-    await expect(
-        atMentionMenuHeading(chatPanelFrame, 'Search for a file to include, or type # for symbols...')
-    ).toBeVisible()
+    await expect(chatPanelFrame.getByRole('option', { selected: true })).toHaveText('Files')
     await page.keyboard.press('Backspace')
 
     // No results
     await chatInput.fill('@definitelydoesntexist')
-    await expect(atMentionMenuHeading(chatPanelFrame, 'No files found')).toBeVisible()
+    await expect(atMentionMenuItem(chatPanelFrame, 'No files found')).toBeVisible()
 
     // Clear the input so the next test doesn't detect the same text already visible from the previous
     // check (otherwise the test can pass even without the filter working).
@@ -78,7 +76,7 @@ test.extend<ExpectedEvents>({
     //   and assert that it contains `fixtures` to ensure this check isn't passing because the fixture folder no
     //   longer matches.
     await chatInput.fill('@fixtures') // fixture is in the test project folder name, but not in the relative paths.
-    await expect(atMentionMenuHeading(chatPanelFrame, 'No files found')).toBeVisible()
+    await expect(atMentionMenuItem(chatPanelFrame, 'No files found')).toBeVisible()
 
     // Includes dotfiles after just "."
     await chatInput.fill('@.')
@@ -194,7 +192,7 @@ test.extend<ExpectedEvents>({
     await expect(chatInput).toHaveText('Explain the @Main.java !file')
 
     //  "ArrowLeft" / "ArrowRight" keys alter the query input for @-mentions.
-    const noMatches = atMentionMenuHeading(chatPanelFrame, 'No files found')
+    const noMatches = atMentionMenuItem(chatPanelFrame, 'No files found')
     await chatInput.pressSequentially(' @abcdefg')
     await expect(chatInput).toHaveText('Explain the @Main.java ! @abcdefgfile')
     await noMatches.hover()
@@ -452,16 +450,17 @@ test.extend<ExpectedEvents>({
     await page.getByRole('tab', { name: 'New Chat' }).click()
 
     // Symbol empty state shows tooltip to search for a symbol
-    await chatInput.fill('@#')
-    await expect(atMentionMenuHeading(chatPanelFrame, /^Search for a symbol to include/)).toBeVisible()
+    await openMentionsForProvider(chatPanelFrame, chatInput, 'Symbols')
+    await expect(atMentionMenuItem(chatPanelFrame, /^Search for a symbol to include/)).toBeVisible()
 
     // Symbol empty symbol results updates tooltip title to show no symbols found
-    await chatInput.fill('@#invalide')
-    await expect(atMentionMenuHeading(chatPanelFrame, /^No symbols found/)).toBeVisible()
+    await chatInput.pressSequentially('invalide', { delay: 10 })
+    await expect(atMentionMenuItem(chatPanelFrame, /^No symbols found/)).toBeVisible()
 
     // Clicking on a file in the selector should autocomplete the file in chat input with added space
     await chatInput.clear()
-    await chatInput.pressSequentially('@#fizzb', { delay: 200 })
+    await openMentionsForProvider(chatPanelFrame, chatInput, 'Symbols')
+    await chatInput.pressSequentially('fizzb', { delay: 10 })
     await expect(chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' })).toBeVisible()
     await chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' }).click()
     await expect(chatInput).toHaveText('@buzz.ts:1-15#fizzbuzz() ')
@@ -576,7 +575,8 @@ test
 
         // Type @-mention of the URL.
         const mentionURL = new URL('/foo', serverURL)
-        await chatInput.fill(`@${mentionURL}`)
+        await openMentionsForProvider(chatPanelFrame, chatInput, 'Web URL')
+        await chatInput.pressSequentially(mentionURL.toString(), { delay: 10 })
         const optionTitle = `foo ${serverURL}`
         await expect(chatPanelFrame.getByRole('option', { name: optionTitle })).toBeVisible()
         await chatPanelFrame.getByRole('option', { name: optionTitle }).click()
@@ -594,3 +594,12 @@ test
         server.close()
     }
 })
+
+async function openMentionsForProvider(
+    frame: FrameLocator,
+    chatInput: Locator,
+    provider: string
+): Promise<void> {
+    await chatInput.fill('@')
+    await frame.getByRole('option', { name: provider }).click()
+}

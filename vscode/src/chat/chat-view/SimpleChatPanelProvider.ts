@@ -16,6 +16,7 @@ import {
     type EventSource,
     type FeatureFlagProvider,
     type Guardrails,
+    type MentionQuery,
     type Message,
     ModelProvider,
     ModelUsage,
@@ -28,6 +29,7 @@ import {
     isError,
     isFileURI,
     isRateLimitError,
+    parseMentionQuery,
     recordErrorToSpan,
     reformatBotMessageForChat,
     serializeChatMessage,
@@ -286,6 +288,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 this.postChatModels()
                 break
             case 'getUserContext':
+                await this.handleGetUserContextFilesCandidates(parseMentionQuery(message.query, null))
+                break
+            case 'queryContextItems':
                 await this.handleGetUserContextFilesCandidates(message.query)
                 break
             case 'insert':
@@ -614,7 +619,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         await chatModel.set(modelID)
     }
 
-    private async handleGetUserContextFilesCandidates(query: string): Promise<void> {
+    private async handleGetUserContextFilesCandidates(query: MentionQuery): Promise<void> {
         // Cancel previously in-flight query.
         const cancellation = new vscode.CancellationTokenSource()
         this.contextFilesQueryCancellation?.cancel()

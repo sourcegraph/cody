@@ -23,6 +23,21 @@ const preview: Preview = {
             ],
         },
     },
+    globalTypes: {
+        experimentalContextProviders: {
+            // The story must use the ContextProvidersDecorator decorator for this to take effect.
+            description: 'Which context providers to enable',
+            type: 'boolean',
+            defaultValue: false,
+            toolbar: {
+                title: 'Providers',
+                items: [
+                    { value: false, title: 'Standard' },
+                    { value: true, title: 'Include experimental' },
+                ],
+            },
+        },
+    },
 }
 
 export default preview

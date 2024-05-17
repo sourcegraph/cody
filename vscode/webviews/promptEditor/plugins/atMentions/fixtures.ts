@@ -1,9 +1,9 @@
 import {
     type ContextItem,
     type ContextItemSymbol,
+    FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type SymbolKind,
-    parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 import type { ChatContextClient } from './chatContextClient'
@@ -16,15 +16,21 @@ export const dummyChatContextClient: ChatContextClient = {
     async getChatContextItems(query) {
         await new Promise<void>(resolve => setTimeout(resolve, 250))
 
-        query = query.toLowerCase()
-        const mentionQuery = parseMentionQuery(query, [])
-        return mentionQuery.provider === SYMBOL_CONTEXT_MENTION_PROVIDER.id
+        const queryTextLower = query.text.toLowerCase()
+        return query.provider === SYMBOL_CONTEXT_MENTION_PROVIDER.id
             ? DUMMY_SYMBOLS.filter(
                   f =>
-                      f.symbolName.toLowerCase().includes(query.slice(1)) ||
-                      f.uri.path.includes(query.slice(1))
+                      f.symbolName.toLowerCase().includes(queryTextLower) ||
+                      f.uri.path.includes(queryTextLower)
               )
-            : DUMMY_FILES.filter(f => f.uri.path.includes(query))
+            : query.provider === null || query.provider === FILE_CONTEXT_MENTION_PROVIDER.id
+              ? DUMMY_FILES.filter(f => f.uri.path.includes(queryTextLower))
+              : [
+                    {
+                        type: 'file',
+                        uri: URI.file(`sample-${query.provider}-result`),
+                    } satisfies ContextItem,
+                ].filter(f => f.uri.path.includes(queryTextLower))
     },
 }
 

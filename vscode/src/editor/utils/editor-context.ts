@@ -130,8 +130,8 @@ export async function getSymbolContextFiles(
     query: string,
     maxResults = 20
 ): Promise<ContextItemSymbol[]> {
-    if (!query.trim()) {
-        return []
+    if (query.startsWith('#')) {
+        query = query.slice(1)
     }
 
     // doesn't support cancellation tokens :(
