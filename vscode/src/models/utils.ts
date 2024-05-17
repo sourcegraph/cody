@@ -54,15 +54,17 @@ export function syncModelProviders(authStatus: AuthStatus): void {
     }
 }
 
-// TODO: Currently all enterprise models have a max output limit of 1000.
-// We need to support configuring the maximum output limit at an instance level.
-// This will allow us to increase this limit whilst still supporting models with a lower output limit.
+// TODO: Currently all enterprise models have a max output limit of
+// 1000. We need to support configuring the maximum output limit at an
+// instance level. This will allow us to increase this limit whilst
+// still supporting models with a lower output limit.
 //
-// To avoid Enterprise instances being stuck with low token counts, we will
-// detect our recommended Cody Gateway models and Bedrock models and use a
-// higher limit.
+// To avoid Enterprise instances being stuck with low token counts, we
+// will detect our recommended Cody Gateway models and Bedrock models
+// and use a higher limit.
 //
 // See: https://github.com/sourcegrcaph/cody/issues/3648#issuecomment-2056954101
+// See: https://github.com/sourcegraph/cody/pull/4203
 function getEnterpriseOutputLimit(model?: string) {
     switch (model) {
         // Cody Gateway models
