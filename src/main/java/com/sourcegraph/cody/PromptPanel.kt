@@ -218,7 +218,12 @@ class PromptPanel(project: Project, private val chatSession: ChatSession) : JLay
         if (contextFilesListViewModel.isEmpty) 0 else contextFilesListView.preferredSize.height + 2
     if (contextFilesContainerHeight == 0) {
       contextFilesContainer.isVisible = false
-    } else {
+    } else if (findAtExpressions(textArea.text).find { it.endIndex == textArea.caretPosition } !=
+        null) {
+      // Check if the caret position is at the end of an @-expression
+      // This ensures that the context files container is only shown when the user is actively
+      // typing an @-expression, and not when the response arrives asynchronously after the
+      // @-expression has been removed or modified.
       contextFilesContainer.size = Dimension(scrollPane.width, contextFilesContainerHeight)
       contextFilesContainer.isVisible = true
     }
