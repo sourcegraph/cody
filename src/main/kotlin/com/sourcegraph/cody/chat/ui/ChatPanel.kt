@@ -80,11 +80,15 @@ class ChatPanel(
 
   @RequiresEdt
   fun addOrUpdateMessage(message: ChatMessage, index: Int) {
-    if (messagesPanel.componentCount == 1) {
+    val numberOfMessagesBeforeAddOrUpdate = messagesPanel.componentCount
+    if (numberOfMessagesBeforeAddOrUpdate == 1) {
       llmDropdown.updateAfterFirstMessage()
       promptPanel.updateEmptyTextAfterFirstMessage()
     }
     messagesPanel.addOrUpdateMessage(message, index)
+    if (numberOfMessagesBeforeAddOrUpdate < messagesPanel.componentCount) {
+      chatPanel.touchingBottom = true
+    }
   }
 
   @RequiresEdt

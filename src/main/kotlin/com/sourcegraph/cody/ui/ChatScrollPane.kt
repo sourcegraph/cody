@@ -11,7 +11,7 @@ import kotlin.math.max
 class ChatScrollPane(private val messagesPanel: JPanel) :
     JBScrollPane(messagesPanel, VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_NEVER) {
 
-  private var touchingBottom = false
+  internal var touchingBottom = false
 
   init {
     border = BorderFactory.createEmptyBorder()
