@@ -18,7 +18,6 @@ import {
     setLogger,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-
 import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
@@ -50,7 +49,7 @@ import { createInlineCompletionItemProvider } from './completions/create-inline-
 import { createInlineCompletionItemFromMultipleProviders } from './completions/create-multi-model-inline-completion-provider'
 import { getConfiguration, getFullConfig } from './configuration'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
-import { exposeOpenCtxExtensionAPIHandle } from './context/openctx'
+import { exposeOpenCtxClient } from './context/openctx'
 import { EditManager } from './edit/manager'
 import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInfo'
 import { VSCodeEditor } from './editor/vscode-editor'
@@ -128,7 +127,7 @@ export async function start(
         })
     )
 
-    exposeOpenCtxExtensionAPIHandle()
+    exposeOpenCtxClient(context.secrets)
 
     return vscode.Disposable.from(...disposables)
 }
