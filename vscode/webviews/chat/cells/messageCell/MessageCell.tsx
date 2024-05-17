@@ -3,6 +3,7 @@ import {
     type Guardrails,
     ps,
     reformatBotMessageForChat,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import { clsx } from 'clsx'
@@ -87,6 +88,7 @@ export const MessageCell: FunctionComponent<{
                                 error={message.error}
                                 userInfo={userInfo}
                                 postMessage={postMessage}
+                                telemetryRecorder={telemetryRecorder}
                             />
                         )
                     ) : null}
