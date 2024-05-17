@@ -140,6 +140,8 @@ export const MentionMenu: FunctionComponent<
     )
     const effectiveValueRow = valueRow ?? firstRow
 
+    const heading = getItemsHeading(params.parentItem, mentionQuery)
+
     return (
         <Command
             loop={true}
@@ -166,8 +168,8 @@ export const MentionMenu: FunctionComponent<
                     </CommandGroup>
                 )}
 
-                <CommandGroup heading={getItemsHeading(params.parentItem, mentionQuery)}>
-                    {params.parentItem && <CommandSeparator />}
+                <CommandGroup heading={heading}>
+                    {heading && params.parentItem && <CommandSeparator />}
                     {data.items ? (
                         data.items.length > 0 ? (
                             data.items.map(item => (
@@ -229,6 +231,13 @@ function getItemsHeading(
         return FILE_RANGE_TOOLTIP_LABEL
     }
     if (!parentItem) {
+        return ''
+    }
+    if (
+        parentItem.id === SYMBOL_CONTEXT_MENTION_PROVIDER.id ||
+        parentItem.id === FILE_CONTEXT_MENTION_PROVIDER.id
+    ) {
+        // Don't show heading for these common types because it's just noisy.
         return ''
     }
     return parentItem.queryLabel ?? parentItem.title ?? parentItem.id

@@ -451,7 +451,6 @@ test.extend<ExpectedEvents>({
 
     // Symbol empty state shows tooltip to search for a symbol
     await openMentionsForProvider(chatPanelFrame, chatInput, 'Symbols')
-    await expect(atMentionMenuItem(chatPanelFrame, /^Search for a symbol to include/)).toBeVisible()
 
     // Symbol empty symbol results updates tooltip title to show no symbols found
     await chatInput.pressSequentially('invalide', { delay: 10 })
