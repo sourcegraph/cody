@@ -20,7 +20,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         initialDefault: true,
         codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        // Has a higher context window with a separated limit for user-context.
+        // Has a higher context window with a separate limit for user-context.
         contextWindow: {
             input: EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
             output: CHAT_OUTPUT_TOKEN_BUDGET,
@@ -36,7 +36,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        // Has a higher context window with a separated limit for user-context.
+        // Has a higher context window with a separate limit for user-context.
         contextWindow: {
             input: EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
             output: CHAT_OUTPUT_TOKEN_BUDGET,
@@ -63,7 +63,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        // Has a higher context window with a separated limit for user-context.
+        // Has a higher context window with a separate limit for user-context.
         contextWindow: {
             input: EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
             output: CHAT_OUTPUT_TOKEN_BUDGET,
