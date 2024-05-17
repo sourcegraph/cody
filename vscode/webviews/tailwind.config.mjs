@@ -10,7 +10,8 @@ export default {
             fontSize: {
                 lg: 'calc(1.1*var(--vscode-font-size))',
                 md: 'var(--vscode-font-size)',
-                sm: 'calc(0.8*var(--vscode-font-size))',
+                sm: 'calc(0.9*var(--vscode-font-size))',
+                xs: 'calc(0.85*var(--vscode-font-size))',
             },
             spacing: {
                 1: '2px',

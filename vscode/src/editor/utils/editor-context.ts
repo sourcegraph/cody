@@ -130,8 +130,9 @@ export async function getSymbolContextFiles(
     query: string,
     maxResults = 20
 ): Promise<ContextItemSymbol[]> {
-    if (!query.trim()) {
-        return []
+    query = query.trim()
+    if (query.startsWith('#')) {
+        query = query.slice(1)
     }
 
     // doesn't support cancellation tokens :(
@@ -158,6 +159,7 @@ export async function getSymbolContextFiles(
     const results = fuzzysort.go(query, relevantQueryResults, {
         key: 'name',
         limit: maxResults,
+        all: true,
     })
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI

@@ -1,18 +1,23 @@
 import type { RangeData } from '../common/range'
-import type { ContextMentionProvider, ContextMentionProviderID } from './api'
+import {
+    type ContextMentionProviderID,
+    type ContextMentionProviderMetadata,
+    FILE_CONTEXT_MENTION_PROVIDER,
+    SYMBOL_CONTEXT_MENTION_PROVIDER,
+} from './api'
 
 /**
  * The parsed representation of a user's (partial or complete) input of an @-mention query.
  */
 export interface MentionQuery {
     /**
-     * The type of context item to search for.
+     * The type of context item to search for, or null to find suggested items across (possibly) all
+     * providers.
      */
-    provider: 'file' | 'symbol' | 'default' | ContextMentionProviderID
+    provider: ContextMentionProviderID | null
 
     /**
-     * The user's text input, to be interpreted as a fuzzy-matched query. It is stripped of any
-     * prefix characters that indicate the {@link MentionQuery.provider}, such as `#` for symbols.
+     * The user's text input, to be interpreted as a fuzzy-matched query.
      */
     text: string
 
@@ -39,24 +44,28 @@ export interface MentionQuery {
  */
 export function parseMentionQuery(
     query: string,
-    contextMentionProviders: Pick<ContextMentionProvider, 'id' | 'triggerPrefixes'>[]
+    provider: Pick<ContextMentionProviderMetadata, 'id'> | null
 ): MentionQuery {
+    if (provider) {
+        return { provider: provider.id, text: query }
+    }
+
     if (query === '') {
-        return { provider: 'default', text: '' }
+        return { provider: null, text: '' }
     }
 
+    // Special-case '#' as a trigger prefix for symbols.
     if (query.startsWith('#')) {
-        return { provider: 'symbol', text: query.slice(1) }
-    }
-
-    for (const provider of contextMentionProviders) {
-        if (provider.triggerPrefixes.some(trigger => query.startsWith(trigger))) {
-            return { provider: provider.id, text: query }
-        }
+        return { provider: SYMBOL_CONTEXT_MENTION_PROVIDER.id, text: query.slice(1) }
     }
 
     const { textWithoutRange, maybeHasRangeSuffix, range } = extractRangeFromFileMention(query)
-    return { provider: 'file', text: textWithoutRange, maybeHasRangeSuffix, range }
+    return {
+        provider: FILE_CONTEXT_MENTION_PROVIDER.id,
+        text: textWithoutRange,
+        maybeHasRangeSuffix,
+        range,
+    }
 }
 
 const RANGE_SUFFIX_REGEXP = /:(?:(\d+)-?)?(\d+)?$/

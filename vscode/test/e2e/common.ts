@@ -87,9 +87,9 @@ export async function expectContextCellCounts(
     )
 }
 
-export function atMentionMenuHeading(chatPanel: FrameLocator, text: string | RegExp): Locator {
+export function atMentionMenuItem(chatPanel: FrameLocator, text: string | RegExp): Locator {
     // Can't just use getByRole because the [cmdk-group-heading] is the aria-labelledby of the
     // [cmdk-group-items], which Playwright deems hidden when it is empty (because its height is 0),
     // but we still want to be able to get the label for testing even when the list below is empty.
-    return chatPanel.locator('[cmdk-group-heading]', { hasText: text })
+    return chatPanel.locator(':is([cmdk-group-heading], [cmdk-empty])', { hasText: text })
 }
