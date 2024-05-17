@@ -137,7 +137,7 @@ export const Default: StoryObj<typeof MentionMenu> = {
                     owner: 'sourcegraph',
                 },
             ],
-            allMentionProvidersMetadata()
+            allMentionProvidersMetadata({ experimentalNoodle: true, experimentalURLContext: true })
         ),
     },
 }
@@ -157,7 +157,7 @@ export const WithExperimentalProviders: StoryObj<typeof MentionMenu> = {
                     range: { start: { line: 3, character: 5 }, end: { line: 7, character: 9 } },
                 },
             ],
-            allMentionProvidersMetadata(true)
+            allMentionProvidersMetadata({ experimentalNoodle: true, experimentalURLContext: true })
         ),
     },
 }

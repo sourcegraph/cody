@@ -106,6 +106,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.noodle':
                         return false
+                    case 'cody.experimental.urlContext':
+                        return false
                     case 'cody.experimental.github.accessToken':
                         return ''
                     default:
@@ -136,6 +138,7 @@ describe('getConfiguration', () => {
             experimentalOllamaChat: true,
             experimentalCommitMessage: true,
             experimentalNoodle: false,
+            experimentalURLContext: false,
             experimentalGithubAccessToken: '',
             codeActions: true,
             commandHints: true,

@@ -10,7 +10,7 @@ export interface ContextProviderContext {
 }
 
 const context = createContext<ContextProviderContext>({
-    providers: allMentionProvidersMetadata(false),
+    providers: allMentionProvidersMetadata({ experimentalNoodle: false, experimentalURLContext: false }),
 })
 
 export const WithContextProviders = context.Provider

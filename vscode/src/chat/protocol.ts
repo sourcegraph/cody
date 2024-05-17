@@ -236,7 +236,7 @@ export interface ExtensionTranscriptMessage {
 export interface ConfigurationSubsetForWebview
     extends Pick<
         ConfigurationWithAccessToken,
-        'experimentalGuardrails' | 'experimentalNoodle' | 'serverEndpoint'
+        'experimentalGuardrails' | 'experimentalNoodle' | 'experimentalURLContext' | 'serverEndpoint'
     > {}
 
 /**

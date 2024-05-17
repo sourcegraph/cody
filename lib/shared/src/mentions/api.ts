@@ -1,4 +1,5 @@
 import type { ContextItem, ContextItemWithContent } from '../codebase-context/messages'
+import type { Configuration } from '../configuration'
 import type { PromptString } from '../prompt/prompt-string'
 import { GITHUB_CONTEXT_MENTION_PROVIDER } from './providers/githubMentions'
 import { OPENCTX_CONTEXT_MENTION_PROVIDER } from './providers/openctxMentions'
@@ -110,12 +111,16 @@ export const SYMBOL_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata<'sy
 }
 
 /** Metadata for all registered {@link ContextMentionProvider}s. */
-export function allMentionProvidersMetadata(experimental = false): ContextMentionProviderMetadata[] {
+export function allMentionProvidersMetadata(
+    config: Pick<Configuration, 'experimentalNoodle' | 'experimentalURLContext'>
+): ContextMentionProviderMetadata[] {
     return [
         FILE_CONTEXT_MENTION_PROVIDER,
         SYMBOL_CONTEXT_MENTION_PROVIDER,
-        ...(experimental
-            ? CONTEXT_MENTION_PROVIDERS.filter(({ id }) => id !== OPENCTX_CONTEXT_MENTION_PROVIDER.id)
-            : []),
+        ...CONTEXT_MENTION_PROVIDERS.filter(
+            ({ id }) =>
+                config.experimentalNoodle ||
+                (id === URL_CONTEXT_MENTION_PROVIDER.id && config.experimentalURLContext)
+        ),
     ]
 }

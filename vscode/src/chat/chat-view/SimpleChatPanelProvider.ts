@@ -386,6 +386,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             serverEndpoint: config.serverEndpoint,
             experimentalGuardrails: config.experimentalGuardrails,
             experimentalNoodle: config.experimentalNoodle,
+            experimentalURLContext: config.experimentalURLContext,
         }
         const workspaceFolderUris =
             vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []

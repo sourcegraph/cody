@@ -287,9 +287,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             <ChatModelContextProvider value={chatModelContext}>
                                 <WithContextProviders
                                     value={{
-                                        providers: allMentionProvidersMetadata(
-                                            config.experimentalNoodle
-                                        ),
+                                        providers: allMentionProvidersMetadata(config),
                                     }}
                                 >
                                     <Chat
