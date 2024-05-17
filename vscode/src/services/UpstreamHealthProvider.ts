@@ -3,7 +3,6 @@ import {
     type ConfigurationWithAccessToken,
     addCustomUserAgent,
     addTraceparent,
-    dotcomTokenToGatewayToken,
     isDotCom,
     logDebug,
     wrapInActiveSpan,
@@ -25,7 +24,6 @@ const INITIAL_PING_DELAY_MS = 10 * 1000 // 10 seconds
 export class UpstreamHealthProvider implements vscode.Disposable {
     private lastUpstreamLatency?: number
     private lastGatewayLatency?: number
-    private fastPathAccessToken?: string
 
     private config: Pick<
         ConfigurationWithAccessToken,
@@ -53,13 +51,6 @@ export class UpstreamHealthProvider implements vscode.Disposable {
         this.config = newConfig
         this.lastUpstreamLatency = undefined
         this.lastGatewayLatency = undefined
-
-        this.fastPathAccessToken =
-            newConfig.accessToken &&
-            // Require the upstream to be dotcom
-            isDotCom(newConfig.serverEndpoint)
-                ? dotcomTokenToGatewayToken(newConfig.accessToken)
-                : undefined
 
         // Enqueue the initial ping after a config change in 10 seconds. This
         // avoids running the test while the extension is still initializing and
@@ -98,10 +89,9 @@ export class UpstreamHealthProvider implements vscode.Disposable {
             })
 
             // We don't want to congest the network so we run the test serially
-            if (this.fastPathAccessToken) {
+            if (isDotCom(this.config.serverEndpoint)) {
                 const gatewayHeaders = new Headers(sharedHeaders)
-                gatewayHeaders.set('Authorization', `Bearer ${this.fastPathAccessToken}`)
-                const uri = 'https://cody-gateway.sourcegraph.com/-/healthz'
+                const uri = 'https://cody-gateway.sourcegraph.com/-/__version'
                 const gatewayResult = await wrapInActiveSpan('upstream-latency.gateway', span => {
                     span.setAttribute('sampled', true)
                     return measureLatencyToUri(gatewayHeaders, uri)
