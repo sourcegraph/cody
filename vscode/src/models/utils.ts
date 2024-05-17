@@ -59,16 +59,23 @@ export function syncModelProviders(authStatus: AuthStatus): void {
 // This will allow us to increase this limit whilst still supporting models with a lower output limit.
 //
 // To avoid Enterprise instances being stuck with low token counts, we will
-// detect our recommended Cody Gateway models and use a higher limit.
+// detect our recommended Cody Gateway models and Bedrock models and use a
+// higher limit.
 //
 // See: https://github.com/sourcegrcaph/cody/issues/3648#issuecomment-2056954101
 function getEnterpriseOutputLimit(model?: string) {
     switch (model) {
+        // Cody Gateway models
         case 'anthropic/claude-3-sonnet-20240229':
         case 'anthropic/claude-3-opus-20240229':
         case 'openai/gpt-4o':
         case 'openai/gpt-4-turbo':
+
+        // Bedrock models:
+        case 'anthropic.claude-3-sonnet-20240229-v1:0':
+        case 'anthropic.claude-3-opus-20240229-v1:0 ':
             return CHAT_OUTPUT_TOKEN_BUDGET
+
         default:
             return ANSWER_TOKENS
     }
