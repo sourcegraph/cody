@@ -418,46 +418,31 @@ Note: It's important to test performance on large repos here.
 4. Empty chat input and type multiline message "A\n\nB"
 5. Press `Up` arrow. Confirm that the caret is positioned in the empty line between A and B.
 
-### Cody Ignore
+### Cody Ignore 
 
-For Cody Ignore tests, ensure that you have set the environment variable
-`CODY_JETBRAINS_FEATURES=cody.feature.internals-menu=true` to show
-an "Internals" submenu at the bottom of your IDE window, next to Cody.
+When testing Cody Ignore, please reload the editor after each policy change. Outside of the required testing steps, please also make sure general product usability is not affected when Cody Ignore policies are turned on. 
 
-Ensure that if the file is ignored, no inline edits can be performed.
+Please use the SG02 endpoint to test and change Cody Ignore configuration.
 
-1. Open a source file in any project.
-2. Open the Internals submenu.
-3. Check the box to override for testing.
-4. Change the repo to match whatever repo the source file is in.
-5. Close the submenu.
-6. Click somewhere in the code and initiate an Inline Edit (control-shift-enter)
-7. Observe that it tells you the file is ignored in a notification, and no Edit dialog appears.
-
-Ensure that if you have an active edit, an ignore update makes it go away.
-
-Leave the repository exclusion alone from the previous test.
-It should be the same repo as the source file you're testing with.
-
-1. Open the Internals menu again and un-check the override-for-testing checkbox.
-2. Start an Inline Edit (e.g., Document Code) somewhere in the source file.
-3. Observe that the edit is working, as the override is currently off.
-4. Leave the Accept lens group up.
-5. Check the menu box to enable Override for Testing again.
-6. The Accept lens group should disappear and clean up after itself.
+| Policy | Workspace Repository| Test Steps | 
+| --- | --- | --- | 
+| ```"cody.contextFilters": {"exclude": [{"repoNamePattern": "^github\\.com\\/sourcegraph\\/cody"}],                        "include": [{"repoNamePattern": "^github\\.com\\/sourcegraph\\/.+"}]}``` |  github.com/sourcegraph/sourcegraph | Chat: <ol><li>Verify chat works as normal by asking Cody any question and receiving a response back.</li><li>Add github.com/sourcegraph/cody to the repo context selector and verify that there is a striked out symbol in the Repositories dropdown</li><li>Ask Cody "How do you contribute to Cody?" and confirm that no files from the Cody repository was used for context </li></ol>Autocomplete: <ol><li>Verify that autocomplete works as normal in any file in the github.com/sourcegraph/sourcegraph repository</ol>Commands: <ol><li>Verify that commands (Edit, Document, Test, Smell) are possible on any file in github.com/sourcegraph/sourcegraph.</li></ol> | 
+| ```"cody.contextFilters": {"exclude": [{"repoNamePattern": "^github\\.com\\/sourcegraph\\/cody"}],                          "include": [{"repoNamePattern": "^github\\.com\\/sourcegraph\\/.+"}]}``` |  github.com/sourcegraph/cody | Chat:<ol><li>Verify chat works as normal by asking Cody any question and receiving a response back.</li><li>Open the Enhanced Context menu and verify that it shows the github.com/sourcegraph/cody repo is ignored, on hover explaining this is due to an admin policy.</li><li>@-mention any files in the github.com/sourcegraph/cody repo and verify that the user sees a disclaimer that the file is ignored upon selection.</li><li>Submit a chat with an @-file and verify that the file is crossed out and excluded in the context dropdown</li><li>Verify that the user can add the github.com/sourcegraph/sourcegraph and github.com/sourcegraph/jetbrains repos through the context popup menu for Enhanced context.</li></ol>Autocomplete:<ol><li>Verify that no autocomplete suggestions are possible on any files in the github.com/sourcegraph/cody repo.</li><li>Verify that the status bar reflects that autocomplete is disabled due to an Ignore policy.</li><li>Manually trigger autocompletes in any files in the github.com/sourcegraph/cody repo and verify that a notification is always triggered.</li></ol>Commands:<ol><li>While in any files in the github.com/sourcegraph/cody repo, verify that the sidebar shows commands are disabled, with a "Learn more" link directing to the Cody Ignore docs.</li><li>Attempt to use the right-click menu to run commands in any files in the github.com/sourcegraph/cody repo and verify that they don't run and a notification is triggered.</li><li>Attempt to use a keyboard shortcut to run commands in any files in the github.com/sourcegraph/cody repo and verify that they don't run and a notification is triggered.</li><ol> |                                                                                                                     
+| ```"cody.contextFilters": {"exclude": [{"repoNamePattern": "^github\\.com\\/sourcegraph\\/sourcegraph"}]}``` |  github.com/sourcegraph/sourcegraph    | Chat: <ol><li>Verify chat works as normal by asking Cody any question and receiving a response back.</li><li>Open the Enhanced Context menu and verify that it shows the github.com/sourcegraph/sourcegraph repo is ignored, on hover explaining this is due to an admin policy.</li><li>@-mention any files in the github.com/sourcegraph/sourcegraph repo and verify that the user sees a disclaimer that the file is ignored upon selection.</li><li>Submit a chat with an @-file and verify that the file is crossed out and excluded in the context dropdown</li><li>Verify that the user can add the github.com/sourcegraph/cody repo through the context popup menu for Enhanced context.</li></ol>Autocomplete: <ol><li>Verify that no autocomplete suggestions are possible on any files in the github.com/sourcegraph/sourcegraph.</li><li>Verify that the status bar reflects that autocomplete is disabled due to an Ignore policy.</li><li>Attempt automatic autocompletes and verify that they are not possible.</li><li>Provide multiple automatic autocomplete attempts and verify that only one notification per session is provided when autocomplete is blocked.</li><li>Manually trigger autocompletes in any files in the github.com/sourcegraph/sourcegraph repo and verify that a notification is always triggered.</li></ol>Commands: <ol><li>While in any files in the github.com/sourcegraph/sourcegraph repo, verify that the sidebar shows commands are disabled, with a "Learn more" link directing to the Cody Ignore docs.</li><li>Attempt to use the right-click menu to run commands in any files in the github.com/sourcegraph/sourcegraph repo and verify that they don't run and a notification is triggered.</li><li>Attempt to use a keyboard shortcut to run commands in any files in the github.com/sourcegraph/sourcegraph repo and verify that they don't run and a notification is triggered.</li></ol> |
+| ```"cody.contextFilters": {"exclude": [{"repoNamePattern": "^github\\.com\\/sourcegraph\\/sourcegraph"}]}``` |  github.com/sourcegraph/cody | Chat: <ol><li>Verify chat works as normal by asking Cody any question and receiving a response back.</li><li>Add github.com/sourcegraph/sourcegraph to the repo context selector and verify that there is a striked out symbol in the Repositories dropdown</li><li>Ask Cody "How do you contribute to Sourcegraph?" and confirm that no files from the Cody repository was used for context </li></ol>Autocomplete: <ol><li>Verify that autocomplete works as normal in any file in the github.com/sourcegraph/sourcegraph repository</ol>Commands: <ol><li>Verify that commands (Edit, Document, Test, Smell) are possible on any file in github.com/sourcegraph/sourcegraph.</li></ol> |
+| ```"cody.contextFilters": {"include": [{"repoNamePattern": "^github\\.com\\/sourcegraph\\/sourcegraph"}]}``` |  github.com/sourcegraph/sourcegraph | Chat: <ol><li>Verify chat works as normal by asking Cody any question and receiving a response back.</li><li>Add github.com/sourcegraph/cody to the repo context selector and verify that there is a striked out symbol in the Repositories dropdown</li><li>Ask Cody "How do you contribute to Cody?" and confirm that no files from the Cody repository was used for context </li></ol>Autocomplete: <ol><li>Verify that autocomplete works as normal in any file in the github.com/sourcegraph/sourcegraph repository</ol>Commands: <ol><li>Verify that commands (Edit, Document, Test, Smell) are possible on any file in github.com/sourcegraph/sourcegraph.</li></ol> |
+| ```"cody.contextFilters": {"include": [{"repoNamePattern": "^github\\.com\\/sourcegraph\\/sourcegraph"}]}``` |  github.com/sourcegraph/cody | Chat: <ol><li>Verify chat works as normal by asking Cody any question and receiving a response back.</li><li>Open the Enhanced Context menu and verify that it shows the github.com/sourcegraph/cody repo is ignored, on hover explaining this is due to an admin policy.</li><li>@-mention any files in the github.com/sourcegraph/cody repo and verify that the user sees a disclaimer that the file is ignored upon selection.</li><li>Submit a chat with an @-file and verify that the file is crossed out and excluded in the context dropdown</li><li>Verify that the user can add the github.com/sourcegraph/sourcegraph repo through the context popup menu for Enhanced context.</li></ol>Autocomplete: <ol><li>Verify that no autocomplete suggestions are possible on any files in the github.com/sourcegraph/cody repository.</li><li>Verify that the status bar reflects that autocomplete is disabled due to an Ignore policy.</li><li>Attempt automatic autocompletes and verify that they are not possible.</li><li>Provide multiple automatic autocomplete attempts and verify that only one notification per session is provided when autocomplete is blocked.</li><li>Manually trigger autocompletes in any files in the github.com/sourcegraph/sourcegraph repo and verify that a notification is always triggered.</li></ol>Commands: <ol><li>While in any files in the github.com/sourcegraph/cody repo, verify that the sidebar shows commands are disabled, with a "Learn more" link directing to the Cody Ignore docs.</li><li>Attempt to use the right-click menu to run commands in any files in the github.com/sourcegraph/cody repo and verify that they don't run and a notification is triggered.</li><li>Attempt to use a keyboard shortcut to run commands in any files in the github.com/sourcegraph/cody repo and verify that they don't run and a notification is triggered.</li></ol> |
+| ```"cody.contextFilters" field not set``` |  any | All functionality should be working as normal |
 
 #### Expected behavior
 
-No matter what combination of enabling/disabling policies you use,
+No matter what combination of include/exclude policies you use,
 all of the following should be true for each test:
 
-1. Whenever the current repo/file is ignored, inline edits should stop working.
-    - The Edit Instructions dialog should not display, and disappear if active.
-    - The Document Code function should not work at all (via keyboard or menu).
-2. If an edit is in progress, with code lenses displaying, and its file becomes
-   ignored, then the edit in progress should cancel/undo.
-3. When the current file's policy changes back to non-ignored, inline edits
-   should start working again.
+1. Whenever the current repo/file is ignored, inline edits and commands should stop working.
+2. Chat should still work, but files from the ignored repositories should not be used as context.
+3. When the current file's policy changes back to non-ignored, inline edits, commands, and context fetching
+   should start working normally again.
 
 ## Multi-repo context
 
