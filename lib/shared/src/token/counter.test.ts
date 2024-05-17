@@ -3,8 +3,8 @@ import { ps } from '../prompt/prompt-string'
 import type { Message } from '../sourcegraph-api'
 import {
     CHAT_INPUT_TOKEN_BUDGET,
-    CLAUDE3_USER_CONTEXT_TOKEN_BUDGET,
     ENHANCED_CONTEXT_ALLOCATION,
+    EXTENDED_USER_CONTEXT_TOKEN_BUDGET,
 } from './constants'
 import { TokenCounter } from './counter'
 
@@ -35,10 +35,10 @@ describe('TokenCounter class', () => {
         const counter = new TokenCounter({
             input: CHAT_INPUT_TOKEN_BUDGET,
             output: 0,
-            context: { user: CLAUDE3_USER_CONTEXT_TOKEN_BUDGET },
+            context: { user: EXTENDED_USER_CONTEXT_TOKEN_BUDGET },
         })
         expect(counter.maxChatTokens).toBe(CHAT_INPUT_TOKEN_BUDGET)
-        expect(counter.maxContextTokens.user).toBe(CLAUDE3_USER_CONTEXT_TOKEN_BUDGET)
+        expect(counter.maxContextTokens.user).toBe(EXTENDED_USER_CONTEXT_TOKEN_BUDGET)
         expect(counter.maxContextTokens.enhanced).toBe(
             CHAT_INPUT_TOKEN_BUDGET * ENHANCED_CONTEXT_ALLOCATION
         )
@@ -68,7 +68,7 @@ describe('TokenCounter class', () => {
         const counter = new TokenCounter({
             input: CHAT_INPUT_TOKEN_BUDGET,
             output: 0,
-            context: { user: CLAUDE3_USER_CONTEXT_TOKEN_BUDGET },
+            context: { user: EXTENDED_USER_CONTEXT_TOKEN_BUDGET },
         })
         expect(counter.updateUsage('preamble', preamble)).toBe(true) // 3 chat tokens used
         expect(

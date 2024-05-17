@@ -20,15 +20,15 @@ export const CHAT_OUTPUT_TOKEN_BUDGET = 4000
 export const ENHANCED_CONTEXT_ALLOCATION = 0.6
 
 /**
- * NOTE: Reserved for Claude-3 Sonnet and Opus only.
+ * NOTE: Reserved for models with large context windows and good recall.
  *
  * The total context window reserved for user added context (@-mention, right-click, etc.)
  */
-export const CLAUDE3_USER_CONTEXT_TOKEN_BUDGET = 30000
+export const EXTENDED_USER_CONTEXT_TOKEN_BUDGET = 30000
 
 /**
- * NOTE: Reserved for Claude-3 Sonnet and Opus only.
+ * NOTE: Reserved for models with large context windows and good recall.
  *
  * The total context window reserved for chat input.
  */
-export const CLAUDE3_CHAT_INPUT_TOKEN_BUDGET = 15000
+export const EXTENDED_CHAT_INPUT_TOKEN_BUDGET = 15000
