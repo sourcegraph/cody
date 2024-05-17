@@ -138,6 +138,8 @@ async function getSymbolSnippetForNodeType(
 
         switch (nodeType) {
             case 'type_identifier': {
+                // TODO: add fallback here for unhelpful symbol snippets. Can happen if LSP lacks the
+                // location links capability
                 definitionString = await getTextFromLocation(definitionLocation)
                 break
             }
