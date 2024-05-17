@@ -711,6 +711,7 @@ export const vsCodeMocks = {
     UIKind,
     QuickInputButtons,
     Uri,
+    Location,
     languages,
     env: {
         uiKind: 1 satisfies vscode_types.UIKind.Desktop,

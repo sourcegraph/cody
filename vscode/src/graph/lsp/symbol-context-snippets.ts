@@ -105,11 +105,11 @@ async function getSymbolSnippetForNodeType(
 
         const { uri: definitionUri, range: definitionRange } = definitionLocation
         const definitionCacheKey = `${definitionRange.start.line}:${definitionRange.start.character}`
-        console.log(
-            `got definition location for ${symbolName}`,
-            JSON.stringify(`${definitionUri.toString().split('/').slice(-4).join('/')}`),
-            definitionRange
-        )
+        console.log(`[${symbolName}] location:`, {
+            nodeType,
+            range: definitionRange,
+            path: JSON.stringify(`${definitionUri.toString().split('/').slice(-4).join('/')}`),
+        })
 
         const symbolContextSnippet = {
             key: `${definitionUri}::${definitionCacheKey}`,
@@ -271,11 +271,17 @@ async function getSymbolSnippetForNodeType(
             })
             .filter(isDefined)
 
-        console.log({
-            symbolName,
-            definitionString,
+        console.log(`[${symbolName}] nested symbols:`, {
             hoverType,
-            symbolsSnippetRequests: symbolsSnippetRequests.map(r => r.symbolName),
+            definitionHover,
+            definitionString,
+            symbolsSnippetRequests: symbolsSnippetRequests.map(r => {
+                return {
+                    symbolName: r.symbolName,
+                    path: JSON.stringify(`${r.uri.toString().split('/').slice(-4).join('/')}`),
+                    range: `${r.position.line}:${r.position.character}`,
+                }
+            }),
         })
 
         if (symbolsSnippetRequests.length === 0) {
@@ -312,8 +318,8 @@ async function getSymbolSnippetForNodeType(
 
     let locationGetters = [
         getTypeDefinitionLocations,
-        getDefinitionLocations,
         getImplementationLocations,
+        getDefinitionLocations,
     ]
     if (['type_identifier'].includes(nodeType)) {
         locationGetters = [
@@ -325,7 +331,8 @@ async function getSymbolSnippetForNodeType(
 
     let symbolContextSnippet: PartialSymbolSnippetInflightRequest | undefined
     for (const locationGetter of locationGetters) {
-        console.log(locationGetter.name)
+        console.log('-------------------------------------------------------------')
+        console.log(`[${symbolName}] using locationGetter "${locationGetter.name}"`)
         symbolContextSnippet = await getSnippetForLocationGetter(locationGetter)
 
         if (symbolContextSnippet?.content !== undefined) {

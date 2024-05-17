@@ -281,6 +281,17 @@ export class TscRetriever implements ContextRetriever {
         // collection.
         await nextTick()
 
+        // console.log(
+        //     options.document.getText().indexOf('execFileSync'),
+        //     options.document.offsetAt(options.position),
+        // )
+        // const quickInfo = compiler.service.getQuickInfoAtPosition(uri.fsPath, 36)
+        // compiler.service.getDefinitionAndBoundSpan()
+        // console.log('quickInfo raw display parts----\n', quickInfo?.displayParts)
+
+        // console.log('displayParts----\n', ts.displayPartsToString(quickInfo?.displayParts))
+        // console.log('documentation----\n', ts.displayPartsToString(quickInfo?.documentation))
+
         return new SymbolCollector(compiler, this.options, options, options.position).relevantSymbols()
     }
 

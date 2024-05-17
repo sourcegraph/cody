@@ -104,14 +104,15 @@ export class LspLightRetriever implements ContextRetriever {
         this.lastResult = contextSnippets
 
         console.log(
-            `LspLightRetriever: got context snippets in ${(performance.now() - start).toFixed(2)}ms`
+            `[LspLightRetriever] got context snippets in ${(performance.now() - start).toFixed(2)}ms`
         )
 
+        console.log('-------------------------------------------------------------')
         // biome-ignore lint/complexity/noForEach: <explanation>
         contextSnippets.forEach(snippet => {
             console.log(snippet.content)
         })
-        console.log('-----------------------------------')
+        console.log('-------------------------------------------------------------')
 
         if (maxChars === 0) {
             // This is likely just a preloading request, so we don't need to prepare the actual context
@@ -155,6 +156,7 @@ export class LspLightRetriever implements ContextRetriever {
         if (event.contentChanges.length === 0 || event.document.uri.scheme !== 'file') {
             return
         }
+        // TODO: consider lazily updating the most popular cache entries instead of evicting everything.
         invalidateDocumentCache(event.document)
     }
 }
