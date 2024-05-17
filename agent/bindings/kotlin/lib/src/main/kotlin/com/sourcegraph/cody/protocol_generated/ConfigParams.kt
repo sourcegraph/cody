@@ -3,6 +3,8 @@ package com.sourcegraph.cody.protocol_generated
 
 data class ConfigParams(
   val experimentalGuardrails: Boolean,
+  val experimentalNoodle: Boolean,
+  val experimentalURLContext: Boolean,
   val serverEndpoint: String,
   val uiKindIsWeb: Boolean,
 )

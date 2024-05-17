@@ -82,7 +82,7 @@ export const FIXTURE_TRANSCRIPT: Record<
     explainCode2: transcriptFixture([
         {
             speaker: 'human',
-            text: ps`What does @#Symbol1 in @dir/dir/file-a-1.py do? Also use @README.md:2-8.`,
+            text: ps`What does @Symbol1 in @dir/dir/file-a-1.py do? Also use @README.md:2-8.`,
             editorState: FILE_MENTION_EDITOR_STATE_FIXTURE,
             contextFiles: [
                 {

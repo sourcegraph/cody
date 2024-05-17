@@ -1,4 +1,11 @@
-import { type ContextItem, displayLineRange, displayPath } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    FILE_CONTEXT_MENTION_PROVIDER,
+    PACKAGE_CONTEXT_MENTION_PROVIDER,
+    SYMBOL_CONTEXT_MENTION_PROVIDER,
+    displayLineRange,
+    displayPath,
+} from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import {
     QUICK_PICK_ITEM_CHECKED_PREFIX,
@@ -24,9 +31,9 @@ export function removeAfterLastAt(str: string): string {
  */
 export function getLabelForContextItem(item: ContextItem): string {
     switch (item.type) {
-        case 'package':
+        case PACKAGE_CONTEXT_MENTION_PROVIDER.id:
             return `${item.ecosystem}:${item.name}`
-        case 'file':
+        case FILE_CONTEXT_MENTION_PROVIDER.id:
             if (item.title) {
                 return `Add context from: ${item.title}`
             }
@@ -35,7 +42,7 @@ export function getLabelForContextItem(item: ContextItem): string {
                 const rangeLabel = item.range ? `:${displayLineRange(item.range)}` : ''
                 return `${displayPath(item.uri)}${rangeLabel}`
             }
-        case 'symbol': {
+        case SYMBOL_CONTEXT_MENTION_PROVIDER.id: {
             const rangeLabel = item.range ? `:${displayLineRange(item.range)}` : ''
             return `${displayPath(item.uri)}${rangeLabel}#${item.symbolName}`
         }
