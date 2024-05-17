@@ -33,6 +33,7 @@ test.extend<ExpectedEvents>({
         'cody.chat-question:submitted',
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
+        'cody.upsellUsageLimitCTA:shown',
     ],
 })('shows upgrade rate limit message for free users', async ({ page, sidebar }) => {
     await fetch(`${mockServer.SERVER_URL}/.test/completions/triggerRateLimit/free`, {
@@ -114,6 +115,7 @@ test.extend<ExpectedEvents>({
         'cody.chat-question:submitted',
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
+        'cody.abuseUsageLimitCTA:shown',
     ],
 })('shows standard rate limit message for non-dotCom users', async ({ page, sidebar }) => {
     await fetch(`${mockServer.SERVER_URL}/.test/completions/triggerRateLimit`, {

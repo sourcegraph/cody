@@ -664,6 +664,11 @@ export class InlineCompletionItemProvider
                         telemetryService.log('CodyVSCodeExtension:upsellUsageLimitCTA:clicked', {
                             limit_type: 'suggestions',
                         })
+                        telemetryRecorder.recordEvent('cody.upsellUsageLimitCTA', 'clicked', {
+                            privateMetadata: {
+                                limit_type: 'suggestions',
+                            },
+                        })
                     }
                     void vscode.commands.executeCommand('cody.show-page', pageName)
                 },
@@ -682,8 +687,8 @@ export class InlineCompletionItemProvider
                         }
                     )
                     telemetryRecorder.recordEvent(
-                        canUpgrade ? 'cody.upsellUsageLimitStatusBar' : 'cody.abuseUsageLimitStatusBar',
-                        'clicked',
+                        canUpgrade ? 'cody.upsellUsageLimitCTA' : 'cody.abuseUsageLimitCTA',
+                        'shown',
                         {
                             privateMetadata: { limit_type: 'suggestions', tier },
                         }
