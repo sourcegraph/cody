@@ -1,18 +1,18 @@
 import { URI } from 'vscode-uri'
 import type { ContextItemWithContent } from '../../codebase-context/messages'
 import { isDefined } from '../../common'
-import { getOpenCtxExtensionAPI } from '../../context/openctx/api'
+import { getOpenCtxClient } from '../../context/openctx/api'
 import type { ContextItemFromProvider, ContextMentionProvider } from '../api'
 
 export const OPENCTX_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'openctx'> = {
     id: 'openctx',
     title: 'OpenCtx',
     async queryContextItems(query) {
-        const openctxAPI = await getOpenCtxExtensionAPI()
-        if (!openctxAPI) {
+        const client = await getOpenCtxClient()
+        if (!client) {
             return []
         }
-        const results = await openctxAPI.getItems({ query: query })
+        const results = await client.items({ query: query })
         const items =
             results
                 ?.map((result, i) =>

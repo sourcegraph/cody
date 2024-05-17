@@ -298,7 +298,6 @@ export { GITHUB_CONTEXT_MENTION_PROVIDER } from './mentions/providers/githubMent
 export { URL_CONTEXT_MENTION_PROVIDER } from './mentions/providers/urlMentions'
 export * from './githubClient'
 export {
-    setOpenCtxExtensionAPI,
-    getOpenCtxExtensionAPI,
-    type OpenCtxExtensionAPI,
+    setOpenCtxClient,
+    getOpenCtxClient,
 } from './context/openctx/api'
