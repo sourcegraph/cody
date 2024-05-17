@@ -15,6 +15,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Pressing <kbd>Space</kbd> no longer accepts an @-mention item. Press <kbd>Tab</kbd> or <kbd>Enter</kbd> instead. [pull/4154](https://github.com/sourcegraph/cody/pull/4154)
 - Chat: You can now change the model after you send a chat message. Subsequent messages will be sent using your selected model. [pull/4189](https://github.com/sourcegraph/cody/pull/4189)
 - Chat: The `@`-mention menu now shows the types of context you can include. [pull/4188](https://github.com/sourcegraph/cody/pull/4188)
+- Increases the context window for the new `GPT-4o` model. [pull/4180](https://github.com/sourcegraph/cody/pull/4180)
+
 
 ## [1.18.0]
 
@@ -28,7 +30,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Document Code/Generate Tests: User selections are now matched against known symbol ranges, and adjusted in cases where a user selection in a suitable subset of one of these ranges. [pull/4031](https://github.com/sourcegraph/cody/pull/4031)
 - Extension: Added the `vscode.git` extension to the `extensionDependencies` list. [pull/4110](https://github.com/sourcegraph/cody/pull/4110)
 - Command: Add a new `Generate Commit Message` command for generating commit messages, available in the Cody sidebar, command palette, and Source Control panel. [pull/4130](https://github.com/sourcegraph/cody/pull/4130)
-- Chat: The new `GPT-4o` model is available for Cody Pro users with an increased context window. [pull/4164](https://github.com/sourcegraph/cody/pull/4164)
+- Chat: The new `GPT-4o` model is available for Cody Pro users. [pull/4164](https://github.com/sourcegraph/cody/pull/4164)
 
 ### Fixed
 
