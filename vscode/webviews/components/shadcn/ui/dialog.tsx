@@ -1,5 +1,5 @@
-import { XMarkIcon } from '@heroicons/react/16/solid'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
+import { XIcon } from 'lucide-react'
 import * as React from 'react'
 
 import { cn } from '../utils'
@@ -43,7 +43,7 @@ const DialogContent = React.forwardRef<
         >
             {children}
             <DialogPrimitive.Close className="tw-absolute tw-right-4 tw-top-4 tw-rounded-sm tw-opacity-70 tw-ring-offset-background tw-transition-opacity hover:tw-opacity-100 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-ring focus:tw-ring-offset-2 disabled:tw-pointer-events-none data-[state=open]:tw-bg-accent data-[state=open]:tw-text-muted-foreground">
-                <XMarkIcon className="tw-h-4 tw-w-4" />
+                <XIcon size={16} strokeWidth={1.25} className="tw-h-4 tw-w-4" />
                 <span className="tw-sr-only">Close</span>
             </DialogPrimitive.Close>
         </DialogPrimitive.Content>
