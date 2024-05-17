@@ -1,8 +1,8 @@
 import type { ContextItem, ContextItemWithContent } from '../codebase-context/messages'
 import type { Configuration } from '../configuration'
+import { getOpenCtxClient } from '../context/openctx/api'
 import type { PromptString } from '../prompt/prompt-string'
 import { GITHUB_CONTEXT_MENTION_PROVIDER } from './providers/githubMentions'
-import { OPENCTX_CONTEXT_MENTION_PROVIDER } from './providers/openctxMentions'
 import { PACKAGE_CONTEXT_MENTION_PROVIDER } from './providers/packageMentions'
 import { SOURCEGRAPH_SEARCH_CONTEXT_MENTION_PROVIDER } from './providers/sourcegraphSearch'
 import { URL_CONTEXT_MENTION_PROVIDER } from './providers/urlMentions'
@@ -23,7 +23,6 @@ export const CONTEXT_MENTION_PROVIDERS: ContextMentionProvider[] = [
     URL_CONTEXT_MENTION_PROVIDER,
     PACKAGE_CONTEXT_MENTION_PROVIDER,
     SOURCEGRAPH_SEARCH_CONTEXT_MENTION_PROVIDER,
-    OPENCTX_CONTEXT_MENTION_PROVIDER,
     GITHUB_CONTEXT_MENTION_PROVIDER,
 ]
 
@@ -111,16 +110,42 @@ export const SYMBOL_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata<'sy
 }
 
 /** Metadata for all registered {@link ContextMentionProvider}s. */
-export function allMentionProvidersMetadata(
+export async function allMentionProvidersMetadata(
     config: Pick<Configuration, 'experimentalNoodle' | 'experimentalURLContext'>
-): ContextMentionProviderMetadata[] {
-    return [
+): Promise<ContextMentionProviderMetadata[]> {
+    const items = [
         FILE_CONTEXT_MENTION_PROVIDER,
         SYMBOL_CONTEXT_MENTION_PROVIDER,
+        ...(await openCtxMentionProviders()),
+        /*
         ...CONTEXT_MENTION_PROVIDERS.filter(
             ({ id }) =>
                 config.experimentalNoodle ||
                 (id === URL_CONTEXT_MENTION_PROVIDER.id && config.experimentalURLContext)
         ),
+    */
     ]
+
+    return items
+}
+
+export async function openCtxMentionProviders(): Promise<ContextMentionProviderMetadata[]> {
+    const client = await getOpenCtxClient()
+    console.log('client client client', client)
+    debugger
+    if (!client) {
+        return []
+    }
+
+    const providers = await client.capabilities({})
+
+    console.log('providers client client', providers)
+    debugger
+
+    return providers.map(provider => ({
+        id: provider.providerUri,
+        title: provider.meta.name,
+        queryLabel: '',
+        emptyLabel: '',
+    }))
 }

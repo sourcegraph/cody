@@ -1,7 +1,7 @@
 import type { Client } from '@openctx/client'
 import type * as vscode from 'vscode'
 
-type OpenCtxClient = Client<vscode.Range>
+export type OpenCtxClient = Client<vscode.Range>
 
 let _client: OpenCtxClient | undefined
 

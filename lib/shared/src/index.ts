@@ -61,6 +61,7 @@ export type {
 export {
     type ContextItem,
     type ContextItemFile,
+    type ContextItemOpenCtx,
     ContextItemSource,
     type ContextItemWithContent,
     type ContextItemSymbol,
@@ -273,6 +274,7 @@ export {
     type ContextMentionProvider,
     type ContextItemProps,
     allMentionProvidersMetadata,
+    openCtxMentionProviders,
     FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type ContextMentionProviderMetadata,

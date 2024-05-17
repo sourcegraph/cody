@@ -12,6 +12,7 @@ import {
     PromptString,
     type SerializedChatTranscript,
     allMentionProvidersMetadata,
+    getOpenCtxClient,
     isMacOS,
 } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from './Chat'
@@ -232,6 +233,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [chatModels, onCurrentChatModelChange]
     )
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+    const providers = useMemo(
+        () => (config ? allMentionProvidersMetadata(config) : []),
+        [config, getOpenCtxClient()]
+    )
+
     // Wait for all the data to be loaded before rendering Chat View
     if (!view || !authStatus || !config) {
         return <LoadingPage />
@@ -287,7 +294,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             <ChatModelContextProvider value={chatModelContext}>
                                 <WithContextProviders
                                     value={{
-                                        providers: allMentionProvidersMetadata(config),
+                                        providers,
                                     }}
                                 >
                                     <Chat

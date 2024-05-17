@@ -6,6 +6,7 @@ import {
     type ContextItemFile,
     type ContextItemGithubIssue,
     type ContextItemGithubPullRequest,
+    type ContextItemOpenCtx,
     type ContextItemPackage,
     type ContextItemSymbol,
     displayLineRange,
@@ -37,6 +38,7 @@ export type SerializedContextItem = { uri: string; title?: string; content?: und
     | Omit<ContextItemPackage, 'uri' | 'content'>
     | Omit<ContextItemGithubIssue, 'uri' | 'content'>
     | Omit<ContextItemGithubPullRequest, 'uri' | 'content'>
+    | Omit<ContextItemOpenCtx, 'uri' | 'content'>
 )
 
 export function serializeContextItem(

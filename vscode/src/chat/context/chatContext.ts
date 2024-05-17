@@ -1,21 +1,22 @@
 import {
     CONTEXT_MENTION_PROVIDERS,
     type ContextItem,
-    type ContextItemProps,
+    type ContextItemOpenCtx,
     type ContextMentionProvider,
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionQuery,
     PACKAGE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     URL_CONTEXT_MENTION_PROVIDER,
+    getOpenCtxClient,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import {
     getFileContextFiles,
     getOpenTabsContextFile,
     getSymbolContextFiles,
-    getWorkspaceGitRemotes,
 } from '../../editor/utils/editor-context'
 
 export async function getChatContextItemsForMention(
@@ -60,18 +61,24 @@ export async function getChatContextItemsForMention(
         }
 
         default: {
-            const props: ContextItemProps = { gitRemotes: getWorkspaceGitRemotes() }
-
-            for (const provider of getEnabledContextMentionProviders()) {
-                if (provider.id === mentionQuery.provider) {
-                    return provider.queryContextItems(
-                        mentionQuery.text,
-                        props,
-                        convertCancellationTokenToAbortSignal(cancellationToken)
-                    )
-                }
+            const openctxClient = getOpenCtxClient()
+            if (!openctxClient) {
+                return []
             }
-            return []
+
+            const items = await openctxClient.mentions(
+                { query: mentionQuery.text },
+                mentionQuery.provider
+            )
+
+            return items.map(
+                (item): ContextItemOpenCtx => ({
+                    type: 'openctx',
+                    title: item.title,
+                    uri: URI.parse(item.uri),
+                    providerUri: item.providerUri,
+                })
+            )
         }
     }
 }
@@ -96,13 +103,4 @@ export function getEnabledContextMentionProviders(): ContextMentionProvider[] {
         )
     }
     return []
-}
-
-function convertCancellationTokenToAbortSignal(token: vscode.CancellationToken): AbortSignal {
-    const controller = new AbortController()
-    const disposable = token.onCancellationRequested(() => {
-        controller.abort()
-        disposable.dispose()
-    })
-    return controller.signal
 }

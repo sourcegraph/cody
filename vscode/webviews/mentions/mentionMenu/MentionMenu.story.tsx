@@ -10,7 +10,6 @@ import {
     PACKAGE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     URL_CONTEXT_MENTION_PROVIDER,
-    allMentionProvidersMetadata,
 } from '@sourcegraph/cody-shared'
 import { VSCodeDecorator } from '../../storybook/VSCodeStoryDecorator'
 import { MentionMenu } from './MentionMenu'
@@ -137,7 +136,7 @@ export const Default: StoryObj<typeof MentionMenu> = {
                     owner: 'sourcegraph',
                 },
             ],
-            allMentionProvidersMetadata({ experimentalNoodle: true, experimentalURLContext: true })
+            []
         ),
     },
 }
@@ -157,7 +156,7 @@ export const WithExperimentalProviders: StoryObj<typeof MentionMenu> = {
                     range: { start: { line: 3, character: 5 }, end: { line: 7, character: 9 } },
                 },
             ],
-            allMentionProvidersMetadata({ experimentalNoodle: true, experimentalURLContext: true })
+            []
         ),
     },
 }
