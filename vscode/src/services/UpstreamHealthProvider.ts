@@ -14,6 +14,7 @@ import type * as vscode from 'vscode'
 // We choose an interval that gives us a reasonable aggregate without causing
 // too many requests
 const PING_INTERVAL_MS = 10 * 60 * 1000 // 10 minutes
+const INITIAL_PING_DELAY_MS = 10 * 1000 // 10 seconds
 
 /**
  * A provider that regularly pings the connected Sourcegraph instance to
@@ -60,7 +61,14 @@ export class UpstreamHealthProvider implements vscode.Disposable {
                 ? dotcomTokenToGatewayToken(newConfig.accessToken)
                 : undefined
 
-        this.measure()
+        // Enqueue the initial ping after a config change in 10 seconds. This
+        // avoids running the test while the extension is still initializing and
+        // competing with many other network requests.
+        if (this.nextTimeoutId) {
+            clearTimeout(this.nextTimeoutId)
+        }
+        this.nextTimeoutId = setTimeout(this.measure.bind(this), INITIAL_PING_DELAY_MS)
+
         return this
     }
 
@@ -74,30 +82,29 @@ export class UpstreamHealthProvider implements vscode.Disposable {
                 throw new Error('UpstreamHealthProvider not initialized')
             }
 
-            const headers = new Headers(this.config.customHeaders as HeadersInit)
-            headers.set('Content-Type', 'application/json; charset=utf-8')
+            const sharedHeaders = new Headers(this.config.customHeaders as HeadersInit)
+            sharedHeaders.set('Content-Type', 'application/json; charset=utf-8')
+            addTraceparent(sharedHeaders)
+            addCustomUserAgent(sharedHeaders)
+
+            const upstreamHeaders = new Headers(sharedHeaders)
             if (this.config.accessToken) {
-                headers.set('Authorization', `token ${this.config.accessToken}`)
+                upstreamHeaders.set('Authorization', `token ${this.config.accessToken}`)
             }
-            addTraceparent(headers)
-            addCustomUserAgent(headers)
             const url = new URL('/healthz', this.config.serverEndpoint)
             const upstreamResult = await wrapInActiveSpan('upstream-latency.upstream', span => {
                 span.setAttribute('sampled', true)
-                return measureLatencyToUri(headers, url.toString())
+                return measureLatencyToUri(upstreamHeaders, url.toString())
             })
 
-            // We don't want to congest the network so we run the test in serial
+            // We don't want to congest the network so we run the test serially
             if (this.fastPathAccessToken) {
-                const headers = new Headers()
-                headers.set('Content-Type', 'application/json; charset=utf-8')
-                headers.set('Authorization', `Bearer ${this.fastPathAccessToken}`)
-                addTraceparent(headers)
-                addCustomUserAgent(headers)
-                const uri = 'https://cody-gateway.sourcegraph.com/healthz'
+                const gatewayHeaders = new Headers(sharedHeaders)
+                gatewayHeaders.set('Authorization', `Bearer ${this.fastPathAccessToken}`)
+                const uri = 'https://cody-gateway.sourcegraph.com/-/healthz'
                 const gatewayResult = await wrapInActiveSpan('upstream-latency.gateway', span => {
                     span.setAttribute('sampled', true)
-                    return measureLatencyToUri(headers, uri)
+                    return measureLatencyToUri(gatewayHeaders, uri)
                 })
                 if (!('error' in gatewayResult)) {
                     this.lastGatewayLatency = gatewayResult.latency
