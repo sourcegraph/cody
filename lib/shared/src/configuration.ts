@@ -64,6 +64,8 @@ export interface Configuration {
     experimentalSupercompletions: boolean
     experimentalGithubAccessToken: string
     experimentalCommitMessage: boolean
+    experimentalNoodle: boolean
+    experimentalURLContext: boolean
 
     /**
      * Unstable Features for internal testing only

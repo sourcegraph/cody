@@ -272,6 +272,10 @@ export {
     CONTEXT_MENTION_PROVIDERS,
     type ContextMentionProvider,
     type ContextItemProps,
+    allMentionProvidersMetadata,
+    FILE_CONTEXT_MENTION_PROVIDER,
+    SYMBOL_CONTEXT_MENTION_PROVIDER,
+    type ContextMentionProviderMetadata,
 } from './mentions/api'
 export { TokenCounter } from './token/counter'
 export { ENHANCED_CONTEXT_ALLOCATION } from './token/constants'
@@ -290,6 +294,8 @@ export * from './token/constants'
 export * from './configuration'
 export * from './mentions/providers/packageMentions'
 export * from './mentions/providers/sourcegraphSearch'
+export { GITHUB_CONTEXT_MENTION_PROVIDER } from './mentions/providers/githubMentions'
+export { URL_CONTEXT_MENTION_PROVIDER } from './mentions/providers/urlMentions'
 export * from './githubClient'
 export {
     setOpenCtxExtensionAPI,

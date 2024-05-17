@@ -190,6 +190,7 @@ describe('Agent', () => {
             expect(lastMessage).toMatchInlineSnapshot(
                 `
               {
+                "model": "anthropic/claude-3-sonnet-20240229",
                 "speaker": "assistant",
                 "text": "Hello there! I'm Claude, an AI assistant created by Anthropic. It's nice to meet you. How can I help you today?",
               }
@@ -339,6 +340,7 @@ describe('Agent', () => {
   "interactions": [
     {
       "assistantMessage": {
+        "model": "anthropic/claude-2.0",
         "speaker": "assistant",
         "text": " I'm Claude, an AI assistant created by Anthropic.",
       },
@@ -951,8 +953,9 @@ describe('Agent', () => {
                 .allUris()
                 .filter(uri => vscode.Uri.parse(uri).scheme === 'untitled')
             expect(untitledDocuments).toHaveLength(2)
-            const [untitledDocument] = untitledDocuments
-            const testDocument = client.workspace.getDocument(vscode.Uri.parse(untitledDocument))
+            const untitledDocument = untitledDocuments.find(d => d.endsWith('trickyLogic.test.ts'))
+            expect(untitledDocument).toBeDefined()
+            const testDocument = client.workspace.getDocument(vscode.Uri.parse(untitledDocument ?? ''))
             expect(trimEndOfLine(testDocument?.getText())).toMatchInlineSnapshot(
                 `
               "import { expect } from 'vitest'
@@ -984,9 +987,7 @@ describe('Agent', () => {
                 explainPollyError
             )
 
-            // Just to make sure the edit happened via `workspace/edit` instead
-            // of `textDocument/edit`.
-            expect(client.workspaceEditParams).toHaveLength(1)
+            expect(client.textDocumentEditParams).toHaveLength(1)
         }, 30_000)
 
         describe('Edit code', () => {
@@ -1049,6 +1050,34 @@ describe('Agent', () => {
                   			</ul>
                   		</>
                   	);
+                  }
+                  "
+                `,
+                    explainPollyError
+                )
+            }, 20_000)
+
+            it('editCommand/code (generate new code)', async () => {
+                const uri = workspace.file('src', 'Heading.tsx')
+                await client.openFile(uri)
+                const task = await client.request('editCommands/code', {
+                    instruction: 'Create and export a Heading component that uses these props',
+                    model: ModelProvider.getProviderByModelSubstringOrError('anthropic/claude-3-opus')
+                        .model,
+                })
+                await client.acceptEditTask(uri, task)
+                expect(client.documentText(uri)).toMatchInlineSnapshot(
+                    `
+                  "import React = require("react");
+
+                  interface HeadingProps {
+                      text: string;
+                      level?: number;
+                  }
+
+                  export function Heading({ text, level = 1 }: HeadingProps) {
+                      const HeadingTag = \`h\${level}\` as keyof JSX.IntrinsicElements;
+                      return <HeadingTag>{text}</HeadingTag>;
                   }
                   "
                 `,
@@ -1184,17 +1213,18 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "Based on the codebase context you have provided, here are the file names:
+              "Here are the file names you have shared with me so far:
 
               1. \`src/TestLogger.ts\`
               2. \`src/TestClass.ts\`
               3. \`src/sum.ts\`
               4. \`src/squirrel.ts\`
               5. \`src/multiple-selections.ts\`
-              6. \`src/example.test.ts\`
-              7. \`src/ChatColumn.tsx\`
-              8. \`src/animal.ts\`
-              9. \`src/trickyLogic.ts\`"
+              6. \`src/Heading.tsx\`
+              7. \`src/example.test.ts\`
+              8. \`src/ChatColumn.tsx\`
+              9. \`src/animal.ts\`
+              10. \`src/trickyLogic.ts\`"
             `,
                 explainPollyError
             )

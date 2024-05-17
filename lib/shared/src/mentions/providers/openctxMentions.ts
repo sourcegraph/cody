@@ -4,17 +4,15 @@ import { isDefined } from '../../common'
 import { getOpenCtxExtensionAPI } from '../../context/openctx/api'
 import type { ContextItemFromProvider, ContextMentionProvider } from '../api'
 
-const TRIGGER_PREFIX = 'octx:'
-
 export const OPENCTX_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'openctx'> = {
     id: 'openctx',
-    triggerPrefixes: [TRIGGER_PREFIX],
+    title: 'OpenCtx',
     async queryContextItems(query) {
         const openctxAPI = await getOpenCtxExtensionAPI()
         if (!openctxAPI) {
             return []
         }
-        const results = await openctxAPI.getItems({ query: query.slice(TRIGGER_PREFIX.length) })
+        const results = await openctxAPI.getItems({ query: query })
         const items =
             results
                 ?.map((result, i) =>

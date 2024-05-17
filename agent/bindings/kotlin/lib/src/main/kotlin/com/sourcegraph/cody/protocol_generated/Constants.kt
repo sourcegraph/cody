@@ -124,6 +124,7 @@ object Constants {
   const val abort = "abort"
   const val `web-sign-in-token` = "web-sign-in-token"
   const val getUserContext = "getUserContext"
+  const val queryContextItems = "queryContextItems"
   const val `show-search-result` = "show-search-result"
   const val reset = "reset"
   const val `attribution-search` = "attribution-search"

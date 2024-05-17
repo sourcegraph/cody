@@ -15,6 +15,15 @@ export interface ChatMessage extends Message {
      * back to editing the text for invalid values.
      */
     editorState?: unknown
+
+    /**
+     * The model used to generate this chat message response. Not set on human messages.
+     *
+     * NOTE: The chat model used to be a property of the entire chat session and was not changeable
+     * after the chat session had begun. Now that field, {@link SerializedChatTranscript.chatModel},
+     * is deprecated, and this field should be used instead.
+     */
+    model?: string
 }
 
 // An unsafe version of the {@link ChatMessage} that has the PromptString
@@ -28,6 +37,7 @@ export interface SerializedChatMessage {
     editorState?: unknown
     speaker: 'human' | 'assistant' | 'system'
     text?: string // Changed from PromptString
+    model?: string
 }
 
 export interface ChatError {

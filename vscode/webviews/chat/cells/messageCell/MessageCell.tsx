@@ -1,7 +1,6 @@
 import {
     type ChatMessage,
     type Guardrails,
-    type ModelProvider,
     ps,
     reformatBotMessageForChat,
 } from '@sourcegraph/cody-shared'
@@ -15,6 +14,7 @@ import { ChatMessageContent, type CodeBlockActionsProps } from '../../ChatMessag
 import { ErrorItem, RequestErrorItem } from '../../ErrorItem'
 import { FeedbackButtons } from '../../components/FeedbackButtons'
 import { LoadingDots } from '../../components/LoadingDots'
+import { useChatModelByID } from '../../models/chatModelContext'
 import { Cell } from '../Cell'
 import styles from './MessageCell.module.css'
 import { SpeakerIcon } from './SpeakerIcon'
@@ -22,7 +22,6 @@ import { SpeakerIcon } from './SpeakerIcon'
 export const MessageCell: FunctionComponent<{
     message: ChatMessage
     messageIndexInTranscript: number
-    chatModel: ModelProvider | undefined
     isLoading: boolean
     disabled?: boolean
 
@@ -42,7 +41,6 @@ export const MessageCell: FunctionComponent<{
 }> = ({
     message,
     messageIndexInTranscript,
-    chatModel,
     isLoading,
     disabled,
     showEditButton,
@@ -63,6 +61,8 @@ export const MessageCell: FunctionComponent<{
     const isItemBeingEdited = beingEdited === messageIndexInTranscript
 
     const displayMarkdown = useDisplayMarkdown(message)
+
+    const chatModel = useChatModelByID(message.model)
 
     return (
         <Cell

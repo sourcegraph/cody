@@ -251,6 +251,7 @@ describe('InlineCompletionItemProvider', () => {
             get: (key: string) => localStorageData[key],
             update: (key: string, value: unknown) => {
                 localStorageData[key] = value
+                return Promise.resolve()
             },
         } as any as vscode.Memento)
 

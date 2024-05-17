@@ -13,20 +13,11 @@ export const ModelSelectField: React.FunctionComponent<{
 
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
 
-    readOnly?: boolean
-
     className?: string
 
     /** For storybooks only. */
     __storybook__open?: boolean
-}> = ({
-    models,
-    onModelSelect: parentOnModelSelect,
-    userInfo,
-    readOnly,
-    className,
-    __storybook__open,
-}) => {
+}> = ({ models, onModelSelect: parentOnModelSelect, userInfo, className, __storybook__open }) => {
     const usableModels = useMemo(() => models.filter(m => !m.deprecated), [models])
     const selectedModel = usableModels.find(m => m.default) ?? usableModels[0]
 
@@ -112,7 +103,7 @@ export const ModelSelectField: React.FunctionComponent<{
             value={selectedModel.model}
             onChange={onChange}
             className={className}
-            readOnly={readOnly || !userInfo.isDotComUser}
+            readOnly={!userInfo.isDotComUser}
             onOpen={onPopoverOpen}
             __storybook__open={__storybook__open}
             aria-label="Choose a model"

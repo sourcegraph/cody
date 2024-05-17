@@ -313,6 +313,11 @@ const register = async (
         searchViewProvider.initialize()
     }
 
+    if (localEmbeddings) {
+        // kick-off embeddings initialization
+        localEmbeddings.start()
+    }
+
     if (config.experimentalSupercompletions) {
         disposables.push(new SupercompletionProvider({ statusBar, chat: chatClient }))
     }

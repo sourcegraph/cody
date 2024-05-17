@@ -15,7 +15,7 @@ import styles from './Transcript.module.css'
 import { Cell } from './cells/Cell'
 import { ContextCell } from './cells/contextCell/ContextCell'
 import { MessageCell } from './cells/messageCell/MessageCell'
-import { useChatModelContext, useCurrentChatModel } from './models/chatModelContext'
+import { useChatModelContext } from './models/chatModelContext'
 
 export const Transcript: React.FunctionComponent<{
     transcript: ChatMessage[]
@@ -130,7 +130,6 @@ export const Transcript: React.FunctionComponent<{
     }
 
     const { chatModels, onCurrentChatModelChange } = useChatModelContext()
-    const chatModel = useCurrentChatModel()
 
     const messageToTranscriptItem =
         (offset: number) =>
@@ -158,7 +157,6 @@ export const Transcript: React.FunctionComponent<{
                         key={keyIndex}
                         message={message}
                         messageIndexInTranscript={keyIndex}
-                        chatModel={chatModel}
                         isLoading={isLoading}
                         disabled={messageBeingEdited !== undefined && !isItemBeingEdited}
                         showEditButton={message.speaker === 'human'}
@@ -193,7 +191,6 @@ export const Transcript: React.FunctionComponent<{
                         <div className={styles.modelSelectFieldContainer}>
                             <ModelSelectField
                                 models={chatModels}
-                                readOnly={transcript.length > 0}
                                 onModelSelect={onCurrentChatModelChange}
                                 userInfo={userInfo}
                             />
@@ -209,7 +206,6 @@ export const Transcript: React.FunctionComponent<{
                         <MessageCell
                             message={messageInProgress}
                             messageIndexInTranscript={transcript.length}
-                            chatModel={chatModel}
                             isLoading={true}
                             beingEdited={messageBeingEdited}
                             setBeingEdited={setMessageBeingEdited}

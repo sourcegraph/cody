@@ -5,6 +5,7 @@ import type {
     ConfigurationWithAccessToken,
     ContextItem,
     EnhancedContextContextT,
+    MentionQuery,
     ModelProvider,
     RangeData,
     SearchPanelFile,
@@ -114,7 +115,15 @@ export type WebviewMessage =
           command: 'simplified-onboarding'
           onboardingKind: 'web-sign-in-token'
       }
-    | { command: 'getUserContext'; query: string }
+    | {
+          command: 'getUserContext'
+          /** @deprecated Use the `queryContextItems` message instead. */
+          query: string
+      }
+    | {
+          command: 'queryContextItems'
+          query: MentionQuery
+      }
     | { command: 'search'; query: string }
     | {
           command: 'show-search-result'
@@ -225,7 +234,10 @@ export interface ExtensionTranscriptMessage {
  * The subset of configuration that is visible to the webview.
  */
 export interface ConfigurationSubsetForWebview
-    extends Pick<ConfigurationWithAccessToken, 'experimentalGuardrails' | 'serverEndpoint'> {}
+    extends Pick<
+        ConfigurationWithAccessToken,
+        'experimentalGuardrails' | 'experimentalNoodle' | 'experimentalURLContext' | 'serverEndpoint'
+    > {}
 
 /**
  * URLs for the Sourcegraph instance and app.
