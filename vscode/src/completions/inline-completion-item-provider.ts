@@ -7,6 +7,7 @@ import {
     RateLimitError,
     contextFiltersProvider,
     isCodyIgnoredFile,
+    telemetryRecorder,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
@@ -680,6 +681,13 @@ export class InlineCompletionItemProvider
                             tier,
                         }
                     )
+                    telemetryRecorder.recordEvent(
+                        canUpgrade ? 'cody.upsellUsageLimitStatusBar' : 'cody.abuseUsageLimitStatusBar',
+                        'clicked',
+                        {
+                            privateMetadata: { limit_type: 'suggestions', tier },
+                        }
+                    )
                 },
             })
 
@@ -690,6 +698,13 @@ export class InlineCompletionItemProvider
                 {
                     limit_type: 'suggestions',
                     tier,
+                }
+            )
+            telemetryRecorder.recordEvent(
+                canUpgrade ? 'cody.upsellUsageLimitStatusBar' : 'cody.abuseUsageLimitStatusBar',
+                'shown',
+                {
+                    privateMetadata: { limit_type: 'suggestions', tier },
                 }
             )
             return

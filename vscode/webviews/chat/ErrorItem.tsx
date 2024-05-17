@@ -1,10 +1,11 @@
 import React, { useCallback } from 'react'
 
-import { type ChatError, RateLimitError } from '@sourcegraph/cody-shared'
+import { type ChatError, RateLimitError, telemetryRecorder } from '@sourcegraph/cody-shared'
 
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 
+import type { TelemetryRecorder } from '@sourcegraph/cody-shared'
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import styles from './ErrorItem.module.css'
 
@@ -15,6 +16,7 @@ export const ErrorItem: React.FunctionComponent<{
     error: Omit<ChatError, 'isChatErrorGuard'>
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
     postMessage?: ApiPostMessage
+    telemetryRecorder: TelemetryRecorder
 }> = ({ error, userInfo, postMessage }) => {
     if (typeof error !== 'string' && error.name === RateLimitError.errorName && postMessage) {
         return (
@@ -22,6 +24,7 @@ export const ErrorItem: React.FunctionComponent<{
                 error={error as RateLimitError}
                 userInfo={userInfo}
                 postMessage={postMessage}
+                telemetryRecorder={telemetryRecorder}
             />
         )
     }
@@ -48,6 +51,7 @@ const RateLimitErrorItem: React.FunctionComponent<{
     error: RateLimitError
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
     postMessage: ApiPostMessage
+    telemetryRecorder: TelemetryRecorder
 }> = ({ error, userInfo, postMessage }) => {
     // Only show Upgrades if both the error said an upgrade was available and we know the user
     // has not since upgraded.
@@ -66,6 +70,16 @@ const RateLimitErrorItem: React.FunctionComponent<{
                 : 'CodyVSCodeExtension:abuseUsageLimitCTA:shown',
             properties: { limit_type: 'chat_commands', tier },
         })
+        telemetryRecorder.recordEvent(
+            canUpgrade ? 'cody.upsellUsageLimitCTA' : 'cody.abuseUsageLimitCTA',
+            'shown',
+            {
+                privateMetadata: {
+                    limit_type: 'chat_commands',
+                    tier,
+                },
+            }
+        )
     }, [])
 
     const onButtonClick = useCallback(
@@ -75,6 +89,13 @@ const RateLimitErrorItem: React.FunctionComponent<{
                 command: 'event',
                 eventName: 'CodyVSCodeExtension:upsellUsageLimitCTA:clicked',
                 properties: { limit_type: 'chat_commands', call_to_action, tier },
+            })
+            telemetryRecorder.recordEvent('cody.upsellUsageLimitCTA', 'clicked', {
+                privateMetadata: {
+                    limit_type: 'chat_commands',
+                    call_to_action,
+                    tier,
+                },
             })
 
             // open the page in browser

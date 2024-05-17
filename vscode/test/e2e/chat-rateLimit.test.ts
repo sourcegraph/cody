@@ -73,6 +73,7 @@ test.extend<ExpectedEvents>({
         'cody.chat-question:submitted',
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
+        'cody.abuseUsageLimitCTA:shown',
     ],
 })('shows standard rate limit message for pro users', async ({ page, sidebar }) => {
     await fetch(`${mockServer.SERVER_URL}/.test/completions/triggerRateLimit/pro`, {
