@@ -149,6 +149,7 @@ export class TestClient extends MessageHandler {
                 REDACTED_SRC_ACCESS_TOKEN: params.credentials.redactedToken,
                 CODY_TELEMETRY_EXPORTER: params.telemetryExporter ?? 'testing',
                 DISABLE_FEATURE_FLAGS: params.areFeatureFlagsEnabled ? undefined : 'true',
+                DISABLE_UPSTREAM_HEALTH_PINGS: 'true',
                 CODY_LOG_EVENT_MODE: params.logEventMode,
                 ...process.env,
             },

@@ -69,6 +69,10 @@ export class UpstreamHealthProvider implements vscode.Disposable {
         }
 
         try {
+            if (process.env.DISABLE_UPSTREAM_HEALTH_PINGS === 'true') {
+                return
+            }
+
             if (!this.config) {
                 throw new Error('UpstreamHealthProvider not initialized')
             }
