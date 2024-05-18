@@ -7,6 +7,7 @@ import { StreamMessageReader, StreamMessageWriter, createMessageConnection } fro
 import { startPollyRecording } from '../../../vscode/src/testutils/polly'
 import { Agent } from '../agent'
 
+import { activate } from '../../../vscode/src/extension.node'
 import { booleanOption } from './evaluate-autocomplete/cli-parsers'
 
 interface JsonrpcCommandOptions {
@@ -186,7 +187,7 @@ function setupAgentCommunication(params: {
         new StreamMessageWriter(params.stdout)
     )
 
-    new Agent({ ...params, conn })
+    new Agent({ ...params, conn, extensionActivate: activate })
 
     // Force the agent process to exit when stdin/stdout close as an attempt to
     // prevent zombie agent processes. We experienced this problem when we

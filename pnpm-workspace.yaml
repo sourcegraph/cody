@@ -4,3 +4,4 @@ packages:
   - cli
   - lib/*
   - vscode
+  - web
