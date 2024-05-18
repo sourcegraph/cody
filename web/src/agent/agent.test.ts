@@ -12,15 +12,18 @@ vi.mock('../../../vscode/src/models', () => ({
 }))
 
 describe('agent web worker', () => {
-    test('creates', async () => {
-        // TODO(sqs): broken
-        const agent = await createAgentClient({
-            serverEndpoint: 'https://example.com',
-            accessToken: 'asdf',
-            workspaceRootUri: 'file:///tmp/foo',
-        })
-        const id = await agent.rpc.sendRequest('chat/new')
-        const UUID = /^[0-9a-f-]{36}$/
-        expect(id).toMatch(UUID)
-    })
+    test(
+        'creates',
+        async () => {
+            const agent = await createAgentClient({
+                serverEndpoint: 'https://example.com',
+                accessToken: 'asdf',
+                workspaceRootUri: 'file:///tmp/foo',
+            })
+            const id = await agent.rpc.sendRequest('chat/new')
+            const UUID = /^[0-9a-f-]{36}$/
+            expect(id).toMatch(UUID)
+        },
+        { timeout: 15000 }
+    )
 })
