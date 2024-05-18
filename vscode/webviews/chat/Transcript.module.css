@@ -1,7 +1,6 @@
 .container {
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
     overflow-x: hidden;
 }
 
@@ -25,9 +24,4 @@
     p {
         margin-block: 1rem;
     }
-}
-
-.model-select-field-container {
-    padding: 8px 10px 5px 12px;
-    border-bottom: solid 1px var(--vscode-sideBarSectionHeader-border);
 }

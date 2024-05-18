@@ -1,13 +1,13 @@
+import type { PopoverContentProps } from '@radix-ui/react-popover'
 import { type ModelProvider, ModelUIGroup } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { ChevronDownIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo, useState } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { chatModelIconComponent } from '../ChatModelIcon'
-import { Button } from '../shadcn/ui/button'
 import { Command, CommandGroup, CommandItem, CommandList } from '../shadcn/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '../shadcn/ui/popover'
+import { ToolbarButton } from '../shadcn/ui/toolbar'
 import { cn } from '../shadcn/utils'
 import styles from './ModelSelectField.module.css'
 
@@ -27,11 +27,21 @@ export const ModelSelectField: React.FunctionComponent<{
 
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
 
+    align?: PopoverContentProps['align']
+    onCloseByEscape?: () => void
     className?: string
 
     /** For storybooks only. */
     __storybook__open?: boolean
-}> = ({ models, onModelSelect: parentOnModelSelect, userInfo, className, __storybook__open }) => {
+}> = ({
+    models,
+    onModelSelect: parentOnModelSelect,
+    userInfo,
+    align,
+    onCloseByEscape,
+    className,
+    __storybook__open,
+}) => {
     const usableModels = useMemo(() => models.filter(m => !m.deprecated), [models])
     const selectedModel = usableModels.find(m => m.default) ?? usableModels[0]
 
@@ -137,6 +147,15 @@ export const ModelSelectField: React.FunctionComponent<{
         [onModelSelect, usableModels]
     )
 
+    const onKeyDown = useCallback(
+        (event: React.KeyboardEvent<HTMLDivElement>) => {
+            if (event.key === 'Escape') {
+                onCloseByEscape?.()
+            }
+        },
+        [onCloseByEscape]
+    )
+
     if (!usableModels.length || usableModels.length < 1) {
         return null
     }
@@ -145,29 +164,25 @@ export const ModelSelectField: React.FunctionComponent<{
     return (
         <Popover open={open} onOpenChange={onOpenChange}>
             <PopoverTrigger asChild>
-                <Button
-                    variant="combobox"
+                <ToolbarButton
+                    variant="secondary"
                     role="combobox"
                     aria-expanded={open}
+                    iconEnd={readOnly ? undefined : 'chevron'}
                     className={cn('tw-justify-between', className)}
                     disabled={readOnly}
                     aria-label="Select a model"
+                    tabIndex={-1} // TODO(sqs): should add a keyboard shortcut for this
                 >
                     {value !== undefined
                         ? options.find(option => option.value === value)?.title
                         : 'Select...'}
-                    {!readOnly && (
-                        <ChevronDownIcon
-                            strokeWidth={1.25}
-                            size={12}
-                            className="tw-ml-3 tw-shrink-0 tw-opacity-50"
-                        />
-                    )}
-                </Button>
+                </ToolbarButton>
             </PopoverTrigger>
             <PopoverContent
                 className="tw-min-w-[325px] tw-w-[unset] tw-max-w-[90%] !tw-p-0"
-                align="start"
+                align={align}
+                onKeyDown={onKeyDown}
             >
                 <Command loop={true} defaultValue={value} tabIndex={0} className="focus:tw-outline-none">
                     <CommandList>

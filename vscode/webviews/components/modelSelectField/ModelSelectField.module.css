@@ -52,9 +52,12 @@
     color: var(--vscode-badge-foreground);
 }
 
-/* Only show provider name and Default badge in dropdown menu, not in the button. */
+/* Show minimal form in the button. */
 button > .model-title-with-icon {
-    .model-provider, .badge {
+    .model-name {
+        font-weight: normal;
+    }
+    & > svg, .model-provider, .badge {
         display: none;
     }
 }

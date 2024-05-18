@@ -95,11 +95,6 @@ test.extend<ExpectedEvents>({
     await expect(chatPanel.getByRole('link', { name: 'index.html:1-11' })).toBeVisible()
     // If a context item is a subcontext of an existing context item, it should not be added to avoid duplication.
     await expect(chatPanel.getByRole('link', { name: 'index.html:2-10' })).not.toBeVisible()
-    const disabledEditButtons = chatPanel.getByTitle('Cannot Edit Command').locator('i')
-    const editLastMessageButton = chatPanel.getByRole('button', { name: /^Edit Last Message/ })
-    // Edit button and Edit Last Message are shown on all command messages.
-    await expect(disabledEditButtons).toHaveCount(0)
-    await expect(editLastMessageButton).toBeVisible()
 
     // Smell Command
     // Running a command again should reuse the current cursor position
@@ -108,8 +103,6 @@ test.extend<ExpectedEvents>({
     await expectContextCellCounts(contextCell, { files: 1 })
     await contextCell.click()
     await expect(chatPanel.getByRole('link', { name: 'index.html:2-10' })).toBeVisible()
-    await expect(disabledEditButtons).toHaveCount(0)
-    await expect(editLastMessageButton).toBeVisible()
 })
 
 test.extend<ExpectedEvents>({

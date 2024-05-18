@@ -5,6 +5,7 @@ import {
     $createTextNode,
     $getRoot,
     $getSelection,
+    $insertNodes,
     CLEAR_HISTORY_COMMAND,
     type LexicalEditor,
     type SerializedEditorState,
@@ -23,6 +24,8 @@ import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
 
 interface Props extends KeyboardEventPluginProps {
     editorClassName?: string
+    contentEditableClassName?: string
+    seamless?: boolean
 
     placeholder?: string
 
@@ -38,7 +41,8 @@ interface Props extends KeyboardEventPluginProps {
 export interface PromptEditorRefAPI {
     setEditorState(value: SerializedPromptEditorState | null): void
     getSerializedValue(): SerializedPromptEditorValue
-    setFocus(focus: boolean): void
+    setFocus(focus: boolean, moveCursorToEnd?: boolean): void
+    appendText(text: string, ensureWhitespaceBefore?: boolean): void
     addContextItemAsToken(items: ContextItem[]): void
 }
 
@@ -47,6 +51,8 @@ export interface PromptEditorRefAPI {
  */
 export const PromptEditor: FunctionComponent<Props> = ({
     editorClassName,
+    contentEditableClassName,
+    seamless,
     placeholder,
     initialEditorState,
     onChange,
@@ -87,15 +93,34 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 }
                 return toSerializedPromptEditorValue(editorRef.current)
             },
-            setFocus(focus) {
+            setFocus(focus, moveCursorToEnd): void {
                 const editor = editorRef.current
                 if (editor) {
                     if (focus) {
-                        editor.focus()
+                        editor.focus(
+                            moveCursorToEnd
+                                ? () => {
+                                      editor.update(() => $getRoot().selectEnd())
+                                  }
+                                : undefined
+                        )
                     } else {
                         editor.blur()
                     }
                 }
+            },
+            appendText(text: string, ensureWhitespaceBefore?: boolean): void {
+                editorRef?.current?.update(() => {
+                    const root = $getRoot()
+                    const needsWhitespaceBefore = !/(^|\s)$/.test(root.getTextContent())
+                    root.selectEnd()
+                    $insertNodes([
+                        $createTextNode(
+                            `${ensureWhitespaceBefore && needsWhitespaceBefore ? ' ' : ''}${text}`
+                        ),
+                    ])
+                    root.selectEnd()
+                })
             },
             addContextItemAsToken(items: ContextItem[]) {
                 editorRef?.current?.update(() => {
@@ -121,7 +146,11 @@ export const PromptEditor: FunctionComponent<Props> = ({
 
     return (
         <BaseEditor
-            className={clsx(styles.editor, editorClassName, disabled && styles.disabled)}
+            className={clsx(styles.editor, editorClassName, {
+                [styles.disabled]: disabled,
+                [styles.seamless]: seamless,
+            })}
+            contentEditableClassName={contentEditableClassName}
             initialEditorState={initialEditorState?.lexicalEditorState ?? null}
             onChange={onBaseEditorChange}
             onFocusChange={onFocusChange}

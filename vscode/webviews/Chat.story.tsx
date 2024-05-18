@@ -18,10 +18,8 @@ const meta: Meta<typeof Chat> = {
     args: {
         transcript: FIXTURE_TRANSCRIPT.simple2,
         messageInProgress: null,
-        chatIDHistory: [],
         chatEnabled: true,
         userInfo: FIXTURE_USER_ACCOUNT_INFO,
-        isWebviewActive: true,
         vscodeAPI: {
             postMessage: () => {},
             onMessage: () => () => {},
@@ -39,3 +37,5 @@ const meta: Meta<typeof Chat> = {
 export default meta
 
 export const Default: StoryObj<typeof meta> = {}
+
+export const Disabled: StoryObj<typeof meta> = { args: { chatEnabled: false } }

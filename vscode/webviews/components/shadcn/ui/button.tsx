@@ -11,8 +11,8 @@ const buttonVariants = cva(
                 default: 'tw-bg-primary tw-text-primary-foreground hover:tw-bg-primary/90',
                 outline:
                     'tw-border tw-border-input tw-bg-background hover:tw-bg-accent hover:tw-text-accent-foreground',
-                combobox:
-                    'tw-border tw-border-input tw-bg-background hover:tw-bg-accent hover:tw-text-accent-foreground disabled:!tw-opacity-100 disabled:tw-border-transparent',
+                toolbarItem:
+                    'tw-border tw-border-input tw-bg-none hover:tw-text-accent-foreground disabled:!tw-opacity-100 disabled:tw-border-transparent',
                 secondary: 'tw-bg-secondary tw-text-secondary-foreground hover:tw-bg-secondary/80',
                 ghost: 'hover:tw-bg-accent hover:tw-text-accent-foreground',
                 link: 'tw-text-primary tw-underline-offset-4 hover:tw-underline',
@@ -38,12 +38,10 @@ export interface ButtonProps
     asChild?: boolean
 }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ({ className, variant, size, asChild = false, ...props }, ref) => {
         const Comp = asChild ? Slot : 'button'
         return <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
     }
 )
 Button.displayName = 'Button'
-
-export { Button, buttonVariants }
