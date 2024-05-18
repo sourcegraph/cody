@@ -537,11 +537,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
             if (!action || !action.command) {
                 throw new Error(`codeActions/trigger: unknown ID ${id}`)
             }
+            const args: ExecuteEditArguments = action.command.arguments?.[0]
+            if (!args) {
+                throw new Error(`codeActions/trigger: no arguments for ID ${id}`)
+            }
             return this.createEditTask(
-                vscode.commands.executeCommand<CommandResult | undefined>(
-                    action.command.command,
-                    ...(action.command.arguments ?? [])
-                )
+                executeEdit(args).then<CommandResult | undefined>(task => ({ type: 'edit', task }))
             )
         })
 
@@ -1159,6 +1160,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
     public createFixupControlApplicator(
         files: FixupActor & FixupFileCollection
     ): FixupControlApplicator {
+        console.log('CREATE FIXUP CONTROL APPLICATOR')
         this.fixups = new AgentFixupControls(files, this.notify.bind(this))
         return this.fixups
     }

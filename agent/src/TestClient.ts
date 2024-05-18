@@ -353,6 +353,20 @@ export class TestClient extends MessageHandler {
         this.registerNotification('debug/message', message => {
             this.logMessage(message)
         })
+        this.registerNotification('editTask/didUpdate', params => {
+            this.taskUpdate.fire(params)
+        })
+        this.registerNotification('editTask/didDelete', params => {
+            this.taskDelete.fire(params)
+        })
+
+        this.registerNotification('webview/postMessage', params => {
+            this.webviewMessages.push(params)
+            this.webviewMessagesEmitter.fire(params)
+        })
+        this.registerNotification('remoteRepo/didChange', () => {
+            // Do nothing
+        })
     }
 
     private editDocument(params: TextDocumentEditParams): {
@@ -485,6 +499,7 @@ export class TestClient extends MessageHandler {
      * Promise that resolves when the provided task has reached the 'applied' state.
      */
     public taskHasReachedAppliedPhase(params: EditTask): Promise<void> {
+        console.log({ params })
         switch (params.state) {
             case CodyTaskState.Applied:
                 return Promise.resolve()
@@ -583,21 +598,6 @@ export class TestClient extends MessageHandler {
     }
 
     public async initialize(additionalConfig?: Partial<ExtensionConfiguration>): Promise<ServerInfo> {
-        this.registerNotification('editTask/didUpdate', params => {
-            this.taskUpdate.fire(params)
-        })
-        this.registerNotification('editTask/didDelete', params => {
-            this.taskDelete.fire(params)
-        })
-
-        this.registerNotification('webview/postMessage', params => {
-            this.webviewMessages.push(params)
-            this.webviewMessagesEmitter.fire(params)
-        })
-        this.registerNotification('remoteRepo/didChange', () => {
-            // Do nothing
-        })
-
         this.conn.listen()
 
         try {

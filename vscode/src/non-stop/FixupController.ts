@@ -1156,6 +1156,7 @@ export class FixupController
             return
         }
         // Save states of the task
+        console.log(`APPLICATOR ${this.controlApplicator}`)
         this.controlApplicator.didUpdateTask(task)
 
         if (task.state === CodyTaskState.Applying) {

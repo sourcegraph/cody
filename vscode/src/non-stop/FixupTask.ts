@@ -95,6 +95,7 @@ export class FixupTask {
             console.log(new Error().stack)
         }
         this.state_ = state
+        console.log(`FixupTask ${this.id} state changed to ${state}`)
         this.stateChanges.fire(state)
     }
 
