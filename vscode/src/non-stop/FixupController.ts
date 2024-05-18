@@ -356,6 +356,7 @@ export class FixupController
             telemetryMetadata
         )
         this.tasks.set(task.id, task)
+        logDebug('FixupController:createTask', intent, task.id)
         return task
     }
 
@@ -678,10 +679,11 @@ export class FixupController
             edit = new vscode.WorkspaceEdit()
         }
 
-        // Always ensure that any scheduled diffs have ran before applying edits
+        // Always ensure that any scheduled diffs have run before applying edits.
         this.updateDiffs()
 
-        // We will format this code once applied, so we avoid placing an undo stop after this edit to avoid cluttering the undo stack.
+        // We will format this code once applied, so we avoid placing an undo stop
+        // after this edit to avoid cluttering the undo stack.
         const applyEditOptions = { undoStopBefore: true, undoStopAfter: false }
 
         let editOk: boolean
@@ -772,7 +774,7 @@ export class FixupController
         task: FixupTask,
         options?: { undoStopBefore: boolean; undoStopAfter: boolean }
     ): Promise<boolean> {
-        logDebug('FixupController:edit', 'inserting')
+        logDebug('FixupController:insertEdit', `taskId=${task.id}`)
         const text = task.replacement
         // If we have specified a dedicated insertion point - use that.
         // Otherwise fall back to using the start of the selection range.
@@ -1136,7 +1138,7 @@ export class FixupController
             // Not a transition--nothing to do.
             return
         }
-
+        logDebug('FixupController:setTaskState', `${task.id} ${oldState} --> ${state}`)
         task.state = state
 
         if (oldState !== CodyTaskState.Working && task.state === CodyTaskState.Working) {
@@ -1174,6 +1176,7 @@ export class FixupController
         for (const disposable of this._disposables) {
             disposable.dispose()
         }
+        logDebug('FixupController:dispose', 'disposed all tasks')
         this._disposables = []
     }
 }

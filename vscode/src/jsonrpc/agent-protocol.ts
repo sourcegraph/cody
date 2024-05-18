@@ -238,7 +238,12 @@ export type ServerRequests = {
 
     'textDocument/edit': [TextDocumentEditParams, boolean]
     'textDocument/openUntitledDocument': [UntitledTextDocument, boolean]
+
+    // This is sent, for instance, when a fixup task creates a new file,
+    // instructing the client to show it before the streaming starts
+    // filling in the contents.
     'textDocument/show': [{ uri: string; options?: TextDocumentShowOptionsParams }, boolean]
+
     'workspace/edit': [WorkspaceEditParams, boolean]
 
     // Low-level API to handle requests from the VS Code extension to create a
