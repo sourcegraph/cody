@@ -34,7 +34,11 @@
     "assets": "dist/*.{wasm,map}"
   },
   "bin": "dist/index.js",
-  "files": ["dist/index.js", "dist/index.js.map", "dist/*.wasm"],
+  "files": [
+    "dist/index.js",
+    "dist/index.js.map",
+    "dist/*.wasm"
+  ],
   "dependencies": {
     "@pollyjs/core": "^6.0.6",
     "@pollyjs/persister": "^6.0.6",
@@ -46,7 +50,7 @@
     "csv-writer": "^1.6.0",
     "dedent": "^0.7.0",
     "env-paths": "^3.0.0",
-    "fast-myers-diff": "^3.1.0",
+    "fast-myers-diff": "^3.2.0",
     "js-levenshtein": "^1.1.6",
     "mac-ca": "^2.0.3",
     "minimatch": "^9.0.3",

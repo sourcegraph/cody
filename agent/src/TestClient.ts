@@ -343,9 +343,12 @@ export class TestClient extends MessageHandler {
             return Promise.resolve(true)
         })
         this.registerRequest('textDocument/edit', params => {
-            console.log('textDocument/edit', params)
             this.textDocumentEditParams.push(params)
-            return Promise.resolve(this.editDocument(params).success)
+            const { success, protocolDocument } = this.editDocument(params)
+            if (protocolDocument) {
+                this.notify('textDocument/didChange', protocolDocument.underlying)
+            }
+            return Promise.resolve(success)
         })
         this.registerRequest('textDocument/show', () => {
             return Promise.resolve(true)
@@ -499,7 +502,6 @@ export class TestClient extends MessageHandler {
      * Promise that resolves when the provided task has reached the 'applied' state.
      */
     public taskHasReachedAppliedPhase(params: EditTask): Promise<void> {
-        console.log({ params })
         switch (params.state) {
             case CodyTaskState.Applied:
                 return Promise.resolve()
@@ -514,7 +516,6 @@ export class TestClient extends MessageHandler {
         return new Promise<void>((resolve, reject) => {
             disposables = [
                 this.onDidUpdateTask(({ id, state, error }) => {
-                    console.log({ id, state, error })
                     if (id === params.id) {
                         switch (state) {
                             case CodyTaskState.Applied:
@@ -632,7 +633,6 @@ export class TestClient extends MessageHandler {
     }
 
     public async acceptEditTask(uri: vscode.Uri, task: EditTask): Promise<void> {
-        console.log('Accepting edit task', task)
         await this.taskHasReachedAppliedPhase(task)
         const lenses = this.codeLenses.get(uri.toString()) ?? []
         if (lenses.length !== 0) {

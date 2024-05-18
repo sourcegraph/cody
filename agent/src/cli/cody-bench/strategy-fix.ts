@@ -1,3 +1,5 @@
+import { calcSlices } from 'fast-myers-diff'
+
 import ts from 'typescript'
 import * as vscode from 'vscode'
 import { TestClient } from '../../TestClient'
@@ -75,10 +77,11 @@ export async function evaluateFixStrategy(
                     }
                     const editTask = await client.request('codeActions/trigger', { id: fixAction.id })
                     await client.acceptEditTask(params.uri, editTask)
-                    const newDiagnostics = await client.request('testing/diagnostics', {
-                        uri: params.uri.toString(),
-                    })
-                    console.log({ editTask, newDiagnostics })
+                    // const newDiagnostics = await client.request('testing/diagnostics', {
+                    //     uri: params.uri.toString(),
+                    // })
+                    const newText = client.workspace.getDocument(params.uri)?.getText() ?? ''
+                    console.log(renderUnifiedDiff(params.content.split('\n'), newText.split('\n')))
                     // TODO: publish diagnostic, trigger code actions
                     correctDiagnostics++
                 }
@@ -87,6 +90,16 @@ export async function evaluateFixStrategy(
         return undefined
     })
     console.log({ correctDiagnostics, totalDiagnostics, totalCandidates })
+}
+
+function renderUnifiedDiff(a: string[], b: string[]): string {
+    const patch = calcSlices(a, b)
+    const out = []
+    for (const [kind, text] of patch) {
+        const prefix = kind === 0 ? ' ' : kind === 1 ? '+' : '-'
+        out.push(`${prefix} ${text}`)
+    }
+    return out.join('\n')
 }
 
 interface FixCandidate {

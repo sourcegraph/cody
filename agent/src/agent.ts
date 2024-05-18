@@ -1160,7 +1160,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
     public createFixupControlApplicator(
         files: FixupActor & FixupFileCollection
     ): FixupControlApplicator {
-        console.log('CREATE FIXUP CONTROL APPLICATOR')
         this.fixups = new AgentFixupControls(files, this.notify.bind(this))
         return this.fixups
     }
