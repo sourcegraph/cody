@@ -29,7 +29,6 @@ sealed class ExtensionMessage {
           "enhanced-context" -> context.deserialize<`enhanced-contextExtensionMessage`>(element, `enhanced-contextExtensionMessage`::class.java)
           "attribution" -> context.deserialize<AttributionExtensionMessage>(element, AttributionExtensionMessage::class.java)
           "setChatEnabledConfigFeature" -> context.deserialize<SetChatEnabledConfigFeatureExtensionMessage>(element, SetChatEnabledConfigFeatureExtensionMessage::class.java)
-          "webview-state" -> context.deserialize<`webview-stateExtensionMessage`>(element, `webview-stateExtensionMessage`::class.java)
           "context/remote-repos" -> context.deserialize<`context_remote-reposExtensionMessage`>(element, `context_remote-reposExtensionMessage`::class.java)
           "setConfigFeatures" -> context.deserialize<SetConfigFeaturesExtensionMessage>(element, SetConfigFeaturesExtensionMessage::class.java)
           "allMentionProvidersMetadata" -> context.deserialize<AllMentionProvidersMetadataExtensionMessage>(element, AllMentionProvidersMetadataExtensionMessage::class.java)
@@ -203,16 +202,6 @@ data class SetChatEnabledConfigFeatureExtensionMessage(
 
   enum class TypeEnum {
     @SerializedName("setChatEnabledConfigFeature") SetChatEnabledConfigFeature,
-  }
-}
-
-data class `webview-stateExtensionMessage`(
-  val type: TypeEnum, // Oneof: webview-state
-  val isActive: Boolean,
-) : ExtensionMessage() {
-
-  enum class TypeEnum {
-    @SerializedName("webview-state") `Webview-state`,
   }
 }
 
