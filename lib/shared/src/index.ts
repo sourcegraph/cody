@@ -301,5 +301,5 @@ export { URL_CONTEXT_MENTION_PROVIDER } from './mentions/providers/urlMentions'
 export * from './githubClient'
 export {
     setOpenCtxClient,
-    getOpenCtxClient,
+    openCtx,
 } from './context/openctx/api'

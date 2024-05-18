@@ -1,6 +1,6 @@
 import type { ContextItem, ContextItemWithContent } from '../codebase-context/messages'
 import type { Configuration } from '../configuration'
-import { getOpenCtxClient } from '../context/openctx/api'
+import { openCtx } from '../context/openctx/api'
 import type { PromptString } from '../prompt/prompt-string'
 import { GITHUB_CONTEXT_MENTION_PROVIDER } from './providers/githubMentions'
 import { PACKAGE_CONTEXT_MENTION_PROVIDER } from './providers/packageMentions'
@@ -130,9 +130,8 @@ export async function allMentionProvidersMetadata(
 }
 
 export async function openCtxMentionProviders(): Promise<ContextMentionProviderMetadata[]> {
-    const client = await getOpenCtxClient()
+    const client = openCtx.client
     console.log('client client client', client)
-    debugger
     if (!client) {
         return []
     }
@@ -140,12 +139,11 @@ export async function openCtxMentionProviders(): Promise<ContextMentionProviderM
     const providers = await client.capabilities({})
 
     console.log('providers client client', providers)
-    debugger
 
     return providers.map(provider => ({
         id: provider.providerUri,
-        title: provider.meta.name,
-        queryLabel: '',
-        emptyLabel: '',
+        title: provider.meta.name + ' (by OpenCtx)',
+        queryLabel: `Search using ${provider.meta.name} provider`,
+        emptyLabel: 'No results found',
     }))
 }

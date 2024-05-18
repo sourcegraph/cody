@@ -204,6 +204,8 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
 
         case 'github_issue':
             return `@github:issue:${contextItem.owner}/${contextItem.repoName}/${contextItem.issueNumber}`
+        case 'openctx':
+            return `openctx:${contextItem.uri}`
     }
     // @ts-ignore
     throw new Error(`unrecognized context item type ${contextItem.type}`)

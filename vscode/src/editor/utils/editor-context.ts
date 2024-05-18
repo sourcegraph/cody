@@ -15,10 +15,10 @@ import {
     TokenCounter,
     contextFiltersProvider,
     displayPath,
-    getOpenCtxClient,
     isCodyIgnoredFile,
     isDefined,
     isWindows,
+    openCtx,
     toRangeData,
 } from '@sourcegraph/cody-shared'
 
@@ -325,8 +325,8 @@ async function resolveContextMentionProviderContextItem(
         return []
     }
 
-    const openctxClient = getOpenCtxClient()
-    if (!openctxClient) {
+    const openCtxClient = openCtx.client
+    if (!openCtxClient) {
         return []
     }
 
@@ -335,7 +335,7 @@ async function resolveContextMentionProviderContextItem(
         uri: item.uri.toString(),
     }
 
-    const items = await openctxClient.items({ message: input.toString(), mention }, providerUri)
+    const items = await openCtxClient.items({ message: input.toString(), mention }, item.providerUri)
 
     return items
         .map((item): ContextItemWithContent | null =>
@@ -343,9 +343,10 @@ async function resolveContextMentionProviderContextItem(
                 ? {
                       type: 'openctx',
                       title: item.title,
-                      uri: URI.parse(item.url || ''),
+                      uri: URI.parse(item.url || item.providerUri),
                       providerUri: item.providerUri,
                       content: item.ai.content,
+                      provider: 'openctx',
                   }
                 : null
         )

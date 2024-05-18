@@ -2,14 +2,12 @@ import type { Decorator } from '@storybook/react'
 
 import {
     type ModelProvider,
-    allMentionProvidersMetadata,
     getDotComDefaultModels,
-    getOpenCtxClient,
     isWindows,
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { type CSSProperties, useMemo, useState } from 'react'
+import { type CSSProperties, useState } from 'react'
 import { URI } from 'vscode-uri'
 import '../../node_modules/@vscode/codicons/dist/codicon.css'
 import { type ChatModelContext, ChatModelContextProvider } from '../chat/models/chatModelContext'
@@ -79,6 +77,7 @@ if (!(window as any).acquireVsCodeApi) {
 }
 
 export const ContextProvidersDecorator: Decorator = (Story, context) => {
+    /*
     const experimentalContextProviders = context.globals.experimentalContextProviders
     // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
     const providers = useMemo(
@@ -86,10 +85,11 @@ export const ContextProvidersDecorator: Decorator = (Story, context) => {
             experimentalContextProviders
                 ? allMentionProvidersMetadata(experimentalContextProviders)
                 : [],
-        [experimentalContextProviders, getOpenCtxClient()]
+        [experimentalContextProviders, openCtx.client]
     )
+    */
     return (
-        <WithContextProviders value={{ providers }}>
+        <WithContextProviders>
             <Story />
         </WithContextProviders>
     )

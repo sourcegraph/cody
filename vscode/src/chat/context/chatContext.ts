@@ -8,7 +8,7 @@ import {
     PACKAGE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     URL_CONTEXT_MENTION_PROVIDER,
-    getOpenCtxClient,
+    openCtx,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
@@ -61,7 +61,7 @@ export async function getChatContextItemsForMention(
         }
 
         default: {
-            const openctxClient = getOpenCtxClient()
+            const openctxClient = openCtx.client
             if (!openctxClient) {
                 return []
             }
@@ -73,10 +73,11 @@ export async function getChatContextItemsForMention(
 
             return items.map(
                 (item): ContextItemOpenCtx => ({
+                    ...item,
                     type: 'openctx',
-                    title: item.title,
                     uri: URI.parse(item.uri),
                     providerUri: item.providerUri,
+                    provider: 'openctx',
                 })
             )
         }
