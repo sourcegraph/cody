@@ -19,16 +19,10 @@ const meta: Meta<typeof Transcript> = {
             mapping: FIXTURE_TRANSCRIPT,
             control: { type: 'select' },
         },
-        messageBeingEdited: {
-            name: 'messageBeingEdited',
-            control: { type: 'number', step: 2 },
-        },
     },
     args: {
         transcript: FIXTURE_TRANSCRIPT.simple,
         messageInProgress: null,
-        messageBeingEdited: undefined,
-        setMessageBeingEdited: () => {},
         feedbackButtonsOnSubmit: () => {},
         copyButtonOnSubmit: () => {},
         insertButtonOnSubmit: () => {},
@@ -56,19 +50,6 @@ export const Empty: StoryObj<typeof meta> = {
 
 export const WithContext: StoryObj<typeof meta> = {
     args: {
-        transcript: FIXTURE_TRANSCRIPT.explainCode2,
-    },
-}
-
-export const Editing: StoryObj<typeof meta> = {
-    args: {
-        messageBeingEdited: 0,
-    },
-}
-
-export const EditingWithContext: StoryObj<typeof meta> = {
-    args: {
-        messageBeingEdited: 0,
         transcript: FIXTURE_TRANSCRIPT.explainCode2,
     },
 }

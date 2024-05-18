@@ -1,0 +1,18 @@
+.button {
+    kbd {
+        font-family: inherit;
+        font-size: 80%;
+        padding: 0.05rem 0.2rem 0.05rem 0;
+        display: inline-flex;
+        align-items: center;
+        line-height: 1;
+        margin-bottom: -1px;
+        opacity: 0.8;
+        border: none !important; /* override VS Code's builtin style */
+    }
+}
+
+/* State: Disabled or editor unfocused */
+.button:is(:not(.editorFocused), :disabled) {
+    --tint-color: color-mix(in srgb, var(--vscode-button-secondaryBackground) 60%, var(--vscode-button-secondaryForeground));
+}

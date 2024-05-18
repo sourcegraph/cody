@@ -1,0 +1,14 @@
+.container {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap-reverse;
+    gap: 3px;
+
+    margin: 0;
+    margin-left: -4px; /* make leftmost toolbar icon flush with text */
+    padding: 0;
+}
+
+.spacer {
+    flex: 1;
+}
