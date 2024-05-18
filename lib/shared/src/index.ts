@@ -270,7 +270,6 @@ export {
     scanForMentionTriggerInUserTextInput,
 } from './mentions/query'
 export {
-    CONTEXT_MENTION_PROVIDERS,
     type ContextMentionProvider,
     type ContextItemProps,
     allMentionProvidersMetadata,

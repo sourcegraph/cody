@@ -1,13 +1,9 @@
 import {
-    CONTEXT_MENTION_PROVIDERS,
     type ContextItem,
     type ContextItemOpenCtx,
-    type ContextMentionProvider,
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionQuery,
-    PACKAGE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
-    URL_CONTEXT_MENTION_PROVIDER,
     openCtx,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -82,26 +78,4 @@ export async function getChatContextItemsForMention(
             )
         }
     }
-}
-
-export function getEnabledContextMentionProviders(): ContextMentionProvider[] {
-    const isAllEnabled =
-        vscode.workspace.getConfiguration('cody').get<boolean>('experimental.noodle') === true
-    if (isAllEnabled) {
-        return CONTEXT_MENTION_PROVIDERS
-    }
-
-    const isURLProviderEnabled =
-        vscode.workspace.getConfiguration('cody').get<boolean>('experimental.urlContext') === true
-    const isPackageProviderEnabled =
-        vscode.workspace.getConfiguration('cody').get<boolean>('experimental.packageContext') === true
-
-    if (isURLProviderEnabled || isPackageProviderEnabled) {
-        return CONTEXT_MENTION_PROVIDERS.filter(
-            provider =>
-                (isURLProviderEnabled && provider.id === URL_CONTEXT_MENTION_PROVIDER.id) ||
-                (isPackageProviderEnabled && provider.id === PACKAGE_CONTEXT_MENTION_PROVIDER.id)
-        )
-    }
-    return []
 }

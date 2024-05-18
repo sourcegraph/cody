@@ -17,7 +17,6 @@ export type ContextMentionProviderID = string
  *
  * This API is *experimental* and subject to rapid, unannounced change.
  *
- * In VS Code, use {@link getEnabledContextMentionProviders} instead of this.
  */
 export const CONTEXT_MENTION_PROVIDERS: ContextMentionProvider[] = [
     URL_CONTEXT_MENTION_PROVIDER,
