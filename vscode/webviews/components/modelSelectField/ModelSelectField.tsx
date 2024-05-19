@@ -1,11 +1,25 @@
 import { type ModelProvider, ModelUIGroup } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { type FunctionComponent, useCallback, useMemo } from 'react'
+import { ChevronDownIcon } from 'lucide-react'
+import { type FunctionComponent, type ReactNode, useCallback, useMemo, useState } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { chatModelIconComponent } from '../ChatModelIcon'
-import { ComboBox, type SelectListOption } from '../shadcn/ui/combobox'
+import { Button } from '../shadcn/ui/button'
+import { Command, CommandGroup, CommandItem, CommandList } from '../shadcn/ui/command'
+import { Popover, PopoverContent, PopoverTrigger } from '../shadcn/ui/popover'
+import { cn } from '../shadcn/utils'
 import styles from './ModelSelectField.module.css'
+
+type Value = string
+
+interface SelectListOption {
+    value: Value | undefined
+    title: string | ReactNode
+    filterKeywords?: string[]
+    group?: string
+    disabled?: boolean
+}
 
 export const ModelSelectField: React.FunctionComponent<{
     models: ModelProvider[]
@@ -49,18 +63,20 @@ export const ModelSelectField: React.FunctionComponent<{
         [showCodyProBadge, parentOnModelSelect]
     )
 
-    const onPopoverOpen = useCallback((): void => {
-        // Trigger `CodyVSCodeExtension:openLLMDropdown:clicked` only when dropdown is about to be opened.
-        getVSCodeAPI().postMessage({
-            command: 'event',
-            eventName: 'CodyVSCodeExtension:openLLMDropdown:clicked',
-            properties: undefined,
-        })
-    }, [])
+    const readOnly = !userInfo.isDotComUser
+    const [open, setOpen] = useState(__storybook__open && !readOnly)
 
-    if (!usableModels.length || usableModels.length < 1) {
-        return null
-    }
+    const onOpenChange = useCallback((open: boolean): void => {
+        setOpen(open)
+        if (open) {
+            // Trigger `CodyVSCodeExtension:openLLMDropdown:clicked` only when dropdown is about to be opened.
+            getVSCodeAPI().postMessage({
+                command: 'event',
+                eventName: 'CodyVSCodeExtension:openLLMDropdown:clicked',
+                properties: undefined,
+            })
+        }
+    }, [])
 
     const options = useMemo<SelectListOption[]>(
         () =>
@@ -76,7 +92,6 @@ export const ModelSelectField: React.FunctionComponent<{
                                 modelAvailability={modelAvailability(userInfo, m)}
                             />
                         ),
-                        filterKeywords: [m.title, m.provider],
                         // needs-cody-pro models should be clickable (not disabled) so the user can
                         // be taken to the upgrade page.
                         disabled: !['available', 'needs-cody-pro'].includes(
@@ -87,6 +102,33 @@ export const ModelSelectField: React.FunctionComponent<{
             ),
         [usableModels, userInfo]
     )
+    const optionsByGroup: { group: string; options: SelectListOption[] }[] = useMemo(() => {
+        const groups = new Map<string, SelectListOption[]>()
+        for (const option of options) {
+            const groupOptions = groups.get(option.group ?? '')
+            if (groupOptions) {
+                groupOptions.push(option)
+            } else {
+                groups.set(option.group ?? '', [option])
+            }
+        }
+        return Array.from(groups.entries())
+            .sort((a, b) => {
+                const aIndex = GROUP_ORDER.indexOf(a[0])
+                const bIndex = GROUP_ORDER.indexOf(b[0])
+                if (aIndex !== -1 && bIndex !== -1) {
+                    return aIndex - bIndex
+                }
+                if (aIndex !== -1) {
+                    return -1
+                }
+                if (bIndex !== -1) {
+                    return 1
+                }
+                return 0
+            })
+            .map(([group, options]) => ({ group, options }))
+    }, [options])
 
     const onChange = useCallback(
         (value: string | undefined) => {
@@ -95,19 +137,61 @@ export const ModelSelectField: React.FunctionComponent<{
         [onModelSelect, usableModels]
     )
 
+    if (!usableModels.length || usableModels.length < 1) {
+        return null
+    }
+
+    const value = selectedModel.model
     return (
-        <ComboBox
-            options={options}
-            groupOrder={GROUP_ORDER}
-            pluralNoun="models"
-            value={selectedModel.model}
-            onChange={onChange}
-            className={className}
-            readOnly={!userInfo.isDotComUser}
-            onOpen={onPopoverOpen}
-            __storybook__open={__storybook__open}
-            aria-label="Choose a model"
-        />
+        <Popover open={open} onOpenChange={onOpenChange}>
+            <PopoverTrigger asChild>
+                <Button
+                    variant="combobox"
+                    role="combobox"
+                    aria-expanded={open}
+                    className={cn('tw-justify-between', className)}
+                    disabled={readOnly}
+                    aria-label="Select a model"
+                >
+                    {value !== undefined
+                        ? options.find(option => option.value === value)?.title
+                        : 'Select...'}
+                    {!readOnly && (
+                        <ChevronDownIcon
+                            strokeWidth={1.25}
+                            size={12}
+                            className="tw-ml-3 tw-shrink-0 tw-opacity-50"
+                        />
+                    )}
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent
+                className="tw-min-w-[325px] tw-w-[unset] tw-max-w-[90%] !tw-p-0"
+                align="start"
+            >
+                <Command loop={true} defaultValue={value} tabIndex={0} className="focus:tw-outline-none">
+                    <CommandList>
+                        {optionsByGroup.map(({ group, options }) => (
+                            <CommandGroup heading={group} key={group}>
+                                {options.map(option => (
+                                    <CommandItem
+                                        key={option.value}
+                                        value={option.value}
+                                        onSelect={currentValue => {
+                                            onChange(currentValue)
+                                            setOpen(false)
+                                        }}
+                                        disabled={option.disabled}
+                                    >
+                                        {option.title}
+                                    </CommandItem>
+                                ))}
+                            </CommandGroup>
+                        ))}
+                    </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
     )
 }
 
