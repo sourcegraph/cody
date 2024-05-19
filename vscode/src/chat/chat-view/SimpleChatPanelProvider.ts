@@ -763,7 +763,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     // =======================================================================
 
     private postEmptyMessageInProgress(): void {
-        this.postViewTranscript({ speaker: 'assistant' })
+        this.postViewTranscript({ speaker: 'assistant', model: this.chatModel.modelID })
     }
 
     private postViewTranscript(messageInProgress?: ChatMessage): void {
@@ -931,6 +931,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 this.postViewTranscript({
                     speaker: 'assistant',
                     text: PromptString.unsafe_fromLLMResponse(content),
+                    model: this.chatModel.modelID,
                 })
             },
             close: content => {
