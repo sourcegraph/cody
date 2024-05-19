@@ -1,8 +1,12 @@
 import {
+    type Client,
     type ContextItem,
     type ContextMentionProviderMetadata,
+    type ExtHostAPI,
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionQuery,
+    createConnectionFromWebviewToExtHost,
+    hydrateAfterPostMessage,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { LRUCache } from 'lru-cache'
@@ -15,41 +19,21 @@ import {
     useRef,
     useState,
 } from 'react'
-import { getVSCodeAPI } from '../../../utils/VSCodeApi'
+import { URI } from 'vscode-uri'
 
-export interface ChatContextClient {
-    getChatContextItems(query: MentionQuery): Promise<ContextItem[]>
-}
+export interface ChatContextClient extends Pick<Client<ExtHostAPI>['proxy'], 'queryContextItems'> {}
 
-const ChatContextClientContext: React.Context<ChatContextClient> = createContext({
-    getChatContextItems(query: MentionQuery): Promise<ContextItem[]> {
-        // Adapt the VS Code webview messaging API to be RPC-like for ease of use by our callers.
-        return new Promise<ContextItem[]>((resolve, reject) => {
-            const vscodeApi = getVSCodeAPI()
-            vscodeApi.postMessage({ command: 'queryContextItems', query })
-
-            const RESPONSE_MESSAGE_TYPE = 'userContextFiles' as const
-
-            // Clean up after a while to avoid resource exhaustion in case there is a bug
-            // somewhere.
-            const MAX_WAIT_SECONDS = 15
-            const rejectTimeout = setTimeout(() => {
-                reject(new Error(`no ${RESPONSE_MESSAGE_TYPE} response after ${MAX_WAIT_SECONDS}s`))
-                dispose()
-            }, MAX_WAIT_SECONDS * 1000)
-
-            // Wait for the response. We assume the first message of the right type is the response to
-            // our call.
-            const dispose = vscodeApi.onMessage(message => {
-                if (message.type === RESPONSE_MESSAGE_TYPE) {
-                    resolve(message.userContextFiles ?? [])
-                    dispose()
-                    clearTimeout(rejectTimeout)
-                }
-            })
-        })
+const extHostClient = createConnectionFromWebviewToExtHost(
+    globalThis as any,
+    {
+        helloWorld() {
+            return Promise.resolve('Hello, world! from the webview')
+        },
     },
-})
+    { hydrate: message => hydrateAfterPostMessage(message, uri => URI.from(uri as any)) }
+)
+
+const ChatContextClientContext: React.Context<ChatContextClient> = createContext(extHostClient.proxy)
 
 export const WithChatContextClient: FunctionComponent<
     React.PropsWithChildren<{ value: ChatContextClient }>
@@ -100,12 +84,12 @@ export function useChatContextItems(
 
         if (chatContextClient) {
             chatContextClient
-                .getChatContextItems(mentionQuery)
+                .queryContextItems(mentionQuery)
                 .then(mentions => {
                     if (invalidated) {
                         return
                     }
-                    setResults(mentions)
+                    setResults(mentions ?? [])
                 })
                 .catch(error => {
                     setResults(undefined)
@@ -123,14 +107,14 @@ export function useChatContextItems(
 function memoizeChatContextClient(client: ChatContextClient): ChatContextClient {
     const cache = new LRUCache<string, ContextItem[]>({ max: 10 })
     return {
-        async getChatContextItems(query: MentionQuery): Promise<ContextItem[]> {
+        async queryContextItems(query: MentionQuery): Promise<ContextItem[]> {
             const key = JSON.stringify(query)
             const cached = cache.get(key)
             if (cached !== undefined) {
                 return cached
             }
 
-            const result = await client.getChatContextItems(query)
+            const result = (await client.queryContextItems(query)) ?? []
             cache.set(key, result)
             return result
         },
