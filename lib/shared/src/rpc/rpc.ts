@@ -1,13 +1,17 @@
 import type * as vscode from 'vscode'
 import type {
+    DataCallback,
     Disposable,
     Logger,
+    Message,
     MessageConnection,
     MessageReader,
     MessageStrategy,
     MessageWriter,
 } from 'vscode-jsonrpc'
 import {
+    AbstractMessageReader,
+    AbstractMessageWriter,
     BrowserMessageReader,
     BrowserMessageWriter,
     createMessageConnection,
@@ -50,15 +54,58 @@ export function createConnectionFromExtHostToWebview(
     options: RPCOptions
 ): Client<WebviewAPI> {
     const connection = createConnectionCommon(
-        new BrowserMessageReader(extHost),
-        new BrowserMessageWriter(extHost),
+        new WebviewMessageReader(extHost),
+        new WebviewMessageWriter(extHost),
         options
     )
     const disposable = handle<ExtHostAPI>(connection, api)
+    connection.listen()
     return {
         connection: connection,
         proxy: proxy<WebviewAPI>(connection),
         disposable: combinedDisposable(disposable, connection),
+    }
+}
+
+// TODO!(sqs)
+class WebviewMessageReader extends AbstractMessageReader {
+    constructor(readonly webview: vscode.Webview) {
+        super()
+    }
+
+    listen(callback: DataCallback): Disposable {
+        return this.webview.onDidReceiveMessage(data => {
+            callback(data)
+        })
+    }
+}
+
+class WebviewMessageWriter extends AbstractMessageWriter implements MessageWriter {
+    private errorCount: number
+
+    constructor(readonly webview: vscode.Webview) {
+        super()
+        this.errorCount = 0
+    }
+
+    public async write(msg: Message): Promise<void> {
+        try {
+            await this.webview.postMessage(msg)
+            this.errorCount = 0
+        } catch (error) {
+            this.handleError(error, msg)
+            return Promise.reject(error)
+        }
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private handleError(error: any, msg: Message): void {
+        this.errorCount++
+        this.fireError(error, msg, this.errorCount)
+    }
+
+    public end(): void {
+        /* empty */
     }
 }
 
@@ -95,6 +142,7 @@ export function createConnectionFromWebviewToExtHost(
         options
     )
     const disposable = handle<WebviewAPI>(connection, api)
+    connection.listen()
     return {
         connection,
         proxy: proxy<ExtHostAPI>(connection),
