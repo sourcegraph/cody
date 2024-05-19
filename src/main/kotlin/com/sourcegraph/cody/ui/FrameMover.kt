@@ -176,8 +176,11 @@ class FrameMover(private val frame: JFrame, private val titleBar: JComponent) : 
       }
       else -> {}
     }
-
-    runInEdt { frame.setSize(newWidth, newHeight) }
+    SwingUtilities.invokeLater {
+      frame.setSize(newWidth, newHeight)
+      frame.revalidate()
+      frame.repaint()
+    }
     lastMouseX = newX
     lastMouseY = newY
     lastUpdateTime = currentTime
