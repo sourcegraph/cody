@@ -116,13 +116,6 @@ export async function allMentionProvidersMetadata(
         FILE_CONTEXT_MENTION_PROVIDER,
         SYMBOL_CONTEXT_MENTION_PROVIDER,
         ...(await openCtxMentionProviders()),
-        /*
-        ...CONTEXT_MENTION_PROVIDERS.filter(
-            ({ id }) =>
-                config.experimentalNoodle ||
-                (id === URL_CONTEXT_MENTION_PROVIDER.id && config.experimentalURLContext)
-        ),
-    */
     ]
 
     return items

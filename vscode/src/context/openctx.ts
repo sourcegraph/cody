@@ -1,18 +1,28 @@
 import { setOpenCtxClient } from '@sourcegraph/cody-shared'
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 import { logDebug, outputChannel } from '../log'
 
+const DEFAULT_OPENCTX_CONFIGURATION = {
+    enable: true,
+    providers: {
+        'https://openctx.org/npm/@openctx/url-fetcher': true,
+    },
+}
+
 export function exposeOpenCtxClient(secrets: vscode.SecretStorage): void {
-    if (vscode.workspace.getConfiguration('cody').get('experimental.openctx', false)) {
-        logDebug('openctx', 'OpenCtx is enabled in Cody')
-        import('@openctx/vscode-lib')
-            .then(({ createController }) => {
-                setOpenCtxClient(
-                    createController({ outputChannel, secrets, features: {} }).controller.client
-                )
-            })
-            .catch(error => {
-                logDebug('openctx', `Failed to load OpenCtx client: ${error}`)
-            })
-    }
+    logDebug('openctx', 'OpenCtx is enabled in Cody')
+    import('@openctx/vscode-lib')
+        .then(({ createController }) => {
+            setOpenCtxClient(
+                createController({
+                    outputChannel,
+                    secrets,
+                    features: {},
+                    defaultConfiguration: DEFAULT_OPENCTX_CONFIGURATION,
+                }).controller.client
+            )
+        })
+        .catch(error => {
+            logDebug('openctx', `Failed to load OpenCtx client: ${error}`)
+        })
 }
