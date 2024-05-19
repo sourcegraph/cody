@@ -301,3 +301,8 @@ export {
     setOpenCtxClient,
     getOpenCtxClient,
 } from './context/openctx/api'
+export {
+    createConnectionFromExtHostToWebview,
+    createConnectionFromWebviewToExtHost,
+    type RPCOptions,
+} from './rpc/rpc'

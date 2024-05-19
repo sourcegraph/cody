@@ -24,6 +24,7 @@ import {
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     Typewriter,
+    createConnectionFromExtHostToWebview,
     hydrateAfterPostMessage,
     isDefined,
     isError,
@@ -63,6 +64,7 @@ import { countGeneratedCode } from '../utils'
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
+import type { MessageConnection } from 'vscode-jsonrpc'
 import type { URI } from 'vscode-uri'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor } from '../../commands/context/selection'
@@ -1151,9 +1153,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     public get webviewPanel(): vscode.WebviewPanel | undefined {
         return this._webviewPanel
     }
-    private _webview?: ChatViewProviderWebview
+    private _webview?: Readonly<{
+        instance: ChatViewProviderWebview
+        client: MessageConnection
+    }>
     public get webview(): ChatViewProviderWebview | undefined {
-        return this._webview
+        return this._webview?.instance
+    }
+    private get webviewClient(): MessageConnection | undefined {
+        return this._webview?.client
     }
 
     /**
@@ -1200,6 +1208,15 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         await this.registerWebviewPanel(webviewPanel)
     }
 
+    private createWebviewClient(webview: vscode.Webview): MessageConnection {
+        const conn = createConnectionFromExtHostToWebview(webview, undefined, {
+            hydrate: message => hydrateAfterPostMessage(message, uri => vscode.Uri.from(uri as any)),
+        })
+        conn.onRequest()
+        conn.listen()
+        return conn
+    }
+
     /**
      * Registers the given webview panel by setting up its options, icon, and handlers.
      * Also stores the panel reference and disposes it when closed.
@@ -1224,7 +1241,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         // Register webview
         this._webviewPanel = panel
-        this._webview = panel.webview
+        this._webview = {
+            instance: panel.webview,
+            client: this.createWebviewClient(panel.webview),
+        }
         this.postContextStatus()
 
         // Dispose panel when the panel is closed
