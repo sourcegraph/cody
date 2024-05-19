@@ -13,10 +13,17 @@ import {
     createMessageConnection,
 } from 'vscode-jsonrpc/browser'
 import type { ContextItem } from '../codebase-context/messages'
+import type { MentionQuery } from '../mentions/query'
 
 export interface RPCOptions {
     hydrate?<T>(value: T): T
     logger?: Logger
+}
+
+export interface Client<A> {
+    connection: MessageConnection
+    proxy: A
+    disposable: Disposable
 }
 
 function toMessageStrategy(options: RPCOptions): MessageStrategy {
@@ -41,26 +48,26 @@ export function createConnectionFromExtHostToWebview(
     extHost: RawExtHostToWebviewMessageAPI,
     api: ExtHostAPI,
     options: RPCOptions
-): { connection: MessageConnection; proxy: WebviewAPI } & Disposable {
+): Client<WebviewAPI> {
     const connection = createConnectionCommon(
         new BrowserMessageReader(extHost),
         new BrowserMessageWriter(extHost),
         options
     )
-    const disposable = handle(connection, api)
+    const disposable = handle<ExtHostAPI>(connection, api)
     return {
         connection: connection,
         proxy: proxy<WebviewAPI>(connection),
-        dispose: () => disposable.dispose(),
+        disposable: combinedDisposable(disposable, connection),
     }
 }
 
 /**
  * The API that the extension host exposes to the webview.
  */
-export interface ExtHostAPI {
-    queryContextItems(): Promise<ContextItem[]>
-}
+export type ExtHostAPI = Copy<{
+    queryContextItems(query: MentionQuery): Promise<ContextItem[] | null>
+}>
 
 ///////////////////////////////////////////////////////////////////////////////
 // WEBVIEW TO EXTENSION HOST
@@ -81,22 +88,36 @@ export function createConnectionFromWebviewToExtHost(
     webview: RawWebviewToExtHostMessageAPI,
     api: WebviewAPI,
     options: RPCOptions
-): { connection: MessageConnection; proxy: ExtHostAPI } & Disposable {
+): Client<ExtHostAPI> {
     const connection = createConnectionCommon(
         new BrowserMessageReader(webview),
         new BrowserMessageWriter(webview),
         options
     )
-    const disposable = handle(connection, api)
-    return { connection, proxy: proxy<ExtHostAPI>(connection), dispose: () => disposable.dispose() }
+    const disposable = handle<WebviewAPI>(connection, api)
+    return {
+        connection,
+        proxy: proxy<ExtHostAPI>(connection),
+        disposable: combinedDisposable(disposable, connection),
+    }
+}
+
+function combinedDisposable(...disposables: Disposable[]): Disposable {
+    return {
+        dispose: () => {
+            for (const d of disposables) {
+                d.dispose()
+            }
+        },
+    }
 }
 
 /**
  * The API that the webview exposes to the extension host.
  */
-export interface WebviewAPI {
+export type WebviewAPI = Copy<{
     helloWorld(): Promise<string>
-}
+}>
 
 ///////////////////////////////////////////////////////////////////////////////
 // PROXY
@@ -113,6 +134,7 @@ function createConnectionCommon(
 }
 
 type API = { [method: string]: (...args: any[]) => any }
+type Copy<T> = { [K in keyof T]: T[K] }
 
 function handle<A extends API>(conn: MessageConnection, api: A): Disposable {
     const disposables: Disposable[] = []
@@ -140,3 +162,5 @@ function proxy<A extends API>(
         },
     })
 }
+
+proxy<{ a(): Promise<number> }>(1 as any)

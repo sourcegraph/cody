@@ -8,6 +8,7 @@ import {
     CHAT_OUTPUT_TOKEN_BUDGET,
     type ChatClient,
     type ChatMessage,
+    type Client,
     ConfigFeaturesSingleton,
     type ContextItem,
     ContextItemSource,
@@ -24,6 +25,7 @@ import {
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     Typewriter,
+    type WebviewAPI,
     createConnectionFromExtHostToWebview,
     hydrateAfterPostMessage,
     isDefined,
@@ -64,7 +66,6 @@ import { countGeneratedCode } from '../utils'
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
-import type { MessageConnection } from 'vscode-jsonrpc'
 import type { URI } from 'vscode-uri'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor } from '../../commands/context/selection'
@@ -290,7 +291,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 this.postChatModels()
                 break
             case 'getUserContext':
-                await this.handleGetUserContextFilesCandidates(parseMentionQuery(message.query, null))
+                await this.legacyHandle<'userContextFiles'>(() =>
+                    this.handleGetUserContextFilesCandidates(parseMentionQuery(message.query, null))
+                )
                 break
             case 'queryContextItems':
                 await this.handleGetUserContextFilesCandidates(message.query)
@@ -623,7 +626,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         await chatModel.set(modelID)
     }
 
-    private async handleGetUserContextFilesCandidates(query: MentionQuery): Promise<void> {
+    private async handleGetUserContextFilesCandidates(
+        query: MentionQuery
+    ): Promise<Extract<ExtensionMessage, { type: 'userContextFiles' }> | undefined> {
         // Cancel previously in-flight query.
         const cancellation = new vscode.CancellationTokenSource()
         this.contextFilesQueryCancellation?.cancel()
@@ -661,18 +666,31 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 ...f,
                 isTooLarge: f.size ? f.size > (context?.user || input) : undefined,
             }))
-            void this.postMessage({
+            return {
                 type: 'userContextFiles',
                 userContextFiles,
-            })
+            }
         } catch (error) {
             if (cancellation.token.isCancellationRequested) {
                 return
             }
             cancellation.cancel()
-            this.postError(new Error(`Error retrieving context files: ${error}`))
+            throw new Error(`Error retrieving context files: ${error}`)
         } finally {
             cancellation.dispose()
+        }
+    }
+
+    private async legacyHandle<T extends ExtensionMessage['type']>(
+        func: () => Promise<Extract<ExtensionMessage, { type: T }> | undefined>
+    ): Promise<void> {
+        try {
+            const result = await func()
+            if (result) {
+                void this.postMessage(result)
+            }
+        } catch (error) {
+            this.postError(error as Error)
         }
     }
 
@@ -1155,12 +1173,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
     private _webview?: Readonly<{
         instance: ChatViewProviderWebview
-        client: MessageConnection
+        client: Client<WebviewAPI>
     }>
     public get webview(): ChatViewProviderWebview | undefined {
         return this._webview?.instance
     }
-    private get webviewClient(): MessageConnection | undefined {
+    private get webviewClient(): Client<WebviewAPI> | undefined {
         return this._webview?.client
     }
 
@@ -1208,13 +1226,17 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         await this.registerWebviewPanel(webviewPanel)
     }
 
-    private createWebviewClient(webview: vscode.Webview): MessageConnection {
-        const conn = createConnectionFromExtHostToWebview(webview, undefined, {
-            hydrate: message => hydrateAfterPostMessage(message, uri => vscode.Uri.from(uri as any)),
-        })
-        conn.onRequest()
-        conn.listen()
-        return conn
+    private createWebviewClient(webview: vscode.Webview): Client<WebviewAPI> {
+        return createConnectionFromExtHostToWebview(
+            webview,
+            {
+                queryContextItems: async (query: MentionQuery) =>
+                    (await this.handleGetUserContextFilesCandidates(query))?.userContextFiles ?? null,
+            },
+            {
+                hydrate: message => hydrateAfterPostMessage(message, uri => vscode.Uri.from(uri as any)),
+            }
+        )
     }
 
     /**

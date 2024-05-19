@@ -305,4 +305,7 @@ export {
     createConnectionFromExtHostToWebview,
     createConnectionFromWebviewToExtHost,
     type RPCOptions,
+    type Client,
+    type ExtHostAPI,
+    type WebviewAPI,
 } from './rpc/rpc'
