@@ -54,7 +54,7 @@ export const ContextCell: React.FunctionComponent<{
         <Cell
             style="context"
             gutterIcon={<SourcegraphLogo width={20} height={20} />}
-            disabled={disabled}
+            aria-disabled={disabled}
             containerClassName={className}
             data-testid="context"
         >
