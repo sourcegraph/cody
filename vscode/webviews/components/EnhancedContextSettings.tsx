@@ -32,7 +32,6 @@ interface EnhancedContextSettingsProps {
     presentationMode: 'consumer' | 'enterprise'
     isOpen: boolean
     setOpen: (open: boolean) => void
-    isNewInstall: boolean | undefined
 }
 
 function defaultEnhancedContextContext(): EnhancedContextContextT {
@@ -351,7 +350,6 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     presentationMode,
     isOpen,
     setOpen,
-    isNewInstall,
 }): React.ReactNode => {
     const events = useEnhancedContextEventHandlers()
     const context = useEnhancedContextContext()
