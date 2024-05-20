@@ -122,10 +122,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     useEffect(() => {
         function handleKeyDown(event: KeyboardEvent) {
-            // Opt+/ and Alt+/ focus the last editor input, to make it easy for users to ask a followup
+            // Opt+> and Alt+> focus the last editor input, to make it easy for users to ask a followup
             // question.
-            if (event.altKey && event.key === '/') {
+            if (event.altKey && event.key === '>') {
                 event.preventDefault()
+                event.stopPropagation()
                 const allEditors = document.querySelectorAll<HTMLElement>('[data-lexical-editor="true"]')
                 const lastEditor = allEditors.item(allEditors.length - 1) as HTMLElement | undefined
                 lastEditor?.focus()
