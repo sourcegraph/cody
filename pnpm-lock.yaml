@@ -18,8 +18,8 @@ importers:
   .:
     dependencies:
       '@openctx/client':
-        specifier: ^0.0.10
-        version: 0.0.10
+        specifier: ^0.0.11
+        version: 0.0.11
       ignore:
         specifier: ^5.3.1
         version: 5.3.1
@@ -3304,10 +3304,35 @@ packages:
       rxjs: 7.8.1
     dev: false
 
+  /@openctx/client@0.0.11:
+    resolution: {integrity: sha512-prBrq4EGCcAkI2yEwqj9LFc+uBS7ABnJEX93l7gtFOyyxnCGybr5Yq+Jc60vtUC+qRplV2HgFtwHPs/Xvhu1JA==}
+    dependencies:
+      '@openctx/protocol': 0.0.10
+      '@openctx/provider': 0.0.10
+      '@openctx/schema': 0.0.9
+      lru-cache: 10.2.2
+      picomatch: 3.0.1
+      rxjs: 7.8.1
+    dev: false
+
+  /@openctx/protocol@0.0.10:
+    resolution: {integrity: sha512-cgb5mIBTKrClhE1kMQ3rRzmOJobiljmbrB9HoF2xgIx8KqFEoAQr10URCSPd+FgDHQiLsC0DgoLlwbwsjq/KNA==}
+    dependencies:
+      '@openctx/schema': 0.0.9
+    dev: false
+
   /@openctx/protocol@0.0.9:
     resolution: {integrity: sha512-r93MbmM7cEB+DCXDMvnAn+FnNFoWJE01NkzSJYmQy6gl16+Gie3GRFOdHL9uyYgLz8uODybWxWT2ddCNb6AG+g==}
     dependencies:
       '@openctx/schema': 0.0.8
+    dev: false
+
+  /@openctx/provider@0.0.10:
+    resolution: {integrity: sha512-HXva8lDmVaMP/z1Dvm1rGgnDnPrRsYLH8z8CoEILdaF3YyrzUIQ7/n7VqQ/h4gfOrwonAX/TDRzr7xOoBDSevA==}
+    dependencies:
+      '@openctx/protocol': 0.0.10
+      '@openctx/schema': 0.0.9
+      picomatch: 3.0.1
     dev: false
 
   /@openctx/provider@0.0.9:
@@ -3320,6 +3345,10 @@ packages:
 
   /@openctx/schema@0.0.8:
     resolution: {integrity: sha512-K3kdWon1siGAQz3E6RuQP1ogCshRcE/YS4U6AGcM6r7RWpArdVXNvmeGy+GLGdkM/ZOBa0E3qw2YBeAqAiBAgw==}
+    dev: false
+
+  /@openctx/schema@0.0.9:
+    resolution: {integrity: sha512-VJTD3KFOXlCsLmQgwGpQHAt/jkiOfG6ZYtk8SlWVT6g/cDWXLV7raXT9hODpHs1Ir5VMxDzHUdCMj4iQvE1O4Q==}
     dev: false
 
   /@openctx/ui-common@0.0.7:
