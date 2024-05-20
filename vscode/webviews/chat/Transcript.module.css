@@ -1,17 +1,5 @@
 .container {
-    display: flex;
-    flex-direction: column;
     overflow-x: hidden;
-}
-
-.scroll-anchored-container {
-    overflow-anchor: none;
-}
-
-.scroll-anchor {
-    overflow-anchor: auto;
-    height: 5px; /* this is the grippy region for autoscroll */
-    width: 100vw;
 }
 
 .welcome-message-cell-content p:first-child {

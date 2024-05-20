@@ -15,7 +15,7 @@ const PopoverContent = React.forwardRef<
     return (
         <>
             {/* Use a portal that's in the same DOM tree to make focus handling easier. */}
-            <div ref={portalRef} />
+            <div ref={portalRef} className="empty:tw-hidden" />
             {portalRef.current && (
                 <PopoverPrimitive.Portal container={portalRef.current}>
                     <PopoverPrimitive.Content

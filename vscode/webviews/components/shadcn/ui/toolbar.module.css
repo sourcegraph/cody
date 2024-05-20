@@ -24,18 +24,13 @@
     --gap: 2px;
     gap: var(--gap);
 
+    flex-shrink: 0;
+
     > svg {
+        flex-shrink: 0;
         width: var(--icon-size);
         height: var(--icon-size);
     }
-}
-
-.button--no-icon-start {
-    padding-left: calc(2*var(--padding-x));
-}
-
-.button--no-icon-end {
-    padding-right: calc(2*var(--padding-x));
 }
 
 .button--icon-end-chevron > svg:last-child {
@@ -50,6 +45,14 @@
     }
     &:enabled {
         --tint-color: var(--vscode-button-background);
+    }
+
+    &.button--no-icon-start {
+        padding-left: calc(2*var(--padding-x));
+    }
+
+    &.button--no-icon-end {
+        padding-right: calc(2*var(--padding-x));
     }
 }
 

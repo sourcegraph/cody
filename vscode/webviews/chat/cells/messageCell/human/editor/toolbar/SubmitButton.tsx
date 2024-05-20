@@ -58,7 +58,7 @@ export const SubmitButton: FunctionComponent<{
             disabled={disabled}
             tabIndex={-1} // press Enter to invoke, doesn't need to be tabbable
         >
-            Chat{!withEnhancedContext && ' w/o context'}
+            Run{!withEnhancedContext && ' (no auto context)'}
             <kbd>
                 {addEnhancedContext && isAltKeyDown ? `${ALT_KEY_NAME}+` : null}
                 <EnterKeyIcon width={7} height={7} />

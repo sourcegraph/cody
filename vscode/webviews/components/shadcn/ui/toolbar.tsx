@@ -97,6 +97,7 @@ export const ToolbarPopoverItem: FunctionComponent<
     PropsWithChildren<
         ButtonHTMLAttributes<HTMLButtonElement> &
             Pick<ToolbarButtonProps, 'iconStart' | 'tooltip'> & {
+                iconEnd: ToolbarButtonProps['iconEnd'] | null
                 popoverContent: (close: () => void) => React.ReactNode
 
                 defaultOpen?: boolean
@@ -107,7 +108,15 @@ export const ToolbarPopoverItem: FunctionComponent<
                 __storybook__open?: boolean
             }
     >
-> = ({ popoverContent, defaultOpen, onCloseByEscape, __storybook__open, children, ...props }) => {
+> = ({
+    iconEnd = 'chevron',
+    popoverContent,
+    defaultOpen,
+    onCloseByEscape,
+    __storybook__open,
+    children,
+    ...props
+}) => {
     const [isOpen, setIsOpen] = useState(defaultOpen)
     const onButtonClick = useCallback(() => {
         setIsOpen(isOpen => !isOpen)
@@ -138,7 +147,7 @@ export const ToolbarPopoverItem: FunctionComponent<
             <PopoverTrigger asChild={true}>
                 <ToolbarButton
                     variant="secondary"
-                    iconEnd="chevron"
+                    iconEnd={iconEnd ?? undefined}
                     ref={anchorRef}
                     onClick={onButtonClick}
                     {...props}

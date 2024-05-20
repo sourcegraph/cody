@@ -126,49 +126,45 @@ export const Transcript: React.FunctionComponent<{
 
     return (
         <div className={clsx(className, styles.container)}>
-            <div className={clsx(styles.scrollAnchoredContainer)}>
-                {transcript.flatMap(messageToTranscriptItem)}
-                {messageInProgress &&
-                    messageInProgress.speaker === 'assistant' &&
-                    transcript.at(-1)?.contextFiles && (
-                        <AssistantMessageCell
-                            message={messageInProgress}
-                            isLoading={true}
-                            showFeedbackButtons={false}
-                            copyButtonOnSubmit={copyButtonOnSubmit}
-                            insertButtonOnSubmit={insertButtonOnSubmit}
-                            postMessage={postMessage}
-                            userInfo={userInfo}
-                        />
-                    )}
-                {!messageInProgress && !isLastAssistantMessageError(transcript) && (
-                    <HumanMessageCell
-                        message={null}
-                        isFirstMessage={transcript.length === 0}
-                        isSent={false}
+            {transcript.flatMap(messageToTranscriptItem)}
+            {messageInProgress &&
+                messageInProgress.speaker === 'assistant' &&
+                transcript.at(-1)?.contextFiles && (
+                    <AssistantMessageCell
+                        message={messageInProgress}
+                        isLoading={true}
+                        showFeedbackButtons={false}
+                        copyButtonOnSubmit={copyButtonOnSubmit}
+                        insertButtonOnSubmit={insertButtonOnSubmit}
+                        postMessage={postMessage}
                         userInfo={userInfo}
-                        isNewInstall={isNewInstall}
-                        chatEnabled={chatEnabled}
-                        userContextFromSelection={userContextFromSelection}
-                        onSubmit={(
-                            editorValue: SerializedPromptEditorValue,
-                            addEnhancedContext: boolean
-                        ): void => {
-                            getVSCodeAPI().postMessage({
-                                command: 'submit',
-                                submitType: 'user',
-                                text: editorValue.text,
-                                editorState: editorValue.editorState,
-                                contextFiles: editorValue.contextItems,
-                                addEnhancedContext,
-                            })
-                        }}
-                        isEditorInitiallyFocused={true}
                     />
                 )}
-            </div>
+            {!messageInProgress && !isLastAssistantMessageError(transcript) && (
+                <HumanMessageCell
+                    message={null}
+                    isFirstMessage={transcript.length === 0}
+                    isSent={false}
+                    userInfo={userInfo}
+                    isNewInstall={isNewInstall}
+                    chatEnabled={chatEnabled}
+                    userContextFromSelection={userContextFromSelection}
+                    onSubmit={(
+                        editorValue: SerializedPromptEditorValue,
+                        addEnhancedContext: boolean
+                    ): void => {
+                        getVSCodeAPI().postMessage({
+                            command: 'submit',
+                            submitType: 'user',
+                            text: editorValue.text,
+                            editorState: editorValue.editorState,
+                            contextFiles: editorValue.contextItems,
+                            addEnhancedContext,
+                        })
+                    }}
+                />
+            )}
             {transcript.length === 0 && <WelcomeMessageCell welcomeMessage={welcomeMessage} />}
-            <div className={clsx(styles.scrollAnchor)}>&nbsp;</div>
         </div>
     )
 }

@@ -14,6 +14,7 @@ import type {
 import { useEnhancedContextEnabled } from '../chat/EnhancedContext'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
+import { BookDashedIcon, BookMarkedIcon } from 'lucide-react'
 import styles from './EnhancedContextSettings.module.css'
 import { ToolbarPopoverItem } from './shadcn/ui/toolbar'
 
@@ -412,9 +413,11 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
 
     return (
         <ToolbarPopoverItem
-            aria-label="Configure automatic codebase context"
-            tooltip="Configure automatic codebase context"
+            aria-label="Configure automatic code context"
+            tooltip="Configure automatic code context"
             tabIndex={-1} // holding Alt/Opt is fastest way to toggle, doesn't need to be tabbable
+            iconStart={enabled ? BookMarkedIcon : BookDashedIcon}
+            iconEnd={null}
             defaultOpen={defaultOpen}
             onCloseByEscape={onCloseByEscape}
             popoverContent={() => (
@@ -461,8 +464,6 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                     </div>
                 </div>
             )}
-        >
-            Context
-        </ToolbarPopoverItem>
+        />
     )
 }

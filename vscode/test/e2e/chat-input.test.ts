@@ -115,7 +115,7 @@ test.extend<ExpectedEvents>({
     // when we submit a question later as the question will be streamed to this panel
     // directly instead of opening a new one.
     await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
-    const [chatPanel, lastChatInput, firstChatInput] = await createEmptyChatPanel(page)
+    const [chatPanel, lastChatInput, firstChatInput, chatInputs] = await createEmptyChatPanel(page)
     await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
     await page.getByRole('tab', { name: 'buzz.ts' }).dblclick()
 
@@ -155,7 +155,7 @@ test.extend<ExpectedEvents>({
     await lastChatInput.type('Regular chat message', { delay: 10 })
     await lastChatInput.press('Enter')
     await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
-    await expect(lastChatInput).toBeFocused()
+    await expect(chatInputs.nth(1)).toBeFocused()
 })
 
 test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<ExpectedEvents>({
