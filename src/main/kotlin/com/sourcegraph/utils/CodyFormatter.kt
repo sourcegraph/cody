@@ -34,6 +34,8 @@ class CodyFormatter {
                 .createFileFromText("TEMP", file.fileType, appendedString)
 
         val codeStyleManager = CodeStyleManager.getInstance(project)
+        // This will fail if cursor < range.startOffset + completionText.length
+        // TODO change the signature of this method or at least validate the arguments
         codeStyleManager.reformatText(psiFile, cursor, range.startOffset + completionText.length)
 
         // Fix for the IJ formatting bug which removes spaces even before the given formatting

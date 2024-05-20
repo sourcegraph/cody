@@ -26,16 +26,12 @@ class CodyFormatterTest : BasePlatformTestCase() {
   private fun formatText(
       toFormat: String,
       offset: Int,
-      range: TextRange? = null,
+      range: TextRange = TextRange(offset, offset),
       fileContent: String = testFileContent
   ): String {
     val psiFile = myFixture.addFileToProject("CodyFormatterTest.java", fileContent)
     return CodyFormatter.formatStringBasedOnDocument(
-        toFormat,
-        myFixture.project,
-        psiFile.viewProvider.document,
-        range ?: TextRange(offset, offset),
-        offset)
+        toFormat, myFixture.project, psiFile.viewProvider.document, range, offset)
   }
 
   fun `test single line formatting`() {
@@ -65,6 +61,38 @@ class CodyFormatterTest : BasePlatformTestCase() {
             insideClassOffset))
   }
 
+  fun `test formatting into fewer lines`() {
+    val original =
+        """|
+           |    public static void fib(
+           |    int n,
+           |
+           |
+           |
+           |
+           |    int dummy
+           |    ) {
+           |    }"""
+            .trimMargin()
+    val originalEndOffset = insideClassOffset + original.length
+    val testFileContent = testFileContent.replace("// CLASS", original)
+    TestCase.assertEquals(
+        """|
+           |    public static void fib(
+           |            int n,
+           |
+           |
+           |            int dummy
+           |    ) {
+           |    }"""
+            .trimMargin(),
+        formatText(
+            original,
+            insideClassOffset,
+            TextRange(insideClassOffset, originalEndOffset),
+            testFileContent))
+  }
+
   fun `test fix for IJ formatter bug`() {
     val existingLine = "    public static void test()    "
     val completion = "$existingLine  { }"
@@ -90,6 +118,6 @@ class CodyFormatterTest : BasePlatformTestCase() {
     val range = testFileContent.findTextRange(existingLine)
     val offset = testFileContent.indexOf("file")
 
-    TestCase.assertEquals(existingLine, formatText(existingLine, offset, range, testFileContent))
+    TestCase.assertEquals(existingLine, formatText(existingLine, offset, range!!, testFileContent))
   }
 }

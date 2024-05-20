@@ -9,10 +9,12 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.LogicalPosition
+import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.TextRange
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentCodebase
@@ -37,6 +39,7 @@ import com.sourcegraph.cody.edit.widget.LensGroupFactory
 import com.sourcegraph.cody.edit.widget.LensWidgetGroup
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.utils.CodyEditorUtil
+import com.sourcegraph.utils.CodyFormatter
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
@@ -62,12 +65,12 @@ abstract class FixupSession(
   // The current lens group. Changes as the state machine proceeds.
   private var lensGroup: LensWidgetGroup? = null
 
-  var selectionRange: Range? = null
+  private var selectionRange: RangeMarker? = null
 
   // The prompt that the Agent used for this task. For Edit, it's the same as
   // the most recent prompt the user sent, which we already have. But for Document Code,
   // it enables us to show the user what we sent and let them hand-edit it.
-  var instruction: String? = null
+  private var instruction: String? = null
 
   private val performedActions: MutableList<FixupUndoableAction> = mutableListOf()
 
@@ -89,6 +92,8 @@ abstract class FixupSession(
           }
         }
       }
+
+  @Volatile private var undoInProgress: Boolean = false
 
   init {
     triggerFixupAsync()
@@ -149,10 +154,10 @@ abstract class FixupSession(
 
   private fun ensureSelectionRange(agent: CodyAgent, textFile: ProtocolTextDocument) {
     val selection = textFile.selection ?: return
-    selectionRange = selection
+    selectionRange = selection.toRangeMarker(document, true)
     agent.server
         .getFoldingRanges(GetFoldingRangeParams(uri = textFile.uri, range = selection))
-        .thenApply { result -> selectionRange = result.range }
+        .thenApply { result -> selectionRange = result.range.toRangeMarker(document, true) }
         .get()
   }
 
@@ -186,15 +191,17 @@ abstract class FixupSession(
     lensGroup?.let { if (!it.isDisposed.get()) Disposer.dispose(it) }
     lensGroup = group
 
-    var range = selectionRange
+    var range =
+        selectionRange?.let {
+          val position = Position(Range.fromRangeMarker(it).start.line, character = 0)
+          Range(start = position, end = position)
+        }
+
     if (range == null) {
       // Be defensive, as the protocol has been fragile with respect to selection ranges.
       logger.warn("No selection range for session: $this")
       // Last-ditch effort to show it somewhere other than top of file.
       val position = Position(editor.caretModel.currentCaret.logicalPosition.line, 0)
-      range = Range(start = position, end = position)
-    } else {
-      val position = Position(range.start.line, 0)
       range = Range(start = position, end = position)
     }
     val future = group.show(range)
@@ -246,6 +253,7 @@ abstract class FixupSession(
   fun undo() {
     runInEdt { showWorkingGroup() }
     CodyAgentService.withAgent(project) { agent ->
+      undoInProgress = true
       agent.server.undoEditTask(TaskIdParam(taskId!!))
     }
   }
@@ -353,18 +361,35 @@ abstract class FixupSession(
           }
         }
 
+        // Skip the formatting if these edits are part of an undo operation.
+        if (!undoInProgress) {
+          // It is safe to use selectionRange here, because it is set in the constructor
+          // by calling triggerFixupAsync() which in turn calls ensureSelectionRange().
+          selectionRange!!.let {
+            val tr = TextRange(it.startOffset, it.endOffset)
+            val input = document.getText(tr)
+            val formatted =
+                CodyFormatter.formatStringBasedOnDocument(
+                    input, project, document, tr, tr.startOffset)
+            document.replaceString(tr.startOffset, tr.endOffset, formatted)
+          }
+        }
+
+        // If this has been an undo operation, it has been completed by now
+        undoInProgress = false
+
         performedActions += currentActions
       }
     }
   }
 
-  private fun adjustToDocumentRange(r: Range): Range {
+  private fun adjustToDocumentRange(r: Range): RangeMarker {
     // Negative values of the start/end line are used to mark beginning/end of the document
     val start = if (r.start.line < 0) Position(line = 0, character = r.start.character) else r.start
     val endLine = document.getLineNumber(document.textLength)
     val endLineLength = document.getLineEndOffset(endLine) - document.getLineStartOffset(endLine)
     val end = if (r.end.line < 0) Position(line = endLine, character = endLineLength) else r.end
-    return Range(start, end)
+    return Range(start, end).toRangeMarker(document, true)
   }
 
   fun createDiffDocument(): Document {
