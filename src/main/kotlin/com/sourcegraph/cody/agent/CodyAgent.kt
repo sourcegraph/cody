@@ -169,12 +169,13 @@ private constructor(
 
       val proxy = HttpConfigurable.getInstance()
       val proxyUrl = proxy.PROXY_HOST + ":" + proxy.PROXY_PORT
-      if (proxy.PROXY_TYPE_IS_SOCKS) {
-        processBuilder.environment()["HTTP_PROXY"] = "socks://$proxyUrl"
-      }
       if (proxy.USE_HTTP_PROXY) {
-        processBuilder.environment()["HTTP_PROXY"] = "http://$proxyUrl"
-        processBuilder.environment()["HTTPS_PROXY"] = "http://$proxyUrl"
+        if (proxy.PROXY_TYPE_IS_SOCKS) {
+          processBuilder.environment()["HTTP_PROXY"] = "socks://$proxyUrl"
+        } else {
+          processBuilder.environment()["HTTP_PROXY"] = "http://$proxyUrl"
+          processBuilder.environment()["HTTPS_PROXY"] = "http://$proxyUrl"
+        }
       }
 
       logger.info("starting Cody agent ${command.joinToString(" ")}")
