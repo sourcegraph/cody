@@ -11,7 +11,6 @@ import type { VSCodeWrapper } from './VSCodeApi'
 /** React context to set the extension host API client. */
 export const ExtHostClientContext = createContext<Client<ExtHostAPI> | null>(null)
 
-export function createExtHostClientForWeb()
 /**
  * Helper function for creating the extension host API client. Set this value in React context with
  * {@link ExtHostClientContext.Provider}.

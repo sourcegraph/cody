@@ -57,7 +57,7 @@ export function useChatContextItems(
                     if (invalidated) {
                         return
                     }
-                    setResults(mentions ?? [])
+                    setResults(mentions ?? undefined)
                 })
                 .catch(error => {
                     setResults(undefined)

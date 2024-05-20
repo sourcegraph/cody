@@ -78,18 +78,14 @@ function setUpAgent(client: Pick<AgentClient, 'rpc'>): void {
         workspaceRootUri: 'file:///tmp/foo',
     }
 
-    let webviewPanelID: string
-    initializeAgentClient(client, params)
-        .then(result => {
-            webviewPanelID = result.webviewPanelID
-        })
-        .catch(console.error)
+    const webviewPanelID = initializeAgentClient(client, params).then(result => result.webviewPanelID)
+    webviewPanelID.catch(console.error)
 
     const onMessageCallbacks: ((message: ExtensionMessage) => void)[] = []
     client.rpc.onNotification(
         'webview/postMessage',
-        ({ id, message }: { id: string; message: ExtensionMessage }) => {
-            if (webviewPanelID === id) {
+        async ({ id, message }: { id: string; message: ExtensionMessage }) => {
+            if ((await webviewPanelID) === id) {
                 for (const callback of onMessageCallbacks) {
                     callback(hydrateAfterPostMessage(message, uri => URI.from(uri as any)))
                 }
@@ -98,9 +94,9 @@ function setUpAgent(client: Pick<AgentClient, 'rpc'>): void {
     )
 
     setVSCodeWrapper({
-        postMessage: message => {
+        postMessage: async message => {
             void client.rpc.sendRequest('webview/receiveMessage', {
-                id: webviewPanelID,
+                id: await webviewPanelID,
                 message,
             })
         },

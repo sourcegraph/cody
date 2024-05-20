@@ -951,6 +951,9 @@ _commands?.registerCommand?.('vscode.executeDocumentSymbolProvider', uri => {
 _commands?.registerCommand?.('vscode.executeFormatDocumentProvider', uri => {
     return Promise.resolve([])
 })
+_commands?.registerCommand?.('vscode.executeWorkspaceSymbolProvider', _query => {
+    return Promise.resolve([])
+})
 
 function promisify(value: any): Promise<any> {
     return value instanceof Promise ? value : Promise.resolve(value)

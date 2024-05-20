@@ -1,7 +1,5 @@
 import {
     type ChatMessage,
-    type Client,
-    type ExtHostAPI,
     type ModelProvider,
     PromptString,
     setDisplayPathEnvInfo,
@@ -22,8 +20,9 @@ import {
 import styles from './App.module.css'
 import { createAgentClient } from './agent/client'
 
-const agentClient = createAgentClient()
+createAgentClient()
 const vscodeAPI = getVSCodeAPI()
+const extHostClient = createExtHostClient(vscodeAPI)
 
 setDisplayPathEnvInfo({ isWindows: false, workspaceFolders: [URI.file('/tmp/foo')] })
 
@@ -38,6 +37,9 @@ export const App: FunctionComponent = () => {
 
     useEffect(() => {
         vscodeAPI.onMessage(message => {
+            if ('jsonrpc' in message) {
+                return // ignore messages from the new JSON-RPC protocol
+            }
             switch (message.type) {
                 case 'transcript': {
                     const deserializedMessages = message.messages.map(
@@ -68,16 +70,11 @@ export const App: FunctionComponent = () => {
                     })
                     break
                 default:
-                    console.error('unknown message type', message)
                     break
             }
         })
         vscodeAPI.postMessage({ command: 'ready' })
     }, [])
-    const extHostClient = useMemo<Client<ExtHostAPI>>(
-        () => createExtHostClient({ postMessage: vscodeAPI.postMessage }),
-        []
-    )
 
     // Deprecated V1 telemetry
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [])

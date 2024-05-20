@@ -53,11 +53,11 @@ function combinedDisposable(...disposables: Disposable[]): Disposable {
 /**
  * The VS Code extension host's hooks for communicating with a webview.
  */
-interface RawExtHostToWebviewMessageAPI
+interface ExtHostToWebviewMessageAPI
     extends Pick<vscode.Webview, 'postMessage' | 'onDidReceiveMessage'> {}
 
 export function createConnectionFromExtHostToWebview(
-    webview: RawExtHostToWebviewMessageAPI,
+    webview: ExtHostToWebviewMessageAPI,
     api: ExtHostAPI,
     options: RPCOptions
 ): Client<WebviewAPI> {
@@ -130,7 +130,7 @@ export type ExtHostAPI = Copy<{
 /**
  * A VS Code webview's hooks for communicating with the extension host.
  */
-type RawWebviewToExtHostMessageAPI = {
+type WebviewToExtHostMessageAPI = {
     /** VSCodeWrapper type */
     vscodeAPI: {
         postMessage(message: unknown): void
@@ -139,7 +139,7 @@ type RawWebviewToExtHostMessageAPI = {
 }
 
 export function createConnectionFromWebviewToExtHost(
-    vscodeAPI: RawWebviewToExtHostMessageAPI,
+    { vscodeAPI }: WebviewToExtHostMessageAPI,
     api: WebviewAPI,
     options: RPCOptions
 ): Client<ExtHostAPI> {
@@ -158,7 +158,7 @@ export function createConnectionFromWebviewToExtHost(
 }
 
 class WebviewMessageReader extends AbstractMessageReader {
-    constructor(private readonly vscodeAPI: RawWebviewToExtHostMessageAPI['vscodeAPI']) {
+    constructor(private readonly vscodeAPI: WebviewToExtHostMessageAPI['vscodeAPI']) {
         super()
     }
 
@@ -175,7 +175,7 @@ class WebviewMessageReader extends AbstractMessageReader {
 class WebviewMessageWriter extends AbstractMessageWriter {
     private errorCount = 0
 
-    constructor(private readonly vscodeAPI: RawWebviewToExtHostMessageAPI['vscodeAPI']) {
+    constructor(private readonly vscodeAPI: WebviewToExtHostMessageAPI['vscodeAPI']) {
         super()
     }
 
@@ -237,10 +237,16 @@ function handle<A extends API>(conn: MessageConnection, api: A): Disposable {
 function proxy<A extends API>(
     conn: MessageConnection
 ): { [M in keyof A]: (...args: Parameters<A[M]>) => Promise<Awaited<ReturnType<A[M]>>> } {
+    const cached: { [method: string]: (...args: any[]) => Promise<any> } = {}
     return new Proxy(Object.create(null), {
         get: (target, prop) => {
             if (typeof prop === 'string') {
-                return (...args: any[]) => conn.sendRequest(prop, args)
+                if (cached[prop]) {
+                    return cached[prop]
+                }
+                const impl = (...args: any[]) => conn.sendRequest(prop, args)
+                cached[prop] = impl
+                return impl
             }
             return target[prop]
         },

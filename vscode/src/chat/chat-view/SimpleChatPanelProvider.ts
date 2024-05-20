@@ -251,6 +251,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
      * @param message is the message from the view.
      */
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
+        if ('jsonrpc' in message) {
+            return // ignore messages from the new JSON-RPC protocol
+        }
         switch (message.command) {
             case 'ready':
                 await this.handleReady()
