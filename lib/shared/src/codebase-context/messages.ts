@@ -174,6 +174,10 @@ export interface ContextItemOpenCtx extends ContextItemCommon {
     provider: 'openctx'
     title: string
     uri: URI
+    /**
+     * originalURI is stored since vscode-uri will incorrectly escape query parameters in toString.
+     */
+    originalURI: string
     providerUri: string
     description?: string
     data?: any
