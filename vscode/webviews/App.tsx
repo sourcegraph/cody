@@ -33,6 +33,7 @@ import {
 import { WithContextProviders } from './mentions/providers'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
+import { ExtHostClientContext, createExtHostClient } from './utils/extHostClient'
 import { createWebviewTelemetryRecorder, createWebviewTelemetryService } from './utils/telemetry'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
@@ -280,26 +281,28 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     <EnhancedContextContext.Provider value={enhancedContextStatus}>
                         <EnhancedContextEnabled.Provider value={enhancedContextEnabled}>
                             <ChatModelContextProvider value={chatModelContext}>
-                                <WithContextProviders
-                                    value={{
-                                        providers: allMentionProvidersMetadata(config),
-                                    }}
-                                >
-                                    <Chat
-                                        chatEnabled={chatEnabled}
-                                        userInfo={userAccountInfo}
-                                        messageInProgress={messageInProgress}
-                                        transcript={transcript}
-                                        vscodeAPI={vscodeAPI}
-                                        telemetryService={telemetryService}
-                                        telemetryRecorder={telemetryRecorder}
-                                        isTranscriptError={isTranscriptError}
-                                        welcomeMessage={welcomeMessageMarkdown}
-                                        guardrails={attributionEnabled ? guardrails : undefined}
-                                        isNewInstall={isNewInstall}
-                                        userContextFromSelection={userContextFromSelection}
-                                    />
-                                </WithContextProviders>
+                                <ExtHostClientContext.Provider value={createExtHostClient(vscodeAPI)}>
+                                    <WithContextProviders
+                                        value={{
+                                            providers: allMentionProvidersMetadata(config),
+                                        }}
+                                    >
+                                        <Chat
+                                            chatEnabled={chatEnabled}
+                                            userInfo={userAccountInfo}
+                                            messageInProgress={messageInProgress}
+                                            transcript={transcript}
+                                            vscodeAPI={vscodeAPI}
+                                            telemetryService={telemetryService}
+                                            telemetryRecorder={telemetryRecorder}
+                                            isTranscriptError={isTranscriptError}
+                                            welcomeMessage={welcomeMessageMarkdown}
+                                            guardrails={attributionEnabled ? guardrails : undefined}
+                                            isNewInstall={isNewInstall}
+                                            userContextFromSelection={userContextFromSelection}
+                                        />
+                                    </WithContextProviders>
+                                </ExtHostClientContext.Provider>
                             </ChatModelContextProvider>
                         </EnhancedContextEnabled.Provider>
                     </EnhancedContextContext.Provider>

@@ -12,8 +12,6 @@ import type {
 import {
     AbstractMessageReader,
     AbstractMessageWriter,
-    BrowserMessageReader,
-    BrowserMessageWriter,
     createMessageConnection,
 } from 'vscode-jsonrpc/browser'
 import type { ContextItem } from '../codebase-context/messages'
@@ -38,6 +36,16 @@ function toMessageStrategy(options: RPCOptions): MessageStrategy {
     }
 }
 
+function combinedDisposable(...disposables: Disposable[]): Disposable {
+    return {
+        dispose: () => {
+            for (const d of disposables) {
+                d.dispose()
+            }
+        },
+    }
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // EXTENSION HOST TO WEBVIEW
 ///////////////////////////////////////////////////////////////////////////////
@@ -49,13 +57,13 @@ interface RawExtHostToWebviewMessageAPI
     extends Pick<vscode.Webview, 'postMessage' | 'onDidReceiveMessage'> {}
 
 export function createConnectionFromExtHostToWebview(
-    extHost: RawExtHostToWebviewMessageAPI,
+    webview: RawExtHostToWebviewMessageAPI,
     api: ExtHostAPI,
     options: RPCOptions
 ): Client<WebviewAPI> {
     const connection = createConnectionCommon(
-        new WebviewMessageReader(extHost),
-        new WebviewMessageWriter(extHost),
+        new ExtHostMessageReader(webview),
+        new ExtHostMessageWriter(webview),
         options
     )
     const disposable = handle<ExtHostAPI>(connection, api)
@@ -67,46 +75,45 @@ export function createConnectionFromExtHostToWebview(
     }
 }
 
-// TODO!(sqs)
-class WebviewMessageReader extends AbstractMessageReader {
-    constructor(readonly webview: vscode.Webview) {
+class ExtHostMessageReader extends AbstractMessageReader {
+    constructor(private readonly webview: Pick<vscode.Webview, 'onDidReceiveMessage'>) {
         super()
     }
 
     listen(callback: DataCallback): Disposable {
         return this.webview.onDidReceiveMessage(data => {
-            callback(data)
+            if (isMessage(data)) {
+                callback(data)
+            }
         })
     }
 }
 
-class WebviewMessageWriter extends AbstractMessageWriter implements MessageWriter {
-    private errorCount: number
+function isMessage(value: unknown): value is Message {
+    return Boolean(value && typeof value === 'object' && 'jsonrpc' in value)
+}
 
-    constructor(readonly webview: vscode.Webview) {
+class ExtHostMessageWriter extends AbstractMessageWriter {
+    private errorCount = 0
+
+    constructor(readonly webview: Pick<vscode.Webview, 'postMessage'>) {
         super()
-        this.errorCount = 0
     }
 
     public async write(msg: Message): Promise<void> {
         try {
-            await this.webview.postMessage(msg)
+            const ok = await this.webview.postMessage(msg)
+            if (!ok) {
+                throw new Error('postMessage failed')
+            }
             this.errorCount = 0
         } catch (error) {
-            this.handleError(error, msg)
+            this.fireError(error, msg, ++this.errorCount)
             return Promise.reject(error)
         }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private handleError(error: any, msg: Message): void {
-        this.errorCount++
-        this.fireError(error, msg, this.errorCount)
-    }
-
-    public end(): void {
-        /* empty */
-    }
+    public end(): void {}
 }
 
 /**
@@ -123,22 +130,22 @@ export type ExtHostAPI = Copy<{
 /**
  * A VS Code webview's hooks for communicating with the extension host.
  */
-interface RawWebviewToExtHostMessageAPI {
-    globalThis: {
-        acquireVsCodeApi: () => { postMessage: (message: unknown) => void }
-        addEventListener: (event: 'message', listener: (event: MessageEvent<unknown>) => void) => void
-        removeEventListener: (event: 'message', listener: (event: MessageEvent<unknown>) => void) => void
+type RawWebviewToExtHostMessageAPI = {
+    /** VSCodeWrapper type */
+    vscodeAPI: {
+        postMessage(message: unknown): void
+        onMessage(callback: (message: unknown) => void): () => void
     }
 }
 
 export function createConnectionFromWebviewToExtHost(
-    webview: RawWebviewToExtHostMessageAPI,
+    vscodeAPI: RawWebviewToExtHostMessageAPI,
     api: WebviewAPI,
     options: RPCOptions
 ): Client<ExtHostAPI> {
     const connection = createConnectionCommon(
-        new BrowserMessageReader(webview),
-        new BrowserMessageWriter(webview),
+        new WebviewMessageReader(vscodeAPI),
+        new WebviewMessageWriter(vscodeAPI),
         options
     )
     const disposable = handle<WebviewAPI>(connection, api)
@@ -150,14 +157,39 @@ export function createConnectionFromWebviewToExtHost(
     }
 }
 
-function combinedDisposable(...disposables: Disposable[]): Disposable {
-    return {
-        dispose: () => {
-            for (const d of disposables) {
-                d.dispose()
-            }
-        },
+class WebviewMessageReader extends AbstractMessageReader {
+    constructor(private readonly vscodeAPI: RawWebviewToExtHostMessageAPI['vscodeAPI']) {
+        super()
     }
+
+    listen(callback: DataCallback): Disposable {
+        const dispose = this.vscodeAPI.onMessage(message => {
+            if (isMessage(message)) {
+                callback(message)
+            }
+        })
+        return { dispose }
+    }
+}
+
+class WebviewMessageWriter extends AbstractMessageWriter {
+    private errorCount = 0
+
+    constructor(private readonly vscodeAPI: RawWebviewToExtHostMessageAPI['vscodeAPI']) {
+        super()
+    }
+
+    public async write(msg: Message): Promise<void> {
+        try {
+            this.vscodeAPI.postMessage(msg)
+            this.errorCount = 0
+        } catch (error) {
+            this.fireError(error, msg, ++this.errorCount)
+            return Promise.reject(error)
+        }
+    }
+
+    public end(): void {}
 }
 
 /**
@@ -185,9 +217,13 @@ type API = { [method: string]: (...args: any[]) => any }
 type Copy<T> = { [K in keyof T]: T[K] }
 
 function handle<A extends API>(conn: MessageConnection, api: A): Disposable {
+    // To enable trace logging:
+    //
+    // conn.trace(Trace.Verbose, { log: console.log })
+
     const disposables: Disposable[] = []
     for (const [method, impl] of Object.entries(api)) {
-        disposables.push(conn.onRequest(method, impl))
+        disposables.push(conn.onRequest(method, args => impl(...args)))
     }
     return {
         dispose: () => {
