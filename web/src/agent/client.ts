@@ -5,32 +5,15 @@ import {
     Trace,
     createMessageConnection,
 } from 'vscode-jsonrpc/browser'
-import type { ServerInfo } from '../../../vscode/src/jsonrpc/agent-protocol'
 
 // TODO(sqs): dedupe with agentClient.ts in [experimental Cody CLI](https://github.com/sourcegraph/cody/pull/3418)
 
 export interface AgentClient {
-    serverInfo: ServerInfo
-    webviewPanelID: string
     rpc: MessageConnection
     dispose(): void
 }
 
-export interface AgentClientOptions {
-    serverEndpoint: string
-    accessToken: string
-    workspaceRootUri: string
-    debug?: boolean
-    trace?: boolean
-}
-
-export async function createAgentClient({
-    serverEndpoint,
-    accessToken,
-    workspaceRootUri,
-    debug = true,
-    trace = false,
-}: AgentClientOptions): Promise<AgentClient> {
+export function createAgentClient(trace = false): AgentClient {
     const worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
     const rpc = createMessageConnection(
         new BrowserMessageReader(worker),
@@ -46,23 +29,36 @@ export async function createAgentClient({
     rpc.listen()
 
     rpc.onNotification('debug/message', message => {
-        if (debug) {
+        if (trace) {
             console.debug('agent: debug:', message)
         }
     })
     rpc.onNotification('webview/postMessage', message => {
-        if (debug) {
+        if (trace) {
             console.debug('agent: debug:', message)
         }
     })
 
-    const serverInfo: ServerInfo = await rpc.sendRequest('initialize', {
+    return {
+        rpc,
+        dispose(): void {
+            rpc.end()
+            worker.terminate()
+        },
+    }
+}
+
+export async function initializeAgentClient(
+    { rpc }: AgentClient,
+    params: { serverEndpoint: string; accessToken: string; workspaceRootUri: string }
+): Promise<{ webviewPanelID: string }> {
+    await rpc.sendRequest('initialize', {
         name: 'cody-web',
         version: '0.0.1',
-        workspaceRootUri,
+        workspaceRootUri: params.workspaceRootUri,
         extensionConfiguration: {
-            serverEndpoint,
-            accessToken,
+            serverEndpoint: params.serverEndpoint,
+            accessToken: params.accessToken,
             customHeaders: {},
             customConfiguration: {
                 'cody.experimental.urlContext': true,
@@ -73,15 +69,7 @@ export async function createAgentClient({
     })
     rpc.sendNotification('initialized', null)
 
-    const webviewPanelID: string = await rpc.sendRequest('chat/new', null)
-
     return {
-        serverInfo,
-        rpc,
-        webviewPanelID,
-        dispose(): void {
-            rpc.end()
-            worker.terminate()
-        },
+        webviewPanelID: await rpc.sendRequest('chat/new', null),
     }
 }

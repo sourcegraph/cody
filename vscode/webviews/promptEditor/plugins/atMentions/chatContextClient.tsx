@@ -1,55 +1,24 @@
 import {
-    type Client,
     type ContextItem,
     type ContextMentionProviderMetadata,
     type ExtHostAPI,
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionQuery,
-    createConnectionFromWebviewToExtHost,
-    hydrateAfterPostMessage,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { LRUCache } from 'lru-cache'
-import {
-    type FunctionComponent,
-    createContext,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'react'
-import { URI } from 'vscode-uri'
-
-export interface ChatContextClient extends Pick<Client<ExtHostAPI>['proxy'], 'queryContextItems'> {}
-
-const extHostClient = createConnectionFromWebviewToExtHost(
-    globalThis as any,
-    {
-        helloWorld() {
-            return Promise.resolve('Hello, world! from the webview')
-        },
-    },
-    { hydrate: message => hydrateAfterPostMessage(message, uri => URI.from(uri as any)) }
-)
-
-const ChatContextClientContext: React.Context<ChatContextClient> = createContext(extHostClient.proxy)
-
-export const WithChatContextClient: FunctionComponent<
-    React.PropsWithChildren<{ value: ChatContextClient }>
-> = ({ value, children }) => (
-    <ChatContextClientContext.Provider value={value}>{children}</ChatContextClientContext.Provider>
-)
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useExtHostClient } from '../../../utils/extHostClient'
 
 /** Hook to get the chat context items for the given query. */
 export function useChatContextItems(
     query: string | null,
     provider: ContextMentionProviderMetadata | null
 ): ContextItem[] | undefined {
-    const unmemoizedClient = useContext(ChatContextClientContext)
-    const chatContextClient = useMemo(
-        () => memoizeChatContextClient(unmemoizedClient),
-        [unmemoizedClient]
+    const { queryContextItems } = useExtHostClient()
+    const memoizedQueryContextItems = useMemo(
+        () => memoizeQueryContextItems(queryContextItems),
+        [queryContextItems]
     )
     const [results, setResults] = useState<ContextItem[]>()
     const lastProvider = useRef<ContextMentionProviderMetadata['id'] | null>(null)
@@ -82,9 +51,8 @@ export function useChatContextItems(
         // no longer valid).
         let invalidated = false
 
-        if (chatContextClient) {
-            chatContextClient
-                .queryContextItems(mentionQuery)
+        if (memoizedQueryContextItems) {
+            memoizedQueryContextItems(mentionQuery)
                 .then(mentions => {
                     if (invalidated) {
                         return
@@ -100,23 +68,23 @@ export function useChatContextItems(
         return () => {
             invalidated = true
         }
-    }, [query, provider, chatContextClient])
+    }, [query, provider, memoizedQueryContextItems])
     return results
 }
 
-function memoizeChatContextClient(client: ChatContextClient): ChatContextClient {
+function memoizeQueryContextItems(
+    queryContextItems: ExtHostAPI['queryContextItems']
+): ExtHostAPI['queryContextItems'] {
     const cache = new LRUCache<string, ContextItem[]>({ max: 10 })
-    return {
-        async queryContextItems(query: MentionQuery): Promise<ContextItem[]> {
-            const key = JSON.stringify(query)
-            const cached = cache.get(key)
-            if (cached !== undefined) {
-                return cached
-            }
+    return async (query: MentionQuery): Promise<ContextItem[]> => {
+        const key = JSON.stringify(query)
+        const cached = cache.get(key)
+        if (cached !== undefined) {
+            return cached
+        }
 
-            const result = (await client.queryContextItems(query)) ?? []
-            cache.set(key, result)
-            return result
-        },
+        const result = (await queryContextItems(query)) ?? []
+        cache.set(key, result)
+        return result
     }
 }
