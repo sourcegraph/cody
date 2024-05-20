@@ -1288,6 +1288,19 @@
             }
           }
         },
+        "openctx.enable": {
+          "type": "boolean",
+          "markdownDescription": "Enable OpenCtx providers for Cody.",
+          "default": true
+        },
+        "openctx.providers": {
+          "type": "object",
+          "markdownDescription": "OpenCtx providers configuration.",
+          "default": {
+            "https://openctx.org/npm/@openctx/web": true,
+            "file:///Users/naman/Work/openctx/provider/web/dist/index.js": true
+          }
+        },
         "cody.internal.unstable": {
           "order": 999,
           "type": "boolean",

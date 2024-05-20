@@ -64,6 +64,7 @@ export async function getChatContextItemsForMention(
 
             const items = await openctxClient.mentions(
                 { query: mentionQuery.text },
+                // get mention items for the selected provider only.
                 mentionQuery.provider
             )
 
