@@ -1,16 +1,20 @@
 package com.sourcegraph.cody.agent.protocol
 
+import com.intellij.codeInsight.codeVision.ui.popup.layouter.bottom
+import com.intellij.codeInsight.codeVision.ui.popup.layouter.right
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.vfs.VirtualFile
+import java.awt.Point
 import java.nio.file.FileSystems
 import java.util.Locale
 
 class ProtocolTextDocument
 private constructor(
-    var uri: String,
-    var content: String?,
-    var selection: Range?,
+    val uri: String,
+    val content: String?,
+    val selection: Range?,
+    val visibleRange: Range?
 ) {
 
   companion object {
@@ -32,6 +36,15 @@ private constructor(
       return Range(position, position)
     }
 
+    private fun getVisibleRange(editor: Editor): Range {
+      val visibleArea = editor.scrollingModel.visibleArea
+      val startOffset = editor.xyToLogicalPosition(visibleArea.location)
+      val endOffset = editor.xyToLogicalPosition(Point(visibleArea.right, visibleArea.bottom))
+      return Range(
+          Position(startOffset.line, startOffset.column),
+          Position(endOffset.line, endOffset.column))
+    }
+
     @JvmStatic
     fun fromEditor(editor: Editor): ProtocolTextDocument? {
       val file = FileDocumentManager.getInstance().getFile(editor.document)
@@ -44,8 +57,7 @@ private constructor(
         file: VirtualFile,
     ): ProtocolTextDocument {
       val text = FileDocumentManager.getInstance().getDocument(file)?.text
-      val selection = getSelection(editor)
-      return ProtocolTextDocument(uriFor(file), text, selection)
+      return ProtocolTextDocument(uriFor(file), text, getSelection(editor), getVisibleRange(editor))
     }
 
     private fun uriFor(file: VirtualFile): String {
