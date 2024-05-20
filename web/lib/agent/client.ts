@@ -1,14 +1,23 @@
 import {
+    Trace,
     BrowserMessageReader,
     BrowserMessageWriter,
-    type MessageConnection,
-    Trace,
     createMessageConnection,
+    type MessageConnection,
 } from 'vscode-jsonrpc/browser'
-import type { ServerInfo } from '../../../vscode/src/jsonrpc/agent-protocol'
+import type { ServerInfo } from '@sourcegraph/vscode-cody/src/jsonrpc/agent-protocol'
+
+// Inline Agent web worker since we're building cody/web package
+// in the cody repository and ship it via published npm package
+// Inlining allows us to not handle web-worker entry point on the
+// consumer side, it brings its own problems but this is temporally
+// solution while we don't have a clear package separation in the
+// cody repository
+
+// @ts-ignore
+import AgentWorker from './worker.ts?worker&inline'
 
 // TODO(sqs): dedupe with agentClient.ts in [experimental Cody CLI](https://github.com/sourcegraph/cody/pull/3418)
-
 export interface AgentClient {
     serverInfo: ServerInfo
     webviewPanelID: string
@@ -31,7 +40,7 @@ export async function createAgentClient({
     debug = true,
     trace = false,
 }: AgentClientOptions): Promise<AgentClient> {
-    const worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
+    const worker = new AgentWorker() as Worker
     const rpc = createMessageConnection(
         new BrowserMessageReader(worker),
         new BrowserMessageWriter(worker),

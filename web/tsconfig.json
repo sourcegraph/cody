@@ -5,8 +5,15 @@
     "module": "ESNext",
     "outDir": "dist",
     "jsx": "react-jsx",
-    "lib": ["ESNext", "DOM"],
+    "skipDefaultLibCheck": true,
+    "skipLibCheck": true,
+    "emitDeclarationOnly": true,
+    "lib": ["ESNext", "DOM"]
   },
-  "include": ["src"],
-  "references": [{"path": "../agent"}, { "path": "../lib/shared" }, {"path": "../vscode"}],
+  "include": ["src", "lib"],
+  "references": [
+    { "path": "../agent" },
+    { "path": "../vscode" },
+    { "path": "../lib/shared" }
+  ],
 }

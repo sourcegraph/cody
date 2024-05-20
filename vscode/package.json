@@ -1,7 +1,6 @@
 {
   "$schema": "package.schema.json",
-  "name": "cody-ai",
-  "private": true,
+  "name": "@sourcegraph/vscode-cody",
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
   "version": "1.22.0",
   "publisher": "sourcegraph",

@@ -3,8 +3,8 @@ import {
     BrowserMessageWriter,
     createMessageConnection,
 } from 'vscode-jsonrpc/browser'
-import { Agent } from '../../../agent/src/agent'
-import { activate } from '../../../vscode/src/extension.web'
+import { Agent } from '@sourcegraph/cody-agent/src/agent'
+import { activate } from '@sourcegraph/vscode-cody/src/extension.web'
 
 const conn = createMessageConnection(new BrowserMessageReader(self), new BrowserMessageWriter(self))
 
