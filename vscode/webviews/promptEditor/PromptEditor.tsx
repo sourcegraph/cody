@@ -4,7 +4,7 @@ import { clsx } from 'clsx'
 import {
     $createTextNode,
     $getRoot,
-    $getSelection,
+    $insertNodes,
     CLEAR_HISTORY_COMMAND,
     type LexicalEditor,
     type SerializedEditorState,
@@ -99,10 +99,9 @@ export const PromptEditor: FunctionComponent<Props> = ({
             },
             addContextItemAsToken(items: ContextItem[]) {
                 editorRef?.current?.update(() => {
-                    const selection = $getSelection()
                     const spaceNode = $createTextNode(' ')
                     const mentionNodes = items.map($createContextItemMentionNode)
-                    selection?.insertNodes([spaceNode, ...mentionNodes, spaceNode])
+                    $insertNodes([spaceNode, ...mentionNodes, spaceNode])
                     spaceNode.select()
                 })
             },

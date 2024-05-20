@@ -56,12 +56,19 @@ export function getChatPanel(page: Page): FrameLocator {
 export async function createEmptyChatPanel(page: Page): Promise<[FrameLocator, Locator]> {
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
     const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
+
+    await closeEnhancedContextSettings(page, chatFrame)
+
+    const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
+    return [chatFrame, chatInput]
+}
+
+export async function closeEnhancedContextSettings(page: Page, chatFrame: FrameLocator): Promise<void> {
+    // Hide the enhanced context box in case it popped up (as it does on new installs).
     const enhancedContextCheckbox = chatFrame.locator('#enhanced-context-checkbox')
     await expect(enhancedContextCheckbox).toBeFocused()
     await page.keyboard.press('Escape')
     await expect(enhancedContextCheckbox).not.toBeVisible()
-    const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
-    return [chatFrame, chatInput]
 }
 
 /**
