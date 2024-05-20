@@ -579,7 +579,7 @@ test
         const optionTitle = `foo ${serverURL}`
         await expect(chatPanelFrame.getByRole('option', { name: optionTitle })).toBeVisible()
         await chatPanelFrame.getByRole('option', { name: optionTitle }).click()
-        await expect(chatInput).toHaveText(`@${mentionURL} `)
+        await expect(chatInput).toHaveText(`@openctx:${mentionURL} `)
 
         // Submit the message
         await chatInput.press('Enter')
