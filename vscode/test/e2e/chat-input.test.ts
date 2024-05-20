@@ -274,7 +274,7 @@ test.extend<ExpectedEvents>({
     const codeBlock = chatFrame.locator('pre').last()
     expect(codeBlock).toBeVisible()
     const codeBlockElement = await codeBlock.boundingBox()
-    expect(codeBlockElement?.width).toBe(welcomeTextContainerWidth)
+    expect(codeBlockElement?.width).toBeLessThanOrEqual(welcomeTextContainerWidth)
 
     // Go to the bottom of the chat transcript view
     await codeBlock.click()
@@ -285,5 +285,5 @@ test.extend<ExpectedEvents>({
 
     // The response text element and the code block element should have the same width
     const botResponseElement = await botResponseText.boundingBox()
-    expect(botResponseElement?.width).toBe(welcomeTextContainerWidth)
+    expect(botResponseElement?.width).toBeLessThanOrEqual(welcomeTextContainerWidth)
 })

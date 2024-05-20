@@ -77,5 +77,5 @@ test.extend<ExpectedEvents>({
     await expect(chatFrame.getByText('Four')).toBeVisible()
 
     // Chat input should still have focus.
-    await expect(lastChatInput).toBeFocused()
+    await expect(secondChatInput).toBeFocused()
 })
