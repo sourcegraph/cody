@@ -105,38 +105,17 @@ export const Default: StoryObj<typeof MentionMenu> = {
                     title: 'Foo - Example',
                     provider: URL_CONTEXT_MENTION_PROVIDER.id,
                 },
-                {
-                    type: 'package',
-                    ecosystem: 'npm',
-                    name: '@lexical/editor',
-                    source: ContextItemSource.Package,
-                    provider: PACKAGE_CONTEXT_MENTION_PROVIDER.id,
-                    uri: URI.parse('https://sourcegraph.com/npm/lexical/editor'),
-                    repoID: '1',
-                    title: '@lexical/editor',
-                },
-                {
-                    type: 'github_issue',
-                    source: ContextItemSource.Github,
-                    provider: GITHUB_CONTEXT_MENTION_PROVIDER.id,
-                    uri: URI.parse('https://github.com/pacocoursey/cmdk/issues/252'),
-                    title: '#252 Selected item does not scroll into view',
-                    issueNumber: 252,
-                    repoName: 'pacocoursey/cmdk',
-                    owner: 'pacocoursey',
-                },
-                {
-                    type: 'github_pull_request',
-                    source: ContextItemSource.Github,
-                    provider: GITHUB_CONTEXT_MENTION_PROVIDER.id,
-                    uri: URI.parse('https://github.com/sourcegraph/cody/pull/4050'),
-                    title: '#4050 use clsx instead of classnames',
-                    pullNumber: 4050,
-                    repoName: 'sourcegraph/cody',
-                    owner: 'sourcegraph',
-                },
             ],
-            []
+            [
+                {
+                    title: 'Files',
+                    id: FILE_CONTEXT_MENTION_PROVIDER.id,
+                },
+                {
+                    title: 'Symbols',
+                    id: SYMBOL_CONTEXT_MENTION_PROVIDER.id,
+                },
+            ]
         ),
     },
 }
@@ -156,7 +135,16 @@ export const WithExperimentalProviders: StoryObj<typeof MentionMenu> = {
                     range: { start: { line: 3, character: 5 }, end: { line: 7, character: 9 } },
                 },
             ],
-            []
+            [
+                {
+                    title: 'Files',
+                    id: FILE_CONTEXT_MENTION_PROVIDER.id,
+                },
+                {
+                    title: 'Symbols',
+                    id: SYMBOL_CONTEXT_MENTION_PROVIDER.id,
+                },
+            ]
         ),
     },
 }
