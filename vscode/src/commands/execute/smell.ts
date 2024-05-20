@@ -20,6 +20,7 @@ import { type ExecuteChatArguments, executeChat } from './ask'
 import type { Span } from '@opentelemetry/api'
 import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/context-filter'
 import { getEditor } from '../../editor/active-editor'
+import { getContextFileFromCurrentFile } from '../context/current-file'
 
 /**
  * Generates the prompt and context files with arguments for the 'smell' command.
@@ -38,12 +39,11 @@ async function smellCommand(
         prompt = ps`${prompt} ${args.additionalInstruction}`
     }
 
-    const contextFiles: ContextItem[] = []
+    const cs =
+        (await getContextFileFromCursor(args?.range?.start))[0] ||
+        (await getContextFileFromCurrentFile())[0]
+    const contextFiles: ContextItem[] = [cs]
 
-    const currentSelection = await getContextFileFromCursor()
-    contextFiles.push(...currentSelection)
-
-    const cs = currentSelection[0]
     if (cs) {
         const range = cs.range && ps`:${displayLineRange(cs.range)}`
         prompt = prompt.replaceAll(

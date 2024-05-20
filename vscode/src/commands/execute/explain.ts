@@ -39,16 +39,11 @@ async function explainCommand(
         prompt = ps`${prompt} ${args.additionalInstruction}`
     }
 
-    // fetches the context file from the current cursor position using getContextFileFromCursor().
-    const contextFiles: ContextItem[] = []
+    const cs =
+        (await getContextFileFromCursor(args?.range?.start))[0] ||
+        (await getContextFileFromCurrentFile())[0]
+    const contextFiles: ContextItem[] = [cs]
 
-    const currentSelection = await getContextFileFromCursor(args?.range?.start)
-    contextFiles.push(...currentSelection)
-
-    const currentFile = await getContextFileFromCurrentFile()
-    contextFiles.push(...currentFile)
-
-    const cs = currentSelection[0] ?? currentFile[0]
     if (cs) {
         const range = cs.range && ps`:${displayLineRange(cs.range)}`
         prompt = prompt.replaceAll(
