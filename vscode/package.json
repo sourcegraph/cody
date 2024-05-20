@@ -1,7 +1,6 @@
 {
   "$schema": "package.schema.json",
   "name": "cody-ai",
-  "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
   "version": "1.24.0",
   "publisher": "sourcegraph",
