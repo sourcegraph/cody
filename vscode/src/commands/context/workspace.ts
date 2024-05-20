@@ -34,7 +34,9 @@ export async function getWorkspaceFilesContext(
         }, 20000)
 
         try {
-            const results = await workspace.findFiles(globalPattern, excluded, maxResults, token.token)
+            const results = (
+                await workspace.findFiles(globalPattern, excluded, maxResults, token.token)
+            ).sort((a, b) => a.toString().localeCompare(b.toString()))
 
             return (
                 await Promise.all(

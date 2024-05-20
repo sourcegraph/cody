@@ -25,7 +25,7 @@
     "watch:build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
     "watch:build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
     "_build:esbuild:desktop": "pnpm download-wasm && esbuild ./src/extension.node.ts --bundle --outfile=dist/extension.node.js --external:vscode --external:typescript --format=cjs --platform=node --sourcemap",
-    "_build:esbuild:web": "esbuild ./src/extension.web.ts --platform=browser --bundle --outfile=dist/extension.web.js --alias:path=path-browserify --external:typescript --alias:node:path=path-browserify --alias:node:os=os-browserify --external:vscode --define:process='{\"env\":{}}' --define:window=self --format=cjs --sourcemap",
+    "_build:esbuild:web": "esbuild ./src/extension.web.ts --platform=browser --bundle --outfile=dist/extension.web.js --alias:path=path-browserify --external:typescript --alias:node:path=path-browserify --alias:node:os=os-browserify --external:vscode --external:node:fs/promises --define:process='{\"env\":{}}' --define:window=self --format=cjs --sourcemap",
     "_build:webviews": "vite -c webviews/vite.config.ts build",
     "release": "ts-node-transpile-only ./scripts/release.ts",
     "download-wasm": "ts-node-transpile-only ./scripts/download-wasm-modules.ts",
@@ -1288,6 +1288,18 @@
             }
           }
         },
+        "openctx.enable": {
+          "type": "boolean",
+          "markdownDescription": "Enable OpenCtx providers for Cody.",
+          "default": true
+        },
+        "openctx.providers": {
+          "type": "object",
+          "markdownDescription": "OpenCtx providers configuration.",
+          "default": {
+            "https://openctx.org/npm/@openctx/provider-web": true
+          }
+        },
         "cody.internal.unstable": {
           "order": 999,
           "type": "boolean",
@@ -1376,7 +1388,7 @@
     "@lexical/html": "^0.13.1",
     "@lexical/react": "^0.13.1",
     "@mdi/js": "^7.2.96",
-    "@openctx/vscode-lib": "^0.0.1",
+    "@openctx/vscode-lib": "^0.0.5",
     "@opentelemetry/api": "^1.7.0",
     "@opentelemetry/core": "^1.18.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",

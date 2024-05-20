@@ -1,4 +1,5 @@
 import type React from 'react'
+import { Fragment } from 'react'
 import { type FunctionComponent, useEffect, useRef } from 'react'
 
 import { clsx } from 'clsx'
@@ -14,7 +15,8 @@ import { CodyLogo } from '../icons/CodyLogo'
 import styles from './Transcript.module.css'
 import { Cell } from './cells/Cell'
 import { ContextCell } from './cells/contextCell/ContextCell'
-import { MessageCell } from './cells/messageCell/MessageCell'
+import { AssistantMessageCell } from './cells/messageCell/assistant/AssistantMessageCell'
+import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 import { useChatModelContext } from './models/chatModelContext'
 
 export const Transcript: React.FunctionComponent<{
@@ -138,7 +140,7 @@ export const Transcript: React.FunctionComponent<{
                 return null
             }
             const offsetIndex = index + offset === earlierMessages.length
-            const keyIndex = index + offset
+            const messageIndexInTranscript = index + offset
 
             const isLoading = Boolean(
                 offsetIndex &&
@@ -146,38 +148,48 @@ export const Transcript: React.FunctionComponent<{
                     messageInProgress.speaker === 'assistant' &&
                     !messageInProgress.text
             )
-            const isLastMessage = keyIndex === transcript.length - 1
+            const isLastMessage = messageIndexInTranscript === transcript.length - 1
 
-            const isItemBeingEdited = messageBeingEdited === keyIndex
+            const isItemBeingEdited = messageBeingEdited === messageIndexInTranscript
 
             return (
-                <div key={index}>
-                    {isItemBeingEdited && <div ref={itemBeingEditedRef} />}
-                    <MessageCell
-                        key={keyIndex}
-                        message={message}
-                        messageIndexInTranscript={keyIndex}
-                        isLoading={isLoading}
-                        disabled={messageBeingEdited !== undefined && !isItemBeingEdited}
-                        showEditButton={message.speaker === 'human'}
-                        beingEdited={messageBeingEdited}
-                        setBeingEdited={setMessageBeingEdited}
-                        showFeedbackButtons={index !== 0 && !isTranscriptError && !message.error}
-                        feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                        copyButtonOnSubmit={copyButtonOnSubmit}
-                        insertButtonOnSubmit={insertButtonOnSubmit}
-                        postMessage={postMessage}
-                        userInfo={userInfo}
-                        guardrails={guardrails}
-                    />
-                    {message.speaker === 'human' &&
-                        ((message.contextFiles && message.contextFiles.length > 0) || isLastMessage) && (
-                            <ContextCell
-                                contextFiles={message.contextFiles}
-                                disabled={messageBeingEdited !== undefined}
+                <Fragment key={messageIndexInTranscript}>
+                    {message.speaker === 'human' ? (
+                        <>
+                            {isItemBeingEdited && <div ref={itemBeingEditedRef} />}
+                            <HumanMessageCell
+                                message={message}
+                                userInfo={userInfo}
+                                messageIndexInTranscript={messageIndexInTranscript}
+                                showEditButton={true}
+                                beingEdited={messageBeingEdited}
+                                setBeingEdited={setMessageBeingEdited}
                             />
-                        )}
-                </div>
+                            {((message.contextFiles && message.contextFiles.length > 0) ||
+                                isLastMessage) && (
+                                <ContextCell
+                                    contextFiles={message.contextFiles}
+                                    disabled={messageBeingEdited !== undefined}
+                                />
+                            )}
+                        </>
+                    ) : (
+                        <AssistantMessageCell
+                            message={message}
+                            userInfo={userInfo}
+                            isLoading={isLoading}
+                            disabled={messageBeingEdited !== undefined}
+                            showFeedbackButtons={
+                                messageIndexInTranscript !== 0 && !isTranscriptError && !message.error
+                            }
+                            feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                            copyButtonOnSubmit={copyButtonOnSubmit}
+                            insertButtonOnSubmit={insertButtonOnSubmit}
+                            postMessage={postMessage}
+                            guardrails={guardrails}
+                        />
+                    )}
+                </Fragment>
             )
         }
 
@@ -203,13 +215,9 @@ export const Transcript: React.FunctionComponent<{
                 {messageInProgress &&
                     messageInProgress.speaker === 'assistant' &&
                     Boolean(transcript[earlierMessages.length].contextFiles) && (
-                        <MessageCell
+                        <AssistantMessageCell
                             message={messageInProgress}
-                            messageIndexInTranscript={transcript.length}
                             isLoading={true}
-                            beingEdited={messageBeingEdited}
-                            setBeingEdited={setMessageBeingEdited}
-                            showEditButton={false}
                             showFeedbackButtons={false}
                             copyButtonOnSubmit={copyButtonOnSubmit}
                             insertButtonOnSubmit={insertButtonOnSubmit}

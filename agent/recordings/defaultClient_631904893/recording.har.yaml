@@ -2680,203 +2680,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: fadc1cebab4f244278c51bbca2133996
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 3177
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 321
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/TestLogger.ts: const foo =
-                  42
-
-                  export const TestLogger = {
-                      startLogging: () => {
-                          // Do some stuff
-
-                          function recordLog() {
-                              console.log(/* CURSOR */ 'Recording the log')
-                          }
-
-                          recordLog()
-                      },
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/TestClass.ts: const foo =
-                  42
-
-
-                  export class TestClass {
-                      constructor(private shouldGreet: boolean) {}
-
-                      public functionName() {
-                          if (this.shouldGreet) {
-                              console.log(/* CURSOR */ 'Hello World!')
-                          }
-                      }
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example.test.ts: import {
-                  expect } from 'vitest'
-
-                  import { it } from 'vitest'
-
-                  import { describe } from 'vitest'
-
-
-                  describe('test block', () => {
-                      it('does 1', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does 2', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does something else', () => {
-                          // This line will error due to incorrect usage of `performance.now`
-                          const startTime = performance.now(/* CURSOR */)
-                      })
-                  })
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  My selected code from @src/animal.ts:1-6:
-                  ```
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: Review the shared code context and configurations to identify the test
-                  framework and libraries in use. Then, generate a suite of
-                  multiple unit tests for the functions in <selected> using the
-                  detected test framework and libraries. Be sure to import the
-                  function being tested. Follow the same patterns as any shared
-                  context. Only add packages, imports, dependencies, and
-                  assertions if they are used in the shared code. Pay attention
-                  to the file path of each shared context to see if test for
-                  <selected> already exists. If one exists, focus on generating
-                  new unit tests for uncovered cases. If none are detected,
-                  import common unit test libraries for {languageName}. Focus on
-                  validating key functionality with simple and complete
-                  assertions. Only include mocks if one is detected in the
-                  shared code. Before writing the tests, identify which test
-                  libraries and frameworks to import, e.g. 'No new imports
-                  needed - using existing libs' or 'Importing test framework
-                  that matches shared context usage' or 'Importing the defined
-                  framework', etc. Then briefly summarize test coverage and any
-                  limitations. At the end, enclose the full completed code for
-                  the new unit tests, including all necessary imports, in a
-                  single markdown codeblock. No fragments or TODO. The new tests
-                  should validate expected functionality and cover edge cases
-                  for <selected> with all required imports, including importing
-                  the function being tested. Do not repeat existing tests.
-            model: anthropic/claude-3-sonnet-20240229
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 1333827
-        content:
-          mimeType: text/event-stream
-          size: 1333827
-          text: >+
-            event: completion
-
-            data: {"completion":"Based on the shared code context from `src/example.test.ts`, the test framework being used is Vitest, which is a modern test runner powered by Vite. It appears to be a test suite for a specific \"test block\" with multiple test cases.\n\nTo generate a suite of unit tests for the `Animal` interface defined in `src/animal.ts`, we can use Vitest and the assertions provided by the `vitest` library.\n\nImporting the required libraries:\n\n```typescript\nimport { describe, it, expect } from 'vitest'\n```\n\nSince the `Animal` interface is an exported module, we need to import it as well:\n\n```typescript\nimport { Animal } from './animal'\n```\n\nNow, we can define a new test suite for the `Animal` interface:\n\n```typescript\ndescribe('Animal', () =\u003e {\n  it('should have a name property', () =\u003e {\n    const mockAnimal: Animal = {\n      name: 'Lion',\n      makeAnimalSound: () =\u003e 'Roar',\n      isMammal: true,\n    }\n\n    expect(mockAnimal).toHaveProperty('name')\n  })\n\n  it('should have a makeAnimalSound method', () =\u003e {\n    const mockAnimal: Animal = {\n      name: 'Parrot',\n      makeAnimalSound: () =\u003e 'Squawk',\n      isMammal: false,\n    }\n\n    expect(mockAnimal.makeAnimalSound).toBeInstanceOf(Function)\n  })\n\n  it('should have an isMammal property', () =\u003e {\n    const mockAnimal: Animal = {\n      name: 'Dolphin',\n      makeAnimalSound: () =\u003e 'Click',\n      isMammal: true,\n    }\n\n    expect(mockAnimal).toHaveProperty('isMammal')\n  })\n})\n```\n\nThis suite covers the following aspects of the `Animal` interface:\n\n1. Ensures that the `name` property exists on the object.\n2. Verifies that the `makeAnimalSound` property is a function.\n3. Checks if the `isMammal` property exists on the object.\n\nNOTE: Since we are testing an interface, we cannot instantiate it directly. Instead, we create mock objects that conform to the interface and use them for testing.\n\nThe generated test suite provides basic coverage for the `Animal` interface and its properties. However, it does not cover any specific implementation details or edge cases, as the `Animal` interface itself is a contract and does not contain any implementation logic.\n\nHere's the complete code for the new unit tests:\n\n```typescript\nimport { describe, it, expect } from 'vitest'\nimport { Animal } from './animal'\n\ndescribe('Animal', () =\u003e {\n  it('should have a name property', () =\u003e {\n    const mockAnimal: Animal = {\n      name: 'Lion',\n      makeAnimalSound: () =\u003e 'Roar',\n      isMammal: true,\n    }\n\n    expect(mockAnimal).toHaveProperty('name')\n  })\n\n  it('should have a makeAnimalSound method', () =\u003e {\n    const mockAnimal: Animal = {\n      name: 'Parrot',\n      makeAnimalSound: () =\u003e 'Squawk',\n      isMammal: false,\n    }\n\n    expect(mockAnimal.makeAnimalSound).toBeInstanceOf(Function)\n  })\n\n  it('should have an isMammal property', () =\u003e {\n    const mockAnimal: Animal = {\n      name: 'Dolphin',\n      makeAnimalSound: () =\u003e 'Click',\n      isMammal: true,\n    }\n\n    expect(mockAnimal).toHaveProperty('isMammal')\n  })\n})\n```","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Thu, 09 May 2024 18:39:23 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-09T18:39:22.387Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: 80cea54ab9beb9ea04b6c612f25dc666
       _order: 0
       cache: {}
@@ -3677,11 +3480,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 1dd042333ad05181be6645a5ef1a221c
+    - _id: 89a6aca98e150be2afc2c9b6a202bcd9
       _order: 0
       cache: {}
       request:
-        bodySize: 3561
+        bodySize: 2823
         cookies: []
         headers:
           - name: content-type
@@ -3693,11 +3496,13 @@ log:
               REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
           - name: user-agent
             value: defaultClient / v1
+          - name: traceparent
+            value: 00-02d6427103ad72965a8796b7a5246df8-71f8671094cc3ef0-01
           - name: connection
             value: keep-alive
           - name: host
             value: sourcegraph.com
-        headersSize: 345
+        headersSize: 415
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -3708,24 +3513,6 @@ log:
             messages:
               - speaker: system
                 text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/TestLogger.ts: const foo =
-                  42
-
-                  export const TestLogger = {
-                      startLogging: () => {
-                          // Do some stuff
-
-                          function recordLog() {
-                              console.log(/* CURSOR */ 'Recording the log')
-                          }
-
-                          recordLog()
-                      },
-                  }
-              - speaker: assistant
-                text: Ok.
               - speaker: human
                 text: >
                   Codebase context from file path src/TestClass.ts: const foo =
@@ -3740,6 +3527,197 @@ log:
                               console.log(/* CURSOR */ 'Hello World!')
                           }
                       }
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example.test.ts: import {
+                  expect } from 'vitest'
+
+                  import { it } from 'vitest'
+
+                  import { describe } from 'vitest'
+
+
+                  describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of `performance.now`
+                          const startTime = performance.now(/* CURSOR */)
+                      })
+                  })
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  My selected code from @src/animal.ts:1-6:
+                  ```
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: Review the shared code context and configurations to identify the test
+                  framework and libraries in use. Then, generate a suite of
+                  multiple unit tests for the functions in <selected> using the
+                  detected test framework and libraries. Be sure to import the
+                  function being tested. Follow the same patterns as any shared
+                  context. Only add packages, imports, dependencies, and
+                  assertions if they are used in the shared code. Pay attention
+                  to the file path of each shared context to see if test for
+                  <selected> already exists. If one exists, focus on generating
+                  new unit tests for uncovered cases. If none are detected,
+                  import common unit test libraries for {languageName}. Focus on
+                  validating key functionality with simple and complete
+                  assertions. Only include mocks if one is detected in the
+                  shared code. Before writing the tests, identify which test
+                  libraries and frameworks to import, e.g. 'No new imports
+                  needed - using existing libs' or 'Importing test framework
+                  that matches shared context usage' or 'Importing the defined
+                  framework', etc. Then briefly summarize test coverage and any
+                  limitations. At the end, enclose the full completed code for
+                  the new unit tests, including all necessary imports, in a
+                  single markdown codeblock. No fragments or TODO. The new tests
+                  should validate expected functionality and cover edge cases
+                  for <selected> with all required imports, including importing
+                  the function being tested. Do not repeat existing tests.
+            model: anthropic/claude-3-sonnet-20240229
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 681264
+        content:
+          mimeType: text/event-stream
+          size: 681264
+          text: >+
+            event: completion
+
+            data: {"completion":"To generate unit tests for the `Animal` interface, I will need to import the testing framework and assertion library used in the shared code context. Based on the file `src/example.test.ts`, the testing framework being used is Vitest.\n\nNo new imports needed - using existing libs.\n\nFor the `Animal` interface, I can create unit tests to ensure that any class implementing this interface has the required properties and methods. Here's a possible test suite:\n\n```typescript\nimport { describe, it, expect } from 'vitest'\n\n// Import the class or module that implements the Animal interface\nimport { /* ClassOrModuleImplementingAnimal */ } from '../src/path/to/class'\n\ndescribe('Animal', () =\u003e {\n  let animal: Animal\n\n  beforeEach(() =\u003e {\n    // Create an instance of the class or module implementing Animal\n    animal = new /* ClassOrModuleImplementingAnimal */()\n  })\n\n  it('should have a name property', () =\u003e {\n    expect(animal).toHaveProperty('name')\n  })\n\n  it('should have a makeAnimalSound method', () =\u003e {\n    expect(animal).toHaveProperty('makeAnimalSound')\n    expect(typeof animal.makeAnimalSound).toBe('function')\n  })\n\n  it('should have an isMammal property', () =\u003e {\n    expect(animal).toHaveProperty('isMammal')\n  })\n\n  it('should return a string when calling makeAnimalSound', () =\u003e {\n    const sound = animal.makeAnimalSound()\n    expect(typeof sound).toBe('string')\n  })\n})\n```\n\nThis test suite covers the following:\n\n1. Ensures that any class implementing the `Animal` interface has the required `name`, `makeAnimalSound`, and `isMammal` properties.\n2. Verifies that the `makeAnimalSound` method is a function.\n3. Checks that the `makeAnimalSound` method returns a string.\n\nLimitations:\n- The tests assume that there is a class or module that implements the `Animal` interface. If no such implementation exists, the tests will fail.\n- The tests do not cover any specific behavior or logic related to the `makeAnimalSound` method or the `isMammal` property. Additional tests may be needed to validate the expected behavior of these members.\n- The tests do not cover any edge cases or error handling scenarios.\n\nTo fully test the implementation of the `Animal` interface, you might need to create additional tests based on the specific requirements and expected behavior of the classes or modules that implement it.","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Sat, 18 May 2024 16:19:13 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-05-18T16:19:11.831Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: a38a32e511f8275bc4df977ecce4ef73
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 3392
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-209c2f3c93f1f8cf83fa466166f26ced-dfc89a8a23b1de72-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 415
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/TestClass.ts: const foo =
+                  42
+
+
+                  export class TestClass {
+                      constructor(private shouldGreet: boolean) {}
+
+                      public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+                      }
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/sum.ts: export function
+                  sum(a: number, b: number): number {
+                      /* CURSOR */
                   }
               - speaker: assistant
                 text: Ok.
@@ -3899,7 +3877,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 14 May 2024 20:42:26 GMT
+            value: Sat, 18 May 2024 16:19:28 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -3928,7 +3906,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-14T20:42:25.303Z
+      startedDateTime: 2024-05-18T16:19:26.666Z
       time: 0
       timings:
         blocked: -1
@@ -11911,262 +11889,6 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-05-06T23:26:11.157Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 635bd88b29afc0d3a63da8a994fc93c3
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 0
-        cookies: []
-        headers:
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 194
-        httpVersion: HTTP/1.1
-        method: GET
-        queryString: []
-        url: https://sourcegraph.com/healthz
-      response:
-        bodySize: 34
-        content:
-          mimeType: text/plain; charset=utf-8
-          size: 34
-          text: 273635_2024-05-09_5.4-e37a78bbd300
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 10 May 2024 16:12:55 GMT
-          - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "34"
-          - name: connection
-            value: keep-alive
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: x-content-type-options
-            value: nosniff
-        headersSize: 939
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-10T16:12:55.276Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: a764a28eda8397a9e6b1a9afaa351050
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 0
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_4a92106dd3be39a589d6e2d0a6e32b705744d4007d74518fdfd1dbf953176dc6
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 278
-        httpVersion: HTTP/1.1
-        method: GET
-        queryString: []
-        url: https://sourcegraph.com/healthz
-      response:
-        bodySize: 34
-        content:
-          mimeType: text/plain; charset=utf-8
-          size: 34
-          text: 273635_2024-05-09_5.4-e37a78bbd300
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 10 May 2024 16:12:55 GMT
-          - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "34"
-          - name: connection
-            value: keep-alive
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: x-content-type-options
-            value: nosniff
-        headersSize: 939
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-10T16:12:55.328Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 07b98a6d87b223d87fe2a6efc3dd8d3d
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 0
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_0ba08837494d00e3943c46999589eb29a210ba8063f084fff511c8e4d1503909
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 290
-        httpVersion: HTTP/1.1
-        method: GET
-        queryString: []
-        url: https://sourcegraph.com/healthz
-      response:
-        bodySize: 34
-        content:
-          mimeType: text/plain; charset=utf-8
-          size: 34
-          text: 273635_2024-05-09_5.4-e37a78bbd300
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 10 May 2024 16:12:55 GMT
-          - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "34"
-          - name: connection
-            value: keep-alive
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: x-content-type-options
-            value: nosniff
-        headersSize: 939
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-10T16:12:55.411Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 5c74073496986f546230ca24c5f5a57e
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 0
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 278
-        httpVersion: HTTP/1.1
-        method: GET
-        queryString: []
-        url: https://sourcegraph.com/healthz
-      response:
-        bodySize: 34
-        content:
-          mimeType: text/plain; charset=utf-8
-          size: 34
-          text: 273635_2024-05-09_5.4-e37a78bbd300
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 10 May 2024 16:12:55 GMT
-          - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "34"
-          - name: connection
-            value: keep-alive
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: x-content-type-options
-            value: nosniff
-        headersSize: 939
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-10T16:12:55.448Z
       time: 0
       timings:
         blocked: -1

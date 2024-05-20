@@ -5,7 +5,7 @@ import { CODY_FEEDBACK_URL } from '../../../src/chat/protocol'
 import styles from './FeedbackButtons.module.css'
 
 export interface FeedbackButtonsProps {
-    className: string
+    className?: string
     disabled?: boolean
     feedbackButtonsOnSubmit: (text: string) => void
 }

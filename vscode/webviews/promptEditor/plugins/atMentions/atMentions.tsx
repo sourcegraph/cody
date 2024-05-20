@@ -162,7 +162,7 @@ export default function MentionsPlugin(): JSX.Element | null {
 
     return (
         <LexicalTypeaheadMenuPlugin<MentionMenuOption>
-            onQueryChange={query => updateQuery(query ?? '')}
+            onQueryChange={query => updateQuery(query)}
             onSelectOption={onSelectOption}
             onClose={() => {
                 updateMentionMenuParams({ parentItem: null })

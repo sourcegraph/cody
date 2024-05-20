@@ -193,7 +193,7 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
 
     const [chatFrame, chatInput] = await createEmptyChatPanel(page)
 
-    const modelSelect = chatFrame.getByRole('combobox', { name: 'Choose a model' })
+    const modelSelect = chatFrame.getByRole('combobox', { name: 'Select a model' })
 
     await expect(modelSelect).toBeEnabled()
     await expect(modelSelect).toHaveText(/^Claude 3 Sonnet/)

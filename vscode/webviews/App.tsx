@@ -11,7 +11,6 @@ import {
     type ModelProvider,
     PromptString,
     type SerializedChatTranscript,
-    allMentionProvidersMetadata,
     isMacOS,
 } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from './Chat'
@@ -285,11 +284,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     <EnhancedContextContext.Provider value={enhancedContextStatus}>
                         <EnhancedContextEnabled.Provider value={enhancedContextEnabled}>
                             <ChatModelContextProvider value={chatModelContext}>
-                                <WithContextProviders
-                                    value={{
-                                        providers: allMentionProvidersMetadata(config),
-                                    }}
-                                >
+                                <WithContextProviders>
                                     <Chat
                                         chatEnabled={chatEnabled}
                                         userInfo={userAccountInfo}

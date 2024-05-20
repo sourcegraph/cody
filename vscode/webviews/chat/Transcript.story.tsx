@@ -154,3 +154,21 @@ export const WithRateLimitError: StoryObj<typeof meta> = {
         isTranscriptError: true,
     },
 }
+
+export const TextWrapping: StoryObj<typeof meta> = {
+    args: {
+        transcript: transcriptFixture([
+            ...SIMPLE_TRANSCRIPT,
+            {
+                speaker: 'human',
+                text: ps`What color is the skyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskysky?`,
+                contextFiles: [],
+            },
+            {
+                speaker: 'assistant',
+                text: ps`The sky is blueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblue.\n\n\`\`\`\nconst color = 'blueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblue'\n\`\`\`\n\nMore info:\n\n- Color of sky: blueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblue`,
+            },
+        ]),
+        isTranscriptError: true,
+    },
+}

@@ -62,6 +62,11 @@ export function isUniqueContextItem(itemToAdd: ContextItem, uniqueItems: Context
                 return false // Duplicate found.
             }
 
+            // Skip non-duplicated user-added item.
+            if (isUserAddedItem(itemToAdd) && !isUserAddedItem(item)) {
+                continue
+            }
+
             // Duplicates if overlapping ranges on the same lines,
             // or if one range contains the other.
             if (item.range && itemToAddRange) {

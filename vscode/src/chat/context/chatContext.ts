@@ -1,21 +1,18 @@
 import {
-    CONTEXT_MENTION_PROVIDERS,
     type ContextItem,
-    type ContextItemProps,
-    type ContextMentionProvider,
+    type ContextItemOpenCtx,
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionQuery,
-    PACKAGE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
-    URL_CONTEXT_MENTION_PROVIDER,
+    openCtx,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import {
     getFileContextFiles,
     getOpenTabsContextFile,
     getSymbolContextFiles,
-    getWorkspaceGitRemotes,
 } from '../../editor/utils/editor-context'
 
 export async function getChatContextItemsForMention(
@@ -60,49 +57,25 @@ export async function getChatContextItemsForMention(
         }
 
         default: {
-            const props: ContextItemProps = { gitRemotes: getWorkspaceGitRemotes() }
-
-            for (const provider of getEnabledContextMentionProviders()) {
-                if (provider.id === mentionQuery.provider) {
-                    return provider.queryContextItems(
-                        mentionQuery.text,
-                        props,
-                        convertCancellationTokenToAbortSignal(cancellationToken)
-                    )
-                }
+            const openctxClient = openCtx.client
+            if (!openctxClient) {
+                return []
             }
-            return []
+
+            const items = await openctxClient.mentions(
+                { query: mentionQuery.text },
+                // get mention items for the selected provider only.
+                mentionQuery.provider
+            )
+
+            return items.map(
+                (item): ContextItemOpenCtx => ({
+                    ...item,
+                    type: 'openctx',
+                    uri: URI.parse(item.uri),
+                    provider: 'openctx',
+                })
+            )
         }
     }
-}
-
-export function getEnabledContextMentionProviders(): ContextMentionProvider[] {
-    const isAllEnabled =
-        vscode.workspace.getConfiguration('cody').get<boolean>('experimental.noodle') === true
-    if (isAllEnabled) {
-        return CONTEXT_MENTION_PROVIDERS
-    }
-
-    const isURLProviderEnabled =
-        vscode.workspace.getConfiguration('cody').get<boolean>('experimental.urlContext') === true
-    const isPackageProviderEnabled =
-        vscode.workspace.getConfiguration('cody').get<boolean>('experimental.packageContext') === true
-
-    if (isURLProviderEnabled || isPackageProviderEnabled) {
-        return CONTEXT_MENTION_PROVIDERS.filter(
-            provider =>
-                (isURLProviderEnabled && provider.id === URL_CONTEXT_MENTION_PROVIDER.id) ||
-                (isPackageProviderEnabled && provider.id === PACKAGE_CONTEXT_MENTION_PROVIDER.id)
-        )
-    }
-    return []
-}
-
-function convertCancellationTokenToAbortSignal(token: vscode.CancellationToken): AbortSignal {
-    const controller = new AbortController()
-    const disposable = token.onCancellationRequested(() => {
-        controller.abort()
-        disposable.dispose()
-    })
-    return controller.signal
 }

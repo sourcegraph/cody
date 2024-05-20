@@ -2,7 +2,6 @@ import type { Decorator } from '@storybook/react'
 
 import {
     type ModelProvider,
-    allMentionProvidersMetadata,
     getDotComDefaultModels,
     isWindows,
     setDisplayPathEnvInfo,
@@ -78,11 +77,8 @@ if (!(window as any).acquireVsCodeApi) {
 }
 
 export const ContextProvidersDecorator: Decorator = (Story, context) => {
-    const experimentalContextProviders = context.globals.experimentalContextProviders
     return (
-        <WithContextProviders
-            value={{ providers: allMentionProvidersMetadata(experimentalContextProviders) }}
-        >
+        <WithContextProviders>
             <Story />
         </WithContextProviders>
     )

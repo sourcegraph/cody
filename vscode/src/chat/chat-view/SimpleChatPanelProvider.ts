@@ -24,6 +24,7 @@ import {
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     Typewriter,
+    allMentionProvidersMetadata,
     hydrateAfterPostMessage,
     isDefined,
     isError,
@@ -159,6 +160,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
     private history = new ChatHistoryManager()
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
+    private allMentionProvidersMetadataQueryCancellation?: vscode.CancellationTokenSource
 
     private disposables: vscode.Disposable[] = []
     public dispose(): void {
@@ -290,6 +292,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             case 'getUserContext':
                 await this.handleGetUserContextFilesCandidates(parseMentionQuery(message.query, null))
                 break
+            case 'getAllMentionProvidersMetadata':
+                await this.handleGetAllMentionProvidersMetadata()
+                break
             case 'queryContextItems':
                 await this.handleGetUserContextFilesCandidates(message.query)
                 break
@@ -373,21 +378,25 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
     }
 
-    // =======================================================================
-    // #region top-level view action handlers
-    // =======================================================================
-
-    // When the webview sends the 'ready' message, respond by posting the view config
-    private async handleReady(): Promise<void> {
+    private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const config = await getFullConfig()
-        const authStatus = this.authProvider.getAuthStatus()
-        const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
+        return {
             uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
             serverEndpoint: config.serverEndpoint,
             experimentalGuardrails: config.experimentalGuardrails,
             experimentalNoodle: config.experimentalNoodle,
             experimentalURLContext: config.experimentalURLContext,
         }
+    }
+
+    // =======================================================================
+    // #region top-level view action handlers
+    // =======================================================================
+
+    // When the webview sends the 'ready' message, respond by posting the view config
+    private async handleReady(): Promise<void> {
+        const authStatus = this.authProvider.getAuthStatus()
+        const configForWebview = await this.getConfigForWebview()
         const workspaceFolderUris =
             vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
         await this.postMessage({
@@ -621,6 +630,36 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         await chatModel.set(modelID)
     }
 
+    private async handleGetAllMentionProvidersMetadata(): Promise<void> {
+        // Cancel previously in-flight query.
+        const cancellation = new vscode.CancellationTokenSource()
+        this.allMentionProvidersMetadataQueryCancellation?.cancel()
+        this.allMentionProvidersMetadataQueryCancellation = cancellation
+
+        try {
+            const config = await this.getConfigForWebview()
+            if (cancellation.token.isCancellationRequested) {
+                return
+            }
+            const providers = await allMentionProvidersMetadata(config)
+            if (cancellation.token.isCancellationRequested) {
+                return
+            }
+            void this.postMessage({
+                type: 'allMentionProvidersMetadata',
+                providers,
+            })
+        } catch (error) {
+            if (cancellation.token.isCancellationRequested) {
+                return
+            }
+            cancellation.cancel()
+            this.postError(new Error(`Error retrieving context files: ${error}`))
+        } finally {
+            cancellation.dispose()
+        }
+    }
+
     private async handleGetUserContextFilesCandidates(query: MentionQuery): Promise<void> {
         // Cancel previously in-flight query.
         const cancellation = new vscode.CancellationTokenSource()
@@ -763,7 +802,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     // =======================================================================
 
     private postEmptyMessageInProgress(): void {
-        this.postViewTranscript({ speaker: 'assistant' })
+        this.postViewTranscript({ speaker: 'assistant', model: this.chatModel.modelID })
     }
 
     private postViewTranscript(messageInProgress?: ChatMessage): void {
@@ -931,6 +970,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 this.postViewTranscript({
                     speaker: 'assistant',
                     text: PromptString.unsafe_fromLLMResponse(content),
+                    model: this.chatModel.modelID,
                 })
             },
             close: content => {
