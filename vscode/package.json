@@ -1297,8 +1297,7 @@
           "type": "object",
           "markdownDescription": "OpenCtx providers configuration.",
           "default": {
-            "https://openctx.org/npm/@openctx/web": true,
-            "file:///Users/naman/Work/openctx/provider/web/dist/index.js": true
+            "https://openctx.org/npm/@openctx/web": true
           }
         },
         "cody.internal.unstable": {
