@@ -2,8 +2,8 @@ import type { ModelProvider } from '.'
 import {
     CHAT_INPUT_TOKEN_BUDGET,
     CHAT_OUTPUT_TOKEN_BUDGET,
-    CLAUDE3_CHAT_INPUT_TOKEN_BUDGET,
-    CLAUDE3_USER_CONTEXT_TOKEN_BUDGET,
+    EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
+    EXTENDED_USER_CONTEXT_TOKEN_BUDGET,
 } from '../token/constants'
 
 import { ModelUsage } from './types'
@@ -20,11 +20,11 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         initialDefault: true,
         codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        // Has a higher context window with a seperated limit for user-context.
+        // Has a higher context window with a separate limit for user-context.
         contextWindow: {
-            input: CLAUDE3_CHAT_INPUT_TOKEN_BUDGET,
+            input: EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
             output: CHAT_OUTPUT_TOKEN_BUDGET,
-            context: { user: CLAUDE3_USER_CONTEXT_TOKEN_BUDGET },
+            context: { user: EXTENDED_USER_CONTEXT_TOKEN_BUDGET },
         },
         deprecated: false,
         uiGroup: ModelUIGroup.Balanced,
@@ -36,11 +36,11 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        // Has a higher context window with a seperated limit for user-context.
+        // Has a higher context window with a separate limit for user-context.
         contextWindow: {
-            input: CLAUDE3_CHAT_INPUT_TOKEN_BUDGET,
+            input: EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
             output: CHAT_OUTPUT_TOKEN_BUDGET,
-            context: { user: CLAUDE3_USER_CONTEXT_TOKEN_BUDGET },
+            context: { user: EXTENDED_USER_CONTEXT_TOKEN_BUDGET },
         },
         deprecated: false,
         uiGroup: ModelUIGroup.Accuracy,
@@ -63,7 +63,12 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
+        // Has a higher context window with a separate limit for user-context.
+        contextWindow: {
+            input: EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
+            output: CHAT_OUTPUT_TOKEN_BUDGET,
+            context: { user: EXTENDED_USER_CONTEXT_TOKEN_BUDGET },
+        },
         deprecated: false,
         uiGroup: ModelUIGroup.Accuracy,
     },

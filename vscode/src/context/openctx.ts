@@ -1,21 +1,18 @@
-import { type OpenCtxExtensionAPI, setOpenCtxExtensionAPI } from '@sourcegraph/cody-shared'
+import { setOpenCtxClient } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { logDebug, outputChannel } from '../log'
 
-export function exposeOpenCtxExtensionAPIHandle(): void {
-    setOpenCtxExtensionAPI(async (): Promise<OpenCtxExtensionAPI | null> => {
-        const API_VERSION = 1 as const
-
-        const ext = vscode.extensions.getExtension<OpenCtxVSCodeExtensionAPI>('sourcegraph.openctx')
-        if (!ext) {
-            return null
-        }
-        return (await ext.activate()).apiVersion(API_VERSION)
-    })
-}
-
-interface OpenCtxVSCodeExtensionAPI {
-    /**
-     * If this API changes, the version number will be incremented.
-     */
-    apiVersion(version: 1): OpenCtxExtensionAPI
+export function exposeOpenCtxClient(secrets: vscode.SecretStorage): void {
+    if (vscode.workspace.getConfiguration('cody').get('experimental.openctx', false)) {
+        logDebug('openctx', 'OpenCtx is enabled in Cody')
+        import('@openctx/vscode-lib')
+            .then(({ createController }) => {
+                setOpenCtxClient(
+                    createController({ outputChannel, secrets, features: {} }).controller.client
+                )
+            })
+            .catch(error => {
+                logDebug('openctx', `Failed to load OpenCtx client: ${error}`)
+            })
+    }
 }

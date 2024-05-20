@@ -298,7 +298,7 @@ Tests:
 - [ ] Enable "Enhanced Context" and verify that Cody used code files as context.
 - [ ] At the top of the chat transcript, use the arrow dropdown to display the code that Cody used as context.
 - [ ] From the list of files that Cody used as context, select one of the `@` files and verify that the correct file opens in a new tab at the correct line number.
-- [ ] In the chat input, verify that typing `@` suggests files to add as context, and typing `@#` suggests symbols to add as context.
+- [ ] In the chat input, verify that typing `@` suggests files to add as context, and selecting Symbols and then typing a symbol name suggests symbols to add as context.
 - [ ] Verify that you can use a relative file path to choose a file to add as context (e.g., `src/util/my-file`).
 
 ### Enterprise

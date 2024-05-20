@@ -8,7 +8,7 @@ import type { ContextMentionProvider } from '../api'
 
 export const SOURCEGRAPH_SEARCH_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'src-search'> = {
     id: 'src-search',
-    triggerPrefixes: ['src:', '?'],
+    title: 'Code Search',
 
     async queryContextItems(query, _, signal) {
         const searchQuery = query.startsWith('?')

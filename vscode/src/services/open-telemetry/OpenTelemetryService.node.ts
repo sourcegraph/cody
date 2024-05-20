@@ -1,4 +1,3 @@
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import { registerInstrumentations } from '@opentelemetry/instrumentation'
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http'
 import { Resource } from '@opentelemetry/resources'
@@ -14,6 +13,7 @@ import {
 import { DiagConsoleLogger, DiagLogLevel, diag } from '@opentelemetry/api'
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { version } from '../../version'
+import { CodyTraceExporter } from './CodyTraceExport'
 import { ConsoleBatchSpanExporter } from './console-batch-span-exporter'
 
 export type OpenTelemetryServiceConfig = Pick<
@@ -24,6 +24,7 @@ export type OpenTelemetryServiceConfig = Pick<
 export class OpenTelemetryService {
     private tracerProvider?: NodeTracerProvider
     private unloadInstrumentations?: () => void
+    private isTracingEnabled = false
 
     private lastTraceUrl: string | undefined
     // We use a single promise object that we chain on to, to avoid multiple reconfigure calls to
@@ -40,13 +41,9 @@ export class OpenTelemetryService {
     }
 
     private async reconfigure(): Promise<void> {
-        const isEnabled =
+        this.isTracingEnabled =
             this.config.experimentalTracing ||
             (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing))
-
-        if (!isEnabled) {
-            return
-        }
 
         const traceUrl = new URL('/-/debug/otlp/v1/traces', this.config.serverEndpoint).toString()
         if (this.lastTraceUrl === traceUrl) {
@@ -76,7 +73,7 @@ export class OpenTelemetryService {
         // Add the default tracer exporter used in production.
         this.tracerProvider.addSpanProcessor(
             new BatchSpanProcessor(
-                new OTLPTraceExporter({ url: traceUrl, httpAgentOptions: { rejectUnauthorized: false } })
+                new CodyTraceExporter({ traceUrl, isTracingEnabled: this.isTracingEnabled })
             )
         )
 

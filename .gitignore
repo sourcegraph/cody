@@ -1,6 +1,7 @@
 node_modules/
 .stylelintcache
 dist/
+out/
 *.tsbuildinfo
 .DS_Store
 .env

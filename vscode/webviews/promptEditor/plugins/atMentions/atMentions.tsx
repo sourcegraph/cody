@@ -1,86 +1,104 @@
-import { FloatingPortal, flip, offset, shift, useFloating } from '@floating-ui/react'
+import {
+    FloatingPortal,
+    type UseFloatingOptions,
+    autoUpdate,
+    computePosition,
+    flip,
+    offset,
+    shift,
+    useFloating,
+} from '@floating-ui/react'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { LexicalTypeaheadMenuPlugin, MenuOption } from '@lexical/react/LexicalTypeaheadMenuPlugin'
-import { $createTextNode, COMMAND_PRIORITY_NORMAL, type TextNode } from 'lexical'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { LexicalTypeaheadMenuPlugin, type MenuOption } from '@lexical/react/LexicalTypeaheadMenuPlugin'
+import { $createTextNode, $getSelection, COMMAND_PRIORITY_NORMAL, type TextNode } from 'lexical'
+import { useCallback, useEffect, useState } from 'react'
 import styles from './atMentions.module.css'
 
 import {
     type ContextItem,
-    ContextItemSource,
     FAST_CHAT_INPUT_TOKEN_BUDGET,
-    displayPath,
     scanForMentionTriggerInUserTextInput,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import { useCurrentChatModel } from '../../../chat/models/chatModelContext'
+import { MentionMenu } from '../../../mentions/mentionMenu/MentionMenu'
+import {
+    useMentionMenuData,
+    useMentionMenuParams,
+} from '../../../mentions/mentionMenu/useMentionMenuData'
 import { toSerializedPromptEditorValue } from '../../PromptEditor'
 import {
     $createContextItemMentionNode,
     $createContextItemTextNode,
     ContextItemMentionNode,
 } from '../../nodes/ContextItemMentionNode'
-import { OptionsList } from './OptionsList'
-import { useChatContextItems } from './chatContextClient'
+import { contextItemID } from './util'
 
 const SUGGESTION_LIST_LENGTH_LIMIT = 20
 
-export class MentionTypeaheadOption extends MenuOption {
-    public displayPath: string
+export interface MentionMenuOption extends MenuOption {
+    item: ContextItem
+}
 
-    constructor(public readonly item: ContextItem) {
-        super(
-            JSON.stringify([
-                `${item.type}`,
-                `${item.uri.toString()}`,
-                `${item.type === 'symbol' ? item.symbolName : ''}`,
-                item.range
-                    ? `${item.range.start.line}:${item.range.start.character}-${item.range.end.line}:${item.range.end.character}`
-                    : '',
-            ])
-        )
-        this.displayPath = displayPath(item.uri)
+export function createMentionMenuOption(item: ContextItem): MentionMenuOption {
+    return {
+        item,
+        key: contextItemID(item),
+
+        // This is not used by LexicalMenu or LexicalTypeaheadMenuPlugin, so we can just make it a
+        // noop.
+        setRefElement: () => {},
     }
+}
+
+const FLOATING_OPTIONS: UseFloatingOptions = {
+    placement: 'top-start',
+    middleware: [offset(6), flip(), shift()],
+    transform: false,
 }
 
 export default function MentionsPlugin(): JSX.Element | null {
     const [editor] = useLexicalComposerContext()
 
-    const [query, setQuery] = useState<string | null>(null)
-
+    /**
+     * Total sum of tokens represented by all of the @-mentioned items.
+     */
     const [tokenAdded, setTokenAdded] = useState<number>(0)
 
-    const { x, y, refs, strategy, update } = useFloating({
-        placement: 'top-start',
-        middleware: [offset(6), flip(), shift()],
-    })
-
-    const results = useChatContextItems(query)
+    const { x, y, refs, strategy } = useFloating(FLOATING_OPTIONS)
 
     const model = useCurrentChatModel()
-    const options = useMemo(() => {
-        const limit =
-            model?.contextWindow?.context?.user ||
-            model?.contextWindow?.input ||
-            FAST_CHAT_INPUT_TOKEN_BUDGET
-        return (
-            results
-                ?.map(r => {
-                    if (r.size) {
-                        r.isTooLarge = r.size > limit - tokenAdded
-                    }
-                    // All @-mentions should have a source of `User`.
-                    r.source = ContextItemSource.User
-                    return new MentionTypeaheadOption(r)
-                })
-                .slice(0, SUGGESTION_LIST_LENGTH_LIMIT) ?? []
-        )
-    }, [results, model, tokenAdded])
+    const limit =
+        model?.contextWindow?.context?.user ||
+        model?.contextWindow?.input ||
+        FAST_CHAT_INPUT_TOKEN_BUDGET
+    const remainingTokenBudget = limit - tokenAdded
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: Intent is to update whenever `options` changes.
-    useEffect(() => {
-        update()
-    }, [options, update])
+    const { params, updateQuery, updateMentionMenuParams } = useMentionMenuParams()
+
+    const data = useMentionMenuData(params, {
+        remainingTokenBudget,
+        limit: SUGGESTION_LIST_LENGTH_LIMIT,
+    })
+
+    const setEditorQuery = useCallback(
+        (query: string): void => {
+            if (editor) {
+                editor.update(() => {
+                    const selection = $getSelection()
+                    if (selection) {
+                        const lastNode = selection.getNodes().at(-1)
+                        if (lastNode) {
+                            const textNode = $createTextNode(`@${query}`)
+                            lastNode.replace(textNode)
+                            textNode.selectEnd()
+                        }
+                    }
+                })
+            }
+        },
+        [editor]
+    )
 
     useEffect(() => {
         // Listen for changes to ContextItemMentionNode to update the token count.
@@ -97,11 +115,7 @@ export default function MentionsPlugin(): JSX.Element | null {
     }, [editor])
 
     const onSelectOption = useCallback(
-        (
-            selectedOption: MentionTypeaheadOption,
-            nodeToReplace: TextNode | null,
-            closeMenu: () => void
-        ) => {
+        (selectedOption: MentionMenuOption, nodeToReplace: TextNode | null, closeMenu: () => void) => {
             editor.update(() => {
                 const currentInputText = nodeToReplace?.__text
                 if (!currentInputText) {
@@ -131,44 +145,67 @@ export default function MentionsPlugin(): JSX.Element | null {
         [editor]
     )
 
-    const onQueryChange = useCallback((query: string | null) => setQuery(query), [])
+    // Reposition popover when the window, editor, or popover changes size.
+    useEffect(() => {
+        const referenceEl = refs.reference.current
+        const floatingEl = refs.floating.current
+        if (!referenceEl || !floatingEl) {
+            return undefined
+        }
+        const cleanup = autoUpdate(referenceEl, floatingEl, async () => {
+            const { x, y } = await computePosition(referenceEl, floatingEl, FLOATING_OPTIONS)
+            floatingEl.style.left = `${x}px`
+            floatingEl.style.top = `${y}px`
+        })
+        return cleanup
+    }, [refs.reference.current, refs.floating.current])
 
     return (
-        <LexicalTypeaheadMenuPlugin<MentionTypeaheadOption>
-            onQueryChange={onQueryChange}
+        <LexicalTypeaheadMenuPlugin<MentionMenuOption>
+            onQueryChange={query => updateQuery(query)}
             onSelectOption={onSelectOption}
+            onClose={() => {
+                updateMentionMenuParams({ parentItem: null })
+            }}
             triggerFn={scanForMentionTriggerInUserTextInput}
-            options={options}
+            options={DUMMY_OPTIONS}
             anchorClassName={styles.resetAnchor}
             commandPriority={
                 COMMAND_PRIORITY_NORMAL /* so Enter keypress selects option and doesn't submit form */
             }
             onOpen={menuResolution => {
                 refs.setPositionReference({
-                    getBoundingClientRect: menuResolution.getRect,
+                    getBoundingClientRect: (): DOMRect => {
+                        const range = document.createRange()
+                        const sel = document.getSelection()
+                        if (sel?.anchorNode) {
+                            range.setStart(sel.anchorNode, menuResolution.match?.leadOffset ?? 0)
+                            range.setEnd(sel.anchorNode, sel.anchorOffset)
+                            return range.getBoundingClientRect()
+                        }
+                        throw new Error('no selection anchor')
+                    },
                 })
             }}
-            menuRenderFn={(
-                anchorElementRef,
-                { selectedIndex, selectOptionAndCleanUp, setHighlightedIndex }
-            ) =>
+            menuRenderFn={(anchorElementRef, { selectOptionAndCleanUp }) =>
                 anchorElementRef.current && (
                     <FloatingPortal root={anchorElementRef.current}>
                         <div
-                            ref={refs.setFloating}
+                            ref={ref => {
+                                refs.setFloating(ref)
+                            }}
                             style={{
                                 position: strategy,
-                                top: y ?? 0,
-                                left: x ?? 0,
-                                width: 'max-content',
+                                top: y,
+                                left: x,
                             }}
                             className={clsx(styles.popover)}
                         >
-                            <OptionsList
-                                query={query ?? ''}
-                                options={options}
-                                selectedIndex={selectedIndex}
-                                setHighlightedIndex={setHighlightedIndex}
+                            <MentionMenu
+                                params={params}
+                                updateMentionMenuParams={updateMentionMenuParams}
+                                setEditorQuery={setEditorQuery}
+                                data={data}
                                 selectOptionAndCleanUp={selectOptionAndCleanUp}
                             />
                         </div>
@@ -178,3 +215,9 @@ export default function MentionsPlugin(): JSX.Element | null {
         />
     )
 }
+
+/**
+ * Dummy options for LexicalTypeaheadMenuPlugin. See {@link MentionMenu} for an explanation of why
+ * we handle options ourselves.
+ */
+const DUMMY_OPTIONS: MentionMenuOption[] = []

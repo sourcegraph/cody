@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { Chat } from './Chat'
 import { FIXTURE_TRANSCRIPT, FIXTURE_USER_ACCOUNT_INFO } from './chat/fixtures'
-import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
+import { ContextProvidersDecorator, VSCodeWebview } from './storybook/VSCodeStoryDecorator'
 
 const meta: Meta<typeof Chat> = {
     title: 'cody/Chat',
@@ -33,7 +33,7 @@ const meta: Meta<typeof Chat> = {
         userContextFromSelection: [],
     } satisfies React.ComponentProps<typeof Chat>,
 
-    decorators: [VSCodeWebview],
+    decorators: [VSCodeWebview, ContextProvidersDecorator],
 }
 
 export default meta

@@ -2,6 +2,7 @@ import type { Decorator } from '@storybook/react'
 
 import {
     type ModelProvider,
+    allMentionProvidersMetadata,
     getDotComDefaultModels,
     isWindows,
     setDisplayPathEnvInfo,
@@ -11,6 +12,7 @@ import { type CSSProperties, useState } from 'react'
 import { URI } from 'vscode-uri'
 import '../../node_modules/@vscode/codicons/dist/codicon.css'
 import { type ChatModelContext, ChatModelContextProvider } from '../chat/models/chatModelContext'
+import { WithContextProviders } from '../mentions/providers'
 import { WithChatContextClient } from '../promptEditor/plugins/atMentions/chatContextClient'
 import { dummyChatContextClient } from '../promptEditor/plugins/atMentions/fixtures'
 import styles from './VSCodeStoryDecorator.module.css'
@@ -73,4 +75,15 @@ if (!(window as any).acquireVsCodeApi) {
     ;(window as any).acquireVsCodeApi = () => ({
         postMessage: () => {},
     })
+}
+
+export const ContextProvidersDecorator: Decorator = (Story, context) => {
+    const experimentalContextProviders = context.globals.experimentalContextProviders
+    return (
+        <WithContextProviders
+            value={{ providers: allMentionProvidersMetadata(experimentalContextProviders) }}
+        >
+            <Story />
+        </WithContextProviders>
+    )
 }

@@ -1,36 +1,33 @@
 import { URI } from 'vscode-uri'
 import type { ContextItemWithContent } from '../../codebase-context/messages'
 import { isDefined } from '../../common'
-import { getOpenCtxExtensionAPI } from '../../context/openctx/api'
+import { getOpenCtxClient } from '../../context/openctx/api'
 import type { ContextItemFromProvider, ContextMentionProvider } from '../api'
-
-const TRIGGER_PREFIX = 'octx:'
 
 export const OPENCTX_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'openctx'> = {
     id: 'openctx',
-    triggerPrefixes: [TRIGGER_PREFIX],
+    title: 'OpenCtx',
     async queryContextItems(query) {
-        const openctxAPI = await getOpenCtxExtensionAPI()
-        if (!openctxAPI) {
+        const client = getOpenCtxClient()
+        if (!client) {
             return []
         }
-        const results = await openctxAPI.getItems({ query: query.slice(TRIGGER_PREFIX.length) })
-        const items =
+        const results = await client.mentions({ query: query })
+        const mentions =
             results
-                ?.map((result, i) =>
-                    result.ai?.content
-                        ? ({
-                              type: 'file',
-                              title: result.title,
-                              uri: URI.parse(result.url ?? `openctx-item:${i}`),
-                              provider: 'openctx',
-                              content: result.ai?.content,
-                          } satisfies ContextItemWithContent & ContextItemFromProvider<'openctx'>)
-                        : null
+                ?.map(
+                    (result, i) =>
+                        ({
+                            type: 'file',
+                            title: result.title,
+                            uri: URI.parse(result.uri ?? `openctx-item:${i}`),
+                            provider: 'openctx',
+                            content: '',
+                        }) satisfies ContextItemWithContent & ContextItemFromProvider<'openctx'>
                 )
                 .filter(isDefined) ?? []
-        HACK_LAST_RESULTS = items
-        return items
+        HACK_LAST_RESULTS = mentions
+        return mentions
     },
     resolveContextItem(item) {
         return Promise.resolve(

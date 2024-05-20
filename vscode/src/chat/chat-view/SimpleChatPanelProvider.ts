@@ -16,6 +16,7 @@ import {
     type EventSource,
     type FeatureFlagProvider,
     type Guardrails,
+    type MentionQuery,
     type Message,
     ModelProvider,
     ModelUsage,
@@ -28,6 +29,7 @@ import {
     isError,
     isFileURI,
     isRateLimitError,
+    parseMentionQuery,
     recordErrorToSpan,
     reformatBotMessageForChat,
     serializeChatMessage,
@@ -286,6 +288,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 this.postChatModels()
                 break
             case 'getUserContext':
+                await this.handleGetUserContextFilesCandidates(parseMentionQuery(message.query, null))
+                break
+            case 'queryContextItems':
                 await this.handleGetUserContextFilesCandidates(message.query)
                 break
             case 'insert':
@@ -380,6 +385,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
             serverEndpoint: config.serverEndpoint,
             experimentalGuardrails: config.experimentalGuardrails,
+            experimentalNoodle: config.experimentalNoodle,
+            experimentalURLContext: config.experimentalURLContext,
         }
         const workspaceFolderUris =
             vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
@@ -614,7 +621,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         await chatModel.set(modelID)
     }
 
-    private async handleGetUserContextFilesCandidates(query: string): Promise<void> {
+    private async handleGetUserContextFilesCandidates(query: MentionQuery): Promise<void> {
         // Cancel previously in-flight query.
         const cancellation = new vscode.CancellationTokenSource()
         this.contextFilesQueryCancellation?.cancel()
@@ -756,7 +763,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     // =======================================================================
 
     private postEmptyMessageInProgress(): void {
-        this.postViewTranscript({ speaker: 'assistant' })
+        this.postViewTranscript({ speaker: 'assistant', model: this.chatModel.modelID })
     }
 
     private postViewTranscript(messageInProgress?: ChatMessage): void {
@@ -924,6 +931,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 this.postViewTranscript({
                     speaker: 'assistant',
                     text: PromptString.unsafe_fromLLMResponse(content),
+                    model: this.chatModel.modelID,
                 })
             },
             close: content => {

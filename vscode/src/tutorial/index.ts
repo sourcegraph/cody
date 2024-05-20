@@ -1,7 +1,6 @@
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { type TextChange, updateRangeMultipleChanges } from '../../src/non-stop/tracked-range'
-import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import { logSidebarClick } from '../services/SidebarCommands'
 import {
     registerAutocompleteListener,
@@ -200,14 +199,6 @@ export const startTutorial = async (document: vscode.TextDocument): Promise<vsco
 export const registerInteractiveTutorial = async (
     context: vscode.ExtensionContext
 ): Promise<vscode.Disposable[]> => {
-    if (isRunningInsideAgent()) {
-        // TODO: The interactive tutorial is currently VS Code specific, both in terms of features and keyboard shortcuts.
-        // Consider opening this up to support dynamic content via Cody Agent.
-        // This would allow us the present the same tutorial but with client-specific steps.
-        // Alternatively, clients may not wish to use this tutorial and instead opt for something more suitable for their environment.
-        return []
-    }
-
     const disposables: vscode.Disposable[] = []
     const documentUri = setTutorialUri(context)
     let document = await initTutorialDocument(documentUri)

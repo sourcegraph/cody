@@ -103,7 +103,7 @@ async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<ContextI
         }
 
         // we sort by shortest diffs first so that we include as many changed files as possible
-        return diffs.toSorted((a, b) => a.size! - b.size!)
+        return diffs.sort((a, b) => a.size! - b.size!)
     } catch (error) {
         logError('getContextFileFromGitDiff', 'failed', { verbose: error })
         throw new Error('Failed to get git diff.')
