@@ -59,6 +59,9 @@ export async function createEmptyChatPanel(
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
     const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
     const chatInputs = chatFrame.getByRole('textbox', { name: 'Chat message' })
+
+    await closeEnhancedContextSettings(page, chatFrame)
+
     return [chatFrame, chatInputs.last(), chatInputs.first(), chatInputs]
 }
 
