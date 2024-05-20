@@ -138,6 +138,7 @@ interface SuggestedEventPayload extends SharedEventPayload {
     read: boolean
     accepted: boolean
     completionsStartedSinceLastSuggestion: number
+    languageId: string
 }
 
 /** Emitted when a completion was fully accepted by the user */
