@@ -73,7 +73,6 @@ export async function getChatContextItemsForMention(
                     ...item,
                     type: 'openctx',
                     uri: URI.parse(item.uri),
-                    providerUri: item.providerUri,
                     provider: 'openctx',
                 })
             )
