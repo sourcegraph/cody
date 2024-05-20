@@ -631,11 +631,11 @@ class EditCommandPrompt(
     // Caching these caused problems with theme switches, even when we
     // updated the cached values on theme-switch notifications.
 
-    fun mutedLabelColor(): Color = EditUtil.getMutedThemeColor("Label.disabledForeground")!!
+    fun mutedLabelColor(): Color = EditUtil.getThemeColor("Label.disabledForeground")!!
 
-    fun boldLabelColor(): Color = EditUtil.getEnhancedThemeColor("Label.foreground")!!
+    fun boldLabelColor(): Color = EditUtil.getThemeColor("Label.foreground")!!
 
-    fun textFieldBackground(): Color = EditUtil.getEnhancedThemeColor("TextField.background")!!
+    fun textFieldBackground(): Color = EditUtil.getThemeColor("TextField.background")!!
 
     /** Returns a compact symbol representation of the action's keyboard shortcut, if any. */
     @JvmStatic
