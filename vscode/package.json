@@ -1,7 +1,6 @@
 {
   "$schema": "package.schema.json",
   "name": "cody-ai",
-  "private": true,
   "displayName": "Cody",
   "version": "1.22.4",
   "publisher": "sourcegraph",

@@ -1,14 +1,19 @@
 import { resolve } from 'node:path'
 
-import react from '@vitejs/plugin-react-swc'
+import dts from 'vite-plugin-dts'
+import react from '@vitejs/plugin-react'
 
 import { defineProjectWithDefaults } from '../.config/viteShared'
 
-const fakeProcessEnv: Record<string, string | boolean> = {
+const FAKE_PROCESS_ENV: Record<string, string | boolean> = {
     CODY_SHIM_TESTING: false,
     CODY_TESTING: false,
     CODY_PROFILE_TEMP: false,
+    CODY_AGENT_TRACE_PATH: '',
     CODY_TELEMETRY_EXPORTER: 'testing',
+    NODE_ENV: 'production',
+    CODY_DEBUG: false,
+    TESTING_DOTCOM_URL: 'https://sourcegraph.com',
     NODE_DEBUG: false,
     CODY_SUPPRESS_AGENT_AUTOCOMPLETE_WARNING: true,
     CODY_WEB_DONT_SET_SOME_HEADERS: true,
@@ -16,27 +21,27 @@ const fakeProcessEnv: Record<string, string | boolean> = {
 }
 
 export default defineProjectWithDefaults(__dirname, {
-    plugins: [react({ devTarget: 'esnext' })],
-    base: './',
+    base: '/',
     logLevel: 'info',
-    server: {
-        strictPort: true,
-        port: 5777,
-    },
+    worker: { format: 'es' },
+    plugins: [
+        react(),
+        dts({ include: ['lib'] })
+    ],
     resolve: {
         alias: [
             { find: 'vscode', replacement: resolve(__dirname, '../agent/src/vscode-shim.ts') },
             {
                 find: 'node:child_process',
-                replacement: resolve(__dirname, 'src/agent/shims/child_process.ts'),
+                replacement: resolve(__dirname, 'lib/agent/shims/child_process.ts'),
             },
             {
                 find: /^node:fs\/promises$/,
-                replacement: resolve(__dirname, 'src/agent/shims/fs__promises.ts'),
+                replacement: resolve(__dirname, 'lib/agent/shims/fs__promises.ts'),
             },
-            { find: /^node:fs$/, replacement: resolve(__dirname, 'src/agent/shims/fs.ts') },
-            { find: /^node:os$/, replacement: resolve(__dirname, 'src/agent/shims/os.ts') },
-            { find: 'env-paths', replacement: resolve(__dirname, 'src/agent/shims/env-paths.ts') },
+            { find: /^node:fs$/, replacement: resolve(__dirname, 'lib/agent/shims/fs.ts') },
+            { find: /^node:os$/, replacement: resolve(__dirname, 'lib/agent/shims/os.ts') },
+            { find: 'env-paths', replacement: resolve(__dirname, 'lib/agent/shims/env-paths.ts') },
             {
                 find: /^(node:)?path$/,
                 replacement: resolve(__dirname, 'node_modules/path-browserify'),
@@ -53,7 +58,7 @@ export default defineProjectWithDefaults(__dirname, {
             // Autocomplete isn't used on web. Omitting it cuts the bundle size by ~5 MB.
             {
                 find: './completions/create-inline-completion-item-provider',
-                replacement: resolve(__dirname, 'src/agent/shims/inline-completion-item-provider.ts'),
+                replacement: resolve(__dirname, 'lib/agent/shims/inline-completion-item-provider.ts'),
             },
         ],
     },
@@ -65,30 +70,28 @@ export default defineProjectWithDefaults(__dirname, {
     define: process.env.VITEST
         ? null
         : {
-              ...Object.fromEntries(
-                  Object.entries(fakeProcessEnv).map(([key, value]) => [
+              'process': {},
+        ...Object.fromEntries(
+            Object.entries(FAKE_PROCESS_ENV).map(([key, value]) => [
                       `process.env.${key}`,
                       JSON.stringify(value),
                   ])
               ),
           },
     build: {
-        emptyOutDir: false,
-        outDir: 'dist',
-        assetsDir: '.',
         minify: false,
-        reportCompressedSize: false,
+        assetsDir: './',
         rollupOptions: {
-            watch: {
-                include: ['src/**'],
-                exclude: ['node_modules'],
-            },
-            input: {
-                main: resolve(__dirname, 'index.html'),
-            },
+            external: ['react', 'react/jsx-runtime'],
             output: {
+                assetFileNames: '[name].[ext]',
                 entryFileNames: '[name].js',
             },
         },
+        lib: {
+            formats: ['cjs'],
+            entry: resolve(__dirname, 'lib/index.ts')
+        }
     },
+    server: { strictPort: true, port: 5777 }
 })
