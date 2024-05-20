@@ -193,7 +193,7 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
 
     const [chatFrame, chatInput] = await createEmptyChatPanel(page)
 
-    const modelSelect = chatFrame.getByRole('combobox', { name: 'Select a model' })
+    const modelSelect = chatFrame.getByRole('combobox', { name: 'Select a model' }).last()
 
     await expect(modelSelect).toBeEnabled()
     await expect(modelSelect).toHaveText(/^Claude 3 Sonnet/)
@@ -207,6 +207,7 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     await modelSelect.click()
     const modelChoices = chatFrame.getByRole('listbox', { name: 'Suggestions' })
     await modelChoices.getByRole('option', { name: 'GPT-4o' }).click()
+    await expect(chatInput).toBeFocused()
     await expect(modelSelect).toHaveText(/^GPT-4o/)
     await chatInput.fill('to model2')
     await chatInput.press('Enter')

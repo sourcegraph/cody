@@ -1,3 +1,4 @@
+import type { ModelProvider } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import { AtSignIcon } from 'lucide-react'
 import { type FunctionComponent, useCallback } from 'react'
@@ -82,7 +83,7 @@ export const Toolbar: FunctionComponent<{
                 presentationMode={userInfo.isDotComUser ? 'consumer' : 'enterprise'}
                 onCloseByEscape={focusEditor}
             />
-            <ModelSelectFieldToolbarItem userInfo={userInfo} onCloseByEscape={focusEditor} />
+            <ModelSelectFieldToolbarItem userInfo={userInfo} focusEditor={focusEditor} />
             <div className={styles.spacer} />
             <SubmitButton
                 onClick={onSubmitClick}
@@ -96,9 +97,17 @@ export const Toolbar: FunctionComponent<{
 
 const ModelSelectFieldToolbarItem: FunctionComponent<{
     userInfo: UserAccountInfo
-    onCloseByEscape?: () => void
-}> = ({ userInfo, onCloseByEscape }) => {
+    focusEditor?: () => void
+}> = ({ userInfo, focusEditor }) => {
     const { chatModels, onCurrentChatModelChange } = useChatModelContext()
+
+    const onModelSelect = useCallback(
+        (model: ModelProvider) => {
+            onCurrentChatModelChange?.(model)
+            focusEditor?.()
+        },
+        [onCurrentChatModelChange, focusEditor]
+    )
 
     return (
         !!chatModels?.length &&
@@ -107,10 +116,10 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
         userInfo.isDotComUser && (
             <ModelSelectField
                 models={chatModels}
-                onModelSelect={onCurrentChatModelChange}
+                onModelSelect={onModelSelect}
                 userInfo={userInfo}
                 align="start"
-                onCloseByEscape={onCloseByEscape}
+                onCloseByEscape={focusEditor}
             />
         )
     )

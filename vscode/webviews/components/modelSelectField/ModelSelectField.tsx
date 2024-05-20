@@ -183,6 +183,11 @@ export const ModelSelectField: React.FunctionComponent<{
                 className="tw-min-w-[325px] tw-w-[unset] tw-max-w-[90%] !tw-p-0"
                 align={align}
                 onKeyDown={onKeyDown}
+                onCloseAutoFocus={event => {
+                    // Prevent the popover trigger from stealing focus after the user selects an
+                    // item. We want the focus to return to the editor.
+                    event.preventDefault()
+                }}
             >
                 <Command loop={true} defaultValue={value} tabIndex={0} className="focus:tw-outline-none">
                     <CommandList>
