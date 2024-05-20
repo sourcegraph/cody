@@ -32,6 +32,7 @@ sealed class ExtensionMessage {
           "webview-state" -> context.deserialize<`webview-stateExtensionMessage`>(element, `webview-stateExtensionMessage`::class.java)
           "context/remote-repos" -> context.deserialize<`context_remote-reposExtensionMessage`>(element, `context_remote-reposExtensionMessage`::class.java)
           "setConfigFeatures" -> context.deserialize<SetConfigFeaturesExtensionMessage>(element, SetConfigFeaturesExtensionMessage::class.java)
+          "allMentionProvidersMetadata" -> context.deserialize<AllMentionProvidersMetadataExtensionMessage>(element, AllMentionProvidersMetadataExtensionMessage::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
@@ -232,6 +233,16 @@ data class SetConfigFeaturesExtensionMessage(
 
   enum class TypeEnum {
     @SerializedName("setConfigFeatures") SetConfigFeatures,
+  }
+}
+
+data class AllMentionProvidersMetadataExtensionMessage(
+  val type: TypeEnum, // Oneof: allMentionProvidersMetadata
+  val providers: List<ContextMentionProviderMetadata>,
+) : ExtensionMessage() {
+
+  enum class TypeEnum {
+    @SerializedName("allMentionProvidersMetadata") AllMentionProvidersMetadata,
   }
 }
 
