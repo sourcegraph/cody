@@ -190,7 +190,7 @@ describe('Unique Context Items', () => {
             ])
         })
 
-        it('should return the first item when duplicated items are added after', () => {
+        it('should return the first item when duplicated items are added after except user-added items', () => {
             const user: ContextItem = {
                 ...baseFile,
                 range: {
@@ -210,7 +210,8 @@ describe('Unique Context Items', () => {
 
             expect(getUniqueContextItems([user])).toStrictEqual([user])
             expect(getUniqueContextItems([user, embeddings, embeddings])).toStrictEqual([user])
-            expect(getUniqueContextItems([embeddings, user])).toStrictEqual([embeddings])
+            // User-added items should always have the highest priority.
+            expect(getUniqueContextItems([embeddings, user])).toStrictEqual([user])
         })
 
         it('should return the item with the largest outer range', () => {
