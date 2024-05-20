@@ -186,7 +186,6 @@ const register = async (
 
     await authProvider.init()
 
-    exposeOpenCtxClient(context.secrets)
     graphqlClient.onConfigurationChange(initialConfig)
     githubClient.onConfigurationChange({ authToken: initialConfig.experimentalGithubAccessToken })
     void featureFlagProvider.syncAuthStatus()
