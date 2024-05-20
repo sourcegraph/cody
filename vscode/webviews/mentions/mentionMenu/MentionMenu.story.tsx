@@ -3,11 +3,8 @@ import { URI } from 'vscode-uri'
 
 import {
     type ContextItem,
-    ContextItemSource,
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
-    GITHUB_CONTEXT_MENTION_PROVIDER,
-    PACKAGE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     URL_CONTEXT_MENTION_PROVIDER,
 } from '@sourcegraph/cody-shared'

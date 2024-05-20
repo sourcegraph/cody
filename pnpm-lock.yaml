@@ -376,8 +376,8 @@ importers:
         specifier: ^7.2.96
         version: 7.2.96
       '@openctx/vscode-lib':
-        specifier: ^0.0.3
-        version: 0.0.3
+        specifier: ^0.0.4
+        version: 0.0.4
       '@opentelemetry/api':
         specifier: ^1.7.0
         version: 1.7.0
@@ -3293,17 +3293,6 @@ packages:
     dependencies:
       '@octokit/openapi-types': 22.2.0
 
-  /@openctx/client@0.0.10:
-    resolution: {integrity: sha512-XI8GF4Bhpa+bzi36hSDyl2lINuLCO61tvJqb7crsHAJqfsNTlnB/+2BElHdpmMhLo8rckn1IkCTdCktYZ4BhXg==}
-    dependencies:
-      '@openctx/protocol': 0.0.9
-      '@openctx/provider': 0.0.9
-      '@openctx/schema': 0.0.8
-      lru-cache: 10.2.2
-      picomatch: 3.0.1
-      rxjs: 7.8.1
-    dev: false
-
   /@openctx/client@0.0.11:
     resolution: {integrity: sha512-prBrq4EGCcAkI2yEwqj9LFc+uBS7ABnJEX93l7gtFOyyxnCGybr5Yq+Jc60vtUC+qRplV2HgFtwHPs/Xvhu1JA==}
     dependencies:
@@ -3321,12 +3310,6 @@ packages:
       '@openctx/schema': 0.0.9
     dev: false
 
-  /@openctx/protocol@0.0.9:
-    resolution: {integrity: sha512-r93MbmM7cEB+DCXDMvnAn+FnNFoWJE01NkzSJYmQy6gl16+Gie3GRFOdHL9uyYgLz8uODybWxWT2ddCNb6AG+g==}
-    dependencies:
-      '@openctx/schema': 0.0.8
-    dev: false
-
   /@openctx/provider@0.0.10:
     resolution: {integrity: sha512-HXva8lDmVaMP/z1Dvm1rGgnDnPrRsYLH8z8CoEILdaF3YyrzUIQ7/n7VqQ/h4gfOrwonAX/TDRzr7xOoBDSevA==}
     dependencies:
@@ -3335,36 +3318,24 @@ packages:
       picomatch: 3.0.1
     dev: false
 
-  /@openctx/provider@0.0.9:
-    resolution: {integrity: sha512-1R55EntDcxkYl+6f1/Y/Imbiko2/Cfl8XcLfpoKqKTmdkR8BjUPSNZ+ywsa0slqFoMUDfgiJXwVUGihVVPDdTA==}
-    dependencies:
-      '@openctx/protocol': 0.0.9
-      '@openctx/schema': 0.0.8
-      picomatch: 3.0.1
-    dev: false
-
-  /@openctx/schema@0.0.8:
-    resolution: {integrity: sha512-K3kdWon1siGAQz3E6RuQP1ogCshRcE/YS4U6AGcM6r7RWpArdVXNvmeGy+GLGdkM/ZOBa0E3qw2YBeAqAiBAgw==}
-    dev: false
-
   /@openctx/schema@0.0.9:
     resolution: {integrity: sha512-VJTD3KFOXlCsLmQgwGpQHAt/jkiOfG6ZYtk8SlWVT6g/cDWXLV7raXT9hODpHs1Ir5VMxDzHUdCMj4iQvE1O4Q==}
     dev: false
 
-  /@openctx/ui-common@0.0.7:
-    resolution: {integrity: sha512-XoHl84aiq1p/nv7IOyE/ls5vuVSo7JbXz2bSTBhzATdoWINxeXv+74jJ0fo+YOYRNjICfCObHi6ZY9ny8Wx5PA==}
+  /@openctx/ui-common@0.0.8:
+    resolution: {integrity: sha512-FWtMTX2COhextyHLBItqdFoRdl+9ZEbxakUjaztnwgbfg0TWHq7bPg8PuonIY5F0lJHItc0C1iYRCClZoVsE3w==}
     dependencies:
-      '@openctx/schema': 0.0.8
+      '@openctx/schema': 0.0.9
       marked: 12.0.2
       sanitize-html: 2.13.0
       xss: 1.0.15
     dev: false
 
-  /@openctx/vscode-lib@0.0.3:
-    resolution: {integrity: sha512-QqnbtJPWFulMIBGZDReYXp4TtRYqOY8yfrHE4QRTSjxkUMAjTDys447IH3eCRjw7Do3SwSfNq6ujdQ0gwwsWKw==}
+  /@openctx/vscode-lib@0.0.4:
+    resolution: {integrity: sha512-w1Ii+Ny+d7LrcBatjJ5Ib9aYZS/5MvVDgsF59OWibo3sBLf1S/xSOhOtOr/nHtcxM7b0+4tTtSEbn5lPkaiQQQ==}
     dependencies:
-      '@openctx/client': 0.0.10
-      '@openctx/ui-common': 0.0.7
+      '@openctx/client': 0.0.11
+      '@openctx/ui-common': 0.0.8
       rxjs: 7.8.1
     dev: false
 
