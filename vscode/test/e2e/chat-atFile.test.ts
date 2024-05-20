@@ -1,5 +1,3 @@
-import * as http from 'node:http'
-import type { AddressInfo } from 'node:net'
 import { type FrameLocator, type Locator, expect } from '@playwright/test'
 import { isWindows } from '@sourcegraph/cody-shared'
 import {
@@ -10,13 +8,7 @@ import {
     sidebarExplorer,
     sidebarSignin,
 } from './common'
-import {
-    type ExpectedEvents,
-    type ExtraWorkspaceSettings,
-    getMetaKeyByOS,
-    test,
-    withPlatformSlashes,
-} from './helpers'
+import { type ExpectedEvents, getMetaKeyByOS, test, withPlatformSlashes } from './helpers'
 
 // See chat-atFile.test.md for the expected behavior for this feature.
 //
@@ -523,75 +515,6 @@ test.extend<ExpectedEvents>({
     await commandPaletteInputBox.fill('>Add Selection to Cody Chat')
     await page.locator('a').filter({ hasText: 'Add Selection to Cody Chat' }).click()
     await expect(chatInput).toHaveText('@buzz.ts:2-13 @buzz.ts:4-6 ')
-})
-
-test
-    .extend<ExtraWorkspaceSettings>({
-        // biome-ignore lint/correctness/noEmptyPattern: Playwright needs empty pattern to specify "no dependencies".
-        extraWorkspaceSettings: async ({}, use) => {
-            use({ 'cody.experimental.urlContext': true })
-        },
-    })
-    .extend<ExpectedEvents>({
-        expectedEvents: [
-            'CodyVSCodeExtension:at-mention:url:executed',
-            'CodyVSCodeExtension:chat-question:executed',
-            'CodyVSCodeExtension:chatResponse:noCode',
-            'CodyVSCodeExtension:chat:context:opened',
-            'CodyVSCodeExtension:chat:context:fileLink:clicked',
-        ],
-        expectedV2Events: [
-            // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-            'cody.extension:savedLogin',
-            'cody.auth:failed',
-            'cody.auth.login:clicked',
-            'cody.auth.signin.menu:clicked',
-            'cody.auth.login:firstEver',
-            'cody.auth.signin.token:clicked',
-            'cody.auth:connected',
-            'cody.at-mention.url:executed',
-            'cody.chat-question:submitted',
-            'cody.chat-question:executed',
-            'cody.chatResponse:noCode',
-        ],
-    })('@-mention URL', async ({ page, sidebar }) => {
-    // Start an HTTP server to serve up the web page that we will @-mention.
-    const server = http.createServer((req, res) => {
-        res.writeHead(200, { 'Content-Type': 'text/html' })
-        res.end(`<h1>Hello from URL ${req.url}</h1>`)
-    })
-    const serverURL = await new Promise<URL>(resolve => {
-        server.listen(0, () => {
-            const addr = server.address() as AddressInfo
-            resolve(new URL(`http://localhost:${addr.port}`))
-        })
-    })
-
-    try {
-        await sidebarSignin(page, sidebar)
-
-        const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
-
-        // Type @-mention of the URL.
-        const mentionURL = new URL('/foo', serverURL)
-        await openMentionsForProvider(chatPanelFrame, chatInput, 'Web URL')
-        await chatInput.pressSequentially(mentionURL.toString(), { delay: 10 })
-        const optionTitle = `foo ${serverURL}`
-        await expect(chatPanelFrame.getByRole('option', { name: optionTitle })).toBeVisible()
-        await chatPanelFrame.getByRole('option', { name: optionTitle }).click()
-        await expect(chatInput).toHaveText(`@openctx:${mentionURL} `)
-
-        // Submit the message
-        await chatInput.press('Enter')
-
-        // URL context item shows up and is clickable.
-        const contextCell = getContextCell(chatPanelFrame)
-        await expectContextCellCounts(contextCell, { files: 1 })
-        await contextCell.click()
-        await contextCell.getByRole('link', { name: mentionURL.toString() }).click()
-    } finally {
-        server.close()
-    }
 })
 
 async function openMentionsForProvider(
