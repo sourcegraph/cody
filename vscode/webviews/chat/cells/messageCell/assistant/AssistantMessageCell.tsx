@@ -3,6 +3,7 @@ import {
     type Guardrails,
     ps,
     reformatBotMessageForChat,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { type FunctionComponent, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
@@ -71,6 +72,7 @@ export const AssistantMessageCell: FunctionComponent<{
                                 error={message.error}
                                 userInfo={userInfo}
                                 postMessage={postMessage}
+                                telemetryRecorder={telemetryRecorder}
                             />
                         )
                     ) : null}
