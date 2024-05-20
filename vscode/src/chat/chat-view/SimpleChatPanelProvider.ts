@@ -1235,6 +1235,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             },
             {
                 hydrate: message => hydrateAfterPostMessage(message, uri => vscode.Uri.from(uri as any)),
+                logger: console,
             }
         )
     }
@@ -1273,6 +1274,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         panel.onDidDispose(() => {
             this.cancelInProgressCompletion()
             this._webviewPanel = undefined
+            this._webview?.client.disposable.dispose()
             this._webview = undefined
             panel.dispose()
         })

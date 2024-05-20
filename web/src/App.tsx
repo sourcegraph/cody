@@ -1,5 +1,7 @@
 import {
     type ChatMessage,
+    type Client,
+    type ExtHostAPI,
     type ModelProvider,
     PromptString,
     hydrateAfterPostMessage,
@@ -14,13 +16,14 @@ import {
     type ChatModelContext,
     ChatModelContextProvider,
 } from '../../vscode/webviews/chat/models/chatModelContext'
-import { type VSCodeWrapper, setVSCodeWrapper } from '../../vscode/webviews/utils/VSCodeApi'
+import { getVSCodeAPI, setVSCodeWrapper } from '../../vscode/webviews/utils/VSCodeApi'
+import { ExtHostClientContext, createExtHostClient } from '../../vscode/webviews/utils/extHostClient'
 import {
     createWebviewTelemetryRecorder,
     createWebviewTelemetryService,
 } from '../../vscode/webviews/utils/telemetry'
 import styles from './App.module.css'
-import { type AgentClient, createAgentClient } from './agent/client'
+import { createAgentClient, initializeAgentClient } from './agent/client'
 
 let ACCESS_TOKEN = localStorage.getItem('accessToken')
 if (!ACCESS_TOKEN) {
@@ -31,17 +34,54 @@ if (!ACCESS_TOKEN) {
     localStorage.setItem('accessToken', ACCESS_TOKEN)
 }
 
-let CLIENT: Promise<AgentClient>
-const onMessageCallbacks: ((message: ExtensionMessage) => void)[] = []
-try {
-    CLIENT = createAgentClient({
-        serverEndpoint: 'https://sourcegraph.com',
-        accessToken: ACCESS_TOKEN ?? '',
-        workspaceRootUri: 'file:///tmp/foo',
+const client = createAgentClient()
+let webviewPanelID: string
+initializeAgentClient(client, {
+    serverEndpoint: 'https://sourcegraph.com',
+    accessToken: ACCESS_TOKEN ?? '',
+    workspaceRootUri: 'file:///tmp/foo',
+})
+    .then(result => {
+        webviewPanelID = result.webviewPanelID
     })
-} catch (error) {
-    console.error(error)
-}
+    .catch(console.error)
+
+const onMessageCallbacks: ((message: ExtensionMessage) => void)[] = []
+client.rpc.onNotification(
+    'webview/postMessage',
+    ({ id, message }: { id: string; message: ExtensionMessage }) => {
+        if (webviewPanelID === id) {
+            for (const callback of onMessageCallbacks) {
+                callback(hydrateAfterPostMessage(message, uri => URI.from(uri as any)))
+            }
+        }
+    }
+)
+setVSCodeWrapper({
+    postMessage: message => {
+        void client.rpc.sendRequest('webview/receiveMessage', {
+            id: webviewPanelID,
+            message,
+        })
+    },
+    onMessage: callback => {
+        onMessageCallbacks.push(callback)
+        return () => {
+            // Remove callback from onMessageCallbacks.
+            const index = onMessageCallbacks.indexOf(callback)
+            if (index >= 0) {
+                onMessageCallbacks.splice(index, 1)
+            }
+        }
+    },
+    getState: () => {
+        throw new Error('not implemented')
+    },
+    setState: () => {
+        throw new Error('not implemented')
+    },
+})
+const vscodeAPI = getVSCodeAPI()
 
 setDisplayPathEnvInfo({ isWindows: false, workspaceFolders: [URI.file('/tmp/foo')] })
 
@@ -54,65 +94,7 @@ export const App: FunctionComponent = () => {
     const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>()
     const [chatModels, setChatModels] = useState<ModelProvider[]>()
 
-    const [client, setClient] = useState<AgentClient | Error | null>(null)
     useEffect(() => {
-        ;(async () => {
-            try {
-                const client = await CLIENT
-                setClient(client)
-            } catch (error) {
-                console.error(error)
-                setClient(() => error as Error)
-            }
-        })()
-    }, [])
-
-    const vscodeAPI = useMemo<VSCodeWrapper>(() => {
-        if (client && !isErrorLike(client)) {
-            client.rpc.onNotification(
-                'webview/postMessage',
-                ({ id, message }: { id: string; message: ExtensionMessage }) => {
-                    if (client.webviewPanelID === id) {
-                        for (const callback of onMessageCallbacks) {
-                            callback(hydrateAfterPostMessage(message, uri => URI.from(uri as any)))
-                        }
-                    }
-                }
-            )
-        }
-
-        return {
-            postMessage: message => {
-                if (client && !isErrorLike(client)) {
-                    void client.rpc.sendRequest('webview/receiveMessage', {
-                        id: client.webviewPanelID,
-                        message,
-                    })
-                }
-            },
-            onMessage: callback => {
-                if (client && !isErrorLike(client)) {
-                    onMessageCallbacks.push(callback)
-                    return () => {
-                        // Remove callback from onMessageCallbacks.
-                        const index = onMessageCallbacks.indexOf(callback)
-                        if (index >= 0) {
-                            onMessageCallbacks.splice(index, 1)
-                        }
-                    }
-                }
-                return () => {}
-            },
-            getState: () => {
-                throw new Error('not implemented')
-            },
-            setState: () => {
-                throw new Error('not implemented')
-            },
-        }
-    }, [client])
-    useEffect(() => {
-        setVSCodeWrapper(vscodeAPI)
         vscodeAPI.onMessage(message => {
             switch (message.type) {
                 case 'transcript': {
@@ -142,25 +124,30 @@ export const App: FunctionComponent = () => {
                         isDotComUser: message.authStatus.isDotCom,
                         user: message.authStatus,
                     })
+                    break
+                default:
+                    console.error('unknown message type', message)
+                    break
             }
         })
-    }, [vscodeAPI])
-    useEffect(() => {
-        // Notify the extension host that we are ready to receive events.
         vscodeAPI.postMessage({ command: 'ready' })
-    }, [vscodeAPI])
+    }, [])
+    const extHostClient = useMemo<Client<ExtHostAPI>>(
+        () => createExtHostClient({ postMessage: vscodeAPI.postMessage }),
+        []
+    )
 
     // Deprecated V1 telemetry
-    const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
+    const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [])
     // V2 telemetry recorder
-    const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
+    const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [])
 
     const onCurrentChatModelChange = useCallback(
         (selected: ModelProvider): void => {
             if (!chatModels || !setChatModels) {
                 return
             }
-            vscodeAPI.postMessage({
+            vscodeAPI?.postMessage({
                 command: 'chatModel',
                 model: selected.model,
             })
@@ -169,7 +156,7 @@ export const App: FunctionComponent = () => {
             )
             setChatModels(updatedChatModels)
         },
-        [chatModels, vscodeAPI]
+        [chatModels]
     )
     const chatModelContext = useMemo<ChatModelContext>(
         () => ({ chatModels, onCurrentChatModelChange }),
@@ -183,18 +170,20 @@ export const App: FunctionComponent = () => {
                     <p>Error: {client.message}</p>
                 ) : (
                     <ChatModelContextProvider value={chatModelContext}>
-                        <Chat
-                            chatEnabled={true}
-                            userInfo={userAccountInfo}
-                            messageInProgress={messageInProgress}
-                            transcript={transcript}
-                            vscodeAPI={vscodeAPI}
-                            telemetryService={telemetryService}
-                            telemetryRecorder={telemetryRecorder}
-                            isTranscriptError={isTranscriptError}
-                            userContextFromSelection={[]}
-                            isNewInstall={false}
-                        />
+                        <ExtHostClientContext.Provider value={extHostClient}>
+                            <Chat
+                                chatEnabled={true}
+                                userInfo={userAccountInfo}
+                                messageInProgress={messageInProgress}
+                                transcript={transcript}
+                                vscodeAPI={vscodeAPI}
+                                telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
+                                isTranscriptError={isTranscriptError}
+                                userContextFromSelection={[]}
+                                isNewInstall={false}
+                            />
+                        </ExtHostClientContext.Provider>
                     </ChatModelContextProvider>
                 )
             ) : (
