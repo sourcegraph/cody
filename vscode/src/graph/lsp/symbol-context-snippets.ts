@@ -94,8 +94,29 @@ async function getSymbolSnippetForNodeType(
             definitionLocations = await lspRequestLimiter(() => locationGetter(uri, position))
         }
 
-        const [definitionLocation] = definitionLocations
+        const sortedDefinitionLocations = definitionLocations.sort((a, b) => {
+            const bLines = b.range.start.line - b.range.end.line
+            const aLines = a.range.start.line - a.range.end.line
 
+            return bLines - aLines
+        })
+
+        debugSymbolLog(
+            symbolName,
+            'definitionLocations',
+            sortedDefinitionLocations.map(
+                location =>
+                    `${location.uri.toString().split('/').slice(-4).join('/')}:${
+                        location.range.start.line
+                    }:${location.range.start.character} – ${location.range.end.line}:${
+                        location.range.end.character
+                    }`
+            )
+        )
+
+        // Sort for the narrowest definition range (e.g. used when we get full class implementation vs. constructor)
+        const [definitionLocation] = sortedDefinitionLocations
+        // const [definitionLocation] = definitionLocations
         if (
             definitionLocation === undefined ||
             (definitionLocation && isCommonImport(definitionLocation.uri))
@@ -105,9 +126,9 @@ async function getSymbolSnippetForNodeType(
 
         const { uri: definitionUri, range: definitionRange } = definitionLocation
         const definitionCacheKey = `${definitionRange.start.line}:${definitionRange.start.character}`
-        console.log(`[${symbolName}] location:`, {
+        debugSymbolLog(symbolName, 'location', {
             nodeType,
-            range: definitionRange,
+            range: `${definitionRange.start.line}:${definitionRange.start.character} – ${definitionRange.end.line}:${definitionRange.end.character}`,
             path: JSON.stringify(`${definitionUri.toString().split('/').slice(-4).join('/')}`),
         })
 
@@ -135,15 +156,37 @@ async function getSymbolSnippetForNodeType(
         let definitionHover: string | undefined
         let isHover = false
         let hoverType: string | undefined
+        const resolutions = []
+        let shouldReturn = false
 
-        switch (nodeType) {
-            case 'type_identifier': {
+        const hoverContent = await lspRequestLimiter(() => getHover(uri, position), abortSignal)
+        const [{ text, type } = { text: '', type: undefined }] = extractHoverContent(hoverContent) || [
+            {},
+        ]
+
+        definitionString = text
+        hoverType = type
+        isHover = true
+
+        resolutions.push({
+            type: 'getHover (initial)',
+            definitionString,
+            hoverType: type,
+        })
+
+        if (isUnhelpfulSymbolSnippet(symbolName, definitionString)) {
+            definitionString = ''
+            hoverType = undefined
+            isHover = false
+            if (nodeType === 'type_identifier') {
                 // TODO: add fallback here for unhelpful symbol snippets. Can happen if LSP lacks the
-                // location links capability
+                // location-links capability
                 definitionString = await getTextFromLocation(definitionLocation)
-                break
-            }
-            default: {
+                resolutions.push({
+                    type: 'getTextFromLocation',
+                    definitionString,
+                })
+            } else {
                 const hoverContent = await lspRequestLimiter(
                     () => getHover(definitionLocation.uri, definitionLocation.range.start),
                     abortSignal
@@ -151,41 +194,67 @@ async function getSymbolSnippetForNodeType(
                 const [{ text, type } = { text: '', type: undefined }] = extractHoverContent(
                     hoverContent
                 ) || [{}]
-                hoverType = type
+
                 definitionString = text
-                definitionHover = definitionString
+                hoverType = type
                 isHover = true
 
+                resolutions.push({
+                    type: 'getHover',
+                    definitionString,
+                    hoverType: type,
+                })
+            }
+        }
+
+        if (isUnhelpfulSymbolSnippet(symbolName, definitionString)) {
+            isHover = false
+            definitionString = await getTextFromLocation(definitionLocation)
+            resolutions.push({
+                why: 'unhelpful snippet',
+                type: 'getTextFromLocation',
+                definitionString,
+            })
+
+            if (definitionString === `class ${symbolName}`) {
+                // Handle class constructors
+                const hoverContent = await lspRequestLimiter(
+                    () => getHover(symbolSnippetRequest.uri, symbolSnippetRequest.position),
+                    abortSignal
+                )
+                const [{ text, type } = { text: '', type: undefined }] =
+                    extractHoverContent(hoverContent)
+                definitionString = text
+                hoverType = type
+                isHover = true
+
+                resolutions.push({
+                    why: 'unhelpful class snippet',
+                    type: 'getHover',
+                    definitionString,
+                    hoverType: type,
+                })
+
                 if (isUnhelpfulSymbolSnippet(symbolName, definitionString)) {
-                    isHover = false
-                    definitionString = await getTextFromLocation(definitionLocation)
-
-                    if (definitionString === `class ${symbolName}`) {
-                        // Handle class constructors
-                        const hoverContent = await lspRequestLimiter(
-                            () => getHover(symbolSnippetRequest.uri, symbolSnippetRequest.position),
-                            abortSignal
-                        )
-                        const [{ text, type } = { text: '', type: undefined }] =
-                            extractHoverContent(hoverContent)
-                        hoverType = type
-                        definitionString = text
-                        definitionHover = definitionString
-                        isHover = true
-
-                        if (isUnhelpfulSymbolSnippet(symbolName, definitionString)) {
-                            return symbolContextSnippet
-                        }
-                    } else if (isUnhelpfulSymbolSnippet(symbolName, definitionString)) {
-                        return symbolContextSnippet
-                    }
+                    shouldReturn = true
                 }
-
-                break
+            } else if (isUnhelpfulSymbolSnippet(symbolName, definitionString)) {
+                shouldReturn = true
             }
         }
 
         if (lines(definitionString).length > 100) {
+            shouldReturn = true
+        }
+
+        if (shouldReturn) {
+            debugSymbolLog(symbolName, 'no helpful context found:', {
+                hoverType,
+                definitionHover,
+                definitionString,
+                resolutions,
+            })
+
             return symbolContextSnippet
         }
 
@@ -207,7 +276,12 @@ async function getSymbolSnippetForNodeType(
             definitionFirstLines = 'function ' + definitionFirstLines
         }
 
-        const symbolsSnippetRequests = getLastNGraphContextIdentifiersFromString({
+        // TODO: add a generic solution for class/object methods
+        if (definitionFirstLines.trimStart().startsWith('constructor')) {
+            definitionFirstLines = `{${definitionFirstLines}}`
+        }
+
+        const initialNestedSymbolRequests = getLastNGraphContextIdentifiersFromString({
             n: NESTED_IDENTIFIERS_TO_RESOLVE,
             uri: definitionLocation.uri,
             languageId,
@@ -218,14 +292,17 @@ async function getSymbolSnippetForNodeType(
             // TODO: required for class property definitions
             // getAllIdentifiers: true,
         })
+
+        const nestedSymbolRequests = initialNestedSymbolRequests
             .filter(request => {
                 return (
+                    request.symbolName.length > 0 &&
                     // exclude current symbol
                     symbolName !== request.symbolName &&
                     // exclude common symbols
-                    !commonKeywords.has(request.symbolName) &&
-                    // exclude symbols not preset in the definition string (if it's a hover string)
-                    definitionString.includes(request.symbolName)
+                    !commonKeywords.has(request.symbolName) && // exclude symbols not preset in the definition string (if it's a hover string)
+                    (definitionFirstLines.includes('class') ||
+                        definitionString.includes(request.symbolName))
                 )
             })
             .map(request => {
@@ -242,7 +319,7 @@ async function getSymbolSnippetForNodeType(
                     // })
 
                     // if (lineDelta === -1) {
-                    //     // console.log({ definitionString, request })
+                    //     // logDebug({ definitionString, request })
                     //     return {
                     //         ...request,
                     //         position: request.position.translate({
@@ -273,11 +350,20 @@ async function getSymbolSnippetForNodeType(
             })
             .filter(isDefined)
 
-        console.log(`[${symbolName}] nested symbols:`, {
+        debugSymbolLog(symbolName, 'nested symbols:', {
             hoverType,
             definitionHover,
             definitionString,
-            symbolsSnippetRequests: symbolsSnippetRequests.map(r => {
+            definitionFirstLines,
+            resolutions,
+            initialNestedSymbolRequests: initialNestedSymbolRequests.map(r => {
+                return {
+                    symbolName: r.symbolName,
+                    path: JSON.stringify(`${r.uri.toString().split('/').slice(-4).join('/')}`),
+                    range: `${r.position.line}:${r.position.character}`,
+                }
+            }),
+            nestedSymbolRequests: nestedSymbolRequests.map(r => {
                 return {
                     symbolName: r.symbolName,
                     path: JSON.stringify(`${r.uri.toString().split('/').slice(-4).join('/')}`),
@@ -286,7 +372,7 @@ async function getSymbolSnippetForNodeType(
             }),
         })
 
-        if (symbolsSnippetRequests.length === 0) {
+        if (nestedSymbolRequests.length === 0) {
             return {
                 ...symbolContextSnippet,
                 content: definitionString,
@@ -301,7 +387,7 @@ async function getSymbolSnippetForNodeType(
         definitionCache.set(definitionLocation, definitionCacheEntry)
 
         await getSymbolContextSnippetsRecursive({
-            symbolsSnippetRequests,
+            symbolsSnippetRequests: nestedSymbolRequests,
             abortSignal,
             recursionLimit: recursionLimit - 1,
             parentDefinitionCacheEntryPaths: new Set([
@@ -316,12 +402,12 @@ async function getSymbolSnippetForNodeType(
         }
     }
 
-    // await debugLSP()
+    // await debugLSP(symbolSnippetRequest)
 
     let locationGetters = [
         getTypeDefinitionLocations,
-        getImplementationLocations,
         getDefinitionLocations,
+        getImplementationLocations,
     ]
     if (['type_identifier'].includes(nodeType)) {
         locationGetters = [
@@ -331,10 +417,18 @@ async function getSymbolSnippetForNodeType(
         ]
     }
 
+    if (['property_identifier'].includes(nodeType)) {
+        locationGetters = [
+            getTypeDefinitionLocations,
+            getDefinitionLocations,
+            getImplementationLocations,
+        ]
+    }
+
     let symbolContextSnippet: PartialSymbolSnippetInflightRequest | undefined
     for (const locationGetter of locationGetters) {
-        console.log('-------------------------------------------------------------')
-        console.log(`[${symbolName}] using locationGetter "${locationGetter.name}"`)
+        debugSymbolLog(symbolName, '-------------------------------------------------------------')
+        debugSymbolLog(symbolName, `using locationGetter "${locationGetter.name}"`)
         symbolContextSnippet = await getSnippetForLocationGetter(locationGetter)
 
         if (symbolContextSnippet?.content !== undefined) {
@@ -377,7 +471,7 @@ async function getSymbolContextSnippetsRecursive(
 
     const contextSnippets = await Promise.all(
         symbolsSnippetRequests.map(symbolSnippetRequest => {
-            // console.log(`requesting for "${symbolSnippetRequest.symbolName}"`)
+            // logDebug(`requesting for "${symbolSnippetRequest.symbolName}"`)
             return getSymbolSnippetForNodeType({
                 symbolSnippetRequest,
                 recursionLimit,
@@ -432,32 +526,35 @@ export async function getSymbolContextSnippets(
         }
     })
 
-    // console.log(`Got symbol snippets in ${performance.now() - start}ms`)
-    // biome-ignore lint/complexity/noForEach: <explanation>
-    // resultWithRelatedSnippets.forEach(r => {
-    //     console.log(`Context for "${r.symbol}":\n`, r.content)
-    // })
-
+    flushDebugLogs()
     return resultWithRelatedSnippets
 }
 
 function extractHoverContent(hover: vscode.Hover[]): ParsedHover[] {
-    return hover
-        .flatMap(hover => hover.contents.map(c => (typeof c === 'string' ? c : c.value)))
-        .map(extractMarkdownCodeBlock)
-        .map(
-            s =>
-                s
-                    .trim()
-                    // TODO: handle loading states
-                    // .replace('(loading...) ', '')
-                    // TODO: adapt to other languages
-                    // .replace('(method)', 'function')
-                    .replace('constructor', 'function')
-            // .replace(/^\(\w+\) /, '')
-        )
-        .filter(s => s !== '')
-        .map(s => parseHoverString(s))
+    return (
+        hover
+            .flatMap(hover => hover.contents.map(c => (typeof c === 'string' ? c : c.value)))
+            .map(extractMarkdownCodeBlock)
+            .map(
+                s => s.trim()
+                // TODO: handle loading states
+                // .replace('(loading...) ', '')
+                // TODO: adapt to other languages
+                // .replace('(method)', 'function')
+                // .replace('constructor', 'function')
+                // .replace(/^\(\w+\) /, '')
+            )
+            .filter(s => s !== '')
+            // Remove the last line if it's an import statement prefix
+            .map(s => {
+                const hoverLines = lines(s)
+                if (hoverLines.length > 1 && hoverLines.at(-1)?.startsWith('import')) {
+                    return hoverLines.slice(0, -1).join('\n')
+                }
+                return s
+            })
+            .map(s => parseHoverString(s))
+    )
 }
 
 interface ParsedHover {
@@ -680,7 +777,7 @@ function isUnhelpfulSymbolSnippet(symbolName: string, symbolSnippet: string): bo
     return (
         symbolSnippet === '' ||
         symbolSnippet === symbolName ||
-        !symbolSnippet.includes(symbolName) ||
+        (!symbolSnippet.includes(symbolName) && !symbolSnippet.includes('constructor')) ||
         trimmed === `interface ${symbolName}` ||
         trimmed === `enum ${symbolName}` ||
         trimmed === `class ${symbolName}` ||
@@ -720,4 +817,28 @@ export async function debugLSP(symbolSnippetRequest: SymbolSnippetsRequest) {
     await printHoverAndText(definitions)
     console.log('type definition')
     await printHoverAndText(typeDefinitions)
+}
+
+const debugLogs: Map<string, unknown[][]> = new Map()
+function debugSymbolLog(symbolName: string, ...rest: unknown[]) {
+    // biome-ignore lint/correctness/noConstantCondition: debug
+    if (true) {
+        return
+    }
+    if (!debugLogs.has(symbolName)) {
+        debugLogs.set(symbolName, [])
+    }
+
+    debugLogs.get(symbolName)!.push(rest)
+}
+function flushDebugLogs() {
+    for (const [symbolName, symbolLogs] of debugLogs.entries()) {
+        for (const log of symbolLogs) {
+            if (typeof log[0] === 'string' && log[0].includes('---')) {
+                console.log(log[0])
+            } else {
+                console.log(`[${symbolName}]`, ...log)
+            }
+        }
+    }
 }

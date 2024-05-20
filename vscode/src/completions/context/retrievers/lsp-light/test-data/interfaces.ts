@@ -1,3 +1,6 @@
+import { Color } from './basic-types'
+import { SquareConfig, createSquare } from './squares';
+
 export interface LabelledValue {
     label: string;
 }
@@ -5,22 +8,11 @@ export interface LabelledValue {
 /**
  * Test documentation block
  */
-export function printLabel(labelledObj: LabelledValue) {
-    console.log('kek');
+export function printLabelAndSquare(labelledObj: LabelledValue): SquareConfig {
+    printLabel(labelledObj)
+    return createSquare({ color: Color.Red, width: 100 })
 }
 
-export interface SquareConfig {
-    color?: string;
-    width?: number;
-}
-
-export function createSquare(config: SquareConfig): { color: string; area: number } {
-    let newSquare = { color: "white", area: 100 };
-    if (config.color) {
-        newSquare.color = config.color;
-    }
-    if (config.width) {
-        newSquare.area = config.width * config.width;
-    }
-    return newSquare;
+export function printLabel(labelledObj: LabelledValue): void {
+    console.log('label', labelledObj)
 }

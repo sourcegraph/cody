@@ -1,5 +1,6 @@
 import { Color, warnUser } from './basic-types';
-import { LabelledValue, printLabel, SquareConfig, createSquare } from './interfaces';
+import { LabelledValue, printLabel, printLabelAndSquare } from './interfaces';
+import { Background, SquareConfig, createSquare } from './squares';
 import { Greeter, Dog, LabelledDog } from './classes';
 import { getName, Container, labelledBox } from './advanced-types';
 import { identity, createLabelledSquare, createLabelledDogContainer } from './generics';
@@ -7,7 +8,7 @@ import { identity, createLabelledSquare, createLabelledDogContainer } from './ge
 // Using various types and functions from different files
 warnUser();
 
-let greeter = new Greeter("world");
+let greeter = new Greeter({ message: "world" });
 console.log(greeter.greet());
 
 let dog = new Dog("Buddy", Color.Green);
@@ -16,12 +17,18 @@ dog.move(10);
 
 let labelledDog = new LabelledDog("Buddy", Color.Green, "Friendly Dog");
 printLabel(labelledDog);
+const printedSquare = printLabelAndSquare(labelledDog);
+console.log(printedSquare)
 
-let squareConfig: SquareConfig = { color: "blue", width: 5 };
+export function createSquareConfig(): SquareConfig {
+    return { color: Color.Blue, width: 5 }
+}
+
+let squareConfig: SquareConfig = { color: Color.Blue, width: 5 };
 let square = createSquare(squareConfig);
 console.log(`Square: color = ${square.color}, area = ${square.area}`);
 
-let labelledSquare = createLabelledSquare({ color: "blue", width: 10 });
+let labelledSquare = createLabelledSquare({ color: Color.Blue, width: 10 });
 console.log(labelledSquare.value);
 
 let myLabelledDogContainer = createLabelledDogContainer("Buddy", Color.Green, "Friendly Dog");
@@ -38,3 +45,10 @@ console.log(numberIdentity);
 
 let stringIdentity = identity<string>("Hello");
 console.log(stringIdentity);
+
+const background: Background = {
+    items: [square, square],
+    name: 'my background'
+}
+const area = background.items[0].area
+console.log(background, area)

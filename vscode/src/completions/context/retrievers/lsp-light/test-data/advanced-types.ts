@@ -1,3 +1,4 @@
+import { Color } from './basic-types'
 import { Dog } from './classes';
 
 export type Name = string;
@@ -24,7 +25,7 @@ export interface Box<T> {
 export let box: Box<string> = { contents: "Hello" };
 
 export type DogContainer = Container<Dog>;
-export let dogContainer: DogContainer = { value: new Dog("Buddy", Color.Brown) };
+export let dogContainer: DogContainer = { value: new Dog("Buddy", Color.Blue) };
 
 export interface LabelledBox<T> extends Box<T> {
     label: string;

@@ -3,7 +3,7 @@ import type * as vscode from 'vscode'
 import type * as rpc from 'vscode-jsonrpc/node'
 import * as lsp from 'vscode-languageserver-protocol/node'
 
-import { Position, Uri, vsCodeMocks } from '../../../../testutils/mocks'
+import { Uri, vsCodeMocks } from '../../../../testutils/mocks'
 import { parseDocument } from '../../../../tree-sitter/parse-tree-cache'
 import { documentFromFilePath, initTreeSitterParser } from '../../../test-helpers'
 
@@ -37,6 +37,14 @@ describe('LspLightRetriever', () => {
     let mainDocument: vscode.TextDocument
     let retriever: LspLightRetriever
     let onDidChangeTextEditorSelection: any
+
+    function positionForWordInSnippet(snippet: string, word: string): vscode.Position {
+        const text = mainDocument.getText()
+        const snippetOffset = text.indexOf(snippet)
+        const wordOffset = text.indexOf(word, snippetOffset)
+
+        return mainDocument.positionAt(wordOffset)
+    }
 
     beforeAll(async () => {
         await initTreeSitterParser()
@@ -159,33 +167,234 @@ describe('LspLightRetriever', () => {
         retriever.dispose()
     })
 
-    it('initializes the typescript language server', async () => {
-        const hoverParams: lsp.TextDocumentPositionParams = {
-            textDocument: { uri: mainFileUri.toString() },
-            position: { line: 29, character: 19 },
-        }
-
-        const hoverResponse = await connection.sendRequest(lsp.HoverRequest.type, hoverParams)
-        expect(hoverResponse).to.have.property('contents')
-    })
-
-    it.only('resolves nested symbols on real workspace files', async () => {
+    it('function with nested symbols in the argument list', async () => {
         const contextSnippets = await retriever.retrieve({
             document: mainDocument,
-            position: new Position(1, 25),
+            position: positionForWordInSnippet('import { LabelledValue, printLabel', 'printLabel'),
             hints: { maxChars: 100, maxMs: 1000 },
         })
 
-        expect(contextSnippets.map(snippet => snippet.content)).toMatchInlineSnapshot(`
-          [
-            "export interface LabelledValue {
+        expect(contextSnippets.length).toBe(1)
+        expect(contextSnippets[0].content).toMatchInlineSnapshot(`
+          "export interface LabelledValue {
               label: string;
           }
-          function printLabel(labelledObj: LabelledValue): void",
-          ]
+          function printLabel(labelledObj: LabelledValue): void"
         `)
     })
 
+    it('function with nested symbols in the argument list and the return value', async () => {
+        const contextSnippets = await retriever.retrieve({
+            document: mainDocument,
+            position: positionForWordInSnippet(
+                'import { LabelledValue, printLabel, printLabelAndSquare }',
+                'printLabelAndSquare'
+            ),
+            hints: { maxChars: 100, maxMs: 1000 },
+        })
+
+        expect(contextSnippets.length).toBe(1)
+        expect(contextSnippets[0].content).toMatchInlineSnapshot(`
+          "export interface SquareConfig {
+              color?: Color;
+              width?: number;
+          }
+          export interface Square {
+              color: Color
+              area: number
+          }
+          export enum Color { Red, Green, Blue }
+          function printLabelAndSquare(labelledObj: LabelledValue): SquareConfig"
+        `)
+    })
+
+    it('interface', async () => {
+        const contextSnippets = await retriever.retrieve({
+            document: mainDocument,
+            position: positionForWordInSnippet('import { LabelledValue', 'LabelledValue'),
+            hints: { maxChars: 100, maxMs: 1000 },
+        })
+
+        expect(contextSnippets.length).toBe(1)
+        expect(contextSnippets[0].content).toMatchInlineSnapshot(`
+          "export interface LabelledValue {
+              label: string;
+          }"
+        `)
+    })
+
+    it('class constructor with an interface in arguments', async () => {
+        const contextSnippets = await retriever.retrieve({
+            document: mainDocument,
+            position: positionForWordInSnippet('new Greeter("world")', 'Greeter'),
+            hints: { maxChars: 100, maxMs: 1000 },
+        })
+
+        expect(contextSnippets.length).toBe(1)
+        // TODO: add only constructor to context snippets
+        expect(contextSnippets[0].content).toMatchInlineSnapshot(`
+          "interface GreeterConfig {
+              message: string
+          }
+          Greeter.greeting: string
+          GreeterConfig.message: string
+          export class Greeter {
+              greeting: string;
+
+              constructor(config: GreeterConfig ) {
+                  this.greeting = config.message;
+              }
+
+              greet() {
+                  return "Hello, " + this.greeting;
+              }
+          }"
+        `)
+    })
+
+    it('class constructor with an enum in arguments', async () => {
+        const contextSnippets = await retriever.retrieve({
+            document: mainDocument,
+            position: positionForWordInSnippet('new Dog("Buddy", Color.Green)', 'Dog'),
+            hints: { maxChars: 100, maxMs: 1000 },
+        })
+
+        expect(contextSnippets.length).toBe(1)
+        // TODO: add only constructor to context snippets
+        expect(contextSnippets[0].content).toMatchInlineSnapshot(
+            `
+          "export interface LabelledValue {
+              label: string;
+          }
+          export enum Color { Red, Green, Blue }
+          Color.Green = 1
+          export class Animal {
+              name: string;
+              color: Color;
+
+              constructor(name: string, color: Color) {
+                  this.name = name;
+                  this.color = color;
+              }
+
+              move(distanceInMeters: number = 0) {
+                  console.log(\`\${this.name} moved \${distanceInMeters}m. Color: \${Color[this.color]}\`);
+              }
+          }
+          Animal.color: Color
+          Animal.name: string
+          new Dog(name: string, color: Color): Dog"
+        `
+        )
+    })
+
+    // TODO: support multiple definition locations
+    it.skip('function return value assignment with the nested symbol in the arguments', async () => {
+        const contextSnippets = await retriever.retrieve({
+            document: mainDocument,
+            position: positionForWordInSnippet(
+                'import { Background, SquareConfig, createSquare }',
+                'createSquare'
+            ),
+            hints: { maxChars: 100, maxMs: 1000 },
+        })
+
+        expect(contextSnippets.length).toBe(1)
+        expect(contextSnippets[0].content).toMatchInlineSnapshot(`
+          "export interface VersionedSquare extends Square {
+              version: number
+          }
+          export interface Square {
+              color: Color
+              area: number
+          }
+          export enum Color { Red, Green, Blue }
+          createSquare(config: SquareConfig, version?: number): VersionedSquare"
+        `)
+    })
+
+    it('function return value assignment with the nested symbol in the arguments', async () => {
+        const contextSnippets = await retriever.retrieve({
+            document: mainDocument,
+            position: positionForWordInSnippet(
+                'let square = createSquare(squareConfig)',
+                'createSquare'
+            ),
+            hints: { maxChars: 100, maxMs: 1000 },
+        })
+
+        expect(contextSnippets.length).toBe(1)
+        expect(contextSnippets[0].content).toMatchInlineSnapshot(`
+          "export interface SquareConfig {
+              color?: Color;
+              width?: number;
+          }
+          export enum Color { Red, Green, Blue }
+          export interface Square {
+              color: Color
+              area: number
+          }
+          createSquare(config: SquareConfig, version?: number): VersionedSquare (+1 overload)"
+        `)
+    })
+
+    it('return value object literal', async () => {
+        const contextSnippets = await retriever.retrieve({
+            document: mainDocument,
+            position: positionForWordInSnippet('return { color: "blue", width: 5 }', 'return'),
+            hints: { maxChars: 100, maxMs: 1000 },
+        })
+
+        expect(contextSnippets.length).toBe(1)
+        expect(contextSnippets[0].content).toMatchInlineSnapshot(`
+          "export enum Color { Red, Green, Blue }
+          export interface Square {
+              color: Color
+              area: number
+          }
+          Color.Green = 1
+          export interface SquareConfig {
+              color?: Color;
+              width?: number;
+          }"
+        `)
+    })
+
+    it('nested object field initialization', async () => {
+        const contextSnippets = await retriever.retrieve({
+            document: mainDocument,
+            position: positionForWordInSnippet('items: [square, square]', 'square'),
+            hints: { maxChars: 100, maxMs: 1000 },
+        })
+
+        expect(contextSnippets.length).toBe(1)
+        expect(contextSnippets[0].content).toMatchInlineSnapshot(`
+          "export interface Square {
+              color: Color
+              area: number
+          }
+          export enum Color { Red, Green, Blue }
+          Background.items: Square[]"
+        `)
+    })
+
+    it('nested object field getter', async () => {
+        const contextSnippets = await retriever.retrieve({
+            document: mainDocument,
+            position: positionForWordInSnippet('background.items[0].area', 'items[0]'),
+            hints: { maxChars: 100, maxMs: 1000 },
+        })
+
+        expect(contextSnippets.length).toBe(1)
+        expect(contextSnippets[0].content).toMatchInlineSnapshot(`
+          "export interface Square {
+              color: Color
+              area: number
+          }
+          export enum Color { Red, Green, Blue }
+          Background.items: Square[]"
+        `)
+    })
     // it('preloads the results when navigating to a line', async () => {
     //     await onDidChangeTextEditorSelection({
     //         textEditor: { document: testDocuments.document1 },

@@ -1,11 +1,15 @@
 import { Color } from './basic-types';
 import { LabelledValue, printLabel } from './interfaces';
 
+interface GreeterConfig {
+    message: string
+}
+
 export class Greeter {
     greeting: string;
 
-    constructor(message: string) {
-        this.greeting = message;
+    constructor(config: GreeterConfig ) {
+        this.greeting = config.message;
     }
 
     greet() {
@@ -17,9 +21,9 @@ export class Animal {
     name: string;
     color: Color;
 
-    constructor(theName: string, theColor: Color) {
-        this.name = theName;
-        this.color = theColor;
+    constructor(name: string, color: Color) {
+        this.name = name;
+        this.color = color;
     }
 
     move(distanceInMeters: number = 0) {
