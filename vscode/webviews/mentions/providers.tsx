@@ -44,7 +44,7 @@ const getAllMentionProvidersMetadata = async (): Promise<ContextMentionProviderM
     })
 }
 
-export const WithContextProviders = (props: { children: any }) => {
+export const WithContextProviders = (props: { children: React.ReactElement }): React.ReactElement => {
     return (
         <context.Provider value={{ providers: getAllMentionProvidersMetadata() }}>
             {props.children}

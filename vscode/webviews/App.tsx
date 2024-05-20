@@ -231,14 +231,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [chatModels, onCurrentChatModelChange]
     )
 
-    /*
-    // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-    const providers = useMemo(
-        () => (config ? allMentionProvidersMetadata(config) : []),
-        [config, openCtx.client]
-    )
-    */
-
     // Wait for all the data to be loaded before rendering Chat View
     if (!view || !authStatus || !config) {
         return <LoadingPage />

@@ -77,17 +77,6 @@ if (!(window as any).acquireVsCodeApi) {
 }
 
 export const ContextProvidersDecorator: Decorator = (Story, context) => {
-    /*
-    const experimentalContextProviders = context.globals.experimentalContextProviders
-    // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-    const providers = useMemo(
-        () =>
-            experimentalContextProviders
-                ? allMentionProvidersMetadata(experimentalContextProviders)
-                : [],
-        [experimentalContextProviders, openCtx.client]
-    )
-    */
     return (
         <WithContextProviders>
             <Story />
