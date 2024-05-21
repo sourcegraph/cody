@@ -30,7 +30,7 @@ export function extractHoverContent(hover: vscode.Hover[]): ParsedHover[] {
 }
 
 interface ParsedHover {
-    type: string | undefined
+    kind: string | undefined
     text: string
 }
 
@@ -40,7 +40,7 @@ function parseHoverString(hoverString: string): ParsedHover {
 
     if (match) {
         return {
-            type: match[1] || undefined,
+            kind: match[1] || undefined,
             text: match[2] || match[3],
         }
     }

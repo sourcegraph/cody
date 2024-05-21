@@ -157,28 +157,28 @@ async function getSymbolSnippetForNodeType(
         let definitionString: string | undefined
         let definitionHover: string | undefined
         let isHover = false
-        let hoverType: string | undefined
+        let hoverKind: string | undefined
         const resolutions = []
         let shouldReturn = false
 
         const hoverContent = await lspRequestLimiter(() => getHover(uri, position), abortSignal)
-        const [{ text, type } = { text: '', type: undefined }] = extractHoverContent(hoverContent) || [
+        const [{ text, kind } = { text: '', kind: undefined }] = extractHoverContent(hoverContent) || [
             {},
         ]
 
         definitionString = text
-        hoverType = type
+        hoverKind = kind
         isHover = true
 
         resolutions.push({
             type: 'getHover (initial)',
             definitionString,
-            hoverType: type,
+            hoverKind: kind,
         })
 
         if (isUnhelpfulSymbolSnippet(symbolName, definitionString)) {
             definitionString = ''
-            hoverType = undefined
+            hoverKind = undefined
             isHover = false
             if (nodeType === 'type_identifier') {
                 // TODO: add fallback here for unhelpful symbol snippets. Can happen if LSP lacks the
@@ -193,18 +193,18 @@ async function getSymbolSnippetForNodeType(
                     () => getHover(definitionLocation.uri, definitionLocation.range.start),
                     abortSignal
                 )
-                const [{ text, type } = { text: '', type: undefined }] = extractHoverContent(
+                const [{ text, kind } = { text: '', kind: undefined }] = extractHoverContent(
                     hoverContent
                 ) || [{}]
 
                 definitionString = text
-                hoverType = type
+                hoverKind = kind
                 isHover = true
 
                 resolutions.push({
                     type: 'getHover',
                     definitionString,
-                    hoverType: type,
+                    hoverKind: kind,
                 })
             }
         }
@@ -224,17 +224,17 @@ async function getSymbolSnippetForNodeType(
                     () => getHover(symbolSnippetRequest.uri, symbolSnippetRequest.position),
                     abortSignal
                 )
-                const [{ text, type } = { text: '', type: undefined }] =
+                const [{ text, kind } = { text: '', kind: undefined }] =
                     extractHoverContent(hoverContent)
                 definitionString = text
-                hoverType = type
+                hoverKind = kind
                 isHover = true
 
                 resolutions.push({
                     why: 'unhelpful class snippet',
                     type: 'getHover',
                     definitionString,
-                    hoverType: type,
+                    hoverKind: kind,
                 })
 
                 if (isUnhelpfulSymbolSnippet(symbolName, definitionString)) {
@@ -251,7 +251,7 @@ async function getSymbolSnippetForNodeType(
 
         if (shouldReturn) {
             debugLspLightSymbolLog(symbolName, 'no helpful context found:', {
-                hoverType,
+                hoverKind: hoverKind,
                 definitionHover,
                 definitionString,
                 resolutions,
@@ -274,7 +274,7 @@ async function getSymbolSnippetForNodeType(
             )
         )
 
-        if (hoverType === 'method') {
+        if (hoverKind === 'method') {
             definitionFirstLines = 'function ' + definitionFirstLines
         }
 
@@ -302,7 +302,8 @@ async function getSymbolSnippetForNodeType(
                     // exclude current symbol
                     symbolName !== request.symbolName &&
                     // exclude common symbols
-                    !commonKeywords.has(request.symbolName) && // exclude symbols not preset in the definition string (if it's a hover string)
+                    !commonKeywords.has(request.symbolName) &&
+                    // exclude symbols not preset in the definition string (if it's a hover string)
                     (definitionFirstLines.includes('class') ||
                         definitionString.includes(request.symbolName))
                 )
@@ -315,31 +316,6 @@ async function getSymbolSnippetForNodeType(
                             lineDelta: definitionLocation.range.start.line,
                         }),
                     }
-                    // const defLines = lines(definitionFirstLines)
-                    // const lineDelta = defLines.findIndex(line => {
-                    //     return line.includes(request.symbolName)
-                    // })
-
-                    // if (lineDelta === -1) {
-                    //     // logDebug({ definitionString, request })
-                    //     return {
-                    //         ...request,
-                    //         position: request.position.translate({
-                    //             lineDelta: definitionLocation.range.start.line,
-                    //             characterDelta: definitionLocation.range.start.character,
-                    //         }),
-                    //     }
-                    // }
-
-                    // const characterDelta = defLines[lineDelta].indexOf(request.symbolName)
-
-                    // return {
-                    //     ...request,
-                    //     position: definitionLocation.range.start.translate({
-                    //         lineDelta,
-                    //         characterDelta,
-                    //     }),
-                    // }
                 }
 
                 return {
@@ -353,7 +329,7 @@ async function getSymbolSnippetForNodeType(
             .filter(isDefined)
 
         debugLspLightSymbolLog(symbolName, 'nested symbols:', {
-            hoverType,
+            hoverKind: hoverKind,
             definitionHover,
             definitionString,
             definitionFirstLines,
@@ -482,8 +458,6 @@ export interface GetSymbolContextSnippetsParams {
 export async function getSymbolContextSnippets(
     params: GetSymbolContextSnippetsParams
 ): Promise<AutocompleteContextSnippet[]> {
-    // const start = performance.now()
-
     const result = await wrapInActiveSpan('getSymbolContextSnippetsRecursive', () => {
         return getSymbolContextSnippetsRecursive(params)
     })

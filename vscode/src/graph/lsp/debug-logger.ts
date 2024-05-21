@@ -69,7 +69,7 @@ export async function debugLSP(symbolSnippetRequest: SymbolSnippetsRequest) {
             )
             console.log(
                 '----hover',
-                extractHoverContent(hoverContent).map(x => `${x.type || 'unknown'}:${x.text}`)
+                extractHoverContent(hoverContent).map(x => `${x.kind || 'unknown'}:${x.text}`)
             )
             console.log('----text', await getTextFromLocation(location))
         }
