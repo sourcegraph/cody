@@ -264,7 +264,7 @@ export interface CodyLLMSiteConfiguration {
     completionModel?: string
     completionModelMaxTokens?: number
     provider?: string
-    smartContext: boolean
+    smartContext?: boolean
 }
 
 export interface CurrentUserCodySubscription {
@@ -545,8 +545,8 @@ export class SourcegraphGraphQLAPIClient {
 
                     return smartContextResponse !== 'disabled'
                 })
-                // For backward compatibility, return true if the query fails
-                .catch(() => true)
+                // For backward compatibility, return false by default when the query fails.
+                .catch(() => false)
         )
     }
 
