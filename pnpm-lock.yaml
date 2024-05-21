@@ -172,6 +172,9 @@ importers:
       '@types/diff':
         specifier: ^5.0.9
         version: 5.0.9
+      '@types/fast-json-stable-stringify':
+        specifier: ^2.1.0
+        version: 2.1.0
       '@types/google-protobuf':
         specifier: 3.15.12
         version: 3.15.12
@@ -193,6 +196,9 @@ importers:
       esbuild:
         specifier: ^0.18.19
         version: 0.18.20
+      fast-json-stable-stringify:
+        specifier: ^2.1.0
+        version: 2.1.0
       google-protobuf:
         specifier: ^3.21.2
         version: 3.21.2
@@ -5549,6 +5555,13 @@ packages:
       '@types/express-serve-static-core': 4.19.0
       '@types/qs': 6.9.15
       '@types/serve-static': 1.15.7
+    dev: true
+
+  /@types/fast-json-stable-stringify@2.1.0:
+    resolution: {integrity: sha512-IyNhGHu71jH1jCXTHmafuoAAdsbBON3kDh7u/UUhLmjYgN5TYB54e1R8ckTCiIevl2UuZaCsi9XRxineY5yUjw==}
+    deprecated: This is a stub types definition. fast-json-stable-stringify provides its own type definitions, so you do not need this installed.
+    dependencies:
+      fast-json-stable-stringify: 2.1.0
     dev: true
 
   /@types/find-cache-dir@3.2.1:

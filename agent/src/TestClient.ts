@@ -1,4 +1,5 @@
 import assert from 'node:assert'
+import stable_stringify from 'fast-json-stable-stringify'
 
 import { createPatch } from 'diff'
 
@@ -743,9 +744,17 @@ export class TestClient extends MessageHandler {
             url: json?.url ?? '',
             postData: bodyText,
         })
+
         if (closestBody) {
-            const oldChange = JSON.stringify(body, null, 2)
-            const newChange = JSON.stringify(JSON.parse(closestBody), null, 2)
+            // Need to go through stable_stringify to get meaningful diffs.
+            // Without this step, we get noisy diffs about different object
+            // property ordering.
+            const oldChange = JSON.stringify(JSON.parse(stable_stringify(body)), null, 2)
+            const newChange = JSON.stringify(
+                JSON.parse(stable_stringify(JSON.parse(closestBody))),
+                null,
+                2
+            )
             if (oldChange === newChange) {
                 console.log(
                     dedent`There exists a recording with exactly the same request body, but for some reason the recordings did not match.

@@ -43,7 +43,7 @@ describe('Fix', () => {
         const editTask = await client.request('codeActions/trigger', { id: fixAction.id })
         await client.acceptEditTask(uri, editTask)
         expect(client.workspace.getDocument(uri)?.getText()).toMatchInlineSnapshot(`
-          "function fixCommandExample(): number {
+          "export function fixCommandExample(): number {
               return 42;
           }
           "
