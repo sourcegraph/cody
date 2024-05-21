@@ -45,7 +45,11 @@ function parseHoverString(hoverString: string): ParsedHover {
         }
     }
 
-    throw new Error(`Unexpected hover string format: ${hoverString}`)
+    console.error(`Unexpected hover string format: ${hoverString}`)
+    return {
+        kind: undefined,
+        text: hoverString,
+    }
 }
 
 function extractMarkdownCodeBlock(string: string): string {
