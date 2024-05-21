@@ -13,6 +13,7 @@ data class ClientCapabilities(
   val untitledDocuments: UntitledDocumentsEnum? = null, // Oneof: none, enabled
   val showDocument: ShowDocumentEnum? = null, // Oneof: none, enabled
   val codeLenses: CodeLensesEnum? = null, // Oneof: none, enabled
+  val codeActions: CodeActionsEnum? = null, // Oneof: none, enabled
   val showWindowMessage: ShowWindowMessageEnum? = null, // Oneof: notification, request
   val ignore: IgnoreEnum? = null, // Oneof: none, enabled
 ) {
@@ -57,6 +58,11 @@ data class ClientCapabilities(
   }
 
   enum class CodeLensesEnum {
+    @SerializedName("none") None,
+    @SerializedName("enabled") Enabled,
+  }
+
+  enum class CodeActionsEnum {
     @SerializedName("none") None,
     @SerializedName("enabled") Enabled,
   }
