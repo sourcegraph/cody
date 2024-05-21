@@ -10,6 +10,7 @@ import {
     ModelProvider,
     ModelUsage,
     getDotComDefaultModels,
+    isWindows,
 } from '@sourcegraph/cody-shared'
 
 import { URI } from 'vscode-uri'
