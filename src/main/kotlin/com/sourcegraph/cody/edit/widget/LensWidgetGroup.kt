@@ -182,7 +182,7 @@ class LensWidgetGroup(val session: FixupSession, parentComponent: Editor) :
   fun widgetXY(widget: LensWidget): Point {
     val ourXY = widgetGroupXY()
     val fontMetrics = widgetFontMetrics ?: editor.getFontMetrics(Font.PLAIN)
-    var sum = 0
+    var sum = LEFT_MARGIN.toInt()
     for (w in widgets) {
       if (w == widget) break
       sum += w.calcWidthInPixels(fontMetrics)
