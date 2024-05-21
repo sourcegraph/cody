@@ -7,7 +7,7 @@
       }
     },
     "hello": {
-      "prompt": "Add a 'hello' comment for the selected code, without including the selected code.",
+      "prompt": "Add a 'hello' comment using inline comment syntax /* hello */ for the selected code, without including the selected code.",
       "context": {
         "selection": true
       },

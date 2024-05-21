@@ -168,7 +168,7 @@ function postProcessResponseText(entry: HarEntry): string | undefined {
         return undefined
     }
     if (
-        !entry.request.url.includes('/.api/completions/stream?api-version=1') &&
+        !entry.request.url.includes('/.api/completions/stream') &&
         !entry.request.url.includes('/completions/code')
     ) {
         return text
