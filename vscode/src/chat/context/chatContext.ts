@@ -18,28 +18,25 @@ import {
 export async function getChatContextItemsForMention(
     mentionQuery: MentionQuery,
     cancellationToken: vscode.CancellationToken,
-    telemetryRecorder?: {
-        empty: () => void
-        withProvider: (type: MentionQuery['provider']) => void
-    }
-): Promise<ContextItem[]> {
     // Logging: log when the at-mention starts, and then log when we know the type (after the 1st
     // character is typed). Don't log otherwise because we would be logging prefixes of the same
     // query repeatedly, which is not needed.
-    if (mentionQuery.provider === null) {
-        telemetryRecorder?.empty()
-    } else {
-        telemetryRecorder?.withProvider(mentionQuery.provider)
+    telemetryRecorder?: {
+        empty: () => void
+        withProvider: (type: MentionQuery['provider'], metadata?: { id: string }) => void
     }
-
+): Promise<ContextItem[]> {
     const MAX_RESULTS = 20
     switch (mentionQuery.provider) {
         case null:
+            telemetryRecorder?.empty()
             return getOpenTabsContextFile()
         case SYMBOL_CONTEXT_MENTION_PROVIDER.id:
+            telemetryRecorder?.withProvider(mentionQuery.provider)
             // It would be nice if the VS Code symbols API supports cancellation, but it doesn't
             return getSymbolContextFiles(mentionQuery.text, MAX_RESULTS)
         case FILE_CONTEXT_MENTION_PROVIDER.id: {
+            telemetryRecorder?.withProvider(mentionQuery.provider)
             const files = mentionQuery.text
                 ? await getFileContextFiles(mentionQuery.text, MAX_RESULTS)
                 : await getOpenTabsContextFile()
@@ -57,12 +54,13 @@ export async function getChatContextItemsForMention(
         }
 
         default: {
-            const openctxClient = openCtx.client
-            if (!openctxClient) {
+            telemetryRecorder?.withProvider('openctx', { id: mentionQuery.provider })
+
+            if (!openCtx.client) {
                 return []
             }
 
-            const items = await openctxClient.mentions(
+            const items = await openCtx.client.mentions(
                 { query: mentionQuery.text },
                 // get mention items for the selected provider only.
                 mentionQuery.provider
