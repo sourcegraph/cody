@@ -4,11 +4,11 @@ import * as vscode from 'vscode'
 import { getLanguageConfig } from '../../tree-sitter/language'
 import { logCompletionBookkeepingEvent } from '../logger'
 
-import { isAlmostTheSameString } from './string-comparator'
+import { PromptString, ps } from '@sourcegraph/cody-shared'
 import type { Position } from 'vscode'
 
-export const OPENING_CODE_TAG = '<CODE5711>'
-export const CLOSING_CODE_TAG = '</CODE5711>'
+export const OPENING_CODE_TAG = ps`<CODE5711>`
+export const CLOSING_CODE_TAG = ps`</CODE5711>`
 export const MULTILINE_STOP_SEQUENCE = '\n\n'
 
 /**
@@ -23,12 +23,12 @@ export const MULTILINE_STOP_SEQUENCE = '\n\n'
  * @returns the extracted code block
  */
 export function extractFromCodeBlock(completion: string): string {
-    if (completion.includes(OPENING_CODE_TAG)) {
+    if (completion.includes(OPENING_CODE_TAG.toString())) {
         logCompletionBookkeepingEvent('containsOpeningTag')
         return ''
     }
 
-    const index = completion.indexOf(CLOSING_CODE_TAG)
+    const index = completion.indexOf(CLOSING_CODE_TAG.toString())
     if (index === -1) {
         return completion
     }
@@ -52,10 +52,10 @@ export function fixBadCompletionStart(completion: string): string {
  * is no trailing whitespace in its input.
  */
 interface TrimmedString {
-    trimmed: string
-    leadSpace: string
-    rearSpace: string
-    raw?: string
+    trimmed: PromptString
+    leadSpace: PromptString
+    rearSpace: PromptString
+    raw?: PromptString
 }
 
 /**
@@ -78,11 +78,11 @@ interface TrimmedString {
 export interface PrefixComponents {
     head: TrimmedString
     tail: TrimmedString
-    overlap?: string
+    overlap?: PromptString
 }
 
 // Split string into head and tail. The tail is at most the last 2 non-empty lines of the snippet
-export function getHeadAndTail(s: string): PrefixComponents {
+export function getHeadAndTail(s: PromptString): PrefixComponents {
     const lines = s.split('\n')
     const tailThreshold = 2
 
@@ -103,8 +103,8 @@ export function getHeadAndTail(s: string): PrefixComponents {
         headAndTail = { head: trimSpace(s), tail: trimSpace(s), overlap: s }
     } else {
         headAndTail = {
-            head: trimSpace(`${lines.slice(0, tailStart).join('\n')}\n`),
-            tail: trimSpace(lines.slice(tailStart).join('\n')),
+            head: trimSpace(ps`${PromptString.join(lines.slice(0, tailStart), ps`\n`)}\n`),
+            tail: trimSpace(PromptString.join(lines.slice(tailStart), ps`\n`)),
         }
     }
 
@@ -122,14 +122,14 @@ export function getHeadAndTail(s: string): PrefixComponents {
     //     // Write some code
     //     █
     //
-    if (headAndTail.tail.rearSpace.includes('\n')) {
-        headAndTail.tail.trimmed += '\n'
+    if (headAndTail.tail.rearSpace.toString().includes('\n')) {
+        headAndTail.tail.trimmed = headAndTail.tail.trimmed.concat(ps`\n`)
     }
 
     return headAndTail
 }
 
-function trimSpace(s: string): TrimmedString {
+function trimSpace(s: PromptString): TrimmedString {
     const trimmed = s.trim()
     const headEnd = s.indexOf(trimmed)
     return {
@@ -201,11 +201,7 @@ export function trimUntilSuffix(
             break
         }
 
-        if (
-            isSameIndentation &&
-            (isAlmostTheSameString(line, firstNonEmptySuffixLine) ||
-                firstNonEmptySuffixLine.startsWith(line))
-        ) {
+        if (isSameIndentation && firstNonEmptySuffixLine.startsWith(line)) {
             cutOffIndex = i
             break
         }
@@ -420,4 +416,15 @@ export function getPositionAfterTextInsertion(position: Position, text?: string)
             : new vscode.Position(position.line + insertedLines.length - 1, insertedLines.at(-1)!.length)
 
     return updatedPosition
+}
+
+export function getSuffixAfterFirstNewline(suffix: PromptString): PromptString {
+    const firstNlInSuffix = suffix.toString().indexOf('\n')
+
+    // When there is no next line, the suffix should be empty
+    if (firstNlInSuffix === -1) {
+        return ps``
+    }
+
+    return suffix.slice(firstNlInSuffix)
 }

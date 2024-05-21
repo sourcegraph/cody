@@ -3,29 +3,36 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
-    isNetworkError,
     type BillingCategory,
     type BillingProduct,
     FeatureFlag,
+    isNetworkError,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { getConfiguration } from '../configuration'
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
 import { getExtensionDetails, logPrefix, telemetryService } from '../services/telemetry'
-import { splitSafeMetadata, telemetryRecorder } from '../services/telemetry-v2'
+import { splitSafeMetadata } from '../services/telemetry-v2'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
+import type { Span } from '@opentelemetry/api'
+import { PersistenceTracker } from '../common/persistence-tracker'
+import type {
+    PersistencePresentEventPayload,
+    PersistenceRemovedEventPayload,
+} from '../common/persistence-tracker/types'
+import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
+import { upstreamHealthProvider } from '../services/UpstreamHealthProvider'
+import { completionProviderConfig } from './completion-provider-config'
 import type { ContextSummary } from './context/context-mixer'
 import type { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
-import { PersistenceTracker } from './persistence-tracker'
 import type { RequestParams } from './request-manager'
 import * as statistics from './statistics'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
 import type { InlineCompletionItem } from './types'
-import type { Span } from '@opentelemetry/api'
-import { completionProviderConfig } from './completion-provider-config'
 
 // A completion ID is a unique identifier for a specific completion text displayed at a specific
 // point in the document. A single completion can be suggested multiple times.
@@ -110,6 +117,10 @@ interface SharedEventPayload extends InteractionIDPayload {
 
     /** A list of known completion providers that are also enabled with this user. */
     otherCompletionProviders: string[]
+
+    /** The round trip timings to reach the Sourcegraph and Cody Gateway instances. */
+    upstreamLatency?: number
+    gatewayLatency?: number
 }
 
 /**
@@ -158,26 +169,6 @@ interface PartiallyAcceptedEventPayload extends SharedEventPayload {
     acceptedLengthDelta: number
 }
 
-/** Emitted when a completion is still present at a specific time interval after insertion */
-interface PersistencePresentEventPayload {
-    /** An ID to uniquely identify an accepted completion. */
-    id: CompletionAnalyticsID
-    /** How many seconds after the acceptance was the check performed */
-    afterSec: number
-    /** Levenshtein distance between the current document state and the accepted completion */
-    difference: number
-    /** Number of lines still in the document */
-    lineCount: number
-    /** Number of characters still in the document */
-    charCount: number
-}
-
-/** Emitted when a completion is no longer present at a specific time interval after insertion */
-interface PersistenceRemovedEventPayload {
-    /** An ID to uniquely identify an accepted completion. */
-    id: CompletionAnalyticsID
-}
-
 /** Emitted when a completion request returned no usable results */
 interface NoResponseEventPayload extends SharedEventPayload {}
 
@@ -205,6 +196,7 @@ function logCompletionSuggestedEvent(params: SuggestedEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(
+        null,
         'suggested',
         {
             version: 0,
@@ -218,6 +210,7 @@ function logCompletionAcceptedEvent(params: AcceptedEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(
+        null,
         'accepted',
         {
             version: 0,
@@ -231,6 +224,7 @@ function logCompletionPartiallyAcceptedEvent(params: PartiallyAcceptedEventPaylo
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(
+        null,
         'partiallyAccepted',
         {
             version: 0,
@@ -244,7 +238,8 @@ export function logCompletionPersistencePresentEvent(params: PersistencePresentE
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(
-        'persistence:present',
+        'persistence',
+        'present',
         {
             version: 0,
             metadata,
@@ -257,7 +252,8 @@ export function logCompletionPersistenceRemovedEvent(params: PersistenceRemovedE
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(
-        'persistence:removed',
+        'persistence',
+        'removed',
         {
             version: 0,
             metadata,
@@ -269,17 +265,17 @@ export function logCompletionPersistenceRemovedEvent(params: PersistenceRemovedE
 function logCompletionNoResponseEvent(params: NoResponseEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
-    writeCompletionEvent('noResponse', { version: 0, metadata, privateMetadata }, params)
+    writeCompletionEvent(null, 'noResponse', { version: 0, metadata, privateMetadata }, params)
 }
 function logCompletionErrorEvent(params: ErrorEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
-    writeCompletionEvent('error', { version: 0, metadata, privateMetadata }, params)
+    writeCompletionEvent(null, 'error', { version: 0, metadata, privateMetadata }, params)
 }
 export function logCompletionFormatEvent(params: FormatEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
-    writeCompletionEvent('format', { version: 0, metadata, privateMetadata }, params)
+    writeCompletionEvent(null, 'format', { version: 0, metadata, privateMetadata }, params)
 }
 /**
  * The following events are added to ensure the logging bookkeeping works as expected in production
@@ -295,29 +291,39 @@ export function logCompletionBookkeepingEvent(
         | 'containsOpeningTag'
         | 'synthesizedFromParallelRequest'
 ): void {
-    writeCompletionEvent(name)
+    writeCompletionEvent(null, name)
 }
 
 /**
  * writeCompletionEvent is the underlying helper for various logCompletion*
  * functions. It writes telemetry in the appropriate format to both the v1
  * and v2 telemetry.
+ *
+ * @param subfeature Subfeature can optionally be provided to be added as part of the event feature.
+ * e.g. 'cody.completion.subfeature'. DO NOT include a 'cody.*' prefix.
+ *  MUST start with lower case and ONLY have letters and '.'.
+ * @param action action is required to represent the verb associated with an event occurrence.
+ * e.g. 'executed', MUST start with lower case and ONLY have letters and '.'.
+ * @param params Telemetry V2 parameters
+ * @param legacyParam legacyParams are passed through as-is the legacy event logger for backwards
+ * compatibility. All relevant arguments should also be set on the params
+ * object.
  */
-function writeCompletionEvent<Name extends string, LegacyParams extends {}>(
-    name: KnownString<Name>,
+function writeCompletionEvent<SubFeature extends string, Action extends string, LegacyParams extends {}>(
+    subfeature: KnownString<SubFeature> | null,
+    action: KnownString<Action>,
     params?: TelemetryEventParameters<{ [key: string]: number }, BillingProduct, BillingCategory>,
-    /**
-     * legacyParams are passed through as-is the legacy event logger for backwards
-     * compatibility. All relevant arguments should also be set on the params
-     * object.
-     */
     legacyParams?: LegacyParams
 ): void {
     const extDetails = getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration()))
-    telemetryService.log(`${logPrefix(extDetails.ide)}:completion:${name}`, legacyParams, {
-        agent: true,
-        hasV2Event: true, // this helper translates the event for us
-    })
+    telemetryService.log(
+        `${logPrefix(extDetails.ide)}:completion:${subfeature ? `${subfeature}:` : ''}${action}`,
+        legacyParams,
+        {
+            agent: true,
+            hasV2Event: true, // this helper translates the event for us
+        }
+    )
     /**
      * Extract interaction ID from the full legacy params for convenience
      */
@@ -328,8 +334,14 @@ function writeCompletionEvent<Name extends string, LegacyParams extends {}>(
      * New telemetry automatically adds extension context - we do not need to
      * include platform in the name of the event. However, we MUST prefix the
      * event with 'cody.' to have the event be categorized as a Cody event.
+     *
+     * We use an if/else statement here because the typechecker gets confused.
      */
-    telemetryRecorder.recordEvent('cody.completion', name, params)
+    if (subfeature) {
+        telemetryRecorder.recordEvent(`cody.completion.${subfeature}`, action, params)
+    } else {
+        telemetryRecorder.recordEvent('cody.completion', action, params)
+    }
 }
 
 export interface CompletionBookkeepingEvent {
@@ -425,7 +437,7 @@ const completionIdsMarkedAsSuggested = new LRUCache<CompletionAnalyticsID, true>
     max: 50,
 })
 
-let persistenceTracker: PersistenceTracker | null = null
+let persistenceTracker: PersistenceTracker<CompletionAnalyticsID> | null = null
 
 let completionsStartedSinceLastSuggestion = 0
 
@@ -626,13 +638,30 @@ export function accepted(
         return
     }
     if (persistenceTracker === null) {
-        persistenceTracker = new PersistenceTracker()
+        persistenceTracker = new PersistenceTracker<CompletionAnalyticsID>(vscode.workspace, {
+            onPresent: logCompletionPersistencePresentEvent,
+            onRemoved: logCompletionPersistenceRemovedEvent,
+        })
     }
+
+    // The trackedRange for the completion is relative to the state before the completion was inserted.
+    // We need to convert it to the state after the completion was inserted.
+    const textLines = lines(completion.insertText)
+    const insertRange = new vscode.Range(
+        trackedRange.start.line,
+        trackedRange.start.character,
+        trackedRange.end.line + textLines.length - 1,
+
+        textLines.length > 1
+            ? textLines.at(-1)!.length
+            : trackedRange.end.character + textLines[0].length
+    )
+
     persistenceTracker.track({
         id: completionEvent.params.id,
         insertedAt: Date.now(),
         insertText: completion.insertText,
-        insertRange: trackedRange,
+        insertRange,
         document,
     })
 }
@@ -770,7 +799,7 @@ function lineAndCharCount({ insertText }: InlineCompletionItem): {
 const TEN_MINUTES = 1000 * 60 * 10
 const errorCounts: Map<string, number> = new Map()
 export function logError(error: Error): void {
-    if (!shouldErrorBeReported(error)) {
+    if (!shouldErrorBeReported(error, false)) {
         return
     }
 
@@ -803,6 +832,8 @@ function getSharedParams(event: CompletionBookkeepingEvent): SharedEventPayload 
         items: event.items.map(i => ({ ...i })),
         otherCompletionProviderEnabled: otherCompletionProviders.length > 0,
         otherCompletionProviders,
+        upstreamLatency: upstreamHealthProvider.getUpstreamLatency(),
+        gatewayLatency: upstreamHealthProvider.getGatewayLatency(),
     }
 }
 
@@ -834,27 +865,26 @@ function completionItemToItemInfo(
 }
 
 const otherCompletionProviders = [
-    'GitHub.copilot',
-    'GitHub.copilot-nightly',
-    'TabNine.tabnine-vscode',
-    'TabNine.tabnine-vscode-self-hosted-updater',
     'AmazonWebServices.aws-toolkit-vscode', // Includes CodeWhisperer
-    'Codeium.codeium',
-    'Codeium.codeium-enterprise-updater',
-    'CodeComplete.codecomplete-vscode',
-    'Venthe.fauxpilot',
-    'TabbyML.vscode-tabby',
-    'blackboxapp.blackbox',
-    'devsense.intelli-php-vscode',
     'aminer.codegeex',
-    'svipas.code-autocomplete',
+    'AskCodi.askcodi-autocomplete',
+    'Bito.Bito',
+    'Blackboxapp.blackbox',
+    'CodeComplete.codecomplete-vscode',
+    'Codeium.codeium-enterprise-updater',
+    'Codeium.codeium',
+    'Continue.continue',
+    'devsense.intelli-php-vscode',
+    'FittenTech.Fitten-Code',
+    'GitHub.copilot-nightly',
+    'GitHub.copilot',
     'mutable-ai.mutable-ai',
+    'svipas.code-autocomplete',
+    'TabbyML.vscode-tabby',
+    'TabNine.tabnine-vscode-self-hosted-updater',
+    'TabNine.tabnine-vscode',
+    'Venthe.fauxpilot',
 ]
 function getOtherCompletionProvider(): string[] {
     return otherCompletionProviders.filter(id => vscode.extensions.getExtension(id)?.isActive)
-}
-
-function isRunningInsideAgent(): boolean {
-    const config = getConfiguration(vscode.workspace.getConfiguration())
-    return !!config.isRunningInsideAgent
 }

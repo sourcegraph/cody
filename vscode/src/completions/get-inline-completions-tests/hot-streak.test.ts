@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { resetParsersCache } from '../../tree-sitter/parser'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
@@ -7,6 +7,14 @@ import { initTreeSitterParser } from '../test-helpers'
 import { getInlineCompletionsWithInlinedChunks } from './helpers'
 
 describe('[getInlineCompletions] hot streak', () => {
+    beforeAll(async () => {
+        await initTreeSitterParser()
+    })
+
+    afterAll(() => {
+        resetParsersCache()
+    })
+
     beforeEach(() => {
         vi.useFakeTimers()
     })
@@ -75,7 +83,7 @@ describe('[getInlineCompletions] hot streak', () => {
                     █console.log(result)
                     if█(i > 1) {
                         console.log(1)
-                    █}
+                    }█
                     console.log(4)
                     return foo█
                 }`,
@@ -86,11 +94,7 @@ describe('[getInlineCompletions] hot streak', () => {
             expect(request.items[0].insertText).toEqual('console.log(result)')
 
             request = await request.acceptFirstCompletionAndPressEnter()
-            expect(request.items[0].insertText).toEqual('if(i > 1) {')
-            expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
-
-            request = await request.acceptFirstCompletionAndPressEnter()
-            expect(request.items[0].insertText).toEqual('console.log(1)\n    }')
+            expect(request.items[0].insertText).toEqual('if(i > 1) {\n        console.log(1)\n    }')
             expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
 
             request = await request.acceptFirstCompletionAndPressEnter()
@@ -104,14 +108,6 @@ describe('[getInlineCompletions] hot streak', () => {
     })
 
     describe('dynamic multiline', () => {
-        beforeAll(async () => {
-            await initTreeSitterParser()
-        })
-
-        afterAll(() => {
-            resetParsersCache()
-        })
-
         it('works with dynamic multiline mode', async () => {
             let request = await getInlineCompletionsWithInlinedChunks(
                 `function myFunction(i) {
@@ -128,7 +124,6 @@ describe('[getInlineCompletions] hot streak', () => {
                 }`,
                 {
                     configuration: {
-                        autocompleteExperimentalDynamicMultilineCompletions: true,
                         autocompleteExperimentalHotStreak: true,
                     },
                 }
@@ -159,7 +154,6 @@ describe('[getInlineCompletions] hot streak', () => {
                 const`,
                 {
                     configuration: {
-                        autocompleteExperimentalDynamicMultilineCompletions: true,
                         autocompleteExperimentalHotStreak: true,
                     },
                     delayBetweenChunks: 20,

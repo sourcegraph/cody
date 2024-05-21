@@ -9,10 +9,10 @@ type that is transitively referenced by the Cody Agent protocol (vscode/src/json
 To fix this problem, re-generate the Kotlin bindings to confirm that the new changes
 can be easily represented in non-TypeScript clients:
 
-  ./agent/scripts/generate-agent-kotlin-bindings.sh
-  git add .
+  pnpm generate-agent-kotlin-bindings
+  git add agent/bindings/kotlin
   git commit -am "Re-generate Kotlin bindings"
-  git push
+  git push YOUR_BRANCH
 '
   exit 1
 fi

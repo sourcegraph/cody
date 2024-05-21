@@ -2,58 +2,66 @@ import { Utils } from 'vscode-uri'
 
 import {
     BotResponseMultiplexer,
+    ModelProvider,
+    Typewriter,
     isAbortError,
     isDotCom,
     posixFilePaths,
-    Typewriter,
+    telemetryRecorder,
     uriBasename,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
-import { convertFileUriToTestFileUri } from '../commands/utils/new-test-file'
 import { logError } from '../log'
 import type { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 import { isNetworkError } from '../services/AuthProvider'
 
+import { workspace } from 'vscode'
+import { doesFileExist } from '../commands/utils/workspace-files'
+import { CodyTaskState } from '../non-stop/utils'
+import { telemetryService } from '../services/telemetry'
+import { splitSafeMetadata } from '../services/telemetry-v2'
+import { countCode } from '../services/utils/code-count'
 import type { EditManagerOptions } from './manager'
+import { responseTransformer } from './output/response-transformer'
 import { buildInteraction } from './prompt'
 import { PROMPT_TOPICS } from './prompt/constants'
-import { contentSanitizer } from './utils'
-import { doesFileExist } from '../commands/utils/workspace-files'
-import { workspace } from 'vscode'
-import { CodyTaskState } from '../non-stop/utils'
-import { getContextWindowForModel } from '../models/utilts'
-import { telemetryService } from '../services/telemetry'
-import { countCode } from '../services/utils/code-count'
-import { telemetryRecorder } from '../services/telemetry-v2'
 
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
     controller: FixupController
 }
 
+// Initiates a completion and responds to the result from the LLM. Implements
+// "tools" like directing the response into a specific file. Code is forwarded
+// to the FixupTask.
 export class EditProvider {
-    private cancelCompletionCallback: (() => void) | null = null
-
-    private insertionResponse: string | null = null
+    private insertionQueue: { response: string; isMessageInProgress: boolean }[] = []
     private insertionInProgress = false
-    private insertionPromise: Promise<void> | null = null
+    private abortController: AbortController | null = null
 
     constructor(public config: EditProviderOptions) {}
 
     public async startEdit(): Promise<void> {
         return wrapInActiveSpan('command.edit.start', async span => {
+            this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
-            const contextWindow = getContextWindowForModel(
-                this.config.authProvider.getAuthStatus(),
-                model
-            )
-            const { messages, stopSequences, responseTopic, responsePrefix } = await buildInteraction({
+            const contextWindow = ModelProvider.getContextWindowByID(model)
+            const {
+                messages,
+                stopSequences,
+                responseTopic,
+                responsePrefix = '',
+            } = await buildInteraction({
                 model,
-                contextWindow,
+                codyApiVersion: this.config.authProvider.getAuthStatus().codyApiVersion,
+                contextWindow: contextWindow.input,
                 task: this.config.task,
                 editor: this.config.editor,
+            }).catch(err => {
+                this.handleError(err)
+                throw err
             })
 
             const multiplexer = new BotResponseMultiplexer()
@@ -80,28 +88,40 @@ export class EditProvider {
                 },
             })
 
-            // Listen to test file name suggestion from responses
-            // Allows Cody to let us know which test file we should add the new content to
             if (this.config.task.intent === 'test') {
-                let filepath = ''
-                multiplexer.sub(PROMPT_TOPICS.FILENAME, {
-                    onResponse: async (content: string) => {
-                        filepath += content
-                        void this.handleFileCreationResponse(filepath, true)
-                        return Promise.resolve()
-                    },
-                    onTurnComplete: async () => {
-                        return Promise.resolve()
-                    },
-                })
+                if (this.config.task.destinationFile) {
+                    // We have already provided a destination file,
+                    // Treat this as the test file to insert to
+                    await this.config.controller.didReceiveNewFileRequest(
+                        this.config.task.id,
+                        this.config.task.destinationFile
+                    )
+                } else {
+                    // Listen to test file name suggestion from responses
+                    // Allows Cody to let us know which test file we should add the new content to
+                    let filepath = ''
+                    multiplexer.sub(PROMPT_TOPICS.FILENAME.toString(), {
+                        onResponse: async (content: string) => {
+                            filepath += content
+                            void this.handleFileCreationResponse(filepath, true)
+                            return Promise.resolve()
+                        },
+                        onTurnComplete: async () => {
+                            return Promise.resolve()
+                        },
+                    })
+                }
             }
 
-            const abortController = new AbortController()
-            this.cancelCompletionCallback = () => abortController.abort()
+            this.abortController = new AbortController()
             const stream = this.config.chat.chat(
                 messages,
-                { model, stopSequences },
-                abortController.signal
+                {
+                    model,
+                    stopSequences,
+                    maxTokensToSample: contextWindow.output,
+                },
+                this.abortController.signal
             )
 
             let textConsumed = 0
@@ -145,7 +165,7 @@ export class EditProvider {
     }
 
     public abortEdit(): void {
-        this.cancelCompletionCallback?.()
+        this.abortController?.abort()
     }
 
     private async handleResponse(response: string, isMessageInProgress: boolean): Promise<void> {
@@ -168,26 +188,53 @@ export class EditProvider {
         }
 
         if (!isMessageInProgress) {
-            telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', {
+            const { task } = this.config
+            const legacyMetadata = {
+                intent: task.intent,
+                mode: task.mode,
+                source: task.source,
                 ...countCode(response),
-                source: this.config.task.source,
+            }
+            telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', legacyMetadata, {
                 hasV2Event: true,
             })
+            const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
             const endpoint = this.config.authProvider?.getAuthStatus()?.endpoint
-            const responseText = endpoint && isDotCom(endpoint) ? response : undefined
             telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {
-                metadata: countCode(response),
+                metadata,
                 privateMetadata: {
-                    source: this.config.task.source,
-                    responseText,
+                    ...privateMetadata,
+                    model: task.model,
+                    // 🚨 SECURITY: edit responses are to be included only for DotCom users AND for V2 telemetry
+                    // V2 telemetry exports privateMetadata only for DotCom users
+                    // the condition below is an aditional safegaurd measure
+                    responseText: endpoint && isDotCom(endpoint) ? response : undefined,
                 },
             })
         }
 
         const intentsForInsert = ['add', 'test']
-        return intentsForInsert.includes(this.config.task.intent)
-            ? this.handleFixupInsert(response, isMessageInProgress)
-            : this.handleFixupEdit(response, isMessageInProgress)
+        if (intentsForInsert.includes(this.config.task.intent)) {
+            this.queueInsertion(response, isMessageInProgress)
+        } else {
+            this.handleFixupEdit(response, isMessageInProgress)
+        }
+    }
+
+    private queueInsertion(response: string, isMessageInProgress: boolean): void {
+        this.insertionQueue.push({ response, isMessageInProgress })
+        if (!this.insertionInProgress) {
+            this.processQueue()
+        }
+    }
+
+    private async processQueue(): Promise<void> {
+        this.insertionInProgress = true
+        while (this.insertionQueue.length > 0) {
+            const { response, isMessageInProgress } = this.insertionQueue.shift()!
+            await this.handleFixupInsert(response, isMessageInProgress)
+        }
+        this.insertionInProgress = false
     }
 
     /**
@@ -201,45 +248,22 @@ export class EditProvider {
     private async handleFixupEdit(response: string, isMessageInProgress: boolean): Promise<void> {
         return this.config.controller.didReceiveFixupText(
             this.config.task.id,
-            contentSanitizer(response),
+            responseTransformer(response, this.config.task, isMessageInProgress),
             isMessageInProgress ? 'streaming' : 'complete'
         )
     }
 
     private async handleFixupInsert(response: string, isMessageInProgress: boolean): Promise<void> {
-        this.insertionResponse = response
-        this.insertionInProgress = isMessageInProgress
-
-        if (this.insertionPromise) {
-            // Already processing an insertion, wait for it to finish
-            return
-        }
-
-        return this.processInsertionQueue()
-    }
-
-    private async processInsertionQueue(): Promise<void> {
-        while (this.insertionResponse !== null) {
-            const responseToSend = this.insertionResponse
-            this.insertionResponse = null
-
-            this.insertionPromise = this.config.controller.didReceiveFixupInsertion(
-                this.config.task.id,
-                contentSanitizer(responseToSend),
-                this.insertionInProgress ? 'streaming' : 'complete'
-            )
-
-            try {
-                await this.insertionPromise
-            } finally {
-                this.insertionPromise = null
-            }
-        }
+        return this.config.controller.didReceiveFixupInsertion(
+            this.config.task.id,
+            responseTransformer(response, this.config.task, isMessageInProgress),
+            isMessageInProgress ? 'streaming' : 'complete'
+        )
     }
 
     private async handleFileCreationResponse(text: string, isMessageInProgress: boolean): Promise<void> {
         const task = this.config.task
-        if (task.state !== CodyTaskState.pending) {
+        if (task.state !== CodyTaskState.Pending) {
             return
         }
 
@@ -250,22 +274,12 @@ export class EditProvider {
 
         // Manually create the file if no name was suggested
         if (!text.length && !isMessageInProgress) {
-            // an existing test file from codebase
-            const cbTestFileUri = task.contextMessages?.find(m => m?.file?.uri?.fsPath?.includes('test'))
-                ?.file?.uri
-            if (cbTestFileUri) {
-                const testFileUri = convertFileUriToTestFileUri(task.fixupFile.uri, cbTestFileUri)
-                const fileExists = await doesFileExist(testFileUri)
-                // create a file uri with untitled scheme that would work on windows
-                const newFileUri = fileExists ? testFileUri : testFileUri.with({ scheme: 'untitled' })
-                await this.config.controller.didReceiveNewFileRequest(this.config.task.id, newFileUri)
-                return
-            }
-
             // Create a new untitled file if the suggested file does not exist
             const currentFile = task.fixupFile.uri
             const currentDoc = await workspace.openTextDocument(currentFile)
-            const newDoc = await workspace.openTextDocument({ language: currentDoc?.languageId })
+            const newDoc = await workspace.openTextDocument({
+                language: currentDoc?.languageId,
+            })
             await this.config.controller.didReceiveNewFileRequest(this.config.task.id, newDoc.uri)
             return
         }
@@ -276,24 +290,25 @@ export class EditProvider {
         const currentFileUri = task.fixupFile.uri
         const currentFileName = uriBasename(currentFileUri)
         // remove open and close tags from text
-        const newFileName = text.trim().replaceAll(new RegExp(`${opentag}(.*)${closetag}`, 'g'), '$1')
+        const newFilePath = text.trim().replaceAll(new RegExp(`${opentag}(.*)${closetag}`, 'g'), '$1')
         const haveSameExtensions =
-            posixFilePaths.extname(currentFileName) === posixFilePaths.extname(newFileName)
+            posixFilePaths.extname(currentFileName) === posixFilePaths.extname(newFilePath)
+
+        // Get workspace uri using the current file uri
+        const workspaceUri = workspace.getWorkspaceFolder(currentFileUri)?.uri
+        const currentDirUri = Utils.joinPath(currentFileUri, '..')
 
         // Create a new file uri by replacing the file name of the currentFileUri with fileName
-        let newFileUri = Utils.joinPath(currentFileUri, '..', newFileName)
+        let newFileUri = Utils.joinPath(workspaceUri ?? currentDirUri, newFilePath)
         if (haveSameExtensions && !task.destinationFile) {
             const fileIsFound = await doesFileExist(newFileUri)
             if (!fileIsFound) {
                 newFileUri = newFileUri.with({ scheme: 'untitled' })
             }
-            this.insertionPromise = this.config.controller.didReceiveNewFileRequest(task.id, newFileUri)
             try {
-                await this.insertionPromise
+                await this.config.controller.didReceiveNewFileRequest(task.id, newFileUri)
             } catch (error) {
                 this.handleError(new Error('Cody failed to generate unit tests', { cause: error }))
-            } finally {
-                this.insertionPromise = null
             }
         }
     }

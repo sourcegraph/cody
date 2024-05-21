@@ -1,11 +1,12 @@
 import * as vscode from 'vscode'
 
-import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 import { chatHistory } from '../chat/chat-view/ChatHistoryManager'
-import type { AuthStatus } from '../chat/protocol'
+import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 
-import type { CodySidebarTreeItem } from './treeViewItems'
-import type { InteractionMessage } from '@sourcegraph/cody-shared'
+import { type AuthStatus, type ChatMessage, PromptString } from '@sourcegraph/cody-shared'
+import { prepareChatMessage } from '../chat/chat-view/SimpleChatModel'
+import { getRelativeChatPeriod } from '../common/time-date'
+import type { CodySidebarTreeItem } from './tree-views/treeViewItems'
 
 interface GroupedChats {
     [groupName: string]: CodySidebarTreeItem[]
@@ -17,37 +18,8 @@ interface HistoryItem {
     kind?: vscode.QuickPickItemKind
 }
 
-interface ChatGroup {
-    [groupName: string]: CodySidebarTreeItem[]
-}
-
-const dateEqual = (d1: Date, d2: Date): boolean => {
-    return d1.getDate() === d2.getDate() && monthYearEqual(d1, d2)
-}
-const monthYearEqual = (d1: Date, d2: Date): boolean => {
-    return d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear()
-}
-
 export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats | null {
-    const todayChats: CodySidebarTreeItem[] = []
-    const yesterdayChats: CodySidebarTreeItem[] = []
-    const thisMonthChats: CodySidebarTreeItem[] = []
-    const lastMonthChats: CodySidebarTreeItem[] = []
-    const nMonthsChats: CodySidebarTreeItem[] = []
-
-    const today = new Date()
-    const yesterday = new Date()
-    yesterday.setDate(yesterday.getDate() - 1)
-    const lastMonth = new Date()
-    lastMonth.setDate(0)
-
-    const chatGroups: ChatGroup = {
-        Today: todayChats,
-        Yesterday: yesterdayChats,
-        'This month': thisMonthChats,
-        'Last month': lastMonthChats,
-        'N months ago': nMonthsChats,
-    }
+    const chatHistoryGroups = new Map<string, CodySidebarTreeItem[]>()
 
     if (!authStatus) {
         return null
@@ -57,35 +29,32 @@ export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats
     if (!chats) {
         return null
     }
-    const chatHistoryEntries = [...Object.entries(chats)]
+
+    const chatHistoryEntries = [...Object.entries(chats)].reverse()
     for (const [id, entry] of chatHistoryEntries) {
-        let lastHumanMessage: InteractionMessage | undefined = undefined
+        let lastHumanMessage: ChatMessage | undefined = undefined
+
         // Can use Array.prototype.findLast once we drop Node 16
         for (let index = entry.interactions.length - 1; index >= 0; index--) {
-            lastHumanMessage = entry.interactions[index]?.humanMessage
+            lastHumanMessage = prepareChatMessage(
+                PromptString.unsafe_deserializeChatMessage(entry.interactions[index]?.humanMessage)
+            )
             if (lastHumanMessage) {
                 break
             }
         }
-        if (lastHumanMessage?.displayText && lastHumanMessage?.text) {
-            const lastDisplayText = lastHumanMessage.displayText.split('\n')[0]
-            const chatTitle = chats[id].chatTitle || getChatPanelTitle(lastDisplayText, false)
 
-            const lastInteractionTimestamp = new Date(entry.lastInteractionTimestamp)
-            let groupLabel = 'N months ago'
+        if (lastHumanMessage?.text) {
+            const lastHumanText = lastHumanMessage.text?.toString()
+            const chatTitle = chats[id].chatTitle || getChatPanelTitle(lastHumanText, false)
+            const timestamp = new Date(entry.lastInteractionTimestamp)
+            const timeUnit = getRelativeChatPeriod(timestamp)
 
-            if (dateEqual(today, lastInteractionTimestamp)) {
-                groupLabel = 'Today'
-            } else if (dateEqual(yesterday, lastInteractionTimestamp)) {
-                groupLabel = 'Yesterday'
-            } else if (monthYearEqual(today, lastInteractionTimestamp)) {
-                groupLabel = 'This month'
-            } else if (monthYearEqual(lastMonth, lastInteractionTimestamp)) {
-                groupLabel = 'Last month'
+            if (!chatHistoryGroups.has(timeUnit)) {
+                chatHistoryGroups.set(timeUnit, [])
             }
 
-            const chatGroup = chatGroups[groupLabel]
-            chatGroup.push({
+            const chatItem = {
                 id,
                 title: chatTitle,
                 icon: 'comment-discussion',
@@ -93,17 +62,13 @@ export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats
                     command: 'cody.chat.panel.restore',
                     args: [id, chatTitle],
                 },
-            })
+            }
+
+            chatHistoryGroups.get(timeUnit)?.push(chatItem)
         }
     }
 
-    return {
-        Today: todayChats.reverse(),
-        Yesterday: yesterdayChats.reverse(),
-        'This month': thisMonthChats.reverse(),
-        'Last month': lastMonthChats.reverse(),
-        'N months ago': nMonthsChats.reverse(),
-    }
+    return Object.fromEntries(chatHistoryGroups)
 }
 
 export async function displayHistoryQuickPick(authStatus: AuthStatus): Promise<void> {

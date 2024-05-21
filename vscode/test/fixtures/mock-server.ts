@@ -14,6 +14,7 @@ interface MockRequest {
     body: {
         messages: {
             text: string
+            speaker?: string
         }[]
     }
 }
@@ -43,6 +44,26 @@ const responses = {
         template: { completion: '', stopReason: 'stop_sequence' },
         mockResponses: ['myFirstCompletion', 'myNotFirstCompletion'],
     },
+    document: `
+    /**
+     * Mocked doc string
+     */
+    `,
+    lorem: `\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\n
+    \`\`\`
+    // Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean blandit erat egestas, malesuada urna id, congue sem.
+    export interface Animal {
+            name: string
+            makeAnimalSound(): string
+            isMammal: boolean
+            printName(): void {
+                console.log(this.name);
+            }
+        }
+    }
+    \`\`\`
+    \n\n
+    `,
 }
 
 const FIXUP_PROMPT_TAG = '<SELECTEDCODE7662>'
@@ -52,16 +73,11 @@ const pubSubClient = new PubSub({
     projectId: 'sourcegraph-telligent-testing',
 })
 
-const publishOptions = {
+const topicPublisher = pubSubClient.topic('projects/sourcegraph-telligent-testing/topics/e2e-testing', {
     gaxOpts: {
         timeout: 120000,
     },
-}
-
-const topicPublisher = pubSubClient.topic(
-    'projects/sourcegraph-telligent-testing/topics/e2e-testing',
-    publishOptions
-)
+})
 
 //#region GraphQL Mocks
 
@@ -79,7 +95,7 @@ type GraphQlMockResponse =
           message: string | undefined
       }
 
-export class GraphQlMock {
+class GraphQlMock {
     private response: GraphQlMockResponse = {
         kind: 'status',
         status: 400,
@@ -153,28 +169,57 @@ export class MockServer {
     public static async run<T>(around: (server: MockServer) => Promise<T>): Promise<T> {
         const app = express()
         const controller = new MockServer(app)
-
         app.use(express.json())
 
+        // Add connection issue middleware to simulate things going wrong. Right now it's very basic but we could extend this with specific
+        // network issue, latencies or errors we see in broken deployments to ensure we robustly handle them in the client.
+        const VALID_CONNECTION_ISSUES = ['ECONNREFUSED', 'ENOTFOUND'] as const
+        // this gets set by calling /.test/connectionIssues/enable\disable
+        let connectionIssue: (typeof VALID_CONNECTION_ISSUES)[number] | undefined = undefined
+        app.use((req, res, next) => {
+            if (connectionIssue && !req.url.startsWith('/.test')) {
+                switch (connectionIssue) {
+                    default: {
+                        //sending response like this prevents logging
+                        res.statusMessage = connectionIssue
+                        res.status(500)
+                        res.send(connectionIssue)
+                    }
+                }
+            } else {
+                next()
+            }
+        })
+        app.post('/.test/connectionIssue/enable', (req, res) => {
+            // get the 'issue' field from the request body and check that it's one of the valid connectionIssues
+            const issue = req.query?.issue as unknown
+            if (issue && VALID_CONNECTION_ISSUES.includes(issue as any)) {
+                connectionIssue = issue as (typeof VALID_CONNECTION_ISSUES)[number]
+                res.sendStatus(200)
+            } else {
+                res.status(400).send(
+                    `The issue <${issue}> must be one of [${VALID_CONNECTION_ISSUES.join(', ')}]`
+                )
+            }
+        })
+        app.post('/.test/connectionIssue/disable', (req, res) => {
+            connectionIssue = undefined
+            res.sendStatus(200)
+        })
+
         // endpoint which will accept the data that you want to send in that you will add your pubsub code
-        app.post('/.api/testLogging', (req, res) => {
+        app.post('/.test/testLogging', (req, res) => {
             void logTestingData('legacy', req.body)
             storeLoggedEvents(req.body)
             res.status(200)
         })
 
         // matches @sourcegraph/cody-shared't work, so hardcode it here.
-        app.post('/.api/mockEventRecording', (req, res) => {
+        app.post('/.test/mockEventRecording', (req, res) => {
             const events = req.body as TelemetryEventInput[]
             for (const event of events) {
                 void logTestingData('new', JSON.stringify(event))
-                if (
-                    ![
-                        'cody.extension', // extension setup events can behave differently in test environments
-                    ].includes(event.feature)
-                ) {
-                    loggedV2Events.push(`${event.feature}/${event.action}`)
-                }
+                loggedV2Events.push(`${event.feature}:${event.action}`)
             }
             res.status(200)
         })
@@ -199,9 +244,22 @@ export class MockServer {
             // Ideas from Dom - see if we could put something in the test request itself where we tell it what to respond with
             // or have a method on the server to send a set response the next time it sees a trigger word in the request.
             const request = req as MockRequest
-            const lastHumanMessageIndex = request.body.messages.length - 2
+            let lastHumanMessageIndex = request.body.messages.findLastIndex(
+                msg => msg?.speaker === 'human'
+            )
+            if (lastHumanMessageIndex < 0) {
+                lastHumanMessageIndex = request.body.messages.length - 2
+            }
             let response = responses.chat
-            if (
+            // Long chat response
+            if (request.body.messages[lastHumanMessageIndex].text.startsWith('Lorem ipsum')) {
+                response = responses.lorem
+            }
+            // Doc command
+            if (request.body.messages[lastHumanMessageIndex].text.includes('documentation comment')) {
+                response = responses.document
+            } else if (
+                // Edit command
                 request.body.messages[lastHumanMessageIndex].text.includes(FIXUP_PROMPT_TAG) ||
                 request.body.messages[lastHumanMessageIndex].text.includes(NON_STOP_FIXUP_PROMPT_TAG)
             ) {
@@ -249,7 +307,6 @@ export class MockServer {
             chatRateLimitPro = undefined
             res.sendStatus(200)
         })
-
         app.post('/.api/completions/code', (req, res) => {
             const OPENING_CODE_TAG = '<CODE5711>'
             const request = req as MockRequest
@@ -285,6 +342,7 @@ export class MockServer {
         })
 
         let attribution = false
+        let codyPro = false
         app.post('/.api/graphql', (req, res) => {
             if (req.headers.authorization !== `token ${VALID_TOKEN}`) {
                 res.sendStatus(401)
@@ -319,12 +377,29 @@ export class MockServer {
                             })
                         )
                         break
+                    case 'CurrentUserCodySubscription':
+                        res.send(
+                            JSON.stringify({
+                                data: {
+                                    currentUser: {
+                                        codySubscription: {
+                                            status: 'ACTIVE',
+                                            plan: codyPro ? 'PRO' : 'FREE',
+                                            applyProRateLimits: codyPro,
+                                            currentPeriodStartAt: '2021-01-01T00:00:00Z',
+                                            currentPeriodEndAt: '2022-01-01T00:00:00Z',
+                                        },
+                                    },
+                                },
+                            })
+                        )
+                        break
                     case 'CurrentUserCodyProEnabled':
                         res.send(
                             JSON.stringify({
                                 data: {
                                     currentUser: {
-                                        codyProEnabled: false,
+                                        codyProEnabled: codyPro,
                                     },
                                 },
                             })
@@ -405,13 +480,25 @@ export class MockServer {
                         break
                     }
                     default:
-                        res.sendStatus(400)
-                        res.statusMessage = `unhandled GraphQL operation ${operation}`
+                        res.status(400).send(
+                            JSON.stringify({
+                                errors: [
+                                    {
+                                        message: `Cannot query field "unknown" on type "${operation}".`,
+                                        locations: [],
+                                    },
+                                ],
+                            })
+                        )
                         break
                 }
             }
         })
 
+        app.post('/.test/currentUser/codyProEnabled', (req, res) => {
+            codyPro = true
+            res.sendStatus(200)
+        })
         app.post('/.test/attribution/enable', (req, res) => {
             attribution = true
             res.sendStatus(200)
@@ -449,7 +536,7 @@ export class MockServer {
 const loggedTestRun: Record<string, boolean> = {}
 
 async function logTestingData(type: 'legacy' | 'new', data: string): Promise<void> {
-    if (process.env.CI === undefined) {
+    if (process.env.CI === undefined || process.env.NO_LOG_TESTING_TELEMETRY_CALLS) {
         return
     }
 
@@ -492,7 +579,7 @@ export let loggedEvents: string[] = []
 // Events recorded using the new event recorders
 // Needs to be recorded separately from the legacy events to ensure ordering
 // is stable.
-let loggedV2Events: string[] = []
+export let loggedV2Events: string[] = []
 
 export function resetLoggedEvents(): void {
     loggedEvents = []

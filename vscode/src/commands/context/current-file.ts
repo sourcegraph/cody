@@ -1,20 +1,26 @@
 import {
-    type ContextFile,
-    MAX_CURRENT_FILE_TOKENS,
-    truncateText,
+    type ContextItem,
+    ContextItemSource,
+    TokenCounter,
+    contextFiltersProvider,
     logError,
+    toRangeData,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { getEditor } from '../../editor/active-editor'
 import * as vscode from 'vscode'
+import { getEditor } from '../../editor/active-editor'
 
-export async function getContextFileFromCurrentFile(): Promise<ContextFile[]> {
+export async function getContextFileFromCurrentFile(): Promise<ContextItem[]> {
     return wrapInActiveSpan('commands.context.file', async span => {
         try {
             const editor = getEditor()
             const document = editor?.active?.document
-            if (!editor?.active || !document) {
+            if (!document) {
                 throw new Error('No active editor')
+            }
+
+            if (await contextFiltersProvider.isUriIgnored(document.uri)) {
+                return []
             }
 
             const selection = new vscode.Selection(
@@ -25,6 +31,7 @@ export async function getContextFileFromCurrentFile(): Promise<ContextFile[]> {
             )
 
             const content = document.getText(selection)
+            const size = TokenCounter.countTokens(content)
 
             if (!content.trim()) {
                 throw new Error('No content')
@@ -34,10 +41,11 @@ export async function getContextFileFromCurrentFile(): Promise<ContextFile[]> {
                 {
                     type: 'file',
                     uri: document.uri,
-                    content: truncateText(content, MAX_CURRENT_FILE_TOKENS),
-                    source: 'editor',
-                    range: selection,
-                } as ContextFile,
+                    content,
+                    source: ContextItemSource.Editor,
+                    range: toRangeData(selection),
+                    size,
+                } satisfies ContextItem,
             ]
         } catch (error) {
             logError('getContextFileFromCurrentFile', 'failed', { verbose: error })

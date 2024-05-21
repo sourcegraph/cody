@@ -1,11 +1,13 @@
+import { createServer } from 'node:net'
 import type { EXPIRY_STRATEGY, MODE, Polly, Request } from '@pollyjs/core'
 import * as commander from 'commander'
 import { Command, Option } from 'commander'
-import { createServer } from 'net'
+import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 
 import { startPollyRecording } from '../../../vscode/src/testutils/polly'
 import { Agent } from '../agent'
 
+import { activate } from '../../../vscode/src/extension.node'
 import { booleanOption } from './evaluate-autocomplete/cli-parsers'
 
 interface JsonrpcCommandOptions {
@@ -52,7 +54,7 @@ function expiryStrategyOption(value: string): EXPIRY_STRATEGY {
 
 const isDebugMode = process.env.CODY_AGENT_DEBUG_REMOTE === 'true'
 const debugPort = process.env.CODY_AGENT_DEBUG_PORT
-    ? parseInt(process.env.CODY_AGENT_DEBUG_PORT, 10)
+    ? Number.parseInt(process.env.CODY_AGENT_DEBUG_PORT, 10)
     : 3113
 
 export const jsonrpcCommand = new Command('jsonrpc')
@@ -180,7 +182,12 @@ function setupAgentCommunication(params: {
     stdin: NodeJS.ReadableStream
     stdout: NodeJS.WritableStream
 }) {
-    const agent = new Agent(params)
+    const conn = createMessageConnection(
+        new StreamMessageReader(params.stdin),
+        new StreamMessageWriter(params.stdout)
+    )
+
+    new Agent({ ...params, conn, extensionActivate: activate })
 
     // Force the agent process to exit when stdin/stdout close as an attempt to
     // prevent zombie agent processes. We experienced this problem when we
@@ -193,6 +200,5 @@ function setupAgentCommunication(params: {
         params.stdin.on('close', () => process.exit(1))
     }
 
-    params.stdin.pipe(agent.messageDecoder)
-    agent.messageEncoder.pipe(params.stdout)
+    conn.listen()
 }

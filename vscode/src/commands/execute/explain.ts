@@ -1,49 +1,71 @@
-import { logDebug, type ContextFile } from '@sourcegraph/cody-shared'
-import { getContextFileFromCursor } from '../context/selection'
-import { getContextFileFromCurrentFile } from '../context/current-file'
-import { type ExecuteChatArguments, executeChat } from './ask'
-import { DefaultChatCommands } from '@sourcegraph/cody-shared/src/commands/types'
+import {
+    type ContextItem,
+    DefaultChatCommands,
+    PromptString,
+    displayLineRange,
+    logDebug,
+    ps,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
+import * as vscode from 'vscode'
 import { defaultCommands } from '.'
 import type { ChatCommandResult } from '../../main'
-import type { CodyCommandArgs } from '../types'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
-import { telemetryRecorder } from '../../services/telemetry-v2'
+import { getContextFileFromCurrentFile } from '../context/current-file'
+import { getContextFileFromCursor } from '../context/selection'
+import type { CodyCommandArgs } from '../types'
+import { type ExecuteChatArguments, executeChat } from './ask'
 
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 import type { Span } from '@opentelemetry/api'
+import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/context-filter'
+import { getEditor } from '../../editor/active-editor'
 
 /**
  * Generates the prompt and context files with arguments for the 'explain' command.
  *
  * Context: Current selection and current file
  */
-export async function explainCommand(
+async function explainCommand(
     span: Span,
     args?: Partial<CodyCommandArgs>
-): Promise<ExecuteChatArguments> {
+): Promise<ExecuteChatArguments | null> {
     const addEnhancedContext = false
-    let prompt = defaultCommands.explain.prompt
+    let prompt = PromptString.fromDefaultCommands(defaultCommands, 'explain')
 
     if (args?.additionalInstruction) {
         span.addEvent('additionalInstruction')
-        prompt = `${prompt} ${args.additionalInstruction}`
+        prompt = ps`${prompt} ${args.additionalInstruction}`
     }
 
     // fetches the context file from the current cursor position using getContextFileFromCursor().
-    const contextFiles: ContextFile[] = []
+    const contextFiles: ContextItem[] = []
 
-    const currentSelection = await getContextFileFromCursor()
+    const currentSelection = await getContextFileFromCursor(args?.range?.start)
     contextFiles.push(...currentSelection)
 
     const currentFile = await getContextFileFromCurrentFile()
     contextFiles.push(...currentFile)
+
+    const cs = currentSelection[0] ?? currentFile[0]
+    if (cs) {
+        const range = cs.range && ps`:${displayLineRange(cs.range)}`
+        prompt = prompt.replaceAll(
+            'the selected code',
+            ps`@${PromptString.fromDisplayPath(cs.uri)}${range ?? ''} `
+        )
+    } else {
+        return null
+    }
 
     return {
         text: prompt,
         submitType: 'user-newchat',
         contextFiles,
         addEnhancedContext,
-        source: DefaultChatCommands.Explain,
+        source: args?.source,
+        command: DefaultChatCommands.Explain,
     }
 }
 
@@ -56,6 +78,15 @@ export async function executeExplainCommand(
     return wrapInActiveSpan('command.explain', async span => {
         span.setAttribute('sampled', true)
         logDebug('executeExplainCommand', 'executing', { args })
+
+        const editor = getEditor()
+        if (
+            editor.active &&
+            (await isUriIgnoredByContextFilterWithNotification(editor.active.document.uri, 'command'))
+        ) {
+            return
+        }
+
         telemetryService.log('CodyVSCodeExtension:command:explain:executed', {
             useCodebaseContex: false,
             requestID: args?.requestID,
@@ -74,9 +105,18 @@ export async function executeExplainCommand(
             },
         })
 
+        const chatArguments = await explainCommand(span, args)
+
+        if (chatArguments === null) {
+            vscode.window.showInformationMessage(
+                'Please select text before running the "Explain" command.'
+            )
+            return undefined
+        }
+
         return {
             type: 'chat',
-            session: await executeChat(await explainCommand(span, args)),
+            session: await executeChat(chatArguments),
         }
     })
 }

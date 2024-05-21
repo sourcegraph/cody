@@ -61,8 +61,6 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
         switch (section) {
             case 'cody.serverEndpoint':
                 return extensionConfig?.serverEndpoint
-            case 'cody.proxy':
-                return extensionConfig?.proxy ?? null
             case 'cody.customHeaders':
                 return extensionConfig?.customHeaders
             case 'cody.telemetry.level':
@@ -79,13 +77,10 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
                 return extensionConfig?.autocompleteAdvancedModel ?? null
             case 'cody.advanced.agent.running':
                 return true
-            case 'cody.debug.enable':
-                return extensionConfig?.debug ?? false
             case 'cody.debug.verbose':
                 return extensionConfig?.verboseDebug ?? false
-            case 'cody.autocomplete.experimental.syntacticPostProcessing':
-                // False because we don't embed WASM with the agent yet.
-                return false
+            case 'cody.experimental.tracing':
+                return extensionConfig?.verboseDebug ?? false
             case 'cody.useContext':
                 // Disable embeddings by default.
                 return 'keyword'

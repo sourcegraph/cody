@@ -8,6 +8,7 @@ fi
 
 pushd $INDEXER_DIR
 git checkout olafurpg/signatures
+git pull origin olafurpg/signatures
 yarn install
 popd
 

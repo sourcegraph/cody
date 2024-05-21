@@ -1,6 +1,6 @@
 import type { TextDocument } from 'vscode'
 
-import type { DocumentContext } from './get-current-doc-context'
+import type { DocumentContext } from '@sourcegraph/cody-shared'
 import { hasCompleteFirstLine } from './text-processing'
 import { parseAndTruncateCompletion } from './text-processing/parse-and-truncate-completion'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
@@ -8,7 +8,6 @@ import type { InlineCompletionItemWithAnalytics } from './text-processing/proces
 interface CanUsePartialCompletionParams {
     document: TextDocument
     docContext: DocumentContext
-    isDynamicMultilineCompletion: boolean
 }
 
 /**

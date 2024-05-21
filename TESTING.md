@@ -128,7 +128,7 @@
 
 - [ ] Deliberately break a line or section of code to trigger the IDE’s red squiggly error warning.
 - [ ] Click the Code Action (in VSC) lightbulb icon in the project file
-- [ ] Select `Ask Cody to fix`.
+- [ ] Select `Ask Cody to Fix`.
 - [ ] Verify that there is a notification that "Cody is working..." while edits are being applied.
 - [ ] Verify that Cody automatically applies a code fix to the selected code.
 - [ ] Verify that you can see a diff view of the fix in a new tab by clicking `Show diff`.
@@ -140,7 +140,7 @@
 
 - [ ] Deliberately break a line or section of code to trigger the IDE’s red squiggly error warning.
 - [ ] Click the Code Action lightbulb icon in the project file
-- [ ] Select `Ask Cody to explain`.
+- [ ] Select `Ask Cody to Explain`.
 - [ ] Verify that Cody provides an explanation of the error in a new chat window.
 - [ ] Verify that the chat executed by running the command appears in the chat list in the left hand panel.
 
@@ -148,7 +148,7 @@
 
 - [ ] Highlight a section of code.
 - [ ] Click the Code Action lightbulb icon in the project file
-- [ ] Select `Ask Cody to Edit`.
+- [ ] Select `Cody: Edit Code`.
 - [ ] Provide instructions for how Cody should edit the selected code.
 - [ ] Verify that there is a notification that "Cody is working..." while edits are being applied.
 - [ ] Verify that Cody automatically applies edits to the selected code, per the user’s instructions
@@ -161,12 +161,35 @@
 
 - [ ] Move the cursor to an empty line, do not highlight any selection.
 - [ ] Click the Code Action lightbulb icon in the project file.
-- [ ] Select `Ask Cody to Generate`.
+- [ ] Select `Cody: Generate Code`.
 - [ ] Provide instructions for what Cody should generate.
 - [ ] Verify that there is a notification that "Cody is working..." while code is being generated.
 - [ ] Verify that, per the user’s instructions, Cody automatically streams the generated code into the document, line-by-line.
 - [ ] Verify that you can see a diff view of the edit in a new tab by clicking `Show diff`.
 - [ ] Verify that you can prompt Cody to retry the command by clicking `Retry` and entering new instructions.
+- [ ] Verify that you can undo the edit by clicking `Undo`.
+- [ ] Verify that the ghost text disappears by clicking `Accept`.
+
+#### Documenting code
+
+- [ ] Move the cursor to an active symbol that could be documented (e.g. a function name), do not highlight any selection.
+- [ ] Click the Code Action lightbulb icon in the project file.
+- [ ] Select `Cody: Generate Documentation for symbolName`.
+- [ ] Verify that there is a notification that "Cody is working..." while code is being generated.
+- [ ] Verify that Cody automatically applies documentation to the selected symbol, per the user’s instructions
+- [ ] Verify that you can see a diff view of the edit in a new tab by clicking `Show diff`.
+- [ ] Verify that you can prompt Cody to retry the command by clicking `Retry` and entering new instructions.
+- [ ] Verify that you can undo the edit by clicking `Undo`.
+- [ ] Verify that the ghost text disappears by clicking `Accept`.
+
+#### Testing code
+
+- [ ] Move the cursor to an active symbol that could be documented (e.g. a function name), do not highlight any selection.
+- [ ] Click the Code Action lightbulb icon in the project file.
+- [ ] Select `Cody: Generate Tests for symbolName`.
+- [ ] Verify that there is a notification: "Cody is working..." while command is being processed.
+- [ ] Verify that Cody opens a new file, and automatically streams the generated tests into said file, line-by-line.
+- [ ] Verify that there is a notification: "Generating Tests..." while the output is beign produced
 - [ ] Verify that you can undo the edit by clicking `Undo`.
 - [ ] Verify that the ghost text disappears by clicking `Accept`.
 
@@ -275,7 +298,7 @@ Tests:
 - [ ] Enable "Enhanced Context" and verify that Cody used code files as context.
 - [ ] At the top of the chat transcript, use the arrow dropdown to display the code that Cody used as context.
 - [ ] From the list of files that Cody used as context, select one of the `@` files and verify that the correct file opens in a new tab at the correct line number.
-- [ ] In the chat input, verify that typing `@` suggests files to add as context, and typing `@#` suggests symbols to add as context.
+- [ ] In the chat input, verify that typing `@` suggests files to add as context, and selecting Symbols and then typing a symbol name suggests symbols to add as context.
 - [ ] Verify that you can use a relative file path to choose a file to add as context (e.g., `src/util/my-file`).
 
 ### Enterprise

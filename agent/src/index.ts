@@ -1,4 +1,7 @@
+#!/usr/bin/env node
+
 import type { Command } from 'commander'
+import { registerLocalCertificates } from './certs'
 
 console.log = console.error
 
@@ -19,6 +22,8 @@ process.on('uncaughtException', e => {
     // trace so we can look into it and fix it.
     console.error('Uncaught exception:', e)
 })
+
+registerLocalCertificates()
 
 const args = process.argv.slice(2)
 const { operands } = rootCommand.parseOptions(args)

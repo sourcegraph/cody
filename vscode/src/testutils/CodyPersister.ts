@@ -1,21 +1,34 @@
-import crypto from 'crypto'
+import crypto from 'node:crypto'
 
-import type { Har } from '@pollyjs/persister'
+import type { Har, HarEntry } from '@pollyjs/persister'
 import FSPersister from '@pollyjs/persister-fs'
 
+import { isError, parseEvents } from '@sourcegraph/cody-shared'
+import { PollyYamlWriter } from './PollyYamlWriter'
 import { decodeCompressedBase64 } from './base64'
-import { PollyYamlWriter } from './pollyapi'
 
 /**
  * SHA-256 digests a Sourcegraph access token so that it's value is redacted but
  * remains uniquely identifyable. The token needs to be uniquely identifiable so
  * that we can correctly replay HTTP responses based on the access token.
  */
-export function redactAccessToken(token: string): string {
-    if (token.startsWith('token REDACTED_')) {
-        return token
+export function redactAuthorizationHeader(header: string): string {
+    if (!header.startsWith('token')) {
+        // NOTE(olafurpg) When using fastpath, this header has the format
+        // `Bearer TOKEN`. We currently disable fastpath in the agent tests so
+        // we should not hit on this case. If fastpath gets enabled for some
+        // reason then the tests should fail quickly with a helpful error
+        // message. I spent almost 2h tracking down why tests were failing in
+        // replay mode when using fastpath and it was not at all obvious what
+        // the root cause was.
+        throw new Error(`Unexpected access token format: ${header}`)
     }
-    return `token REDACTED_${sha256(`prefix${token}`)}`
+
+    if (header.startsWith('token REDACTED_')) {
+        return header
+    }
+
+    return `token REDACTED_${sha256(`prefix${header}`)}`
 }
 
 function sha256(input: string): string {
@@ -87,7 +100,7 @@ export class CodyPersister extends FSPersister {
             for (const header of headers) {
                 switch (header.name) {
                     case 'authorization':
-                        header.value = redactAccessToken(header.value)
+                        header.value = redactAuthorizationHeader(header.value)
                         break
                     // We should not harcode the dates to minimize diffs because
                     // that breaks the expiration feature in Polly.
@@ -100,6 +113,7 @@ export class CodyPersister extends FSPersister {
             entry.response.content.text
             entry.request.cookies.length = 0
             entry.response.cookies.length = 0
+            entry.response.content.text = postProcessResponseText(entry)
 
             // And other misc fields.
             entry.time = 0
@@ -147,4 +161,37 @@ export class CodyPersister extends FSPersister {
                 removeHeaderPrefixes.every(prefix => !header.name.startsWith(prefix))
         )
     }
+}
+function postProcessResponseText(entry: HarEntry): string | undefined {
+    const { text } = entry.response.content
+    if (text === undefined) {
+        return undefined
+    }
+    if (
+        !entry.request.url.includes('/.api/completions/stream?api-version=1') &&
+        !entry.request.url.includes('/completions/code')
+    ) {
+        return text
+    }
+    const parseResult = parseEvents(text)
+    if (isError(parseResult)) {
+        return text
+    }
+    const hasError = parseResult.events.some(event => event.type === 'error')
+    if (hasError) {
+        return text
+    }
+
+    const [completionEvent, doneEvent] = parseResult.events.slice(-2)
+    if (completionEvent.type !== 'completion' || doneEvent.type !== 'done') {
+        return text
+    }
+
+    const lines = text.split('\n')
+    const lastCompletionEvent = lines.lastIndexOf('event: completion')
+    if (lastCompletionEvent >= 0) {
+        return lines.slice(lastCompletionEvent).join('\n')
+    }
+
+    return text
 }

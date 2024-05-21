@@ -2,6 +2,6 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class NoticeParams(
-  val key: String? = null,
+  val key: String,
 )
 

@@ -1,17 +1,20 @@
-import { CompletionStopReason, type CompletionResponseGenerator } from '@sourcegraph/cody-shared'
+import {
+    type CompletionResponseGenerator,
+    CompletionStopReason,
+    type DocumentContext,
+} from '@sourcegraph/cody-shared'
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { canUsePartialCompletion } from '../can-use-partial-completion'
-import type { DocumentContext } from '../get-current-doc-context'
 import { getFirstLine } from '../text-processing'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
 import {
-    processCompletion,
     type InlineCompletionItemWithAnalytics,
+    processCompletion,
 } from '../text-processing/process-inline-completions'
 
 import { getDynamicMultilineDocContext } from './dynamic-multiline'
-import { createHotStreakExtractor, type HotStreakExtractor } from './hot-streak'
+import { type HotStreakExtractor, createHotStreakExtractor } from './hot-streak'
 import type { ProviderOptions } from './provider'
 
 export interface FetchAndProcessCompletionsParams {
@@ -20,6 +23,15 @@ export interface FetchAndProcessCompletionsParams {
     providerSpecificPostProcess: (insertText: string) => string
     providerOptions: Readonly<ProviderOptions>
 }
+
+export type FetchCompletionResult =
+    | {
+          docContext: DocumentContext
+          completion: InlineCompletionItemWithAnalytics
+      }
+    | undefined
+
+type FetchCompletionsGenerator = AsyncGenerator<FetchCompletionResult>
 
 /**
  * Uses the first line of the completion to figure out if it start the new multiline syntax node.
@@ -111,7 +123,6 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
             const completion = extractCompletion(rawCompletion, {
                 document: providerOptions.document,
                 docContext,
-                isDynamicMultilineCompletion: false,
             })
 
             if (completion) {
@@ -147,7 +158,6 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
             const completion = extractCompletion(rawCompletion, {
                 document: providerOptions.document,
                 docContext: dynamicMultilineDocContext,
-                isDynamicMultilineCompletion: true,
             })
 
             if (completion) {
@@ -178,7 +188,6 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
             const completion = extractCompletion(rawCompletion, {
                 document: providerOptions.document,
                 docContext,
-                isDynamicMultilineCompletion: false,
             })
 
             if (completion) {
@@ -202,75 +211,6 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
                     completedCompletion,
                     rawCompletion,
                 })
-            }
-        }
-    }
-}
-
-export type FetchCompletionResult =
-    | {
-          docContext: DocumentContext
-          completion: InlineCompletionItemWithAnalytics
-      }
-    | undefined
-
-type FetchCompletionsGenerator = AsyncGenerator<FetchCompletionResult>
-
-export async function* fetchAndProcessCompletions(
-    params: FetchAndProcessCompletionsParams
-): FetchCompletionsGenerator {
-    const {
-        completionResponseGenerator,
-        abortController,
-        providerOptions,
-        providerSpecificPostProcess,
-    } = params
-    const { hotStreak, docContext } = providerOptions
-
-    let hotStreakExtractor: undefined | HotStreakExtractor
-
-    for await (const { stopReason, completion } of completionResponseGenerator) {
-        addAutocompleteDebugEvent('fetchAndProcessCompletions', {
-            stopReason,
-            completion,
-        })
-
-        const isFullResponse = stopReason !== CompletionStopReason.StreamingChunk
-        const rawCompletion = providerSpecificPostProcess(completion)
-
-        if (hotStreakExtractor) {
-            yield* hotStreakExtractor.extract(rawCompletion, isFullResponse)
-            continue
-        }
-
-        const extractCompletion = isFullResponse ? parseAndTruncateCompletion : canUsePartialCompletion
-        const parsedCompletion = extractCompletion(rawCompletion, {
-            document: providerOptions.document,
-            docContext,
-            isDynamicMultilineCompletion: false,
-        })
-
-        if (parsedCompletion) {
-            const completedCompletion = processCompletion(parsedCompletion, providerOptions)
-
-            yield {
-                docContext,
-                completion: {
-                    ...completedCompletion,
-                    stopReason: isFullResponse ? stopReason : 'streaming-truncation',
-                },
-            }
-
-            if (hotStreak) {
-                hotStreakExtractor = createHotStreakExtractor({
-                    completedCompletion,
-                    ...params,
-                })
-
-                yield* hotStreakExtractor?.extract(rawCompletion, isFullResponse)
-            } else {
-                abortController.abort()
-                break
             }
         }
     }

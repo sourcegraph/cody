@@ -16,6 +16,7 @@ sealed class WebviewMessage {
           "ready" -> context.deserialize<ReadyWebviewMessage>(element, ReadyWebviewMessage::class.java)
           "initialized" -> context.deserialize<InitializedWebviewMessage>(element, InitializedWebviewMessage::class.java)
           "event" -> context.deserialize<EventWebviewMessage>(element, EventWebviewMessage::class.java)
+          "recordEvent" -> context.deserialize<RecordEventWebviewMessage>(element, RecordEventWebviewMessage::class.java)
           "submit" -> context.deserialize<SubmitWebviewMessage>(element, SubmitWebviewMessage::class.java)
           "history" -> context.deserialize<HistoryWebviewMessage>(element, HistoryWebviewMessage::class.java)
           "restoreHistory" -> context.deserialize<RestoreHistoryWebviewMessage>(element, RestoreHistoryWebviewMessage::class.java)
@@ -37,13 +38,15 @@ sealed class WebviewMessage {
           "copy" -> context.deserialize<CopyWebviewMessage>(element, CopyWebviewMessage::class.java)
           "auth" -> context.deserialize<AuthWebviewMessage>(element, AuthWebviewMessage::class.java)
           "abort" -> context.deserialize<AbortWebviewMessage>(element, AbortWebviewMessage::class.java)
-          "reload" -> context.deserialize<ReloadWebviewMessage>(element, ReloadWebviewMessage::class.java)
           "simplified-onboarding" -> context.deserialize<`simplified-onboardingWebviewMessage`>(element, `simplified-onboardingWebviewMessage`::class.java)
           "getUserContext" -> context.deserialize<GetUserContextWebviewMessage>(element, GetUserContextWebviewMessage::class.java)
+          "queryContextItems" -> context.deserialize<QueryContextItemsWebviewMessage>(element, QueryContextItemsWebviewMessage::class.java)
           "search" -> context.deserialize<SearchWebviewMessage>(element, SearchWebviewMessage::class.java)
           "show-search-result" -> context.deserialize<`show-search-resultWebviewMessage`>(element, `show-search-resultWebviewMessage`::class.java)
           "reset" -> context.deserialize<ResetWebviewMessage>(element, ResetWebviewMessage::class.java)
           "attribution-search" -> context.deserialize<`attribution-searchWebviewMessage`>(element, `attribution-searchWebviewMessage`::class.java)
+          "troubleshoot/reloadAuth" -> context.deserialize<Troubleshoot_reloadAuthWebviewMessage>(element, Troubleshoot_reloadAuthWebviewMessage::class.java)
+          "getAllMentionProvidersMetadata" -> context.deserialize<GetAllMentionProvidersMetadataWebviewMessage>(element, GetAllMentionProvidersMetadataWebviewMessage::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
@@ -51,7 +54,7 @@ sealed class WebviewMessage {
 }
 
 data class ReadyWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: ready
+  val command: CommandEnum, // Oneof: ready
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -60,7 +63,7 @@ data class ReadyWebviewMessage(
 }
 
 data class InitializedWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: initialized
+  val command: CommandEnum, // Oneof: initialized
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -69,8 +72,8 @@ data class InitializedWebviewMessage(
 }
 
 data class EventWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: event
-  val eventName: String? = null,
+  val command: CommandEnum, // Oneof: event
+  val eventName: String,
   val properties: TelemetryEventProperties? = null,
 ) : WebviewMessage() {
 
@@ -79,12 +82,25 @@ data class EventWebviewMessage(
   }
 }
 
+data class RecordEventWebviewMessage(
+  val command: CommandEnum, // Oneof: recordEvent
+  val feature: String,
+  val action: String,
+  val parameters: WebviewRecordEventParameters,
+) : WebviewMessage() {
+
+  enum class CommandEnum {
+    @SerializedName("recordEvent") RecordEvent,
+  }
+}
+
 data class SubmitWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: submit
+  val command: CommandEnum, // Oneof: submit
   val addEnhancedContext: Boolean? = null,
-  val contextFiles: List<ContextFile>? = null,
-  val text: String? = null,
-  val submitType: ChatSubmitType? = null, // Oneof: user, user-newchat
+  val contextFiles: List<ContextItem>? = null,
+  val text: String,
+  val submitType: ChatSubmitType, // Oneof: user, user-newchat
+  val editorState: Any? = null,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -93,8 +109,8 @@ data class SubmitWebviewMessage(
 }
 
 data class HistoryWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: history
-  val action: ActionEnum? = null, // Oneof: clear, export
+  val command: CommandEnum, // Oneof: history
+  val action: ActionEnum, // Oneof: clear, export
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -108,8 +124,8 @@ data class HistoryWebviewMessage(
 }
 
 data class RestoreHistoryWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: restoreHistory
-  val chatID: String? = null,
+  val command: CommandEnum, // Oneof: restoreHistory
+  val chatID: String,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -118,8 +134,8 @@ data class RestoreHistoryWebviewMessage(
 }
 
 data class DeleteHistoryWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: deleteHistory
-  val chatID: String? = null,
+  val command: CommandEnum, // Oneof: deleteHistory
+  val chatID: String,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -128,8 +144,8 @@ data class DeleteHistoryWebviewMessage(
 }
 
 data class LinksWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: links
-  val value: String? = null,
+  val command: CommandEnum, // Oneof: links
+  val value: String,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -138,8 +154,8 @@ data class LinksWebviewMessage(
 }
 
 data class `show-pageWebviewMessage`(
-  val command: CommandEnum? = null, // Oneof: show-page
-  val page: String? = null,
+  val command: CommandEnum, // Oneof: show-page
+  val page: String,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -148,8 +164,8 @@ data class `show-pageWebviewMessage`(
 }
 
 data class ChatModelWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: chatModel
-  val model: String? = null,
+  val command: CommandEnum, // Oneof: chatModel
+  val model: String,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -158,7 +174,7 @@ data class ChatModelWebviewMessage(
 }
 
 data class `get-chat-modelsWebviewMessage`(
-  val command: CommandEnum? = null, // Oneof: get-chat-models
+  val command: CommandEnum, // Oneof: get-chat-models
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -167,9 +183,9 @@ data class `get-chat-modelsWebviewMessage`(
 }
 
 data class OpenFileWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: openFile
-  val uri: Uri? = null,
-  val range: ActiveTextEditorSelectionRange? = null,
+  val command: CommandEnum, // Oneof: openFile
+  val uri: Uri,
+  val range: RangeData? = null,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -178,9 +194,9 @@ data class OpenFileWebviewMessage(
 }
 
 data class OpenLocalFileWithRangeWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: openLocalFileWithRange
-  val filePath: String? = null,
-  val range: ActiveTextEditorSelectionRange? = null,
+  val command: CommandEnum, // Oneof: openLocalFileWithRange
+  val filePath: String,
+  val range: RangeData? = null,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -189,11 +205,12 @@ data class OpenLocalFileWithRangeWebviewMessage(
 }
 
 data class EditWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: edit
+  val command: CommandEnum, // Oneof: edit
   val addEnhancedContext: Boolean? = null,
-  val contextFiles: List<ContextFile>? = null,
-  val text: String? = null,
+  val contextFiles: List<ContextItem>? = null,
+  val text: String,
   val index: Int? = null,
+  val editorState: Any? = null,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -202,7 +219,7 @@ data class EditWebviewMessage(
 }
 
 data class `context_get-remote-search-reposWebviewMessage`(
-  val command: CommandEnum? = null, // Oneof: context/get-remote-search-repos
+  val command: CommandEnum, // Oneof: context/get-remote-search-repos
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -211,7 +228,7 @@ data class `context_get-remote-search-reposWebviewMessage`(
 }
 
 data class `context_choose-remote-search-repoWebviewMessage`(
-  val command: CommandEnum? = null, // Oneof: context/choose-remote-search-repo
+  val command: CommandEnum, // Oneof: context/choose-remote-search-repo
   val explicitRepos: List<Repo>? = null,
 ) : WebviewMessage() {
 
@@ -221,8 +238,8 @@ data class `context_choose-remote-search-repoWebviewMessage`(
 }
 
 data class `context_remove-remote-search-repoWebviewMessage`(
-  val command: CommandEnum? = null, // Oneof: context/remove-remote-search-repo
-  val repoId: String? = null,
+  val command: CommandEnum, // Oneof: context/remove-remote-search-repo
+  val repoId: String,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -231,7 +248,7 @@ data class `context_remove-remote-search-repoWebviewMessage`(
 }
 
 data class Embeddings_indexWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: embeddings/index
+  val command: CommandEnum, // Oneof: embeddings/index
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -240,7 +257,7 @@ data class Embeddings_indexWebviewMessage(
 }
 
 data class Symf_indexWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: symf/index
+  val command: CommandEnum, // Oneof: symf/index
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -249,9 +266,8 @@ data class Symf_indexWebviewMessage(
 }
 
 data class InsertWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: insert
-  val text: String? = null,
-  val metadata: CodeBlockMeta? = null,
+  val command: CommandEnum, // Oneof: insert
+  val text: String,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -260,9 +276,8 @@ data class InsertWebviewMessage(
 }
 
 data class NewFileWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: newFile
-  val text: String? = null,
-  val metadata: CodeBlockMeta? = null,
+  val command: CommandEnum, // Oneof: newFile
+  val text: String,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -271,10 +286,9 @@ data class NewFileWebviewMessage(
 }
 
 data class CopyWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: copy
-  val eventType: EventTypeEnum? = null, // Oneof: Button, Keydown
-  val text: String? = null,
-  val metadata: CodeBlockMeta? = null,
+  val command: CommandEnum, // Oneof: copy
+  val eventType: EventTypeEnum, // Oneof: Button, Keydown
+  val text: String,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -288,8 +302,8 @@ data class CopyWebviewMessage(
 }
 
 data class AuthWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: auth
-  val authKind: AuthKindEnum? = null, // Oneof: signin, signout, support, callback, simplified-onboarding, simplified-onboarding-exposure
+  val command: CommandEnum, // Oneof: auth
+  val authKind: AuthKindEnum, // Oneof: signin, signout, support, callback, simplified-onboarding
   val endpoint: String? = null,
   val value: String? = null,
   val authMethod: AuthMethod? = null, // Oneof: dotcom, github, gitlab, google
@@ -305,12 +319,11 @@ data class AuthWebviewMessage(
     @SerializedName("support") Support,
     @SerializedName("callback") Callback,
     @SerializedName("simplified-onboarding") `Simplified-onboarding`,
-    @SerializedName("simplified-onboarding-exposure") `Simplified-onboarding-exposure`,
   }
 }
 
 data class AbortWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: abort
+  val command: CommandEnum, // Oneof: abort
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -318,18 +331,9 @@ data class AbortWebviewMessage(
   }
 }
 
-data class ReloadWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: reload
-) : WebviewMessage() {
-
-  enum class CommandEnum {
-    @SerializedName("reload") Reload,
-  }
-}
-
 data class `simplified-onboardingWebviewMessage`(
-  val command: CommandEnum? = null, // Oneof: simplified-onboarding
-  val onboardingKind: OnboardingKindEnum? = null, // Oneof: web-sign-in-token
+  val command: CommandEnum, // Oneof: simplified-onboarding
+  val onboardingKind: OnboardingKindEnum, // Oneof: web-sign-in-token
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -342,8 +346,8 @@ data class `simplified-onboardingWebviewMessage`(
 }
 
 data class GetUserContextWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: getUserContext
-  val query: String? = null,
+  val command: CommandEnum, // Oneof: getUserContext
+  val query: String,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -351,9 +355,19 @@ data class GetUserContextWebviewMessage(
   }
 }
 
+data class QueryContextItemsWebviewMessage(
+  val command: CommandEnum, // Oneof: queryContextItems
+  val query: MentionQuery,
+) : WebviewMessage() {
+
+  enum class CommandEnum {
+    @SerializedName("queryContextItems") QueryContextItems,
+  }
+}
+
 data class SearchWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: search
-  val query: String? = null,
+  val command: CommandEnum, // Oneof: search
+  val query: String,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -362,9 +376,9 @@ data class SearchWebviewMessage(
 }
 
 data class `show-search-resultWebviewMessage`(
-  val command: CommandEnum? = null, // Oneof: show-search-result
-  val uri: Uri? = null,
-  val range: ActiveTextEditorSelectionRange? = null,
+  val command: CommandEnum, // Oneof: show-search-result
+  val uri: Uri,
+  val range: RangeData,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -373,7 +387,7 @@ data class `show-search-resultWebviewMessage`(
 }
 
 data class ResetWebviewMessage(
-  val command: CommandEnum? = null, // Oneof: reset
+  val command: CommandEnum, // Oneof: reset
 ) : WebviewMessage() {
 
   enum class CommandEnum {
@@ -382,12 +396,30 @@ data class ResetWebviewMessage(
 }
 
 data class `attribution-searchWebviewMessage`(
-  val command: CommandEnum? = null, // Oneof: attribution-search
-  val snippet: String? = null,
+  val command: CommandEnum, // Oneof: attribution-search
+  val snippet: String,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
     @SerializedName("attribution-search") `Attribution-search`,
+  }
+}
+
+data class Troubleshoot_reloadAuthWebviewMessage(
+  val command: CommandEnum, // Oneof: troubleshoot/reloadAuth
+) : WebviewMessage() {
+
+  enum class CommandEnum {
+    @SerializedName("troubleshoot/reloadAuth") Troubleshoot_reloadAuth,
+  }
+}
+
+data class GetAllMentionProvidersMetadataWebviewMessage(
+  val command: CommandEnum, // Oneof: getAllMentionProvidersMetadata
+) : WebviewMessage() {
+
+  enum class CommandEnum {
+    @SerializedName("getAllMentionProvidersMetadata") GetAllMentionProvidersMetadata,
   }
 }
 

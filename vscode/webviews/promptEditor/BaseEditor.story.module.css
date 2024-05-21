@@ -1,0 +1,21 @@
+.editor {
+    padding: 0.4375rem 50px 0.4375rem 0.5rem;
+    outline: #444 auto 1px;
+    border-radius: 2px;
+}
+
+.editor:focus-within {
+    outline-color: -webkit-focus-ring-color;
+}
+
+.state-value, .html-value {
+    color: #fff;
+    margin-top: 2rem;
+    padding: 1rem;
+    background-color: #222;
+}
+
+.state-value {
+    white-space: pre;
+    font-size: 90%;
+}

@@ -1,16 +1,33 @@
-import * as child_process from 'child_process'
-import { promises as fs, mkdir, mkdtempSync, rmSync, writeFile, type PathLike, type RmOptions } from 'fs'
-import * as os from 'os'
-import * as path from 'path'
+import * as child_process from 'node:child_process'
+import {
+    promises as fs,
+    type PathLike,
+    type RmOptions,
+    mkdir,
+    mkdtempSync,
+    rmSync,
+    writeFile,
+} from 'node:fs'
+import * as os from 'node:os'
+import * as path from 'node:path'
 
-import { test as base, expect, type Frame, type FrameLocator, type Page } from '@playwright/test'
+import { type Frame, type FrameLocator, type Page, test as base, expect } from '@playwright/test'
 import { _electron as electron } from 'playwright'
 import * as uuid from 'uuid'
 
-import { loggedEvents, MockServer, resetLoggedEvents, sendTestInfo } from '../fixtures/mock-server'
+import {
+    MockServer,
+    SERVER_URL,
+    VALID_TOKEN,
+    loggedEvents,
+    loggedV2Events,
+    resetLoggedEvents,
+    sendTestInfo,
+} from '../fixtures/mock-server'
 
+import { expectAuthenticated } from './common'
 import { installVsCode } from './install-deps'
-
+import { buildCustomCommandConfigFile } from './utils/buildCustomCommands'
 // Playwright test extension: The workspace directory to run the test in.
 export interface WorkspaceDirectory {
     workspaceDirectory: string
@@ -31,9 +48,18 @@ export interface DotcomUrlOverride {
     dotcomUrl: string | undefined
 }
 
+export interface TestConfiguration {
+    preAuthenticate?: true | false
+}
+
 // playwright test extension: Add expectedEvents to each test to compare against
 export interface ExpectedEvents {
     expectedEvents: string[]
+}
+
+// playwright test extension: Add expectedV2Events to each test to compare against
+export interface ExpectedV2Events {
+    expectedV2Events: string[]
 }
 
 export const test = base
@@ -58,17 +84,43 @@ export const test = base
     .extend<DotcomUrlOverride>({
         dotcomUrl: undefined,
     })
+    .extend<TestConfiguration>({
+        preAuthenticate: false,
+    })
     // By default, these events should always fire for each test
     .extend<ExpectedEvents>({
-        expectedEvents: [
-            'CodyInstalled',
-            'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-            'CodyVSCodeExtension:login:clicked',
-            'CodyVSCodeExtension:auth:selectSigninMenu',
-            'CodyVSCodeExtension:auth:fromToken',
-            'CodyVSCodeExtension:Auth:connected',
-        ],
+        expectedEvents: async ({ preAuthenticate }, use) =>
+            await use(
+                preAuthenticate
+                    ? ['CodyInstalled']
+                    : [
+                          'CodyInstalled',
+                          'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+                          'CodyVSCodeExtension:login:clicked',
+                          'CodyVSCodeExtension:auth:selectSigninMenu',
+                          'CodyVSCodeExtension:auth:fromToken',
+                          'CodyVSCodeExtension:Auth:connected',
+                      ]
+            ),
     })
+
+    .extend<ExpectedV2Events>({
+        expectedV2Events: async ({ preAuthenticate }, use) =>
+            await use(
+                preAuthenticate
+                    ? [
+                          // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+                          // 'cody.extention.installed'
+                          'cody.auth:connected',
+                      ]
+                    : [
+                          // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+                          // 'cody.extention.installed',
+                          'cody.auth:connected',
+                      ]
+            ),
+    })
+
     .extend<{ server: MockServer }>({
         // biome-ignore lint/correctness/noEmptyPattern: Playwright ascribes meaning to the empty pattern: No dependencies.
         server: async ({}, use) => {
@@ -86,6 +138,8 @@ export const test = base
                 dotcomUrl,
                 server: MockServer,
                 expectedEvents,
+                expectedV2Events,
+                preAuthenticate,
             },
             use,
             testInfo
@@ -107,7 +161,7 @@ export const test = base
             )
 
             await buildWorkSpaceSettings(workspaceDirectory, extraWorkspaceSettings)
-            await buildCodyJson(workspaceDirectory)
+            await buildCustomCommandConfigFile(workspaceDirectory)
 
             sendTestInfo(testInfo.title, testInfo.testId, uuid.v4())
 
@@ -116,12 +170,20 @@ export const test = base
                 dotcomUrlOverride = { TESTING_DOTCOM_URL: dotcomUrl }
             }
 
+            //pre authenticated can ensure that a token is already set in the secret storage
+            let secretStorageState: { [key: string]: string } = {}
+            if (preAuthenticate) {
+                secretStorageState = {
+                    TESTING_SECRET_STORAGE_TOKEN: JSON.stringify([SERVER_URL, VALID_TOKEN]),
+                }
+            }
             // See: https://github.com/microsoft/vscode-test/blob/main/lib/runTest.ts
             const app = await electron.launch({
                 executablePath: vscodeExecutablePath,
                 env: {
                     ...process.env,
                     ...dotcomUrlOverride,
+                    ...secretStorageState,
                     CODY_TESTING: 'true',
                 },
                 args: [
@@ -156,12 +218,12 @@ export const test = base
             // TODO(philipp-spiess): Figure out which playwright matcher we can use that works for
             // the signed-in and signed-out cases
             await new Promise(resolve => setTimeout(resolve, 500))
-
-            // Ensure we're signed out.
-            if (await page.isVisible('[aria-label="User Settings"]')) {
+            if (preAuthenticate) {
+                await expectAuthenticated(page)
+            } else if (await page.isVisible('[aria-label="User Settings"]')) {
+                // Ensure we're signed out.
                 await signOut(page)
             }
-
             await use(page)
 
             // Critical test to prevent event logging regressions.
@@ -174,6 +236,15 @@ export const test = base
                 console.log('Logged:', loggedEvents)
                 throw error
             }
+            try {
+                await assertEvents(loggedV2Events, expectedV2Events)
+            } catch (error) {
+                console.error('Expected v2 events do not match actual events!')
+                console.log('Expected:', expectedV2Events)
+                console.log('Logged:', loggedV2Events)
+                throw error
+            }
+
             resetLoggedEvents()
 
             await app.close()
@@ -187,10 +258,17 @@ export const test = base
             await rmSyncWithRetries(extensionsDirectory, { recursive: true })
         },
     })
-    .extend<{ sidebar: Frame }>({
-        sidebar: async ({ page }, use) => {
-            const sidebar = await getCodySidebar(page)
-            await use(sidebar)
+    .extend<{ sidebar: Frame | null; getCodySidebar: () => Promise<Frame> }>({
+        sidebar: async ({ page, preAuthenticate }, use) => {
+            if (preAuthenticate) {
+                await use(null)
+            } else {
+                const sidebar = await getCodySidebar(page)
+                await use(sidebar)
+            }
+        },
+        getCodySidebar: async ({ page }, use) => {
+            await use(() => getCodySidebar(page))
         },
     })
 /**
@@ -259,7 +337,6 @@ async function buildWorkSpaceSettings(
     const settings = {
         'cody.serverEndpoint': 'http://localhost:49300',
         'cody.commandCodeLenses': true,
-        'cody.editorTitleCommandIcon': true,
         ...extraSettings,
     }
     // create a temporary directory with settings.json and add to the workspaceDirectory
@@ -281,58 +358,6 @@ async function buildWorkSpaceSettings(
     })
 }
 
-// Build a cody.json file for testing custom commands and context fetching
-async function buildCodyJson(workspaceDirectory: string): Promise<void> {
-    const codyJson = {
-        currentDir: {
-            description:
-                "Should have 4 context files from the current directory. Files start with '.' are skipped by default.",
-            prompt: 'Add four context files from the current directory.',
-            context: {
-                selection: false,
-                currentDir: true,
-            },
-        },
-        filePath: {
-            prompt: 'Add lib/batches/env/var.go as context.',
-            context: {
-                filePath: 'lib/batches/env/var.go',
-            },
-        },
-        directoryPath: {
-            description: 'Get files from directory.',
-            prompt: 'Directory has one context file.',
-            context: {
-                directoryPath: 'lib/batches/env',
-            },
-        },
-        openTabs: {
-            description: 'Get files from open tabs.',
-            prompt: 'Open tabs as context.',
-            context: {
-                selection: false,
-                openTabs: true,
-            },
-        },
-        invalid: {
-            description: 'Command without prompt should not break the custom command menu.',
-            note: 'This is used for validating the custom command UI to avoid cases where an invalid command entry prevents all custom commands from showing up in the menu.',
-        },
-    }
-
-    // add file to the .vscode directory created in the buildWorkSpaceSettings step
-    const codyJsonPath = path.join(workspaceDirectory, '.vscode', 'cody.json')
-    await new Promise<void>((resolve, reject) => {
-        writeFile(codyJsonPath, JSON.stringify(codyJson), error => {
-            if (error) {
-                reject(error)
-            } else {
-                resolve()
-            }
-        })
-    })
-}
-
 export async function signOut(page: Page): Promise<void> {
     // TODO(sqs): could simplify this further with a cody.auth.signoutAll command
     await executeCommandInPalette(page, 'cody sign out')
@@ -341,7 +366,8 @@ export async function signOut(page: Page): Promise<void> {
 export async function executeCommandInPalette(page: Page, commandName: string): Promise<void> {
     // TODO(sqs): could simplify this further with a cody.auth.signoutAll command
     await page.keyboard.press('F1')
-    await page.getByRole('combobox', { name: 'input' }).fill(`>${commandName}`)
+    await page.getByPlaceholder('Type the name of a command to run.').click()
+    await page.getByPlaceholder('Type the name of a command to run.').fill(`>${commandName}`)
     await page.keyboard.press('Enter')
 }
 
@@ -382,18 +408,22 @@ export function spawn(...args: Parameters<typeof child_process.spawn>): Promise<
 
 // Uses VSCode command palette to open a file by typing its name.
 export async function openFile(page: Page, filename: string): Promise<void> {
+    const metaKey = getMetaKeyByOS()
     // Open a file from the file picker
-    await page.keyboard.down('Control')
-    await page.keyboard.down('Shift')
-    await page.keyboard.press('P')
-    await page.keyboard.up('Shift')
-    await page.keyboard.up('Control')
-    await page.keyboard.type(`${filename}\n`)
+    await page.keyboard.press(`${metaKey}+P`)
+    // Makes sure the file picker input box has the focus
+    await page.getByPlaceholder(/Search files by name/).click()
+    await page.keyboard.type(`${filename}`)
+    // Makes sure the file is visible in the file picker
+    await expect(page.locator('a').filter({ hasText: filename })).toBeVisible()
+    await page.keyboard.press('Enter')
+    // Makes sure the file is opened in the editor
+    await expect(page.getByRole('tab', { name: filename })).toBeVisible()
 }
 
 // Starts a new panel chat and returns a FrameLocator for the chat.
 export async function newChat(page: Page): Promise<FrameLocator> {
-    await page.getByRole('button', { name: 'New Chat' }).click()
+    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
     return page.frameLocator('iframe.webview').last().frameLocator('iframe')
 }
 
@@ -402,6 +432,15 @@ export function withPlatformSlashes(input: string) {
 }
 
 const isPlatform = (platform: string) => process.platform === platform
-export function getMetaKeyByOS(): string {
+export function getMetaKeyByOS(): 'Meta' | 'Control' {
     return isPlatform('darwin') ? 'Meta' : 'Control'
+}
+
+export const openCustomCommandMenu = async (page: Page): Promise<void> => {
+    const customCommandSidebarItem = page
+        .getByRole('treeitem', { name: 'Custom Commands' })
+        .locator('a')
+        // The second item is the setting icon attached to the "Custom Commands" item.
+        .first()
+    await customCommandSidebarItem.click()
 }

@@ -1,66 +1,49 @@
 import type * as vscode from 'vscode'
 
-import type { OllamaGenerateParameters } from '@sourcegraph/cody-shared'
+import {
+    type AutocompleteContextSnippet,
+    type OllamaGenerateParameters,
+    type PromptString,
+    ps,
+} from '@sourcegraph/cody-shared'
 
 interface OllamaPromptContext {
-    snippets: { uri: vscode.Uri; content: string }[]
-    context: string
-    currentFileNameComment: string
+    snippets: AutocompleteContextSnippet[]
+    context: PromptString
+    currentFileNameComment: PromptString
     isInfill: boolean
 
     uri: vscode.Uri
-    prefix: string
-    suffix: string
+    prefix: PromptString
+    suffix: PromptString
 
     languageId: string
 }
 
-const EOT_TOKEN = '<EOT>'
-const SHARED_STOP_SEQUENCES = [
-    '// Path:',
-    '\u001E',
-    '\u001C',
-    EOT_TOKEN,
-
-    // Tokens that reduce the quality of multi-line completions but improve performance.
-    '; ',
-    ';\t',
-]
-const SINGLE_LINE_STOP_SEQUENCES = ['\n', ...SHARED_STOP_SEQUENCES]
-// TODO(valery): find the balance between using less stop tokens to get more multiline completions and keeping a good perf.
-// `SHARED_STOP_SEQUENCES` are not included because the number of multiline completions goes down significantly
-// leaving an impression that Ollama provider support only singleline completions.
-const MULTI_LINE_STOP_SEQUENCES: string[] = ['\n\n', EOT_TOKEN /* ...SHARED_STOP_SEQUENCES */]
-
 export interface OllamaModel {
-    getPrompt(ollamaPrompt: OllamaPromptContext): string
-    getRequestOptions(isMultiline: boolean, isDynamicMultiline: boolean): OllamaGenerateParameters
+    getPrompt(ollamaPrompt: OllamaPromptContext): PromptString
+    getRequestOptions(isMultiline: boolean): OllamaGenerateParameters
 }
 
 class DefaultOllamaModel implements OllamaModel {
-    getPrompt(ollamaPrompt: OllamaPromptContext): string {
+    getPrompt(ollamaPrompt: OllamaPromptContext): PromptString {
         const { context, currentFileNameComment, prefix } = ollamaPrompt
-        return context + currentFileNameComment + prefix
+        return context.concat(currentFileNameComment, prefix)
     }
 
-    getRequestOptions(isMultiline: boolean, isDynamicMultiline: boolean): OllamaGenerateParameters {
+    getRequestOptions(isMultiline: boolean): OllamaGenerateParameters {
+        const stop = ['<PRE>', '<SUF>', '<MID>', '<EOT>']
+
         const params = {
-            stop: SINGLE_LINE_STOP_SEQUENCES,
+            stop: ['\n', ...stop],
             temperature: 0.2,
             top_k: -1,
             top_p: -1,
-            num_predict: 30,
+            num_predict: 256,
         }
 
         if (isMultiline) {
-            Object.assign(params, {
-                num_predict: 256,
-                stop: MULTI_LINE_STOP_SEQUENCES,
-            })
-        }
-
-        if (isDynamicMultiline) {
-            params.stop = []
+            params.stop = ['\n\n', ...stop]
         }
 
         return params
@@ -68,37 +51,29 @@ class DefaultOllamaModel implements OllamaModel {
 }
 
 class DeepseekCoder extends DefaultOllamaModel {
-    getPrompt(ollamaPrompt: OllamaPromptContext): string {
+    getPrompt(ollamaPrompt: OllamaPromptContext): PromptString {
         const { context, currentFileNameComment, prefix, suffix } = ollamaPrompt
 
-        const infillPrefix = context + currentFileNameComment + prefix
+        const infillPrefix = context.concat(currentFileNameComment, prefix)
 
-        return `<｜fim▁begin｜>${infillPrefix}<｜fim▁hole｜>${suffix}<｜fim▁end｜>`
+        return ps`<｜fim▁begin｜>${infillPrefix}<｜fim▁hole｜>${suffix}<｜fim▁end｜>`
     }
 
-    getRequestOptions(isMultiline: boolean, isDynamicMultiline: boolean): OllamaGenerateParameters {
+    getRequestOptions(isMultiline: boolean): OllamaGenerateParameters {
+        const stop = ['<｜fim▁begin｜>', '<｜fim▁hole｜>', '<｜fim▁end｜>']
+
         const params = {
-            stop: SINGLE_LINE_STOP_SEQUENCES,
+            stop: ['\n', ...stop],
             temperature: 0.6,
             top_k: 30,
             top_p: 0.2,
-            num_predict: 30,
+            num_predict: 256,
             num_gpu: 99,
             repeat_penalty: 1.1,
         }
 
         if (isMultiline) {
-            Object.assign(params, {
-                num_predict: -1,
-                stop: MULTI_LINE_STOP_SEQUENCES,
-            })
-        }
-
-        if (isDynamicMultiline) {
-            Object.assign(params, {
-                num_predict: -1,
-                stop: [],
-            })
+            params.stop = ['\n\n', ...stop]
         }
 
         return params
@@ -106,11 +81,11 @@ class DeepseekCoder extends DefaultOllamaModel {
 }
 
 class CodeLlama extends DefaultOllamaModel {
-    getPrompt(ollamaPrompt: OllamaPromptContext): string {
+    getPrompt(ollamaPrompt: OllamaPromptContext): PromptString {
         const { context, currentFileNameComment, prefix, suffix, isInfill } = ollamaPrompt
 
         if (isInfill) {
-            const infillPrefix = context + currentFileNameComment + prefix
+            const infillPrefix = context.concat(currentFileNameComment, prefix)
 
             /**
              * The infill prompt for Code Llama.
@@ -122,10 +97,75 @@ class CodeLlama extends DefaultOllamaModel {
              *
              * Source: https://blog.fireworks.ai/simplifying-code-infilling-with-code-llama-and-fireworks-ai-92c9bb06e29c
              */
-            return `<PRE> ${infillPrefix} <SUF>${suffix} <MID>`
+            return ps`<PRE> ${infillPrefix} <SUF>${suffix} <MID>`
         }
 
-        return context + currentFileNameComment + prefix
+        return context.concat(currentFileNameComment, prefix)
+    }
+}
+
+class StarCoder2 extends DefaultOllamaModel {
+    getPrompt(ollamaPrompt: OllamaPromptContext): PromptString {
+        const { context, prefix, suffix } = ollamaPrompt
+
+        // `currentFileNameComment` is not included because it causes StarCoder2 to output
+        // invalid suggestions.
+        const infillPrefix = context.concat(prefix)
+
+        return ps`<fim_prefix>${infillPrefix}<fim_suffix>${suffix}<fim_middle>`
+    }
+
+    getRequestOptions(isMultiline: boolean): OllamaGenerateParameters {
+        const stop = ['<fim_prefix>', '<fim_suffix>', '<fim_middle>', '<|endoftext|>', '<file_sep>']
+
+        const params = {
+            stop: ['\n', ...stop],
+            temperature: 0.2,
+            top_k: -1,
+            top_p: -1,
+            num_predict: 256,
+        }
+
+        if (isMultiline) {
+            params.stop = ['\n\n', ...stop]
+        }
+
+        return params
+    }
+}
+
+class CodeGemma extends DefaultOllamaModel {
+    getPrompt(ollamaPrompt: OllamaPromptContext): PromptString {
+        const { context, currentFileNameComment, prefix, suffix } = ollamaPrompt
+        // c.f. https://huggingface.co/blog/codegemma
+        // c.f. https://huggingface.co/google/codegemma-7b/blob/main/tokenizer.json
+        // c.f. https://storage.googleapis.com/deepmind-media/gemma/codegemma_report.pdf
+        return ps`${currentFileNameComment}<|fim_prefix|>${context}${prefix}<|fim_suffix|>${suffix}<|fim_middle|>`
+    }
+
+    getRequestOptions(isMultiline: boolean): OllamaGenerateParameters {
+        const stop = [
+            '<|fim_prefix|>',
+            '<|fim_suffix|>',
+            '<|fim_middle|>',
+            '<|file_separator|>',
+            '<end_of_turn>',
+        ]
+
+        const params = {
+            stop: ['\n', ...stop],
+            temperature: 0.2,
+            repeat_penalty: 1.0,
+            top_k: -1,
+            top_p: -1,
+            num_predict: 256,
+        }
+
+        if (isMultiline) {
+            params.stop = ['\n\n', ...stop]
+        }
+
+        return params
     }
 }
 
@@ -136,6 +176,14 @@ export function getModelHelpers(model: string) {
 
     if (model.includes('deepseek-coder')) {
         return new DeepseekCoder()
+    }
+
+    if (model.includes('starcoder2')) {
+        return new StarCoder2()
+    }
+
+    if (model.includes('codegemma')) {
+        return new CodeGemma()
     }
 
     return new DefaultOllamaModel()

@@ -1,8 +1,8 @@
-import { scip } from './scip'
-import path from 'path'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import { URI } from 'vscode-uri'
-import { readFileSync } from 'fs'
 import { type Diagnostic, Severity } from './Diagnostic'
+import { scip } from './scip'
 
 export class ConsoleReporter {
     public diagnostics: Diagnostic[] = []

@@ -5,12 +5,15 @@ import { marked } from 'marked'
 // TODO(sqs): copied from sourcegraph/sourcegraph. should dedupe.
 
 /**
- * Escapes HTML by replacing characters like `<` with their HTML escape sequences like `&lt;`
+ * Escapes HTML by replacing characters like `<` with their HTML escape sequences like `&lt;`.
  */
-const escapeHTML = (html: string): string => {
-    const span = document.createElement('span')
-    span.textContent = html
-    return span.innerHTML
+export function escapeHTML(html: string): string {
+    return html
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;')
 }
 
 /**
@@ -94,15 +97,15 @@ export const renderMarkdown = (markdown: string, options: MarkdownOptions = {}):
             ? options.dompurifyConfig
             : options.plainText
               ? {
-                      ALLOWED_TAGS: [],
-                      ALLOWED_ATTR: [],
-                      KEEP_CONTENT: true,
-                  }
+                    ALLOWED_TAGS: [],
+                    ALLOWED_ATTR: [],
+                    KEEP_CONTENT: true,
+                }
               : {
-                      USE_PROFILES: { html: true },
-                      FORBID_TAGS: ['style', 'form', 'input', 'button'],
-                      FORBID_ATTR: ['rel', 'style', 'method', 'action'],
-                  }
+                    USE_PROFILES: { html: true },
+                    FORBID_TAGS: ['style', 'form', 'input', 'button'],
+                    FORBID_ATTR: ['rel', 'style', 'method', 'action'],
+                }
 
     if (options.addTargetBlankToAllLinks) {
         // Add a hook that adds target="_blank" and rel="noopener" to all links. DOMPurify does not
@@ -117,11 +120,11 @@ export const renderMarkdown = (markdown: string, options: MarkdownOptions = {}):
         })
     }
 
-    // Wrap links with the '_cody.vscode.open' command
+    // Wrap non-command links with the '_cody.vscode.open' command
     if (options.wrapLinksWithCodyCommand) {
         DOMPurify.addHook('afterSanitizeAttributes', node => {
             const link = node.getAttribute('href')
-            if (node.tagName.toLowerCase() === 'a' && link) {
+            if (node.tagName.toLowerCase() === 'a' && link && !link.startsWith('command:')) {
                 const encodedLink = encodeURIComponent(JSON.stringify(link))
                 node.setAttribute('href', `command:_cody.vscode.open?${encodedLink}`)
             }

@@ -1,40 +1,38 @@
 import * as vscode from 'vscode'
 
 import {
-    isFileURI,
+    type ConfigurationUseContext,
+    type ContextItem,
+    ContextItemSource,
     MAX_BYTES_PER_FILE,
     NUM_CODE_RESULTS,
     NUM_TEXT_RESULTS,
+    type PromptString,
+    type Result,
+    isFileURI,
     truncateTextNearestLine,
     uriBasename,
-    type ConfigurationUseContext,
-    type Result,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
+import { getContextFileFromSelection } from '../../commands/context/selection'
+import type { RemoteSearch } from '../../context/remote-search'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
+import type { ContextRankingController } from '../../local-context/context-ranking'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
-import { viewRangeToRange } from './chat-helpers'
-import type { RemoteSearch } from '../../context/remote-search'
-import type { ContextItem } from '../../prompt-builder/types'
 
-export interface GetEnhancedContextOptions {
+interface GetEnhancedContextOptions {
     strategy: ConfigurationUseContext
     editor: VSCodeEditor
-    text: string
+    text: PromptString
     providers: {
         localEmbeddings: LocalEmbeddingsController | null
         symf: SymfRunner | null
         remoteSearch: RemoteSearch | null
     }
-    featureFlags: {
-        internalUnstable: boolean
-    }
-    hints: {
-        maxChars: number
-    }
+    contextRanking: ContextRankingController | null
     // TODO(@philipp-spiess): Add abort controller to be able to cancel expensive retrievers
 }
 export async function getEnhancedContext({
@@ -42,79 +40,19 @@ export async function getEnhancedContext({
     editor,
     text,
     providers,
-    featureFlags,
-    hints,
+    contextRanking,
 }: GetEnhancedContextOptions): Promise<ContextItem[]> {
-    if (featureFlags.internalUnstable) {
-        return getEnhancedContextFused({
+    if (contextRanking) {
+        return getEnhancedContextFromRanker({
             strategy,
             editor,
             text,
             providers,
-            featureFlags,
-            hints,
+            contextRanking,
         })
     }
 
-    return wrapInActiveSpan('chat.enhancedContext', async span => {
-        const searchContext: ContextItem[] = []
-
-        // use user attention context only if config is set to none
-        if (strategy === 'none') {
-            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > none')
-            searchContext.push(...getVisibleEditorContext(editor))
-            return searchContext
-        }
-
-        let hasEmbeddingsContext = false
-        // Get embeddings context if useContext Config is not set to 'keyword' only
-        if (strategy !== 'keyword') {
-            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (start)')
-            const localEmbeddingsResults = searchEmbeddingsLocal(providers.localEmbeddings, text)
-            try {
-                const r = await localEmbeddingsResults
-                hasEmbeddingsContext = hasEmbeddingsContext || r.length > 0
-                searchContext.push(...r)
-            } catch (error) {
-                logDebug('SimpleChatPanelProvider', 'getEnhancedContext > local embeddings', error)
-            }
-            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > embeddings (end)')
-        }
-
-        if (strategy !== 'embeddings') {
-            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > search')
-            if (providers.remoteSearch) {
-                try {
-                    searchContext.push(...(await searchRemote(providers.remoteSearch, text)))
-                } catch (error) {
-                    // TODO: Error reporting
-                    logDebug('SimpleChatPanelProvider.getEnhancedContext', 'remote search error', error)
-                }
-            }
-            if (providers.symf) {
-                try {
-                    searchContext.push(...(await searchSymf(providers.symf, editor, text)))
-                } catch (error) {
-                    // TODO(beyang): handle this error better
-                    logDebug('SimpleChatPanelProvider.getEnhancedContext', 'searchSymf error', error)
-                }
-            }
-            logDebug('SimpleChatPanelProvider', 'getEnhancedContext > search (end)')
-        }
-
-        const priorityContext = await getPriorityContext(text, editor, searchContext)
-        return priorityContext.concat(searchContext)
-    })
-}
-
-async function getEnhancedContextFused({
-    strategy,
-    editor,
-    text,
-    providers,
-    hints,
-}: GetEnhancedContextOptions): Promise<ContextItem[]> {
-    return wrapInActiveSpan('chat.enhancedContextFused', async () => {
+    return wrapInActiveSpan('chat.enhancedContext', async () => {
         // use user attention context only if config is set to none
         if (strategy === 'none') {
             logDebug('SimpleChatPanelProvider', 'getEnhancedContext > none')
@@ -130,11 +68,7 @@ async function getEnhancedContextFused({
                   )
                 : []
 
-        // Get search (symf or remote search) context if config is not set to 'embeddings' only
-        const localSearchContextItemsPromise =
-            providers.symf && strategy !== 'embeddings'
-                ? retrieveContextGracefully(searchSymf(providers.symf, editor, text), 'symf')
-                : []
+        //  Get search (symf or remote search) context if config is not set to 'embeddings' only
         const remoteSearchContextItemsPromise =
             providers.remoteSearch && strategy !== 'embeddings'
                 ? await retrieveContextGracefully(
@@ -142,41 +76,107 @@ async function getEnhancedContextFused({
                       'remote-search'
                   )
                 : []
+        const localSearchContextItemsPromise =
+            providers.symf && strategy !== 'embeddings'
+                ? retrieveContextGracefully(searchSymf(providers.symf, editor, text), 'symf')
+                : []
+
+        // Combine all context sources
+        const searchContext = [
+            ...(await embeddingsContextItemsPromise),
+            ...(await remoteSearchContextItemsPromise),
+            ...(await localSearchContextItemsPromise),
+        ]
+
+        const priorityContext = await getPriorityContext(text, editor, searchContext)
+        return priorityContext.concat(searchContext)
+    })
+}
+
+async function getEnhancedContextFromRanker({
+    editor,
+    text,
+    providers,
+    contextRanking,
+}: GetEnhancedContextOptions): Promise<ContextItem[]> {
+    return wrapInActiveSpan('chat.enhancedContextRanker', async span => {
+        // Get all possible context items to rank
+        let searchContext = getVisibleEditorContext(editor)
+
+        const numResults = 50
+        const embeddingsContextItemsPromise = retrieveContextGracefully(
+            searchEmbeddingsLocal(providers.localEmbeddings, text, numResults),
+            'local-embeddings'
+        )
+
+        const modelSpecificEmbeddingsContextItemsPromise = contextRanking
+            ? retrieveContextGracefully(
+                  contextRanking.searchModelSpecificEmbeddings(text, numResults),
+                  'model-specific-embeddings'
+              )
+            : []
+
+        const precomputeQueryEmbeddingPromise = contextRanking?.precomputeContextRankingFeatures(text)
+
+        const localSearchContextItemsPromise = providers.symf
+            ? retrieveContextGracefully(searchSymf(providers.symf, editor, text), 'symf')
+            : []
+
+        const remoteSearchContextItemsPromise = providers.remoteSearch
+            ? await retrieveContextGracefully(
+                  searchRemote(providers.remoteSearch, text),
+                  'remote-search'
+              )
+            : []
+
         const keywordContextItemsPromise = (async () => [
             ...(await localSearchContextItemsPromise),
             ...(await remoteSearchContextItemsPromise),
         ])()
 
-        const [embeddingsContextItems, keywordContextItems] = await Promise.all([
-            embeddingsContextItemsPromise,
-            keywordContextItemsPromise,
-        ])
+        const [embeddingsContextItems, keywordContextItems, modelEmbeddingContextItems] =
+            await Promise.all([
+                embeddingsContextItemsPromise,
+                keywordContextItemsPromise,
+                modelSpecificEmbeddingsContextItemsPromise,
+                precomputeQueryEmbeddingPromise,
+            ])
 
-        const fusedContext = fuseContext(keywordContextItems, embeddingsContextItems, hints.maxChars)
-
-        const priorityContext = await getPriorityContext(text, editor, fusedContext)
-        return priorityContext.concat(fusedContext)
+        searchContext = searchContext
+            .concat(keywordContextItems)
+            .concat(embeddingsContextItems)
+            .concat(modelEmbeddingContextItems)
+        const editorContext = await getPriorityContext(text, editor, searchContext)
+        const allContext = editorContext.concat(searchContext)
+        if (!contextRanking) {
+            return allContext
+        }
+        const rankedContext = wrapInActiveSpan('chat.enhancedContextRanker.reranking', () =>
+            contextRanking.rankContextItems(text, allContext)
+        )
+        return rankedContext
     })
 }
 
 async function searchRemote(
     remoteSearch: RemoteSearch | null,
-    userText: string
+    userText: PromptString
 ): Promise<ContextItem[]> {
-    return wrapInActiveSpan('chat.context.embeddings.remote', async () => {
+    return wrapInActiveSpan('chat.context.search.remote', async () => {
         if (!remoteSearch) {
             return []
         }
         return (await remoteSearch.query(userText)).map(result => {
             return {
-                text: result.content,
+                type: 'file',
+                content: result.content,
                 range: new vscode.Range(result.startLine, 0, result.endLine, 0),
                 uri: result.uri,
-                source: 'unified',
+                source: ContextItemSource.Unified,
                 repoName: result.repoName,
                 title: result.path,
                 revision: result.commit,
-            }
+            } satisfies ContextItem
         })
     })
 }
@@ -187,7 +187,7 @@ async function searchRemote(
 async function searchSymf(
     symf: SymfRunner | null,
     editor: VSCodeEditor,
-    userText: string,
+    userText: PromptString,
     blockOnIndex = false
 ): Promise<ContextItem[]> {
     return wrapInActiveSpan('chat.context.symf', async () => {
@@ -201,9 +201,15 @@ async function searchSymf(
 
         const indexExists = await symf.getIndexStatus(workspaceRoot)
         if (indexExists !== 'ready' && !blockOnIndex) {
-            void symf.ensureIndex(workspaceRoot, { hard: false })
+            void symf.ensureIndex(workspaceRoot, {
+                retryIfLastAttemptFailed: false,
+                ignoreExisting: false,
+            })
             return []
         }
+
+        // trigger background reindex if the index is stale
+        void symf?.reindexIfStale(workspaceRoot)
 
         const r0 = (await symf.getResults(userText, [workspaceRoot])).flatMap(async results => {
             const items = (await results).flatMap(
@@ -218,9 +224,6 @@ async function searchSymf(
                     let text: string | undefined
                     try {
                         text = await editor.getTextEditorContentForFile(result.file, range)
-                        if (!text) {
-                            return []
-                        }
                     } catch (error) {
                         logError(
                             'SimpleChatPanelProvider.searchSymf',
@@ -229,10 +232,11 @@ async function searchSymf(
                         return []
                     }
                     return {
+                        type: 'file',
                         uri: result.file,
                         range,
-                        source: 'search',
-                        text,
+                        source: ContextItemSource.Search,
+                        content: text,
                     }
                 }
             )
@@ -245,19 +249,18 @@ async function searchSymf(
 
 async function searchEmbeddingsLocal(
     localEmbeddings: LocalEmbeddingsController | null,
-    text: string
+    text: PromptString,
+    numResults: number = NUM_CODE_RESULTS + NUM_TEXT_RESULTS
 ): Promise<ContextItem[]> {
-    return wrapInActiveSpan('chat.context.embeddings.local', async () => {
+    return wrapInActiveSpan('chat.context.embeddings.local', async span => {
         if (!localEmbeddings) {
             return []
         }
 
         logDebug('SimpleChatPanelProvider', 'getEnhancedContext > searching local embeddings')
         const contextItems: ContextItem[] = []
-        const embeddingsResults = await localEmbeddings.getContext(
-            text,
-            NUM_CODE_RESULTS + NUM_TEXT_RESULTS
-        )
+        const embeddingsResults = await localEmbeddings.getContext(text, numResults)
+        span.setAttribute('numResults', embeddingsResults.length)
 
         for (const result of embeddingsResults) {
             const range = new vscode.Range(
@@ -266,10 +269,11 @@ async function searchEmbeddingsLocal(
             )
 
             contextItems.push({
+                type: 'file',
                 uri: result.uri,
                 range,
-                text: result.content,
-                source: 'embeddings',
+                content: result.content,
+                source: ContextItemSource.Embeddings,
             })
         }
         return contextItems
@@ -283,31 +287,6 @@ const userAttentionRegexps: RegExp[] = [
     /have\s+open/,
 ]
 
-function getCurrentSelectionContext(editor: VSCodeEditor): ContextItem[] {
-    const selection = editor.getActiveTextEditorSelection()
-    if (!selection?.selectedText) {
-        return []
-    }
-    let range: vscode.Range | undefined
-    if (selection.selectionRange) {
-        range = new vscode.Range(
-            selection.selectionRange.start.line,
-            selection.selectionRange.start.character,
-            selection.selectionRange.end.line,
-            selection.selectionRange.end.character
-        )
-    }
-
-    return [
-        {
-            text: selection.selectedText,
-            uri: selection.fileUri,
-            range,
-            source: 'selection',
-        },
-    ]
-}
-
 function getVisibleEditorContext(editor: VSCodeEditor): ContextItem[] {
     return wrapInActiveSpan('chat.context.visibleEditorContext', () => {
         const visible = editor.getActiveTextEditorVisibleContent()
@@ -320,25 +299,25 @@ function getVisibleEditorContext(editor: VSCodeEditor): ContextItem[] {
         }
         return [
             {
-                text: visible.content,
+                type: 'file',
+                content: visible.content,
                 uri: fileUri,
-                source: 'editor',
+                source: ContextItemSource.Editor,
             },
-        ]
+        ] satisfies ContextItem[]
     })
 }
 
 async function getPriorityContext(
-    text: string,
+    text: PromptString,
     editor: VSCodeEditor,
     retrievedContext: ContextItem[]
 ): Promise<ContextItem[]> {
     return wrapInActiveSpan('chat.context.priority', async () => {
         const priorityContext: ContextItem[] = []
-        const selectionContext = getCurrentSelectionContext(editor)
-        if (selectionContext.length > 0) {
-            priorityContext.push(...selectionContext)
-        } else if (needsUserAttentionContext(text)) {
+        const selectionContext = await getContextFileFromSelection()
+        priorityContext.push(...selectionContext)
+        if (needsUserAttentionContext(text)) {
             // Query refers to current editor
             priorityContext.push(...getVisibleEditorContext(editor))
         } else if (needsReadmeContext(editor, text)) {
@@ -362,8 +341,8 @@ async function getPriorityContext(
     })
 }
 
-function needsUserAttentionContext(input: string): boolean {
-    const inputLowerCase = input.toLowerCase()
+function needsUserAttentionContext(input: PromptString): boolean {
+    const inputLowerCase = input.toString().toLowerCase()
     // If the input matches any of the `editorRegexps` we assume that we have to include
     // the editor context (e.g., currently open file) to the overall message context.
     for (const regexp of userAttentionRegexps) {
@@ -374,15 +353,15 @@ function needsUserAttentionContext(input: string): boolean {
     return false
 }
 
-function needsReadmeContext(editor: VSCodeEditor, input: string): boolean {
-    input = input.toLowerCase()
-    const question = extractQuestion(input)
+function needsReadmeContext(editor: VSCodeEditor, input: PromptString): boolean {
+    const stringInput = input.toString().toLowerCase()
+    const question = extractQuestion(stringInput)
     if (!question) {
         return false
     }
 
     // split input into words, discarding spaces and punctuation
-    const words = input.split(/\W+/).filter(w => w.length > 0)
+    const words = stringInput.split(/\W+/).filter(w => w.length > 0)
     const bagOfWords = Object.fromEntries(words.map(w => [w, true]))
 
     const projectSignifiers = [
@@ -441,10 +420,11 @@ async function getReadmeContext(): Promise<ContextItem[]> {
 
     return [
         {
+            type: 'file',
             uri: readmeUri,
-            text: truncatedReadmeText,
-            range: viewRangeToRange(range),
-            source: 'editor',
+            content: truncatedReadmeText,
+            range,
+            source: ContextItemSource.Editor,
         },
     ]
 }
@@ -471,36 +451,4 @@ async function retrieveContextGracefully<T>(promise: Promise<T[]>, strategy: str
     } finally {
         logDebug('SimpleChatPanelProvider', `getEnhancedContext > ${strategy} (end)`)
     }
-}
-
-// A simple context fusion engine that picks the top most keyword results to fill up 80% of the
-// context window and picks the top ranking embeddings items for the remainder.
-export function fuseContext(
-    keywordItems: ContextItem[],
-    embeddingsItems: ContextItem[],
-    maxChars: number
-): ContextItem[] {
-    let charsUsed = 0
-    const fused = []
-    const maxKeywordChars = embeddingsItems.length > 0 ? maxChars * 0.8 : maxChars
-
-    for (const item of keywordItems) {
-        const len = item.text.length
-
-        if (charsUsed + len <= maxKeywordChars) {
-            charsUsed += len
-            fused.push(item)
-        }
-    }
-
-    for (const item of embeddingsItems) {
-        const len = item.text.length
-
-        if (charsUsed + len <= maxChars) {
-            charsUsed += len
-            fused.push(item)
-        }
-    }
-
-    return fused
 }

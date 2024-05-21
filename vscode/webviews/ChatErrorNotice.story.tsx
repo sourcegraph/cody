@@ -1,40 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
-import classNames from 'classnames'
 
-import { RateLimitError } from '@sourcegraph/cody-shared'
-import type { ChatButtonProps } from '@sourcegraph/cody-ui/src/Chat'
-import { ErrorItem } from '@sourcegraph/cody-ui/src/chat/ErrorItem'
+import { RateLimitError, errorToChatError } from '@sourcegraph/cody-shared'
+import { ErrorItem } from './chat/ErrorItem'
 
-import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
-
-import transcriptItemStyles from '../../lib/ui/src/chat/TranscriptItem.module.css'
-import chatStyles from './Chat.module.css'
+import { VSCodeStandaloneComponent } from './storybook/VSCodeStoryDecorator'
 
 const meta: Meta<typeof ErrorItem> = {
     title: 'cody/Chat Error Item',
     component: ErrorItem,
-    decorators: [VSCodeStoryDecorator],
-    parameters: {
-        backgrounds: {
-            default: 'vscode',
-            values: [
-                {
-                    name: 'vscode',
-                    value: 'var(--vscode-sideBar-background)',
-                },
-            ],
-        },
-    },
+    decorators: [VSCodeStandaloneComponent],
     render: args => (
-        <div
-            className={classNames(
-                transcriptItemStyles.row,
-                chatStyles.transcriptItem,
-                transcriptItemStyles.assistantRow
-            )}
-            style={{ border: '1px solid var(--vscode-sideBarSectionHeader-border)' }}
-        >
+        <div style={{ position: 'relative', padding: '1rem' }}>
             <ErrorItem {...args} />
         </div>
     ),
@@ -44,21 +20,12 @@ export default meta
 
 type Story = StoryObj<typeof ErrorItem>
 
-const ChatButton: React.FunctionComponent<ChatButtonProps> = ({
-    label,
-    action,
-    onClick,
-    appearance,
-}) => (
-    <VSCodeButton
-        type="button"
-        onClick={() => onClick(action)}
-        className={chatStyles.chatButton}
-        appearance={appearance}
-    >
-        {label}
-    </VSCodeButton>
-)
+export const GenericError: Story = {
+    args: {
+        error: errorToChatError(new Error('some error')),
+        postMessage: () => {},
+    },
+}
 
 export const ChatRateLimitFree: Story = {
     args: {
@@ -74,7 +41,6 @@ export const ChatRateLimitFree: Story = {
             isDotComUser: true,
             isCodyProUser: false,
         },
-        ChatButtonComponent: ChatButton,
     },
 }
 
@@ -92,6 +58,5 @@ export const ChatRateLimitPro: Story = {
             isDotComUser: true,
             isCodyProUser: true,
         },
-        ChatButtonComponent: ChatButton,
     },
 }

@@ -1,7 +1,7 @@
 import type * as vscode from 'vscode'
-import type { URI } from 'vscode-uri'
 
-import type { DocumentContext } from './get-current-doc-context'
+import type { AutocompleteContextSnippet, DocumentContext } from '@sourcegraph/cody-shared'
+import type { LastInlineCompletionCandidate } from './get-inline-completions'
 
 /**
  * @see vscode.InlineCompletionItem
@@ -17,20 +17,6 @@ export interface InlineCompletionItem {
     range?: vscode.Range
 }
 
-/**
- * Keep property names in sync with the `EmbeddingsSearchResult` type.
- */
-export interface FileContextSnippet {
-    uri: URI
-    startLine: number
-    endLine: number
-    content: string
-}
-export interface SymbolContextSnippet extends FileContextSnippet {
-    symbol: string
-}
-export type ContextSnippet = FileContextSnippet | SymbolContextSnippet
-
 export interface ContextRetrieverOptions {
     document: vscode.TextDocument
     position: vscode.Position
@@ -39,6 +25,7 @@ export interface ContextRetrieverOptions {
         maxChars: number
         maxMs: number
     }
+    lastCandidate?: LastInlineCompletionCandidate
     abortSignal?: AbortSignal
 }
 
@@ -63,7 +50,7 @@ export interface ContextRetriever extends vscode.Disposable {
      * The abortSignal can be used to detect when the completion request becomes invalidated. When
      * triggered, any further work is ignored so you can stop immediately.
      */
-    retrieve(options: ContextRetrieverOptions): Promise<ContextSnippet[]>
+    retrieve(options: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]>
 
     /**
      * Return true if the retriever supports the given languageId.

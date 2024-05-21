@@ -1,45 +1,46 @@
 import type * as vscode from 'vscode'
 
 import {
-    createOllamaClient,
-    displayPath,
+    type AutocompleteContextSnippet,
     type OllamaGenerateParams,
     type OllamaOptions,
+    PromptString,
+    createOllamaClient,
+    ps,
 } from '@sourcegraph/cody-shared'
 
 import { logger } from '../../log'
 import { getLanguageConfig } from '../../tree-sitter/language'
-import type { ContextSnippet } from '../types'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
+import { getSuffixAfterFirstNewline } from '../text-processing'
+import {
+    type FetchCompletionResult,
+    fetchAndProcessDynamicMultilineCompletions,
+} from './fetch-and-process-completions'
 import { type OllamaModel, getModelHelpers } from './ollama-models'
 import {
-    fetchAndProcessCompletions,
-    fetchAndProcessDynamicMultilineCompletions,
-    type FetchCompletionResult,
-} from './fetch-and-process-completions'
-import {
-    Provider,
     type CompletionProviderTracer,
+    Provider,
     type ProviderConfig,
     type ProviderOptions,
 } from './provider'
 
 interface OllamaPromptContext {
-    snippets: { uri: vscode.Uri; content: string }[]
-    context: string
-    currentFileNameComment: string
+    snippets: AutocompleteContextSnippet[]
+    context: PromptString
+    currentFileNameComment: PromptString
     isInfill: boolean
 
     uri: vscode.Uri
-    prefix: string
-    suffix: string
+    prefix: PromptString
+    suffix: PromptString
 
     languageId: string
 }
 
-function fileNameLine(uri: vscode.Uri, commentStart: string): string {
-    return `${commentStart} Path: ${displayPath(uri)}\n`
+function fileNameLine(uri: vscode.Uri, commentStart: PromptString): PromptString {
+    return ps`${commentStart} Path: ${PromptString.fromDisplayPath(uri)}\n`
 }
 
 /**
@@ -58,24 +59,31 @@ class ExperimentalOllamaProvider extends Provider {
     }
 
     protected createPromptContext(
-        snippets: ContextSnippet[],
+        snippets: AutocompleteContextSnippet[],
         isInfill: boolean,
         modelHelpers: OllamaModel
     ): OllamaPromptContext {
         const { languageId, uri } = this.options.document
         const config = getLanguageConfig(languageId)
-        const commentStart = config?.commentStart || '//'
+        const commentStart = config?.commentStart || ps`// `
+        const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(
+            this.options.docContext,
+            this.options.document.uri
+        )
 
-        const context = snippets
-            .map(
-                ({ uri, content }) =>
-                    fileNameLine(uri, commentStart) +
-                    content
-                        .split('\n')
-                        .map(line => `${commentStart} ${line}`)
-                        .join('\n')
-            )
-            .join('\n\n')
+        const context = PromptString.join(
+            snippets.map(snippet => {
+                const contextPrompts = PromptString.fromAutocompleteContextSnippet(snippet)
+
+                return fileNameLine(uri, commentStart).concat(
+                    PromptString.join(
+                        contextPrompts.content.split('\n').map(line => ps`${commentStart} ${line}`),
+                        ps`\n`
+                    )
+                )
+            }),
+            ps`\n\n`
+        )
 
         const currentFileNameComment = fileNameLine(uri, commentStart)
 
@@ -86,8 +94,8 @@ class ExperimentalOllamaProvider extends Provider {
             context,
             currentFileNameComment,
             isInfill,
-            prefix: this.options.docContext.prefix,
-            suffix: this.options.docContext.suffix,
+            prefix,
+            suffix: getSuffixAfterFirstNewline(suffix),
         }
 
         if (process.env.OLLAMA_CONTEXT_SNIPPETS) {
@@ -114,13 +122,12 @@ class ExperimentalOllamaProvider extends Provider {
 
     public generateCompletions(
         abortSignal: AbortSignal,
-        snippets: ContextSnippet[],
+        snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]> {
         // Only use infill if the suffix is not empty
         const useInfill = this.options.docContext.suffix.trim().length > 0
         const isMultiline = this.options.multiline
-        const isDynamicMultiline = Boolean(this.options.dynamicMultilineCompletions)
 
         const timeoutMs = 5_0000
         const modelHelpers = getModelHelpers(this.ollamaOptions.model)
@@ -130,7 +137,7 @@ class ExperimentalOllamaProvider extends Provider {
             prompt: modelHelpers.getPrompt(promptContext),
             template: '{{ .Prompt }}',
             model: this.ollamaOptions.model,
-            options: modelHelpers.getRequestOptions(isMultiline, isDynamicMultiline),
+            options: modelHelpers.getRequestOptions(isMultiline),
         } satisfies OllamaGenerateParams
 
         if (this.ollamaOptions.parameters) {
@@ -140,9 +147,6 @@ class ExperimentalOllamaProvider extends Provider {
         // TODO(valery): remove `any` casts
         tracer?.params(requestParams as any)
         const ollamaClient = createOllamaClient(this.ollamaOptions, logger)
-        const fetchAndProcessCompletionsImpl = isDynamicMultiline
-            ? fetchAndProcessDynamicMultilineCompletions
-            : fetchAndProcessCompletions
 
         const completionsGenerators = Array.from({
             length: this.options.n,
@@ -155,7 +159,7 @@ class ExperimentalOllamaProvider extends Provider {
                 abortController
             )
 
-            return fetchAndProcessCompletionsImpl({
+            return fetchAndProcessDynamicMultilineCompletions({
                 completionResponseGenerator,
                 abortController,
                 providerSpecificPostProcess: insertText => insertText.trim(),

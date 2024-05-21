@@ -4,12 +4,16 @@ import { spawnBfg } from '../../../../graph/bfg/spawn-bfg'
 import type { MessageHandler } from '../../../../jsonrpc/jsonrpc'
 import { logDebug } from '../../../../log'
 import type { Repository } from '../../../../repository/builtinGitExtension'
-import { gitAPI } from '../../../../repository/repositoryHelpers'
+import { vscodeGitAPI } from '../../../../repository/git-extension-api'
 import { captureException } from '../../../../services/sentry/sentry'
-import { getContextRange } from '../../../doc-context-getters'
-import type { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
+import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 
-import { inferGitRepository, type SimpleRepository } from './simple-git'
+import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
+import {
+    getLastNGraphContextIdentifiersFromDocument,
+    getLastNGraphContextIdentifiersFromString,
+} from '../graph/identifiers'
+import { type SimpleRepository, inferGitRepository } from './simple-git'
 
 export class BfgRetriever implements ContextRetriever {
     public identifier = 'bfg'
@@ -66,15 +70,22 @@ export class BfgRetriever implements ContextRetriever {
         }
     }
     private async indexGitRepositories(): Promise<void> {
-        const git = gitAPI()
-        if (!git) {
+        // TODO: Only works in the VS Code extension where the Git extension is available.
+        // We should implement fallbacks for the Git methods used below.
+        if (!vscodeGitAPI) {
             return
         }
-        for (const repository of git.repositories) {
+
+        // TODO: scan workspace folders for git repos to support this in the agent.
+        // https://github.com/sourcegraph/cody/issues/4137
+        for (const repository of vscodeGitAPI.repositories) {
             await this.didChangeGitExtensionRepository(repository)
         }
         this.context.subscriptions.push(
-            git.onDidOpenRepository(repository => this.didChangeGitExtensionRepository(repository))
+            // TODO: https://github.com/sourcegraph/cody/issues/4138
+            vscodeGitAPI.onDidOpenRepository(repository =>
+                this.didChangeGitExtensionRepository(repository)
+            )
         )
         this.context.subscriptions.push(
             vscode.workspace.onDidChangeWorkspaceFolders(() => this.indexInferredGitRepositories())
@@ -169,7 +180,8 @@ export class BfgRetriever implements ContextRetriever {
         position,
         docContext,
         hints,
-    }: ContextRetrieverOptions): Promise<ContextSnippet[]> {
+        lastCandidate,
+    }: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
         try {
             if (this.didFailLoading) {
                 return []
@@ -184,32 +196,57 @@ export class BfgRetriever implements ContextRetriever {
                 await this.bfgIndexingPromise
             }
 
-            const responses = await bfg.request('bfg/contextAtPosition', {
+            const lastCandidateCurrentLine =
+                (lastCandidate?.lastTriggerDocContext.currentLinePrefix || '') +
+                lastCandidate?.result.items[0].insertText
+
+            const bfgRequestStart = performance.now()
+            const inputIdentifiers = Array.from(
+                new Set([
+                    // Get last 10 identifiers from the last candidate insert text
+                    // in hopes that LLM partially guessed the right completion.
+                    ...getLastNGraphContextIdentifiersFromString({
+                        n: 10,
+                        document,
+                        position,
+                        currentLinePrefix: docContext.currentLinePrefix,
+                        source: lastCandidateCurrentLine,
+                    }),
+                    // Get last 10 identifiers from the current document prefix.
+                    ...getLastNGraphContextIdentifiersFromDocument({
+                        n: 10,
+                        document,
+                        position,
+                        currentLinePrefix: docContext.currentLinePrefix,
+                    }),
+                ])
+            )
+
+            const response = await bfg.request('bfg/contextForIdentifiers', {
                 uri: document.uri.toString(),
-                content: (await vscode.workspace.openTextDocument(document.uri)).getText(),
-                position: { line: position.line, character: position.character },
-                maxChars: hints.maxChars, // ignored by BFG server for now
-                contextRange: getContextRange(document, docContext),
+                identifiers: inputIdentifiers,
+                maxSnippets: 20,
+                maxDepth: 4,
             })
 
             // Just in case, handle non-object results
-            if (typeof responses !== 'object') {
+            if (typeof response !== 'object') {
                 return []
             }
 
-            const mergedContextSnippets = [...(responses.symbols || []), ...(responses?.files || [])]
-
             // Convert BFG snippets to match the format expected on the client.
-            const symbols = mergedContextSnippets.map(contextSnippet => ({
+            const symbols = (response.symbols || []).map(contextSnippet => ({
                 ...contextSnippet,
                 uri: vscode.Uri.from({ scheme: 'file', path: contextSnippet.fileName }),
-            })) satisfies Omit<ContextSnippet, 'startLine' | 'endLine'>[]
+            })) satisfies Omit<AutocompleteContextSnippet, 'startLine' | 'endLine'>[]
 
-            logDebug(
-                'CodyEngine',
-                'bfg/contextAtPosition',
-                `returning ${mergedContextSnippets.length} results`
-            )
+            logDebug('CodyEngine', 'bfg/contextForIdentifiers', {
+                verbose: {
+                    inputIdentifiers,
+                    duration: `${performance.now() - bfgRequestStart}ms`,
+                    symbols: symbols.map(s => `${s.symbol} ${s.content}`),
+                },
+            })
 
             // TODO: add `startLine` and `endLine` to `responses` or explicitly add
             // another context snippet type to the client.

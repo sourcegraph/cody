@@ -1,4 +1,5 @@
-import fspromises from 'fs/promises'
+import fspromises from 'node:fs/promises'
+import dedent from 'dedent'
 import {
     BaseCodegen,
     ProtocolMethodDirection,
@@ -6,7 +7,6 @@ import {
     type ProtocolSymbol,
 } from './BaseCodegen'
 import type { scip } from './scip'
-import dedent from 'dedent'
 
 export class MarkdownCodegen extends BaseCodegen {
     public async run(): Promise<void> {

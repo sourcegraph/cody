@@ -4,6 +4,8 @@ import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
 import type { TelemetryEventProperties } from '.'
+import type { AuthStatus } from '../auth/types'
+import { getTier } from '../telemetry-v2/cody-tier'
 
 export interface ExtensionDetails {
     ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
@@ -23,7 +25,8 @@ export class EventLogger {
     constructor(
         private serverEndpoint: string,
         private extensionDetails: ExtensionDetails,
-        private config: ConfigurationWithAccessToken
+        private config: ConfigurationWithAccessToken,
+        private getAuthStatus: () => AuthStatus
     ) {
         this.gqlAPIClient = new SourcegraphGraphQLAPIClient(this.config)
         this.setSiteIdentification().catch(error =>
@@ -117,9 +120,11 @@ export class EventLogger {
             ...properties,
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
+            tier: getTier(this.getAuthStatus()),
             configurationDetails: {
                 contextSelection: this.config.useContext,
                 guardrails: this.config.experimentalGuardrails,
+                ollama: this.config.experimentalOllamaChat,
             },
             version: this.extensionDetails.version, // for backcompat
             hasV2Event,

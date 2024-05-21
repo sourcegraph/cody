@@ -2,27 +2,28 @@ import type * as vscode from 'vscode'
 
 import {
     ChatClient,
-    SourcegraphGuardrailsClient,
-    SourcegraphIntentDetectorClient,
-    graphqlClient,
-    isError,
     type CodeCompletionsClient,
     type ConfigurationWithAccessToken,
     type Guardrails,
-    type IntentDetector,
+    SourcegraphGuardrailsClient,
+    graphqlClient,
+    isError,
 } from '@sourcegraph/cody-shared'
 
 import { createClient as createCodeCompletionsClient } from './completions/client'
 import type { PlatformContext } from './extension.common'
+import type { ContextRankerConfig } from './local-context/context-ranking'
+import type { ContextRankingController } from './local-context/context-ranking'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { logDebug, logger } from './log'
+import type { AuthProvider } from './services/AuthProvider'
 
 interface ExternalServices {
-    intentDetector: IntentDetector
     chatClient: ChatClient
     codeCompletionsClient: CodeCompletionsClient
     guardrails: Guardrails
+    contextRanking: ContextRankingController | undefined
     localEmbeddings: LocalEmbeddingsController | undefined
     symfRunner: SymfRunner | undefined
 
@@ -37,10 +38,11 @@ type ExternalServicesConfiguration = Pick<
     | 'useContext'
     | 'customHeaders'
     | 'accessToken'
-    | 'debugEnable'
+    | 'debugVerbose'
     | 'experimentalTracing'
 > &
-    LocalEmbeddingsConfig
+    LocalEmbeddingsConfig &
+    ContextRankerConfig
 
 export async function configureExternalServices(
     context: vscode.ExtensionContext,
@@ -52,7 +54,9 @@ export async function configureExternalServices(
         | 'createSentryService'
         | 'createOpenTelemetryService'
         | 'createSymfRunner'
-    >
+        | 'createContextRankingController'
+    >,
+    authProvider: AuthProvider
 ): Promise<ExternalServices> {
     const sentryService = platform.createSentryService?.(initialConfig)
     const openTelemetryService = platform.createOpenTelemetryService?.(initialConfig)
@@ -73,18 +77,22 @@ export async function configureExternalServices(
         )
     }
 
-    const localEmbeddings = platform.createLocalEmbeddingsController?.(initialConfig)
+    const contextRanking = initialConfig.experimentalChatContextRanker
+        ? platform.createContextRankingController?.(initialConfig)
+        : undefined
 
-    const chatClient = new ChatClient(completionsClient)
+    const localEmbeddings = await platform.createLocalEmbeddingsController?.(initialConfig)
+
+    const chatClient = new ChatClient(completionsClient, () => authProvider.getAuthStatus())
 
     const guardrails = new SourcegraphGuardrailsClient(graphqlClient)
 
     return {
-        intentDetector: new SourcegraphIntentDetectorClient(completionsClient),
         chatClient,
         codeCompletionsClient,
         guardrails,
         localEmbeddings,
+        contextRanking,
         symfRunner,
         onConfigurationChange: newConfig => {
             sentryService?.onConfigurationChange(newConfig)
@@ -92,6 +100,7 @@ export async function configureExternalServices(
             completionsClient.onConfigurationChange(newConfig)
             codeCompletionsClient.onConfigurationChange(newConfig)
             void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
+            void contextRanking?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
         },
     }
 }

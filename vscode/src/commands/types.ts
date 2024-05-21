@@ -1,4 +1,7 @@
-import type { ChatEventSource, CodyCommand, ContextFile } from '@sourcegraph/cody-shared'
+import type { CodyCommand, ContextItem, EventSource, PromptString } from '@sourcegraph/cody-shared'
+
+import type { Range, Uri } from 'vscode'
+import type { ExecuteEditArguments } from '../edit/execute'
 
 /**
  * The name of the file for configuring Custom Commands.
@@ -21,19 +24,22 @@ export interface CodyCommandsFile {
     commands: Map<string, CodyCommand>
 }
 
-// JSON format of the CodyCommandsFile
-export interface CodyCommandsFileJSON {
-    commands: { [id: string]: Omit<CodyCommand, 'key'> }
-}
-
-export interface CodyCommandArgs {
+export interface CodyCommandArgs extends ExecuteEditArguments {
     // for tracing the life of the request
     requestID: string
     // where the command was triggered from
-    source?: ChatEventSource
+    source?: EventSource
     // runs the command in chat mode, even if it's an edit command
     runInChatMode?: boolean
     // current context to add on top of the command context
-    userContextFiles?: ContextFile[]
-    additionalInstruction?: string
+    userContextFiles?: ContextItem[]
+    additionalInstruction?: PromptString
+
+    /**
+     * Editor Context
+     */
+    // The URI of the file in the editor
+    uri?: Uri
+    // The range of the selection in the editor
+    range?: Range
 }

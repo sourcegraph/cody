@@ -1,33 +1,23 @@
-import { useArgs, useState } from '@storybook/preview-api'
+import { useArgs } from '@storybook/preview-api'
 import type { Meta, StoryObj } from '@storybook/react'
 
 import type { ContextProvider, LocalEmbeddingsProvider, SearchProvider } from '@sourcegraph/cody-shared'
 
-import { VSCodeStoryDecorator } from '../storybook/VSCodeStoryDecorator'
+import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
 
+import { useState } from 'react'
 import {
     EnhancedContextContext,
     EnhancedContextEventHandlers,
+    type EnhancedContextEventHandlersT,
     EnhancedContextPresentationMode,
     EnhancedContextSettings,
-    type EnhancedContextEventHandlersT,
 } from './EnhancedContextSettings'
 
 const meta: Meta<typeof EnhancedContextSettings> = {
-    title: 'cody/Enhanced Context',
+    title: 'cody/Enhanced Context Settings',
     component: EnhancedContextSettings,
-    decorators: [VSCodeStoryDecorator],
-    parameters: {
-        backgrounds: {
-            default: 'vscode',
-            values: [
-                {
-                    name: 'vscode',
-                    value: 'var(--vscode-sideBar-background)',
-                },
-            ],
-        },
-    },
+    decorators: [VSCodeStandaloneComponent],
 }
 
 export default meta
@@ -133,7 +123,7 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
                     >
                         <EnhancedContextSettings
                             isOpen={isOpen}
-                            setOpen={() => setIsOpen(!isOpen)}
+                            setOpen={setIsOpen}
                             presentationMode={args.presentationMode}
                         />
                     </div>
@@ -153,7 +143,11 @@ export const ConsumerMultipleProviders: StoryObj<typeof EnhancedContextSettings>
                         {
                             displayName: '~/projects/foo',
                             providers: [
-                                { kind: 'embeddings', state: 'unconsented' },
+                                {
+                                    kind: 'embeddings',
+                                    state: 'unconsented',
+                                    embeddingsAPIProvider: 'openai',
+                                },
                                 { kind: 'search', type: 'local', state: 'indexing' },
                             ],
                         },
@@ -169,7 +163,7 @@ export const ConsumerMultipleProviders: StoryObj<typeof EnhancedContextSettings>
                 >
                     <EnhancedContextSettings
                         isOpen={isOpen}
-                        setOpen={() => setIsOpen(!isOpen)}
+                        setOpen={setIsOpen}
                         presentationMode={EnhancedContextPresentationMode.Consumer}
                     />
                 </div>
@@ -197,7 +191,7 @@ export const EnterpriseNoRepositories: StoryObj<typeof EnhancedContextSettings> 
                     <EnhancedContextSettings
                         presentationMode={EnhancedContextPresentationMode.Enterprise}
                         isOpen={isOpen}
-                        setOpen={() => setIsOpen(!isOpen)}
+                        setOpen={setIsOpen}
                     />
                 </div>
             </EnhancedContextContext.Provider>
@@ -221,6 +215,7 @@ export const EnterpriseMultipleRepositories: StoryObj<typeof EnhancedContextSett
                                     state: 'ready',
                                     id: 'pqrxy',
                                     inclusion: 'manual',
+                                    isIgnored: false,
                                 },
                             ],
                         },
@@ -233,6 +228,7 @@ export const EnterpriseMultipleRepositories: StoryObj<typeof EnhancedContextSett
                                     state: 'ready',
                                     id: 'xgzwa',
                                     inclusion: 'auto',
+                                    isIgnored: true,
                                 },
                             ],
                         },
@@ -245,6 +241,7 @@ export const EnterpriseMultipleRepositories: StoryObj<typeof EnhancedContextSett
                                     state: 'ready',
                                     id: 'pffty',
                                     inclusion: 'manual',
+                                    isIgnored: false,
                                 },
                             ],
                         },
@@ -261,7 +258,7 @@ export const EnterpriseMultipleRepositories: StoryObj<typeof EnhancedContextSett
                     <EnhancedContextSettings
                         presentationMode={EnhancedContextPresentationMode.Enterprise}
                         isOpen={isOpen}
-                        setOpen={() => setIsOpen(!isOpen)}
+                        setOpen={setIsOpen}
                     />
                 </div>
             </EnhancedContextContext.Provider>

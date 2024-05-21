@@ -1,16 +1,15 @@
-import { Range, type Position, type TextDocument } from 'vscode'
+import { type Position, Range, type TextDocument } from 'vscode'
 import type { Tree } from 'web-tree-sitter'
 
-import { dedupeWith } from '@sourcegraph/cody-shared'
+import { type DocumentContext, dedupeWith } from '@sourcegraph/cody-shared'
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { getNodeAtCursorAndParents } from '../../tree-sitter/ast-getters'
 import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
-import type { DocumentContext } from '../get-current-doc-context'
 import type { ItemPostProcessingInfo } from '../logger'
 import type { InlineCompletionItem } from '../types'
 
-import { dropParserFields, type ParsedCompletion } from './parse-completion'
+import { type ParsedCompletion, dropParserFields } from './parse-completion'
 import { findLastAncestorOnTheSameRow } from './truncate-parsed-completion'
 import { collapseDuplicativeWhitespace, removeTrailingWhitespace, trimUntilSuffix } from './utils'
 

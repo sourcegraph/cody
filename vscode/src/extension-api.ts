@@ -7,6 +7,7 @@ export class ExtensionApi {
     // environment contains CODY_TESTING=true . This is only for
     // testing and the API will change.
     public testing: TestSupport | undefined = undefined
+
     constructor(public extensionMode: ExtensionMode) {
         if (process.env.CODY_TESTING === 'true') {
             console.warn('Setting up testing hooks')

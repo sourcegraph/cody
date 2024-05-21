@@ -2,16 +2,15 @@ import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
-import { isDefined } from '@sourcegraph/cody-shared'
+import { type AutocompleteContextSnippet, createSubscriber, isDefined } from '@sourcegraph/cody-shared'
 
 import { locationKeyFn } from '../../../../graph/lsp/graph'
 import {
-    getGraphDocumentSections as defaultGetDocumentSections,
     type DocumentSection,
+    getGraphDocumentSections as defaultGetDocumentSections,
 } from '../../../../graph/lsp/sections'
 import { getContextRange } from '../../../doc-context-getters'
-import type { ContextRetriever, ContextRetrieverOptions, ContextSnippet } from '../../../types'
-import { createSubscriber } from '../../../utils'
+import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { baseLanguageId } from '../../utils'
 
 interface Section extends DocumentSection {}
@@ -95,7 +94,7 @@ export class SectionHistoryRetriever implements ContextRetriever {
         document: ContextRetrieverOptions['document']
         position: ContextRetrieverOptions['position']
         docContext: ContextRetrieverOptions['docContext']
-    }): Promise<ContextSnippet[]> {
+    }): Promise<AutocompleteContextSnippet[]> {
         const section = this.getSectionAtPosition(document, position)
         const contextRange = getContextRange(document, docContext)
 

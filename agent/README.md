@@ -4,6 +4,15 @@ The `@sourcegraph/cody-agent` package implements a JSON-RPC server to interact
 with Cody via stdout/stdin. This package is intended to be used by
 non-ECMAScript clients such as the JetBrains and NeoVim plugins.
 
+## Releases
+
+Cody Agent releases are available:
+
+- as self-contained executables for various platforms at [Cody Agent releases](https://github.com/sourcegraph/cody/releases) on GitHub
+- from the `@sourcegraph/cody-agent` npm package (`npx @sourcegraph/cody-agent help`)
+
+To build and publish a release using GitHub Actions, bump the version number in the agent's [package.json](package.json) and then push to the `agent-vN.N.N` tag (where `N.N.N` is that version number).
+
 ## Protocol
 
 The protocol is defined in the file [`protocol.ts`](../vscode/src/jsonrpc/agent-protocol.ts). The TypeScript code is the single source of truth of what JSON-RPC methods are
@@ -47,6 +56,8 @@ The following commands assume you are in the root directory of this repository:
 | `pnpm update-agent-tests`                                                                                            | Update HTTP recordings for all tests. Run this before opening a PR                                                                                            |
 | `CODY_KEEP_UNUSED_RECORDINGS=true CODY_RECORD_IF_MISSING=true pnpm run test agent/src/index.test.ts`                 | Run this when iterating on a feature and you only want to run an individual test via `it.only`. Remember to run `pnpm update-agent-tests` before sending a PR |
 | `CODY_KEEP_UNUSED_RECORDINGS=true CODY_RECORD_IF_MISSING=true npx vitest agent/src/index.test.ts -t 'squirrel test'` | Run only a single test without making changes to the code                                                                                                     |
+| `./agent/scripts/reset-recordings-to-main.sh` | Overwrites the local HTTP recordings with the recordings from origin/main. Useful when preparing a PR for review. |
+| `./agent/scripts/resolve-recordings-git-conflict.sh` | Resolves git conflicts in HTTP recording files by picking the recordings on the other branch. Requires you to re-record changes in your branch. |
 
 ## Debugging the agent
 

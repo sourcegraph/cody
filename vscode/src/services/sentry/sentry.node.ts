@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/node'
 
-import { SentryService, type SentryOptions } from './sentry'
+import { type SentryOptions, SentryService } from './sentry'
 
 export class NodeSentryService extends SentryService {
     public reconfigure(options: SentryOptions): void {

@@ -2,27 +2,34 @@ import { debounce } from 'lodash'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { ModelProvider, type ChatClient, type Guardrails } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
+    type ChatClient,
+    type Guardrails,
+} from '@sourcegraph/cody-shared'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import type { View } from '../../../webviews/NavBar'
-import { CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID } from '../../commands/utils/display-text'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import { localStorage } from '../../services/LocalStorageProvider'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
-import { telemetryRecorder } from '../../services/telemetry-v2'
-import type { AuthStatus } from '../protocol'
 
-import { ChatPanelsManager } from './ChatPanelsManager'
-import { SidebarViewController, type SidebarViewOptions } from './SidebarViewController'
-import type { ChatSession, SimpleChatPanelProvider } from './SimpleChatPanelProvider'
+import { DEFAULT_EVENT_SOURCE } from '@sourcegraph/cody-shared'
+import type { URI } from 'vscode-uri'
 import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
-import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
+import type { ContextRankingController } from '../../local-context/context-ranking'
+import { ChatPanelsManager } from './ChatPanelsManager'
+import { SidebarViewController, type SidebarViewOptions } from './SidebarViewController'
+import type { ChatSession } from './SimpleChatPanelProvider'
 
 export const CodyChatPanelViewType = 'cody.chatPanel'
+
 /**
  * Manages the sidebar webview for auth/onboarding.
  *
@@ -43,6 +50,7 @@ export class ChatManager implements vscode.Disposable {
         private chatClient: ChatClient,
         private enterpriseContext: EnterpriseContextFactory | null,
         private localEmbeddings: LocalEmbeddingsController | null,
+        private contextRanking: ContextRankingController | null,
         private symf: SymfRunner | null,
         private guardrails: Guardrails
     ) {
@@ -59,6 +67,7 @@ export class ChatManager implements vscode.Disposable {
             this.options,
             this.chatClient,
             this.localEmbeddings,
+            this.contextRanking,
             this.symf,
             this.enterpriseContext,
             this.guardrails
@@ -82,25 +91,25 @@ export class ChatManager implements vscode.Disposable {
             ),
             vscode.commands.registerCommand(CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID, (...args) =>
                 this.passthroughVsCodeOpen(...args)
+            ),
+
+            // Mention selection/file commands
+            vscode.commands.registerCommand('cody.mention.selection', uri =>
+                this.sendEditorContextToChat('chat', uri)
+            ),
+            vscode.commands.registerCommand('cody.mention.selection.new', uri =>
+                this.sendEditorContextToChat('new-chat', uri)
+            ),
+            vscode.commands.registerCommand('cody.mention.file', uri =>
+                this.sendEditorContextToChat('chat', uri)
+            ),
+            vscode.commands.registerCommand('cody.mention.file.new', uri =>
+                this.sendEditorContextToChat('new-chat', uri)
             )
         )
     }
 
-    private async getChatProvider(): Promise<SimpleChatPanelProvider> {
-        const provider = await this.chatPanelsManager.getChatPanel()
-        return provider
-    }
-
     public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
-        if (authStatus?.configOverwrites?.chatModel) {
-            ModelProvider.add(
-                new ModelProvider(authStatus.configOverwrites.chatModel, [
-                    ModelUsage.Chat,
-                    // TODO: Add configOverwrites.editModel for separate edit support
-                    ModelUsage.Edit,
-                ])
-            )
-        }
         await this.chatPanelsManager.syncAuthStatus(authStatus)
     }
 
@@ -111,24 +120,47 @@ export class ChatManager implements vscode.Disposable {
             return vscode.commands.executeCommand('cody.focus')
         }
 
-        const chatProvider = await this.getChatProvider()
+        const chatProvider = await this.chatPanelsManager.getNewChatPanel()
         await chatProvider?.setWebviewView(view)
     }
 
     /**
      * Execute a chat request in a new chat panel
      */
-    public async executeChat(args: ExecuteChatArguments): Promise<ChatSession | undefined> {
-        const provider = await this.getChatProvider()
+    public async executeChat({
+        text,
+        submitType,
+        contextFiles,
+        editorState,
+        addEnhancedContext,
+        source = DEFAULT_EVENT_SOURCE,
+        command,
+    }: ExecuteChatArguments): Promise<ChatSession | undefined> {
+        const provider = await this.chatPanelsManager.getNewChatPanel()
         await provider?.handleUserMessageSubmission(
             uuid.v4(),
-            args.text,
-            args?.submitType,
-            args?.contextFiles ?? [],
-            args?.addEnhancedContext ?? true,
-            args?.source
+            text,
+            submitType,
+            contextFiles ?? [],
+            editorState,
+            addEnhancedContext ?? true,
+            source,
+            command
         )
         return provider
+    }
+
+    private async sendEditorContextToChat(mode: 'chat' | 'new-chat', uri?: URI): Promise<void> {
+        telemetryService.log('CodyVSCodeExtension:addChatContext:clicked', undefined, {
+            hasV2Event: true,
+        })
+        telemetryRecorder.recordEvent('cody.addChatContext', 'clicked')
+
+        const provider =
+            mode === 'new-chat'
+                ? await this.chatPanelsManager.getNewChatPanel()
+                : await this.chatPanelsManager.getActiveChatPanel()
+        await provider?.handleGetUserEditorContext(uri)
     }
 
     private async editChatHistory(treeItem?: vscode.TreeItem): Promise<void> {
@@ -208,7 +240,7 @@ export class ChatManager implements vscode.Disposable {
     }
 
     public async triggerNotice(notice: { key: string }): Promise<void> {
-        const provider = await this.getChatProvider()
+        const provider = await this.chatPanelsManager.getActiveChatPanel()
         provider.webviewPanel?.onDidChangeViewState(e => {
             if (e.webviewPanel.visible) {
                 void provider?.webview?.postMessage({

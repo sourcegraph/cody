@@ -1,5 +1,5 @@
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
+import path from 'node:path'
 
 import dedent from 'dedent'
 import { findLast } from 'lodash'
@@ -8,6 +8,7 @@ import type { default as Parser, Point, SyntaxNode } from 'web-tree-sitter'
 
 import type { SupportedLanguage } from '../grammars'
 import { getLanguageConfig } from '../language'
+import type { WrappedParser } from '../parser'
 
 interface CommentSymbolInfo {
     delimiter: string
@@ -26,7 +27,7 @@ function getCommentDelimiter(language: SupportedLanguage): CommentSymbolInfo {
         throw new Error(`No language config found for ${language}`)
     }
 
-    const delimiter = languageConfig.commentStart.trim()
+    const delimiter = languageConfig.commentStart.trim().toString()
     const indent = ' '.repeat(delimiter.length)
     const separator = `${delimiter} ${SNIPPET_SEPARATOR}`
 
@@ -95,21 +96,22 @@ function initEmptyAnnotationsForPoint(annotations: Annotations, point: Point): v
 }
 
 // Defines the signature for functions that annotate nodes.
-type Captures = (
+export type Captures = (
     node: SyntaxNode,
     startPosition: Point,
     endPosition?: Point
 ) => readonly Readonly<Parser.QueryCapture>[]
 
-interface AnnotateSnippetsParams {
+interface AnnotateSnippetParams {
     code: string
     language: SupportedLanguage
-    parser: Parser
+    parser: WrappedParser
     captures: Captures
+    isOnly: boolean
 }
 
-function annotateSnippets(params: AnnotateSnippetsParams): string {
-    const { code, language, captures, parser } = params
+function annotateSnippet(params: AnnotateSnippetParams): string {
+    const { code, language, captures, parser, isOnly } = params
 
     const { delimiter, indent } = getCommentDelimiter(language)
     const lines = code.split('\n').map(line => line.replaceAll(/\t/g, ' '.repeat(4)))
@@ -136,8 +138,10 @@ function annotateSnippets(params: AnnotateSnippetsParams): string {
         column: caretPoint.column + 1,
     })
 
+    const debugTree = `\n${commentOutLines(tree.rootNode.toString(), delimiter)}`
+
     if (!capturedNodes || capturedNodes.length === 0) {
-        return code
+        return code + (isOnly ? debugTree : '')
     }
 
     // Matrix with annotations for each character in the code snippet.
@@ -205,12 +209,16 @@ function annotateSnippets(params: AnnotateSnippetsParams): string {
 
     let annotatedCodeSnippet = result.filter(line => !isCursorPositionLine(line, delimiter)).join('\n')
 
-    // Add extra line betwee the annotated code and node types annotations if needed.
+    // Add extra line between the annotated code and node types annotations if needed.
     if (!annotatedCodeSnippet.endsWith('\n\n')) {
         annotatedCodeSnippet += '\n'
     }
 
-    const nodeTypesAnnotation = `${delimiter} Nodes types:\n${nodeTypes.join('\n')}\n\n`
+    let nodeTypesAnnotation = `${delimiter} Nodes types:\n${nodeTypes.join('\n')}\n\n`
+
+    if (isOnly) {
+        nodeTypesAnnotation += debugTree
+    }
     return annotatedCodeSnippet + nodeTypesAnnotation
 }
 
@@ -228,7 +236,7 @@ function commentOutLines(text: string, commentSymbol: string): string {
 
 interface AnnotateAndMatchParams {
     sourcesPath: string
-    parser: Parser
+    parser: WrappedParser
     language: SupportedLanguage
     captures: Captures
 }
@@ -245,7 +253,7 @@ export async function annotateAndMatchSnapshot(params: AnnotateAndMatchParams): 
     // Get the source code and split into snippets.
     const code = fs.readFileSync(path.join(__dirname, sourcesPath), 'utf8')
     // Queries are used on specific parts of the source code (e.g., range of the inserted multiline completion).
-    // Snippets are required to mimick such behavior and test the order of returned captures.
+    // Snippets are required to mimic such behavior and test the order of returned captures.
     const snippets = code.split(separator)
     // Support "// only" to focus on one code sample at a time
     const onlySnippet = findLast(snippets, snippet => snippet.startsWith(`${delimiter} only`))
@@ -257,7 +265,13 @@ export async function annotateAndMatchSnapshot(params: AnnotateAndMatchParams): 
 
     const annotated = (onlySnippet ? [onlySnippet] : snippets)
         .map(snippet => {
-            return annotateSnippets({ code: snippet, language, parser, captures })
+            return annotateSnippet({
+                code: snippet,
+                language,
+                parser,
+                captures,
+                isOnly: Boolean(onlySnippet),
+            })
         })
         .join(separator)
 

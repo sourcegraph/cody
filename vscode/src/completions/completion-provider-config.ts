@@ -11,12 +11,12 @@ class CompletionProviderConfig {
 
     private flagsToResolve = [
         FeatureFlag.CodyAutocompleteContextBfgMixed,
-        FeatureFlag.CodyAutocompleteDynamicMultilineCompletions,
         FeatureFlag.CodyAutocompleteHotStreak,
-        FeatureFlag.CodyAutocompleteFastPath,
         FeatureFlag.CodyAutocompleteUserLatency,
         FeatureFlag.CodyAutocompleteEagerCancellation,
         FeatureFlag.CodyAutocompleteTracing,
+        FeatureFlag.CodyAutocompleteSmartThrottle,
+        FeatureFlag.CodyAutocompleteReducedDebounce,
     ] as const
 
     private get config() {
@@ -50,13 +50,6 @@ class CompletionProviderConfig {
         return Boolean(this.featureFlagProvider.getFromCache(flag as FeatureFlag))
     }
 
-    public get dynamicMultilineCompletions(): boolean {
-        return (
-            this.config.autocompleteExperimentalDynamicMultilineCompletions ||
-            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteDynamicMultilineCompletions)
-        )
-    }
-
     public get hotStreak(): boolean {
         return (
             this.config.autocompleteExperimentalHotStreak ||
@@ -64,34 +57,38 @@ class CompletionProviderConfig {
         )
     }
 
-    public get fastPath(): boolean {
-        return (
-            this.config.autocompleteExperimentalFastPath ||
-            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteFastPath)
-        )
+    public get contextStrategy(): ContextStrategy {
+        switch (this.config.autocompleteExperimentalGraphContext as string) {
+            case 'tsc-mixed':
+                return 'tsc-mixed'
+            case 'tsc':
+                return 'tsc'
+            case 'bfg':
+                return 'bfg'
+            case 'bfg-mixed':
+                return 'bfg-mixed'
+            case 'local-mixed':
+                return 'local-mixed'
+            case 'jaccard-similarity':
+                return 'jaccard-similarity'
+            case 'new-jaccard-similarity':
+                return 'new-jaccard-similarity'
+            default:
+                return this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextBfgMixed)
+                    ? 'bfg-mixed'
+                    : 'jaccard-similarity'
+        }
     }
 
-    public get contextStrategy(): ContextStrategy {
-        const { config } = this
-
-        const bfgMixedContextFlag = this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteContextBfgMixed)
-
-        const contextStrategy: ContextStrategy =
-            config.autocompleteExperimentalGraphContext === 'bfg'
-                ? 'bfg'
-                : config.autocompleteExperimentalGraphContext === 'bfg-mixed'
-                  ? 'bfg-mixed'
-                  : config.autocompleteExperimentalGraphContext === 'local-mixed'
-                      ? 'local-mixed'
-                      : config.autocompleteExperimentalGraphContext === 'jaccard-similarity'
-                          ? 'jaccard-similarity'
-                          : config.autocompleteExperimentalGraphContext === 'new-jaccard-similarity'
-                              ? 'new-jaccard-similarity'
-                              : bfgMixedContextFlag
-                                  ? 'bfg-mixed'
-                                  : 'jaccard-similarity'
-
-        return contextStrategy
+    public get smartThrottle(): boolean {
+        return (
+            // smart throttle is required for the bfg-mixed context strategy
+            // because it allows us to update the completion based on the identifiers
+            // user typed in the current line.
+            this.contextStrategy === 'bfg-mixed' ||
+            this.config.autocompleteExperimentalSmartThrottle ||
+            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteSmartThrottle)
+        )
     }
 }
 

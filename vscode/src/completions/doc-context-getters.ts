@@ -1,9 +1,8 @@
 import * as vscode from 'vscode'
 
+import type { DocumentContext } from '@sourcegraph/cody-shared'
 import { getLanguageConfig } from '../tree-sitter/language'
-import { execQueryWrapper, type CompletionIntent } from '../tree-sitter/query-sdk'
-
-import type { DocumentContext } from './get-current-doc-context'
+import { type CompletionIntent, execQueryWrapper, positionToQueryPoints } from '../tree-sitter/query-sdk'
 
 export function getCurrentLinePrefixWithoutInjectedPrefix(docContext: DocumentContext): string {
     const { currentLinePrefix, injectedPrefix } = docContext
@@ -52,7 +51,12 @@ export function getCompletionIntent(params: GetCompletionIntentParams): Completi
               character: Math.max(0, position.character - 1),
           }
 
-    const [completionIntent] = execQueryWrapper(document, positionBeforeCursor, 'getCompletionIntent')
+    const queryPoints = positionToQueryPoints(positionBeforeCursor)
+    const [completionIntent] = execQueryWrapper({
+        document,
+        queryPoints,
+        queryWrapper: 'getCompletionIntent',
+    })
 
     return completionIntent?.name
 }

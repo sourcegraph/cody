@@ -1,36 +1,29 @@
 import type { URI } from 'vscode-uri'
 
-import type { ActiveTextEditorSelectionRange } from '../editor'
-import { displayPath } from '../editor/displayPath'
+import type { RangeData } from '../common/range'
 import type { Message } from '../sourcegraph-api'
-
-// tracked for telemetry purposes. Which context source provided this context file.
-// embeddings: context file returned by the embeddings client
-// user: context file provided by the user explicitly via chat input
-// keyword: the context file returned from local keyword search
-// editor: context file retrieved from the current editor
-// search: context file returned by symf search
-// selection: selected code from the current editor
-// terminal: output from shell terminal
-// unified: remote search
-export type ContextFileSource =
-    | 'embeddings'
-    | 'user'
-    | 'keyword'
-    | 'editor'
-    | 'filename'
-    | 'search'
-    | 'unified'
-    | 'selection'
-    | 'terminal'
 
 export type ContextFileType = 'file' | 'symbol'
 
-export type SymbolKind = 'class' | 'function' | 'method'
-
-interface ContextFileCommon {
+/**
+ * Fields that are common to any context item included in chat messages.
+ */
+interface ContextItemCommon {
+    /**
+     * The URI of the document (such as a file) where this context resides.
+     */
     uri: URI
-    range?: ActiveTextEditorSelectionRange
+
+    /**
+     * If only a subset of a file is included as context, the range of that subset.
+     */
+    range?: RangeData
+
+    /**
+     * The content, either the entire document or the range subset.
+     */
+    content?: string
+
     repoName?: string
     revision?: string
 
@@ -39,83 +32,217 @@ interface ContextFileCommon {
      */
     title?: string
 
-    source?: ContextFileSource
-    content?: string
+    /**
+     * The source of this context item.
+     */
+    source?: ContextItemSource
+
+    /**
+     * The token count of the item's content.
+     */
+    size?: number
+
+    /**
+     * Whether the item is excluded by Cody Ignore.
+     */
+    isIgnored?: boolean
+
+    /**
+     * Whether the content of the item is too large to be included as context.
+     */
+    isTooLarge?: boolean
+
+    /**
+     * The ID of the {@link ContextMentionProvider} that supplied this context item (or `undefined`
+     * if from a built-in context source such as files and symbols).
+     */
+    provider?: string
 }
 
-export type ContextFile = ContextFileFile | ContextFileSymbol
-export type ContextFileFile = ContextFileCommon & { type: 'file' }
-export type ContextFileSymbol = ContextFileCommon & {
+/**
+ * The source of this context.
+ */
+export enum ContextItemSource {
+    /** From embeddings search */
+    Embeddings = 'embeddings',
+
+    /** Explicitly @-mentioned by the user in chat */
+    User = 'user',
+
+    /** From local keyword search */
+    Keyword = 'keyword',
+
+    /** From the current editor state and open tabs/documents */
+    Editor = 'editor',
+
+    Filename = 'filename',
+
+    /** From symf search */
+    Search = 'search',
+
+    /** Remote search */
+    Unified = 'unified',
+
+    /** Selected code from the current editor */
+    Selection = 'selection',
+
+    /** Output from the terminal */
+    Terminal = 'terminal',
+
+    /** From URI */
+    Uri = 'uri',
+
+    /** From a package repository */
+    Package = 'package',
+
+    /** From source control history */
+    History = 'history',
+
+    /** From Github API */
+    Github = 'github',
+}
+
+/**
+ * An item (such as a file or symbol) that is included as context in a chat message.
+ */
+export type ContextItem =
+    | ContextItemFile
+    | ContextItemSymbol
+    | ContextItemPackage
+    | ContextItemGithubPullRequest
+    | ContextItemGithubIssue
+    | ContextItemOpenCtx
+
+/**
+ * A Github pull request that is included as context in a chat message.
+ */
+export interface ContextItemGithubPullRequest extends ContextItemCommon {
+    type: 'github_pull_request'
+
+    /**
+     * the owner of the repository.
+     */
+    owner: string
+
+    /**
+     * the name of the repository.
+     */
+    repoName: string
+
+    /**
+     *  the number for this pull request.
+     */
+    pullNumber: number
+
+    /**
+     * the title of this pull request.
+     */
+    title: string
+}
+
+/**
+ * A Github issue that is included as context in a chat message.
+ */
+export interface ContextItemGithubIssue extends ContextItemCommon {
+    type: 'github_issue'
+
+    /**
+     * the owner of the repository.
+     */
+    owner: string
+
+    /**
+     * the name of the repository.
+     */
+    repoName: string
+
+    /**
+     *  the number for this issue.
+     */
+    issueNumber: number
+
+    /**
+     * the title of this issue.
+     */
+    title: string
+}
+/**
+ * An OpenCtx context item returned from a provider.
+ */
+export interface ContextItemOpenCtx extends ContextItemCommon {
+    type: 'openctx'
+    provider: 'openctx'
+    title: string
+    uri: URI
+    providerUri: string
+    description?: string
+    data?: any
+}
+
+/**
+ * A package repository that is included as context in a chat message.
+ */
+export interface ContextItemPackage extends ContextItemCommon {
+    type: 'package'
+
+    /**
+     * the repository id for this package.
+     */
+    repoID: string
+
+    /**
+     * the title for this package.
+     */
+    title: string
+    /**
+     * the ecosystem for this package.
+     */
+    ecosystem: string
+    /**
+     * the name for this package.
+     */
+    name: string
+}
+
+/**
+ * A file (or a subset of a file given by a range) that is included as context in a chat message.
+ */
+export interface ContextItemFile extends ContextItemCommon {
+    type: 'file'
+}
+
+/**
+ * A symbol (which is a range within a file) that is included as context in a chat message.
+ */
+export interface ContextItemSymbol extends ContextItemCommon {
     type: 'symbol'
 
-    /** The fuzzy name of the symbol (if this represents a symbol). */
+    /** The name of the symbol, used for presentation only (not semantically meaningful). */
     symbolName: string
 
+    /** The kind of symbol, used for presentation only (not semantically meaningful). */
     kind: SymbolKind
 }
 
+/** The valid kinds of a symbol. */
+export type SymbolKind = 'class' | 'function' | 'method'
+
+/** {@link ContextItem} with the `content` field set to the content. */
+export type ContextItemWithContent = ContextItem & Required<Pick<ContextItem, 'content'>>
+
+/**
+ * A system chat message that adds a context item to the conversation.
+ */
 export interface ContextMessage extends Required<Message> {
-    file?: ContextFile
-    preciseContext?: PreciseContext
-}
+    /**
+     * Context messages are always "from" the human. (In the future, this could be from "system" for
+     * LLMs that support that kind of message, but that `speaker` value is not currently supported
+     * by the `Message` type.)
+     */
+    speaker: 'human'
 
-export interface PreciseContext {
-    symbol: {
-        fuzzyName?: string
-    }
-    hoverText: string[]
-    definitionSnippet: string
-    filePath: string
-    range?: {
-        startLine: number
-        startCharacter: number
-        endLine: number
-        endCharacter: number
-    }
-}
-
-export interface HoverContext {
-    symbolName: string
-    sourceSymbolName?: string
-    content: string[]
-    uri: string
-    range?: {
-        startLine: number
-        startCharacter: number
-        endLine: number
-        endCharacter: number
-    }
-}
-
-export function getContextMessageWithResponse(
-    text: string,
-    file: ContextFile,
-    response = 'Ok.',
-    source: ContextFileSource = 'editor'
-): ContextMessage[] {
-    file.source = file.source || source
-
-    return [
-        { speaker: 'human', text, file },
-        { speaker: 'assistant', text: response },
-    ]
-}
-
-export function createContextMessageByFile(file: ContextFile, content: string): ContextMessage[] {
-    const code = content || file.content
-    if (!code) {
-        return []
-    }
-    const filepath = displayPath(file.uri)
-    return [
-        {
-            speaker: 'human',
-            text:
-                file.type === 'file'
-                    ? `Context from file path @${filepath}:\n${code}`
-                    : `$${file.symbolName} is a ${file.kind} symbol from file path @${filepath}:\n${code}`,
-            file,
-        },
-        { speaker: 'assistant', text: 'OK.' },
-    ]
+    /**
+     * The context item that this message introduces into the conversation.
+     */
+    file: ContextItem
 }

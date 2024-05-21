@@ -21,17 +21,21 @@ interface CodyAgentClient {
   @JsonRequest("workspace/edit")
   fun workspace_edit(params: WorkspaceEditParams): CompletableFuture<Boolean>
   @JsonRequest("webview/create")
-  fun webview_create(params: Webview_CreateParams): CompletableFuture<Null>
+  fun webview_create(params: Webview_CreateParams): CompletableFuture<Null?>
 
   // =============
   // Notifications
   // =============
   @JsonNotification("debug/message")
   fun debug_message(params: DebugMessage)
-  @JsonNotification("editTaskState/didChange")
-  fun editTaskState_didChange(params: EditTask)
+  @JsonNotification("editTask/didUpdate")
+  fun editTask_didUpdate(params: EditTask)
+  @JsonNotification("editTask/didDelete")
+  fun editTask_didDelete(params: EditTask)
   @JsonNotification("codeLenses/display")
   fun codeLenses_display(params: DisplayCodeLensParams)
+  @JsonNotification("ignore/didChange")
+  fun ignore_didChange(params: Null?)
   @JsonNotification("webview/postMessage")
   fun webview_postMessage(params: WebviewPostMessageParams)
   @JsonNotification("progress/start")
@@ -40,4 +44,8 @@ interface CodyAgentClient {
   fun progress_report(params: ProgressReportParams)
   @JsonNotification("progress/end")
   fun progress_end(params: Progress_EndParams)
+  @JsonNotification("remoteRepo/didChange")
+  fun remoteRepo_didChange(params: Null?)
+  @JsonNotification("remoteRepo/didChangeState")
+  fun remoteRepo_didChangeState(params: RemoteRepoFetchState)
 }

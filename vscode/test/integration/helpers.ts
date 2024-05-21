@@ -1,4 +1,4 @@
-import * as assert from 'assert'
+import * as assert from 'node:assert'
 
 import * as vscode from 'vscode'
 
@@ -59,7 +59,7 @@ export async function getTranscript(index: number): Promise<ChatMessage> {
     const testSupport = api.exports.testing
     assert.ok(testSupport)
 
-    let transcript: ChatMessage[] | undefined
+    let transcript: readonly ChatMessage[] | undefined
 
     await waitUntil(async () => {
         if (!api.isActive || !api.exports.testing) {

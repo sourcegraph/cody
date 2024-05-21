@@ -1,5 +1,5 @@
-import * as fspromises from 'fs/promises'
-import path from 'path'
+import * as fspromises from 'node:fs/promises'
+import path from 'node:path'
 
 import type { ObjectHeaderItem } from 'csv-writer/src/lib/record'
 import type * as vscode from 'vscode'

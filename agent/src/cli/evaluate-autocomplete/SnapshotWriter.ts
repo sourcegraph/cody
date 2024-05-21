@@ -1,11 +1,11 @@
-import * as fspromises from 'fs/promises'
+import * as fspromises from 'node:fs/promises'
 
 import { createObjectCsvWriter } from 'csv-writer'
 import type { CsvWriter } from 'csv-writer/src/lib/csv-writer'
 import { rimraf } from 'rimraf'
 
+import { type EvaluationDocument, autocompleteItemHeaders } from './EvaluationDocument'
 import type { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
-import { autocompleteItemHeaders, type EvaluationDocument } from './EvaluationDocument'
 
 export class SnapshotWriter {
     public csvWriter: CsvWriter<any> | undefined

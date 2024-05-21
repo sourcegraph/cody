@@ -1,54 +1,66 @@
-import * as vscode from 'vscode'
-import { SHA256, enc } from 'crypto-js'
-
 import {
-    displayPath,
-    tokensToChars,
+    type AuthStatus,
+    type AutocompleteContextSnippet,
     type AutocompleteTimeouts,
     type CodeCompletionsClient,
-    type CompletionResponseGenerator,
     type CodeCompletionsParams,
-    TracedError,
     type CompletionResponse,
-    isRateLimitError,
-    isAbortError,
-    NetworkError,
-    isNodeResponse,
-    getActiveTraceAndSpanId,
-    addTraceparent,
-    type ConfigurationWithAccessToken,
+    type CompletionResponseGenerator,
     CompletionStopReason,
+    type ConfigurationWithAccessToken,
+    NetworkError,
+    PromptString,
+    TracedError,
+    addTraceparent,
+    contextFiltersProvider,
+    createSSEIterator,
+    dotcomTokenToGatewayToken,
+    getActiveTraceAndSpanId,
+    isAbortError,
+    isNodeResponse,
+    isRateLimitError,
+    logResponseHeadersToSpan,
+    ps,
+    recordErrorToSpan,
+    tokensToChars,
+    tracer,
 } from '@sourcegraph/cody-shared'
 
+import { fetch } from '@sourcegraph/cody-shared'
 import { getLanguageConfig } from '../../tree-sitter/language'
-import { CLOSING_CODE_TAG, getHeadAndTail, OPENING_CODE_TAG } from '../text-processing'
-import type { ContextSnippet } from '../types'
+import { getSuffixAfterFirstNewline } from '../text-processing'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
-import { fetch } from '../../fetch'
 
-import type { FetchCompletionResult } from './fetch-and-process-completions'
+import { SpanStatusCode } from '@opentelemetry/api'
+import { logDebug } from '../../log'
+import { createRateLimitErrorFromResponse } from '../client'
+import { TriggerKind } from '../get-inline-completions'
 import {
-    getCompletionParamsAndFetchImpl,
+    type FetchCompletionResult,
+    fetchAndProcessDynamicMultilineCompletions,
+} from './fetch-and-process-completions'
+import {
+    MAX_RESPONSE_TOKENS,
+    getCompletionParams,
     getLineNumberDependentCompletionParams,
 } from './get-completion-params'
 import {
-    Provider,
-    standardContextSizeHints,
     type CompletionProviderTracer,
+    Provider,
     type ProviderConfig,
     type ProviderOptions,
+    standardContextSizeHints,
 } from './provider'
-import { createRateLimitErrorFromResponse, createSSEIterator, logResponseHeadersToSpan } from '../client'
-import type { AuthStatus } from '../../chat/protocol'
-import { SpanStatusCode } from '@opentelemetry/api'
-import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
 
 export interface FireworksOptions {
     model: FireworksModel
     maxContextTokens?: number
     client: CodeCompletionsClient
     timeouts: AutocompleteTimeouts
-    config: Pick<ConfigurationWithAccessToken, 'accessToken'>
+    config: Pick<
+        ConfigurationWithAccessToken,
+        'accessToken' | 'autocompleteExperimentalFireworksOptions'
+    >
     authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>
 }
 
@@ -64,22 +76,30 @@ const MODEL_MAP = {
     starcoder: 'fireworks/starcoder',
     'starcoder-16b': 'fireworks/starcoder-16b',
     'starcoder-7b': 'fireworks/starcoder-7b',
+    'starcoder2-15b': 'fireworks/starcoder2-15b',
+    'starcoder2-7b': 'fireworks/starcoder2-7b',
 
     // Fireworks model identifiers
-    'llama-code-7b': 'fireworks/accounts/fireworks/models/llama-v2-7b-code',
     'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
-    'llama-code-13b-instruct': 'fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct',
-    'mistral-7b-instruct-4k': 'fireworks/accounts/fireworks/models/mistral-7b-instruct-4k',
+
+    // Fine-tuned model mapping
+    'fireworks-completions-fine-tuned':
+        'fireworks/accounts/sourcegraph/models/codecompletion-mixtral-rust-152k-005e',
 }
 
 type FireworksModel =
     | keyof typeof MODEL_MAP
     // `starcoder-hybrid` uses the 16b model for multiline requests and the 7b model for single line
     | 'starcoder-hybrid'
+    // `starcoder2-hybrid` uses the 15b model for multiline requests and the 7b model for single line
+    | 'starcoder2-hybrid'
 
 function getMaxContextTokens(model: FireworksModel): number {
     switch (model) {
         case 'starcoder':
+        case 'starcoder2-hybrid':
+        case 'starcoder2-15b':
+        case 'starcoder2-7b':
         case 'starcoder-hybrid':
         case 'starcoder-16b':
         case 'starcoder-7b': {
@@ -87,23 +107,19 @@ function getMaxContextTokens(model: FireworksModel): number {
             // other providers.
             return 2048
         }
-        case 'llama-code-7b':
         case 'llama-code-13b':
-        case 'llama-code-13b-instruct':
             // Llama 2 on Fireworks supports up to 4k tokens. We're constraining it here to better
             // compare the results
             return 2048
-        case 'mistral-7b-instruct-4k':
+        case 'fireworks-completions-fine-tuned':
             return 2048
         default:
             return 1200
     }
 }
 
-const MAX_RESPONSE_TOKENS = 256
-
 const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopSequences: ['\n'],
+    singlelineStopSequences: ['\n\n', '\n\r\n'],
     multilineStopSequences: ['\n\n', '\n\r\n'],
 })
 
@@ -114,6 +130,8 @@ class FireworksProvider extends Provider {
     private timeouts?: AutocompleteTimeouts
     private fastPathAccessToken?: string
     private authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>
+    private isLocalInstance: boolean
+    private fireworksConfig?: ConfigurationWithAccessToken['autocompleteExperimentalFireworksOptions']
 
     constructor(
         options: ProviderOptions,
@@ -125,58 +143,78 @@ class FireworksProvider extends Provider {
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
         this.client = client
         this.authStatus = authStatus
+        this.isLocalInstance = Boolean(
+            this.authStatus.endpoint?.includes('sourcegraph.test') ||
+                this.authStatus.endpoint?.includes('localhost')
+        )
 
         const isNode = typeof process !== 'undefined'
         this.fastPathAccessToken =
-            this.options.fastPath &&
             config.accessToken &&
             // Require the upstream to be dotcom
-            this.authStatus.isDotCom &&
+            (this.authStatus.isDotCom || this.isLocalInstance) &&
+            process.env.CODY_DISABLE_FASTPATH !== 'true' && // Used for testing
             // The fast path client only supports Node.js style response streams
             isNode
                 ? dotcomTokenToGatewayToken(config.accessToken)
                 : undefined
+
+        if (
+            process.env.NODE_ENV === 'development' &&
+            config.autocompleteExperimentalFireworksOptions?.token
+        ) {
+            this.fastPathAccessToken = config.autocompleteExperimentalFireworksOptions?.token
+            this.fireworksConfig = config.autocompleteExperimentalFireworksOptions
+        }
     }
 
-    private createPrompt(snippets: ContextSnippet[]): string {
-        const { prefix, suffix } = this.options.docContext
+    private createPrompt(snippets: AutocompleteContextSnippet[]): PromptString {
+        const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(
+            this.options.docContext,
+            this.options.document.uri
+        )
 
-        const intro: string[] = []
-        let prompt = ''
+        const intro: PromptString[] = []
+        let prompt = ps``
 
         const languageConfig = getLanguageConfig(this.options.document.languageId)
 
         // In StarCoder we have a special token to announce the path of the file
-        if (!isStarCoderFamily(this.model)) {
-            intro.push(`Path: ${this.options.document.fileName}`)
+        if (!isStarCoderFamily(this.model) && this.model !== 'fireworks-completions-fine-tuned') {
+            intro.push(ps`Path: ${PromptString.fromDisplayPath(this.options.document.uri)}`)
         }
 
         for (let snippetsToInclude = 0; snippetsToInclude < snippets.length + 1; snippetsToInclude++) {
             if (snippetsToInclude > 0) {
                 const snippet = snippets[snippetsToInclude - 1]
-                if ('symbol' in snippet && snippet.symbol !== '') {
+                const contextPrompts = PromptString.fromAutocompleteContextSnippet(snippet)
+
+                if (contextPrompts.symbol) {
                     intro.push(
-                        `Additional documentation for \`${snippet.symbol}\`:\n\n${snippet.content}`
+                        ps`Additional documentation for \`${contextPrompts.symbol}\`:\n\n${contextPrompts.content}`
                     )
                 } else {
                     intro.push(
-                        `Here is a reference snippet of code from ${displayPath(snippet.uri)}:\n\n${
-                            snippet.content
-                        }`
+                        ps`Here is a reference snippet of code from ${PromptString.fromDisplayPath(
+                            snippet.uri
+                        )}:\n\n${contextPrompts.content}`
                     )
                 }
             }
 
-            const introString = `${intro
-                .join('\n\n')
-                .split('\n')
-                .map(line => (languageConfig ? languageConfig.commentStart + line : '// '))
-                .join('\n')}\n`
+            const introString = ps`${PromptString.join(
+                PromptString.join(intro, ps`\n\n`)
+                    .split('\n')
+                    .map(line => ps`${languageConfig ? languageConfig.commentStart : ps`// `}${line}`),
+                ps`\n`
+            )}\n`
 
+            // We want to remove the same line suffix from a completion request since both StarCoder and Llama
+            // code can't handle this correctly.
             const suffixAfterFirstNewline = getSuffixAfterFirstNewline(suffix)
 
             const nextPrompt = this.createInfillingPrompt(
-                vscode.workspace.asRelativePath(this.options.document.fileName),
+                PromptString.fromDisplayPath(this.options.document.uri),
                 introString,
                 prefix,
                 suffixAfterFirstNewline
@@ -194,27 +232,40 @@ class FireworksProvider extends Provider {
 
     public generateCompletions(
         abortSignal: AbortSignal,
-        snippets: ContextSnippet[],
+        snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]> {
-        const { partialRequestParams, fetchAndProcessCompletionsImpl } = getCompletionParamsAndFetchImpl(
-            {
-                providerOptions: this.options,
-                timeouts: this.timeouts,
-                lineNumberDependentCompletionParams,
-            }
-        )
+        const partialRequestParams = getCompletionParams({
+            providerOptions: this.options,
+            timeouts: this.timeouts,
+            lineNumberDependentCompletionParams,
+        })
 
         const { multiline } = this.options
-        const requestParams: CodeCompletionsParams = {
+        const useMultilineModel = multiline || this.options.triggerKind !== TriggerKind.Automatic
+        const model: string =
+            this.model === 'starcoder2-hybrid'
+                ? MODEL_MAP[useMultilineModel ? 'starcoder2-15b' : 'starcoder2-7b']
+                : this.model === 'starcoder-hybrid'
+                  ? MODEL_MAP[useMultilineModel ? 'starcoder-16b' : 'starcoder-7b']
+                  : MODEL_MAP[this.model]
+        const requestParams = {
             ...partialRequestParams,
             messages: [{ speaker: 'human', text: this.createPrompt(snippets) }],
             temperature: 0.2,
             topK: 0,
-            model:
-                this.model === 'starcoder-hybrid'
-                    ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
-                    : MODEL_MAP[this.model],
+            model,
+        } satisfies CodeCompletionsParams
+
+        if (requestParams.model.includes('starcoder2')) {
+            requestParams.stopSequences = [
+                ...(requestParams.stopSequences || []),
+                '<fim_prefix>',
+                '<fim_suffix>',
+                '<fim_middle>',
+                '<|endoftext|>',
+                '<file_sep>',
+            ]
         }
 
         tracer?.params(requestParams)
@@ -230,7 +281,7 @@ class FireworksProvider extends Provider {
                 abortController
             )
 
-            return fetchAndProcessCompletionsImpl({
+            return fetchAndProcessDynamicMultilineCompletions({
                 completionResponseGenerator,
                 abortController,
                 providerSpecificPostProcess: this.postProcess,
@@ -257,36 +308,29 @@ class FireworksProvider extends Provider {
     }
 
     private createInfillingPrompt(
-        filename: string,
-        intro: string,
-        prefix: string,
-        suffix: string
-    ): string {
+        filename: PromptString,
+        intro: PromptString,
+        prefix: PromptString,
+        suffix: PromptString
+    ): PromptString {
         if (isStarCoderFamily(this.model)) {
             // c.f. https://huggingface.co/bigcode/starcoder#fill-in-the-middle
             // c.f. https://arxiv.org/pdf/2305.06161.pdf
-            return `<filename>${filename}<fim_prefix>${intro}${prefix}<fim_suffix>${suffix}<fim_middle>`
+            return ps`<filename>${filename}<fim_prefix>${intro}${prefix}<fim_suffix>${suffix}<fim_middle>`
         }
         if (isLlamaCode(this.model)) {
             // c.f. https://github.com/facebookresearch/codellama/blob/main/llama/generation.py#L402
-            return `<PRE> ${intro}${prefix} <SUF>${suffix} <MID>`
+            return ps`<PRE> ${intro}${prefix} <SUF>${suffix} <MID>`
         }
-        if (this.model === 'mistral-7b-instruct-4k') {
-            // This part is copied from the anthropic prompt but fitted into the Mistral instruction format
-            const relativeFilePath = vscode.workspace.asRelativePath(this.options.document.fileName)
-            const { head, tail } = getHeadAndTail(this.options.docContext.prefix)
-            const infillSuffix = this.options.docContext.suffix
-            const infillBlock = tail.trimmed.endsWith('{\n') ? tail.trimmed.trimEnd() : tail.trimmed
-            const infillPrefix = head.raw
-            return `<s>[INST] Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:
-\`\`\`
-${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
-\`\`\`[/INST]
- ${OPENING_CODE_TAG}${infillBlock}`
+        if (this.model === 'fireworks-completions-fine-tuned') {
+            const fixedPrompt = ps`You are an expert in writing code in many different languages.
+                Your goal is to perform code completion for the following code, keeping in mind the rest of the code and the file meta data.
+                Metadata details: filename: ${filename}. The code of the file until where you have to start completion:
+            `
+            return ps`${intro} \n ${fixedPrompt}\n${prefix}`
         }
-
         console.error('Could not generate infilling prompt for', this.model)
-        return `${intro}${prefix}`
+        return ps`${intro}${prefix}`
     }
 
     private postProcess = (content: string): string => {
@@ -317,14 +361,13 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
         requestParams: CodeCompletionsParams,
         abortController: AbortController
     ): CompletionResponseGenerator {
-        const isLocalInstance =
-            this.authStatus.endpoint?.includes('sourcegraph.test') ||
-            this.authStatus.endpoint?.includes('localhost')
-        const gatewayUrl = isLocalInstance
+        const gatewayUrl = this.isLocalInstance
             ? 'http://localhost:9992'
             : 'https://cody-gateway.sourcegraph.com'
 
-        const url = `${gatewayUrl}/v1/completions/fireworks`
+        const url = this.fireworksConfig
+            ? this.fireworksConfig.url
+            : `${gatewayUrl}/v1/completions/fireworks`
         const log = this.client.logger?.startCompletion(requestParams, url)
 
         // The async generator can not use arrow function syntax so we close over the context
@@ -334,18 +377,24 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
             `POST ${url}`,
             async function* (span): CompletionResponseGenerator {
                 // Convert the SG instance messages array back to the original prompt
-                const prompt = requestParams.messages[0]!.text!
+                const prompt =
+                    await requestParams.messages[0]!.text!.toFilteredString(contextFiltersProvider)
 
                 // c.f. https://readme.fireworks.ai/reference/createcompletion
                 const fireworksRequest = {
-                    model: requestParams.model?.replace(/^fireworks\//, ''),
+                    model:
+                        self.fireworksConfig?.model || requestParams.model?.replace(/^fireworks\//, ''),
                     prompt,
                     max_tokens: requestParams.maxTokensToSample,
                     echo: false,
-                    temperature: requestParams.temperature,
-                    top_p: requestParams.topP,
-                    top_k: requestParams.topK,
-                    stop: requestParams.stopSequences,
+                    temperature:
+                        self.fireworksConfig?.parameters?.temperature || requestParams.temperature,
+                    top_p: self.fireworksConfig?.parameters?.top_p || requestParams.topP,
+                    top_k: self.fireworksConfig?.parameters?.top_k || requestParams.topK,
+                    stop: [
+                        ...(requestParams.stopSequences || []),
+                        ...(self.fireworksConfig?.parameters?.stop || []),
+                    ],
                     stream: true,
                 }
 
@@ -353,11 +402,15 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
                 // Force HTTP connection reuse to reduce latency.
                 // c.f. https://github.com/microsoft/vscode/issues/173861
                 headers.set('Connection', 'keep-alive')
-                headers.set('Content-Type', 'application/json; charset=utf-8')
+                headers.set(
+                    'Content-Type',
+                    `application/json${self.fireworksConfig ? '' : '; charset=utf-8'}`
+                )
                 headers.set('Authorization', `Bearer ${self.fastPathAccessToken}`)
                 headers.set('X-Sourcegraph-Feature', 'code_completions')
                 addTraceparent(headers)
 
+                logDebug('FireworksProvider', 'fetch', { verbose: { url, fireworksRequest } })
                 const response = await fetch(url, {
                     method: 'POST',
                     body: JSON.stringify(fireworksRequest),
@@ -387,7 +440,7 @@ ${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}
                         new NetworkError(
                             response,
                             (await response.text()) +
-                                (isLocalInstance ? '\nIs Cody Gateway running locally?' : ''),
+                                (self.isLocalInstance ? '\nIs Cody Gateway running locally?' : ''),
                             traceId
                         )
                     )
@@ -501,11 +554,11 @@ export function createProviderConfig({
     const resolvedModel =
         model === null || model === ''
             ? 'starcoder-hybrid'
-            : model === 'starcoder-hybrid'
-              ? 'starcoder-hybrid'
+            : ['starcoder-hybrid', 'starcoder2-hybrid'].includes(model)
+              ? (model as FireworksModel)
               : Object.prototype.hasOwnProperty.call(MODEL_MAP, model)
-                  ? (model as keyof typeof MODEL_MAP)
-                  : null
+                ? (model as keyof typeof MODEL_MAP)
+                : null
 
     if (resolvedModel === null) {
         throw new Error(`Unknown model: \`${model}\``)
@@ -534,19 +587,6 @@ export function createProviderConfig({
     }
 }
 
-// We want to remove the same line suffix from a completion request since both StarCoder and Llama
-// code can't handle this correctly.
-function getSuffixAfterFirstNewline(suffix: string): string {
-    const firstNlInSuffix = suffix.indexOf('\n')
-
-    // When there is no next line, the suffix should be empty
-    if (firstNlInSuffix === -1) {
-        return ''
-    }
-
-    return suffix.slice(suffix.indexOf('\n'))
-}
-
 function isStarCoderFamily(model: string): boolean {
     return model.startsWith('starcoder')
 }
@@ -557,24 +597,4 @@ function isLlamaCode(model: string): boolean {
 
 interface FireworksSSEData {
     choices: [{ text: string; finish_reason: null }]
-}
-
-function dotcomTokenToGatewayToken(dotcomToken: string): string | undefined {
-    const DOTCOM_TOKEN_REGEX: RegExp =
-        /^(?:sgph?_)?(?:[\da-fA-F]{16}_|local_)?(?<hexbytes>[\da-fA-F]{40})$/
-    const match = DOTCOM_TOKEN_REGEX.exec(dotcomToken)
-
-    if (!match) {
-        throw new Error('Access token format is invalid.')
-    }
-
-    const hexEncodedAccessTokenBytes = match?.groups?.hexbytes
-
-    if (!hexEncodedAccessTokenBytes) {
-        throw new Error('Access token not found.')
-    }
-
-    const accessTokenBytes = enc.Hex.parse(hexEncodedAccessTokenBytes)
-    const gatewayTokenBytes = SHA256(SHA256(accessTokenBytes)).toString()
-    return 'sgd_' + gatewayTokenBytes
 }

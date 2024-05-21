@@ -1,10 +1,9 @@
-import path from 'path'
+import path from 'node:path'
 
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 
-import { isNode16 } from '../../isNode16'
 import { getLanguageForFileName } from '../../language'
 
 import { AutocompleteMatcher } from './AutocompleteMatcher'
@@ -12,7 +11,7 @@ import { EvaluationDocument } from './EvaluationDocument'
 import { Queries } from './Queries'
 import { isWindows } from './isWindows'
 
-describe.skipIf(isWindows() || isNode16())('AutocompleteMatcher', () => {
+describe.skipIf(isWindows())('AutocompleteMatcher', () => {
     const queriesDirectory = path.join(__dirname, 'queries')
     const queries = new Queries(queriesDirectory)
     function checkInput(filename: string, text: string, assertion: (obtained: string) => void): void {

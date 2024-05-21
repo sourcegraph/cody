@@ -1,9 +1,9 @@
 import * as vscode from 'vscode'
 
 import {
-    EventLogger,
     type Configuration,
     type ConfigurationWithAccessToken,
+    EventLogger,
     type ExtensionDetails,
     type TelemetryEventProperties,
     type TelemetryService,
@@ -14,6 +14,7 @@ import { logDebug } from '../log'
 import { getOSArch } from '../os'
 import { version } from '../version'
 
+import type { AuthProvider } from './AuthProvider'
 import { localStorage } from './LocalStorageProvider'
 
 let eventLogger: EventLogger | null = null
@@ -35,7 +36,8 @@ export const getExtensionDetails = (config: Pick<Configuration, 'agentIDE'>): Ex
  */
 export async function createOrUpdateEventLogger(
     config: ConfigurationWithAccessToken,
-    isExtensionModeDevOrTest: boolean
+    isExtensionModeDevOrTest: boolean,
+    authProvider: AuthProvider
 ): Promise<void> {
     if (config.telemetryLevel === 'off' || isExtensionModeDevOrTest) {
         // check that CODY_TESTING is not true, because we want to log events when we are testing
@@ -56,7 +58,9 @@ export async function createOrUpdateEventLogger(
     const serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
 
     if (!eventLogger) {
-        eventLogger = new EventLogger(serverEndpoint, extensionDetails, config)
+        eventLogger = new EventLogger(serverEndpoint, extensionDetails, config, () =>
+            authProvider.getAuthStatus()
+        )
         if (created) {
             logEvent('CodyInstalled', undefined, {
                 hasV2Event: true, // Created in src/services/telemetry-v2.ts
@@ -105,8 +109,13 @@ function logEvent(
             eventLogger === null || process.env.CODY_TESTING === 'true' ? ' (telemetry disabled)' : ''
         }`,
         eventName,
-        getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration())).ide,
-        JSON.stringify({ properties, opts })
+        {
+            verbose: {
+                details: getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration())).ide,
+                properties,
+                opts,
+            },
+        }
     )
     if (!eventLogger || !globalAnonymousUserID) {
         return

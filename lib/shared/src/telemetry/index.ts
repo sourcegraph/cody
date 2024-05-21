@@ -1,5 +1,7 @@
 /**
  * A service to log telemetry data.
+ *
+ * @deprecated Use V2 telemetry recorders instead.
  */
 export interface TelemetryService {
     /**

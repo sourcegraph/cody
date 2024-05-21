@@ -1,17 +1,26 @@
-import { beforeAll, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ignores, isCodyIgnoredFile, testFileUri, uriBasename } from '@sourcegraph/cody-shared'
+import {
+    type AutocompleteContextSnippet,
+    CODY_IGNORE_URI_PATH,
+    contextFiltersProvider,
+    ignores,
+    isCodyIgnoredFile,
+    testFileUri,
+    uriBasename,
+} from '@sourcegraph/cody-shared'
 
 import { getCurrentDocContext } from '../get-current-doc-context'
 import { documentAndPosition } from '../test-helpers'
-import type { ContextRetriever, ContextSnippet } from '../types'
+import type { ContextRetriever } from '../types'
 
+import { Utils } from 'vscode-uri'
 import { ContextMixer } from './context-mixer'
 import type { ContextStrategyFactory } from './context-strategy'
-import { Utils } from 'vscode-uri'
-import { CODY_IGNORE_URI_PATH } from '@sourcegraph/cody-shared/src/cody-ignore/ignore-helper'
 
-function createMockStrategy(resultSets: ContextSnippet[][]): ContextStrategyFactory {
+import type * as vscode from 'vscode'
+
+function createMockStrategy(resultSets: AutocompleteContextSnippet[][]): ContextStrategyFactory {
     const retrievers = []
     for (const [index, set] of resultSets.entries()) {
         retrievers.push({
@@ -39,7 +48,6 @@ const docContext = getCurrentDocContext({
     position,
     maxPrefixLength: 100,
     maxSuffixLength: 100,
-    dynamicMultilineCompletions: false,
 })
 
 const defaultOptions = {
@@ -50,6 +58,10 @@ const defaultOptions = {
 }
 
 describe('ContextMixer', () => {
+    beforeEach(() => {
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
+    })
+
     describe('with no retriever', () => {
         it('returns empty result if no retrievers', async () => {
             const mixer = new ContextMixer(createMockStrategy([]))
@@ -86,7 +98,6 @@ describe('ContextMixer', () => {
                 ])
             )
             const { context, logSummary } = await mixer.getContext(defaultOptions)
-
             expect(normalize(context)).toEqual([
                 {
                     fileName: 'foo.ts',
@@ -220,7 +231,7 @@ describe('ContextMixer', () => {
             })
         })
 
-        describe('retrived context is filtered by .cody/ignore', () => {
+        describe('retrieved context is filtered by .cody/ignore', () => {
             const workspaceRoot = testFileUri('')
             beforeAll(() => {
                 ignores.setActiveState(true)
@@ -282,9 +293,67 @@ describe('ContextMixer', () => {
                 }
             })
         })
+
+        describe('retrieved context is filtered by context filters', () => {
+            beforeAll(() => {
+                vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockImplementation(
+                    async (uri: vscode.Uri) => {
+                        if (uri.path.includes('foo.ts')) {
+                            return 'repo:foo'
+                        }
+                        return false as const
+                    }
+                )
+            })
+            it('mixes results are filtered', async () => {
+                const mixer = new ContextMixer(
+                    createMockStrategy([
+                        [
+                            {
+                                uri: testFileUri('foo.ts'),
+                                content: 'function foo1() {}',
+                                startLine: 0,
+                                endLine: 0,
+                            },
+                            {
+                                uri: testFileUri('foo/bar.ts'),
+                                content: 'function bar1() {}',
+                                startLine: 0,
+                                endLine: 0,
+                            },
+                        ],
+                        [
+                            {
+                                uri: testFileUri('test/foo.ts'),
+                                content: 'function foo3() {}',
+                                startLine: 10,
+                                endLine: 10,
+                            },
+                            {
+                                uri: testFileUri('foo.ts'),
+                                content: 'function foo1() {}\nfunction foo2() {}',
+                                startLine: 0,
+                                endLine: 1,
+                            },
+                            {
+                                uri: testFileUri('example/bar.ts'),
+                                content: 'function bar1() {}\nfunction bar2() {}',
+                                startLine: 0,
+                                endLine: 1,
+                            },
+                        ],
+                    ])
+                )
+                const { context } = await mixer.getContext(defaultOptions)
+                const contextFiles = normalize(context)
+                expect(contextFiles.map(c => c.fileName)).toEqual(['bar.ts', 'bar.ts'])
+            })
+        })
     })
 })
 
-function normalize(context: ContextSnippet[]): (Omit<ContextSnippet, 'uri'> & { fileName: string })[] {
+function normalize(
+    context: AutocompleteContextSnippet[]
+): (Omit<AutocompleteContextSnippet, 'uri'> & { fileName: string })[] {
     return context.map(({ uri, ...rest }) => ({ ...rest, fileName: uriBasename(uri) }))
 }

@@ -1,58 +1,94 @@
-import type { CodyCommand } from '@sourcegraph/cody-shared'
-import { window, commands } from 'vscode'
-import { CustomCommandConfigMenuItems, CommandMenuOption } from './items'
+import { type CodyCommand, PromptString } from '@sourcegraph/cody-shared'
+import * as vscode from 'vscode'
+import { commands, window } from 'vscode'
+import { CommandMenuOption, CustomCommandConfigMenuItems } from './items/menu'
 
-import { type CustomCommandsBuilder, CustomCommandsBuilderMenu } from './command-builder'
-import type { CommandMenuItem } from './types'
-import { CommandMenuTitleItem, CommandMenuSeperator, type CommandMenuButton } from './items'
-import { openCustomCommandDocsLink } from '../services/custom-commands'
-import { executeChat } from '../execute/ask'
-import { executeEdit } from '../../edit/execute'
+import { CustomCommandType } from '@sourcegraph/cody-shared'
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { CodyCommandMenuItems } from '..'
+import { executeEdit } from '../../edit/execute'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
-import { telemetryRecorder } from '../../services/telemetry-v2'
+import { executeChat } from '../execute/ask'
+import { openCustomCommandDocsLink } from '../services/custom-commands'
+import type { CodyCommandArgs } from '../types'
+import { type CustomCommandsBuilder, CustomCommandsBuilderMenu } from './command-builder'
+import { type CommandMenuButton, CommandMenuSeperator, CommandMenuTitleItem } from './items/menu'
+import type { CommandMenuItem } from './types'
 
 export async function showCommandMenu(
     type: 'default' | 'custom' | 'config',
-    customCommands: CodyCommand[]
+    customCommands: CodyCommand[],
+    args?: CodyCommandArgs
 ): Promise<void> {
     const items: CommandMenuItem[] = []
     const configOption = CommandMenuOption.config
     const addOption = CommandMenuOption.add
 
-    telemetryService.log(`CodyVSCodeExtension:menu:command:${type}:clicked`)
-    telemetryRecorder.recordEvent(`cody.menu:command:${type}`, 'clicked')
+    // Log Command Menu opened event
+    const source = args?.source
+    telemetryService.log(
+        `CodyVSCodeExtension:menu:command:${type}:clicked`,
+        { source },
+        { hasV2Event: true }
+    )
+    telemetryRecorder.recordEvent(`cody.menu.command.${type}`, 'clicked', {
+        privateMetadata: { source },
+    })
 
-    // Add items to menu
+    // Add items to menus accordingly:
+    // 1. default: contains default commands and custom commands
+    // 2. custom (custom commands): contain custom commands and add custom command option
+    // 3. config (settings): setting options for custom commands
     if (type === 'config') {
         items.push(...CustomCommandConfigMenuItems)
     } else {
-        if (type === 'default') {
+        // Add Default Commands
+        if (type !== 'custom') {
             items.push(CommandMenuSeperator.commands)
-            for (const _command of CodyCommandMenuItems) {
-                const key = _command.key
-                const label = `$(${_command.icon}) ${_command.description}`
-                const command = _command.command.command
+            for (const item of CodyCommandMenuItems) {
+                // Skip the 'Custom Commands' option
+                if (item.key === 'custom') {
+                    continue
+                }
+
+                if (
+                    item.requires?.setting &&
+                    !vscode.workspace.getConfiguration().get(item.requires?.setting)
+                ) {
+                    // Skip items that are missing the correct setting
+                    continue
+                }
+
+                const key = item.key
+                const label = `$(${item.icon}) ${item.description}`
+                const command = item.command.command
                 // Show keybind as description if present
-                const description = _command.keybinding ? _command.keybinding : ''
+                const description = item.keybinding ? item.keybinding : ''
+                const type = 'default'
                 items.push({ label, command, description, type, key })
             }
         }
 
-        // The Create New Command option should show up in custom command menu only
-        if (type === 'custom') {
-            // Add custom commands
+        // Add Custom Commands
+        if (customCommands?.length) {
             items.push(CommandMenuSeperator.custom)
             for (const customCommand of customCommands) {
                 const label = `$(tools) ${customCommand.key}`
                 const description = customCommand.description ?? customCommand.prompt
                 const command = customCommand.key
                 const key = customCommand.key
-                items.push({ label, description, command, key })
+                const type = customCommand.type ?? CustomCommandType.User
+                items.push({ label, description, command, type, key })
             }
-            // Extra options
-            items.push(CommandMenuSeperator.settings, configOption, addOption)
         }
+
+        // Extra options - Settings
+        items.push(CommandMenuSeperator.settings)
+        if (type === 'custom') {
+            items.push(addOption) // Create New Custom Command option
+        }
+        items.push(configOption) // Configure Custom Command option
     }
 
     const options = CommandMenuTitleItem[type]
@@ -100,6 +136,7 @@ export async function showCommandMenu(
                     quickPick.items = [
                         CommandMenuOption.chat,
                         CommandMenuOption.edit,
+                        CommandMenuOption.search,
                         ...items.filter(i => i.key !== 'ask' && i.key !== 'edit'),
                     ]
                 } else {
@@ -110,7 +147,7 @@ export async function showCommandMenu(
 
         quickPick.onDidAccept(async () => {
             const selection = quickPick.activeItems[0] as CommandMenuItem
-            const value = normalize(quickPick.value)
+            const value = PromptString.unsafe_fromUserQuery(normalize(quickPick.value))
             const source = 'menu'
 
             // On item button click
@@ -131,7 +168,7 @@ export async function showCommandMenu(
                 // Check if it's an ask command
                 if (selection.key === 'ask') {
                     // show input box if no value
-                    if (!value) {
+                    if (value.length === 0) {
                         void commands.executeCommand('cody.chat.panel.new')
                     } else {
                         void executeChat({
@@ -146,7 +183,10 @@ export async function showCommandMenu(
 
                 // Check if it's an edit command
                 if (selection.key === 'edit') {
-                    void executeEdit({ configuration: { instruction: value }, source })
+                    void executeEdit({
+                        configuration: { instruction: value },
+                        source,
+                    })
                     quickPick.hide()
                     return
                 }

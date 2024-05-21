@@ -1,17 +1,19 @@
-import * as child_process from 'child_process'
-import * as fs from 'fs'
-import * as fspromises from 'fs/promises'
-import path from 'path'
-import * as util from 'util'
+import * as child_process from 'node:child_process'
+import * as fs from 'node:fs'
+import * as fspromises from 'node:fs/promises'
+import path from 'node:path'
+import * as util from 'node:util'
 
 import envPaths from 'env-paths'
 import * as rimraf from 'rimraf'
-import { afterAll, assert, beforeAll, describe, expect, it } from 'vitest'
+import { assert, afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 
 import { BfgRetriever } from '../../../vscode/src/completions/context/retrievers/bfg/bfg-retriever'
 import { getCurrentDocContext } from '../../../vscode/src/completions/get-current-doc-context'
 import { initTreeSitterParser } from '../../../vscode/src/completions/test-helpers'
+import { defaultVSCodeExtensionClient } from '../../../vscode/src/extension-client'
+import { activate } from '../../../vscode/src/extension.node'
 import { initializeVscodeExtension, newEmbeddedAgentClient } from '../agent'
 import * as vscode_shim from '../vscode-shim'
 
@@ -34,7 +36,11 @@ describe('BfgRetriever', async () => {
     beforeAll(async () => {
         process.env.CODY_TESTING = 'true'
         await initTreeSitterParser()
-        await initializeVscodeExtension(vscode.Uri.file(process.cwd()))
+        await initializeVscodeExtension(
+            vscode.Uri.file(process.cwd()),
+            activate,
+            defaultVSCodeExtensionClient()
+        )
 
         if (shouldCreateGitDir) {
             await exec('git init', { cwd: dir })
@@ -53,20 +59,26 @@ describe('BfgRetriever', async () => {
     })
 
     const rootUri = vscode.Uri.from({ scheme: 'file', path: gitdir })
-    vscode_shim.addGitRepository(rootUri, 'asdf')
-    const agent = await newEmbeddedAgentClient({
-        name: 'BfgContextFetcher',
-        version: '0.1.0',
-        workspaceRootUri: rootUri.toString(),
-        extensionConfiguration: {
-            accessToken: '',
-            serverEndpoint: '',
-            customHeaders: {},
-            customConfiguration: {
-                'cody.experimental.cody-engine.await-indexing': true,
+    // TODO: git extension APIs used in the BFG retriever are not supported by the agent.
+    // To fix this test the following functionality should be implemented:
+    // - https://github.com/sourcegraph/cody/issues/4137
+    // - https://github.com/sourcegraph/cody/issues/4138
+    const agent = await newEmbeddedAgentClient(
+        {
+            name: 'BfgContextFetcher',
+            version: '0.1.0',
+            workspaceRootUri: rootUri.toString(),
+            extensionConfiguration: {
+                accessToken: '',
+                serverEndpoint: '',
+                customHeaders: {},
+                customConfiguration: {
+                    'cody.experimental.cody-engine.await-indexing': true,
+                },
             },
         },
-    })
+        activate
+    )
     const client = agent.clientForThisInstance()
 
     const filePath = path.join(dir, testFile)
@@ -105,7 +117,6 @@ describe('BfgRetriever', async () => {
             position,
             maxPrefixLength: 10_000,
             maxSuffixLength: 1_000,
-            dynamicMultilineCompletions: false,
         })
         const maxChars = 1_000
         const maxMs = 100

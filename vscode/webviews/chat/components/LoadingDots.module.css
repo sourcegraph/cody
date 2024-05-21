@@ -1,0 +1,42 @@
+.dots-holder {
+    display: flex;
+    gap: 0.2rem;
+    margin: 0.5rem 0;
+    margin-left: 0.25rem;
+}
+
+.dot {
+    animation: 1s flash 0.5s infinite;
+    width: 0.25rem !important;
+    height: 0.25rem !important;
+    border-radius: 100%;
+    background-color: #fff;
+    opacity: 0.25;
+}
+
+body[data-vscode-theme-kind='vscode-light'] .dot,
+body[data-vscode-theme-kind='vscode-high-contrast-light'] .dot {
+    background-color: black;
+}
+
+.dot:nth-child(2) {
+    animation-delay: 0.6s;
+}
+
+.dot:nth-child(3) {
+    animation-delay: 0.7s;
+}
+
+@keyframes flash {
+    from {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0.25;
+    }
+}

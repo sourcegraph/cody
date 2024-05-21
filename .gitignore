@@ -1,6 +1,7 @@
 node_modules/
 .stylelintcache
 dist/
+out/
 *.tsbuildinfo
 .DS_Store
 .env
@@ -9,3 +10,4 @@ dist/
 playwright/**/*.webm
 **/*.iml
 **/*.vsix
+index.scip

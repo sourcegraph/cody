@@ -1,4 +1,4 @@
-import * as assert from 'assert'
+import * as assert from 'node:assert'
 
 import * as vscode from 'vscode'
 
@@ -19,6 +19,12 @@ async function getChatViewProvider(): Promise<SimpleChatPanelProvider> {
     return chatViewProvider
 }
 
+// Note: The integration runner can not require from lib-shared so we have to expose
+// this instead.
+function getPs() {
+    return getExtensionAPI().exports.testing?.ps!
+}
+
 suite('Chat', function () {
     this.beforeEach(() => beforeIntegrationTest())
     this.afterEach(() => afterIntegrationTest())
@@ -26,11 +32,18 @@ suite('Chat', function () {
     test('sends and receives a message', async () => {
         await vscode.commands.executeCommand('cody.chat.panel.new')
         const chatView = await getChatViewProvider()
-        await chatView.handleUserMessageSubmission('test', 'hello from the human', 'user', [], false)
+        await chatView.handleUserMessageSubmission(
+            'test',
+            getPs()`hello from the human`,
+            'user',
+            [],
+            undefined,
+            false
+        )
 
-        assert.match((await getTranscript(0)).displayText || '', /^hello from the human$/)
+        assert.match((await getTranscript(0)).text?.toString() || '', /^hello from the human$/)
         await waitUntil(async () =>
-            /^hello from the assistant$/.test((await getTranscript(1)).displayText || '')
+            /^hello from the assistant$/.test((await getTranscript(1)).text?.toString() || '')
         )
     })
 
@@ -39,12 +52,19 @@ suite('Chat', function () {
         await getTextEditorWithSelection()
         await vscode.commands.executeCommand('cody.chat.panel.new')
         const chatView = await getChatViewProvider()
-        await chatView.handleUserMessageSubmission('test', 'hello from the human', 'user', [], false)
+        await chatView.handleUserMessageSubmission(
+            'test',
+            getPs()`hello from the human`,
+            'user',
+            [],
+            undefined,
+            false
+        )
 
         // Display text should include file link at the end of message
-        assert.match((await getTranscript(0)).displayText || '', /^hello from the human$/)
+        assert.match((await getTranscript(0)).text?.toString() || '', /^hello from the human$/)
         await waitUntil(async () =>
-            /^hello from the assistant$/.test((await getTranscript(1)).displayText || '')
+            /^hello from the assistant$/.test((await getTranscript(1)).text?.toString() || '')
         )
     })
 })

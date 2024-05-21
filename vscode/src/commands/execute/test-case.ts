@@ -1,13 +1,12 @@
+import { type ContextItem, logError, ps } from '@sourcegraph/cody-shared'
+import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { Range } from 'vscode'
-import { logError, type ContextFile } from '@sourcegraph/cody-shared'
-import { getEditor } from '../../editor/active-editor'
+import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/context-filter'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
-import { DefaultEditCommands } from '@sourcegraph/cody-shared/src/commands/types'
+import { getEditor } from '../../editor/active-editor'
 import type { EditCommandResult } from '../../main'
-import type { CodyCommandArgs } from '../types'
 import { getContextFilesForAddingUnitTestCases } from '../context/unit-test-case'
-
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
+import type { CodyCommandArgs } from '../types'
 
 /**
  * Adds generated test cases to the selected test suite inline.
@@ -19,8 +18,7 @@ export async function executeTestCaseEditCommand(
 ): Promise<EditCommandResult | undefined> {
     return wrapInActiveSpan('command.test-case', async span => {
         span.setAttribute('sampled', true)
-        const instruction =
-            'Review the shared code context to identify the testing framework and libraries in use. Then, create multiple new unit tests for the test suite in my selected code following the same patterns, testing conventions, and testing library as shown in the shared context. Pay attention to the shared context to ensure that your response code does not contain cases that have already been covered. Focus on generating new unit tests for uncovered cases. Respond only with the fully completed code with the new unit tests added at the end, without any comments, fragments, or TODO. The new tests should validate expected functionality and cover edge cases for the test suites. The goal is to provide me with code that I can add to the end of the existing test file. Do not repeat tests from the shared context. Enclose only the new tests without describe/suite, import statements, or packages in your response.'
+        const instruction = ps`Review the shared code context to identify the testing framework and libraries in use. Then, create multiple new unit tests for the test suite in my selected code following the same patterns, testing conventions, and testing library as shown in the shared context. Pay attention to the shared context to ensure that your response code does not contain cases that have already been covered. Focus on generating new unit tests for uncovered cases. Respond only with the fully completed code with the new unit tests added at the end, without any comments, fragments, or TODO. The new tests should validate expected functionality and cover edge cases for the test suites. The goal is to provide me with code that I can add to the end of the existing test file. Do not repeat tests from the shared context. Enclose only the new tests without describe/suite, import statements, or packages in your response.`
 
         const editor = getEditor()?.active
         const document = editor?.document
@@ -29,7 +27,11 @@ export async function executeTestCaseEditCommand(
             return
         }
 
-        const contextFiles: ContextFile[] = []
+        if (await isUriIgnoredByContextFilterWithNotification(document.uri, 'test')) {
+            return
+        }
+
+        const contextFiles: ContextItem[] = []
 
         try {
             const files = await getContextFilesForAddingUnitTestCases(document.uri)
@@ -54,7 +56,7 @@ export async function executeTestCaseEditCommand(
                     userContextFiles: contextFiles,
                     destinationFile: document.uri,
                 },
-                source: DefaultEditCommands.Test,
+                source: args?.source,
             } satisfies ExecuteEditArguments),
         }
     })

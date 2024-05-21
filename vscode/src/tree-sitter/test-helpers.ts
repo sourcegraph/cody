@@ -1,10 +1,10 @@
-import path from 'path'
+import path from 'node:path'
 
-import type { default as Parser, QueryCapture, QueryMatch } from 'web-tree-sitter'
+import type { QueryCapture, QueryMatch } from 'web-tree-sitter'
 
 import { SupportedLanguage } from './grammars'
-import { createParser } from './parser'
-import { getDocumentQuerySDK, type DocumentQuerySDK } from './query-sdk'
+import { type WrappedParser, createParser } from './parser'
+import { type DocumentQuerySDK, getDocumentQuerySDK } from './query-sdk'
 
 const CUSTOM_WASM_LANGUAGE_DIR = path.join(__dirname, '../../resources/wasm')
 
@@ -12,8 +12,8 @@ const CUSTOM_WASM_LANGUAGE_DIR = path.join(__dirname, '../../resources/wasm')
  * Should be used in tests only.
  */
 export function initTreeSitterParser(
-    language = SupportedLanguage.TypeScript
-): Promise<Parser | undefined> {
+    language = SupportedLanguage.typescript
+): Promise<WrappedParser | undefined> {
     return createParser({
         language,
         grammarDirectory: CUSTOM_WASM_LANGUAGE_DIR,
@@ -24,7 +24,7 @@ export function initTreeSitterParser(
  * Should be used in tests only.
  */
 export async function initTreeSitterSDK(
-    language = SupportedLanguage.TypeScript
+    language = SupportedLanguage.typescript
 ): Promise<DocumentQuerySDK> {
     await initTreeSitterParser(language)
     const sdk = getDocumentQuerySDK(language)
@@ -53,7 +53,7 @@ interface FormattedCapture {
     text: string
 }
 
-function formatCaptures(captures: QueryCapture[]): FormattedCapture[] {
+export function formatCaptures(captures: QueryCapture[]): FormattedCapture[] {
     return captures.map(capture => ({
         name: capture.name,
         text: capture.node.text,

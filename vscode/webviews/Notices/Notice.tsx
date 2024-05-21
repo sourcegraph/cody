@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 
 import { VSCodeButton, VSCodeLink } from '@vscode/webview-ui-toolkit/react'
-import classNames from 'classnames'
+import { clsx } from 'clsx'
 
 import styles from './Notice.module.css'
 
@@ -49,7 +49,7 @@ export const Notice: React.FunctionComponent<React.PropsWithChildren<NoticeProps
     }
 
     return (
-        <div className={classNames(styles.notice, className)}>
+        <div className={clsx(styles.notice, className)}>
             <div className={styles.noticeIcon}>{icon}</div>
             <div className={styles.noticeText}>
                 <h1>{title}</h1>

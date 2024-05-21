@@ -1,14 +1,17 @@
 import * as vscode from 'vscode'
-import type { GetItemsResult } from '../quick-pick'
-import { symbolIsFunctionLike } from './utils'
-import type { EditRangeItem } from './types'
-import { getEditSmartSelection } from '../../utils/edit-selection'
-import { QUICK_PICK_ITEM_CHECKED_PREFIX, QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX } from '../constants'
-import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './constants'
-import type { EditInputInitialValues } from '../get-input'
+import {
+    QUICK_PICK_ITEM_CHECKED_PREFIX,
+    QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX,
+} from '../../../chat/context/constants'
 import { isGenerateIntent } from '../../utils/edit-intent'
+import { getEditSmartSelection } from '../../utils/edit-selection'
+import type { EditInputInitialValues } from '../get-input'
+import type { GetItemsResult } from '../quick-pick'
+import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './constants'
+import { RANGE_SYMBOLS_ITEM } from './range-symbols'
+import type { EditRangeItem } from './types'
 
-export const getDefaultRangeItems = (
+const getDefaultRangeItems = (
     document: vscode.TextDocument,
     initialValues: RangeInputInitialValues
 ): EditRangeItem[] => {
@@ -74,13 +77,8 @@ export const getRangeInputItems = async (
         ...item,
         label: `${QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX} ${item.label}`,
     }))
-    const symbols = await symbolsPromise
-    const symbolItems: EditRangeItem[] = symbols.filter(symbolIsFunctionLike).map(symbol => ({
-        label: `${QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX} $(symbol-method) ${symbol.name}`,
-        range: symbol.range,
-    }))
 
-    const activeItem = [...defaultItems, ...symbolItems].find(
+    const activeItem = defaultItems.find(
         item => item.range instanceof vscode.Range && item.range.isEqual(activeRange)
     )
 
@@ -92,16 +90,12 @@ export const getRangeInputItems = async (
         )
     }
 
-    if (!symbolItems || symbolItems.length === 0) {
-        return { items: defaultItems, activeItem }
-    }
-
     return {
         items: [
             { label: 'ranges', kind: vscode.QuickPickItemKind.Separator },
             ...defaultItems,
             { label: 'symbols', kind: vscode.QuickPickItemKind.Separator },
-            ...symbolItems,
+            RANGE_SYMBOLS_ITEM,
         ],
         activeItem,
     }

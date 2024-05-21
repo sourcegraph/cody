@@ -2,16 +2,15 @@ import * as child_process from 'node:child_process'
 
 import * as vscode from 'vscode'
 
+import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 import { MessageHandler } from '../../jsonrpc/jsonrpc'
 import { logDebug } from '../../log'
-
 import { downloadBfg } from './download-bfg'
 
 export async function spawnBfg(
     context: vscode.ExtensionContext,
     reject: (reason?: any) => void
 ): Promise<MessageHandler> {
-    const bfg = new MessageHandler()
     const codyrpc = await downloadBfg(context)
     if (!codyrpc) {
         throw new Error(
@@ -29,7 +28,7 @@ export async function spawnBfg(
         },
     })
     child.stderr.on('data', chunk => {
-        logDebug('CodyEngine', 'stderr', chunk.toString())
+        logDebug('CodyEngine', 'spawnBfg:stderr', { verbose: chunk.toString() })
     })
     child.on('disconnect', () => reject())
     child.on('close', () => reject())
@@ -39,7 +38,12 @@ export async function spawnBfg(
         reject(code)
     })
     child.stderr.pipe(process.stderr)
-    child.stdout.pipe(bfg.messageDecoder)
-    bfg.messageEncoder.pipe(child.stdin)
+
+    const conn = createMessageConnection(
+        new StreamMessageReader(child.stdout),
+        new StreamMessageWriter(child.stdin)
+    )
+    const bfg = new MessageHandler(conn)
+    conn.listen()
     return bfg
 }

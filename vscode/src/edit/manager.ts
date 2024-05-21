@@ -1,49 +1,80 @@
 import * as vscode from 'vscode'
 
-import { ConfigFeaturesSingleton, type ChatClient, type ModelProvider } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    type ChatClient,
+    ConfigFeaturesSingleton,
+    type ModelProvider,
+    telemetryRecorder,
+} from '@sourcegraph/cody-shared'
 
-import type { ContextProvider } from '../chat/ContextProvider'
 import type { GhostHintDecorator } from '../commands/GhostHintDecorator'
 import { getEditor } from '../editor/active-editor'
 import type { VSCodeEditor } from '../editor/vscode-editor'
 import { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 
+import { DEFAULT_EVENT_SOURCE } from '@sourcegraph/cody-shared'
+import { isUriIgnoredByContextFilterWithNotification } from '../cody-ignore/context-filter'
+import { showCodyIgnoreNotification } from '../cody-ignore/notification'
+import type { ExtensionClient } from '../extension-client'
+import { editModel } from '../models'
+import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
+import type { AuthProvider } from '../services/AuthProvider'
+import { telemetryService } from '../services/telemetry'
+import { splitSafeMetadata } from '../services/telemetry-v2'
+import { DEFAULT_EDIT_MODE } from './constants'
 import type { ExecuteEditArguments } from './execute'
 import { EditProvider } from './provider'
-import { getEditLineSelection, getEditSmartSelection } from './utils/edit-selection'
-import { DEFAULT_EDIT_MODE } from './constants'
-import type { AuthProvider } from '../services/AuthProvider'
-import { editModel } from '../models'
-import type { AuthStatus } from '../chat/protocol'
-import { getEditModelsForUser } from './utils/edit-models'
 import { getEditIntent } from './utils/edit-intent'
-import { telemetryService } from '../services/telemetry'
-import { telemetryRecorder } from '../services/telemetry-v2'
+import { getEditModelsForUser } from './utils/edit-models'
+import { getEditLineSelection, getEditSmartSelection } from './utils/edit-selection'
 
 export interface EditManagerOptions {
     editor: VSCodeEditor
     chat: ChatClient
-    contextProvider: ContextProvider
     ghostHintDecorator: GhostHintDecorator
     authProvider: AuthProvider
+    extensionClient: ExtensionClient
 }
 
+// EditManager handles translating specific edit intents (document, edit) into
+// generic FixupTasks, and pairs a FixupTask with an EditProvider to generate
+// a completion.
 export class EditManager implements vscode.Disposable {
-    private controller: FixupController
+    private readonly controller: FixupController
     private disposables: vscode.Disposable[] = []
-    private editProviders = new Map<FixupTask, EditProvider>()
+    private editProviders = new WeakMap<FixupTask, EditProvider>()
     private models: ModelProvider[] = []
 
     constructor(public options: EditManagerOptions) {
-        this.models = getEditModelsForUser(options.authProvider.getAuthStatus())
-        this.controller = new FixupController(options.authProvider)
-        this.disposables.push(
-            this.controller,
-            vscode.commands.registerCommand('cody.command.edit-code', (args: ExecuteEditArguments) =>
-                this.executeEdit(args)
-            )
+        this.controller = new FixupController(options.authProvider, options.extensionClient)
+        /**
+         * Entry point to triggering a new Edit.
+         * Given a set or arguments, this will create a new LLM interaction
+         * and start a `FixupTask`.
+         */
+        const editCommand = vscode.commands.registerCommand(
+            'cody.command.edit-code',
+            (args: ExecuteEditArguments) => this.executeEdit(args)
         )
+        /**
+         * Entry point to start an existing Edit.
+         * This generally should only be required if a `FixupTask` needs
+         * to be manually re-triggered in some way. For example, if we need
+         * to restart a task due to a conflict.
+         *
+         * Note: This differs to a "retry", as it preserves the original `FixupTask`.
+         */
+        const startCommand = vscode.commands.registerCommand(
+            'cody.command.start-edit',
+            (task: FixupTask) => {
+                const provider = this.getProviderForTask(task)
+                provider.abortEdit()
+                provider.startEdit()
+            }
+        )
+        this.disposables.push(this.controller, editCommand, startCommand)
     }
 
     public syncAuthStatus(authStatus: AuthStatus): void {
@@ -58,7 +89,8 @@ export class EditManager implements vscode.Disposable {
              * editor actions that cannot provide executeEdit `args`.
              * E.g. triggering this command via the command palette, right-click menus
              **/
-            source = 'editor',
+            source = DEFAULT_EVENT_SOURCE,
+            telemetryMetadata,
         } = args
         const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
         if (!configFeatures.commands) {
@@ -70,13 +102,17 @@ export class EditManager implements vscode.Disposable {
 
         const editor = getEditor()
         if (editor.ignored) {
-            void vscode.window.showInformationMessage('Cannot edit Cody ignored file.')
+            showCodyIgnoreNotification('edit', 'cody-ignore')
             return
         }
 
         const document = configuration.document || editor.active?.document
         if (!document) {
             void vscode.window.showErrorMessage('Please open a file before running a command.')
+            return
+        }
+
+        if (await isUriIgnoredByContextFilterWithNotification(document.uri, 'edit')) {
             return
         }
 
@@ -103,7 +139,7 @@ export class EditManager implements vscode.Disposable {
         }
 
         let task: FixupTask | null
-        if (configuration.instruction?.trim()) {
+        if (configuration.instruction && configuration.instruction.trim().length > 0) {
             task = await this.controller.createTask(
                 document,
                 configuration.instruction,
@@ -113,19 +149,21 @@ export class EditManager implements vscode.Disposable {
                 mode,
                 model,
                 source,
-                configuration.contextMessages,
-                configuration.destinationFile
+                configuration.destinationFile,
+                configuration.insertionPoint,
+                telemetryMetadata
             )
         } else {
             task = await this.controller.promptUserForTask(
+                configuration.preInstruction,
                 document,
                 range,
                 expandedRange,
                 mode,
                 model,
                 intent,
-                configuration.contextMessages || [],
-                source
+                source,
+                telemetryMetadata
             )
         }
 
@@ -133,17 +171,45 @@ export class EditManager implements vscode.Disposable {
             return
         }
 
+        /**
+         * Checks if there is already an active task for the given fixup file
+         * that has the same instruction and selection range as the current task.
+         */
+        const activeTask = this.controller.tasksForFile(task.fixupFile).find(activeTask => {
+            return (
+                ACTIVE_TASK_STATES.includes(activeTask.state) &&
+                activeTask.instruction === task!.instruction &&
+                activeTask.selectionRange.isEqual(task!.selectionRange)
+            )
+        })
+
+        if (activeTask) {
+            this.controller.cancel(task)
+            return
+        }
+
         // Log the default edit command name for doc intent or test mode
         const isDocCommand = configuration.intent === 'doc' ? 'doc' : undefined
         const isUnitTestCommand = configuration.intent === 'test' ? 'test' : undefined
-        const eventName = isDocCommand ?? isUnitTestCommand ?? 'edit'
-        telemetryService.log(
-            `CodyVSCodeExtension:command:${eventName}:executed`,
-            { source },
-            { hasV2Event: true }
-        )
+        const isFixCommand = configuration.intent === 'fix' ? 'fix' : undefined
+        const eventName = isDocCommand ?? isUnitTestCommand ?? isFixCommand ?? 'edit'
+
+        const legacyMetadata = {
+            intent: task.intent,
+            mode: task.mode,
+            source: task.source,
+            ...telemetryMetadata,
+        }
+        telemetryService.log(`CodyVSCodeExtension:command:${eventName}:executed`, legacyMetadata, {
+            hasV2Event: true,
+        })
+        const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         telemetryRecorder.recordEvent(`cody.command.${eventName}`, 'executed', {
-            privateMetadata: { source },
+            metadata,
+            privateMetadata: {
+                ...privateMetadata,
+                model: task.model,
+            },
         })
 
         const provider = this.getProviderForTask(task)
@@ -151,7 +217,7 @@ export class EditManager implements vscode.Disposable {
         return task
     }
 
-    public getProviderForTask(task: FixupTask): EditProvider {
+    private getProviderForTask(task: FixupTask): EditProvider {
         let provider = this.editProviders.get(task)
 
         if (!provider) {
@@ -160,14 +226,6 @@ export class EditManager implements vscode.Disposable {
         }
 
         return provider
-    }
-
-    public removeProviderForTask(task: FixupTask): void {
-        const provider = this.editProviders.get(task)
-
-        if (provider) {
-            this.editProviders.delete(task)
-        }
     }
 
     public dispose(): void {

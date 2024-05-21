@@ -1,13 +1,20 @@
 import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
-import { getActiveTraceAndSpanId, isAbortError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import {
+    type DocumentContext,
+    getActiveTraceAndSpanId,
+    isAbortError,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
 
 import { logError } from '../log'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
+import { isValidTestFile } from '../commands/utils/test-commands'
+import { completionProviderConfig } from './completion-provider-config'
 import type { ContextMixer } from './context/context-mixer'
-import { insertIntoDocContext, type DocumentContext } from './get-current-doc-context'
+import { insertIntoDocContext } from './get-current-doc-context'
 import * as CompletionLogger from './logger'
 import type { CompletionLogID } from './logger'
 import type {
@@ -18,11 +25,10 @@ import type {
 } from './providers/provider'
 import type { RequestManager, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
+import type { SmartThrottleService } from './smart-throttle'
 import type { AutocompleteItem } from './suggested-autocomplete-items-cache'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import type { ProvideInlineCompletionsItemTraceData } from './tracer'
-import { isValidTestFile } from '../commands/utils/test-commands'
-import { completionProviderConfig } from './completion-provider-config'
 import { sleep } from './utils'
 
 export interface InlineCompletionsParams {
@@ -41,6 +47,7 @@ export interface InlineCompletionsParams {
     // Shared
     requestManager: RequestManager
     contextMixer: ContextMixer
+    smartThrottleService: SmartThrottleService | null
 
     // UI state
     isDotComUser: boolean
@@ -137,6 +144,10 @@ export enum TriggerKind {
     SuggestWidget = 'SuggestWidget',
 }
 
+export function allTriggerKinds(): TriggerKind[] {
+    return [TriggerKind.Automatic, TriggerKind.Hover, TriggerKind.Manual, TriggerKind.SuggestWidget]
+}
+
 export async function getInlineCompletions(
     params: InlineCompletionsParams
 ): Promise<InlineCompletionsResult | null> {
@@ -148,17 +159,19 @@ export async function getInlineCompletions(
         const error = unknownError instanceof Error ? unknownError : new Error(unknownError as any)
 
         params.tracer?.({ error: error.toString() })
+
+        if (isAbortError(error)) {
+            return null
+        }
+
         if (process.env.NODE_ENV === 'development') {
             // Log errors to the console in the development mode to see the stack traces with source maps
             // in Chrome dev tools.
             console.error(error)
         }
+
         logError('getInlineCompletions:error', error.message, error.stack, { verbose: { error } })
         CompletionLogger.logError(error)
-
-        if (isAbortError(error)) {
-            return null
-        }
 
         throw error
     } finally {
@@ -179,6 +192,7 @@ async function doGetInlineCompletions(
         providerConfig,
         contextMixer,
         requestManager,
+        smartThrottleService,
         lastCandidate,
         debounceInterval,
         setIsLoading,
@@ -232,7 +246,6 @@ async function doGetInlineCompletions(
             docContext: lastAcceptedCompletionItem.requestParams.docContext,
             insertText: lastAcceptedCompletionItem.analyticsItem.insertText,
             languageId: lastAcceptedCompletionItem.requestParams.document.languageId,
-            dynamicMultilineCompletions: false,
         })
         if (
             docContext.prefix === docContextOfLastAcceptedAndInsertedCompletionItem.prefix &&
@@ -257,6 +270,7 @@ async function doGetInlineCompletions(
                   handleDidPartiallyAcceptCompletionItem,
               })
             : null
+
     if (resultToReuse) {
         return resultToReuse
     }
@@ -278,7 +292,7 @@ async function doGetInlineCompletions(
         traceId: getActiveTraceAndSpanId()?.traceId,
     })
 
-    const requestParams: RequestParams = {
+    let requestParams: RequestParams = {
         document,
         docContext,
         position,
@@ -302,11 +316,22 @@ async function doGetInlineCompletions(
         }
     }
 
-    const debounceTime =
-        triggerKind !== TriggerKind.Automatic
-            ? 0
-            : ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) +
-              (artificialDelay ?? 0)
+    if (smartThrottleService) {
+        const throttledRequest = await smartThrottleService.throttle(requestParams, triggerKind)
+
+        if (throttledRequest === null) {
+            return null
+        }
+
+        requestParams = throttledRequest
+    }
+
+    const debounceTime = smartThrottleService
+        ? 0
+        : triggerKind !== TriggerKind.Automatic
+          ? 0
+          : ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) +
+            (artificialDelay ?? 0)
 
     // We split the desired debounceTime into two chunks. One that is at most 25ms where every
     // further execution is halted...
@@ -332,6 +357,7 @@ async function doGetInlineCompletions(
                 docContext,
                 abortSignal,
                 maxChars: providerConfig.contextSizeHints.totalChars,
+                lastCandidate,
             })
         ),
         remainingInterval > 0
@@ -391,14 +417,13 @@ function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
     const { document, position, triggerKind, providerConfig, docContext } = params
 
     const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
+        triggerKind,
         docContext,
         document,
         position,
-        dynamicMultilineCompletions: completionProviderConfig.dynamicMultilineCompletions,
         hotStreak: completionProviderConfig.hotStreak,
-        fastPath: completionProviderConfig.fastPath,
-        // For the now the value is static and based on the average multiline completion latency.
-        firstCompletionTimeout: 1900,
+        // For now the value is static and based on the average multiline completion latency.
+        firstCompletionTimeout: 1500,
     }
 
     // Show more if manually triggered (but only showing 1 is faster, so we use it

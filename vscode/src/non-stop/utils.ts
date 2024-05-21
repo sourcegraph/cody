@@ -1,25 +1,58 @@
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
 export enum CodyTaskState {
-    idle = 1,
-    working = 2,
-    inserting = 3,
-    applying = 4,
-    formatting = 5,
-    applied = 6,
-    finished = 7,
-    error = 8,
-    pending = 9,
-}
-
-export function isTerminalCodyTaskState(state: CodyTaskState): boolean {
-    switch (state) {
-        case CodyTaskState.finished:
-        case CodyTaskState.error:
-            return true
-        default:
-            return false
-    }
+    /**
+     * The task has been created, but not yet started.
+     */
+    Idle = 'Idle',
+    /**
+     * The task has been started, but we have not yet received an actionable
+     * response from the LLM.
+     */
+    Working = 'Working',
+    /**
+     * We have received a response from the LLM, and we intend to apply the
+     * response to the document as we receive it.
+     * Similar to `applying` but we do not wait for the LLM to finish responding.
+     */
+    Inserting = 'Inserting',
+    /**
+     * We have received a complete response from the LLM, and we are in the process
+     * of applying the full response to the document.
+     */
+    Applying = 'Applying',
+    /**
+     * The response has been applied to the document, and we are attempting to format
+     * it using the users' preferred formatter.
+     */
+    Formatting = 'Formatting',
+    /**
+     * The response has been applied to the document, and we are satisfied enough to present it to the user.
+     * The user hasn't technically accepted it, and they can still act on the response.
+     * E.g. Undo the change, Retry the change, View the diff.
+     */
+    Applied = 'Applied',
+    /**
+     * Terminal state. The response has been "accepted" by the user. This is either by:
+     * - Clicking "Accept" via the CodeLens
+     * - Saving the document
+     * - Making an edit within the range of the response (implied acceptance)
+     */
+    Finished = 'Finished',
+    /**
+     * Terminal state. We received an error somewhere in the process.
+     * We present this error to the user, the response can be "discarded" by the user by:
+     * - Clicking "Discard" via the CodeLens
+     * - Saving the document
+     * - Making an edit within the range of the response (implied acceptance)
+     */
+    Error = 'Error',
+    /**
+     * Additional state currently only used for the `test` command.
+     * This state is used to signify that an Edit is no longer idle, but waiting for
+     * some additional information before it is started (e.g. a file name from the LLM)
+     */
+    Pending = 'Pending',
 }
 
 /**
@@ -32,4 +65,19 @@ export function getMinimumDistanceToRangeBoundary(
     const startDistance = Math.abs(position.line - range.start.line)
     const endDistance = Math.abs(position.line - range.end.line)
     return Math.min(startDistance, endDistance)
+}
+
+/**
+ * Given some `insertedText`, adjusts the provided `range` to account for the
+ * additional lines and characters that were inserted.
+ */
+export function expandRangeToInsertedText(range: vscode.Range, insertedText: string): vscode.Range {
+    const insertedLines = insertedText.split(/\r\n|\r|\n/m)
+    const lastLineLength = insertedLines.at(-1)?.length || 0
+    return new vscode.Range(
+        range.start,
+        insertedLines.length === 1
+            ? range.start.translate(0, lastLineLength)
+            : new vscode.Position(range.start.line + insertedLines.length - 1, lastLineLength)
+    )
 }

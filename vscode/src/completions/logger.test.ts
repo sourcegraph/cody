@@ -1,16 +1,16 @@
-import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest'
+import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { telemetryService } from '../services/telemetry'
-import { telemetryRecorder } from '../services/telemetry-v2'
 import { range } from '../testutils/textDocument'
 
 import type { ContextSummary } from './context/context-mixer'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
+import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
 import * as CompletionLogger from './logger'
 import type { RequestParams } from './request-manager'
 import { documentAndPosition } from './test-helpers'
-import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
 
 const defaultArgs = {
     multiline: false,
@@ -37,7 +37,6 @@ const defaultRequestParams: RequestParams = {
         position,
         maxPrefixLength: 100,
         maxSuffixLength: 100,
-        dynamicMultilineCompletions: false,
     }),
     selectedCompletionInfo: undefined,
 }
@@ -85,6 +84,7 @@ describe('logger', () => {
             otherCompletionProviders: [],
             providerIdentifier: 'bfl',
             providerModel: 'blazing-fast-llm',
+            medianUpstreamLatency: undefined,
             contextSummary: {
                 retrieverStats: {},
                 strategy: 'none',

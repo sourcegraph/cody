@@ -2,28 +2,32 @@ import { partition } from 'lodash'
 import { LRUCache } from 'lru-cache'
 import type * as vscode from 'vscode'
 
-import { FeatureFlag, isDefined, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import {
+    type AutocompleteContextSnippet,
+    type DocumentContext,
+    FeatureFlag,
+    isDefined,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
 
 import { addAutocompleteDebugEvent } from '../services/open-telemetry/debug-utils'
 
-import type { DocumentContext } from './get-current-doc-context'
+import { logDebug } from '../log'
+import { completionProviderConfig } from './completion-provider-config'
 import {
     InlineCompletionsResultSource,
     type LastInlineCompletionCandidate,
 } from './get-inline-completions'
-import { logCompletionBookkeepingEvent, type CompletionLogID } from './logger'
+import { type CompletionLogID, logCompletionBookkeepingEvent } from './logger'
+import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 import { STOP_REASON_HOT_STREAK } from './providers/hot-streak'
 import type { CompletionProviderTracer, Provider } from './providers/provider'
 import { reuseLastCandidate } from './reuse-last-candidate'
-import {
-    processInlineCompletions,
-    type InlineCompletionItemWithAnalytics,
-} from './text-processing/process-inline-completions'
-import type { ContextSnippet } from './types'
 import { lines, removeIndentation } from './text-processing'
-import { logDebug } from '../log'
-import { isLocalCompletionsProvider } from './providers/experimental-ollama'
-import { completionProviderConfig } from './completion-provider-config'
+import {
+    type InlineCompletionItemWithAnalytics,
+    processInlineCompletions,
+} from './text-processing/process-inline-completions'
 import { forkSignal } from './utils'
 
 export interface RequestParams {
@@ -51,7 +55,7 @@ export interface RequestManagerResult {
 interface RequestsManagerParams {
     requestParams: RequestParams
     provider: Provider
-    context: ContextSnippet[]
+    context: AutocompleteContextSnippet[]
     isCacheEnabled: boolean
     tracer?: CompletionProviderTracer
 }
@@ -96,11 +100,13 @@ export class RequestManager {
 
         addAutocompleteDebugEvent('RequestManager.request')
 
+        const shouldHonorCancellation = eagerCancellation || completionProviderConfig.smartThrottle
+
         // When request recycling is enabled, we do not pass the original abort signal forward as to
         // not interrupt requests that are no longer relevant. Instead, we let all previous requests
         // complete and try to see if their results can be reused for other inflight requests.
         const abortController: AbortController =
-            eagerCancellation && params.requestParams.abortSignal
+            shouldHonorCancellation && params.requestParams.abortSignal
                 ? forkSignal(params.requestParams.abortSignal)
                 : new AbortController()
 

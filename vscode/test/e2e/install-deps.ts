@@ -1,10 +1,10 @@
-import { spawn } from 'child_process'
+import { spawn } from 'node:child_process'
 
 import {
     ConsoleReporter,
+    type ProgressReport,
     ProgressReportStage,
     downloadAndUnzipVSCode,
-    type ProgressReport,
 } from '@vscode/test-electron'
 
 // The VS Code version to use for e2e tests (there is also a version in ../integration/main.ts used for integration tests).

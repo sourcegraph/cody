@@ -18,13 +18,15 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version-file: .tool-versions
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@d882d12c64e032187b2edb46d3a0d003b7a43598 # SECURITY: pin third-party action hashes
         with:
           run_install: true
       - run: pnpm build
       - run: pnpm run test
       - run: xvfb-run -a pnpm -C vscode run test:integration
       - run: xvfb-run -a pnpm -C vscode run test:e2e
+        env:
+          NO_LOG_TESTING_TELEMETRY_CALLS: true
       - run: CODY_RELEASE_TYPE=insiders pnpm -C vscode run release
         if: github.ref == 'refs/heads/main' && github.repository == 'sourcegraph/cody'
         env:
@@ -32,7 +34,7 @@ jobs:
           VSCODE_OPENVSX_TOKEN: ${{ secrets.VSCODE_OPENVSX_TOKEN }}
       - name: Slack Notification
         if: ${{ failure() }}
-        uses: rtCamp/action-slack-notify@v2
+        uses: rtCamp/action-slack-notify@b24d75fe0e728a4bf9fc42ee217caa686d141ee8 # SECURITY: pin third-party action hashes
         env:
           SLACK_CHANNEL: wg-cody-vscode
           SLACK_ICON: https://github.com/sourcegraph.png?size=48

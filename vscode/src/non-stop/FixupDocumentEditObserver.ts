@@ -1,30 +1,20 @@
 import * as vscode from 'vscode'
 
-import type { Edit, Position, Range } from './diff'
-import type { FixupFileCollection, FixupTextChanged } from './roles'
-import { updateFixedRange, updateRangeMultipleChanges, type TextChange } from './tracked-range'
+import { type RangeData, toRangeData } from '@sourcegraph/cody-shared'
+import type { Edit, Position } from './diff'
+import type { FixupActor, FixupFileCollection, FixupTextChanged } from './roles'
+import { type TextChange, updateFixedRange, updateRangeMultipleChanges } from './tracked-range'
 import { CodyTaskState } from './utils'
 
 // This does some thunking to manage the two range types: diff ranges, and
 // text change ranges.
-function updateDiffRange(range: Range, changes: TextChange[]): Range {
-    return toDiffRange(
+function updateDiffRange(range: RangeData, changes: TextChange[]): RangeData {
+    return toRangeData(
         updateRangeMultipleChanges(toVsCodeRange(range), changes, { supportRangeAffix: true })
     )
 }
 
-function toDiffRange(range: vscode.Range): Range {
-    return {
-        start: toDiffPosition(range.start),
-        end: toDiffPosition(range.end),
-    }
-}
-
-function toDiffPosition(position: vscode.Position): Position {
-    return { line: position.line, character: position.character }
-}
-
-function toVsCodeRange(range: Range): vscode.Range {
+function toVsCodeRange(range: RangeData): vscode.Range {
     return new vscode.Range(toVsCodePosition(range.start), toVsCodePosition(range.end))
 }
 
@@ -33,7 +23,7 @@ function toVsCodePosition(position: Position): vscode.Position {
 }
 
 // Updates the ranges in a diff.
-function updateRanges(ranges: Range[], changes: TextChange[]): void {
+function updateRanges(ranges: RangeData[], changes: TextChange[]): void {
     for (let i = 0; i < ranges.length; i++) {
         ranges[i] = updateDiffRange(ranges[i], changes)
     }
@@ -54,7 +44,7 @@ function updateEdits(edits: Edit[], changes: TextChange[]): void {
  * and the decorations indicating where edits will appear.
  */
 export class FixupDocumentEditObserver {
-    constructor(private readonly provider_: FixupFileCollection & FixupTextChanged) {}
+    constructor(private readonly provider_: FixupFileCollection & FixupTextChanged & FixupActor) {}
 
     public textDocumentChanged(event: vscode.TextDocumentChangeEvent): void {
         const file = this.provider_.maybeFileForUri(event.document.uri)
@@ -67,10 +57,10 @@ export class FixupDocumentEditObserver {
             // Cancel any ongoing `add` tasks on undo.
             // This is to avoid a scenario where a user is trying to undo a specific part of text, but cannot because the streamed text continues to come in as the latest addition.
             if (
-                task.state === CodyTaskState.inserting &&
+                task.state === CodyTaskState.Inserting &&
                 event.reason === vscode.TextDocumentChangeReason.Undo
             ) {
-                this.provider_.cancelTask(task)
+                this.provider_.cancel(task)
                 continue
             }
 
@@ -99,6 +89,17 @@ export class FixupDocumentEditObserver {
             if (!updatedRange.isEqual(task.selectionRange)) {
                 task.selectionRange = updatedRange
                 this.provider_.rangeDidChange(task)
+            }
+
+            if (task.insertionPoint) {
+                const updatedInsertionPoint = updateRangeMultipleChanges(
+                    new vscode.Range(task.insertionPoint, task.insertionPoint),
+                    changes,
+                    { supportRangeAffix: true }
+                ).start
+                if (!updatedInsertionPoint.isEqual(task.insertionPoint)) {
+                    task.insertionPoint = updatedInsertionPoint
+                }
             }
 
             // We keep track of where the original range should be, so we can re-use it for retries.

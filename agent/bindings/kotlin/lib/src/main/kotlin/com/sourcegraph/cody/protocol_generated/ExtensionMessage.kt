@@ -22,6 +22,7 @@ sealed class ExtensionMessage {
           "notice" -> context.deserialize<NoticeExtensionMessage>(element, NoticeExtensionMessage::class.java)
           "transcript-errors" -> context.deserialize<`transcript-errorsExtensionMessage`>(element, `transcript-errorsExtensionMessage`::class.java)
           "userContextFiles" -> context.deserialize<UserContextFilesExtensionMessage>(element, UserContextFilesExtensionMessage::class.java)
+          "chat-input-context" -> context.deserialize<`chat-input-contextExtensionMessage`>(element, `chat-input-contextExtensionMessage`::class.java)
           "chatModels" -> context.deserialize<ChatModelsExtensionMessage>(element, ChatModelsExtensionMessage::class.java)
           "update-search-results" -> context.deserialize<`update-search-resultsExtensionMessage`>(element, `update-search-resultsExtensionMessage`::class.java)
           "index-updated" -> context.deserialize<`index-updatedExtensionMessage`>(element, `index-updatedExtensionMessage`::class.java)
@@ -31,6 +32,7 @@ sealed class ExtensionMessage {
           "webview-state" -> context.deserialize<`webview-stateExtensionMessage`>(element, `webview-stateExtensionMessage`::class.java)
           "context/remote-repos" -> context.deserialize<`context_remote-reposExtensionMessage`>(element, `context_remote-reposExtensionMessage`::class.java)
           "setConfigFeatures" -> context.deserialize<SetConfigFeaturesExtensionMessage>(element, SetConfigFeaturesExtensionMessage::class.java)
+          "allMentionProvidersMetadata" -> context.deserialize<AllMentionProvidersMetadataExtensionMessage>(element, AllMentionProvidersMetadataExtensionMessage::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
@@ -38,10 +40,10 @@ sealed class ExtensionMessage {
 }
 
 data class ConfigExtensionMessage(
-  val type: TypeEnum? = null, // Oneof: config
-  val config: ConfigParams? = null,
-  val authStatus: AuthStatus? = null,
-  val workspaceFolderUris: List<String>? = null,
+  val type: TypeEnum, // Oneof: config
+  val config: ConfigParams,
+  val authStatus: AuthStatus,
+  val workspaceFolderUris: List<String>,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {
@@ -50,8 +52,8 @@ data class ConfigExtensionMessage(
 }
 
 data class Search_configExtensionMessage(
-  val type: TypeEnum? = null, // Oneof: search:config
-  val workspaceFolderUris: List<String>? = null,
+  val type: TypeEnum, // Oneof: search:config
+  val workspaceFolderUris: List<String>,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {
@@ -60,7 +62,7 @@ data class Search_configExtensionMessage(
 }
 
 data class HistoryExtensionMessage(
-  val type: TypeEnum? = null, // Oneof: history
+  val type: TypeEnum, // Oneof: history
   val localHistory: UserLocalHistory? = null,
 ) : ExtensionMessage() {
 
@@ -70,10 +72,10 @@ data class HistoryExtensionMessage(
 }
 
 data class TranscriptExtensionMessage(
-  val type: TypeEnum? = null, // Oneof: transcript
-  val messages: List<ChatMessage>? = null,
-  val isMessageInProgress: Boolean? = null,
-  val chatID: String? = null,
+  val type: TypeEnum, // Oneof: transcript
+  val messages: List<SerializedChatMessage>,
+  val isMessageInProgress: Boolean,
+  val chatID: String,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {
@@ -82,8 +84,8 @@ data class TranscriptExtensionMessage(
 }
 
 data class ViewExtensionMessage(
-  val type: TypeEnum? = null, // Oneof: view
-  val view: View? = null, // Oneof: chat, login
+  val type: TypeEnum, // Oneof: view
+  val view: View, // Oneof: chat, login
 ) : ExtensionMessage() {
 
   enum class TypeEnum {
@@ -92,8 +94,8 @@ data class ViewExtensionMessage(
 }
 
 data class ErrorsExtensionMessage(
-  val type: TypeEnum? = null, // Oneof: errors
-  val errors: String? = null,
+  val type: TypeEnum, // Oneof: errors
+  val errors: String,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {
@@ -102,8 +104,8 @@ data class ErrorsExtensionMessage(
 }
 
 data class NoticeExtensionMessage(
-  val type: TypeEnum? = null, // Oneof: notice
-  val notice: NoticeParams? = null,
+  val type: TypeEnum, // Oneof: notice
+  val notice: NoticeParams,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {
@@ -112,8 +114,8 @@ data class NoticeExtensionMessage(
 }
 
 data class `transcript-errorsExtensionMessage`(
-  val type: TypeEnum? = null, // Oneof: transcript-errors
-  val isTranscriptError: Boolean? = null,
+  val type: TypeEnum, // Oneof: transcript-errors
+  val isTranscriptError: Boolean,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {
@@ -122,9 +124,8 @@ data class `transcript-errorsExtensionMessage`(
 }
 
 data class UserContextFilesExtensionMessage(
-  val type: TypeEnum? = null, // Oneof: userContextFiles
-  val userContextFiles: List<ContextFile>? = null,
-  val kind: ContextFileType? = null, // Oneof: file, symbol
+  val type: TypeEnum, // Oneof: userContextFiles
+  val userContextFiles: List<ContextItem>? = null,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {
@@ -132,9 +133,19 @@ data class UserContextFilesExtensionMessage(
   }
 }
 
+data class `chat-input-contextExtensionMessage`(
+  val type: TypeEnum, // Oneof: chat-input-context
+  val items: List<ContextItem>,
+) : ExtensionMessage() {
+
+  enum class TypeEnum {
+    @SerializedName("chat-input-context") `Chat-input-context`,
+  }
+}
+
 data class ChatModelsExtensionMessage(
-  val type: TypeEnum? = null, // Oneof: chatModels
-  val models: List<ModelProvider>? = null,
+  val type: TypeEnum, // Oneof: chatModels
+  val models: List<ModelProvider>,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {
@@ -143,9 +154,9 @@ data class ChatModelsExtensionMessage(
 }
 
 data class `update-search-resultsExtensionMessage`(
-  val type: TypeEnum? = null, // Oneof: update-search-results
-  val results: List<SearchPanelFile>? = null,
-  val query: String? = null,
+  val type: TypeEnum, // Oneof: update-search-results
+  val results: List<SearchPanelFile>,
+  val query: String,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {
@@ -154,8 +165,8 @@ data class `update-search-resultsExtensionMessage`(
 }
 
 data class `index-updatedExtensionMessage`(
-  val type: TypeEnum? = null, // Oneof: index-updated
-  val scopeDir: String? = null,
+  val type: TypeEnum, // Oneof: index-updated
+  val scopeDir: String,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {
@@ -164,8 +175,8 @@ data class `index-updatedExtensionMessage`(
 }
 
 data class `enhanced-contextExtensionMessage`(
-  val type: TypeEnum? = null, // Oneof: enhanced-context
-  val enhancedContextStatus: EnhancedContextContextT? = null,
+  val type: TypeEnum, // Oneof: enhanced-context
+  val enhancedContextStatus: EnhancedContextContextT,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {
@@ -174,8 +185,8 @@ data class `enhanced-contextExtensionMessage`(
 }
 
 data class AttributionExtensionMessage(
-  val type: TypeEnum? = null, // Oneof: attribution
-  val snippet: String? = null,
+  val type: TypeEnum, // Oneof: attribution
+  val snippet: String,
   val attribution: AttributionParams? = null,
   val error: String? = null,
 ) : ExtensionMessage() {
@@ -186,8 +197,8 @@ data class AttributionExtensionMessage(
 }
 
 data class SetChatEnabledConfigFeatureExtensionMessage(
-  val type: TypeEnum? = null, // Oneof: setChatEnabledConfigFeature
-  val data: Boolean? = null,
+  val type: TypeEnum, // Oneof: setChatEnabledConfigFeature
+  val data: Boolean,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {
@@ -196,8 +207,8 @@ data class SetChatEnabledConfigFeatureExtensionMessage(
 }
 
 data class `webview-stateExtensionMessage`(
-  val type: TypeEnum? = null, // Oneof: webview-state
-  val isActive: Boolean? = null,
+  val type: TypeEnum, // Oneof: webview-state
+  val isActive: Boolean,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {
@@ -206,8 +217,8 @@ data class `webview-stateExtensionMessage`(
 }
 
 data class `context_remote-reposExtensionMessage`(
-  val type: TypeEnum? = null, // Oneof: context/remote-repos
-  val repos: List<Repo>? = null,
+  val type: TypeEnum, // Oneof: context/remote-repos
+  val repos: List<Repo>,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {
@@ -216,12 +227,22 @@ data class `context_remote-reposExtensionMessage`(
 }
 
 data class SetConfigFeaturesExtensionMessage(
-  val type: TypeEnum? = null, // Oneof: setConfigFeatures
-  val configFeatures: ConfigFeaturesParams? = null,
+  val type: TypeEnum, // Oneof: setConfigFeatures
+  val configFeatures: ConfigFeaturesParams,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {
     @SerializedName("setConfigFeatures") SetConfigFeatures,
+  }
+}
+
+data class AllMentionProvidersMetadataExtensionMessage(
+  val type: TypeEnum, // Oneof: allMentionProvidersMetadata
+  val providers: List<ContextMentionProviderMetadata>,
+) : ExtensionMessage() {
+
+  enum class TypeEnum {
+    @SerializedName("allMentionProvidersMetadata") AllMentionProvidersMetadata,
   }
 }
 

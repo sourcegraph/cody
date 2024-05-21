@@ -1,7 +1,11 @@
 import * as vscode from 'vscode'
 
-import type { Range, ProtocolTextDocument } from './agent-protocol'
 import { logDebug } from '../log'
+import type {
+    ProtocolTextDocument,
+    ProtocolTextDocumentContentChangeEvent,
+    Range,
+} from './agent-protocol'
 
 /**
  * Wrapper around `ProtocolTextDocument` that also contains a parsed vscode.Uri.
@@ -47,7 +51,15 @@ export class ProtocolTextDocumentWithUri {
         return this.underlying.content
     }
 
+    public get contentChanges(): ProtocolTextDocumentContentChangeEvent[] | undefined {
+        return this.underlying.contentChanges
+    }
+
     public get selection(): Range | undefined {
         return this.underlying.selection
+    }
+
+    public get visibleRange(): Range | undefined {
+        return this.underlying.visibleRange
     }
 }

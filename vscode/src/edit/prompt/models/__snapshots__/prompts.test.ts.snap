@@ -1,6 +1,15 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Edit Prompts > 'claude' builds prompts correctly > add 1`] = `
+exports[`Edit Prompts > 'claude' builds prompts correctly > add.instruction 1`] = `
+"The user is currently in the file: src/file/index.ts
+
+Provide your generated code using the following instructions:
+<INSTRUCTIONS7390>
+Console log text
+</INSTRUCTIONS7390>"
+`;
+
+exports[`Edit Prompts > 'claude' builds prompts correctly > add.system 1`] = `
 "- You are an AI programming assistant who is an expert in adding new code by following instructions.
 - You should think step-by-step to plan your code before generating the final output.
 - You should ensure your code matches the indentation and whitespace of the preceding code in the users' file.
@@ -9,40 +18,23 @@ exports[`Edit Prompts > 'claude' builds prompts correctly > add 1`] = `
 - You will be provided with code that is below the users' cursor, enclosed in <FOLLOWINGCODE2472></FOLLOWINGCODE2472> XML tags. You must use this code to help you plan your updated code. You must not repeat this code in your output unless necessary.
 - You will be provided with instructions on what to generate, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
 - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-- Do not provide any additional commentary about the code you added. Only respond with the generated code.
-
-The user is currently in the file: src/file/index.ts
-
-Provide your generated code using the following instructions:
-<INSTRUCTIONS7390>
-Console log text
-</INSTRUCTIONS7390>"
+- Do not provide any additional commentary about the code you added. Only respond with the generated code."
 `;
 
-exports[`Edit Prompts > 'claude' builds prompts correctly > doc 1`] = `
-"- You are an AI programming assistant who is an expert in updating code to meet given instructions.
-- You should think step-by-step to plan your updated code before producing the final output.
-- You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-- Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-- Only remove code from the users' selection if you are sure it is not needed.
-- You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-- You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-- Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-- Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-
-This is part of the file: src/file/index.ts
+exports[`Edit Prompts > 'claude' builds prompts correctly > doc.instruction 1`] = `
+"This is part of the file: src/file/index.ts
 
 The user has the following code in their selection:
 <SELECTEDCODE7662>return text</SELECTEDCODE7662>
 
-The user wants you to geneerate documentation for the selected code by following their instructions.
+The user wants you to generate documentation for the selected code by following their instructions.
 Provide your generated documentation using the following instructions:
 <INSTRUCTIONS7390>
 Console log text
 </INSTRUCTIONS7390>"
 `;
 
-exports[`Edit Prompts > 'claude' builds prompts correctly > edit 1`] = `
+exports[`Edit Prompts > 'claude' builds prompts correctly > doc.system 1`] = `
 "- You are an AI programming assistant who is an expert in updating code to meet given instructions.
 - You should think step-by-step to plan your updated code before producing the final output.
 - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
@@ -51,9 +43,11 @@ exports[`Edit Prompts > 'claude' builds prompts correctly > edit 1`] = `
 - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
 - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
 - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-- Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+- Do not provide any additional commentary about the changes you made. Only respond with the generated code."
+`;
 
-This is part of the file: src/file/index.ts
+exports[`Edit Prompts > 'claude' builds prompts correctly > edit.instruction 1`] = `
+"This is part of the file: src/file/index.ts
 
 The user has the following code in their selection:
 <SELECTEDCODE7662>return text</SELECTEDCODE7662>
@@ -65,19 +59,20 @@ Console log text
 </INSTRUCTIONS7390>"
 `;
 
-exports[`Edit Prompts > 'claude' builds prompts correctly > fix 1`] = `
-"- You are an AI programming assistant who is an expert in fixing errors within code.
-- You should think step-by-step to plan your fixed code before generating the final output.
+exports[`Edit Prompts > 'claude' builds prompts correctly > edit.system 1`] = `
+"- You are an AI programming assistant who is an expert in updating code to meet given instructions.
+- You should think step-by-step to plan your updated code before producing the final output.
 - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-- Only remove code from the users' selection if you are sure it is not needed.
 - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-- You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your fixed code.
-- You will be provided with errors from the users' selection, enclosed in <DIAGNOSTICS5668></DIAGNOSTICS5668> XML tags. You must attempt to fix all of these errors.
-- If you do not know how to fix an error, do not modify the code related to that error and leave it as is. Only modify code related to errors you know how to fix.
+- Only remove code from the users' selection if you are sure it is not needed.
+- You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+- You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
 - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-- Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+- Do not provide any additional commentary about the changes you made. Only respond with the generated code."
+`;
 
-This is part of the file: src/file/index.ts
+exports[`Edit Prompts > 'claude' builds prompts correctly > fix.instruction 1`] = `
+"This is part of the file: src/file/index.ts
 
 The user has the following code in their selection:
 <SELECTEDCODE7662>return text</SELECTEDCODE7662>
@@ -89,7 +84,20 @@ Console log text
 </DIAGNOSTICS5668>"
 `;
 
-exports[`Edit Prompts > 'claude' builds prompts correctly > test 1`] = `
+exports[`Edit Prompts > 'claude' builds prompts correctly > fix.system 1`] = `
+"- You are an AI programming assistant who is an expert in fixing errors within code.
+- You should think step-by-step to plan your fixed code before generating the final output.
+- You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+- Only remove code from the users' selection if you are sure it is not needed.
+- Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+- You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your fixed code.
+- You will be provided with errors from the users' selection, enclosed in <DIAGNOSTICS5668></DIAGNOSTICS5668> XML tags. You must attempt to fix all of these errors.
+- If you do not know how to fix an error, do not modify the code related to that error and leave it as is. Only modify code related to errors you know how to fix.
+- Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+- Do not provide any additional commentary about the changes you made. Only respond with the generated code."
+`;
+
+exports[`Edit Prompts > 'claude' builds prompts correctly > test.instruction 1`] = `
 "Here is my selected code from my codebase file src/file/index.ts, enclosed in <SELECTEDCODE7662> tags:
 <SELECTEDCODE7662>return text</SELECTEDCODE7662>
 
@@ -97,11 +105,22 @@ As my programming assistant and an expert in testing code, follow instructions b
 
 RULES:
 - Do not enclose response with any markdown formatting or triple backticks.
-- Enclose only the generated code in <CODE5711> XML tags.
-- Your response must start with the <TESTFILE7041> XML tags with a suggested file name for the test code."
+- Enclose only the unit tests between <CODE5711> XML tags.
+- Your response must start with the suggested file path between <TESTFILE7041> XML tags, ensuring it aligns with the directory structure and conventions from the shared context"
 `;
 
-exports[`Edit Prompts > 'openai' builds prompts correctly > add 1`] = `
+exports[`Edit Prompts > 'claude' builds prompts correctly > test.system 1`] = `""`;
+
+exports[`Edit Prompts > 'openai' builds prompts correctly > add.instruction 1`] = `
+"The user is currently in the file: src/file/index.ts
+
+Provide your generated code using the following instructions:
+<INSTRUCTIONS7390>
+Console log text
+</INSTRUCTIONS7390>"
+`;
+
+exports[`Edit Prompts > 'openai' builds prompts correctly > add.system 1`] = `
 "- You are an AI programming assistant who is an expert in adding new code by following instructions.
 - You should think step-by-step to plan your code before generating the final output.
 - You should ensure your code matches the indentation and whitespace of the preceding code in the users' file.
@@ -110,40 +129,23 @@ exports[`Edit Prompts > 'openai' builds prompts correctly > add 1`] = `
 - You will be provided with code that is below the users' cursor, enclosed in <FOLLOWINGCODE2472></FOLLOWINGCODE2472> XML tags. You must use this code to help you plan your updated code. You must not repeat this code in your output unless necessary.
 - You will be provided with instructions on what to generate, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
 - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-- Do not provide any additional commentary about the code you added. Only respond with the generated code.
-
-The user is currently in the file: src/file/index.ts
-
-Provide your generated code using the following instructions:
-<INSTRUCTIONS7390>
-Console log text
-</INSTRUCTIONS7390>"
+- Do not provide any additional commentary about the code you added. Only respond with the generated code."
 `;
 
-exports[`Edit Prompts > 'openai' builds prompts correctly > doc 1`] = `
-"- You are an AI programming assistant who is an expert in updating code to meet given instructions.
-- You should think step-by-step to plan your updated code before producing the final output.
-- You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-- Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-- Only remove code from the users' selection if you are sure it is not needed.
-- You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-- You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-- Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-- Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-
-This is part of the file: src/file/index.ts
+exports[`Edit Prompts > 'openai' builds prompts correctly > doc.instruction 1`] = `
+"This is part of the file: src/file/index.ts
 
 The user has the following code in their selection:
 <SELECTEDCODE7662>return text</SELECTEDCODE7662>
 
-The user wants you to geneerate documentation for the selected code by following their instructions.
+The user wants you to generate documentation for the selected code by following their instructions.
 Provide your generated documentation using the following instructions:
 <INSTRUCTIONS7390>
 Console log text
 </INSTRUCTIONS7390>"
 `;
 
-exports[`Edit Prompts > 'openai' builds prompts correctly > edit 1`] = `
+exports[`Edit Prompts > 'openai' builds prompts correctly > doc.system 1`] = `
 "- You are an AI programming assistant who is an expert in updating code to meet given instructions.
 - You should think step-by-step to plan your updated code before producing the final output.
 - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
@@ -152,9 +154,11 @@ exports[`Edit Prompts > 'openai' builds prompts correctly > edit 1`] = `
 - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
 - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
 - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-- Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+- Do not provide any additional commentary about the changes you made. Only respond with the generated code."
+`;
 
-This is part of the file: src/file/index.ts
+exports[`Edit Prompts > 'openai' builds prompts correctly > edit.instruction 1`] = `
+"This is part of the file: src/file/index.ts
 
 The user has the following code in their selection:
 <SELECTEDCODE7662>return text</SELECTEDCODE7662>
@@ -166,19 +170,20 @@ Console log text
 </INSTRUCTIONS7390>"
 `;
 
-exports[`Edit Prompts > 'openai' builds prompts correctly > fix 1`] = `
-"- You are an AI programming assistant who is an expert in fixing errors within code.
-- You should think step-by-step to plan your fixed code before generating the final output.
+exports[`Edit Prompts > 'openai' builds prompts correctly > edit.system 1`] = `
+"- You are an AI programming assistant who is an expert in updating code to meet given instructions.
+- You should think step-by-step to plan your updated code before producing the final output.
 - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-- Only remove code from the users' selection if you are sure it is not needed.
 - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-- You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your fixed code.
-- You will be provided with errors from the users' selection, enclosed in <DIAGNOSTICS5668></DIAGNOSTICS5668> XML tags. You must attempt to fix all of these errors.
-- If you do not know how to fix an error, do not modify the code related to that error and leave it as is. Only modify code related to errors you know how to fix.
+- Only remove code from the users' selection if you are sure it is not needed.
+- You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+- You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
 - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-- Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+- Do not provide any additional commentary about the changes you made. Only respond with the generated code."
+`;
 
-This is part of the file: src/file/index.ts
+exports[`Edit Prompts > 'openai' builds prompts correctly > fix.instruction 1`] = `
+"This is part of the file: src/file/index.ts
 
 The user has the following code in their selection:
 <SELECTEDCODE7662>return text</SELECTEDCODE7662>
@@ -190,7 +195,20 @@ Console log text
 </DIAGNOSTICS5668>"
 `;
 
-exports[`Edit Prompts > 'openai' builds prompts correctly > test 1`] = `
+exports[`Edit Prompts > 'openai' builds prompts correctly > fix.system 1`] = `
+"- You are an AI programming assistant who is an expert in fixing errors within code.
+- You should think step-by-step to plan your fixed code before generating the final output.
+- You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+- Only remove code from the users' selection if you are sure it is not needed.
+- Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+- You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your fixed code.
+- You will be provided with errors from the users' selection, enclosed in <DIAGNOSTICS5668></DIAGNOSTICS5668> XML tags. You must attempt to fix all of these errors.
+- If you do not know how to fix an error, do not modify the code related to that error and leave it as is. Only modify code related to errors you know how to fix.
+- Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+- Do not provide any additional commentary about the changes you made. Only respond with the generated code."
+`;
+
+exports[`Edit Prompts > 'openai' builds prompts correctly > test.instruction 1`] = `
 "Here is my selected code from my codebase file src/file/index.ts, enclosed in <SELECTEDCODE7662> tags:
 <SELECTEDCODE7662>return text</SELECTEDCODE7662>
 
@@ -198,6 +216,8 @@ As my programming assistant and an expert in testing code, follow instructions b
 
 RULES:
 - Do not enclose response with any markdown formatting or triple backticks.
-- Enclose only the generated code in <CODE5711> XML tags.
-- Your response must start with the <TESTFILE7041> XML tags with a suggested file name for the test code."
+- Enclose only the unit tests between <CODE5711> XML tags.
+- Your response must start with the suggested file path between <TESTFILE7041> XML tags, ensuring it aligns with the directory structure and conventions from the shared context"
 `;
+
+exports[`Edit Prompts > 'openai' builds prompts correctly > test.system 1`] = `""`;

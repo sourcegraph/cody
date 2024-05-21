@@ -1,11 +1,11 @@
-import { exec } from 'child_process'
-import * as fspromises from 'fs/promises'
-import * as os from 'os'
-import path from 'path'
+import { exec } from 'node:child_process'
+import * as fspromises from 'node:fs/promises'
+import * as os from 'node:os'
+import path from 'node:path'
 
-import type { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
 import type { TestParameters } from './TestParameters'
 import { Timer } from './Timer'
+import type { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
 
 async function runCommand(command: string | undefined, cwd: string): Promise<boolean> {
     return new Promise<boolean>(resolve => {

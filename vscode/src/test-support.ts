@@ -1,7 +1,5 @@
-import type { ChatMessage } from '@sourcegraph/cody-shared'
-
+import { type ChatMessage, type IgnoreHelper, ps } from '@sourcegraph/cody-shared'
 import type { SimpleChatPanelProvider } from './chat/chat-view/SimpleChatPanelProvider'
-import type { IgnoreHelper } from '@sourcegraph/cody-shared/src/cody-ignore/ignore-helper'
 
 // A one-slot channel which lets readers block on a value being
 // available from a writer. Tests use this to wait for the
@@ -39,7 +37,9 @@ export class TestSupport {
     public chatPanelProvider = new Rendezvous<SimpleChatPanelProvider>()
     public ignoreHelper = new Rendezvous<IgnoreHelper>()
 
-    public async chatMessages(): Promise<ChatMessage[]> {
+    public ps = ps
+
+    public async chatMessages(): Promise<readonly ChatMessage[]> {
         return (await this.chatPanelProvider.get()).getViewTranscript()
     }
 }

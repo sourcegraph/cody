@@ -3,48 +3,71 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import {
-    isDotCom,
-    isFileURI,
-    uriBasename,
     type ConfigurationWithAccessToken,
     type ContextGroup,
     type ContextStatusProvider,
+    type EmbeddingsModelConfig,
     type EmbeddingsSearchResult,
+    FeatureFlag,
     type FileURI,
     type LocalEmbeddingsFetcher,
     type LocalEmbeddingsProvider,
+    type PromptString,
+    featureFlagProvider,
+    isDotCom,
+    isFileURI,
+    recordErrorToSpan,
+    uriBasename,
+    wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
-import { spawnBfg } from '../graph/bfg/spawn-bfg'
 import type { IndexHealthResultFound, IndexRequest } from '../jsonrpc/embeddings-protocol'
 import type { MessageHandler } from '../jsonrpc/jsonrpc'
 import { logDebug } from '../log'
 import { captureException } from '../services/sentry/sentry'
+import { CodyEngineService } from './cody-engine'
 
-export function createLocalEmbeddingsController(
+export async function createLocalEmbeddingsController(
     context: vscode.ExtensionContext,
     config: LocalEmbeddingsConfig
-): LocalEmbeddingsController {
-    return new LocalEmbeddingsController(context, config)
+): Promise<LocalEmbeddingsController> {
+    const modelConfig =
+        config.testingModelConfig ||
+        ((await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyUseSourcegraphEmbeddings))
+            ? sourcegraphModelConfig
+            : openaiModelConfig)
+    const autoIndexingEnabled = await featureFlagProvider.evaluateFeatureFlag(
+        FeatureFlag.CodyEmbeddingsAutoIndexing
+    )
+    return new LocalEmbeddingsController(context, config, modelConfig, autoIndexingEnabled)
 }
 
 export type LocalEmbeddingsConfig = Pick<
     ConfigurationWithAccessToken,
     'serverEndpoint' | 'accessToken'
 > & {
-    testingLocalEmbeddingsModel: string | undefined
-    testingLocalEmbeddingsEndpoint: string | undefined
-    testingLocalEmbeddingsIndexLibraryPath: string | undefined
+    testingModelConfig: EmbeddingsModelConfig | undefined
 }
 
-function getIndexLibraryPath(): FileURI {
+const CODY_GATEWAY_PROD_ENDPOINT = 'https://cody-gateway.sourcegraph.com/v1/embeddings'
+
+function getIndexLibraryPath(modelSuffix: string): FileURI {
     switch (process.platform) {
         case 'darwin':
-            return URI.file(`${process.env.HOME}/Library/Caches/com.sourcegraph.cody/embeddings`)
+            return URI.file(
+                `${process.env.HOME}/Library/Caches/com.sourcegraph.cody/embeddings` +
+                    (modelSuffix === '' ? '' : '/' + modelSuffix)
+            )
         case 'linux':
-            return URI.file(`${process.env.HOME}/.cache/com.sourcegraph.cody/embeddings`)
+            return URI.file(
+                `${process.env.HOME}/.cache/com.sourcegraph.cody/embeddings` +
+                    (modelSuffix === '' ? '' : '/' + modelSuffix)
+            )
         case 'win32':
-            return URI.file(`${process.env.LOCALAPPDATA}\\com.sourcegraph.cody\\embeddings`)
+            return URI.file(
+                `${process.env.LOCALAPPDATA}\\com.sourcegraph.cody\\embeddings` +
+                    (modelSuffix === '' ? '' : '\\' + modelSuffix)
+            )
         default:
             throw new Error(`Unsupported platform: ${process.platform}`)
     }
@@ -56,15 +79,27 @@ interface RepoState {
     errorReason: GetFieldType<LocalEmbeddingsProvider, 'errorReason'>
 }
 
+const sourcegraphModelConfig: EmbeddingsModelConfig = {
+    model: 'sourcegraph/st-multi-qa-mpnet-base-dot-v1',
+    dimension: 768,
+    provider: 'sourcegraph',
+    endpoint: CODY_GATEWAY_PROD_ENDPOINT,
+    indexPath: getIndexLibraryPath('st-v1'),
+}
+
+const openaiModelConfig: EmbeddingsModelConfig = {
+    model: 'openai/text-embedding-ada-002',
+    dimension: 1536,
+    provider: 'openai',
+    endpoint: CODY_GATEWAY_PROD_ENDPOINT,
+    // empty prefix to keep backwards compatibility
+    indexPath: getIndexLibraryPath(''),
+}
+
 export class LocalEmbeddingsController
     implements LocalEmbeddingsFetcher, ContextStatusProvider, vscode.Disposable
 {
     private disposables: vscode.Disposable[] = []
-
-    // These properties are constants, but may be overridden for testing.
-    private readonly model: string
-    private readonly endpoint: string
-    private readonly indexLibraryPath: FileURI | undefined
 
     // The cody-engine child process, if starting or started.
     private service: Promise<MessageHandler> | undefined
@@ -96,7 +131,9 @@ export class LocalEmbeddingsController
 
     constructor(
         private readonly context: vscode.ExtensionContext,
-        config: LocalEmbeddingsConfig
+        config: LocalEmbeddingsConfig,
+        private readonly modelConfig: EmbeddingsModelConfig,
+        private readonly autoIndexingEnabled: boolean
     ) {
         logDebug('LocalEmbeddingsController', 'constructor')
         this.disposables.push(this.changeEmitter, this.statusEmitter)
@@ -109,13 +146,6 @@ export class LocalEmbeddingsController
         // Pick up the initial access token, and whether the account is dotcom.
         this.accessToken = config.accessToken || undefined
         this.endpointIsDotcom = isDotCom(config.serverEndpoint)
-
-        this.model = config.testingLocalEmbeddingsModel || 'openai/text-embedding-ada-002'
-        this.endpoint =
-            config.testingLocalEmbeddingsEndpoint || 'https://cody-gateway.sourcegraph.com/v1/embeddings'
-        this.indexLibraryPath = config.testingLocalEmbeddingsIndexLibraryPath
-            ? URI.file(config.testingLocalEmbeddingsIndexLibraryPath)
-            : undefined
     }
 
     public dispose(): void {
@@ -135,7 +165,13 @@ export class LocalEmbeddingsController
         await this.getService()
         const repoUri = vscode.workspace.workspaceFolders?.[0]?.uri
         if (repoUri && isFileURI(repoUri)) {
-            await this.eagerlyLoad(repoUri)
+            const loadedOk = await this.eagerlyLoad(repoUri)
+            if (!loadedOk) {
+                // failed to load the index, let's see if we should start indexing
+                if (this.canAutoIndex()) {
+                    this.index()
+                }
+            }
         }
     }
 
@@ -167,21 +203,13 @@ export class LocalEmbeddingsController
 
     private getService(): Promise<MessageHandler> {
         if (!this.service) {
-            this.service = this.spawnAndBindService(this.context)
+            const instance = CodyEngineService.getInstance(this.context)
+            this.service = instance.getService(this.setupLocalEmbeddingsService)
         }
         return this.service
     }
 
-    private async spawnAndBindService(context: vscode.ExtensionContext): Promise<MessageHandler> {
-        const service = await new Promise<MessageHandler>((resolve, reject) => {
-            spawnBfg(context, reject).then(
-                bfg => resolve(bfg),
-                error => {
-                    captureException(error)
-                    reject(error)
-                }
-            )
-        })
+    private setupLocalEmbeddingsService = async (service: MessageHandler): Promise<void> => {
         // TODO: Add more states for cody-engine fetching and trigger status updates here
         service.registerNotification('embeddings/progress', obj => {
             if (typeof obj === 'object') {
@@ -213,29 +241,17 @@ export class LocalEmbeddingsController
         })
 
         logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'service started, initializing')
-        let indexPath = getIndexLibraryPath()
-        // Tests may override the index library path
-        if (this.indexLibraryPath) {
-            logDebug(
-                'LocalEmbeddingsController',
-                'spawnAndBindService',
-                'overriding index library path',
-                this.indexLibraryPath
-            )
-            indexPath = this.indexLibraryPath
-        }
+
         const initResult = await service.request('embeddings/initialize', {
-            codyGatewayEndpoint: this.endpoint,
-            indexPath: indexPath.fsPath,
+            codyGatewayEndpoint: this.modelConfig.endpoint,
+            indexPath: this.modelConfig.indexPath.fsPath,
         })
-        logDebug(
-            'LocalEmbeddingsController',
-            'spawnAndBindService',
-            'initialized',
-            initResult,
-            'token available?',
-            !!this.accessToken
-        )
+        logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'initialized', {
+            verbose: {
+                initResult,
+                tokenAvailable: !!this.accessToken,
+            },
+        })
 
         if (this.accessToken) {
             // Set the initial access token
@@ -243,7 +259,6 @@ export class LocalEmbeddingsController
         }
         this.serviceStarted = true
         this.changeEmitter.fire(this)
-        return service
     }
 
     // After indexing succeeds or fails, try to load the index. Update state
@@ -298,6 +313,7 @@ export class LocalEmbeddingsController
                         {
                             kind: 'embeddings',
                             state: 'indeterminate',
+                            embeddingsAPIProvider: this.modelConfig.provider,
                         },
                     ],
                 },
@@ -308,7 +324,13 @@ export class LocalEmbeddingsController
                 {
                     dir,
                     displayName: uriBasename(dir),
-                    providers: [{ kind: 'embeddings', state: 'indexing' }],
+                    providers: [
+                        {
+                            kind: 'embeddings',
+                            state: 'indexing',
+                            embeddingsAPIProvider: this.modelConfig.provider,
+                        },
+                    ],
                 },
             ]
         }
@@ -321,6 +343,7 @@ export class LocalEmbeddingsController
                         {
                             kind: 'embeddings',
                             state: 'ready',
+                            embeddingsAPIProvider: this.modelConfig.provider,
                         },
                     ],
                 },
@@ -348,6 +371,7 @@ export class LocalEmbeddingsController
                     {
                         kind: 'embeddings',
                         ...stateAndErrors,
+                        embeddingsAPIProvider: this.modelConfig.provider,
                     },
                 ],
             },
@@ -366,7 +390,7 @@ export class LocalEmbeddingsController
         logDebug('LocalEmbeddingsController', 'index', 'starting repository', repoPath)
         await this.indexRequest({
             repoPath: repoPath.fsPath,
-            mode: { type: 'new', model: this.model, dimension: 1536 },
+            mode: { type: 'new', model: this.modelConfig.model, dimension: this.modelConfig.dimension },
         })
     }
 
@@ -395,44 +419,6 @@ export class LocalEmbeddingsController
             logDebug('LocalEmbeddingsController', captureException(error), error)
             await vscode.window.showErrorMessage(`Cody Embeddings — Error: ${error?.message}`)
         }
-    }
-
-    public async load(repoDir: vscode.Uri | undefined): Promise<boolean> {
-        if (!this.endpointIsDotcom) {
-            // Local embeddings only supported for dotcom
-            return false
-        }
-        if (!repoDir) {
-            // There's no path to search
-            return false
-        }
-        if (!isFileURI(repoDir)) {
-            // Local embeddings currently only supports the file system.
-            return false
-        }
-        const cachedState = this.repoState.get(repoDir.toString())
-        if (cachedState && !cachedState.repoName) {
-            // We already failed to loading this, so use that result
-            return false
-        }
-        if (!this.serviceStarted) {
-            // Try starting the service but reply that there are no local
-            // embeddings this time.
-            void (async () => {
-                try {
-                    await this.getService()
-                } catch (error) {
-                    logDebug(
-                        'LocalEmbeddingsController',
-                        'load',
-                        captureException(error),
-                        JSON.stringify(error)
-                    )
-                }
-            })()
-            return false
-        }
-        return this.eagerlyLoad(repoDir)
     }
 
     // Tries to load an index for the repo at the specified path, skipping any
@@ -519,9 +505,20 @@ export class LocalEmbeddingsController
         }
         this.lastHealth = health
         const hasIssue = health.numItemsNeedEmbedding > 0
-        await vscode.commands.executeCommand('setContext', 'cody.embeddings.hasIssue', hasIssue)
         if (hasIssue) {
-            this.updateIssueStatusBar()
+            const canRetry = this.canAutoIndex() && !this.lastError
+            let retrySucceeded = true
+            if (canRetry) {
+                try {
+                    await this.indexRetry()
+                } catch {
+                    retrySucceeded = false
+                }
+            }
+            if (!canRetry || !retrySucceeded) {
+                await vscode.commands.executeCommand('setContext', 'cody.embeddings.hasIssue', hasIssue)
+                this.updateIssueStatusBar()
+            }
         }
     }
 
@@ -536,6 +533,11 @@ export class LocalEmbeddingsController
         return `${options?.prefix || ''}Cody Embeddings index for ${
             this.lastRepo?.dir || 'this repository'
         } is only ${percentDone.toFixed(0)}% complete.${options?.suffix || ''}`
+    }
+
+    // Check if auto-indexing is enabled and if we're using the Sourcegraph provider.
+    private canAutoIndex(): boolean {
+        return this.autoIndexingEnabled && this.modelConfig.provider === 'sourcegraph'
     }
 
     private updateIssueStatusBar(): void {
@@ -596,28 +598,38 @@ export class LocalEmbeddingsController
     }
 
     /** {@link LocalEmbeddingsFetcher.getContext} */
-    public async getContext(query: string, _numResults: number): Promise<EmbeddingsSearchResult[]> {
+    public async getContext(query: PromptString, numResults: number): Promise<EmbeddingsSearchResult[]> {
         if (!this.endpointIsDotcom) {
             return []
         }
-        const lastRepo = this.lastRepo
-        if (!lastRepo || !lastRepo.repoName) {
-            return []
-        }
-        try {
-            const service = await this.getService()
-            const resp = await service.request('embeddings/query', {
-                repoName: lastRepo.repoName,
-                query,
-            })
-            logDebug('LocalEmbeddingsController', 'query', `returning ${resp.results.length} results`)
-            return resp.results.map(result => ({
-                ...result,
-                uri: vscode.Uri.joinPath(lastRepo.dir, result.fileName),
-            }))
-        } catch (error) {
-            logDebug('LocalEmbeddingsController', 'query', captureException(error), error)
-            return []
-        }
+        return wrapInActiveSpan('LocalEmbeddingsController.query', async span => {
+            try {
+                span.setAttribute('provider', this.modelConfig.provider)
+                const lastRepo = this.lastRepo
+                if (!lastRepo?.repoName) {
+                    span.setAttribute('noResultReason', 'last-repo-not-set')
+                    return []
+                }
+                const service = await this.getService()
+                const resp = await service.request('embeddings/query', {
+                    repoName: lastRepo.repoName,
+                    query: query.toString(),
+                    numResults,
+                })
+                logDebug(
+                    'LocalEmbeddingsController',
+                    'query',
+                    `returning ${resp.results.length} results`
+                )
+                return resp.results.map(result => ({
+                    ...result,
+                    uri: vscode.Uri.joinPath(lastRepo.dir, result.fileName),
+                }))
+            } catch (error) {
+                logDebug('LocalEmbeddingsController', 'query', captureException(error), error)
+                recordErrorToSpan(span, error as Error)
+                return []
+            }
+        })
     }
 }

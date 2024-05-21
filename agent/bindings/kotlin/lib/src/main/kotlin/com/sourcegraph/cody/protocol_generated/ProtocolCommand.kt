@@ -2,8 +2,8 @@
 package com.sourcegraph.cody.protocol_generated
 
 data class ProtocolCommand(
-  val title: String? = null,
-  val command: String? = null,
+  val title: TitleParams,
+  val command: String,
   val tooltip: String? = null,
   val arguments: List<Any>? = null,
 )

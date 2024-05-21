@@ -1,6 +1,7 @@
 import type { Span } from '@opentelemetry/api'
 import type { ConfigurationWithAccessToken } from '../../configuration'
 
+import { recordErrorToSpan } from '../../tracing'
 import type {
     CompletionCallbacks,
     CompletionGeneratorValue,
@@ -8,7 +9,6 @@ import type {
     CompletionResponse,
     Event,
 } from './types'
-import { recordErrorToSpan } from '../../tracing'
 
 export interface CompletionLogger {
     startCompletion(
@@ -27,7 +27,7 @@ export interface CompletionLogger {
 
 export type CompletionsClientConfig = Pick<
     ConfigurationWithAccessToken,
-    'serverEndpoint' | 'accessToken' | 'debugEnable' | 'customHeaders'
+    'serverEndpoint' | 'accessToken' | 'customHeaders'
 >
 
 /**
@@ -84,16 +84,22 @@ export abstract class SourcegraphCompletionsClient {
 
     protected abstract _streamWithCallbacks(
         params: CompletionParameters,
+        apiVersion: number,
         cb: CompletionCallbacks,
         signal?: AbortSignal
-    ): void
+    ): Promise<void>
 
-    public stream(
+    public async *stream(
         params: CompletionParameters,
+        apiVersion: number,
         signal?: AbortSignal
     ): AsyncGenerator<CompletionGeneratorValue> {
-        // This is a technique to convert a function that takes callbacks to an async generator.
+        // Provide default stop sequence for starchat models.
+        if (!params.stopSequences && params?.model?.startsWith('openaicompatible/starchat')) {
+            params.stopSequences = ['<|end|>']
+        }
 
+        // This is a technique to convert a function that takes callbacks to an async generator.
         const values: Promise<CompletionGeneratorValue>[] = []
         let resolve: ((value: CompletionGeneratorValue) => void) | undefined
         values.push(
@@ -121,17 +127,15 @@ export abstract class SourcegraphCompletionsClient {
                 send({ type: 'error', error, statusCode })
             },
         }
-        this._streamWithCallbacks(params, callbacks, signal)
+        await this._streamWithCallbacks(params, apiVersion, callbacks, signal)
 
-        return (async function* () {
-            for (let i = 0; ; i++) {
-                const val = await values[i]
-                delete values[i]
-                yield val
-                if (val.type === 'complete' || val.type === 'error') {
-                    break
-                }
+        for (let i = 0; ; i++) {
+            const val = await values[i]
+            delete values[i]
+            yield val
+            if (val.type === 'complete' || val.type === 'error') {
+                break
             }
-        })()
+        }
     }
 }

@@ -1,11 +1,11 @@
-import fspromises from 'fs/promises'
+import fspromises from 'node:fs/promises'
 import { Command, InvalidOptionArgumentError, Option } from 'commander'
-import { KotlinCodegen } from './KotlinCodegen'
-import { scip } from './scip'
-import { SymbolTable } from './SymbolTable'
-import { ConsoleReporter } from './ConsoleReporter'
 import type { BaseCodegen } from './BaseCodegen'
+import { ConsoleReporter } from './ConsoleReporter'
+import { KotlinCodegen } from './KotlinCodegen'
 import { MarkdownCodegen } from './MarkdownCodegen'
+import { SymbolTable } from './SymbolTable'
+import { scip } from './scip'
 
 export interface CodegenOptions {
     input: string

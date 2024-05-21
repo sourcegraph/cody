@@ -1,37 +1,21 @@
 import {
+    type ConfigurationWithAccessToken,
+    type LogEventMode,
     MockServerTelemetryRecorderProvider,
     NoOpTelemetryRecorderProvider,
     TelemetryRecorderProvider,
-    type ConfigurationWithAccessToken,
-    type LogEventMode,
-    type TelemetryRecorder,
+    telemetryRecorder,
+    telemetryRecorderProvider,
+    updateGlobalTelemetryInstances,
 } from '@sourcegraph/cody-shared'
-import { CallbackTelemetryProcessor, TimestampTelemetryProcessor } from '@sourcegraph/telemetry'
+import { TimestampTelemetryProcessor } from '@sourcegraph/telemetry'
 
 import { logDebug } from '../log'
 
+import type { AuthProvider } from './AuthProvider'
 import { localStorage } from './LocalStorageProvider'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { getExtensionDetails } from './telemetry'
-
-let telemetryRecorderProvider: TelemetryRecorderProvider | undefined
-
-/**
- * Recorder for recording telemetry events in the new telemetry framework:
- * https://sourcegraph.com/docs/dev/background-information/telemetry
- *
- * See GraphQLTelemetryExporter to learn more about how events are exported
- * when recorded using the new recorder.
- *
- * The default recorder throws an error if it is used before initialization
- * via createOrUpdateTelemetryRecorderProvider.
- */
-export let telemetryRecorder: TelemetryRecorder = new NoOpTelemetryRecorderProvider().getRecorder([
-    new CallbackTelemetryProcessor(() => {
-        if (!process.env.VITEST) {
-            throw new Error('telemetry-v2: recorder used before initialization')
-        }
-    }),
-])
 
 /**
  * For legacy events export, where we are connected to a pre-5.2.0 instance,
@@ -48,25 +32,6 @@ const legacyBackcompatLogEventMode: LogEventMode = 'connected-instance-only'
 
 const debugLogLabel = 'telemetry-v2'
 
-function updateGlobalInstances(updatedProvider: TelemetryRecorderProvider & { noOp?: boolean }): void {
-    telemetryRecorderProvider?.unsubscribe()
-    telemetryRecorderProvider = updatedProvider
-    telemetryRecorder = updatedProvider.getRecorder([
-        // Log all events in debug for reference.
-        new CallbackTelemetryProcessor(event => {
-            logDebug(
-                debugLogLabel,
-                `recordEvent${updatedProvider.noOp ? ' (no-op)' : ''}: ${event.feature}/${
-                    event.action
-                }: ${JSON.stringify({
-                    parameters: event.parameters,
-                    timestamp: event.timestamp,
-                })}`
-            )
-        }),
-    ])
-}
-
 /**
  * Initializes or configures new event-recording globals, which leverage the
  * new telemetry framework:
@@ -78,7 +43,8 @@ export async function createOrUpdateTelemetryRecorderProvider(
      * Hardcode isExtensionModeDevOrTest to false to test real exports - when
      * true, exports are logged to extension output instead.
      */
-    isExtensionModeDevOrTest: boolean
+    isExtensionModeDevOrTest: boolean,
+    authProvider: AuthProvider
 ): Promise<void> {
     const extensionDetails = getExtensionDetails(config)
 
@@ -90,7 +56,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
         !extensionDetails.ide ||
         extensionDetails.ideExtensionType !== 'Cody'
     ) {
-        updateGlobalInstances(defaultNoOpProvider)
+        updateGlobalTelemetryInstances(defaultNoOpProvider)
         return
     }
 
@@ -102,17 +68,23 @@ export async function createOrUpdateTelemetryRecorderProvider(
      */
     if (process.env.CODY_TESTING === 'true') {
         logDebug(debugLogLabel, 'using mock exporter')
-        updateGlobalInstances(
-            new MockServerTelemetryRecorderProvider(extensionDetails, config, anonymousUserID)
+        updateGlobalTelemetryInstances(
+            new MockServerTelemetryRecorderProvider(
+                extensionDetails,
+                config,
+                () => authProvider.getAuthStatus(),
+                anonymousUserID
+            )
         )
     } else if (isExtensionModeDevOrTest) {
         logDebug(debugLogLabel, 'using no-op exports')
-        updateGlobalInstances(defaultNoOpProvider)
+        updateGlobalTelemetryInstances(defaultNoOpProvider)
     } else {
-        updateGlobalInstances(
+        updateGlobalTelemetryInstances(
             new TelemetryRecorderProvider(
                 extensionDetails,
                 config,
+                () => authProvider.getAuthStatus(),
                 anonymousUserID,
                 legacyBackcompatLogEventMode
             )

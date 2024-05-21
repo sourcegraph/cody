@@ -6,7 +6,7 @@ import com.google.gson.annotations.SerializedName
 data class ClientCapabilities(
   val completions: CompletionsEnum? = null, // Oneof: none
   val chat: ChatEnum? = null, // Oneof: none, streaming
-  val git: GitEnum? = null, // Oneof: none, disabled
+  val git: GitEnum? = null, // Oneof: none, enabled
   val progressBars: ProgressBarsEnum? = null, // Oneof: none, enabled
   val edit: EditEnum? = null, // Oneof: none, enabled
   val editWorkspace: EditWorkspaceEnum? = null, // Oneof: none, enabled
@@ -14,6 +14,7 @@ data class ClientCapabilities(
   val showDocument: ShowDocumentEnum? = null, // Oneof: none, enabled
   val codeLenses: CodeLensesEnum? = null, // Oneof: none, enabled
   val showWindowMessage: ShowWindowMessageEnum? = null, // Oneof: notification, request
+  val ignore: IgnoreEnum? = null, // Oneof: none, enabled
 ) {
 
   enum class CompletionsEnum {
@@ -27,7 +28,7 @@ data class ClientCapabilities(
 
   enum class GitEnum {
     @SerializedName("none") None,
-    @SerializedName("disabled") Disabled,
+    @SerializedName("enabled") Enabled,
   }
 
   enum class ProgressBarsEnum {
@@ -63,6 +64,11 @@ data class ClientCapabilities(
   enum class ShowWindowMessageEnum {
     @SerializedName("notification") Notification,
     @SerializedName("request") Request,
+  }
+
+  enum class IgnoreEnum {
+    @SerializedName("none") None,
+    @SerializedName("enabled") Enabled,
   }
 }
 

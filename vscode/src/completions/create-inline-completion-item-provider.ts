@@ -1,23 +1,22 @@
-import * as vscode from 'vscode'
-
 import {
-    isDotCom,
     type CodeCompletionsClient,
     type ConfigurationWithAccessToken,
     featureFlagProvider,
+    isDotCom,
 } from '@sourcegraph/cody-shared'
+import * as vscode from 'vscode'
 
 import { logDebug } from '../log'
 import type { AuthProvider } from '../services/AuthProvider'
 import type { CodyStatusBar } from '../services/StatusBar'
 
+import { completionProviderConfig } from './completion-provider-config'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProviderConfig } from './providers/create-provider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
-import { completionProviderConfig } from './completion-provider-config'
 
-interface InlineCompletionItemProviderArgs {
+export interface InlineCompletionItemProviderArgs {
     config: ConfigurationWithAccessToken
     client: CodeCompletionsClient
     statusBar: CodyStatusBar

@@ -1,30 +1,24 @@
 import * as uuid from 'uuid'
 import type { Memento } from 'vscode'
 
-import type { ChatHistory, ChatInputHistory, UserLocalHistory } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    type ChatHistory,
+    type SerializedChatInteraction,
+    type SerializedChatMessage,
+    type UserLocalHistory,
+    logDebug,
+} from '@sourcegraph/cody-shared'
 
-import { isSourcegraphToken, type AuthStatus } from '../chat/protocol'
+import { isSourcegraphToken } from '../chat/protocol'
 
 type ChatHistoryKey = `${string}-${string}`
 type AccountKeyedChatHistory = {
     [key: ChatHistoryKey]: PersistedUserLocalHistory
-} & {
-    // For backward compatibility, we do not want to delete the `chat` and `input` keys.
-    // As otherwise, downgrading to a prior version would completely block the startup
-    // as the client would throw.
-    //
-    // TODO: This can be removed in a future version
-    chat: ChatHistory
-    input: []
 }
 
-/**
- * Persisted chat history may contain string inputs without context
- * that we must migrate during loading.
- */
 interface PersistedUserLocalHistory {
     chat: ChatHistory
-    input: (ChatInputHistory | string)[]
 }
 
 class LocalStorage {
@@ -33,7 +27,7 @@ class LocalStorage {
     public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
     public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     protected readonly CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
-    protected readonly KEY_LAST_USED_RECIPES = 'SOURCEGRAPH_CODY_LAST_USED_RECIPE_NAMES'
+    protected readonly CODY_ENROLLMENT_HISTORY = 'SOURCEGRAPH_CODY_ENROLLMENTS'
 
     /**
      * Should be set on extension activation via `localStorage.setStorage(context.globalState)`
@@ -90,10 +84,6 @@ class LocalStorage {
         return this.storage.get<string[] | null>(this.CODY_ENDPOINT_HISTORY, null)
     }
 
-    public async deleteEndpointHistory(): Promise<void> {
-        await this.storage.update(this.CODY_ENDPOINT_HISTORY, null)
-    }
-
     private async addEndpointHistory(endpoint: string): Promise<void> {
         // Do not save sourcegraph tokens as endpoint
         if (isSourcegraphToken(endpoint)) {
@@ -108,59 +98,18 @@ class LocalStorage {
     }
 
     public getChatHistory(authStatus: AuthStatus): UserLocalHistory {
-        let history = this.storage.get<AccountKeyedChatHistory | PersistedUserLocalHistory | null>(
-            this.KEY_LOCAL_HISTORY,
-            null
-        )
-        if (!history) {
-            return { chat: {}, input: [] }
+        const history = this.storage.get<AccountKeyedChatHistory | null>(this.KEY_LOCAL_HISTORY, null)
+        const accountKey = getKeyForAuthStatus(authStatus)
+
+        // Migrate chat history to set the `ChatMessage.model` property on each assistant message
+        // instead of `chatModel` on the overall transcript. Can remove when
+        // `SerializedChatTranscript.chatModel` property is removed in v1.22.
+        const migratedHistory = migrateHistoryForChatModelProperty(history)
+        if (history !== migratedHistory) {
+            this.storage.update(this.KEY_LOCAL_HISTORY, migratedHistory).then(() => {}, console.error)
         }
 
-        const key = getKeyForAuthStatus(authStatus)
-
-        // For backwards compatibility, we upgrade the local storage key from the old layout that is
-        // not scoped to individual user accounts to be scoped instead.
-        if (history && !isMigratedChatHistory2261(history)) {
-            // HACK: We spread both parts here as TS would otherwise have issues validating the type
-            //       of AccountKeyedChatHistory. This is only three fields though.
-            history = {
-                ...{ [key]: history },
-                ...{
-                    chat: {},
-                    input: [],
-                },
-            } satisfies AccountKeyedChatHistory
-            // We use a raw write here to ensure we do not _append_ a key but actually replace
-            // existing `chat` and `input` keys.
-            // The result is not awaited to avoid changing this API to be async.
-            this.storage.update(this.KEY_LOCAL_HISTORY, history).then(() => {}, console.error)
-        }
-
-        if (!Object.hasOwn(history, key)) {
-            return { chat: {}, input: [] }
-        }
-
-        const accountHistory = (history as AccountKeyedChatHistory)[key]
-
-        // Persisted history might contain only string inputs without context so these may need converting too.
-        const inputs = accountHistory?.input
-        if (inputs?.length) {
-            let didUpdate = false
-            for (let i = 0; i < inputs.length; i++) {
-                const input = inputs[i]
-                // Convert strings to ChatInputHistory
-                if (typeof input === 'string') {
-                    inputs[i] = { inputText: input, inputContextFiles: [] }
-                    didUpdate = true
-                }
-            }
-            // Persist back to disk if we made any changes.
-            if (didUpdate) {
-                this.storage.update(this.KEY_LOCAL_HISTORY, history).then(() => {}, console.error)
-            }
-        }
-
-        return accountHistory as UserLocalHistory
+        return migratedHistory?.[accountKey] ?? { chat: {} }
     }
 
     public async setChatHistory(authStatus: AuthStatus, history: UserLocalHistory): Promise<void> {
@@ -180,9 +129,6 @@ class LocalStorage {
             }
 
             await this.storage.update(this.KEY_LOCAL_HISTORY, fullHistory)
-
-            // MIGRATION: Delete old/orphaned storage data from a previous migration.
-            this.migrateChatHistory2665(fullHistory as AccountKeyedChatHistory)
         } catch (error) {
             console.error(error)
         }
@@ -202,10 +148,30 @@ class LocalStorage {
 
     public async removeChatHistory(authStatus: AuthStatus): Promise<void> {
         try {
-            await this.setChatHistory(authStatus, { chat: {}, input: [] })
+            await this.setChatHistory(authStatus, { chat: {} })
         } catch (error) {
             console.error(error)
         }
+    }
+
+    /**
+     * Gets the enrollment history for a feature from the storage.
+     *
+     * Checks if the given feature name exists in the stored enrollment
+     * history array.
+     *
+     * If not, add the feature to the memory, but return false after adding the feature
+     * so that the caller can log the first enrollment event.
+     */
+    public getEnrollmentHistory(featureName: string): boolean {
+        const history = this.storage.get<string[]>(this.CODY_ENROLLMENT_HISTORY, [])
+        const hasEnrolled = history.includes(featureName)
+        // Log the first enrollment event
+        if (!hasEnrolled) {
+            history.push(featureName)
+            this.storage.update(this.CODY_ENROLLMENT_HISTORY, history)
+        }
+        return hasEnrolled
     }
 
     /**
@@ -227,21 +193,6 @@ class LocalStorage {
         return { anonymousUserID: id, created }
     }
 
-    public async setLastUsedCommands(commands: string[]): Promise<void> {
-        if (commands.length === 0) {
-            return
-        }
-        try {
-            await this.storage.update(this.KEY_LAST_USED_RECIPES, commands)
-        } catch (error) {
-            console.error(error)
-        }
-    }
-
-    public getLastUsedCommands(): string[] | null {
-        return this.storage.get<string[] | null>(this.KEY_LAST_USED_RECIPES, null)
-    }
-
     public get(key: string): string | null {
         return this.storage.get(key, null)
     }
@@ -257,22 +208,6 @@ class LocalStorage {
     public async delete(key: string): Promise<void> {
         await this.storage.update(key, undefined)
     }
-
-    /**
-     * In https://github.com/sourcegraph/cody/pull/2665 we migrated the chat history key to use the
-     * user's username instead of their email address. This means that the storage would retain the chat
-     * history under the old key indefinitely. Large storage data slows down extension host activation
-     * and each `Memento#update` call, so we don't want it to linger.
-     */
-    private migrateChatHistory2665(history: AccountKeyedChatHistory): void {
-        const needsMigration = Object.keys(history).some(key => key.includes('@'))
-        if (needsMigration) {
-            const cleanedHistory = Object.fromEntries(
-                Object.entries(history).filter(([key]) => !key.includes('@'))
-            )
-            this.storage.update(this.KEY_LOCAL_HISTORY, cleanedHistory).then(() => {}, console.error)
-        }
-    }
 }
 
 /**
@@ -286,12 +221,66 @@ function getKeyForAuthStatus(authStatus: AuthStatus): ChatHistoryKey {
 }
 
 /**
- * As part of #2261, we migrated the storage format of the chat history to be keyed by the current
- * user account. This checks if the new format is used by checking if any key contains a hyphen (the
- * separator between endpoint and email in the new format).
+ * Migrate chat history to set the {@link ChatMessage.model} property on each assistant message
+ * instead of {@link SerializedChatTranscript.chatModel} on the overall transcript. Can remove when
+ * {@link SerializedChatTranscript.chatModel} property is removed in v1.22.
  */
-function isMigratedChatHistory2261(
-    history: AccountKeyedChatHistory | PersistedUserLocalHistory
-): history is AccountKeyedChatHistory {
-    return !!Object.keys(history).find(k => k.includes('-'))
+function migrateHistoryForChatModelProperty(
+    history: AccountKeyedChatHistory | null
+): AccountKeyedChatHistory | null {
+    if (!history) {
+        return null
+    }
+
+    let neededMigration = 0
+    function migrateAssistantMessage(
+        assistantMessage: SerializedChatMessage,
+        model: string | undefined
+    ): SerializedChatMessage {
+        if (assistantMessage.model) {
+            return assistantMessage
+        }
+        neededMigration++
+        return {
+            ...assistantMessage,
+            model: model ?? 'unknown',
+        }
+    }
+
+    const migratedHistory = Object.fromEntries(
+        Object.entries(history).map(([accountKey, userLocalHistory]) => [
+            accountKey,
+            {
+                chat: userLocalHistory.chat
+                    ? Object.fromEntries(
+                          Object.entries(userLocalHistory.chat).map(([id, transcript]) => [
+                              id,
+                              transcript
+                                  ? {
+                                        ...transcript,
+                                        interactions: transcript.interactions.map(
+                                            interaction =>
+                                                ({
+                                                    ...interaction,
+                                                    assistantMessage: interaction.assistantMessage
+                                                        ? migrateAssistantMessage(
+                                                              interaction.assistantMessage,
+                                                              transcript.chatModel
+                                                          )
+                                                        : null,
+                                                }) satisfies SerializedChatInteraction
+                                        ),
+                                    }
+                                  : transcript,
+                          ])
+                      )
+                    : {},
+            },
+        ])
+    )
+    if (neededMigration) {
+        logDebug('migrateHistoryForChatModelProperty', `${neededMigration} chat messages migrated`)
+        return migratedHistory
+    }
+    return history
 }

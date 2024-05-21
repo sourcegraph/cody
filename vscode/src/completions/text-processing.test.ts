@@ -2,9 +2,9 @@ import { describe, expect, it, test } from 'vitest'
 
 import {
     CLOSING_CODE_TAG,
+    OPENING_CODE_TAG,
     collapseDuplicativeWhitespace,
     extractFromCodeBlock,
-    OPENING_CODE_TAG,
     trimLeadingWhitespaceUntilNewline,
 } from './text-processing'
 
@@ -32,7 +32,7 @@ describe('extractFromCodeBlock', () => {
     it('returns an empty string if the opening tag is found', () => {
         expect(extractFromCodeBlock(`${OPENING_CODE_TAG}hello world${CLOSING_CODE_TAG}`)).toBe('')
         expect(extractFromCodeBlock(`hello world${OPENING_CODE_TAG}`)).toBe('')
-        expect(extractFromCodeBlock(OPENING_CODE_TAG)).toBe('')
+        expect(extractFromCodeBlock(OPENING_CODE_TAG.toString())).toBe('')
     })
 })
 

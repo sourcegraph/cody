@@ -1,8 +1,10 @@
 import {
-    type ContextFile,
-    MAX_CURRENT_FILE_TOKENS,
-    truncateText,
+    type ContextItem,
+    ContextItemSource,
+    TokenCounter,
+    contextFiltersProvider,
     logError,
+    toRangeData,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -11,27 +13,32 @@ import type { URI } from 'vscode-uri'
 /**
  * Generate ContextFile for a file URI.
  */
-export async function getContextFileFromUri(file: URI): Promise<ContextFile[]> {
+export async function getContextFileFromUri(file: URI, range?: vscode.Range): Promise<ContextItem[]> {
     return wrapInActiveSpan('commands.context.filePath', async span => {
         try {
-            const doc = await vscode.workspace.openTextDocument(file)
-            const decoded = doc?.getText()
-            const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS).trim()
-            if (!decoded || !truncatedContent) {
-                throw new Error('No file content')
+            if (await contextFiltersProvider.isUriIgnored(file)) {
+                return []
             }
 
-            const range = new vscode.Range(0, 0, truncatedContent.split('\n').length, 0)
+            const doc = await vscode.workspace.openTextDocument(file)
+            const content = doc?.getText(range).trim()
+            if (!content) {
+                throw new Error('No file content')
+            }
+            const endLine = Math.max(doc.lineCount - 1, 0)
+            range = range ?? new vscode.Range(0, 0, endLine, 0)
+            const size = TokenCounter.countTokens(content)
 
             return [
                 {
                     type: 'file',
-                    content: decoded,
+                    content,
                     uri: file,
-                    source: 'editor',
-                    range,
+                    source: ContextItemSource.Editor,
+                    range: toRangeData(range),
+                    size,
                 },
-            ]
+            ] satisfies ContextItem[]
         } catch (error) {
             logError('getContextFileFromUri', 'failed', { verbose: error })
             return []

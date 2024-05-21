@@ -1,26 +1,28 @@
 import type { URI } from 'vscode-uri'
 
-import type { ContextFile, ContextFileFile } from '../codebase-context/messages'
+import type { RangeData } from '..'
+import type { ContextItem, ContextItemFile } from '../codebase-context/messages'
+import type { PromptString } from '../prompt/prompt-string'
 import type { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 
-export type ContextResult = ContextFile & {
+export type ContextResult = ContextItem & {
     repoName?: string
     revision?: string
     content: string
 }
 
 export interface FilenameContextFetcher {
-    getContext(query: string, numResults: number): Promise<ContextResult[]>
+    getContext(query: PromptString, numResults: number): Promise<ContextResult[]>
 }
 
 export interface LocalEmbeddingsFetcher {
-    getContext(query: string, numResults: number): Promise<EmbeddingsSearchResult[]>
+    getContext(query: PromptString, numResults: number): Promise<EmbeddingsSearchResult[]>
 }
 
 // Minimal interface so inline edit can use remote search for context.
 export interface IRemoteSearch {
     setWorkspaceUri(uri: URI): Promise<void>
-    search(query: string): Promise<ContextFileFile[]>
+    search(query: PromptString): Promise<ContextItemFile[]>
 }
 
 interface Point {
@@ -48,7 +50,7 @@ export interface Result {
 }
 
 export interface IndexedKeywordContextFetcher {
-    getResults(query: string, scopeDirs: URI[]): Promise<Promise<Result[]>[]>
+    getResults(query: PromptString, scopeDirs: URI[]): Promise<Promise<Result[]>[]>
 }
 
 /**
@@ -64,14 +66,5 @@ export interface SearchPanelFile {
  */
 export interface SearchPanelSnippet {
     contents: string
-    range: {
-        start: {
-            line: number
-            character: number
-        }
-        end: {
-            line: number
-            character: number
-        }
-    }
+    range: RangeData
 }

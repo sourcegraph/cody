@@ -1,10 +1,10 @@
-import { execSync } from 'child_process'
-import path from 'path'
+import { execSync } from 'node:child_process'
+import path from 'node:path'
 
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
-import { logDebug, logError } from '@sourcegraph/cody-shared'
+import { extensionForLanguage, logDebug, logError, setClientNameVersion } from '@sourcegraph/cody-shared'
 
 // <VERY IMPORTANT - PLEASE READ>
 // This file must not import any module that transitively imports from 'vscode'.
@@ -23,6 +23,7 @@ import { logDebug, logError } from '@sourcegraph/cody-shared'
 import type { InlineCompletionItemProvider } from '../../vscode/src/completions/inline-completion-item-provider'
 import type { API, GitExtension, Repository } from '../../vscode/src/repository/builtinGitExtension'
 import { AgentEventEmitter as EventEmitter } from '../../vscode/src/testutils/AgentEventEmitter'
+import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
 import {
     CancellationTokenSource,
     ColorThemeKind,
@@ -40,17 +41,15 @@ import {
     ViewColumn,
     workspaceFs,
 } from '../../vscode/src/testutils/mocks'
-import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
 
 import { emptyDisposable } from '../../vscode/src/testutils/emptyDisposable'
 
-import type { Agent } from './agent'
+import { AgentQuickPick } from './AgentQuickPick'
 import { AgentTabGroups } from './AgentTabGroups'
 import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
+import type { Agent } from './agent'
 import { matchesGlobPatterns } from './cli/evaluate-autocomplete/matchesGlobPatterns'
 import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
-import { AgentQuickPick } from './AgentQuickPick'
-import { extensionForLanguage } from '@sourcegraph/cody-shared/src/common/languages'
 
 // Not using CODY_TESTING because it changes the URL endpoint we send requests
 // to and we want to send requests to sourcegraph.com because we record the HTTP
@@ -111,6 +110,7 @@ const emptyFileWatcher: vscode.FileSystemWatcher = {
 export let clientInfo: ClientInfo | undefined
 export function setClientInfo(newClientInfo: ClientInfo): void {
     clientInfo = newClientInfo
+    setClientNameVersion(clientInfo.name, clientInfo.version)
     if (newClientInfo.extensionConfiguration) {
         setExtensionConfiguration(newClientInfo.extensionConfiguration)
     }
@@ -176,6 +176,7 @@ export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments)
 }
 
 export const workspaceFolders: vscode.WorkspaceFolder[] = []
+export const workspaceTextDocuments: vscode.TextDocument[] = []
 
 // vscode.workspace.onDidChangeConfiguration
 const _workspace: typeof vscode.workspace = {
@@ -205,7 +206,7 @@ const _workspace: typeof vscode.workspace = {
     registerFileSystemProvider: () => emptyDisposable,
     registerNotebookSerializer: () => emptyDisposable,
     saveAll: () => Promise.resolve(false),
-    textDocuments: [], // Cody uses `vscode.window.tabGroups.all` instead of this API
+    textDocuments: workspaceTextDocuments,
     updateWorkspaceFolders: () => false,
     workspaceFile: undefined,
     registerTaskProvider: () => emptyDisposable,
@@ -290,49 +291,13 @@ const _workspace: typeof vscode.workspace = {
         if (!workspaceDocuments) {
             throw new Error('workspaceDocuments is uninitialized')
         }
-        if (typeof uriOrString === 'string') {
-            return workspaceDocuments.openTextDocument(Uri.file(uriOrString))
-        }
-        if (uriOrString instanceof Uri) {
-            return workspaceDocuments.openTextDocument(uriOrString)
-        }
 
-        if (
-            typeof uriOrString === 'object' &&
-            ((uriOrString as any)?.language || (uriOrString as any)?.content) &&
-            agent
-        ) {
-            const language: string = (uriOrString as any)?.language ?? ''
-            const content: string = (uriOrString as any)?.content ?? ''
-            const extension = extensionForLanguage(language) ?? language
-            const untitledUri = Uri.from({ scheme: 'untitled', path: `${uuid.v4()}.${extension}` })
-            if (clientInfo?.capabilities?.untitledDocuments !== 'enabled') {
-                const errorMessage =
-                    'Client does not support untitled documents. To fix this problem, set `untitledDocuments: "enabled"` in client capabilities'
-                logError('vscode.workspace.openTextDocument', 'unsupported operation', errorMessage)
-                throw new Error(errorMessage)
+        const result = toUri(uriOrString)
+        if (result) {
+            if (result.uri.scheme === 'untitled' && result.shouldOpenInClient) {
+                await openUntitledDocument(result.uri)
             }
-            const result = await agent.request('textDocument/openUntitledDocument', {
-                uri: untitledUri.toString(),
-                content,
-                language,
-            })
-
-            if (!result) {
-                throw new Error(
-                    `client returned false from textDocument/openUntitledDocument: ${JSON.stringify(
-                        uriOrString
-                    )}`
-                )
-            }
-            const document = await workspaceDocuments.openTextDocument(untitledUri)
-            if (document.getText() !== content) {
-                throw new Error(
-                    'untitled document has mismatched content. ' +
-                        JSON.stringify({ expected: content, obtained: document.getText() }, null, 2)
-                )
-            }
-            return document
+            return workspaceDocuments.openTextDocument(result.uri)
         }
         return Promise.reject(
             new Error(`workspace.openTextDocument:unsupported argument ${JSON.stringify(uriOrString)}`)
@@ -352,6 +317,8 @@ const _workspace: typeof vscode.workspace = {
             name: workspaceDocuments.workspaceRootUri?.path,
         }
     },
+    // TODO: used by `WorkspaceRepoMapper` and will be used by `git.onDidOpenRepository`
+    // https://github.com/sourcegraph/cody/issues/4136
     onDidChangeWorkspaceFolders: emptyEvent(),
     onDidOpenTextDocument: onDidOpenTextDocument.event,
     onDidChangeConfiguration: onDidChangeConfiguration.event,
@@ -383,7 +350,9 @@ const _workspace: typeof vscode.workspace = {
         }
         return relativePath
     },
-    createFileSystemWatcher: () => emptyFileWatcher, // TODO: used for codyignore and custom commands
+    // TODO: used for Cody Ignore, WorkspaceRepoMapper and custom commands
+    // https://github.com/sourcegraph/cody/issues/4136
+    createFileSystemWatcher: () => emptyFileWatcher,
     getConfiguration: (section, scope): vscode.WorkspaceConfiguration => {
         if (section !== undefined) {
             if (scope === undefined) {
@@ -431,7 +400,10 @@ export function defaultWebviewPanel(params: {
     title: string
     showOptions:
         | vscode.ViewColumn
-        | { readonly viewColumn: vscode.ViewColumn; readonly preserveFocus?: boolean }
+        | {
+              readonly viewColumn: vscode.ViewColumn
+              readonly preserveFocus?: boolean
+          }
     options: (vscode.WebviewPanelOptions & vscode.WebviewOptions) | undefined
     onDidReceiveMessage: vscode.EventEmitter<any>
     onDidPostMessage: EventEmitter<any>
@@ -441,7 +413,10 @@ export function defaultWebviewPanel(params: {
         dispose: () => {},
         onDidChangeViewState: emptyEvent(),
         onDidDispose: emptyEvent(),
-        options: params.options ?? { enableFindWidget: false, retainContextWhenHidden: false },
+        options: params.options ?? {
+            enableFindWidget: false,
+            retainContextWhenHidden: false,
+        },
         reveal: () => {},
         title: params.title,
         viewColumn:
@@ -477,6 +452,58 @@ const defaultTreeView: vscode.TreeView<any> = {
     description: undefined,
     message: undefined,
     title: undefined,
+}
+
+/**
+ * @returns An object with a URI and a boolean indicating whether the URI should be opened in the client.
+ * This object with UUID path is used only when we want to create in-memory temp files, and those we do not want to send to the clients.
+ */
+function toUri(
+    uriOrString: string | vscode.Uri | { language?: string; content?: string } | undefined
+): { uri: Uri; shouldOpenInClient: boolean } | undefined {
+    if (typeof uriOrString === 'string') {
+        return { uri: Uri.file(uriOrString), shouldOpenInClient: true }
+    }
+    if (uriOrString instanceof Uri) {
+        return { uri: uriOrString, shouldOpenInClient: true }
+    }
+    if (
+        typeof uriOrString === 'object' &&
+        ((uriOrString as any)?.language || (uriOrString as any)?.content)
+    ) {
+        const language = (uriOrString as any)?.language ?? ''
+        const extension = extensionForLanguage(language) ?? language
+        return {
+            uri: Uri.from({
+                scheme: 'untitled',
+                path: `${uuid.v4()}.${extension}`,
+            }),
+            shouldOpenInClient: false,
+        }
+    }
+    return
+}
+
+async function openUntitledDocument(uri: Uri, content?: string, language?: string) {
+    if (clientInfo?.capabilities?.untitledDocuments !== 'enabled') {
+        const errorMessage =
+            'Client does not support untitled documents. To fix this problem, set `untitledDocuments: "enabled"` in client capabilities'
+        logError('vscode.workspace.openTextDocument', 'unsupported operation', errorMessage)
+        throw new Error(errorMessage)
+    }
+    if (agent) {
+        const result = await agent.request('textDocument/openUntitledDocument', {
+            uri: uri.toString(),
+            content,
+            language,
+        })
+
+        if (!result) {
+            throw new Error(
+                `client returned false from textDocument/openUntitledDocument: ${uri.toString()}`
+            )
+        }
+    }
 }
 
 function outputChannel(name: string): vscode.LogOutputChannel {
@@ -548,7 +575,10 @@ async function showWindowMessage(
             })
             return result ?? undefined
         }
-        agent.notify('debug/message', { channel: 'window.showErrorMessage', message })
+        agent.notify('debug/message', {
+            channel: 'window.showErrorMessage',
+            message,
+        })
     }
     return Promise.resolve(undefined)
 }
@@ -610,7 +640,11 @@ const _window: typeof vscode.window = {
                 {
                     report: ({ message, increment }) => {
                         if (progressClient && !token.isCancellationRequested) {
-                            progressClient.notify('progress/report', { id, message, increment })
+                            progressClient.notify('progress/report', {
+                                id,
+                                message,
+                                increment,
+                            })
                         }
                     },
                 },
@@ -653,7 +687,22 @@ const _window: typeof vscode.window = {
                     `vscode.window.showTextDocument: unable to infer URI from argument ${params}`
                 )
             }
-            const result = await agent.request('textDocument/show', { uri })
+            const selection = (options as any)?.selection
+            const selectionRange = selection
+                ? new Range(
+                      selection.start.line,
+                      selection.start.character,
+                      selection.end.line,
+                      selection.end.character
+                  )
+                : undefined
+            const result = await agent.request('textDocument/show', {
+                uri,
+                options: {
+                    preserveFocus: (options as any)?.preserveFocus ?? true,
+                    selection: selectionRange,
+                },
+            })
             if (!result) {
                 throw new Error(`showTextDocument: client returned false when trying to show URI ${uri}`)
             }
@@ -777,13 +826,19 @@ const gitExports: GitExtension = {
             getRepository(uri) {
                 try {
                     const cwd = uri.fsPath
-                    const toplevel = execSync('git rev-parse --show-toplevel', { cwd, stdio: 'pipe' })
+                    const toplevel = execSync('git rev-parse --show-toplevel', {
+                        cwd,
+                        stdio: 'pipe',
+                    })
                         .toString()
                         .trim()
                     if (toplevel !== uri.fsPath) {
                         return null
                     }
-                    const commit = execSync('git rev-parse --abbrev-ref HEAD', { cwd, stdio: 'pipe' })
+                    const commit = execSync('git rev-parse --abbrev-ref HEAD', {
+                        cwd,
+                        stdio: 'pipe',
+                    })
                         .toString()
                         .trim()
                     return gitRepository(Uri.file(toplevel), commit)
@@ -810,12 +865,12 @@ const _extensions: typeof vscode.extensions = {
     all: [gitExtension],
     onDidChange: emptyEvent(),
     getExtension: (extensionId: string) => {
-        const shouldActivateGitExtension =
-            clientInfo !== undefined && clientInfo?.capabilities?.git !== 'disabled'
-        if (shouldActivateGitExtension && extensionId === 'vscode.git') {
-            const extension: vscode.Extension<any> = gitExtension
-            return extension
+        if (clientInfo?.capabilities?.git === 'enabled' && extensionId === 'vscode.git') {
+            throw new Error(
+                'The git extension is not fully implemented. See https://github.com/sourcegraph/cody/issues/4165'
+            )
         }
+
         return undefined
     },
 }
@@ -905,7 +960,7 @@ export const commands = _commands as typeof vscode.commands
 
 const _env: Partial<typeof vscode.env> = {
     uriScheme: 'file',
-    appRoot: process.cwd(),
+    appRoot: process.cwd?.(),
     uiKind: UIKind.Web,
     language: process.env.language,
     clipboard: {
@@ -915,7 +970,6 @@ const _env: Partial<typeof vscode.env> = {
 }
 export const env = _env as typeof vscode.env
 
-const codeLensProviders = new Set<vscode.CodeLensProvider>()
 const newCodeLensProvider = new EventEmitter<vscode.CodeLensProvider>()
 const removeCodeLensProvider = new EventEmitter<vscode.CodeLensProvider>()
 export const onDidRegisterNewCodeLensProvider = newCodeLensProvider.event
@@ -942,7 +996,7 @@ const _languages: Partial<typeof vscode.languages> = {
     registerCodeActionsProvider: () => emptyDisposable,
     registerCodeLensProvider: (_selector, provider) => {
         newCodeLensProvider.fire(provider)
-        return { dispose: () => codeLensProviders.delete(provider) }
+        return { dispose: () => removeCodeLensProvider.fire(provider) }
     },
     registerInlineCompletionItemProvider: (_selector, provider) => {
         latestCompletionProvider = provider as any
@@ -954,7 +1008,10 @@ const _languages: Partial<typeof vscode.languages> = {
             return [] as vscode.Diagnostic[] // return diagnostics for the specific resource
         }
         return [[resource, []]] // return diagnostics for all resources
-    }) as { (resource: vscode.Uri): vscode.Diagnostic[]; (): [vscode.Uri, vscode.Diagnostic[]][] },
+    }) as {
+        (resource: vscode.Uri): vscode.Diagnostic[]
+        (): [vscode.Uri, vscode.Diagnostic[]][]
+    },
 }
 
 export const languages = _languages as typeof vscode.languages

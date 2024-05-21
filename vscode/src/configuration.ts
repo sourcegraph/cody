@@ -1,17 +1,21 @@
 import * as vscode from 'vscode'
 
 import {
-    DOTCOM_URL,
     type Configuration,
     type ConfigurationUseContext,
     type ConfigurationWithAccessToken,
+    DOTCOM_URL,
+    OLLAMA_DEFAULT_URL,
+    PromptString,
+    ps,
 } from '@sourcegraph/cody-shared'
 
+import { URI } from 'vscode-uri'
 import {
     CONFIG_KEY,
-    getConfigEnumValues,
     type ConfigKeys,
     type ConfigurationKeysMap,
+    getConfigEnumValues,
 } from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
 import { getAccessToken } from './services/SecretStorageProvider'
@@ -51,7 +55,10 @@ export function getConfiguration(
     }
 
     let autocompleteAdvancedProvider = config.get<
-        Configuration['autocompleteAdvancedProvider'] | 'unstable-ollama' | 'unstable-fireworks'
+        | Configuration['autocompleteAdvancedProvider']
+        | 'unstable-ollama'
+        | 'unstable-fireworks'
+        | 'experimental-openaicompatible'
     >(CONFIG_KEY.autocompleteAdvancedProvider, null)
 
     // Handle deprecated provider identifiers
@@ -81,12 +88,23 @@ export function getConfiguration(
         null
     )
 
+    function hasValidLocalEmbeddingsConfig(): boolean {
+        return (
+            [
+                'testing.localEmbeddings.model',
+                'testing.localEmbeddings.endpoint',
+                'testing.localEmbeddings.indexLibraryPath',
+            ].every(key => !!getHiddenSetting<string | undefined>(key, undefined)) &&
+            !!getHiddenSetting<number | undefined>('testing.localEmbeddings.dimension', undefined)
+        )
+    }
+    const vsCodeConfig = vscode.workspace.getConfiguration()
+
     return {
-        proxy: config.get<string | null>(CONFIG_KEY.proxy, null),
+        proxy: vsCodeConfig.get<string>('http.proxy'),
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
         customHeaders: config.get<object>(CONFIG_KEY.customHeaders, {}) as Record<string, string>,
         useContext: config.get<ConfigurationUseContext>(CONFIG_KEY.useContext) || 'embeddings',
-        debugEnable: config.get<boolean>(CONFIG_KEY.debugEnable, false),
         debugVerbose: config.get<boolean>(CONFIG_KEY.debugVerbose, false),
         debugFilter: debugRegex,
         telemetryLevel: config.get<'all' | 'off'>(CONFIG_KEY.telemetryLevel, 'all'),
@@ -94,9 +112,9 @@ export function getConfiguration(
         autocompleteLanguages: config.get(CONFIG_KEY.autocompleteLanguages, {
             '*': true,
         }),
-        chatPreInstruction: config.get(CONFIG_KEY.chatPreInstruction, ''),
+        chatPreInstruction: PromptString.fromConfig(config, CONFIG_KEY.chatPreInstruction, ps``),
+        editPreInstruction: PromptString.fromConfig(config, CONFIG_KEY.editPreInstruction, ps``),
         commandCodeLenses: config.get(CONFIG_KEY.commandCodeLenses, false),
-        editorTitleCommandIcon: config.get(CONFIG_KEY.editorTitleCommandIcon, true),
         autocompleteAdvancedProvider,
         autocompleteAdvancedModel: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedModel, null),
         autocompleteCompleteSuggestWidgetSelection: config.get(
@@ -120,25 +138,42 @@ export function getConfiguration(
         autocompleteExperimentalGraphContext,
         experimentalSimpleChatContext: getHiddenSetting('experimental.simpleChatContext', true),
         experimentalSymfContext: getHiddenSetting('experimental.symfContext', true),
+        experimentalCommitMessage: getHiddenSetting('experimental.commitMessage', true),
+        experimentalNoodle: getHiddenSetting('experimental.noodle', false),
+        experimentalURLContext: getHiddenSetting('experimental.urlContext', false),
 
         experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
-        autocompleteExperimentalDynamicMultilineCompletions: getHiddenSetting(
-            'autocomplete.experimental.dynamicMultilineCompletions',
-            false
-        ),
+        experimentalOllamaChat: getHiddenSetting('experimental.ollamaChat', true),
+        experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
+
+        experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
+
+        experimentalGithubAccessToken: getHiddenSetting('experimental.github.accessToken', ''),
+
         autocompleteExperimentalHotStreak: getHiddenSetting(
             'autocomplete.experimental.hotStreak',
             false
         ),
-        autocompleteExperimentalFastPath: getHiddenSetting('autocomplete.experimental.fastPath', false),
         autocompleteExperimentalOllamaOptions: getHiddenSetting(
             'autocomplete.experimental.ollamaOptions',
             {
-                url: 'http://localhost:11434',
+                url: OLLAMA_DEFAULT_URL,
                 model: 'codellama:7b-code',
             }
+        ),
+        autocompleteExperimentalFireworksOptions: getHiddenSetting(
+            'autocomplete.experimental.fireworksOptions',
+            undefined
+        ),
+        autocompleteExperimentalSmartThrottle: getHiddenSetting(
+            'autocomplete.experimental.smartThrottle',
+            false
+        ),
+        autocompleteExperimentalMultiModelCompletions: getHiddenSetting(
+            'autocomplete.experimental.multiModelCompletions',
+            undefined
         ),
 
         // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
@@ -157,16 +192,18 @@ export function getConfiguration(
                 undefined
             ),
         },
-
-        testingLocalEmbeddingsModel: isTesting
-            ? getHiddenSetting<string | undefined>('testing.localEmbeddings.model', undefined)
-            : undefined,
-        testingLocalEmbeddingsEndpoint: isTesting
-            ? getHiddenSetting<string | undefined>('testing.localEmbeddings.endpoint', undefined)
-            : undefined,
-        testingLocalEmbeddingsIndexLibraryPath: isTesting
-            ? getHiddenSetting<string | undefined>('testing.localEmbeddings.indexLibraryPath', undefined)
-            : undefined,
+        testingModelConfig:
+            isTesting && hasValidLocalEmbeddingsConfig()
+                ? {
+                      model: getHiddenSetting<string>('testing.localEmbeddings.model'),
+                      dimension: getHiddenSetting<number>('testing.localEmbeddings.dimension'),
+                      endpoint: getHiddenSetting<string>('testing.localEmbeddings.endpoint'),
+                      indexPath: URI.file(
+                          getHiddenSetting<string>('testing.localEmbeddings.indexLibraryPath')
+                      ),
+                      provider: 'openai',
+                  }
+                : undefined,
     }
 }
 

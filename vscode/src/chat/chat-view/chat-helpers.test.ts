@@ -1,98 +1,6 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, it, test } from 'vitest'
 
-import {
-    CodebaseContext,
-    populateCurrentEditorSelectedContextTemplate,
-    populateCurrentSelectedCodeContextTemplate,
-    testFileUri,
-    type ContextFile,
-} from '@sourcegraph/cody-shared'
-
-import * as vscode from '../../testutils/mocks'
-
-import {
-    contextItemsToContextFiles,
-    contextMessageToContextItem,
-    getChatPanelTitle,
-    stripContextWrapper,
-} from './chat-helpers'
-import type { ContextItem } from '../../prompt-builder/types'
-
-describe('unwrap context snippets', () => {
-    test('should wrap and unwrap context item snippets', () => {
-        interface TestCase {
-            contextItem: ContextItem
-        }
-
-        const testCases: TestCase[] = [
-            {
-                contextItem: {
-                    uri: testFileUri('test.ts'),
-                    range: new vscode.Range(0, 1, 2, 3),
-                    source: 'editor',
-                    text: '// This is code context',
-                },
-            },
-            {
-                contextItem: {
-                    uri: testFileUri('doc.md'),
-                    range: new vscode.Range(0, 1, 2, 3),
-                    source: 'editor',
-                    text: 'This is markdown context',
-                },
-            },
-        ]
-
-        for (const testCase of testCases) {
-            const contextFiles = contextItemsToContextFiles([testCase.contextItem])
-            const contextMessages = CodebaseContext.makeContextMessageWithResponse({
-                file: contextFiles[0] as ContextFile & Required<Pick<ContextFile, 'uri'>>,
-                results: [contextFiles[0].content || ''],
-            })
-            const contextItem = contextMessageToContextItem(contextMessages[0])
-            expect(prettyJSON(contextItem)).toEqual(prettyJSON(testCase.contextItem))
-        }
-    })
-
-    test('should unwrap context from context message', () => {
-        interface TestCase {
-            input: string
-            expOut: string
-        }
-
-        const testCases: TestCase[] = [
-            {
-                input: populateCurrentEditorSelectedContextTemplate(
-                    '// This is the code',
-                    testFileUri('test.ts')
-                ),
-                expOut: '// This is the code',
-            },
-            {
-                input: populateCurrentSelectedCodeContextTemplate(
-                    '// This is the code',
-                    testFileUri('test.ts')
-                ),
-                expOut: '// This is the code',
-            },
-        ]
-
-        for (const testCase of testCases) {
-            const output = stripContextWrapper(testCase.input)
-            expect(output).toEqual(testCase.expOut)
-        }
-    })
-})
-
-function prettyJSON(obj: any): string {
-    if (obj === null) {
-        return 'null'
-    }
-    if (obj === undefined) {
-        return 'undefined'
-    }
-    return JSON.stringify(obj, Object.keys(obj).sort())
-}
+import { getChatPanelTitle } from './chat-helpers'
 
 describe('getChatPanelTitle', () => {
     test('returns default title when no lastDisplayText', () => {
@@ -134,5 +42,13 @@ describe('getChatPanelTitle', () => {
         const title = 'Explain the relationship...'
         const result = getChatPanelTitle(title)
         expect(result).toEqual('Explain the relationship....')
+    })
+
+    it('should trim leading and trailing whitespace from the input string', () => {
+        expect(getChatPanelTitle('\n\nExplain\n\n')).toEqual('Explain')
+    })
+
+    it('should return the first non-empty line from the input string', () => {
+        expect(getChatPanelTitle('\nInclude this\nExclude this\n')).toEqual('Include this')
     })
 })

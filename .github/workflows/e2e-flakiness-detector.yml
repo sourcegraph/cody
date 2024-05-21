@@ -1,0 +1,49 @@
+# Runs the e2e tests many times to detect intermittent flakiness proactively instead of having it be
+# occasionally detected in unrelated PRs.
+name: e2e-flakiness-detector
+
+on:
+  schedule:
+    - cron: '0 14 * * *' # daily at 1400 UTC
+  workflow_dispatch:
+
+jobs:
+  test-e2e:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu, windows]
+    runs-on: ${{ matrix.runner }}-latest
+    timeout-minutes: 120
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version-file: .tool-versions
+      - uses: pnpm/action-setup@d882d12c64e032187b2edb46d3a0d003b7a43598 # SECURITY: pin third-party action hashes
+      - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+        shell: bash
+        id: pnpm-cache
+      - name: Cache pnpm store
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
+      - run: pnpm install
+      - run: xvfb-run -a pnpm -C vscode run test:e2e --repeat-each 10 --retries 0
+        if: matrix.runner == 'ubuntu'
+        env:
+          NO_LOG_TESTING_TELEMETRY_CALLS: "1"
+      - run: pnpm -C vscode run test:e2e --repeat-each 4 --retries 0
+        if: matrix.runner != 'ubuntu'
+        env:
+          NO_LOG_TESTING_TELEMETRY_CALLS: "1"
+      - uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: playwright-recordings ${{ matrix.runner }}
+          path: playwright/**/*.webm

@@ -1,18 +1,19 @@
 import detectIndent from 'detect-indent'
 import type { TextDocument } from 'vscode'
+import * as vscode from 'vscode'
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
-import { getEditorIndentString } from '../../utils'
 import { canUsePartialCompletion } from '../can-use-partial-completion'
 import { endsWithBlockStart } from '../detect-multiline'
-import { insertIntoDocContext, type DocumentContext } from '../get-current-doc-context'
+import { insertIntoDocContext } from '../get-current-doc-context'
 import { getLastLine } from '../text-processing'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
 import {
-    processCompletion,
     type InlineCompletionItemWithAnalytics,
+    processCompletion,
 } from '../text-processing/process-inline-completions'
 
+import { type DocumentContext, getEditorIndentString } from '@sourcegraph/cody-shared'
 import { getDynamicMultilineDocContext } from './dynamic-multiline'
 import type {
     FetchAndProcessCompletionsParams,
@@ -37,7 +38,9 @@ export function pressEnterAndGetIndentString(
     const { languageId, uri } = document
 
     const startsNewBlock = Boolean(endsWithBlockStart(insertText, languageId))
-    const newBlockIndent = startsNewBlock ? getEditorIndentString(uri) : ''
+    const newBlockIndent = startsNewBlock
+        ? getEditorIndentString(uri, vscode.workspace, vscode.window)
+        : ''
     const currentIndentReference = insertText.includes('\n') ? getLastLine(insertText) : currentLine
 
     return '\n' + detectIndent(currentIndentReference).indent + newBlockIndent
@@ -51,8 +54,7 @@ export function pressEnterAndGetIndentString(
 function insertCompletionAndPressEnter(
     docContext: DocumentContext,
     completion: InlineCompletionItemWithAnalytics,
-    document: TextDocument,
-    dynamicMultilineCompletions: boolean
+    document: TextDocument
 ): DocumentContext {
     const { insertText } = completion
 
@@ -68,7 +70,6 @@ function insertCompletionAndPressEnter(
         docContext,
         languageId: document.languageId,
         insertText: insertTextWithPressedEnter,
-        dynamicMultilineCompletions,
     })
 
     return updatedDocContext
@@ -80,15 +81,9 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
         docContext,
         document,
         document: { languageId },
-        dynamicMultilineCompletions = false,
     } = providerOptions
 
-    let updatedDocContext = insertCompletionAndPressEnter(
-        docContext,
-        completedCompletion,
-        document,
-        dynamicMultilineCompletions
-    )
+    let updatedDocContext = insertCompletionAndPressEnter(docContext, completedCompletion, document)
 
     function* extract(rawCompletion: string, isRequestEnd: boolean): Generator<FetchCompletionResult> {
         while (true) {
@@ -108,7 +103,7 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
 
             const maybeDynamicMultilineDocContext = {
                 ...updatedDocContext,
-                ...(dynamicMultilineCompletions && !updatedDocContext.multilineTrigger
+                ...(!updatedDocContext.multilineTrigger
                     ? getDynamicMultilineDocContext({
                           languageId,
                           docContext: updatedDocContext,
@@ -120,7 +115,6 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
             const completion = extractCompletion(unprocessedCompletion, {
                 document,
                 docContext: maybeDynamicMultilineDocContext,
-                isDynamicMultilineCompletion: Boolean(dynamicMultilineCompletions),
             })
 
             addAutocompleteDebugEvent('attempted to extract completion', {
@@ -153,8 +147,7 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
                 updatedDocContext = insertCompletionAndPressEnter(
                     updatedDocContext,
                     processedCompletion,
-                    document,
-                    dynamicMultilineCompletions
+                    document
                 )
             } else {
                 addAutocompleteDebugEvent('hot-streak extractor stop')

@@ -1,28 +1,43 @@
-import type { ContextFile, PreciseContext } from '../../codebase-context/messages'
+import type { ContextItem } from '../../codebase-context/messages'
 import type { Message } from '../../sourcegraph-api'
 
-import type { TranscriptJSON } from '.'
-import type { DefaultCodyCommands } from '../../commands/types'
-
-export interface ChatButton {
-    label: string
-    action: string
-    onClick: (action: string) => void
-    appearance?: 'primary' | 'secondary' | 'icon'
-}
+import type { SerializedChatTranscript } from '.'
 
 export interface ChatMessage extends Message {
-    displayText?: string
-    contextFiles?: ContextFile[]
-    preciseContext?: PreciseContext[]
-    buttons?: ChatButton[]
-    data?: any
-    metadata?: ChatMetadata
+    contextFiles?: ContextItem[]
     error?: ChatError
+
+    /**
+     * For messages composed in a rich text editor field, this is the representation of the editor
+     * state that can be used to instantiate the editor to edit the message or to render the
+     * message. This field's value is opaque to all but the rich editor, and it must validate and
+     * version the value so that it can (1) support backward- and forward-compatibility and (2) fall
+     * back to editing the text for invalid values.
+     */
+    editorState?: unknown
+
+    /**
+     * The model used to generate this chat message response. Not set on human messages.
+     *
+     * NOTE: The chat model used to be a property of the entire chat session and was not changeable
+     * after the chat session had begun. Now that field, {@link SerializedChatTranscript.chatModel},
+     * is deprecated, and this field should be used instead.
+     */
+    model?: string
 }
 
-export interface InteractionMessage extends ChatMessage {
-    prefix?: string
+// An unsafe version of the {@link ChatMessage} that has the PromptString
+// replaced to a regular string for serialization @see ChatMessage
+//
+// Note: This is created as an interface so that the Kotlin type-gen does not
+// break.
+export interface SerializedChatMessage {
+    contextFiles?: ContextItem[]
+    error?: ChatError
+    editorState?: unknown
+    speaker: 'human' | 'assistant' | 'system'
+    text?: string // Changed from PromptString
+    model?: string
 }
 
 export interface ChatError {
@@ -45,29 +60,24 @@ export interface ChatError {
     isChatErrorGuard: 'isChatErrorGuard'
 }
 
-interface ChatMetadata {
-    source?: ChatEventSource
-    requestID?: string
-    chatModel?: string
-}
-
 export interface UserLocalHistory {
     chat: ChatHistory
-    input: ChatInputHistory[]
 }
 
 export interface ChatHistory {
-    [chatID: string]: TranscriptJSON
+    [chatID: string]: SerializedChatTranscript
 }
 
-export interface ChatInputHistory {
-    inputText: string
-    inputContextFiles: ContextFile[]
-}
+/**
+ * We need to specific a default event source as some commands can be
+ * executed directly through VS Code where we cannot provide a custom source.
+ * For example: Commands executed through the command palette, right-click menu or through keyboard shortcuts.
+ */
+export const DEFAULT_EVENT_SOURCE = 'editor'
 
-export type ChatEventSource =
+export type EventSource =
+    | typeof DEFAULT_EVENT_SOURCE
     | 'chat'
-    | 'editor' // e.g. shortcut, right-click menu or VS Code command palette
     | 'menu' // Cody command palette
     | 'sidebar'
     | 'code-action:explain'
@@ -75,10 +85,11 @@ export type ChatEventSource =
     | 'code-action:edit'
     | 'code-action:fix'
     | 'code-action:generate'
+    | 'code-action:test'
     | 'custom-commands'
-    | 'test'
     | 'code-lens'
-    | DefaultCodyCommands
+    | 'hover'
+    | 'terminal'
 
 /**
  * Converts an Error to a ChatError. Note that this cannot be done naively,

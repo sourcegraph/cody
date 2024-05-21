@@ -1,6 +1,12 @@
+import path from 'node:path'
 import { expect } from '@playwright/test'
-import path from 'path'
-import { sidebarExplorer, sidebarSignin } from './common'
+import {
+    atMentionMenuItem,
+    createEmptyChatPanel,
+    getContextCell,
+    sidebarExplorer,
+    sidebarSignin,
+} from './common'
 import { type ExpectedEvents, test } from './helpers'
 
 /**
@@ -15,6 +21,7 @@ test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
     expectEvents: [
         'CodyInstalled',
+        'CodyVSCodeExtension:codyIgnore:hasFile',
         'CodyVSCodeExtension:Auth:failed',
         'CodyVSCodeExtension:auth:clickOtherSignInOptions',
         'CodyVSCodeExtension:login:clicked',
@@ -25,6 +32,20 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:chat-question:executed',
         'CodyVSCodeExtension:command:explain:clicked',
         'CodyVSCodeExtension:command:explain:executed',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
     ],
 })('chat and command do not work in .cody/ignore file', async ({ page, sidebar }) => {
     // Sign into Cody
@@ -37,37 +58,37 @@ test.extend<ExpectedEvents>({
 
     // Cody icon in the status bar should shows that the file is being ignored
     const statusBarButton = page.getByRole('button', {
-        name: 'cody-logo-heavy, Current file is ignored by Cody',
+        name: 'cody-logo-heavy-slash File Ignored, The current file is ignored by Cody',
     })
     await statusBarButton.hover()
     await expect(statusBarButton).toBeVisible()
 
-    // Open Cody sidebar to start a new chat
-    await page.click('.badge[aria-label="Cody"]')
-    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
+    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
+
+    // Start new chat
+    const [chatPanel, chatInput] = await createEmptyChatPanel(page)
 
     /* TEST: Chat Context - Ignored file do not show up with context */
-    const chatPanel = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    const chatInput = chatPanel.getByRole('textbox', { name: 'Chat message' })
     await chatInput.focus()
     await chatInput.fill('Ignore me')
     await chatInput.press('Enter')
     // Assistant should response to your chat question,
     // but the current file is excluded (ignoredByCody.css) and not on the context list
     await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
-    expect(await chatPanel.getByText(/^✨ Context:/).count()).toEqual(0)
+    const contextCell = getContextCell(chatPanel)
+    await expect(contextCell).not.toBeVisible()
 
     /* TEST: At-file - Ignored file does not show up as context when using @-mention */
     await chatInput.focus()
     await chatInput.clear()
     await chatInput.fill('@ignoredByCody')
-    await expect(chatPanel.getByRole('heading', { name: 'No matching files found' })).toBeVisible()
+    await expect(atMentionMenuItem(chatPanel, 'No files found')).toBeVisible()
     await chatInput.clear()
     await chatInput.fill('@ignore')
     await expect(
-        chatPanel.getByRole('button', { name: withPlatformSlashes('.cody/ignore') })
+        chatPanel.getByRole('option', { name: withPlatformSlashes('ignore .cody') })
     ).toBeVisible()
-    await expect(chatPanel.getByRole('button', { name: 'ignoredByCody.css' })).not.toBeVisible()
+    await expect(chatPanel.getByRole('option', { name: 'ignoredByCody.css' })).not.toBeVisible()
 
     /* TEST: Command - Ignored file do not show up with context */
     await page.getByText('Explain Code').hover()
@@ -75,7 +96,9 @@ test.extend<ExpectedEvents>({
     // Assistant should not response to your command, so you should still see the old message.
     await expect(chatPanel.getByText('Ignore me')).toBeVisible()
     // A system message shows up to notify users that the file is ignored
-    await expect(page.getByText(/^Cannot execute a command in an ignored file./)).toBeVisible()
+    await expect(
+        page.getByText(/^Command failed to run: file is ignored \(due to your cody ignore config\)/)
+    ).toBeVisible()
 })
 
 function withPlatformSlashes(input: string) {

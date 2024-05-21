@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { execQueryWrapper } from '../../tree-sitter/query-sdk'
 import { getSelectionAroundLine } from './document-sections'
 
 /**
@@ -23,33 +24,45 @@ import { getSelectionAroundLine } from './document-sections'
  */
 export async function getSmartSelection(
     documentOrUri: vscode.TextDocument | vscode.Uri,
-    target: number
+    target: vscode.Position
 ): Promise<vscode.Selection | undefined> {
     const document =
         documentOrUri instanceof vscode.Uri
             ? await vscode.workspace.openTextDocument(documentOrUri)
             : documentOrUri
-    return getSelectionAroundLine(document, target)
+
+    const [enclosingFunction] = execQueryWrapper({
+        document,
+        position: target,
+        queryWrapper: 'getEnclosingFunction',
+    })
+
+    if (enclosingFunction) {
+        const { startPosition, endPosition } = enclosingFunction.node
+        // Regardless of the columns provided, we want to ensure the edit spans the full range of characters
+        // on the start and end lines. This helps improve the reliability of the output.
+        const adjustedStartColumn = document.lineAt(startPosition.row).firstNonWhitespaceCharacterIndex
+        const adjustedEndColumn = Number.MAX_SAFE_INTEGER
+        return new vscode.Selection(
+            startPosition.row,
+            adjustedStartColumn,
+            endPosition.row,
+            adjustedEndColumn
+        )
+    }
+
+    return getSelectionAroundLine(document, target.line)
 }
 
 /**
- * Searches for workspace symbols matching the given query string.
- * @param query - The search query string.
- * @returns A promise resolving to the array of SymbolInformation objects representing the matched workspace symbols.
- */
-export async function getWorkspaceSymbols(query = ''): Promise<vscode.SymbolInformation[]> {
-    return vscode.commands.executeCommand('vscode.executeWorkspaceSymbolProvider', query)
-}
-
-/**
- * Returns an array of URI's for all open editor tabs.
+ * Returns an array of URI's for all unique open editor tabs.
  *
  * Loops through all open tab groups and tabs, collecting the URI
  * of each tab with a 'file' scheme.
  */
 export function getOpenTabsUris(): vscode.Uri[] {
-    const uris = []
-    // Get open tabs
+    // de-dupe in case if they have a file open in two tabs
+    const uris = new Map<string, vscode.Uri>()
     const tabGroups = vscode.window.tabGroups.all
     const openTabs = tabGroups.flatMap(group =>
         group.tabs.map(tab => tab.input)
@@ -58,8 +71,8 @@ export function getOpenTabsUris(): vscode.Uri[] {
     for (const tab of openTabs) {
         // Skip non-file URIs
         if (tab?.uri?.scheme === 'file') {
-            uris.push(tab.uri)
+            uris.set(tab.uri.path, tab.uri)
         }
     }
-    return uris
+    return Array.from(uris.values())
 }

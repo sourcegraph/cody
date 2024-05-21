@@ -9,8 +9,10 @@ import type {
 
 import { getConfiguration } from './configuration'
 
+export const CODY_OUTPUT_CHANNEL = 'Cody by Sourcegraph'
+
 export const outputChannel: vscode.OutputChannel = vscode.window.createOutputChannel(
-    'Cody by Sourcegraph',
+    CODY_OUTPUT_CHANNEL,
     'json'
 )
 
@@ -24,7 +26,7 @@ export const outputChannel: vscode.OutputChannel = vscode.window.createOutputCha
  *   logDebug('label', 'this is a message', 'some', 'args', { verbose: 'verbose info goes here' })
  */
 export function logDebug(filterLabel: string, text: string, ...args: unknown[]): void {
-    log('error', filterLabel, text, ...args)
+    log('debug', filterLabel, text, ...args)
 }
 
 /**
@@ -47,7 +49,6 @@ export function logError(filterLabel: string, text: string, ...args: unknown[]):
  * A window refresh may be needed if these settings are changed for the behavior change to take
  * effect.
  *
- * - cody.debug.enabled: toggles debug logging on or off
  * - cody.debug.filter: sets a regex filter that opts-in messages with labels matching the regex
  * - cody.debug.verbose: prints out the text in the `verbose` field of the last argument
  *
@@ -56,9 +57,7 @@ function log(level: 'debug' | 'error', filterLabel: string, text: string, ...arg
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
-    const debugEnable = process.env.CODY_DEBUG_ENABLE === 'true' || config.debugEnable
-
-    if (!outputChannel || (level === 'debug' && !debugEnable)) {
+    if (!outputChannel) {
         return
     }
 
@@ -94,13 +93,6 @@ function log(level: 'debug' | 'error', filterLabel: string, text: string, ...arg
 
 export const logger: CompletionLogger = {
     startCompletion(params: CompletionParameters | Record<string, never>, endpoint: string) {
-        const workspaceConfig = vscode.workspace.getConfiguration()
-        const config = getConfiguration(workspaceConfig)
-
-        if (!config.debugEnable) {
-            return undefined
-        }
-
         const start = Date.now()
         const type =
             'prompt' in params

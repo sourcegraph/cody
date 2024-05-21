@@ -1,11 +1,14 @@
-// If the bot message ends with some prefix of the `Human:` stop
-// sequence, trim if from the end.
+import { type PromptString, ps } from '../prompt/prompt-string'
+
 const STOP_SEQUENCE_REGEXP = /(H|Hu|Hum|Huma|Human|Human:)$/
 
-export function reformatBotMessageForChat(text: string, prefix: string): string {
-    let reformattedMessage = prefix + text.trimEnd()
+/**
+ * If the bot message ends with some prefix of the `Human:` stop sequence, trim if from the end.
+ */
+export function reformatBotMessageForChat(text: PromptString): PromptString {
+    let reformattedMessage = text.trimEnd()
 
-    const stopSequenceMatch = reformattedMessage.match(STOP_SEQUENCE_REGEXP)
+    const stopSequenceMatch = reformattedMessage.toString().match(STOP_SEQUENCE_REGEXP)
     if (stopSequenceMatch) {
         reformattedMessage = reformattedMessage.slice(0, stopSequenceMatch.index)
     }
@@ -13,10 +16,10 @@ export function reformatBotMessageForChat(text: string, prefix: string): string 
     return fixOpenMarkdownCodeBlock(reformattedMessage)
 }
 
-function fixOpenMarkdownCodeBlock(text: string): string {
+function fixOpenMarkdownCodeBlock(text: PromptString): PromptString {
     const occurrences = text.split('```').length - 1
     if (occurrences % 2 === 1) {
-        return text + '\n```'
+        return text.concat(ps`\n\`\`\``)
     }
     return text
 }

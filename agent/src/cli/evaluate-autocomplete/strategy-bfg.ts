@@ -1,19 +1,19 @@
-import { execSync } from 'child_process'
-import * as fspromises from 'fs/promises'
-import * as path from 'path'
+import { execSync } from 'node:child_process'
+import * as fspromises from 'node:fs/promises'
+import * as path from 'node:path'
 
 import * as vscode from 'vscode'
 
-import { getParseLanguage } from '../../../../vscode/src/tree-sitter/grammars'
+import { isSupportedLanguage } from '../../../../vscode/src/tree-sitter/grammars'
 import type { MessageHandler } from '../../jsonrpc-alias'
 import { getLanguageForFileName } from '../../language'
 
-import { AutocompleteMatcher, type AutocompleteMatchKind } from './AutocompleteMatcher'
-import type { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
+import { type AutocompleteMatchKind, AutocompleteMatcher } from './AutocompleteMatcher'
 import { EvaluationDocument } from './EvaluationDocument'
-import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { Queries } from './Queries'
 import { SnapshotWriter } from './SnapshotWriter'
+import type { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
+import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { testCleanup, testInstall } from './testTypecheck'
 import { triggerAutocomplete } from './triggerAutocomplete'
 
@@ -56,8 +56,7 @@ export async function evaluateBfgStrategy(
             }
             const content = (await fspromises.readFile(filePath)).toString()
             const languageid = getLanguageForFileName(file)
-            const language = getParseLanguage(languageid)
-            if (!language) {
+            if (!isSupportedLanguage(languageid)) {
                 continue
             }
             if (

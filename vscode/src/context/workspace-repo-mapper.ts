@@ -1,8 +1,9 @@
-import { isError, logDebug, graphqlClient } from '@sourcegraph/cody-shared'
+import { graphqlClient, isError, logDebug } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { getCodebaseFromWorkspaceUri, gitAPI } from '../repository/repositoryHelpers'
-import { RemoteSearch } from './remote-search'
+import { vscodeGitAPI } from '../repository/git-extension-api'
+import { repoNameResolver } from '../repository/repo-name-resolver'
 import type { CodebaseRepoIdMapper } from './enterprise-context-factory'
+import { RemoteSearch } from './remote-search'
 import type { Repo } from './repo-fetcher'
 
 // TODO(dpc): The vscode.git extension has an delay before we can fetch a
@@ -14,9 +15,13 @@ const GIT_REFRESH_DELAY = 2000
 // IDs. This depends on the vscode.git extension for mapping git repositories
 // to their remotes.
 export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMapper {
-    private changeEmitter = new vscode.EventEmitter<{ name: string; id: string }[]>()
+    private changeEmitter = new vscode.EventEmitter<Repo[]>()
     private disposables: vscode.Disposable[] = [this.changeEmitter]
-    private repos: { name: string; id: string }[] = []
+    // The workspace repos.
+    private repos: Repo[] = []
+    // A cache of results for non-workspace repos. This caches repos that are
+    // not found, as well as repo IDs.
+    private nonWorkspaceRepos = new Map<string, string | undefined>()
     private started: Promise<void> | undefined
 
     public dispose(): void {
@@ -35,7 +40,7 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
         if (!repoName) {
             return
         }
-        // Check cached repository list.
+        // Check workspace repository list.
         const item = this.repos.find(item => item.name === repoName)
         if (item) {
             return {
@@ -43,17 +48,27 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
                 name: item.name,
             }
         }
+        // Check cached, non-workspace repository list.
+        if (this.nonWorkspaceRepos.has(repoName)) {
+            const id = this.nonWorkspaceRepos.get(repoName)
+            return id
+                ? {
+                      id,
+                      name: repoName,
+                  }
+                : undefined
+        }
         const result = await graphqlClient.getRepoId(repoName)
         if (isError(result)) {
             throw result
         }
-        if (!result) {
-            return
-        }
-        return {
-            name: repoName,
-            id: result,
-        }
+        this.nonWorkspaceRepos.set(repoName, result || undefined)
+        return result
+            ? {
+                  name: repoName,
+                  id: result,
+              }
+            : undefined
     }
 
     // Fetches the set of repo IDs and starts listening for workspace changes.
@@ -81,7 +96,9 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
                 undefined,
                 this.disposables
             )
-            gitAPI()?.onDidOpenRepository(
+            // TODO: Only works in the VS Code extension where the Git extension is available.
+            // https://github.com/sourcegraph/cody/issues/4138
+            vscodeGitAPI?.onDidOpenRepository(
                 async () => {
                     logDebug('WorkspaceRepoMapper', 'vscode.git repositories changed, updating repos')
                     setTimeout(async () => await this.updateRepos(), GIT_REFRESH_DELAY)
@@ -94,11 +111,11 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
         return this.started
     }
 
-    public get workspaceRepos(): { name: string; id: string }[] {
+    public get workspaceRepos(): Repo[] {
         return [...this.repos]
     }
 
-    public get onChange(): vscode.Event<{ name: string; id: string }[]> {
+    public get onChange(): vscode.Event<Repo[]> {
         return this.changeEmitter.event
     }
 
@@ -112,7 +129,7 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
                     .map(f => f.uri.toString())
                     .join()}`
             )
-            this.repos = await this.findRepoIds(folders)
+            this.repos = await this.findRepos(folders)
         } catch (error) {
             logDebug('WorkspaceRepoMapper', `Error mapping workspace folders to repo IDs: ${error}`)
             throw error
@@ -122,23 +139,26 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
 
     // Given a set of workspace folders, looks up their git remotes and finds the related repo IDs,
     // if any.
-    private async findRepoIds(
-        folders: readonly vscode.WorkspaceFolder[]
-    ): Promise<{ name: string; id: string }[]> {
-        const repoNames = new Set(
-            folders.flatMap(folder => {
-                const codebase = getCodebaseFromWorkspaceUri(folder.uri)
-                return codebase ? [codebase] : []
+    private async findRepos(folders: readonly vscode.WorkspaceFolder[]): Promise<Repo[]> {
+        const repoNames = await Promise.all(
+            folders.map(folder => {
+                return repoNameResolver.getRepoNamesFromWorkspaceUri(folder.uri)
             })
         )
-        if (repoNames.size === 0) {
+
+        const uniqueRepoNames = new Set(repoNames.flat())
+        if (uniqueRepoNames.size === 0) {
             // Otherwise we fetch the first 10 repos from the Sourcegraph instance
             return []
         }
-        const ids = await graphqlClient.getRepoIds([...repoNames.values()], RemoteSearch.MAX_REPO_COUNT)
-        if (isError(ids)) {
-            throw ids
+        const repos = await graphqlClient.getRepoIds(
+            [...uniqueRepoNames.values()],
+            RemoteSearch.MAX_REPO_COUNT
+        )
+        if (isError(repos)) {
+            throw repos
         }
-        return ids
+
+        return repos
     }
 }

@@ -1,9 +1,10 @@
 import type { Span } from '@opentelemetry/api'
 import { featureFlagProvider } from '@sourcegraph/cody-shared'
-import { getConfiguration } from '../../configuration'
 import * as vscode from 'vscode'
-import { getExtensionDetails } from '../telemetry'
+import { getConfiguration } from '../../configuration'
 import type { ExtensionApi } from '../../extension-api'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
+import { getExtensionDetails } from '../telemetry'
 
 // Ensure to ad exposed experiments at the very end to make sure we include experiments that the
 // user is being exposed to while the span was generated

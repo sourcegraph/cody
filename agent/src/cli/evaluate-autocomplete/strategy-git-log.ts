@@ -1,6 +1,6 @@
-import { execSync } from 'child_process'
-import * as fspromises from 'fs/promises'
-import * as path from 'path'
+import { execSync } from 'node:child_process'
+import * as fspromises from 'node:fs/promises'
+import * as path from 'node:path'
 
 import parseGitDiff, { type AddedLine } from 'parse-git-diff'
 import * as vscode from 'vscode'
@@ -8,10 +8,10 @@ import * as vscode from 'vscode'
 import type { MessageHandler } from '../../jsonrpc-alias'
 import { getLanguageForFileName } from '../../language'
 
-import type { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
 import { EvaluationDocument } from './EvaluationDocument'
-import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { SnapshotWriter } from './SnapshotWriter'
+import type { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
+import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { testCleanup, testInstall } from './testTypecheck'
 import { triggerAutocomplete } from './triggerAutocomplete'
 

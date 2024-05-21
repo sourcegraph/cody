@@ -63,7 +63,7 @@ query SiteGraphQLFields {
 }`
 
 export const CURRENT_SITE_CODY_LLM_PROVIDER = `
-query CurrentSiteCodyLlmConfiguration {
+query CurrentSiteCodyLlmProvider {
     site {
         codyLLMConfiguration {
             provider
@@ -103,7 +103,6 @@ query Repositories($first: Int!, $after: String) {
         nodes {
             id
             name
-            url
         }
         pageInfo {
             endCursor
@@ -151,6 +150,23 @@ query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $
         }
     }
 }`
+
+export const CONTEXT_FILTERS_QUERY = `
+query ContextFilters {
+    site {
+        codyContextFilters(version: V1) {
+            raw
+        }
+    }
+}`
+
+export const REPO_NAME_QUERY = `
+query ResolveRepoName($cloneURL: String!) {
+    repository(cloneURL: $cloneURL) {
+        name
+    }
+}
+`
 
 export const SEARCH_ATTRIBUTION_QUERY = `
 query SnippetAttribution($snippet: String!) {
@@ -230,5 +246,25 @@ export const GET_FEATURE_FLAGS_QUERY = `
 export const EVALUATE_FEATURE_FLAG_QUERY = `
     query EvaluateFeatureFlag($flagName: String!) {
         evaluateFeatureFlag(flagName: $flagName)
+    }
+`
+
+export const PACKAGE_LIST_QUERY = `
+    query Packages($kind: PackageRepoReferenceKind!, $name: String!, $first: Int!, $after: String) {
+        packageRepoReferences(kind: $kind, name: $name, first: $first, after: $after) {
+            nodes {
+                id
+                name
+                kind
+                repository {
+                    id
+                    name
+                    url
+                }
+            }
+            pageInfo {
+                endCursor
+            }
+        }
     }
 `

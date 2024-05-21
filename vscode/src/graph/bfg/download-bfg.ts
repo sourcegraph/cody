@@ -1,6 +1,6 @@
-import * as fs from 'fs'
-import { promises as fspromises } from 'fs'
-import path from 'path'
+import * as fs from 'node:fs'
+import { promises as fspromises } from 'node:fs'
+import path from 'node:path'
 
 import axios from 'axios'
 import * as unzipper from 'unzipper'
@@ -13,7 +13,7 @@ import { captureException } from '../../services/sentry/sentry'
 
 // Available releases: https://github.com/sourcegraph/bfg/releases
 // Do not include 'v' in this string.
-const defaultBfgVersion = '5.2.23617'
+const defaultBfgVersion = '5.3.16454'
 
 // We use this Promise to only have one downloadBfg running at once.
 let serializeBfgDownload: Promise<string | null> = Promise.resolve(null)

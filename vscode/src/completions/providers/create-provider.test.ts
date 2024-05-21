@@ -1,18 +1,19 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-    graphqlClient,
+    type AuthStatus,
     type CodeCompletionsClient,
     type CodyLLMSiteConfiguration,
     type Configuration,
-    type GraphQLAPIClientConfig,
     type ConfigurationWithAccessToken,
+    type GraphQLAPIClientConfig,
+    graphqlClient,
 } from '@sourcegraph/cody-shared'
 
 import { DEFAULT_VSCODE_SETTINGS } from '../../testutils/mocks'
 
+import { defaultAuthStatus } from '../../chat/protocol'
 import { createProviderConfig } from './create-provider'
-import { type AuthStatus, defaultAuthStatus } from '../../chat/protocol'
 
 const getVSCodeConfigurationWithAccessToken = (
     config: Partial<Configuration> = {}
@@ -83,6 +84,33 @@ describe('createProviderConfig', () => {
                 dummyAuthStatus
             )
             expect(provider?.identifier).toBe('fireworks')
+            expect(provider?.model).toBe('starcoder-hybrid')
+        })
+
+        it('returns "experimental-openaicompatible" provider config and corresponding model if specified', async () => {
+            const provider = await createProviderConfig(
+                getVSCodeConfigurationWithAccessToken({
+                    autocompleteAdvancedProvider: 'experimental-openaicompatible',
+                    autocompleteAdvancedModel: 'starchat-16b-beta',
+                }),
+                dummyCodeCompletionsClient,
+                dummyAuthStatus
+            )
+            expect(provider?.identifier).toBe('experimental-openaicompatible')
+            expect(provider?.model).toBe('starchat-16b-beta')
+        })
+
+        it('returns "experimental-openaicompatible" provider config if specified in settings and default model', async () => {
+            const provider = await createProviderConfig(
+                getVSCodeConfigurationWithAccessToken({
+                    autocompleteAdvancedProvider: 'experimental-openaicompatible',
+                }),
+                dummyCodeCompletionsClient,
+                dummyAuthStatus
+            )
+            expect(provider?.identifier).toBe('experimental-openaicompatible')
+            // TODO(slimsag): make this default to starchat2 once added
+            // specifically just when using `experimental-openaicompatible`
             expect(provider?.model).toBe('starcoder-hybrid')
         })
 
@@ -207,8 +235,8 @@ describe('createProviderConfig', () => {
 
                 // fireworks
                 {
-                    codyLLMConfig: { provider: 'fireworks', completionModel: 'llama-code-7b' },
-                    expected: { provider: 'fireworks', model: 'llama-code-7b' },
+                    codyLLMConfig: { provider: 'fireworks', completionModel: 'llama-code-13b' },
+                    expected: { provider: 'fireworks', model: 'llama-code-13b' },
                 },
                 {
                     codyLLMConfig: { provider: 'fireworks' },

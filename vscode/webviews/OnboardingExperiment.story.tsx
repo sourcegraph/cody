@@ -1,15 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/cody-shared'
+import { NOOP_TELEMETRY_SERVICE, noOpTelemetryRecorder } from '@sourcegraph/cody-shared'
 
 import { LoginSimplified } from './OnboardingExperiment'
-import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
+import { VSCodeSidebar } from './storybook/VSCodeStoryDecorator'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 const meta: Meta<typeof LoginSimplified> = {
     title: 'cody/Onboarding',
     component: LoginSimplified,
-    decorators: [VSCodeStoryDecorator],
+    decorators: [VSCodeSidebar],
 }
 
 export default meta
@@ -23,26 +23,24 @@ const vscodeAPI: VSCodeWrapper = {
 
 export const Login: StoryObj<typeof LoginSimplified> = {
     render: () => (
-        <div style={{ background: 'rgb(28, 33, 40)' }}>
-            <LoginSimplified
-                simplifiedLoginRedirect={() => {}}
-                telemetryService={NOOP_TELEMETRY_SERVICE}
-                uiKindIsWeb={false}
-                vscodeAPI={vscodeAPI}
-            />
-        </div>
+        <LoginSimplified
+            simplifiedLoginRedirect={() => {}}
+            telemetryService={NOOP_TELEMETRY_SERVICE}
+            telemetryRecorder={noOpTelemetryRecorder}
+            uiKindIsWeb={false}
+            vscodeAPI={vscodeAPI}
+        />
     ),
 }
 
 export const LoginWeb: StoryObj<typeof LoginSimplified> = {
     render: () => (
-        <div style={{ background: 'rgb(28, 33, 40)' }}>
-            <LoginSimplified
-                simplifiedLoginRedirect={() => {}}
-                telemetryService={NOOP_TELEMETRY_SERVICE}
-                uiKindIsWeb={true}
-                vscodeAPI={vscodeAPI}
-            />
-        </div>
+        <LoginSimplified
+            simplifiedLoginRedirect={() => {}}
+            telemetryService={NOOP_TELEMETRY_SERVICE}
+            telemetryRecorder={noOpTelemetryRecorder}
+            uiKindIsWeb={true}
+            vscodeAPI={vscodeAPI}
+        />
     ),
 }

@@ -1,44 +1,66 @@
-import { logDebug, type ContextFile } from '@sourcegraph/cody-shared'
-import { getContextFileFromCursor } from '../context/selection'
-import { type ExecuteChatArguments, executeChat } from './ask'
-import { DefaultChatCommands } from '@sourcegraph/cody-shared/src/commands/types'
+import {
+    type ContextItem,
+    DefaultChatCommands,
+    PromptString,
+    displayLineRange,
+    logDebug,
+    ps,
+    wrapInActiveSpan,
+} from '@sourcegraph/cody-shared'
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
+import * as vscode from 'vscode'
 import { defaultCommands } from '.'
 import type { ChatCommandResult } from '../../main'
-import type { CodyCommandArgs } from '../types'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
-import { telemetryRecorder } from '../../services/telemetry-v2'
+import { getContextFileFromCursor } from '../context/selection'
+import type { CodyCommandArgs } from '../types'
+import { type ExecuteChatArguments, executeChat } from './ask'
 
-import { wrapInActiveSpan } from '@sourcegraph/cody-shared/src/tracing'
 import type { Span } from '@opentelemetry/api'
+import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/context-filter'
+import { getEditor } from '../../editor/active-editor'
 
 /**
  * Generates the prompt and context files with arguments for the 'smell' command.
  *
  * Context: Current selection
  */
-export async function smellCommand(
+async function smellCommand(
     span: Span,
     args?: Partial<CodyCommandArgs>
-): Promise<ExecuteChatArguments> {
+): Promise<ExecuteChatArguments | null> {
     const addEnhancedContext = false
-    let prompt = defaultCommands.smell.prompt
+    let prompt = PromptString.fromDefaultCommands(defaultCommands, 'smell')
 
     if (args?.additionalInstruction) {
         span.addEvent('additionalInstruction')
-        prompt = `${prompt} ${args.additionalInstruction}`
+        prompt = ps`${prompt} ${args.additionalInstruction}`
     }
 
-    const contextFiles: ContextFile[] = []
+    const contextFiles: ContextItem[] = []
 
     const currentSelection = await getContextFileFromCursor()
     contextFiles.push(...currentSelection)
+
+    const cs = currentSelection[0]
+    if (cs) {
+        const range = cs.range && ps`:${displayLineRange(cs.range)}`
+        prompt = prompt.replaceAll(
+            'the selected code',
+            ps`@${PromptString.fromDisplayPath(cs.uri)}${range ?? ''} `
+        )
+    } else {
+        return null
+    }
 
     return {
         text: prompt,
         submitType: 'user-newchat',
         contextFiles,
         addEnhancedContext,
-        source: DefaultChatCommands.Smell,
+        source: args?.source,
+        command: DefaultChatCommands.Smell,
     }
 }
 
@@ -50,6 +72,15 @@ export async function executeSmellCommand(
 ): Promise<ChatCommandResult | undefined> {
     return wrapInActiveSpan('command.smell', async span => {
         span.setAttribute('sampled', true)
+
+        const editor = getEditor()
+        if (
+            editor.active &&
+            (await isUriIgnoredByContextFilterWithNotification(editor.active.document.uri, 'command'))
+        ) {
+            return
+        }
+
         logDebug('executeSmellCommand', 'executing', { args })
         telemetryService.log('CodyVSCodeExtension:command:smell:executed', {
             useCodebaseContex: false,
@@ -69,9 +100,17 @@ export async function executeSmellCommand(
             },
         })
 
+        const chatArguments = await smellCommand(span, args)
+        if (chatArguments === null) {
+            vscode.window.showInformationMessage(
+                'Please select text before running the "Smell" command.'
+            )
+            return
+        }
+
         return {
             type: 'chat',
-            session: await executeChat(await smellCommand(span, args)),
+            session: await executeChat(chatArguments),
         }
     })
 }

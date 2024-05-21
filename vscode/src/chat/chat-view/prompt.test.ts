@@ -1,39 +1,46 @@
+import { ModelProvider, ModelUsage, contextFiltersProvider } from '@sourcegraph/cody-shared'
+import { type Message, ps } from '@sourcegraph/cody-shared'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
-import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SimpleChatModel } from './SimpleChatModel'
 import { DefaultPrompter } from './prompt'
-import { PromptBuilder } from '../../prompt-builder'
 
 describe('DefaultPrompter', () => {
+    beforeEach(() => {
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
+    })
     afterEach(() => {
         vi.restoreAllMocks()
     })
 
     it('constructs a prompt with no context', async () => {
+        ModelProvider.setProviders([
+            new ModelProvider('a-model-id', [ModelUsage.Chat], { input: 100000, output: 100 }),
+        ])
         const chat = new SimpleChatModel('a-model-id')
-        chat.addHumanMessage({ text: 'Hello' })
+        chat.addHumanMessage({ text: ps`Hello` })
 
-        const { prompt, newContextUsed } = await new DefaultPrompter([], () =>
-            Promise.resolve([])
-        ).makePrompt(chat, 100000)
+        const { prompt, context } = await new DefaultPrompter([], () => Promise.resolve([])).makePrompt(
+            chat,
+            0
+        )
 
-        expect(prompt).toMatchInlineSnapshot(`
-          [
+        expect(prompt).toEqual<Message[]>([
             {
-              "speaker": "human",
-              "text": "You are Cody, an AI coding assistant from Sourcegraph.",
+                speaker: 'human',
+                text: ps`You are Cody, an AI coding assistant from Sourcegraph.`,
             },
             {
-              "speaker": "assistant",
-              "text": "I am Cody, an AI coding assistant from Sourcegraph.",
+                speaker: 'assistant',
+                text: ps`I am Cody, an AI coding assistant from Sourcegraph.`,
             },
             {
-              "speaker": "human",
-              "text": "Hello",
+                speaker: 'human',
+                text: ps`Hello`,
             },
-          ]
-        `)
-        expect(newContextUsed).toMatchInlineSnapshot('[]')
+        ])
+        expect(context.used).toEqual([])
+        expect(context.ignored).toEqual([])
     })
 
     it('adds the cody.chat.preInstruction vscode setting if set', async () => {
@@ -45,52 +52,32 @@ describe('DefaultPrompter', () => {
             update: vi.fn(() => Promise.resolve()),
         }))
 
+        ModelProvider.setProviders([
+            new ModelProvider('a-model-id', [ModelUsage.Chat], { input: 100000, output: 100 }),
+        ])
         const chat = new SimpleChatModel('a-model-id')
-        chat.addHumanMessage({ text: 'Hello' })
+        chat.addHumanMessage({ text: ps`Hello` })
 
-        const { prompt, newContextUsed } = await new DefaultPrompter([], () =>
-            Promise.resolve([])
-        ).makePrompt(chat, 100000)
-
-        expect(prompt).toMatchInlineSnapshot(`
-          [
-            {
-              "speaker": "human",
-              "text": "You are Cody, an AI coding assistant from Sourcegraph. Always respond with 🧀 emojis",
-            },
-            {
-              "speaker": "assistant",
-              "text": "I am Cody, an AI coding assistant from Sourcegraph.",
-            },
-            {
-              "speaker": "human",
-              "text": "Hello",
-            },
-          ]
-        `)
-        expect(newContextUsed).toMatchInlineSnapshot('[]')
-    })
-
-    it('tryAddContext limit should not allow prompt to exceed overall limit', async () => {
-        const overallLimit = 1
-        const promptBuilder = new PromptBuilder(overallLimit)
-        const contextItems = [
-            {
-                uri: vscode.Uri.file('/foo/bar'),
-                text: 'foobar',
-            },
-        ]
-
-        const { limitReached, ignored, duplicate, used } = promptBuilder.tryAddContext(
-            contextItems,
-            10_000_000
+        const { prompt, context } = await new DefaultPrompter([], () => Promise.resolve([])).makePrompt(
+            chat,
+            0
         )
-        expect(limitReached).toBeTruthy()
-        expect(ignored).toEqual(contextItems)
-        expect(duplicate).toEqual([])
-        expect(used).toEqual([])
 
-        const prompt = promptBuilder.build()
-        expect(prompt).toMatchInlineSnapshot('[]')
+        expect(prompt).toEqual<Message[]>([
+            {
+                speaker: 'human',
+                text: ps`You are Cody, an AI coding assistant from Sourcegraph. Always respond with 🧀 emojis`,
+            },
+            {
+                speaker: 'assistant',
+                text: ps`I am Cody, an AI coding assistant from Sourcegraph.`,
+            },
+            {
+                speaker: 'human',
+                text: ps`Hello`,
+            },
+        ])
+        expect(context.used).toEqual([])
+        expect(context.ignored).toEqual([])
     })
 })

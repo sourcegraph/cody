@@ -1,0 +1,43 @@
+.editor {
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+
+    box-sizing: border-box;
+    border: 1px solid transparent;
+    border-radius: 2px;
+
+    /* Extra right padding to ensure it doesn't overlap with enhanced context button */
+    padding: 0.375rem 50px 0.375rem 0.375rem;
+    font: inherit;
+    width: 100%;
+
+    /* Scroll */
+    overflow: auto;
+
+    /* A visible scrollbar interferes with the EnhancedContextSettings element. It's still scrollable with the mouse/trackpad and arrow keys. */
+    scrollbar-width: none;
+
+    /* Don't allow the input box to become larger than the webview to avoid submit buttons going off the screen */
+    max-height: 80vh; /* 80% of viewport height */
+
+    /* Place on top of each other */
+    grid-area: 1 / 1 / 2 / 2;
+    resize: none;
+}
+
+.editor:focus,
+.editor:focus-visible,
+.editor:focus-within {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: -1px;
+}
+
+.editor {
+    border-color: var(--vscode-input-border, transparent);
+}
+
+.disabled {
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    opacity: 0.5;
+}

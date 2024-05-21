@@ -12,17 +12,17 @@
  * all Cody clients over how messages get logged. For example, the JetBrains
  * plugin may want to display warnings/errors in a custom way.
  */
-export interface CodyLogger {
+interface CodyLogger {
     logDebug(filterLabel: string, text: string, ...args: unknown[]): void
     logError(filterLabel: string, text: string, ...args: unknown[]): void
 }
 
 const consoleLogger: CodyLogger = {
     logDebug(filterLabel, text, ...args) {
-        console.log(`${filterLabel}:${text}`, ...args)
+        console.log(`${filterLabel}: ${text}`, ...args)
     },
     logError(filterLabel, text, ...args) {
-        console.log(`${filterLabel}:${text}`, ...args)
+        console.log(`${filterLabel}: ${text}`, ...args)
     },
 }
 

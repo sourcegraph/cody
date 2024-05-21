@@ -1,38 +1,38 @@
 {
-    "note": "Used for building command menu and keeping track of the cody commands that are available by default.",
-    "commands": {
-        "doc": {
-            "description": "Generate code documentation",
-            "prompt": "Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.",
-            "context": {
-                "currentFile": true,
-                "selection": true
-            },
-            "mode": "insert",
-            "type": "default"
-        },
-        "explain": {
-            "description": "Explain code",
-            "prompt": "Explain what the selected code does in simple terms. Assume the audience is a beginner programmer who has just learned the language features and basic syntax. Focus on explaining: 1) The purpose of the code 2) What input(s) it takes 3) What output(s) it produces 4) How it achieves its purpose through the logic and algorithm. 5) Any important logic flows or data transformations happening. Use simple language a beginner could understand. Include enough detail to give a full picture of what the code aims to accomplish without getting too technical. Format the explanation in coherent paragraphs, using proper punctuation and grammar. Write the explanation assuming no prior context about the code is known. Do not make assumptions about variables or functions not shown in the shared code. Start the answer with the name of the code that is being explained.",
-            "context": {
-                "currentFile": true
-            },
-            "type": "default"
-        },
-        "test": {
-            "description": "Generate unit tests",
-            "prompt": "Review the shared context to identify the testing framework and libraries in use. Then, generate a suite of multiple unit tests for the selected function using the detected test framework and libraries. Be sure to import the function being tested. Use the same patterns, testing conventions, and testing library as shown in the shared context. Only import modules, functions, dependencies, and mocks based on shared code. If a test suite for the selected code is in the shared context, focus on generating new tests for uncovered cases. If none are detected, import common unit test libraries for {languageName}. Focus on validating key functionality with simple and complete assertions. Before writing the tests, identify which testing libraries and frameworks to use and import. At the end, enclose the fully completed code for the new unit tests without any comments, fragments, or TODOs. The new tests should validate the expected functionality and cover edge cases for with all required imports, including the function being tested. Do not repeat tests from the shared context. Enclose only the complete runnable tests.",
-            "context": {
-                "currentDir": true,
-                "currentFile": true,
-                "selection": true
-            },
-            "type": "default"
-        },
-        "smell": {
-            "description": "Find code smells",
-            "prompt": "Please review and analyze the selected code and identify potential areas for improvement related to code smells, readability, maintainability, performance, security, etc. Do not list issues already addressed in the given code. Focus on providing up to 5 constructive suggestions that could make the code more robust, efficient, or align with best practices. For each suggestion, provide a brief explanation of the potential benefits. After listing any recommendations, summarize if you found notable opportunities to enhance the code quality overall or if the code generally follows sound design principles. If no issues found, reply 'There are no errors.'",
-            "type": "default"
-        }
+  "note": "Used for building command menu and keeping track of the cody commands that are available by default.",
+  "commands": {
+    "doc": {
+      "description": "Generate code documentation",
+      "prompt": "Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.",
+      "context": {
+        "currentFile": true,
+        "selection": true
+      },
+      "mode": "insert",
+      "type": "default"
+    },
+    "explain": {
+      "description": "Explain code",
+      "prompt": "Explain what the selected code does in simple terms. Assume the audience is a beginner programmer who has just learned the language features and basic syntax. Focus on explaining: 1) The purpose of the code 2) What input(s) it takes 3) What output(s) it produces 4) How it achieves its purpose through the logic and algorithm. 5) Any important logic flows or data transformations happening. Use simple language a beginner could understand. Include enough detail to give a full picture of what the code aims to accomplish without getting too technical. Format the explanation in coherent paragraphs, using proper punctuation and grammar. Write the explanation assuming no prior context about the code is known. Do not make assumptions about variables or functions not shown in the shared code. Start the answer with the name of the code that is being explained.",
+      "context": {
+        "currentFile": true
+      },
+      "type": "default"
+    },
+    "test": {
+      "description": "Generate unit tests",
+      "prompt": "Review the shared context to identify the testing framework and libraries in use. Then, generate a suite of multiple unit tests for the selected function using the detected test framework and libraries. Be sure to import the function being tested. Use the same patterns, testing framework, conventions, and libraries as shown in the shared context. Only import modules, functions, dependencies, and mocks based on shared code. If a test suite for the selected code is in the shared context, focus on generating new tests for uncovered cases. If none are detected, import common unit test libraries for {languageName}. Focus on validating key functionality with simple and complete assertions. Before writing the tests, identify which testing libraries and frameworks to use and import. At the end, enclose the fully completed code for the new unit tests without any comments, fragments, or TODOs. The new tests should validate the expected functionality and cover edge cases for with all required imports, including the function being tested. Do not repeat tests from the shared context. Enclose only the complete runnable tests.",
+      "context": {
+        "currentDir": true,
+        "currentFile": true,
+        "selection": true
+      },
+      "type": "default"
+    },
+    "smell": {
+      "description": "Find code smells",
+      "prompt": "Please review and analyze the selected code and identify potential areas for improvement related to code smells, readability, maintainability, performance, security, etc. Do not list issues already addressed in the given code. Focus on providing up to 5 constructive suggestions that could make the code more robust, efficient, or align with best practices. For each suggestion, provide a brief explanation of the potential benefits. After listing any recommendations, summarize if you found notable opportunities to enhance the code quality overall or if the code generally follows sound design principles. If no issues found, reply 'There are no errors.'",
+      "type": "default"
     }
+  }
 }

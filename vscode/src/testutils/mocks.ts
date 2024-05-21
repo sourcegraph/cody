@@ -1,5 +1,5 @@
 // TODO: use implements vscode.XXX on mocked classes to ensure they match the real vscode API.
-import fspromises from 'fs/promises'
+import fspromises from 'node:fs/promises'
 
 import type * as vscode_types from 'vscode'
 import type {
@@ -9,9 +9,17 @@ import type {
     Range as VSCodeRange,
 } from 'vscode'
 
-import { FeatureFlagProvider, type Configuration, type FeatureFlag } from '@sourcegraph/cody-shared'
+import {
+    type Configuration,
+    type FeatureFlag,
+    FeatureFlagProvider,
+    OLLAMA_DEFAULT_URL,
+    ps,
+} from '@sourcegraph/cody-shared'
 
+import path from 'node:path'
 import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
+import { AgentWorkspaceEdit as WorkspaceEdit } from './AgentWorkspaceEdit'
 import { Uri } from './uri'
 
 export { Uri } from './uri'
@@ -19,7 +27,6 @@ export { Uri } from './uri'
 export { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
 export { AgentWorkspaceEdit as WorkspaceEdit } from './AgentWorkspaceEdit'
 export { Disposable } from './Disposable'
-import { AgentWorkspaceEdit as WorkspaceEdit } from './AgentWorkspaceEdit'
 
 /**
  * This module defines shared VSCode mocks for use in every Vitest test.
@@ -503,8 +510,8 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
             : stat.isDirectory()
               ? FileType.Directory
               : stat.isSymbolicLink()
-                  ? FileType.SymbolicLink
-                  : FileType.Unknown
+                ? FileType.SymbolicLink
+                : FileType.Unknown
 
         return {
             type,
@@ -524,8 +531,8 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
                 : entry.isDirectory()
                   ? FileType.Directory
                   : entry.isSymbolicLink()
-                      ? FileType.SymbolicLink
-                      : FileType.Unknown
+                    ? FileType.SymbolicLink
+                    : FileType.Unknown
 
             return [entry.name, type]
         })
@@ -542,6 +549,7 @@ export const workspaceFs: typeof vscode_types.workspace.fs = {
         }
     },
     writeFile: async (uri, content) => {
+        await fspromises.mkdir(path.dirname(uri.fsPath), { recursive: true })
         await fspromises.writeFile(uri.fsPath, content)
     },
     delete: async (uri, options) => {
@@ -680,9 +688,17 @@ export enum UIKind {
     Web = 2,
 }
 
+export class FileSystemError extends Error {
+    public code = 'FileSystemError'
+}
+
+export const vscodeWorkspaceTextDocuments: vscode_types.TextDocument[] = []
+
 export const vsCodeMocks = {
+    FileSystemError,
     FileType,
     Range,
+    Selection,
     Position,
     InlineCompletionItem,
     EventEmitter,
@@ -734,7 +750,7 @@ export const vsCodeMocks = {
                         case 'cody.debug.filter':
                             return '.*'
                         default:
-                            return ''
+                            return undefined
                     }
                 },
                 update(): void {},
@@ -752,6 +768,7 @@ export const vsCodeMocks = {
         onDidChangeTextDocument() {},
         onDidRenameFiles() {},
         onDidDeleteFiles() {},
+        textDocuments: vscodeWorkspaceTextDocuments,
     },
     ConfigurationTarget: {
         Global: undefined,
@@ -768,6 +785,7 @@ export const vsCodeMocks = {
     CodeActionKind,
     DiagnosticSeverity,
     ViewColumn,
+    TextDocumentChangeReason,
 } as const
 
 export enum ProgressLocation {
@@ -797,26 +815,31 @@ export class MockFeatureFlagProvider extends FeatureFlagProvider {
 export const emptyMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>())
 
 export const DEFAULT_VSCODE_SETTINGS = {
-    proxy: null,
+    proxy: undefined,
     codebase: '',
     customHeaders: {},
-    chatPreInstruction: '',
+    chatPreInstruction: ps``,
+    editPreInstruction: ps``,
     useContext: 'embeddings',
     autocomplete: true,
     autocompleteLanguages: {
         '*': true,
     },
     commandCodeLenses: false,
-    editorTitleCommandIcon: true,
     experimentalGuardrails: false,
     experimentalSimpleChatContext: true,
+    experimentalSupercompletions: false,
+    experimentalOllamaChat: true,
     experimentalSymfContext: true,
     experimentalTracing: false,
+    experimentalGithubAccessToken: '',
+    experimentalCommitMessage: true,
+    experimentalNoodle: false,
+    experimentalURLContext: false,
     codeActions: true,
     commandHints: false,
     isRunningInsideAgent: false,
     agentIDE: undefined,
-    debugEnable: false,
     debugVerbose: false,
     debugFilter: null,
     telemetryLevel: 'all',
@@ -826,19 +849,17 @@ export const DEFAULT_VSCODE_SETTINGS = {
     autocompleteCompleteSuggestWidgetSelection: true,
     autocompleteFormatOnAccept: true,
     autocompleteDisableInsideComments: false,
-    autocompleteExperimentalDynamicMultilineCompletions: false,
     autocompleteExperimentalHotStreak: false,
-    autocompleteExperimentalFastPath: false,
     autocompleteExperimentalGraphContext: null,
+    autocompleteExperimentalSmartThrottle: false,
     autocompleteExperimentalOllamaOptions: {
         model: 'codellama:7b-code',
-        url: 'http://localhost:11434',
+        url: OLLAMA_DEFAULT_URL,
     },
     autocompleteTimeouts: {
         multiline: undefined,
         singleline: undefined,
     },
-    testingLocalEmbeddingsEndpoint: undefined,
-    testingLocalEmbeddingsIndexLibraryPath: undefined,
-    testingLocalEmbeddingsModel: undefined,
+    testingModelConfig: undefined,
+    experimentalChatContextRanker: false,
 } satisfies Configuration

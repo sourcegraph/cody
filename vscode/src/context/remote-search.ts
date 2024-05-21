@@ -1,19 +1,23 @@
 import * as vscode from 'vscode'
 
 import {
-    isError,
     type ContextGroup,
+    type ContextItem,
+    type ContextItemFile,
+    ContextItemSource,
     type ContextSearchResult,
     type ContextStatusProvider,
     type Disposable,
     type IRemoteSearch,
-    type ContextFileFile,
+    type PromptString,
+    contextFiltersProvider,
     graphqlClient,
+    isError,
 } from '@sourcegraph/cody-shared'
 
-import type * as repofetcher from './repo-fetcher'
 import type { URI } from 'vscode-uri'
-import { getCodebaseFromWorkspaceUri } from '../repository/repositoryHelpers'
+import { repoNameResolver } from '../repository/repo-name-resolver'
+import type * as repofetcher from './repo-fetcher'
 
 export enum RepoInclusion {
     Automatic = 'auto',
@@ -26,6 +30,13 @@ interface DisplayRepo {
 
 export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
     public static readonly MAX_REPO_COUNT = 10
+    private disposeOnContextFilterChanged: () => void
+
+    constructor() {
+        this.disposeOnContextFilterChanged = contextFiltersProvider.onContextFiltersChanged(() => {
+            this.statusChangedEmitter.fire(this)
+        })
+    }
 
     private statusChangedEmitter = new vscode.EventEmitter<ContextStatusProvider>()
 
@@ -37,6 +48,7 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
 
     public dispose(): void {
         this.statusChangedEmitter.dispose()
+        this.disposeOnContextFilterChanged()
     }
 
     // #region ContextStatusProvider implementation.
@@ -59,6 +71,7 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
                         state: 'ready',
                         id,
                         inclusion: auto ? 'auto' : 'manual',
+                        isIgnored: contextFiltersProvider.isRepoNameIgnored(displayName),
                     },
                 ],
             }
@@ -106,8 +119,9 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
         return new Set([...this.reposAuto.keys(), ...this.reposManual.keys()])
     }
 
-    public async query(query: string): Promise<ContextSearchResult[]> {
-        const result = await graphqlClient.contextSearch(this.getRepoIdSet(), query)
+    public async query(query: PromptString): Promise<ContextSearchResult[]> {
+        // Sending prompt strings to the Sourcegraph search backend is fine.
+        const result = await graphqlClient.contextSearch(this.getRepoIdSet(), query.toString())
         if (result instanceof Error) {
             throw result
         }
@@ -117,7 +131,7 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
     // IRemoteSearch implementation. This is only used for inline edit context.
 
     public async setWorkspaceUri(uri: URI): Promise<void> {
-        const codebase = getCodebaseFromWorkspaceUri(uri)
+        const [codebase] = await repoNameResolver.getRepoNamesFromWorkspaceUri(uri)
         if (!codebase) {
             this.setRepos([], RepoInclusion.Automatic)
             return
@@ -129,28 +143,31 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
         this.setRepos(repos, RepoInclusion.Automatic)
     }
 
-    public async search(query: string): Promise<ContextFileFile[]> {
+    public async search(query: PromptString): Promise<ContextItemFile[]> {
         const results = await this.query(query)
         if (isError(results)) {
             throw results
         }
-        return (results || []).map(result => ({
-            type: 'file',
-            uri: result.uri,
-            repoName: result.repoName,
-            revision: result.commit,
-            source: 'unified',
-            content: result.content,
-            range: {
-                start: {
-                    line: result.startLine,
-                    character: 0,
-                },
-                end: {
-                    line: result.endLine,
-                    character: 0,
-                },
-            },
-        }))
+        return (results || []).map(
+            result =>
+                ({
+                    type: 'file',
+                    uri: result.uri,
+                    repoName: result.repoName,
+                    revision: result.commit,
+                    source: ContextItemSource.Unified,
+                    content: result.content,
+                    range: {
+                        start: {
+                            line: result.startLine,
+                            character: 0,
+                        },
+                        end: {
+                            line: result.endLine,
+                            character: 0,
+                        },
+                    },
+                }) satisfies ContextItem
+        )
     }
 }

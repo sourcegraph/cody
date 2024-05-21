@@ -1,59 +1,119 @@
+import { clsx } from 'clsx'
 import type React from 'react'
 
-import { displayPath } from '@sourcegraph/cody-shared'
-import type { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/components/EnhancedContext'
+import {
+    type RangeData,
+    displayLineRange,
+    displayPath,
+    webviewOpenURIForContextItem,
+} from '@sourcegraph/cody-shared'
 
+import type { URI } from 'vscode-uri'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
-
 import styles from './FileLink.module.css'
 
-export const FileLink: React.FunctionComponent<FileLinkProps> = ({
+interface FileLinkProps {
+    uri: URI
+    repoName?: string
+    revision?: string
+    source?: string
+    range?: RangeData
+    title?: string
+    isTooLarge?: boolean
+    isIgnored?: boolean
+}
+
+const LIMIT_WARNING = 'Excluded due to context window limit'
+const IGNORE_WARNING = 'File ignored by an admin setting'
+
+export const FileLink: React.FunctionComponent<FileLinkProps & { className?: string }> = ({
     uri,
     range,
     source,
     repoName,
     title,
     revision,
+    isTooLarge,
+    isIgnored,
+    className,
 }) => {
-    if (source === 'unified') {
-        // This is a remote search result.
-        const repoShortName = repoName?.slice(repoName.lastIndexOf('/') + 1)
-        const pathToDisplay = `${repoShortName} ${title}`
-        const pathWithRange = range
-            ? `${pathToDisplay}:${range.start.line + 1}-${range.end.line}`
-            : pathToDisplay
-        const tooltip = `${repoName} @${revision}\nincluded via Search`
-        return (
-            <a
-                href={uri.toString()}
-                target="_blank"
-                rel="noreferrer"
-                title={tooltip}
-                className={styles.linkButton}
-            >
-                {pathWithRange}
-            </a>
-        )
+    function logFileLinkClicked() {
+        getVSCodeAPI().postMessage({
+            command: 'event',
+            eventName: 'CodyVSCodeExtension:chat:context:fileLink:clicked',
+            properties: { source },
+        })
     }
 
-    // +1 because selection range starts at 0 but editor line number starts at 1
-    const startLine = (range?.start.line ?? 0) + 1
-    const endLine = (range?.end.line ?? -1) + 1
-    const hasValidRange = startLine <= endLine
+    let tooltip: string
+    let pathWithRange: string
+    let href: string
+    let target: string | undefined
+    if (source === 'unified') {
+        // Remote search result.
+        const repoShortName = repoName?.slice(repoName.lastIndexOf('/') + 1)
+        const pathToDisplay = `${repoShortName} ${title}`
+        pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
+        tooltip = `${repoName} @${revision}\nincluded via Enhanced Context (Remote Search)`
+        // We can skip encoding when the uri path already contains '@'.
+        href = uri.toString(uri.path.includes('@'))
+        target = '_blank'
+    } else {
+        const pathToDisplay = `${displayPath(uri)}`
+        pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
+        const openURI = webviewOpenURIForContextItem({ uri, range })
+        tooltip = isIgnored ? IGNORE_WARNING : isTooLarge ? LIMIT_WARNING : pathWithRange
+        href = openURI.href
+        target = openURI.target
+    }
 
-    const pathToDisplay = `@${displayPath(uri)}`
-    const pathWithRange = hasValidRange ? `${pathToDisplay}:${startLine}-${endLine}` : pathToDisplay
-    const tooltip = source ? `${pathWithRange} included via ${source}` : pathWithRange
     return (
-        <button
-            className={styles.linkButton}
-            type="button"
-            title={tooltip}
-            onClick={() => {
-                getVSCodeAPI().postMessage({ command: 'openFile', uri, range })
-            }}
-        >
-            {pathWithRange}
-        </button>
+        <div className={clsx(styles.linkContainer, className)}>
+            {isIgnored ? (
+                <i className="codicon codicon-warning" title={IGNORE_WARNING} />
+            ) : isTooLarge ? (
+                <i className="codicon codicon-warning" title={LIMIT_WARNING} />
+            ) : null}
+            <a
+                className={styles.linkButton}
+                title={tooltip}
+                href={href}
+                target={target}
+                onClick={logFileLinkClicked}
+            >
+                <i
+                    className={clsx('codicon', `codicon-${source === 'user' ? 'mention' : 'file'}`)}
+                    title={getFileSourceIconTitle(source)}
+                />
+                <div className={clsx(styles.path, (isTooLarge || isIgnored) && styles.excluded)}>
+                    {pathWithRange}
+                </div>
+            </a>
+        </div>
     )
+}
+
+function getFileSourceIconTitle(source?: string): string {
+    const displayText = getFileSourceDisplayText(source)
+    return `Included via ${displayText}`
+}
+
+function getFileSourceDisplayText(source?: string): string {
+    switch (source) {
+        case 'unified':
+            return 'Enhanced Context (Enterprise Search)'
+        case 'search':
+        case 'symf':
+            return 'Enhanced Context (Search)'
+        case 'embeddings':
+            return 'Enhanced Context (Embeddings)'
+        case 'editor':
+            return 'Editor Context'
+        case 'selection':
+            return 'Selection'
+        case 'user':
+            return '@-mention'
+        default:
+            return source ?? 'Enhanced Context'
+    }
 }

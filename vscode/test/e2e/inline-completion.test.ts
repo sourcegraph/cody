@@ -1,7 +1,8 @@
-import { expect, type Locator, type Page } from '@playwright/test'
+import { expect } from '@playwright/test'
 
 import { sidebarExplorer, sidebarSignin } from './common'
 import { type ExpectedEvents, test } from './helpers'
+import { acceptInlineCompletion, triggerInlineCompletion } from './utils/completions'
 
 test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
@@ -14,8 +15,8 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:completion:accepted',
     ],
 })
-    // TODO Fix flaky test
-    .skip('shows chat sidebar completion onboarding notice on first completion accept', async ({
+    .skip(// TODO Fix flaky test
+    'shows chat sidebar completion onboarding notice on first completion accept', async ({
         page,
         sidebar,
     }) => {
@@ -40,7 +41,7 @@ test.extend<ExpectedEvents>({
         await indexFile.dblclick()
 
         // Trigger inline-completion and ensure no notice (yet).
-        await triggerInlineCompletionAfter(page, page.getByText('<body>'), 'myFirst')
+        await triggerInlineCompletion(page, 'myFirst', page.getByText('<body>'))
         await expect(notice).not.toBeVisible()
 
         // Accept the completion and expect the text to be added and
@@ -54,7 +55,7 @@ test.extend<ExpectedEvents>({
         await expect(notice).not.toBeVisible()
 
         // Trigger/accept another completion, but don't expect the notification.
-        await triggerInlineCompletionAfter(page, firstAcceptedCompletion, 'myNot')
+        await triggerInlineCompletion(page, 'myNot', firstAcceptedCompletion)
         await acceptInlineCompletion(page)
         await expect(otherAcceptedCompletion).toBeVisible()
         await expect(notice).not.toBeVisible()
@@ -65,7 +66,6 @@ test.extend<ExpectedEvents>({
         // First suggest/accept
         'CodyVSCodeExtension:completion:suggested',
         'CodyVSCodeExtension:completion:accepted',
-        // Second suggest/accept
         'CodyVSCodeExtension:completion:suggested',
         'CodyVSCodeExtension:completion:accepted',
     ],
@@ -95,7 +95,7 @@ test.extend<ExpectedEvents>({
         await indexFile.dblclick()
 
         // Trigger inline-completion and ensure no notice (yet).
-        await triggerInlineCompletionAfter(page, page.getByText('<body>'), 'myFirst')
+        await triggerInlineCompletion(page, 'myFirst', page.getByText('<body>'))
         await expect(decoration).not.toBeVisible()
 
         // Accept the completion and expect the text to be added and
@@ -112,7 +112,7 @@ test.extend<ExpectedEvents>({
 
         // Trigger/accept another completion, but don't expect the notification.
         await page.waitForTimeout(100)
-        await triggerInlineCompletionAfter(page, firstAcceptedCompletion, 'myNot')
+        await triggerInlineCompletion(page, 'myNot', firstAcceptedCompletion)
         await acceptInlineCompletion(page)
         // After accepting a completion, a new completion request will be made. Since this can interfere
         // with the expected event order (especially since suggestion events are logged after the
@@ -122,23 +122,3 @@ test.extend<ExpectedEvents>({
         await expect(otherAcceptedCompletion).toBeVisible()
         await expect(decoration).not.toBeVisible()
     })
-
-async function triggerInlineCompletionAfter(
-    page: Page,
-    afterElement: Locator,
-    prefix: string
-): Promise<void> {
-    await afterElement.click()
-    await page.keyboard.press('End')
-    await page.keyboard.press('Enter')
-    await page.keyboard.type(prefix)
-
-    // TODO: Fix flaky
-    // Wait for ghost text to become visible.
-    await page.locator('.ghost-text-decoration').waitFor({ state: 'visible' })
-}
-
-async function acceptInlineCompletion(page: Page): Promise<void> {
-    await page.keyboard.press('Tab')
-    await page.waitForTimeout(100)
-}

@@ -2,24 +2,29 @@ import dedent from 'dedent'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 
-import { graphqlClient, RateLimitError, type GraphQLAPIClientConfig } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    type GraphQLAPIClientConfig,
+    RateLimitError,
+    contextFiltersProvider,
+    graphqlClient,
+} from '@sourcegraph/cody-shared'
 
-import type { AuthStatus } from '../chat/protocol'
 import { localStorage } from '../services/LocalStorageProvider'
 import { vsCodeMocks } from '../testutils/mocks'
 import { withPosixPaths } from '../testutils/textDocument'
 
-import { getInlineCompletions, InlineCompletionsResultSource } from './get-inline-completions'
+import { SupportedLanguage } from '../tree-sitter/grammars'
+import { updateParseTreeCache } from '../tree-sitter/parse-tree-cache'
+import { getParser, resetParsersCache } from '../tree-sitter/parser'
+import { InlineCompletionsResultSource, getInlineCompletions } from './get-inline-completions'
+import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import type { CompletionLogID } from './logger'
 import * as CompletionLogger from './logger'
 import { createProviderConfig } from './providers/anthropic'
 import { documentAndPosition, initTreeSitterParser } from './test-helpers'
 import type { InlineCompletionItem } from './types'
-import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
-import { getParser, resetParsersCache } from '../tree-sitter/parser'
-import { updateParseTreeCache } from '../tree-sitter/parse-tree-cache'
-import { SupportedLanguage } from '../tree-sitter/grammars'
 
 vi.mock('vscode', () => ({
     ...vsCodeMocks,
@@ -52,6 +57,7 @@ const DUMMY_AUTH_STATUS: AuthStatus = {
     displayName: 'w.w.',
     avatarURL: '',
     userCanUpgrade: false,
+    codyApiVersion: 0,
 }
 
 graphqlClient.onConfigurationChange({} as unknown as GraphQLAPIClientConfig)
@@ -85,6 +91,9 @@ describe('InlineCompletionItemProvider', () => {
     beforeAll(async () => {
         await initCompletionProviderConfig({})
     })
+    beforeEach(() => {
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
+    })
 
     it('returns results that span the whole line', async () => {
         const { document, position } = documentAndPosition('const foo = █', 'typescript')
@@ -117,7 +126,7 @@ describe('InlineCompletionItemProvider', () => {
             const { document, position } = documentAndPosition('// █', 'typescript')
 
             await initTreeSitterParser()
-            const parser = getParser(SupportedLanguage.TypeScript)
+            const parser = getParser(SupportedLanguage.typescript)
             if (parser) {
                 updateParseTreeCache(document, parser)
             }
@@ -220,6 +229,20 @@ describe('InlineCompletionItemProvider', () => {
         expect(fn.mock.calls.map(call => call[0].lastCandidate?.result.items)).toEqual([[item]])
     })
 
+    it('no-ops on files that are ignored by the context filter policy', async () => {
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValueOnce('repo:foo')
+        const { document, position } = documentAndPosition('const foo = █', 'typescript')
+        const fn = vi.fn()
+        const provider = new MockableInlineCompletionItemProvider(fn)
+        const completions = await provider.provideInlineCompletionItems(
+            document,
+            position,
+            DUMMY_CONTEXT
+        )
+        expect(completions).toBe(null)
+        expect(fn).not.toHaveBeenCalled()
+    })
+
     describe('onboarding', () => {
         // Set up local storage backed by an object. Local storage is used to
         // track whether a completion was accepted for the first time.
@@ -228,6 +251,7 @@ describe('InlineCompletionItemProvider', () => {
             get: (key: string) => localStorageData[key],
             update: (key: string, value: unknown) => {
                 localStorageData[key] = value
+                return Promise.resolve()
             },
         } as any as vscode.Memento)
 
@@ -271,10 +295,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('does not triggers notice the first time an inline complation is accepted if not a new install', async () => {
-            await localStorage.setChatHistory(DUMMY_AUTH_STATUS, {
-                chat: { a: null as any },
-                input: [{ inputText: '', inputContextFiles: [] }],
-            })
+            await localStorage.setChatHistory(DUMMY_AUTH_STATUS, { chat: { a: null as any } })
 
             const { document, position } = documentAndPosition('const foo = █', 'typescript')
 

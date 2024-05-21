@@ -1,10 +1,10 @@
-import fspromises from 'fs/promises'
-import * as vscode from 'vscode'
+import fspromises from 'node:fs/promises'
+import path from 'node:path'
+import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
+import * as vscode from 'vscode'
 import { IndentationBasedFoldingRangeProvider } from '../../../vscode/src/lsp/foldingRanges'
 import { AgentTextDocument } from '../AgentTextDocument'
-import dedent from 'dedent'
-import path from 'path'
 
 // NOTE: this test case lives in the agent/ project so that we can mock out VS Code APIs.
 describe('IndentationBasedFoldingRangeProvider', async () => {

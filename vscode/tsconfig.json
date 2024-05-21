@@ -5,7 +5,11 @@
     "rootDir": ".",
     "outDir": "dist/tsc",
     "jsx": "react-jsx",
-    "lib": ["ESNext", "DOM"]
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "types": ["@testing-library/jest-dom"],
+    "paths": {
+      "@/*": ["./webviews/*"]
+    }
   },
   "include": [
     "src",
@@ -13,10 +17,10 @@
     "test/fixtures",
     "playwright.config.ts",
     "test/e2e",
+    "test/e2e/utils/commands.json",
     "webviews",
     "webviews/*.d.ts",
     "package.json",
-    ".storybook/*.ts"
   ],
   "exclude": [
     "scripts",
@@ -29,9 +33,6 @@
   "references": [
     {
       "path": "../lib/shared"
-    },
-    {
-      "path": "../lib/ui"
     }
   ]
 }

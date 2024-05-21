@@ -7,35 +7,33 @@ import { vsCodeMocks } from '../../testutils/mocks'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
 import { RequestManager } from '../request-manager'
 import { completion } from '../test-helpers'
-import { MULTILINE_STOP_SEQUENCE } from '../text-processing'
 
-import { getInlineCompletions, params, type V } from './helpers'
+import { type V, getInlineCompletions, params } from './helpers'
 
 describe('[getInlineCompletions] common', () => {
-    test('single-line mode only completes one line', async () =>
-        expect(
-            await getInlineCompletions(
-                params(
-                    `
-        function test() {
-            console.log(1);
-            █
-        }
-        `,
-                    [
-                        completion`
-                    ├if (true) {
-                        console.log(3);
+    test('single-line mode only completes one line', async () => {
+        const result = await getInlineCompletions(
+            params(
+                `
+                    function test() {
+                        console.log(1);
+                        █
                     }
-                    console.log(4);┤
-                ┴┴┴┴`,
-                    ]
-                )
+                `,
+                [
+                    completion`
+                        ├if (true) {
+                            console.log(3);
+                        }
+                        console.log(4);┤
+                    ┴┴┴┴`,
+                ]
             )
-        ).toEqual<V>({
-            items: [{ insertText: 'if (true) {' }],
-            source: InlineCompletionsResultSource.Network,
-        }))
+        )
+
+        expect(result!.items[0].insertText).toEqual('if (true) {')
+        expect(result!.source).toEqual(InlineCompletionsResultSource.Network)
+    })
 
     test('with selectedCompletionInfo', async () =>
         expect(
@@ -84,7 +82,7 @@ describe('[getInlineCompletions] common', () => {
             )
         )
         const messages = requests[0].messages
-        expect(messages.at(-1)!.text).toBe('<CODE5711>class Range {')
+        expect(messages.at(-1)!.text?.toString()).toBe('<CODE5711>class Range {')
     })
 
     test('uses a more complex prompt for larger files', async () => {
@@ -127,7 +125,7 @@ describe('[getInlineCompletions] common', () => {
                     this.startLine =",
             }
         `)
-        expect(requests[0].stopSequences).toEqual(['\n\nHuman:', '</CODE5711>', MULTILINE_STOP_SEQUENCE])
+        expect(requests).toBeSingleLine()
     })
 
     test('synthesizes a completion from a prior request', async () => {

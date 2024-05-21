@@ -1,20 +1,25 @@
 import * as vscode from 'vscode'
 
 import {
+    type AuthStatus,
     ConfigFeaturesSingleton,
     FeatureFlag,
-    isCodyIgnoredFile,
     RateLimitError,
+    contextFiltersProvider,
+    isCodyIgnoredFile,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
-import type { AuthStatus } from '../chat/protocol'
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
 import type { CodyStatusBar } from '../services/StatusBar'
 import { telemetryService } from '../services/telemetry'
 
-import { getArtificialDelay, resetArtificialDelay, type LatencyFeatureFlags } from './artificial-delay'
+import { type CodyIgnoreType, showCodyIgnoreNotification } from '../cody-ignore/notification'
+import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
+import { isInTutorial } from '../tutorial/helpers'
+import { type LatencyFeatureFlags, getArtificialDelay, resetArtificialDelay } from './artificial-delay'
+import { completionProviderConfig } from './completion-provider-config'
 import { ContextMixer } from './context/context-mixer'
 import { DefaultContextStrategyFactory } from './context/context-strategy'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
@@ -23,29 +28,28 @@ import { FirstCompletionDecorationHandler } from './first-completion-decoration-
 import { formatCompletion } from './format-completion'
 import { getCurrentDocContext } from './get-current-doc-context'
 import {
-    getInlineCompletions,
-    InlineCompletionsResultSource,
-    TriggerKind,
     type InlineCompletionsParams,
+    InlineCompletionsResultSource,
     type LastInlineCompletionCandidate,
+    TriggerKind,
+    getInlineCompletions,
 } from './get-inline-completions'
 import { isCompletionVisible } from './is-completion-visible'
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './logger'
 import * as CompletionLogger from './logger'
+import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 import type { ProviderConfig } from './providers/provider'
 import { RequestManager, type RequestParams } from './request-manager'
 import { getRequestParamsFromLastCandidate } from './reuse-last-candidate'
+import { SmartThrottleService } from './smart-throttle'
 import {
+    type AutocompleteInlineAcceptedCommandArgs,
+    type AutocompleteItem,
     analyticsItemToAutocompleteItem,
     suggestedAutocompleteItemsCache,
     updateInsertRangeForVSCode,
-    type AutocompleteInlineAcceptedCommandArgs,
-    type AutocompleteItem,
 } from './suggested-autocomplete-items-cache'
 import type { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
-import { isLocalCompletionsProvider } from './providers/experimental-ollama'
-import { completionProviderConfig } from './completion-provider-config'
-import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
 
 interface AutocompleteResult extends vscode.InlineCompletionList {
     logId: CompletionLogID
@@ -54,7 +58,7 @@ interface AutocompleteResult extends vscode.InlineCompletionList {
     completionEvent?: CompletionBookkeepingEvent
 }
 
-export interface CodyCompletionItemProviderConfig {
+interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
     statusBar: CodyStatusBar
     tracer?: ProvideInlineCompletionItemsTracer | null
@@ -72,6 +76,17 @@ export interface CodyCompletionItemProviderConfig {
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
+
+    // Flag to check if the current request is also triggered for multiple providers.
+    // When true it means the inlineCompletion are triggerd for multiple model for comparison purpose.
+    // Check `createInlineCompletionItemFromMultipleProviders` method in create-inline-completion-item-provider for more detail.
+    noInlineAccept?: boolean
+}
+
+export interface MultiModelCompletionsResults {
+    provider: string
+    model: string
+    completion?: string
 }
 
 interface CompletionRequest {
@@ -94,6 +109,7 @@ export class InlineCompletionItemProvider
 
     private requestManager: RequestManager
     private contextMixer: ContextMixer
+    private smartThrottleService: SmartThrottleService | null = null
 
     /** Mockable (for testing only). */
     protected getInlineCompletions = getInlineCompletions
@@ -127,6 +143,7 @@ export class InlineCompletionItemProvider
             tracer,
             isRunningInsideAgent: config.isRunningInsideAgent ?? false,
             isDotComUser: config.isDotComUser ?? false,
+            noInlineAccept: config.noInlineAccept ?? false,
         }
 
         if (this.config.completeSuggestWidgetSelection) {
@@ -156,6 +173,11 @@ export class InlineCompletionItemProvider
             )
         )
 
+        if (completionProviderConfig.smartThrottle) {
+            this.smartThrottleService = new SmartThrottleService()
+            this.disposables.push(this.smartThrottleService)
+        }
+
         const chatHistory = localStorage.getChatHistory(this.config.authStatus)?.chat
         this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0
 
@@ -164,15 +186,18 @@ export class InlineCompletionItemProvider
             [this.config.providerConfig.identifier, this.config.providerConfig.model].join('/')
         )
 
-        this.disposables.push(
-            this.contextMixer,
-            vscode.commands.registerCommand(
-                'cody.autocomplete.inline.accepted',
-                ({ codyCompletion }: AutocompleteInlineAcceptedCommandArgs) => {
-                    void this.handleDidAcceptCompletionItem(codyCompletion)
-                }
+        this.disposables.push(this.contextMixer)
+        if (!this.config.noInlineAccept) {
+            // We don't want to accept and log items when we are doing completion comparison from different models.
+            this.disposables.push(
+                vscode.commands.registerCommand(
+                    'cody.autocomplete.inline.accepted',
+                    ({ codyCompletion }: AutocompleteInlineAcceptedCommandArgs) => {
+                        void this.handleDidAcceptCompletionItem(codyCompletion)
+                    }
+                )
             )
-        )
+        }
 
         // Warm caches for the config feature configuration to avoid the first completion call
         // having to block on this.
@@ -193,12 +218,22 @@ export class InlineCompletionItemProvider
         // Making it optional here to execute multiple suggestion in parallel from the CLI script.
         token?: vscode.CancellationToken
     ): Promise<AutocompleteResult | null> {
+        const isManualCompletion = Boolean(
+            this.lastManualCompletionTimestamp && this.lastManualCompletionTimestamp > Date.now() - 500
+        )
+
         // Do not create item for files that are on the cody ignore list
         if (isCodyIgnoredFile(document.uri)) {
+            logIgnored(document.uri, 'cody-ignore', isManualCompletion)
             return null
         }
 
         return wrapInActiveSpan('autocomplete.provideInlineCompletionItems', async span => {
+            if (await contextFiltersProvider.isUriIgnored(document.uri)) {
+                logIgnored(document.uri, 'context-filter', isManualCompletion)
+                return null
+            }
+
             // Update the last request
             const lastCompletionRequest = this.lastCompletionRequest
             const completionRequest: CompletionRequest = {
@@ -271,15 +306,13 @@ export class InlineCompletionItemProvider
                 takeSuggestWidgetSelectionIntoAccount = true
             }
 
-            const triggerKind =
-                this.lastManualCompletionTimestamp &&
-                this.lastManualCompletionTimestamp > Date.now() - 500
-                    ? TriggerKind.Manual
-                    : context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic
-                      ? TriggerKind.Automatic
-                      : takeSuggestWidgetSelectionIntoAccount
-                          ? TriggerKind.SuggestWidget
-                          : TriggerKind.Hover
+            const triggerKind = isManualCompletion
+                ? TriggerKind.Manual
+                : context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic
+                  ? TriggerKind.Automatic
+                  : takeSuggestWidgetSelectionIntoAccount
+                    ? TriggerKind.SuggestWidget
+                    : TriggerKind.Hover
             this.lastManualCompletionTimestamp = null
 
             const docContext = getCurrentDocContext({
@@ -289,7 +322,6 @@ export class InlineCompletionItemProvider
                 maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
                 // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
                 context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
-                dynamicMultilineCompletions: completionProviderConfig.dynamicMultilineCompletions,
             })
 
             const completionIntent = getCompletionIntent({
@@ -319,7 +351,16 @@ export class InlineCompletionItemProvider
             const isEagerCancellationEnabled = completionProviderConfig.getPrefetchedFlag(
                 FeatureFlag.CodyAutocompleteEagerCancellation
             )
-            const debounceInterval = isLocalProvider ? 125 : isEagerCancellationEnabled ? 10 : 75
+            const isReducedDebounceEnabled = completionProviderConfig.getPrefetchedFlag(
+                FeatureFlag.CodyAutocompleteReducedDebounce
+            )
+            const debounceInterval = isLocalProvider
+                ? 125
+                : isEagerCancellationEnabled
+                  ? 10
+                  : isReducedDebounceEnabled
+                    ? 25
+                    : 75
 
             try {
                 const result = await this.getInlineCompletions({
@@ -331,6 +372,7 @@ export class InlineCompletionItemProvider
                     providerConfig: this.config.providerConfig,
                     contextMixer: this.contextMixer,
                     requestManager: this.requestManager,
+                    smartThrottleService: this.smartThrottleService,
                     lastCandidate: this.lastCandidate,
                     debounceInterval: {
                         singleLine: debounceInterval,
@@ -508,6 +550,11 @@ export class InlineCompletionItemProvider
         // Mark as seen, so we don't show again after this.
         void localStorage.set(key, 'true')
 
+        if (isInTutorial(request.document)) {
+            // Do nothing, the user is already working through the tutorial
+            return
+        }
+
         if (!this.isProbablyNewInstall) {
             // Only trigger for new installs for now, to avoid existing users from
             // seeing this. Consider removing this check in future, because existing
@@ -535,7 +582,6 @@ export class InlineCompletionItemProvider
         if (!completion) {
             return
         }
-
         CompletionLogger.suggested(completion.logId, completion.span)
     }
 
@@ -619,6 +665,8 @@ export class InlineCompletionItemProvider
                 title: errorTitle,
                 description: `${error.userMessage} ${error.retryMessage ?? ''}`.trim(),
                 errorType: error.name,
+                removeAfterSelected: true,
+                removeAfterEpoch: error.retryAfterDate ? Number(error.retryAfterDate) : undefined,
                 onSelect: () => {
                     if (canUpgrade) {
                         telemetryService.log('CodyVSCodeExtension:upsellUsageLimitCTA:clicked', {
@@ -670,6 +718,7 @@ export class InlineCompletionItemProvider
                 title: errorTitle,
                 description: 'Contact your Sourcegraph site admin to enable autocomplete',
                 errorType: 'AutoCompleteDisabledByAdmin',
+                removeAfterSelected: false,
                 onShow: () => {
                     if (shown) {
                         return
@@ -784,4 +833,22 @@ function onlyCompletionWidgetSelectionChanged(
     }
 
     return prevSelectedCompletionInfo.text !== nextSelectedCompletionInfo.text
+}
+
+let lasIgnoredUriLogged: string | undefined = undefined
+function logIgnored(uri: vscode.Uri, reason: CodyIgnoreType, isManualCompletion: boolean) {
+    // Only show a notification for actively triggered autocomplete requests.
+    if (isManualCompletion) {
+        showCodyIgnoreNotification('autocomplete', reason)
+    }
+
+    const string = uri.toString()
+    if (lasIgnoredUriLogged === string) {
+        return
+    }
+    lasIgnoredUriLogged = string
+    logDebug(
+        'CodyCompletionProvider:ignored',
+        'Cody is disabled in file ' + uri.toString() + ' (' + reason + ')'
+    )
 }

@@ -1,10 +1,10 @@
 import * as vscode from 'vscode'
 
-import { displayPath, isDefined, renderMarkdown } from '@sourcegraph/cody-shared'
+import { displayPath, displayRange, isDefined, renderMarkdown } from '@sourcegraph/cody-shared'
 
 import {
-    registerDebugListener as registerSectionObserverDebugListener,
     SectionHistoryRetriever,
+    registerDebugListener as registerSectionObserverDebugListener,
 } from '../context/retrievers/section-history/section-history-retriever'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
 import type { InlineCompletionItemProvider } from '../inline-completion-item-provider'
@@ -162,12 +162,12 @@ ${
               ),
               data.completionProviderCallResult.debugMessage
                   ? codeDetailsWithSummary(
-                          'Timing',
-                          data.completionProviderCallResult.debugMessage,
-                          undefined,
-                          undefined,
-                          true
-                      )
+                        'Timing',
+                        data.completionProviderCallResult.debugMessage,
+                        undefined,
+                        undefined,
+                        true
+                    )
                   : null,
           ]
               .filter(isDefined)
@@ -195,8 +195,8 @@ ${
         : data.result.items.length === 0
           ? 'Empty completions.'
           : data.result.items
-                  .map(item => inlineCompletionItemDescription(item, data.params?.document))
-                  .join('\n\n---\n\n')
+                .map(item => inlineCompletionItemDescription(item, data.params?.document))
+                .join('\n\n---\n\n')
 }`,
 
         data?.error &&
@@ -313,20 +313,8 @@ ${
 }`
 }
 
-function rangeDescription(range: vscode.Range): string {
-    // The VS Code extension API uses 0-indexed lines and columns, but the UI (and humans) use
-    // 1-indexed lines and columns. Show the latter.
-    return `${range.start.line + 1}:${range.start.character + 1}${
-        range.isEmpty
-            ? ''
-            : `-${range.end.line === range.start.line ? '' : `${range.end.line + 1}:`}${
-                  range.end.character + 1
-              }`
-    }`
-}
-
 function rangeDescriptionWithCurrentText(range: vscode.Range, document?: vscode.TextDocument): string {
-    return `${rangeDescription(range)} (${
+    return `${displayRange(range)} (${
         range.isEmpty
             ? 'empty'
             : document

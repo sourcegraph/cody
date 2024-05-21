@@ -6,6 +6,7 @@
 set -eu
 default_revision=$(git rev-parse origin/main)
 revision=${1:-$default_revision}
-for file in $(git ls-files | uniq | grep '.har.yaml'); do
+
+for file in $(git ls-tree -r --name-only $revision agent/recordings/); do
   git show "$revision:$file" > "$file"
 done

@@ -1,121 +1,99 @@
 import { findLast } from 'lodash'
 
 import {
-    errorToChatError,
-    reformatBotMessageForChat,
-    type ChatError,
     type ChatMessage,
-    type InteractionJSON,
-    type InteractionMessage,
+    type ContextItem,
     type Message,
-    type TranscriptJSON,
+    type ModelContextWindow,
+    ModelProvider,
+    type SerializedChatInteraction,
+    type SerializedChatTranscript,
+    errorToChatError,
     isCodyIgnoredFile,
+    toRangeData,
 } from '@sourcegraph/cody-shared'
 
-import { contextItemsToContextFiles, getChatPanelTitle } from './chat-helpers'
+import { serializeChatMessage } from '@sourcegraph/cody-shared'
 import type { Repo } from '../../context/repo-fetcher'
-import type { ContextItem } from '../../prompt-builder/types'
-
-/**
- * Interface for a chat message with additional context.
- *
- * 🚨 SECURITY: Cody ignored files must be excluded from all context items.
- */
-export interface MessageWithContext {
-    message: Message
-
-    // If set, this should be used as the display text for the message.
-    // Do not access directly, prefer using the getDisplayText function
-    // instead.
-    displayText?: string
-
-    // The additional context items attached to this message (which should not
-    // duplicate any previous context items in the transcript). This should
-    // only be defined on human messages.
-    newContextUsed?: ContextItem[]
-
-    error?: ChatError
-}
+import { getChatPanelTitle } from './chat-helpers'
 
 export class SimpleChatModel {
+    public contextWindow: ModelContextWindow
     constructor(
         public modelID: string,
-        private messagesWithContext: MessageWithContext[] = [],
+        private messages: ChatMessage[] = [],
         public readonly sessionID: string = new Date(Date.now()).toUTCString(),
         private customChatTitle?: string,
         private selectedRepos?: Repo[]
-    ) {}
-
-    public isEmpty(): boolean {
-        return this.messagesWithContext.length === 0
+    ) {
+        this.contextWindow = ModelProvider.getContextWindowByID(this.modelID)
     }
 
-    public setNewContextUsed(newContextUsed: ContextItem[]): void {
-        const lastMessage = this.messagesWithContext.at(-1)
+    public updateModel(newModelID: string): void {
+        this.modelID = newModelID
+        this.contextWindow = ModelProvider.getContextWindowByID(this.modelID)
+    }
+
+    public isEmpty(): boolean {
+        return this.messages.length === 0
+    }
+
+    public setLastMessageContext(newContextUsed: ContextItem[]): void {
+        const lastMessage = this.messages.at(-1)
         if (!lastMessage) {
             throw new Error('no last message')
         }
-        if (lastMessage.message.speaker !== 'human') {
+        if (lastMessage.speaker !== 'human') {
             throw new Error('Cannot set new context used for bot message')
         }
-        lastMessage.newContextUsed = newContextUsed.filter(c => !isCodyIgnoredFile(c.uri))
+        lastMessage.contextFiles = newContextUsed.filter(c => !isCodyIgnoredFile(c.uri))
     }
 
-    public addHumanMessage(message: Omit<Message, 'speaker'>, displayText?: string): void {
-        if (this.messagesWithContext.at(-1)?.message.speaker === 'human') {
+    public addHumanMessage(message: Omit<ChatMessage, 'speaker'>): void {
+        if (this.messages.at(-1)?.speaker === 'human') {
             throw new Error('Cannot add a user message after a user message')
         }
-        this.messagesWithContext.push({
-            displayText,
-            message: {
-                ...message,
-                speaker: 'human',
-            },
-        })
+        this.messages.push({ ...message, speaker: 'human' })
     }
 
-    public addBotMessage(message: Omit<Message, 'speaker'>, displayText?: string): void {
-        const lastMessage = this.messagesWithContext.at(-1)?.message
+    public addBotMessage(message: Omit<Message, 'speaker'>): void {
+        const lastMessage = this.messages.at(-1)
         let error: any
         // If there is no text, it could be a placeholder message for an error
         if (lastMessage?.speaker === 'assistant') {
             if (lastMessage?.text) {
                 throw new Error('Cannot add a bot message after a bot message')
             }
-            error = this.messagesWithContext.pop()?.error
+            error = this.messages.pop()?.error
         }
-        this.messagesWithContext.push({
-            displayText,
+        this.messages.push({
+            model: this.modelID,
+            ...message,
+            speaker: 'assistant',
             error,
-            message: {
-                ...message,
-                speaker: 'assistant',
-            },
         })
     }
 
     public addErrorAsBotMessage(error: Error): void {
-        const lastMessage = this.messagesWithContext.at(-1)?.message
+        const lastMessage = this.messages.at(-1)
         // Remove the last assistant message if any
-        const lastAssistantMessage =
-            lastMessage?.speaker === 'assistant' && this.messagesWithContext.pop()
-        const assistantMessage = lastAssistantMessage || { speaker: 'assistant' }
+        const lastAssistantMessage: ChatMessage | undefined =
+            lastMessage?.speaker === 'assistant' ? this.messages.pop() : undefined
         // Then add a new assistant message with error added
-        this.messagesWithContext.push({
+        this.messages.push({
+            model: this.modelID,
+            ...(lastAssistantMessage ?? {}),
+            speaker: 'assistant',
             error: errorToChatError(error),
-            message: {
-                ...assistantMessage,
-                speaker: 'assistant',
-            },
         })
     }
 
-    public getLastHumanMessage(): MessageWithContext | undefined {
-        return findLast(this.messagesWithContext, message => message.message.speaker === 'human')
+    public getLastHumanMessage(): ChatMessage | undefined {
+        return findLast(this.messages, message => message.speaker === 'human')
     }
 
     public getLastSpeakerMessageIndex(speaker: 'human' | 'assistant'): number | undefined {
-        return this.messagesWithContext.findLastIndex(message => message.message.speaker === speaker)
+        return this.messages.findLastIndex(message => message.speaker === speaker)
     }
 
     /**
@@ -129,7 +107,7 @@ export class SimpleChatModel {
             throw new Error('SimpleChatModel.removeMessagesFromIndex: not message to remove')
         }
 
-        const speakerAtIndex = this.messagesWithContext.at(index)?.message?.speaker
+        const speakerAtIndex = this.messages.at(index)?.speaker
         if (speakerAtIndex !== expectedSpeaker) {
             throw new Error(
                 `SimpleChatModel.removeMessagesFromIndex: expected ${expectedSpeaker}, got ${speakerAtIndex}`
@@ -137,35 +115,25 @@ export class SimpleChatModel {
         }
 
         // Removes everything from the index to the last element
-        this.messagesWithContext.splice(index)
+        this.messages.splice(index)
     }
 
-    public updateLastHumanMessage(message: Omit<Message, 'speaker'>, displayText?: string): void {
-        const lastMessage = this.messagesWithContext.at(-1)
-        if (!lastMessage) {
-            return
-        }
-        if (lastMessage.message.speaker === 'human') {
-            this.messagesWithContext.pop()
-        } else if (lastMessage.message.speaker === 'assistant') {
-            this.messagesWithContext.splice(-2, 2)
-        }
-        this.addHumanMessage(message, displayText)
+    public getMessages(): readonly ChatMessage[] {
+        return this.messages
     }
 
-    public getMessagesWithContext(): MessageWithContext[] {
-        return this.messagesWithContext
+    // De-hydrate because vscode.Range serializes to `[start, end]` in JSON.
+    // TODO: we should use a different type for `getMessages` to make the range hydration explicit.
+    public getDehydratedMessages(): readonly ChatMessage[] {
+        return this.messages.map(prepareChatMessage)
     }
 
     public getChatTitle(): string {
         if (this.customChatTitle) {
             return this.customChatTitle
         }
-        const text = this.getLastHumanMessage()?.displayText
-        if (text) {
-            return getChatPanelTitle(text)
-        }
-        return 'New Chat'
+        const lastHumanMessage = this.getLastHumanMessage()
+        return getChatPanelTitle(lastHumanMessage?.text?.toString() ?? '')
     }
 
     public getCustomChatTitle(): string | undefined {
@@ -185,21 +153,23 @@ export class SimpleChatModel {
     }
 
     /**
-     * Serializes to the legacy transcript JSON format
+     * Serializes to the transcript JSON format.
      */
-    public toTranscriptJSON(): TranscriptJSON {
-        const interactions: InteractionJSON[] = []
-        for (let i = 0; i < this.messagesWithContext.length; i += 2) {
-            const humanMessage = this.messagesWithContext[i]
-            const botMessage = this.messagesWithContext[i + 1]
-            interactions.push(messageToInteractionJSON(humanMessage, botMessage))
+    public toSerializedChatTranscript(): SerializedChatTranscript {
+        const interactions: SerializedChatInteraction[] = []
+        for (let i = 0; i < this.messages.length; i += 2) {
+            const humanMessage = this.messages[i]
+            const assistantMessage = this.messages.at(i + 1)
+            interactions.push(messageToSerializedChatInteraction(humanMessage, assistantMessage))
         }
-        const result: TranscriptJSON = {
+        const result: SerializedChatTranscript = {
             id: this.sessionID,
-            chatModel: this.modelID,
             chatTitle: this.getCustomChatTitle(),
             lastInteractionTimestamp: this.sessionID,
             interactions,
+
+            // DEPRECATED: Write this for backcompat.
+            chatModel: this.modelID,
         }
         if (this.selectedRepos) {
             result.enhancedContext = {
@@ -210,51 +180,36 @@ export class SimpleChatModel {
     }
 }
 
-function messageToInteractionJSON(
-    humanMessage: MessageWithContext,
-    botMessage: MessageWithContext
-): InteractionJSON {
-    if (humanMessage?.message?.speaker !== 'human') {
-        throw new Error('SimpleChatModel.toTranscriptJSON: expected human message, got bot')
+function messageToSerializedChatInteraction(
+    humanMessage: ChatMessage,
+    assistantMessage?: ChatMessage
+): SerializedChatInteraction {
+    if (humanMessage?.speaker !== 'human') {
+        throw new Error('expected human message, got bot')
     }
+
+    if (humanMessage.speaker !== 'human') {
+        throw new Error(`expected human message to have speaker == 'human', got ${humanMessage.speaker}`)
+    }
+    if (assistantMessage && assistantMessage.speaker !== 'assistant') {
+        throw new Error(
+            `expected bot message to have speaker == 'assistant', got ${assistantMessage.speaker}`
+        )
+    }
+
     return {
-        humanMessage: messageToInteractionMessage(humanMessage),
-        assistantMessage:
-            botMessage?.message?.speaker === 'assistant'
-                ? messageToInteractionMessage(botMessage)
-                : { speaker: 'assistant' },
-        usedContextFiles: contextItemsToContextFiles(humanMessage.newContextUsed ?? []),
-        // These fields are unused on deserialization
-        fullContext: [],
-        usedPreciseContext: [],
-        timestamp: new Date().toISOString(),
+        humanMessage: serializeChatMessage(humanMessage),
+        assistantMessage: assistantMessage ? serializeChatMessage(assistantMessage) : null,
     }
 }
 
-function messageToInteractionMessage(message: MessageWithContext): InteractionMessage {
+export function prepareChatMessage(message: ChatMessage): ChatMessage {
     return {
-        speaker: message.message.speaker,
-        text: message.message.text,
-        displayText: getDisplayText(message),
+        ...message,
+        contextFiles: message.contextFiles?.map(item => ({
+            ...item,
+            // De-hydrate because vscode.Range serializes to `[start, end]` in JSON.
+            range: toRangeData(item.range),
+        })),
     }
-}
-
-export function toViewMessage(mwc: MessageWithContext): ChatMessage {
-    const displayText = getDisplayText(mwc)
-    return {
-        ...mwc.message,
-        error: mwc.error,
-        displayText,
-        contextFiles: contextItemsToContextFiles(mwc.newContextUsed || []),
-    }
-}
-
-function getDisplayText(mwc: MessageWithContext): string | undefined {
-    if (mwc.displayText) {
-        return mwc.displayText
-    }
-    if (mwc.message.speaker === 'assistant' && mwc.message.text) {
-        return reformatBotMessageForChat(mwc.message.text, '')
-    }
-    return mwc.message.text
 }

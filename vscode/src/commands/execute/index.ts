@@ -2,12 +2,13 @@ import {
     DefaultChatCommands,
     type DefaultCodyCommands,
     DefaultEditCommands,
-} from '@sourcegraph/cody-shared/src/commands/types'
-import { executeSmellCommand } from './smell'
-import { executeExplainCommand } from './explain'
-import { executeTestChatCommand } from './test-chat'
-import { executeDocCommand } from './doc'
+    type PromptString,
+} from '@sourcegraph/cody-shared'
 import type { CommandResult } from '../../main'
+import { executeDocCommand } from './doc'
+import { executeExplainCommand } from './explain'
+import { executeSmellCommand } from './smell'
+import { executeTestChatCommand } from './test-chat'
 import { executeTestEditCommand } from './test-edit'
 
 export { commands as defaultCommands } from './cody.json'
@@ -45,7 +46,7 @@ export function isDefaultEditCommand(id: string): DefaultEditCommands | undefine
  */
 export async function executeDefaultCommand(
     id: DefaultCodyCommands | string,
-    additionalInstruction?: string
+    additionalInstruction?: PromptString
 ): Promise<CommandResult | undefined> {
     const key = id.replace(/^\//, '').trim() as DefaultCodyCommands
     switch (key) {

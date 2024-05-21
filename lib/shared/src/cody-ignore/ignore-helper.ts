@@ -33,13 +33,13 @@ export class IgnoreHelper {
      * A map of workspace roots to their ignore rules.
      */
     private workspaceIgnores = new Map<ClientWorkspaceRootURI, Ignore>()
-
+    public hasCodyIgnoreFiles = false
     /**
      * Check if the configuration is enabled or not
      * Do not ignore files if the feature is not enabled
      * TODO: Remove this once it's ready for GA
      */
-    private isActive = false
+    public isActive = false
     public setActiveState(isActive: boolean): void {
         this.isActive = isActive
     }
@@ -50,6 +50,10 @@ export class IgnoreHelper {
      * @param ignoreFiles The URIs and content of all ignore files within the root.
      */
     public setIgnoreFiles(workspaceRoot: URI, ignoreFiles: IgnoreFileContent[]): void {
+        if (!this.isActive) {
+            return
+        }
+
         this.ensureAbsolute('workspaceRoot', workspaceRoot)
 
         const rules = this.getDefaultIgnores()
@@ -90,6 +94,9 @@ export class IgnoreHelper {
         }
 
         this.workspaceIgnores.set(workspaceRoot.toString(), rules)
+        if (ignoreFiles.length && !this.hasCodyIgnoreFiles) {
+            this.hasCodyIgnoreFiles = true
+        }
     }
 
     public clearIgnoreFiles(workspaceRoot: URI): void {
@@ -106,6 +113,10 @@ export class IgnoreHelper {
         // remote context (e.g. unified, multi-repo) files, which are already
         // filtered by the backend to respect codyignore files during sync time.
         if (uri.scheme === 'https') {
+            return false
+        }
+
+        if (uri.scheme === 'http') {
             return false
         }
 

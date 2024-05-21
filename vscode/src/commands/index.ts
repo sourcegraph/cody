@@ -1,9 +1,20 @@
-import type { CodySidebarTreeItem } from '../services/treeViewItems'
-import { isMac } from '@sourcegraph/cody-shared/src/common/platform'
+import { type CodyCommandMode, isMacOS } from '@sourcegraph/cody-shared'
 
-const osIcon = isMac() ? '⌥' : 'Alt+'
+const osIcon = isMacOS() ? '⌥' : 'Alt+'
 
-export const CodyCommandMenuItems = [
+interface MenuCommandAccessor {
+    key: string
+    description: string
+    icon: string
+    command: { command: string }
+    keybinding: string
+    prompt?: string
+    mode?: CodyCommandMode
+    contextValue?: string
+    requires?: { setting: string }
+}
+
+export const CodyCommandMenuItems: MenuCommandAccessor[] = [
     {
         key: 'ask',
         description: 'New Chat',
@@ -12,7 +23,6 @@ export const CodyCommandMenuItems = [
         command: { command: 'cody.chat.panel.new' },
         keybinding: `${osIcon}L`,
         mode: 'ask',
-        type: 'default',
     },
     {
         key: 'edit',
@@ -22,16 +32,14 @@ export const CodyCommandMenuItems = [
         command: { command: 'cody.command.edit-code' },
         keybinding: `${osIcon}K`,
         mode: 'edit',
-        type: 'default',
     },
     {
         key: 'doc',
         description: 'Document Code',
         icon: 'book',
         command: { command: 'cody.command.document-code' },
-        keybinding: '',
+        keybinding: `${osIcon}D`,
         mode: 'edit',
-        type: 'default',
     },
     {
         key: 'explain',
@@ -40,7 +48,6 @@ export const CodyCommandMenuItems = [
         command: { command: 'cody.command.explain-code' },
         keybinding: '',
         mode: 'ask',
-        type: 'default',
     },
     {
         key: 'test',
@@ -49,7 +56,6 @@ export const CodyCommandMenuItems = [
         command: { command: 'cody.command.unit-tests' },
         keybinding: '',
         mode: 'edit',
-        type: 'default',
     },
     {
         key: 'smell',
@@ -58,7 +64,22 @@ export const CodyCommandMenuItems = [
         command: { command: 'cody.command.smell-code' },
         keybinding: '',
         mode: 'ask',
-        type: 'default',
+    },
+    {
+        key: 'search',
+        prompt: 'Start a new natural language search',
+        description: 'Search Code (Beta)',
+        icon: 'search',
+        command: { command: 'cody.symf.search' },
+        keybinding: '',
+    },
+    {
+        key: 'commit',
+        description: 'Generate Commit Message (Experimental)',
+        icon: 'git-commit',
+        command: { command: 'cody.command.generate-commit' },
+        keybinding: '',
+        requires: { setting: 'cody.experimental.commitMessage' },
     },
     {
         key: 'custom',
@@ -66,16 +87,6 @@ export const CodyCommandMenuItems = [
         icon: 'tools',
         command: { command: 'cody.menu.custom-commands' },
         keybinding: `${osIcon}⇧C`,
-        type: 'default',
+        contextValue: 'cody.sidebar.custom-commands',
     },
 ]
-
-export function getCommandTreeItems(): CodySidebarTreeItem[] {
-    return CodyCommandMenuItems.map(item => {
-        return {
-            ...item,
-            title: item.description,
-            description: item.keybinding,
-        }
-    })
-}

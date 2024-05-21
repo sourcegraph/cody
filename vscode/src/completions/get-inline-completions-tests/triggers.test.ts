@@ -7,7 +7,7 @@ import { range } from '../../testutils/textDocument'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
 import { completion } from '../test-helpers'
 
-import { getInlineCompletions, params, type V } from './helpers'
+import { type V, getInlineCompletions, params } from './helpers'
 
 describe('[getInlineCompletions] triggers', () => {
     describe('singleline', () => {
@@ -143,7 +143,7 @@ describe('[getInlineCompletions] triggers', () => {
             const requests: CompletionParameters[] = []
             await getInlineCompletions(
                 params('function looksLegit() {\n  █', [], {
-                    languageId: 'elixir',
+                    languageId: 'julia',
                     onNetworkRequest(params) {
                         requests.push(params)
                     },

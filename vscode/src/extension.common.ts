@@ -1,24 +1,31 @@
 import * as vscode from 'vscode'
 
 import type {
+    CompletionLogger,
+    CompletionsClientConfig,
     Configuration,
     ConfigurationWithAccessToken,
-    SourcegraphBrowserCompletionsClient,
+    SourcegraphCompletionsClient,
 } from '@sourcegraph/cody-shared'
-import type { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import type { startTokenReceiver } from './auth/token-receiver'
 
 import type { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever'
 import { onActivationDevelopmentHelpers } from './dev/helpers'
 
 import './editor/displayPathEnvInfo' // import for side effects
 
+import type { CommandsProvider } from './commands/services/provider'
 import { ExtensionApi } from './extension-api'
+import type { ExtensionClient } from './extension-client'
+import type { ContextRankerConfig, ContextRankingController } from './local-context/context-ranking'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
-import type { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
-import { captureException, type SentryService } from './services/sentry/sentry'
-import type { CommandsProvider } from './commands/services/provider'
+import type {
+    OpenTelemetryService,
+    OpenTelemetryServiceConfig,
+} from './services/open-telemetry/OpenTelemetryService.node'
+import { type SentryService, captureException } from './services/sentry/sentry'
 
 type Constructor<T extends new (...args: any) => any> = T extends new (
     ...args: infer A
@@ -28,17 +35,21 @@ type Constructor<T extends new (...args: any) => any> = T extends new (
 
 export interface PlatformContext {
     createCommandsProvider?: Constructor<typeof CommandsProvider>
-    createLocalEmbeddingsController?: (config: LocalEmbeddingsConfig) => LocalEmbeddingsController
+    createLocalEmbeddingsController?: (
+        config: LocalEmbeddingsConfig
+    ) => Promise<LocalEmbeddingsController>
+    createContextRankingController?: (config: ContextRankerConfig) => ContextRankingController
     createSymfRunner?: Constructor<typeof SymfRunner>
     createBfgRetriever?: () => BfgRetriever
-    createCompletionsClient:
-        | Constructor<typeof SourcegraphBrowserCompletionsClient>
-        | Constructor<typeof SourcegraphNodeCompletionsClient>
+    createCompletionsClient: (
+        config: CompletionsClientConfig,
+        logger?: CompletionLogger
+    ) => SourcegraphCompletionsClient
     createSentryService?: (config: Pick<ConfigurationWithAccessToken, 'serverEndpoint'>) => SentryService
-    createOpenTelemetryService?: (
-        config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'experimentalTracing'>
-    ) => OpenTelemetryService
+    createOpenTelemetryService?: (config: OpenTelemetryServiceConfig) => OpenTelemetryService
+    startTokenReceiver?: typeof startTokenReceiver
     onConfigurationChange?: (configuration: Configuration) => void
+    extensionClient: ExtensionClient
 }
 
 export async function activate(
@@ -46,7 +57,6 @@ export async function activate(
     platformContext: PlatformContext
 ): Promise<ExtensionApi> {
     const api = new ExtensionApi(context.extensionMode)
-
     try {
         const disposable = await start(context, platformContext)
         if (!context.globalState.get('extension.hasActivatedPreviously')) {
@@ -61,6 +71,5 @@ export async function activate(
         captureException(error)
         console.error(error)
     }
-
     return api
 }

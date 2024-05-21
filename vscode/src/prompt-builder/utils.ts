@@ -1,44 +1,75 @@
 import {
-    type Message,
-    ProgrammingLanguage,
-    languageFromFilename,
+    type ContextItem,
+    ContextItemSource,
+    type ContextMessage,
+    type ContextTokenUsageType,
+    PromptString,
+    displayPath,
     populateCodeContextTemplate,
     populateContextTemplateFromText,
     populateCurrentSelectedCodeContextTemplate,
-    populateMarkdownContextTemplate,
+    ps,
 } from '@sourcegraph/cody-shared'
-import type { ContextItem } from './types'
+
 import { URI } from 'vscode-uri'
 
-export function contextItemId(contextItem: ContextItem): string {
-    return contextItem.range
-        ? `${contextItem.uri.toString()}#${contextItem.range.start.line}:${contextItem.range.end.line}`
-        : contextItem.uri.toString()
+export function renderContextItem(contextItem: ContextItem): ContextMessage | null {
+    const { source, range } = contextItem
+    const { content, repoName } = PromptString.fromContextItem(contextItem)
+    // Do not create context item for empty file
+    if (!content?.trim()?.length) {
+        return null
+    }
+
+    const uri = getContextItemLocalUri(contextItem)
+
+    let messageText: PromptString
+
+    switch (source) {
+        case ContextItemSource.Selection:
+            messageText = populateCurrentSelectedCodeContextTemplate(content, uri, range)
+            break
+        case ContextItemSource.Editor:
+            // This template text works best with prompts in our commands
+            // Using populateCodeContextTemplate here will cause confusion to Cody
+            messageText = populateContextTemplateFromText(
+                ps`Codebase context from file path {displayPath}: `,
+                content,
+                uri
+            )
+            break
+        case ContextItemSource.Terminal:
+        case ContextItemSource.History:
+            messageText = content
+            break
+        default:
+            messageText = populateCodeContextTemplate(content, uri, repoName)
+            break
+    }
+
+    return { speaker: 'human', text: messageText, file: contextItem }
 }
 
-export function renderContextItem(contextItem: ContextItem): Message[] {
-    // Do not create context item for empty file
-    if (!contextItem.text?.trim()?.length) {
-        return []
+export function getContextItemTokenUsageType(item: ContextItem): ContextTokenUsageType {
+    switch (item.source) {
+        case 'user':
+        case 'selection':
+            return 'user'
+        default:
+            return 'enhanced'
     }
-    let messageText: string
-    const uri = contextItem.source === 'unified' ? URI.parse(contextItem.title || '') : contextItem.uri
-    if (contextItem.source === 'selection') {
-        messageText = populateCurrentSelectedCodeContextTemplate(contextItem.text, uri)
-    } else if (contextItem.source === 'editor') {
-        // This template text works best with prompts in our commands
-        // Using populateCodeContextTemplate here will cause confusion to Cody
-        const templateText = 'Codebase context from file path {fileName}: '
-        messageText = populateContextTemplateFromText(templateText, contextItem.text, uri)
-    } else if (contextItem.source === 'terminal') {
-        messageText = contextItem.text
-    } else if (languageFromFilename(uri) === ProgrammingLanguage.Markdown) {
-        messageText = populateMarkdownContextTemplate(contextItem.text, uri, contextItem.repoName)
-    } else {
-        messageText = populateCodeContextTemplate(contextItem.text, uri, contextItem.repoName)
-    }
-    return [
-        { speaker: 'human', text: messageText },
-        { speaker: 'assistant', text: 'Ok.' },
-    ]
+}
+
+/**
+ * Returns the display path for a context item.
+ *
+ * For unified items, the title is used as the display path.
+ * For other items, the URI is used.
+ */
+export function getContextItemDisplayPath(item: ContextItem): string {
+    return displayPath(getContextItemLocalUri(item))
+}
+
+function getContextItemLocalUri(item: ContextItem): URI {
+    return item.source === ContextItemSource.Unified ? URI.parse(item.title || '') : item.uri
 }

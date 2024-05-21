@@ -2,26 +2,28 @@ import { isEqual } from 'lodash'
 import * as vscode from 'vscode'
 
 import {
-    isFileURI,
-    uriBasename,
     type ContextGroup,
     type ContextProvider,
     type ContextStatusProvider,
     type Disposable,
     type Editor,
+    isFileURI,
+    uriBasename,
 } from '@sourcegraph/cody-shared'
 
 import { getConfiguration } from '../../configuration'
+import type { CodebaseRepoIdMapper } from '../../context/enterprise-context-factory'
 import { getEditor } from '../../editor/active-editor'
 import type { SymfRunner } from '../../local-context/symf'
-import { getCodebaseFromWorkspaceUri } from '../../repository/repositoryHelpers'
-import type { CodebaseRepoIdMapper } from '../../context/enterprise-context-factory'
+import { RepoMetadatafromGitApi } from '../../repository/repo-metadata-from-git-api'
+import { repoNameResolver } from '../../repository/repo-name-resolver'
 
 interface CodebaseIdentifiers {
     localFolder: vscode.Uri
     remote?: string
     remoteRepoId?: string
     setting?: string
+    isPublic?: boolean
 }
 
 /**
@@ -155,11 +157,16 @@ export class CodebaseStatusProvider implements vscode.Disposable, ContextStatusP
             // Always use the codebase from config as this is manually set by the user
             newCodebase.remote =
                 config.codebase ||
-                (currentFile ? getCodebaseFromWorkspaceUri(currentFile) : config.codebase)
+                (currentFile
+                    ? (await repoNameResolver.getRepoNamesFromWorkspaceUri(currentFile))[0]
+                    : config.codebase)
             if (newCodebase.remote) {
                 newCodebase.remoteRepoId = (
                     await this.codebaseRepoIdMapper?.repoForCodebase(newCodebase.remote)
                 )?.id
+                const instance = RepoMetadatafromGitApi.getInstance()
+                const gitMetaData = await instance.getRepoMetadataUsingGitUrl(newCodebase.remote)
+                newCodebase.isPublic = gitMetaData?.isPublic
             }
         }
 

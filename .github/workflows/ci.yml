@@ -9,11 +9,27 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Sets a variable that is used to determine the matrix to run fast tests (unit & integration) on.
+  # Everything runs on ubuntu and windows, only commits to main run on macos.
+  fast_tests_matrix_prep:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          if [ "$GITHUB_EVENT_NAME" == "push" ] && [ "$GITHUB_REF" == "refs/heads/main" ]; then
+            echo 'matrix=["ubuntu","windows","macos"]' >> $GITHUB_OUTPUT
+          else
+            echo 'matrix=["ubuntu","windows"]' >> $GITHUB_OUTPUT
+          fi
+
   test-unit:
+    needs: fast_tests_matrix_prep
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu, windows, macos]
+        runner: ${{ fromJson(needs.fast_tests_matrix_prep.outputs.matrix) }}
         # Run on the most recently supported version of node for all bots.
         node: [20]
         include:
@@ -21,7 +37,7 @@ jobs:
           # need to run this on all platforms as we're only verifying we don't
           # call any APIs not available in this version.
           - runner: ubuntu
-            node: 16 # Supported by VS Code 1.81 (July 2023).
+            node: 18 # VS Code started using Node 18 in Aug 2023 in v1.82: https://code.visualstudio.com/updates/v1_82#_engineering
     runs-on: ${{ matrix.runner }}-latest
     timeout-minutes: 10
     steps:
@@ -29,7 +45,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@d882d12c64e032187b2edb46d3a0d003b7a43598 # SECURITY: pin third-party action hashes
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash
         id: pnpm-cache
@@ -46,10 +62,11 @@ jobs:
           CODY_NODE_VERSION: ${{ matrix.node }}
 
   test-integration:
+    needs: fast_tests_matrix_prep
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu, windows, macos]
+        runner: ${{ fromJson(needs.fast_tests_matrix_prep.outputs.matrix) }}
     runs-on: ${{ matrix.runner }}-latest
     timeout-minutes: 15
     steps:
@@ -57,7 +74,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version-file: .tool-versions
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@d882d12c64e032187b2edb46d3a0d003b7a43598 # SECURITY: pin third-party action hashes
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash
         id: pnpm-cache
@@ -71,15 +88,31 @@ jobs:
       - run: xvfb-run -a pnpm -C vscode run test:integration
         if: matrix.runner == 'ubuntu'
       - run: pnpm -C vscode run test:integration
-        if: github.ref == 'refs/heads/main' && (matrix.runner == 'windows' || matrix.runner == 'macos')
+        if: matrix.runner == 'windows' || matrix.runner == 'macos'
+
+  # Sets a variable that is used to determine the matrix to run slow tests (e2e) on.
+  # Everything runs on ubuntu, only commits to main run on macos and windows.
+  slow_tests_matrix_prep:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          if [ "$GITHUB_EVENT_NAME" == "push" ] && [ "$GITHUB_REF" == "refs/heads/main" ]; then
+            echo 'matrix=[{"runner":"ubuntu"},{"runner":"windows"},{"runner":"macos"}]' >> $GITHUB_OUTPUT
+          else
+            echo 'matrix=[{"runner":"ubuntu","shard":"1/5"},{"runner":"ubuntu","shard":"2/5"},{"runner":"ubuntu","shard":"3/5"},{"runner":"ubuntu","shard":"4/5"},{"runner":"ubuntu","shard":"5/5"}]' >> $GITHUB_OUTPUT
+          fi
 
   test-e2e:
+    needs: slow_tests_matrix_prep
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu, windows]
+        include: ${{ fromJson(needs.slow_tests_matrix_prep.outputs.matrix) }}
     runs-on: ${{ matrix.runner }}-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     permissions:
       id-token: write
       contents: read
@@ -88,7 +121,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version-file: .tool-versions
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@d882d12c64e032187b2edb46d3a0d003b7a43598 # SECURITY: pin third-party action hashes
       - id: auth
         uses: google-github-actions/auth@v0
         # Skip auth if PR is from a fork
@@ -107,55 +140,10 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-      - run: xvfb-run -a pnpm -C vscode run test:e2e
+      - run: xvfb-run -a pnpm -C vscode run test:e2e --shard=${{ matrix.shard }}
         if: matrix.runner == 'ubuntu'
       - run: pnpm -C vscode run test:e2e
         if: matrix.runner != 'ubuntu'
-      - uses: actions/upload-artifact@v3
-        if: ${{ failure() }}
-        with:
-          name: playwright-recordings ${{ matrix.runner }}
-          path: playwright/**/*.webm
-
-  # Use a single large mac for e2e tests as it runs in 4m instead of 6m (as of
-  # 2023-12-06)
-  #
-  # fixme(toolmantim): We should dedupe this Mac job with the above job using a
-  # matrix after Cody 1.0.0. It wasn't done beforehand because it requires
-  # updating the required status checks for merging PRs. Ideally it would just
-  # be https://github.com/sourcegraph/cody/blob/21a40be7297da70f310350e2557a069ea06326ce/.github/workflows/ci.yml#L76
-  test-e2e-macos:
-    runs-on: macos-latest-large
-    name: 'test-e2e (macos)'
-    timeout-minutes: 15
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version-file: .tool-versions
-      - uses: pnpm/action-setup@v2
-      - id: auth
-        uses: google-github-actions/auth@v0
-        # Skip auth if PR is from a fork
-        if: ${{ !github.event.pull_request.head.repo.fork }}
-        with:
-          workload_identity_provider: ${{ secrets.DATA_TEAM_PROVIDER_NAME }}
-          service_account: ${{ secrets.DATA_TEAM_SA_EMAIL }}
-      - uses: google-github-actions/setup-gcloud@v0
-      - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-        shell: bash
-        id: pnpm-cache
-      - name: Cache pnpm store
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-pnpm-store-
-      - run: pnpm install
-      - run: pnpm -C vscode run test:e2e
       - uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
@@ -170,7 +158,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version-file: .tool-versions
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@d882d12c64e032187b2edb46d3a0d003b7a43598 # SECURITY: pin third-party action hashes
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash
         id: pnpm-cache
@@ -181,7 +169,24 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-      - run: pnpm exec biome ci --error-on-warnings .
+      # Run Biome and capture the output. If biome crashes, it still reports a
+      # successful CI run (exit code 0) but that will ripple down to errors in
+      # the Biome VS Code extension. This ensures that we don't accidentally
+      # break Biome.
+      - name: Biome
+        run: |
+          set +e
+          output=$(pnpm exec biome ci --error-on-warnings . 2>&1)
+          status=$?
+          echo "$output"
+          if [ $status -ne 0 ]; then
+            exit $status
+          fi
+          if echo "$output" | grep -q "Biome encountered an unexpected error"; then
+            echo "Error string 'Biome encountered an unexpected error' detected in output."
+            exit 1
+          fi
+        shell: bash
       - run: pnpm run build
       - run: pnpm -C vscode run build
       - run: CODY_RELEASE_TYPE=stable pnpm -C vscode run release:dry-run

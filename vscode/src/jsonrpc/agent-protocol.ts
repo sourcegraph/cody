@@ -1,11 +1,14 @@
-import type * as vscode from 'vscode'
 import type {
+    AuthStatus,
     BillingCategory,
     BillingProduct,
-    ChatMessage,
-    ModelProvider,
-    event,
+    ContextFilters,
     CurrentUserCodySubscription,
+    ModelProvider,
+    ModelUsage,
+    SerializedChatMessage,
+    SerializedChatTranscript,
+    event,
 } from '@sourcegraph/cody-shared'
 import type {
     KnownKeys,
@@ -13,11 +16,13 @@ import type {
     TelemetryEventMarketingTrackingInput,
     TelemetryEventParameters,
 } from '@sourcegraph/telemetry'
+import type * as vscode from 'vscode'
 
-import type { AuthStatus, ExtensionMessage, WebviewMessage } from '../chat/protocol'
+import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent } from '../completions/logger'
-import type { CodyTaskState } from '../non-stop/utils'
 import type { Repo } from '../context/repo-fetcher'
+import type { FixupTaskID } from '../non-stop/FixupTask'
+import type { CodyTaskState } from '../non-stop/utils'
 
 // This file documents the Cody Agent JSON-RPC protocol. Consult the JSON-RPC
 // specification to learn about how JSON-RPC works https://www.jsonrpc.org/specification
@@ -47,9 +52,13 @@ export type ClientRequests = {
     // `type: 'transcript'` ExtensionMessage that is sent via
     // `webview/postMessage`. Returns a new *panel* ID, which can be used to
     // send a chat message via `chat/submitMessage`.
-    'chat/restore': [{ modelID: string; messages: ChatMessage[]; chatID: string }, string]
+    'chat/restore': [
+        { modelID?: string | null; messages: SerializedChatMessage[]; chatID: string },
+        string,
+    ]
 
-    'chat/models': [{ id: string }, { models: ModelProvider[] }]
+    'chat/models': [{ modelUsage: ModelUsage }, { models: ModelProvider[] }]
+    'chat/export': [null, ChatExportResult[]]
     'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] }]
 
     // High-level wrapper around webview/receiveMessage and webview/postMessage
@@ -73,8 +82,21 @@ export type ClientRequests = {
     'commands/custom': [{ key: string }, CustomCommandResult]
 
     // Trigger commands that edit the code.
+    'editCommands/code': [{ instruction: string; model: string }, EditTask]
     'editCommands/test': [null, EditTask]
-    'commands/document': [null, EditTask] // TODO: rename to editCommands/test
+    'editCommands/document': [null, EditTask]
+
+    // If the task is "applied", discards the task.
+    'editTask/accept': [{ id: FixupTaskID }, null]
+    // If the task is "applied", attempts to revert the task's edit, then
+    // discards the task.
+    'editTask/undo': [{ id: FixupTaskID }, null]
+    // Discards the task. Applicable to tasks in any state.
+    'editTask/cancel': [{ id: FixupTaskID }, null]
+
+    // Utility for clients that don't have language-neutral folding-range support.
+    // Provides a list of all the computed folding ranges in the specified document.
+    'editTask/getFoldingRanges': [GetFoldingRangeParams, GetFoldingRangeResult]
 
     // Low-level API to trigger a VS Code command with any argument list. Avoid
     // using this API in favor of high-level wrappers like 'chat/new'.
@@ -102,10 +124,6 @@ export type ClientRequests = {
 
     'graphql/getRepoIdIfEmbeddingExists': [{ repoName: string }, string | null]
     'graphql/getRepoId': [{ repoName: string }, string | null]
-    /**
-     * Checks if a given set of URLs includes a Cody ignored file.
-     */
-    'check/isCodyIgnoredFile': [{ urls: string[] }, boolean]
 
     'git/codebaseName': [{ url: string }, string | null]
 
@@ -158,6 +176,58 @@ export type ClientRequests = {
             limitHit: boolean
         },
     ]
+
+    // Gets whether the specified URI is sensitive and should not be sent to
+    // LLM providers.
+    'ignore/test': [
+        { uri: string },
+        {
+            policy: 'ignore' | 'use'
+        },
+    ]
+
+    // For testing. Overrides any ignore policy to ignore repositories and URIs
+    // which match the specified regular expressions. Pass `undefined` to remove
+    // the override.
+    'testing/ignore/overridePolicy': [ContextFilters | null, null]
+
+    // Gets whether the specific repo name is known on the remote.
+    'remoteRepo/has': [{ repoName: string }, { result: boolean }]
+
+    // Gets paginated list of repositories matching a fuzzy search query (or ''
+    // for all repositories.) Remote repositories are fetched concurrently, so
+    // subscribe to 'remoteRepo/didChange' to invalidate results.
+    //
+    // At the end of the list, returns an empty list of repositories.
+    // If `afterId` is specified, but not in the query result set,
+    // `startIndex` is -1.
+    //
+    // remoteRepo/list caches a single query result, making it efficient to page
+    // through a large list of results provided the query is the same.
+    'remoteRepo/list': [
+        {
+            // The user input to perform a fuzzy match with
+            query?: string
+            // The maximum number of results to retrieve
+            first: number
+            // The repository ID of the last result in the previous
+            // page, or `undefined` to start from the beginning.
+            afterId?: string
+        },
+        {
+            // The index of the first result in the filtered repository list.
+            startIndex: number
+            // The total number of results in the filtered repository list.
+            count: number
+            // The repositories.
+            repos: {
+                name: string // eg github.com/sourcegraph/cody
+                id: string // for use in afterId, Sourcegraph remotes
+            }[]
+            // The state of the underlying repo fetching.
+            state: RemoteRepoFetchState
+        },
+    ]
 }
 
 // ================
@@ -168,7 +238,7 @@ export type ServerRequests = {
 
     'textDocument/edit': [TextDocumentEditParams, boolean]
     'textDocument/openUntitledDocument': [UntitledTextDocument, boolean]
-    'textDocument/show': [{ uri: string; options?: vscode.TextDocumentShowOptions }, boolean]
+    'textDocument/show': [{ uri: string; options?: TextDocumentShowOptionsParams }, boolean]
     'workspace/edit': [WorkspaceEditParams, boolean]
 
     // Low-level API to handle requests from the VS Code extension to create a
@@ -243,8 +313,20 @@ export type ClientNotifications = {
 export type ServerNotifications = {
     'debug/message': [DebugMessage]
 
-    'editTaskState/didChange': [EditTask]
+    // Certain properties of the task are updated:
+    // - State
+    // - The associated range has changed because the document was edited
+    // Only sent if client capabilities fixupControls === 'events'
+    'editTask/didUpdate': [EditTask]
+    // The task is deleted because it has been accepted or cancelled.
+    // Only sent if client capabilities fixupControls === 'events'.
+    'editTask/didDelete': [EditTask]
+
     'codeLenses/display': [DisplayCodeLensParams]
+
+    // The set of ignored files/repositories has changed. The client should
+    // re-query using ignore/test.
+    'ignore/didChange': [null]
 
     // Low-level webview notification for the given chat session ID (created via
     // chat/new). Subscribe to these messages to get access to streaming updates
@@ -259,6 +341,14 @@ export type ServerNotifications = {
     'progress/report': [ProgressReportParams]
 
     'progress/end': [{ id: string }]
+
+    // The list of remote repositories changed. Results from remoteRepo/list
+    // may be stale and should be requeried.
+    'remoteRepo/didChange': [null]
+    // Reflects the state of fetching the repository list. After fetching is
+    // complete, or errored, the results from remoteRepo/list will not change.
+    // When configuration changes, repo fetching may re-start.
+    'remoteRepo/didChangeState': [RemoteRepoFetchState]
 }
 
 interface CancelParams {
@@ -269,7 +359,7 @@ interface CompletionItemParams {
     completionID: string
 }
 
-interface AutocompleteParams {
+export interface AutocompleteParams {
     uri: string
     filePath?: string
     position: Position
@@ -282,6 +372,11 @@ interface AutocompleteParams {
 interface SelectedCompletionInfo {
     readonly range: Range
     readonly text: string
+}
+
+export interface ChatExportResult {
+    chatID: string
+    transcript: SerializedChatTranscript
 }
 export interface AutocompleteResult {
     items: AutocompleteItem[]
@@ -314,11 +409,14 @@ export interface ClientInfo {
     marketingTracking?: TelemetryEventMarketingTrackingInput
 }
 
+// The capability should match the name of the JSON-RPC methods.
 interface ClientCapabilities {
     completions?: 'none'
     //  When 'streaming', handles 'chat/updateMessageInProgress' streaming notifications.
     chat?: 'none' | 'streaming'
-    git?: 'none' | 'disabled'
+    // TODO: allow clients to implement the necessary parts of the git extension.
+    // https://github.com/sourcegraph/cody/issues/4165
+    git?: 'none' | 'enabled'
     // If 'enabled', the client must implement the progress/start,
     // progress/report, and progress/end notification endpoints.
     progressBars?: 'none' | 'enabled'
@@ -328,6 +426,7 @@ interface ClientCapabilities {
     showDocument?: 'none' | 'enabled'
     codeLenses?: 'none' | 'enabled'
     showWindowMessage?: 'notification' | 'request'
+    ignore?: 'none' | 'enabled'
 }
 
 export interface ServerInfo {
@@ -446,6 +545,13 @@ export interface ProtocolTextDocument {
     filePath?: string
     content?: string
     selection?: Range
+    contentChanges?: ProtocolTextDocumentContentChangeEvent[]
+    visibleRange?: Range
+}
+
+export interface ProtocolTextDocumentContentChangeEvent {
+    range: Range
+    text: string
 }
 
 interface ExecuteCommandParams {
@@ -564,6 +670,13 @@ export interface TextDocumentEditParams {
     edits: TextEdit[]
     options?: { undoStopBefore: boolean; undoStopAfter: boolean }
 }
+
+export interface TextDocumentShowOptionsParams {
+    preserveFocus?: boolean
+    preview?: boolean
+    selection?: Range
+}
+
 export type TextEdit = ReplaceTextEdit | InsertTextEdit | DeleteTextEdit
 export interface ReplaceTextEdit {
     type: 'replace'
@@ -587,6 +700,8 @@ export interface EditTask {
     id: string
     state: CodyTaskState
     error?: CodyError
+    selectionRange: Range
+    instruction?: string
 }
 
 export interface CodyError {
@@ -607,7 +722,13 @@ export interface ProtocolCodeLens {
 }
 
 export interface ProtocolCommand {
-    title: string
+    title: {
+        text: string
+        icons: {
+            value: string
+            position: number
+        }[]
+    }
     command: string
     tooltip?: string
     arguments?: any[]
@@ -652,4 +773,18 @@ export interface CustomChatCommandResult {
 export interface CustomEditCommandResult {
     type: 'edit'
     editResult: EditTask
+}
+
+export interface GetFoldingRangeParams {
+    uri: string
+    range: Range
+}
+
+export interface GetFoldingRangeResult {
+    range: Range
+}
+
+export interface RemoteRepoFetchState {
+    state: 'paused' | 'fetching' | 'errored' | 'complete'
+    error: CodyError | undefined
 }

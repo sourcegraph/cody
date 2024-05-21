@@ -1,24 +1,14 @@
 import type { URI } from 'vscode-uri'
+import type { RangeData } from '../common/range'
 
 export interface ActiveTextEditor {
     content: string
     fileUri: URI
     repoName?: string
     revision?: string
-    selectionRange?: ActiveTextEditorSelectionRange
+    selectionRange?: RangeData
 
     ignored?: boolean
-}
-
-export interface ActiveTextEditorSelectionRange {
-    start: {
-        line: number
-        character: number
-    }
-    end: {
-        line: number
-        character: number
-    }
 }
 
 export interface ActiveTextEditorSelection {
@@ -28,14 +18,14 @@ export interface ActiveTextEditorSelection {
     precedingText: string
     selectedText: string
     followingText: string
-    selectionRange?: ActiveTextEditorSelectionRange | null
+    selectionRange?: RangeData | null
 }
 
 export type ActiveTextEditorDiagnosticType = 'error' | 'warning' | 'information' | 'hint'
 
 export interface ActiveTextEditorDiagnostic {
     type: ActiveTextEditorDiagnosticType
-    range: ActiveTextEditorSelectionRange
+    range: RangeData
     text: string
     message: string
 }
@@ -53,29 +43,15 @@ export interface Editor {
 
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null
-    getActiveTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null>
 
-    /**
-     * Gets the active text editor's selection, or the entire file if the selected range is empty.
-     */
-    getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null
-    /**
-     * Gets the active text editor's selection, or the visible content if the selected range is empty.
-     */
-    getActiveTextEditorSelectionOrVisibleContent(): ActiveTextEditorSelection | null
     /**
      * Get diagnostics (errors, warnings, hints) for a range within the active text editor.
      */
-    getActiveTextEditorDiagnosticsForRange(
-        range: ActiveTextEditorSelectionRange
-    ): ActiveTextEditorDiagnostic[] | null
+    getActiveTextEditorDiagnosticsForRange(range: RangeData): ActiveTextEditorDiagnostic[] | null
 
     getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null
 
-    getTextEditorContentForFile(
-        uri: URI,
-        range?: ActiveTextEditorSelectionRange
-    ): Promise<string | undefined>
+    getTextEditorContentForFile(uri: URI, range?: RangeData): Promise<string>
 
     showWarningMessage(message: string): Promise<void>
 }
@@ -93,18 +69,6 @@ export class NoopEditor implements Editor {
         return null
     }
 
-    public getActiveTextEditorSmartSelection(): Promise<ActiveTextEditorSelection | null> {
-        return Promise.resolve(null)
-    }
-
-    public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
-        return null
-    }
-
-    public getActiveTextEditorSelectionOrVisibleContent(): ActiveTextEditorSelection | null {
-        return null
-    }
-
     public getActiveTextEditorDiagnosticsForRange(): ActiveTextEditorDiagnostic[] | null {
         return null
     }
@@ -113,11 +77,8 @@ export class NoopEditor implements Editor {
         return null
     }
 
-    public getTextEditorContentForFile(
-        _uri: URI,
-        _range?: ActiveTextEditorSelectionRange
-    ): Promise<string | undefined> {
-        return Promise.resolve(undefined)
+    public getTextEditorContentForFile(_uri: URI, _range?: RangeData): Promise<string> {
+        return Promise.reject(new Error('NoopEditor: no file content available'))
     }
 
     public showWarningMessage(_message: string): Promise<void> {

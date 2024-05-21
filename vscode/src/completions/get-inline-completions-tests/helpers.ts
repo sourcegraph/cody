@@ -3,39 +3,43 @@ import { isEqual } from 'lodash'
 import { expect } from 'vitest'
 
 import {
-    CompletionStopReason,
-    testFileUri,
+    type AuthStatus,
     type CodeCompletionsClient,
     type CompletionParameters,
     type CompletionResponse,
     type CompletionResponseGenerator,
+    CompletionStopReason,
     type Configuration,
+    type ConfigurationWithAccessToken,
+    testFileUri,
 } from '@sourcegraph/cody-shared'
 
+import { defaultAuthStatus } from '../../chat/protocol'
+import { DEFAULT_VSCODE_SETTINGS, emptyMockFeatureFlagProvider } from '../../testutils/mocks'
 import type { SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
 import { getParser } from '../../tree-sitter/parser'
+import { completionProviderConfig } from '../completion-provider-config'
 import { ContextMixer } from '../context/context-mixer'
 import { DefaultContextStrategyFactory } from '../context/context-strategy'
 import { getCompletionIntent } from '../doc-context-getters'
 import { getCurrentDocContext } from '../get-current-doc-context'
 import {
-    TriggerKind,
-    getInlineCompletions as _getInlineCompletions,
     type InlineCompletionsParams,
     type InlineCompletionsResult,
+    TriggerKind,
+    getInlineCompletions as _getInlineCompletions,
 } from '../get-inline-completions'
 import {
-    createProviderConfig,
     MULTI_LINE_STOP_SEQUENCES,
     SINGLE_LINE_STOP_SEQUENCES,
+    createProviderConfig as createAnthropicProviderConfig,
 } from '../providers/anthropic'
+import { createProviderConfig as createFireworksProviderConfig } from '../providers/fireworks'
+import { pressEnterAndGetIndentString } from '../providers/hot-streak'
 import type { ProviderOptions } from '../providers/provider'
 import { RequestManager } from '../request-manager'
 import { documentAndPosition } from '../test-helpers'
-import { pressEnterAndGetIndentString } from '../providers/hot-streak'
-import { completionProviderConfig } from '../completion-provider-config'
-import { emptyMockFeatureFlagProvider } from '../../testutils/mocks'
 import { sleep } from '../utils'
 
 // The dedent package seems to replace `\t` with `\\t` so in order to insert a tab character, we
@@ -44,6 +48,16 @@ import { sleep } from '../utils'
 export const T = '\t'
 
 const URI_FIXTURE = testFileUri('test.ts')
+
+const dummyAuthStatus: AuthStatus = defaultAuthStatus
+const getVSCodeConfigurationWithAccessToken = (
+    config: Partial<Configuration> = {}
+): ConfigurationWithAccessToken => ({
+    ...DEFAULT_VSCODE_SETTINGS,
+    ...config,
+    serverEndpoint: 'https://example.com',
+    accessToken: 'foobar',
+})
 
 type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'docContext'>> & {
     languageId?: string
@@ -85,6 +99,7 @@ export function params(
         takeSuggestWidgetSelectionIntoAccount,
         isDotComUser = false,
         providerOptions,
+        configuration,
         ...restParams
     } = params
 
@@ -94,7 +109,7 @@ export function params(
         resolveCompletionResponseGenerator = resolve
     })
 
-    const client: Pick<CodeCompletionsClient, 'complete'> = {
+    const client: CodeCompletionsClient = {
         async *complete(completeParams) {
             onNetworkRequest?.(completeParams)
 
@@ -113,11 +128,25 @@ export function params(
 
             return responses[requestCounter++] || { completion: '', stopReason: 'unknown' }
         },
+        onConfigurationChange() {},
+        logger: undefined,
     }
 
+    // TODO: add support for `createProviderConfig` from `vscode/src/completions/providers/create-provider.ts`
+    const createProviderConfig =
+        configuration?.autocompleteAdvancedProvider === 'fireworks' &&
+        configuration.autocompleteAdvancedModel
+            ? createFireworksProviderConfig
+            : createAnthropicProviderConfig
+
+    const configWithAccessToken = getVSCodeConfigurationWithAccessToken(configuration)
     const providerConfig = createProviderConfig({
         client,
         providerOptions,
+        timeouts: {},
+        authStatus: dummyAuthStatus,
+        model: configuration?.autocompleteAdvancedModel!,
+        config: configWithAccessToken,
     })
 
     const { document, position } = documentAndPosition(code, languageId, URI_FIXTURE.toString())
@@ -132,7 +161,6 @@ export function params(
         position,
         maxPrefixLength: 1000,
         maxSuffixLength: 1000,
-        dynamicMultilineCompletions: false,
         context: takeSuggestWidgetSelectionIntoAccount
             ? {
                   triggerKind: 0,
@@ -154,12 +182,14 @@ export function params(
         providerConfig,
         requestManager: new RequestManager(),
         contextMixer: new ContextMixer(new DefaultContextStrategyFactory('none')),
+        smartThrottleService: null,
         completionIntent: getCompletionIntent({
             document,
             position,
             prefix: docContext.prefix,
         }),
         isDotComUser,
+        configuration,
         ...restParams,
 
         // Test-specific helpers
@@ -203,7 +233,7 @@ interface ParamsWithInlinedCompletion extends Params {
  *   return result█
  * }
  */
-export function paramsWithInlinedCompletion(
+function paramsWithInlinedCompletion(
     code: string,
     { delayBetweenChunks, ...completionParams }: ParamsWithInlinedCompletion = {}
 ): ParamsResult {
@@ -356,7 +386,7 @@ expect.extend({
         }
     },
     /**
-     * Checks if `CompletionParameters[]` contains three items with multi-line stop sequences.
+     * Checks if `CompletionParameters[]` contains one item with multi-line stop sequences.
      */
     toBeMultiLine(requests: CompletionParameters[], _) {
         const { isNot } = this

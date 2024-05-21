@@ -1,7 +1,7 @@
-import { basename } from 'path'
+import { basename } from 'node:path'
 
-import { mergeConfig, type UserConfig } from 'vite'
-import { configDefaults, defineProject, type UserWorkspaceConfig } from 'vitest/config'
+import { type UserConfig, mergeConfig } from 'vite'
+import { type UserWorkspaceConfig, configDefaults, defineProject } from 'vitest/config'
 
 /**
  * Default configuration for a project in a workspace.

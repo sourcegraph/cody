@@ -25,6 +25,7 @@ class TestProvider implements status.ContextStatusProvider {
                         {
                             kind: 'embeddings',
                             state: 'unconsented',
+                            embeddingsAPIProvider: 'openai',
                         },
                     ],
                 },
@@ -50,6 +51,7 @@ describe('ContextStatusAggregator', () => {
                     {
                         kind: 'embeddings',
                         state: 'unconsented',
+                        embeddingsAPIProvider: 'openai',
                     },
                 ],
             },
@@ -81,6 +83,7 @@ describe('ContextStatusAggregator', () => {
                             state: 'ready',
                             id: 'quux',
                             inclusion: 'manual',
+                            isIgnored: false,
                         },
                     ],
                 },
@@ -93,6 +96,7 @@ describe('ContextStatusAggregator', () => {
                     {
                         kind: 'embeddings',
                         state: 'unconsented',
+                        embeddingsAPIProvider: 'openai',
                     },
                     {
                         kind: 'search',
@@ -100,6 +104,7 @@ describe('ContextStatusAggregator', () => {
                         state: 'ready',
                         id: 'quux',
                         inclusion: 'manual',
+                        isIgnored: false,
                     },
                 ],
             },

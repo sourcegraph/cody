@@ -1,27 +1,32 @@
 import {
-    FeatureFlag,
-    NetworkError,
-    RateLimitError,
-    CompletionStopReason,
-    TracedError,
-    addTraceparent,
-    featureFlagProvider,
-    getActiveTraceAndSpanId,
-    isAbortError,
-    isNodeResponse,
-    isRateLimitError,
+    type BrowserOrNodeResponse,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
     type CompletionLogger,
     type CompletionResponse,
     type CompletionResponseGenerator,
+    CompletionStopReason,
     type CompletionsClientConfig,
-    type BrowserOrNodeResponse,
+    FeatureFlag,
+    NetworkError,
+    RateLimitError,
+    type SerializedCodeCompletionsParams,
+    TracedError,
+    addTraceparent,
+    createSSEIterator,
+    featureFlagProvider,
+    getActiveTraceAndSpanId,
+    getClientInfoParams,
+    isAbortError,
+    isNodeResponse,
+    isRateLimitError,
+    logResponseHeadersToSpan,
+    recordErrorToSpan,
+    tracer,
 } from '@sourcegraph/cody-shared'
 
-import { fetch } from '../fetch'
-import { recordErrorToSpan, tracer } from '@sourcegraph/cody-shared/src/tracing'
-import { type Span, SpanStatusCode } from '@opentelemetry/api'
+import { SpanStatusCode } from '@opentelemetry/api'
+import { contextFiltersProvider, fetch } from '@sourcegraph/cody-shared'
 
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.
@@ -34,7 +39,8 @@ export function createClient(
         params: CodeCompletionsParams,
         abortController: AbortController
     ): CompletionResponseGenerator {
-        const url = new URL('/.api/completions/code', config.serverEndpoint).href
+        const query = new URLSearchParams(getClientInfoParams())
+        const url = new URL(`/.api/completions/code?${query.toString()}`, config.serverEndpoint).href
         const log = logger?.startCompletion(params, url)
         const { signal } = abortController
 
@@ -74,12 +80,22 @@ export function createClient(
                     headers.set('Accept-Encoding', 'gzip;q=0')
                 }
 
+                const serializedParams: SerializedCodeCompletionsParams & {
+                    stream: boolean
+                } = {
+                    ...params,
+                    stream: enableStreaming,
+                    messages: await Promise.all(
+                        params.messages.map(async m => ({
+                            ...m,
+                            text: await m.text?.toFilteredString(contextFiltersProvider),
+                        }))
+                    ),
+                }
+
                 const response = await fetch(url, {
                     method: 'POST',
-                    body: JSON.stringify({
-                        ...params,
-                        stream: enableStreaming,
-                    }),
+                    body: JSON.stringify(serializedParams),
                     headers,
                     signal,
                 })
@@ -202,7 +218,9 @@ export function createClient(
                     throw new TracedError(message, traceId)
                 } finally {
                     if (completionResponse) {
-                        span.addEvent('return', { stopReason: completionResponse.stopReason })
+                        span.addEvent('return', {
+                            stopReason: completionResponse.stopReason,
+                        })
                         span.setStatus({ code: SpanStatusCode.OK })
                         span.end()
                         log?.onComplete(completionResponse)
@@ -221,75 +239,6 @@ export function createClient(
     }
 }
 
-interface SSEMessage {
-    event: string
-    data: string
-}
-
-const SSE_TERMINATOR = '\n\n'
-export async function* createSSEIterator(
-    iterator: NodeJS.ReadableStream,
-    options: {
-        // This is an optimizations to avoid unnecessary work when a streaming chunk contains more
-        // than one completion event. Only use it when the completion repeats all generated tokens
-        // and you can afford to loose some individual chunks.
-        aggregatedCompletionEvent?: boolean
-    } = {}
-): AsyncGenerator<SSEMessage> {
-    let buffer = ''
-    for await (const event of iterator) {
-        const messages: SSEMessage[] = []
-
-        buffer += event.toString()
-
-        let index: number
-        // biome-ignore lint/suspicious/noAssignInExpressions: useful
-        while ((index = buffer.indexOf(SSE_TERMINATOR)) >= 0) {
-            const message = buffer.slice(0, index)
-            buffer = buffer.slice(index + SSE_TERMINATOR.length)
-            messages.push(parseSSEEvent(message))
-        }
-
-        for (let i = 0; i < messages.length; i++) {
-            if (options.aggregatedCompletionEvent) {
-                if (
-                    i + 1 < messages.length &&
-                    messages[i].event === 'completion' &&
-                    messages[i + 1].event === 'completion'
-                ) {
-                    continue
-                }
-            }
-
-            yield messages[i]
-        }
-    }
-}
-
-function parseSSEEvent(message: string): SSEMessage {
-    const headers = message.split('\n')
-
-    let event = ''
-    let data = ''
-    for (const header of headers) {
-        const index = header.indexOf(': ')
-        const title = header.slice(0, index)
-        const rest = header.slice(index + 2)
-        switch (title) {
-            case 'event':
-                event = rest
-                break
-            case 'data':
-                data = rest
-                break
-            default:
-                console.error(`Unknown SSE event type: ${event}`)
-        }
-    }
-
-    return { event, data }
-}
-
 export async function createRateLimitErrorFromResponse(
     response: BrowserOrNodeResponse,
     upgradeIsAvailable: boolean
@@ -300,19 +249,7 @@ export async function createRateLimitErrorFromResponse(
         'autocompletions',
         await response.text(),
         upgradeIsAvailable,
-        limit ? parseInt(limit, 10) : undefined,
+        limit ? Number.parseInt(limit, 10) : undefined,
         retryAfter
     )
-}
-
-export function logResponseHeadersToSpan(span: Span, response: BrowserOrNodeResponse) {
-    const responseHeaders: Record<string, string> = {}
-    response.headers.forEach((value, key) => {
-        responseHeaders[key] = value
-    })
-    span.addEvent('response')
-    span.setAttributes({
-        ...responseHeaders,
-        status: response.status,
-    })
 }

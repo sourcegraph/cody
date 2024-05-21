@@ -1,36 +1,43 @@
 import * as vscode from 'vscode'
 
 import {
-    ModelProvider,
-    featureFlagProvider,
+    type AuthStatus,
     type ChatClient,
+    type Configuration,
     type ConfigurationWithAccessToken,
     type FeatureFlagProvider,
     type Guardrails,
-    type Configuration,
+    ModelProvider,
+    ModelUsage,
+    featureFlagProvider,
 } from '@sourcegraph/cody-shared'
 
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
+// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
-import { telemetryRecorder } from '../../services/telemetry-v2'
-import { TreeViewProvider } from '../../services/TreeViewProvider'
+import { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 import type { MessageProviderOptions } from '../MessageProvider'
-import type { AuthStatus, ExtensionMessage } from '../protocol'
+import type { ExtensionMessage } from '../protocol'
 
+import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
+import type { ContextRankingController } from '../../local-context/context-ranking'
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType } from './ChatManager'
 import type { SidebarViewOptions } from './SidebarViewController'
 import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
-import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
-import { ModelUsage } from '@sourcegraph/cody-shared/src/models/types'
 
 type ChatID = string
 
 export type ChatPanelConfig = Pick<
     ConfigurationWithAccessToken,
-    'experimentalGuardrails' | 'experimentalSymfContext' | 'internalUnstable' | 'useContext'
+    | 'experimentalGuardrails'
+    | 'experimentalSymfContext'
+    | 'internalUnstable'
+    | 'useContext'
+    | 'experimentalChatContextRanker'
 >
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
@@ -56,7 +63,6 @@ export class ChatPanelsManager implements vscode.Disposable {
     public treeView
 
     public supportTreeViewProvider = new TreeViewProvider('support', featureFlagProvider)
-    public commandTreeViewProvider = new TreeViewProvider('command', featureFlagProvider)
 
     // We keep track of the currently authenticated account and dispose open chats when it changes
     private currentAuthAccount: undefined | { endpoint: string; primaryEmail: string; username: string }
@@ -67,6 +73,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         { extensionUri, ...options }: SidebarViewOptions,
         private chatClient: ChatClient,
         private readonly localEmbeddings: LocalEmbeddingsController | null,
+        private readonly contextRanking: ContextRankingController | null,
         private readonly symf: SymfRunner | null,
         private readonly enterpriseContext: EnterpriseContextFactory | null,
         private readonly guardrails: Guardrails
@@ -92,16 +99,7 @@ export class ChatPanelsManager implements vscode.Disposable {
             vscode.window.registerTreeDataProvider(
                 'cody.support.tree.view',
                 this.supportTreeViewProvider
-            ),
-            vscode.window.registerTreeDataProvider(
-                'cody.commands.tree.view',
-                this.commandTreeViewProvider
-            ),
-            vscode.workspace.onDidChangeConfiguration(async event => {
-                if (event.affectsConfiguration('cody')) {
-                    await this.commandTreeViewProvider.refresh()
-                }
-            })
+            )
         )
     }
 
@@ -113,8 +111,9 @@ export class ChatPanelsManager implements vscode.Disposable {
             this.disposePanels()
         }
 
+        const endpoint = authStatus.endpoint ?? ''
         this.currentAuthAccount = {
-            endpoint: authStatus.endpoint ?? '',
+            endpoint,
             primaryEmail: authStatus.primaryEmail,
             username: authStatus.username,
         }
@@ -124,16 +123,28 @@ export class ChatPanelsManager implements vscode.Disposable {
         this.supportTreeViewProvider.syncAuthStatus(authStatus)
     }
 
-    public async getChatPanel(): Promise<SimpleChatPanelProvider> {
+    public async getNewChatPanel(): Promise<SimpleChatPanelProvider> {
         const provider = await this.createWebviewPanel()
+        return provider
+    }
 
-        if (this.options.config.isRunningInsideAgent) {
-            // Never reuse webviews when running inside the agent.
-            return provider
+    /**
+     * Gets the currently active chat panel provider.
+     *
+     * If an active panel provider already exists and the application is not running inside an agent, it returns the existing provider.
+     * Otherwise, it creates a new webview panel and returns the new provider.
+     *
+     * @returns {Promise<SimpleChatPanelProvider>} The active chat panel provider.
+     */
+    public async getActiveChatPanel(): Promise<SimpleChatPanelProvider> {
+        // Check if any existing panel is available
+        // NOTE: Never reuse webviews when running inside the agent.
+        if (this.activePanelProvider && !this.options.config.isRunningInsideAgent) {
+            return this.activePanelProvider
         }
 
-        // Check if any existing panel is available
-        return this.activePanelProvider || provider
+        const provider = await this.createWebviewPanel()
+        return provider
     }
 
     /**
@@ -170,8 +181,6 @@ export class ChatPanelsManager implements vscode.Disposable {
             return emptyNewChatProvider
         }
 
-        logDebug('ChatPanelsManager:createWebviewPanel', this.panelProviders.length.toString())
-
         // Get the view column of the current active chat panel so that we can open a new one on top of it
         const activePanelViewColumn = this.activePanelProvider?.webviewPanel?.viewColumn
 
@@ -184,6 +193,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         // Revives a chat panel provider for a given webview panel and session ID.
         // Restores any existing session data. Registers handlers for view state changes and dispose events.
         if (panel) {
+            this.activePanelProvider = provider
             await provider.revive(panel)
         } else {
             await provider.createWebviewPanel(activePanelViewColumn, chatID, chatQuestion)
@@ -217,23 +227,17 @@ export class ChatPanelsManager implements vscode.Disposable {
     private createProvider(): SimpleChatPanelProvider {
         const authProvider = this.options.authProvider
         const authStatus = authProvider.getAuthStatus()
-        if (authStatus?.configOverwrites?.chatModel) {
-            ModelProvider.add(
-                new ModelProvider(authStatus.configOverwrites.chatModel, [
-                    ModelUsage.Chat,
-                    // TODO: Add configOverwrites.editModel for separate edit support
-                    ModelUsage.Edit,
-                ])
-            )
-        }
-        const models = ModelProvider.get(ModelUsage.Chat, authStatus.endpoint)
-        const isConsumer = authProvider.getAuthStatus().isDotCom
+
+        const isConsumer = authStatus.isDotCom
+        const isCodyProUser = !authStatus.userCanUpgrade
+        const models = ModelProvider.getProviders(ModelUsage.Chat, isCodyProUser)
 
         return new SimpleChatPanelProvider({
             ...this.options,
             config: this.options.contextProvider.config,
             chatClient: this.chatClient,
             localEmbeddings: isConsumer ? this.localEmbeddings : null,
+            contextRanking: isConsumer ? this.contextRanking : null,
             symf: isConsumer ? this.symf : null,
             enterpriseContext: isConsumer ? null : this.enterpriseContext,
             models,
@@ -241,7 +245,15 @@ export class ChatPanelsManager implements vscode.Disposable {
         })
     }
 
+    private updateChatPanelContext(): void {
+        const panels = this.panelProviders.some(p => p.webviewPanel?.title === 'New Chat')
+        const current = this.activePanelProvider?.webviewPanel?.title === 'New Chat'
+        vscode.commands.executeCommand('setContext', 'cody.hasNewChatOpened', panels || current)
+        vscode.commands.executeCommand('setContext', 'cody.chatPanelsOpened', this.panelProviders.length)
+    }
+
     private selectTreeItem(chatID: ChatID): void {
+        this.updateChatPanelContext()
         // no op if tree view is not visible
         if (!this.treeView.visible) {
             return
@@ -256,6 +268,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     private async updateTreeViewHistory(): Promise<void> {
+        this.updateChatPanelContext()
         await this.treeViewProvider.updateTree(this.options.authProvider.getAuthStatus())
     }
 
@@ -327,9 +340,11 @@ export class ChatPanelsManager implements vscode.Disposable {
             const provider = this.panelProviders.find(p => p.sessionID === chatID)
             if (provider?.sessionID === chatID) {
                 provider.webviewPanel?.reveal()
+                this.activePanelProvider = provider
                 return provider
             }
-            return await this.createWebviewPanel(chatID, chatQuestion)
+            this.activePanelProvider = await this.createWebviewPanel(chatID, chatQuestion)
+            return this.activePanelProvider
         } catch (error) {
             console.error(error, 'errored restoring panel')
             return undefined
@@ -347,6 +362,8 @@ export class ChatPanelsManager implements vscode.Disposable {
             removedProvider.webviewPanel?.dispose()
             removedProvider.dispose()
         }
+
+        this.updateChatPanelContext()
     }
 
     // Dispose all open panels

@@ -107,36 +107,3 @@ const name = 'test'
 let changingName = 'test'
 changingName = 'other'
 // |
-
-// ------------------------------------
-
-export function testFunc() {}
-// |
-
-// ------------------------------------
-
-export function testFunc() {}
-//           |
-
-// ------------------------------------
-
-const name = 'test'
-export { name }
-// |
-
-// ------------------------------------
-
-const name = 'test'
-export { name }
-//         |
-
-// ------------------------------------
-
-const name = 'test'
-export default name
-//        |
-
-// ------------------------------------
-
-export default function testFunc() {}
-//                |

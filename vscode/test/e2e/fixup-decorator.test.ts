@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
 
 import { sidebarExplorer, sidebarSignin } from './common'
-import { test, type ExpectedEvents } from './helpers'
+import { type ExpectedEvents, test } from './helpers'
 
 const DECORATION_SELECTOR =
     'div.view-overlays[role="presentation"] div[class*="TextEditorDecorationType"]'
@@ -42,7 +42,7 @@ test.skip('decorations from un-applied Cody changes appear', async ({ page, side
     await page.keyboard.press('ArrowDown')
 
     // Open the command palette by clicking on the Cody Icon
-    await page.getByRole('button', { name: 'Commands' }).click()
+    await page.getByRole('button', { name: 'Cody Commands' }).click()
     // Navigate to fixup input
     await page.getByRole('option', { name: 'Edit code' }).click()
 

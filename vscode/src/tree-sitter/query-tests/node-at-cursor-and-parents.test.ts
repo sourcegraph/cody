@@ -9,11 +9,11 @@ import { annotateAndMatchSnapshot } from './annotate-and-match-snapshot'
 
 describe('getNodeAtCursorAndParents', () => {
     beforeAll(async () => {
-        await initTreeSitterParser(SupportedLanguage.TypeScript)
+        await initTreeSitterParser(SupportedLanguage.typescript)
     })
 
     it('typescript', async () => {
-        const { language, parser } = getDocumentQuerySDK(SupportedLanguage.TypeScript)!
+        const { language, parser } = getDocumentQuerySDK(SupportedLanguage.typescript)!
 
         await annotateAndMatchSnapshot({
             parser,

@@ -1,26 +1,23 @@
-import type { ComponentMeta, ComponentStoryObj } from '@storybook/react'
+import type { Meta, StoryObj } from '@storybook/react'
 
 import { defaultAuthStatus } from '../src/chat/protocol'
 
+import { getDotComDefaultModels } from '@sourcegraph/cody-shared'
 import { App } from './App'
-import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
+import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
-const meta: ComponentMeta<typeof App> = {
+const meta: Meta<typeof App> = {
     title: 'cody/App',
     component: App,
 
-    decorators: [VSCodeStoryDecorator],
+    decorators: [VSCodeWebview],
 }
 
 export default meta
 
-export const Simple: ComponentStoryObj<typeof App> = {
-    render: () => (
-        <div style={{ background: 'rgb(28, 33, 40)' }}>
-            <App vscodeAPI={dummyVSCodeAPI} />
-        </div>
-    ),
+export const Simple: StoryObj<typeof meta> = {
+    render: () => <App vscodeAPI={dummyVSCodeAPI} />,
 }
 
 const dummyVSCodeAPI: VSCodeWrapper = {
@@ -29,14 +26,11 @@ const dummyVSCodeAPI: VSCodeWrapper = {
         cb({
             type: 'config',
             config: {
-                debugEnable: true,
                 serverEndpoint: 'https://example.com',
-                os: 'linux',
-                arch: 'x64',
-                homeDir: '/home/user',
                 uiKindIsWeb: false,
-                extensionVersion: '0.0.0',
                 experimentalGuardrails: false,
+                experimentalNoodle: false,
+                experimentalURLContext: false,
             },
             authStatus: {
                 ...defaultAuthStatus,
@@ -49,6 +43,24 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 endpoint: 'https://example.com',
             },
             workspaceFolderUris: [],
+        })
+        cb({ type: 'chatModels', models: getDotComDefaultModels() })
+        cb({
+            type: 'history',
+            localHistory: {
+                chat: {
+                    a: {
+                        id: 'a',
+                        lastInteractionTimestamp: '2024-03-29',
+                        interactions: [
+                            {
+                                humanMessage: { speaker: 'human', text: 'Hello, world!' },
+                                assistantMessage: { speaker: 'assistant', text: 'Hi!' },
+                            },
+                        ],
+                    },
+                },
+            },
         })
         return () => {}
     },

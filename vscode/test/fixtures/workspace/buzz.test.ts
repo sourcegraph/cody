@@ -1,5 +1,5 @@
+import { describe, expect, test } from 'vitest'
 import { fizzbuzz } from './buzz'
-import { describe, expect } from 'vitest'
 
 describe('fizzbuzz', () => {
     test('returns correct array', () => {

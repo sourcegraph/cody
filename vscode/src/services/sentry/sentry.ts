@@ -2,12 +2,13 @@ import type { init as browserInit } from '@sentry/browser'
 import type { init as nodeInit } from '@sentry/node'
 
 import {
+    type ConfigurationWithAccessToken,
+    NetworkError,
     isAbortError,
     isAuthError,
     isDotCom,
+    isError,
     isRateLimitError,
-    NetworkError,
-    type ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared'
 
 import { version } from '../../version'
@@ -38,13 +39,14 @@ export abstract class SentryService {
 
             // Used to enable Sentry reporting in the development environment.
             const isSentryEnabled = process.env.ENABLE_SENTRY === 'true'
-            if (!isSentryEnabled) {
+            if (!isProd && !isSentryEnabled) {
                 return
             }
 
             const options: SentryOptions = {
                 dsn: SENTRY_DSN,
                 release: version,
+                sampleRate: 0.05, // 5% of errors are sent to Sentry
                 environment: this.config.isRunningInsideAgent
                     ? 'agent'
                     : typeof process === 'undefined'
@@ -59,21 +61,13 @@ export abstract class SentryService {
                     if (
                         isProd &&
                         isDotCom(this.config.serverEndpoint) &&
-                        shouldErrorBeReported(hint.originalException)
+                        shouldErrorBeReported(hint.originalException, !!this.config.isRunningInsideAgent)
                     ) {
                         return event
                     }
 
                     return null
                 },
-
-                // The extension host is shared across other extensions, so listening on the default
-                // unhandled error listeners would not be helpful in case other extensions or VS Code
-                // throw. Instead, use the manual `captureException` API.
-                //
-                // When running inside Agent, we control the whole Node environment so we can safely
-                // listen to unhandled errors/rejections.
-                ...(this.config.isRunningInsideAgent ? {} : { defaultIntegrations: false }),
             }
 
             this.reconfigure(options)
@@ -86,13 +80,24 @@ export abstract class SentryService {
     protected abstract reconfigure(options: Parameters<typeof nodeInit | typeof browserInit>[0]): void
 }
 
-export function shouldErrorBeReported(error: unknown): boolean {
+export function shouldErrorBeReported(error: unknown, insideAgent: boolean): boolean {
     if (error instanceof NetworkError) {
         // Ignore Server error responses (5xx).
         return error.status < 500
     }
 
     if (isAbortError(error) || isRateLimitError(error) || isAuthError(error)) {
+        return false
+    }
+
+    // Silencing our #1 reported error
+    if (isError(error) && error.message?.includes("Unexpected token '<'")) {
+        return false
+    }
+
+    // Attempt to silence errors from other extensions (if we're inside a VS Code extension, the
+    // stack trace should include the extension name).
+    if (isError(error) && !insideAgent && !error.stack?.includes('sourcegraph.cody-ai')) {
         return false
     }
 

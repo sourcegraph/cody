@@ -1,4 +1,6 @@
 .inner-container {
+    display: flex;
+    flex-direction: column;
     height: 100%;
 
     /* popups use a screen to capture clicks outside the popups; this is
@@ -7,217 +9,47 @@
     overflow: clip;
 }
 
-.transcript-item {
-    font-size: var(--vscode-font-size);
-    font-family: var(--vscode-font-family);
-    font-weight: var(--vscode-font-weight);
-    border-color: var(--vscode-sideBarSectionHeader-border);
-    padding: 1rem 1rem 1rem 1.25rem;
-    color: var(--vscode-foreground);
-}
-
-/* Apply a slight tint to the assistant transcript item. */
-body[data-vscode-theme-kind='vscode-light'] .human-transcript-item,
-body[data-vscode-theme-kind='vscode-high-contrast-light'] .human-transcript-item {
-    /* slight dark tint */
-    background-color: rgb(0 0 0 / 4%);
-}
-
-body[data-vscode-theme-kind='vscode-dark'] .human-transcript-item,
-body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
-    /* slight light tint */
-    background-color: rgb(255 255 255 / 4%);
-}
-
-.human-transcript-item::before {
-    background-color: var(--vscode-sideBar-foreground, currentColor);
-}
-
-.transcript-item code,
-.transcript-item pre {
-    font-family: var(--vscode-editor-font-family);
-    font-size: var(--vscode-editor-font-size);
-}
-
-.transcript-item pre,
-.transcript-item pre > code {
-    /* Our syntax highlighter emits colors intended for dark backgrounds only. */
-    background-color: var(--vscode-editor-background);
-    color: var(--vscode-editor-foreground);
-    margin-bottom: 0;
-}
-
-.transcript-item pre {
-    border-style: solid;
-    border-width: 1px;
-    border-color: var(--vscode-sideBarSectionHeader-border);
-    border-bottom: none;
-}
-
-body[data-vscode-theme-kind='vscode-light'] .transcript-item pre,
-body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
-    /* Our syntax highlighter emits colors intended for dark backgrounds only. */
-    background-color: var(--code-background);
-    color: var(--code-foreground);
-}
-
-.transcript-item ul:not(.transcript-action *),
-.transcript-item ol:not(.transcript-action *) {
-    padding-left: 2rem;
-}
-
-.code-blocks-copy-button,
-.code-blocks-insert-button {
-    background: var(--button-icon-background);
-    border-radius: var(--button-icon-corner-radius);
-    color: var(--foreground);
-}
-
-.code-blocks-copy-button:hover,
-.code-blocks-insert-button:hover {
-    background: var(--button-icon-hover-background);
-    outline: 1px dotted var(--contrast-active-border);
-    outline-offset: -1px;
+.transcript-container {
+    flex: 1;
 }
 
 .input-row {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem;
     border-top: solid 1px var(--vscode-sideBarSectionHeader-border);
     gap: 0.5rem;
     padding: 0.75rem;
 }
 
-/* Container used for autogrowing, based on https://css-tricks.com/the-cleanest-trick-for-autogrowing-textareas/ */
-.chat-input-container {
-    /* easy way to plop the elements on top of each other and have them both sized based on the tallest one's height */
-    display: grid;
-}
-
-.chat-input-container::after {
-    /* Note the weird space! Needed to preventy jumpy behavior */
-    content: attr(data-value) ' ';
-
-    /* This is how textarea text behaves */
-    white-space: pre-wrap;
-
-    /* Hidden from view, clicks, and screen readers */
-    visibility: hidden;
-}
-
-/* Both elements need the same styling so the height matches */
-.chat-input,
-.chat-input-container::after {
-    box-sizing: border-box;
-    background-color: var(--vscode-input-background);
-    color: var(--vscode-input-foreground);
-    border: 1px solid transparent;
-    border-radius: 2px;
-
-    /* Extra right padding to ensure it doesn't overlap with enhanced context button */
-    padding: 0.5rem 32px 0.5rem 0.5rem;
-    font: inherit;
+.editor-outer-container {
+    position: relative;
     width: 100%;
-    overflow: hidden;
-
-    /* Don't allow the input box to become larger than the webview to avoid submit buttons going off the screen */
-    max-height: 80vh; /* 80% of viewport height */
-
-    /* Place on top of each other */
-    grid-area: 1 / 1 / 2 / 2;
-    resize: none;
 }
 
-/* Unset for the new chat ui */
-.new-chat-input,
-.new-chat-input-container::after {
-    min-height: unset;
-}
-
-.chat-input {
-    border-color: var(--vscode-input-border, transparent);
-}
-
-.chat-input:focus,
-.chat-input:focus-visible,
-.chat-input:focus-within {
-    outline: 1px solid var(--vscode-focusBorder);
-    outline-offset: -1px;
-}
-
-.chat-input-actions {
+.context-button {
+    color: var(--button-primary-background);
     position: absolute;
-    bottom: 6px;
-    left: 4px;
-
-    /* This is a small detail, but we always want clicks to fall through the textarea if buttons are disabled */
-    pointer-events: none;
-}
-
-.chat-input-actions > * {
-    /* We have to set this explicitly, otherwise it will use the parent's value */
-    pointer-events: auto;
-}
-
-.chat-input-actions [disabled] {
-    /* Disabled buttons just send their clicks to the textarea, similar to Slack’s implementation */
-    pointer-events: none;
-}
-
-.chat-button {
-    margin-top: 0.5rem;
-    padding: 0.25rem;
-}
-
-.chat-input-context {
-    opacity: 0.85;
-}
-
-.feedback-buttons {
-    display: flex;
-    flex-direction: row;
-    gap: 0.15rem;
-}
-
-.edit-button {
-    border-radius: 0.5rem;
-}
-
-.edit-button:hover {
+    right: 0.3125rem;
+    bottom: 0.3125rem;
+    fill: currentColor;
     background: none;
-}
-
-.edit-button-disabled {
-    background: var(--vscode-button-secondaryBackground);
-    color: var(--vscode-button-secondaryForeground);
+    border: none;
     cursor: pointer;
-}
-
-.edit-button[disabled] {
-    opacity: 0.4;
-    cursor: pointer;
-}
-
-.suggestion-button {
-    all: unset;
-    cursor: pointer;
-    font-size: 90%;
-    padding: 3px 6px;
-    background: var(--button-icon-background);
-    border-radius: var(--button-icon-corner-radius);
-    color: var(--foreground);
-}
-
-.suggestion-button:hover {
-    background: var(--button-icon-hover-background);
-    outline: 1px dotted var(--contrast-active-border);
-    outline-offset: -1px;
-}
-
-.suggestion-button .codicon {
-    vertical-align: middle;
-    margin-right: 3px;
 }
 
 .submit-button {
+    border: none;
+    cursor: pointer;
+
+    border-radius: 50%;
+    height: 2rem;
+    width: 2rem;
+
+    margin-left: 0.3125rem;
+
     background: var(--vscode-button-background);
     color: var(--vscode-button-foreground);
     display: flex;
@@ -226,7 +58,7 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
 
 .submit-button,
 .submit-button-disabled {
-    margin-bottom: 0;
+    margin-bottom: 0.0625rem;
 }
 
 .submit-button[disabled] {
@@ -238,22 +70,14 @@ body[data-vscode-theme-kind='vscode-light'] .transcript-item pre > code {
     opacity: 1;
 }
 
-.thumbs-down-feedback-container {
+/* Put the up arrow in the exact center */
+.send-icon-arrow-up {
+    transform: translateX(-0.5px);
+}
+
+.text-area-container {
+    position: relative;
+    width: 100%;
     display: flex;
-    align-items: center;
-    gap: calc(var(--spacing) / 4);
-}
-
-.feedback-button[disabled] {
-    /* VSCodeButton's default cursor is not-allowed, but that's different to
-       native VS Code and feels off, especially when it quickly changes to
-       not-allowed after you submit feedback. So we reset it back to the
-       default cursor to fit in nicer with standard VS Code native behaviour */
-    cursor: default;
-}
-
-.textarea-disabled {
-    background-color: var(--vscode-input-background);
-    color: var(--vscode-input-foreground);
-    opacity: 0.5;
+    align-items: flex-end;
 }

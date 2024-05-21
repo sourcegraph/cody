@@ -3,9 +3,9 @@ import type { Point, SyntaxNode } from 'web-tree-sitter'
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
-import type { DocumentContext } from '../get-current-doc-context'
 
-import { parseCompletion, type ParsedCompletion } from './parse-completion'
+import type { DocumentContext } from '@sourcegraph/cody-shared'
+import { type ParsedCompletion, parseCompletion } from './parse-completion'
 import { BRACKET_PAIR, type OpeningBracket } from './utils'
 
 interface CompletionContext {
@@ -64,6 +64,7 @@ export function truncateParsedCompletion(context: CompletionContext): TruncatePa
     addAutocompleteDebugEvent('truncate', {
         currentLinePrefix: docContext.currentLinePrefix,
         text: insertText,
+        position: points.trigger || points.start,
     })
 
     let fixedCompletion = completion
@@ -90,7 +91,9 @@ export function truncateParsedCompletion(context: CompletionContext): TruncatePa
     )
 
     let textToInsert =
-        nodeToInsert?.id === fixedCompletion.tree!.rootNode.id ? 'root' : nodeToInsert?.text
+        nodeToInsert?.grammarId === fixedCompletion.tree!.rootNode.grammarId
+            ? 'root'
+            : nodeToInsert?.text
     if (textToInsert && document.getText().endsWith(textToInsert.slice(-100))) {
         textToInsert = 'till the end of the document'
     }
@@ -124,7 +127,7 @@ export function findLastAncestorOnTheSameRow(root: SyntaxNode, position: Point):
 
     while (
         current?.parent?.startPosition.row === initial?.startPosition.row &&
-        current.parent.id !== root.id
+        current.parent.grammarId !== root.grammarId
     ) {
         current = current.parent
     }

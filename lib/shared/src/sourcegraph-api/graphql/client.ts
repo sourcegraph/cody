@@ -1,16 +1,17 @@
-import fetch from 'isomorphic-fetch'
 import type { Response as NodeResponse } from 'node-fetch'
 import { URI } from 'vscode-uri'
+import { fetch } from '../../fetch'
 
 import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
+import semver from 'semver'
 import type { ConfigurationWithAccessToken } from '../../configuration'
 import { logDebug, logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
-
 import {
+    CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_QUERY,
     CURRENT_SITE_CODY_CONFIG_FEATURES,
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
@@ -27,10 +28,12 @@ import {
     GET_FEATURE_FLAGS_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
+    PACKAGE_LIST_QUERY,
     RECORD_TELEMETRY_EVENTS_MUTATION,
-    REPOSITORY_ID_QUERY,
     REPOSITORY_IDS_QUERY,
+    REPOSITORY_ID_QUERY,
     REPOSITORY_LIST_QUERY,
+    REPO_NAME_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
@@ -53,7 +56,10 @@ interface SiteVersionResponse {
 }
 
 interface SiteIdentificationResponse {
-    site: { siteID: string; productSubscription: { license: { hashedKey: string } } } | null
+    site: {
+        siteID: string
+        productSubscription: { license: { hashedKey: string } }
+    } | null
 }
 
 interface SiteGraphqlFieldsResponse {
@@ -109,11 +115,29 @@ interface CurrentUserCodySubscriptionResponse {
 }
 
 interface CodyLLMSiteConfigurationResponse {
-    site: { codyLLMConfiguration: Omit<CodyLLMSiteConfiguration, 'provider'> | null } | null
+    site: {
+        codyLLMConfiguration: Omit<CodyLLMSiteConfiguration, 'provider'> | null
+    } | null
 }
 
 interface CodyLLMSiteConfigurationProviderResponse {
-    site: { codyLLMConfiguration: Pick<CodyLLMSiteConfiguration, 'provider'> | null } | null
+    site: {
+        codyLLMConfiguration: Pick<CodyLLMSiteConfiguration, 'provider'> | null
+    } | null
+}
+
+export interface PackageListResponse {
+    packageRepoReferences: {
+        nodes: {
+            id: string
+            name: string
+            kind: string
+            repository: { id: string; name: string; url: string }
+        }[]
+        pageInfo: {
+            endCursor: string | null
+        }
+    }
 }
 
 export interface RepoListResponse {
@@ -127,6 +151,10 @@ export interface RepoListResponse {
 
 interface RepositoryIdResponse {
     repository: { id: string } | null
+}
+
+interface RepositoryNameResponse {
+    repository: { name: string } | null
 }
 
 interface RepositoryIdsResponse {
@@ -181,6 +209,42 @@ export interface ContextSearchResult {
     endLine: number
     content: string
 }
+
+export interface ContextFiltersResponse {
+    site: {
+        codyContextFilters: {
+            raw: ContextFilters | null
+        } | null
+    } | null
+}
+
+export interface ContextFilters {
+    include?: CodyContextFilterItem[] | null
+    exclude?: CodyContextFilterItem[] | null
+}
+
+export interface CodyContextFilterItem {
+    repoNamePattern: string
+    // Not implemented
+    filePathPatterns?: string[]
+}
+
+/**
+ * Default value used on the client in case context filters are not set.
+ */
+export const INCLUDE_EVERYTHING_CONTEXT_FILTERS = {
+    include: [{ repoNamePattern: '.*' }],
+    exclude: null,
+} satisfies ContextFilters
+
+/**
+ * Default value used on the client in case client encounters errors
+ * fetching or parsing context filters.
+ */
+export const EXCLUDE_EVERYTHING_CONTEXT_FILTERS = {
+    include: null,
+    exclude: [{ repoNamePattern: '.*' }],
+} satisfies ContextFilters
 
 interface SearchAttributionResults {
     limitHit: boolean
@@ -301,7 +365,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     /**
-     * If set, anonymousUID is trasmitted as 'X-Sourcegraph-Actor-Anonymous-UID'
+     * If set, anonymousUID is transmitted as 'X-Sourcegraph-Actor-Anonymous-UID'
      * which is automatically picked up by Sourcegraph backends 5.2+
      */
     public setAnonymousUserID(anonymousUID: string): void {
@@ -456,6 +520,20 @@ export class SourcegraphGraphQLAPIClient {
         return { ...config, provider }
     }
 
+    public async getPackageList(
+        kind: string,
+        name: string,
+        first: number,
+        after?: string
+    ): Promise<PackageListResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<PackageListResponse>>(PACKAGE_LIST_QUERY, {
+            kind,
+            name,
+            first,
+            after: after || null,
+        }).then(response => extractDataOrError(response, data => data))
+    }
+
     /**
      * Gets a subset of the list of repositories from the Sourcegraph instance.
      * @param first the number of repositories to retrieve.
@@ -487,6 +565,18 @@ export class SourcegraphGraphQLAPIClient {
         }).then(response => extractDataOrError(response, data => data.repositories?.nodes || []))
     }
 
+    public async getRepoName(cloneURL: string): Promise<string | null> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<RepositoryNameResponse>>(
+            REPO_NAME_QUERY,
+            {
+                cloneURL,
+            }
+        )
+
+        const result = extractDataOrError(response, data => data.repository?.name ?? null)
+        return isError(result) ? null : result
+    }
+
     public async contextSearch(
         repos: Set<string>,
         query: string
@@ -503,7 +593,7 @@ export class SourcegraphGraphQLAPIClient {
                     repoName: item.blob.repository.name,
                     path: item.blob.path,
                     uri: URI.parse(
-                        `${item.blob.url.startsWith('/') ? this.endpoint : ''}${item.blob.url}?L${
+                        `${this.endpoint}${item.blob.repository.name}/-/blob/${item.blob.path}?L${
                             item.startLine + 1
                         }-${item.endLine}`
                     ),
@@ -513,6 +603,48 @@ export class SourcegraphGraphQLAPIClient {
                 }))
             )
         )
+    }
+
+    public async contextFilters(): Promise<ContextFilters> {
+        // CONTEXT FILTERS are only available on Sourcegraph 5.3.3 and later.
+        const minimumVersion = '5.3.3'
+        const { enabled, version } = await this.isCodyEnabled()
+        const insiderBuild = version.length > 12 || version.includes('dev')
+        const isValidVersion = insiderBuild || semver.gte(version, minimumVersion)
+        if (!enabled || !isValidVersion) {
+            return INCLUDE_EVERYTHING_CONTEXT_FILTERS
+        }
+
+        const response =
+            await this.fetchSourcegraphAPI<APIResponse<ContextFiltersResponse | null>>(
+                CONTEXT_FILTERS_QUERY
+            )
+
+        const result = extractDataOrError(response, data => {
+            if (data?.site?.codyContextFilters?.raw === null) {
+                return INCLUDE_EVERYTHING_CONTEXT_FILTERS
+            }
+
+            if (data?.site?.codyContextFilters?.raw) {
+                return data.site.codyContextFilters.raw
+            }
+
+            // Exclude everything in case of an unexpected response structure.
+            return EXCLUDE_EVERYTHING_CONTEXT_FILTERS
+        })
+
+        if (result instanceof Error) {
+            // Ignore errors caused by outdated Sourcegraph API instances.
+            if (hasOutdatedAPIErrorMessages(result)) {
+                return INCLUDE_EVERYTHING_CONTEXT_FILTERS
+            }
+
+            logError('SourcegraphGraphQLAPIClient', 'contextFilters', result.message)
+            // Exclude everything in case of an unexpected error.
+            return EXCLUDE_EVERYTHING_CONTEXT_FILTERS
+        }
+
+        return result
     }
 
     /**
@@ -537,18 +669,21 @@ export class SourcegraphGraphQLAPIClient {
         if (insiderBuild) {
             return { enabled: true, version: siteVersion }
         }
-        // NOTE: Cody does not work on versions older than 5.0
-        const versionBeforeCody = siteVersion < '5.0.0'
+        // NOTE: Cody does not work on version later than 5.0
+        const versionBeforeCody = semver.lt(siteVersion, '5.0.0')
         if (versionBeforeCody) {
             return { enabled: false, version: siteVersion }
         }
         // Beta version is betwewen 5.0.0 - 5.1.0 and does not have isCodyEnabled field
-        const betaVersion = siteVersion >= '5.0.0' && siteVersion < '5.1.0'
+        const betaVersion = semver.gte(siteVersion, '5.0.0') && semver.lt(siteVersion, '5.1.0')
         const hasIsCodyEnabledField = await this.getSiteHasIsCodyEnabledField()
         // The isCodyEnabled field does not exist before version 5.1.0
         if (!betaVersion && !isError(hasIsCodyEnabledField) && hasIsCodyEnabledField) {
             const siteHasCodyEnabled = await this.getSiteHasCodyEnabled()
-            return { enabled: !isError(siteHasCodyEnabled) && siteHasCodyEnabled, version: siteVersion }
+            return {
+                enabled: !isError(siteHasCodyEnabled) && siteHasCodyEnabled,
+                version: siteVersion,
+            }
         }
         return { enabled: insiderBuild || betaVersion, version: siteVersion }
     }
@@ -732,14 +867,14 @@ export class SourcegraphGraphQLAPIClient {
         return this.fetchSourcegraphAPI<APIResponse<EvaluatedFeatureFlagsResponse>>(
             GET_FEATURE_FLAGS_QUERY,
             {}
-        ).then(response =>
-            extractDataOrError(response, data =>
+        ).then(response => {
+            return extractDataOrError(response, data =>
                 data.evaluatedFeatureFlags.reduce((acc: Record<string, boolean>, { name, value }) => {
                     acc[name] = value
                     return acc
                 }, {})
             )
-        )
+        })
     }
 
     public async evaluateFeatureFlag(flagName: string): Promise<boolean | null | Error> {
@@ -751,7 +886,7 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response => extractDataOrError(response, data => data.evaluateFeatureFlag))
     }
 
-    private fetchSourcegraphAPI<T>(
+    public fetchSourcegraphAPI<T>(
         query: string,
         variables: Record<string, any> = {}
     ): Promise<T | Error> {
@@ -759,7 +894,8 @@ export class SourcegraphGraphQLAPIClient {
         headers.set('Content-Type', 'application/json; charset=utf-8')
         if (this.config.accessToken) {
             headers.set('Authorization', `token ${this.config.accessToken}`)
-        } else if (this.anonymousUserID) {
+        }
+        if (this.anonymousUserID && !process.env.CODY_WEB_DONT_SET_SOME_HEADERS) {
             headers.set('X-Sourcegraph-Actor-Anonymous-UID', this.anonymousUserID)
         }
 
@@ -768,7 +904,10 @@ export class SourcegraphGraphQLAPIClient {
 
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
 
-        const url = buildGraphQLUrl({ request: query, baseUrl: this.config.serverEndpoint })
+        const url = buildGraphQLUrl({
+            request: query,
+            baseUrl: this.config.serverEndpoint,
+        })
         return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
             fetch(url, {
                 method: 'POST',
@@ -788,7 +927,10 @@ export class SourcegraphGraphQLAPIClient {
         query: string,
         variables: Record<string, any>
     ): Promise<T | Error> {
-        const url = buildGraphQLUrl({ request: query, baseUrl: this.dotcomUrl.href })
+        const url = buildGraphQLUrl({
+            request: query,
+            baseUrl: this.dotcomUrl.href,
+        })
         const headers = new Headers()
         addCustomUserAgent(headers)
         addTraceparent(headers)
@@ -809,7 +951,7 @@ export class SourcegraphGraphQLAPIClient {
 
     // make an anonymous request to the Testing API
     private fetchSourcegraphTestingAPI<T>(body: Record<string, any>): Promise<T | Error> {
-        const url = 'http://localhost:49300/.api/testLogging'
+        const url = 'http://localhost:49300/.test/testLogging'
         const headers = new Headers({
             'Content-Type': 'application/json',
         })
@@ -870,9 +1012,7 @@ export class ConfigFeaturesSingleton {
         const previousConfigFeatures = this.configFeatures
         this.configFeatures = this.fetchConfigFeatures().catch((error: Error) => {
             // Ignore fetcherrors as older SG instances will always face this because their GQL is outdated
-            if (
-                !(error.message.includes('FetchError') || error.message.includes('Cannot query field'))
-            ) {
+            if (!(error.message.includes('FetchError') || hasOutdatedAPIErrorMessages(error))) {
                 logError('ConfigFeaturesSingleton', 'refreshConfigFeatures', error.message)
             }
             // In case of an error, return previously fetched value
@@ -897,7 +1037,7 @@ export class ConfigFeaturesSingleton {
     }
 }
 
-async function verifyResponseCode(response: Response): Promise<Response> {
+async function verifyResponseCode(response: BrowserOrNodeResponse): Promise<BrowserOrNodeResponse> {
     if (!response.ok) {
         const body = await response.text()
         throw new Error(`HTTP status code ${response.status}${body ? `: ${body}` : ''}`)
@@ -909,3 +1049,13 @@ export type LogEventMode =
     | 'dotcom-only' // only log to dotcom
     | 'connected-instance-only' // only log to the connected instance
     | 'all' // log to both dotcom AND the connected instance
+
+function hasOutdatedAPIErrorMessages(error: Error): boolean {
+    // Sourcegraph 5.2.3 returns an empty string ("") instead of an error message
+    // when querying non-existent codyContextFilters; this produces
+    // 'Unexpected end of JSON input'
+    return (
+        error.message.includes('Cannot query field') ||
+        error.message.includes('Unexpected end of JSON input')
+    )
+}

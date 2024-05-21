@@ -1,6 +1,16 @@
+import {
+    type ContextItem,
+    FILE_CONTEXT_MENTION_PROVIDER,
+    PACKAGE_CONTEXT_MENTION_PROVIDER,
+    SYMBOL_CONTEXT_MENTION_PROVIDER,
+    displayLineRange,
+    displayPath,
+} from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { displayPath, type ContextFile } from '@sourcegraph/cody-shared'
-import { QUICK_PICK_ITEM_CHECKED_PREFIX, QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX } from './constants'
+import {
+    QUICK_PICK_ITEM_CHECKED_PREFIX,
+    QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX,
+} from '../../chat/context/constants'
 
 /**
  * Removes the string after the last '@' character in the given string.
@@ -16,35 +26,29 @@ export function removeAfterLastAt(str: string): string {
 }
 
 /**
- * Returns a string representation of the given ContextFile for use in UI labels.
+ * Returns a string representation of the given ContextItem for use in UI labels.
  * Includes the file path and an optional range or symbol specifier.
  */
-export function getLabelForContextFile(file: ContextFile): string {
-    const isFileType = file.type === 'file'
-    const rangeLabel = file.range ? `:${file.range?.start.line}-${file.range?.end.line}` : ''
-    if (isFileType) {
-        return `${displayPath(file.uri)}${rangeLabel}`
-    }
-    return `${displayPath(file.uri)}${rangeLabel}#${file.symbolName}`
-}
+export function getLabelForContextItem(item: ContextItem): string {
+    switch (item.type) {
+        case PACKAGE_CONTEXT_MENTION_PROVIDER.id:
+            return `${item.ecosystem}:${item.name}`
+        case FILE_CONTEXT_MENTION_PROVIDER.id:
+            if (item.title) {
+                return `Add context from: ${item.title}`
+            }
 
-/**
- * Returns a string representation of the given range, formatted as "{startLine}:{endLine}".
- * If startLine and endLine are the same, returns just the line number.
- */
-export function getTitleRange(range: vscode.Range): string {
-    if (range.isEmpty) {
-        // No selected range, return just active line
-        return `${range.start.line + 1}`
+            {
+                const rangeLabel = item.range ? `:${displayLineRange(item.range)}` : ''
+                return `${displayPath(item.uri)}${rangeLabel}`
+            }
+        case SYMBOL_CONTEXT_MENTION_PROVIDER.id: {
+            const rangeLabel = item.range ? `:${displayLineRange(item.range)}` : ''
+            return `${displayPath(item.uri)}${rangeLabel}#${item.symbolName}`
+        }
+        default:
+            throw new Error(`getLableForContextItem Error: Unexpected type ${item.type}`)
     }
-
-    const endLine = range.end.character === 0 ? range.end.line - 1 : range.end.line
-    if (range.start.line === endLine) {
-        // Range only encompasses a single line
-        return `${range.start.line + 1}`
-    }
-
-    return `${range.start.line + 1}:${endLine + 1}`
 }
 
 /**

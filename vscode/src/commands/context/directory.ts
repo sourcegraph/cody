@@ -1,13 +1,15 @@
 import {
-    truncateText,
-    type ContextFile,
-    MAX_CURRENT_FILE_TOKENS,
+    type ContextItem,
+    ContextItemSource,
+    TokenCounter,
+    contextFiltersProvider,
     logError,
+    toRangeData,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { getEditor } from '../../editor/active-editor'
 import * as vscode from 'vscode'
 import { type URI, Utils } from 'vscode-uri'
+import { getEditor } from '../../editor/active-editor'
 
 /**
  * Gets context messages for the files in the given directory.
@@ -17,9 +19,9 @@ import { type URI, Utils } from 'vscode-uri'
  * truncates it, and adds it to the context messages along with the file name.
  * Limits file sizes to 1MB.
  */
-export async function getContextFileFromDirectory(directory?: URI): Promise<ContextFile[]> {
+export async function getContextFileFromDirectory(directory?: URI): Promise<ContextItem[]> {
     return wrapInActiveSpan('commands.context.directory', async () => {
-        const contextFiles: ContextFile[] = []
+        const contextFiles: ContextItem[] = []
 
         const editor = getEditor()
         const document = editor?.active?.document
@@ -34,19 +36,25 @@ export async function getContextFileFromDirectory(directory?: URI): Promise<Cont
             // Get the files in the directory
             const filesInDir = await vscode.workspace.fs.readDirectory(dirUri)
             // Filter out directories and dot files
-            const filtered = filesInDir.filter(file => {
-                const fileName = file[0]
-                const fileType = file[1]
-                const isDirectory = fileType === vscode.FileType.Directory
-                const isHiddenFile = fileName.startsWith('.')
+            const filtered = filesInDir
+                .filter(file => {
+                    const fileName = file[0]
+                    const fileType = file[1]
+                    const isDirectory = fileType === vscode.FileType.Directory
+                    const isHiddenFile = fileName.startsWith('.')
 
-                return !isDirectory && !isHiddenFile
-            })
+                    return !isDirectory && !isHiddenFile
+                })
+                .sort((a, b) => a[0].localeCompare(b[0])) // sort for determinism
 
             // Get the context from each file in the directory
             for (const [name, _type] of filtered) {
                 // Reconstruct the file URI with the file name and directory URI
                 const fileUri = Utils.joinPath(dirUri, name)
+
+                if (await contextFiltersProvider.isUriIgnored(fileUri)) {
+                    continue
+                }
 
                 // check file size before opening the file. skip file if it's larger than 1MB
                 const fileSize = await vscode.workspace.fs.stat(fileUri)
@@ -55,19 +63,18 @@ export async function getContextFileFromDirectory(directory?: URI): Promise<Cont
                 }
 
                 const bytes = await vscode.workspace.fs.readFile(fileUri)
-                const decoded = new TextDecoder('utf-8').decode(bytes)
-                const truncatedContent = truncateText(decoded, MAX_CURRENT_FILE_TOKENS)
-                const range = new vscode.Range(0, 0, truncatedContent.split('\n').length - 1 || 0, 0)
+                const content = new TextDecoder('utf-8').decode(bytes)
+                const range = new vscode.Range(0, 0, content.split('\n').length - 1 || 0, 0)
+                const size = TokenCounter.countTokens(content)
 
-                const contextFile = {
+                contextFiles.push({
                     type: 'file',
                     uri: fileUri,
-                    content: truncatedContent,
-                    source: 'editor',
-                    range,
-                } as ContextFile
-
-                contextFiles.push(contextFile)
+                    content,
+                    source: ContextItemSource.Editor,
+                    range: toRangeData(range),
+                    size,
+                })
 
                 // Limit the number of files to 10
                 const maxResults = 10
