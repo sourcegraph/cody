@@ -14,6 +14,10 @@ import {
 } from './anthropic'
 import { createProviderConfig as createExperimentalOllamaProviderConfig } from './experimental-ollama'
 import {
+    FIREWORKS_FIM_FINE_TUNED_MODEL_1,
+    FIREWORKS_FIM_FINE_TUNED_MODEL_2,
+    FIREWORKS_FIM_FINE_TUNED_MODEL_3,
+    FIREWORKS_FIM_FINE_TUNED_MODEL_4,
     type FireworksOptions,
     createProviderConfig as createFireworksProviderConfig,
 } from './fireworks'
@@ -150,6 +154,51 @@ export async function createProviderConfig(
     return createAnthropicProviderConfig({ client })
 }
 
+async function resolveFinetunedModelProviderFromFeatureFlags(): Promise<{
+    provider: string
+    model?: FireworksOptions['model'] | AnthropicOptions['model']
+} | null> {
+    /**
+     * The traffic allocated to the fine-tuned-base feature flag is further split between multiple feature flag in function.
+     */
+    const [finetuneControl, finetuneVariant1, finetuneVariant2, finetuneVariant3, finetuneVariant4] =
+        await Promise.all([
+            featureFlagProvider.evaluateFeatureFlag(
+                FeatureFlag.CodyAutocompleteFIMFineTunedModelControl
+            ),
+            featureFlagProvider.evaluateFeatureFlag(
+                FeatureFlag.CodyAutocompleteFIMFineTunedModelVariant1
+            ),
+            featureFlagProvider.evaluateFeatureFlag(
+                FeatureFlag.CodyAutocompleteFIMFineTunedModelVariant2
+            ),
+            featureFlagProvider.evaluateFeatureFlag(
+                FeatureFlag.CodyAutocompleteFIMFineTunedModelVariant3
+            ),
+            featureFlagProvider.evaluateFeatureFlag(
+                FeatureFlag.CodyAutocompleteFIMFineTunedModelVariant4
+            ),
+        ])
+    if (finetuneVariant1) {
+        return { provider: 'fireworks', model: FIREWORKS_FIM_FINE_TUNED_MODEL_1 }
+    }
+    if (finetuneVariant2) {
+        return { provider: 'fireworks', model: FIREWORKS_FIM_FINE_TUNED_MODEL_2 }
+    }
+    if (finetuneVariant3) {
+        return { provider: 'fireworks', model: FIREWORKS_FIM_FINE_TUNED_MODEL_3 }
+    }
+    if (finetuneVariant4) {
+        return { provider: 'fireworks', model: FIREWORKS_FIM_FINE_TUNED_MODEL_4 }
+    }
+    if (finetuneControl) {
+        return { provider: 'fireworks', model: 'starcoder-hybrid' }
+    }
+
+    // Extra free traffic - redirect to the current production model which could be different than control
+    return { provider: 'fireworks', model: 'starcoder-hybrid' }
+}
+
 async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
     configuredProvider: string | null
 ): Promise<{
@@ -160,15 +209,21 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
         return { provider: configuredProvider }
     }
 
-    const [starCoder2Hybrid, starCoderHybrid, llamaCode13B, claude3, finetunedModel] = await Promise.all(
-        [
+    const [starCoder2Hybrid, starCoderHybrid, llamaCode13B, claude3, finetunedFIMModelExperiment] =
+        await Promise.all([
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteFineTunedModel),
-        ]
-    )
+            featureFlagProvider.evaluateFeatureFlag(
+                FeatureFlag.CodyAutocompleteFIMFineTunedModelBaseFeatureFlag
+            ),
+        ])
+
+    if (finetunedFIMModelExperiment) {
+        // The traffic in this feature flag is interpreted as a traffic allocated to the fine-tuned experiment.
+        return await resolveFinetunedModelProviderFromFeatureFlags()
+    }
 
     if (llamaCode13B) {
         return { provider: 'fireworks', model: 'llama-code-13b' }
@@ -179,12 +234,6 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
     }
 
     if (starCoderHybrid) {
-        // Adding the fine-tuned model here for the A/B test setup.
-        // Among all the users in starcoder-hybrid - some % of them will be redirected to the fine-tuned model.
-        if (finetunedModel) {
-            return { provider: 'fireworks', model: 'fireworks-completions-fine-tuned' }
-        }
-
         return { provider: 'fireworks', model: 'starcoder-hybrid' }
     }
 
