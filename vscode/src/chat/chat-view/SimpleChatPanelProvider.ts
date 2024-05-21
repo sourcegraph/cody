@@ -1281,14 +1281,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             panel.dispose()
         })
 
-        // Let the webview know if it is active
-        panel.onDidChangeViewState(event => {
-            this.postMessage({
-                type: 'webview-state',
-                isActive: event.webviewPanel.active,
-            })
-        })
-
         this.disposables.push(
             panel.webview.onDidReceiveMessage(message =>
                 this.onDidReceiveMessage(
