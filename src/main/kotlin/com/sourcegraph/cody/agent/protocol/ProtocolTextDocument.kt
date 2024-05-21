@@ -8,6 +8,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import java.awt.Point
 import java.nio.file.FileSystems
 import java.util.Locale
+import kotlin.math.max
+import kotlin.math.min
 
 class ProtocolTextDocument
 private constructor(
@@ -38,11 +40,17 @@ private constructor(
 
     private fun getVisibleRange(editor: Editor): Range {
       val visibleArea = editor.scrollingModel.visibleArea
+
       val startOffset = editor.xyToLogicalPosition(visibleArea.location)
+      val startOffsetLine = max(startOffset.line, 0)
+      val startOffsetColumn = max(startOffset.column, 0)
+
       val endOffset = editor.xyToLogicalPosition(Point(visibleArea.right, visibleArea.bottom))
+      val endOffsetLine = min(endOffset.line, editor.document.lineCount - 1)
+      val endOffsetColumn = min(endOffset.column, editor.document.getLineEndOffset(endOffsetLine))
+
       return Range(
-          Position(startOffset.line, startOffset.column),
-          Position(endOffset.line, endOffset.column))
+          Position(startOffsetLine, startOffsetColumn), Position(endOffsetLine, endOffsetColumn))
     }
 
     @JvmStatic
