@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test'
+import { type Locator, expect } from '@playwright/test'
 
 import * as mockServer from '../fixtures/mock-server'
 import { createEmptyChatPanel, sidebarExplorer, sidebarSignin } from './common'
@@ -157,6 +157,97 @@ test.extend<ExpectedEvents>({
     await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
     await expect(chatInputs.nth(1)).toBeFocused()
 })
+
+test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
+    'chat toolbar and row UI',
+    async ({ page, sidebar }) => {
+        await fetch(`${mockServer.SERVER_URL}/.test/currentUser/codyProEnabled`, { method: 'POST' })
+
+        // This test requires that the window be focused in the OS window manager because it deals with
+        // focus.
+        await page.bringToFront()
+
+        await sidebarSignin(page, sidebar)
+        const [chatPanel] = await createEmptyChatPanel(page)
+
+        function nthHumanMessageRow(n: number): Locator {
+            return chatPanel
+                .locator('[role="row"][data-testid="message"]:has([data-lexical-editor="true"])')
+                .nth(n)
+        }
+        function humanMessageRowParts(row: Locator): {
+            editor: Locator
+            toolbar: {
+                mention: Locator
+                enhancedContext: Locator
+                modelSelector: Locator
+                submit: Locator
+            }
+        } {
+            const toolbar = row.locator('[role="toolbar"]')
+            return {
+                editor: row.locator('[data-lexical-editor="true"]'),
+                toolbar: {
+                    mention: toolbar.getByRole('button', { name: 'Add context' }),
+                    enhancedContext: toolbar.getByRole('button', {
+                        name: 'Configure automatic code context',
+                    }),
+                    modelSelector: toolbar.getByRole('combobox', { name: 'Select a model' }),
+                    submit: toolbar.getByRole('button', { name: 'Submit message' }),
+                },
+            }
+        }
+
+        // Ensure the chat toolbar is visible even when it's not focused because it's the last human
+        // input.
+        const humanRow0 = humanMessageRowParts(nthHumanMessageRow(0))
+        await humanRow0.editor.blur()
+        await expect(humanRow0.toolbar.mention).toBeVisible()
+        await expect(humanRow0.toolbar.enhancedContext).toBeVisible()
+        await expect(humanRow0.toolbar.modelSelector).toBeVisible()
+        await expect(humanRow0.toolbar.submit).toBeVisible()
+
+        // Ensure that clicking the toolbar mention button focuses the editor.
+        await humanRow0.toolbar.mention.click()
+        await expect(humanRow0.editor).toBeFocused()
+
+        // Now send a message.
+        await humanRow0.editor.fill('Hello')
+        await humanRow0.editor.press('Enter')
+        await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
+
+        // Ensure the toolbar hides when the first input isn't focused.
+        await expect(humanRow0.editor).toBeFocused()
+        await humanRow0.editor.blur()
+        await expect(humanRow0.toolbar.mention).not.toBeVisible()
+        await expect(humanRow0.toolbar.enhancedContext).not.toBeVisible()
+        await expect(humanRow0.toolbar.modelSelector).not.toBeVisible()
+        await expect(humanRow0.toolbar.submit).not.toBeVisible()
+
+        // Now check the interactions on the first human message row again. The toolbar should still
+        // work when clicking among different toolbar popovers. When the first message input loses
+        // focus, it hides the toolbar, but that should not interfere with clicking among toolbar items.
+        await humanRow0.editor.focus()
+        await expect(humanRow0.toolbar.mention).toBeVisible()
+        await expect(humanRow0.toolbar.enhancedContext).toBeVisible()
+        await expect(humanRow0.toolbar.modelSelector).toBeVisible()
+        await expect(humanRow0.toolbar.submit).toBeVisible()
+        await expect(chatPanel.getByText('Optimized for Accuracy')).not.toBeVisible()
+        await expect(chatPanel.getByText('Enhanced Context ✨')).not.toBeVisible()
+        // Open the model selector toolbar popover.
+        await humanRow0.toolbar.modelSelector.click()
+        await expect(chatPanel.getByText('Optimized for Accuracy')).toBeVisible()
+        await expect(chatPanel.getByText('Enhanced Context ✨')).not.toBeVisible()
+        // Now click to the enhanced context toolbar popover. All toolbar items should still be visible, and the new popover should be open.
+        await humanRow0.toolbar.enhancedContext.click()
+        await expect(chatPanel.getByText('Optimized for Accuracy')).not.toBeVisible()
+        await expect(chatPanel.getByText('Enhanced Context ✨')).toBeVisible()
+        await expect(humanRow0.toolbar.mention).toBeVisible()
+        await expect(humanRow0.toolbar.enhancedContext).toBeVisible()
+        await expect(humanRow0.toolbar.modelSelector).toBeVisible()
+        await expect(humanRow0.toolbar.submit).toBeVisible()
+    }
+)
 
 test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<ExpectedEvents>({
     expectedEvents: [
