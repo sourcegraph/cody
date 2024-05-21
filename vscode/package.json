@@ -6,7 +6,7 @@
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
-  "description": "AI coding assistant that understands your codebase. Cody brings autocomplete, chat, and commands to your IDE, helping you generate code, write unit tests, create documentation, and explain complex or legacy code using AI. Choose from several LLMs including GPT-3.5 Turbo, GPT-4 Turbo, and Claude 3, or run local models using Ollama. Cody supports all major languages including JavaScript, TypeScript, Python, Java, Go, and C/C++.",
+  "description": "AI coding assistant that uses search and codebase context to help you write code faster. Cody brings autocomplete, chat, and commands to VS Code, so you can generate code, write unit tests, create docs, and explain complex code using AI. Choose from the latest LLMs, including GPT-4o and Claude 3.",
   "scripts": {
     "postinstall": "pnpm download-wasm",
     "dev": "pnpm run -s dev:desktop",
