@@ -4,6 +4,7 @@ import type {
     AuthStatus,
     ConfigurationWithAccessToken,
     ContextItem,
+    ContextMentionProviderMetadata,
     EnhancedContextContextT,
     MentionQuery,
     ModelProvider,
@@ -140,6 +141,9 @@ export type WebviewMessage =
     | {
           command: 'troubleshoot/reloadAuth'
       }
+    | {
+          command: 'getAllMentionProvidersMetadata'
+      }
 
 /**
  * A message sent from the extension host to the webview.
@@ -190,6 +194,10 @@ export type ExtensionMessage =
               chat: boolean
               attribution: boolean
           }
+      }
+    | {
+          type: 'allMentionProvidersMetadata'
+          providers: ContextMentionProviderMetadata[]
       }
 
 interface ExtensionAttributionMessage {

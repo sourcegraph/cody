@@ -36,14 +36,16 @@ export async function getContextFileFromDirectory(directory?: URI): Promise<Cont
             // Get the files in the directory
             const filesInDir = await vscode.workspace.fs.readDirectory(dirUri)
             // Filter out directories and dot files
-            const filtered = filesInDir.filter(file => {
-                const fileName = file[0]
-                const fileType = file[1]
-                const isDirectory = fileType === vscode.FileType.Directory
-                const isHiddenFile = fileName.startsWith('.')
+            const filtered = filesInDir
+                .filter(file => {
+                    const fileName = file[0]
+                    const fileType = file[1]
+                    const isDirectory = fileType === vscode.FileType.Directory
+                    const isHiddenFile = fileName.startsWith('.')
 
-                return !isDirectory && !isHiddenFile
-            })
+                    return !isDirectory && !isHiddenFile
+                })
+                .sort((a, b) => a[0].localeCompare(b[0])) // sort for determinism
 
             // Get the context from each file in the directory
             for (const [name, _type] of filtered) {

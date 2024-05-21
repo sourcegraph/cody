@@ -542,7 +542,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                                 isOpen={isEnhancedContextOpen}
                                 setOpen={onEnhancedContextTogglerClick}
                                 presentationMode={userInfo.isDotComUser ? 'consumer' : 'enterprise'}
-                                isNewInstall={isNewInstall}
                             />
                         </div>
                     </div>

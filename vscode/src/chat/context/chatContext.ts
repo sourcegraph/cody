@@ -1,48 +1,42 @@
 import {
-    CONTEXT_MENTION_PROVIDERS,
     type ContextItem,
-    type ContextItemProps,
-    type ContextMentionProvider,
+    type ContextItemOpenCtx,
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionQuery,
-    PACKAGE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
-    URL_CONTEXT_MENTION_PROVIDER,
+    openCtx,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import {
     getFileContextFiles,
     getOpenTabsContextFile,
     getSymbolContextFiles,
-    getWorkspaceGitRemotes,
 } from '../../editor/utils/editor-context'
 
 export async function getChatContextItemsForMention(
     mentionQuery: MentionQuery,
     cancellationToken: vscode.CancellationToken,
-    telemetryRecorder?: {
-        empty: () => void
-        withProvider: (type: MentionQuery['provider']) => void
-    }
-): Promise<ContextItem[]> {
     // Logging: log when the at-mention starts, and then log when we know the type (after the 1st
     // character is typed). Don't log otherwise because we would be logging prefixes of the same
     // query repeatedly, which is not needed.
-    if (mentionQuery.provider === null) {
-        telemetryRecorder?.empty()
-    } else {
-        telemetryRecorder?.withProvider(mentionQuery.provider)
+    telemetryRecorder?: {
+        empty: () => void
+        withProvider: (type: MentionQuery['provider'], metadata?: { id: string }) => void
     }
-
+): Promise<ContextItem[]> {
     const MAX_RESULTS = 20
     switch (mentionQuery.provider) {
         case null:
+            telemetryRecorder?.empty()
             return getOpenTabsContextFile()
         case SYMBOL_CONTEXT_MENTION_PROVIDER.id:
+            telemetryRecorder?.withProvider(mentionQuery.provider)
             // It would be nice if the VS Code symbols API supports cancellation, but it doesn't
             return getSymbolContextFiles(mentionQuery.text, MAX_RESULTS)
         case FILE_CONTEXT_MENTION_PROVIDER.id: {
+            telemetryRecorder?.withProvider(mentionQuery.provider)
             const files = mentionQuery.text
                 ? await getFileContextFiles(mentionQuery.text, MAX_RESULTS)
                 : await getOpenTabsContextFile()
@@ -60,49 +54,26 @@ export async function getChatContextItemsForMention(
         }
 
         default: {
-            const props: ContextItemProps = { gitRemotes: getWorkspaceGitRemotes() }
+            telemetryRecorder?.withProvider('openctx', { id: mentionQuery.provider })
 
-            for (const provider of getEnabledContextMentionProviders()) {
-                if (provider.id === mentionQuery.provider) {
-                    return provider.queryContextItems(
-                        mentionQuery.text,
-                        props,
-                        convertCancellationTokenToAbortSignal(cancellationToken)
-                    )
-                }
+            if (!openCtx.client) {
+                return []
             }
-            return []
+
+            const items = await openCtx.client.mentions(
+                { query: mentionQuery.text },
+                // get mention items for the selected provider only.
+                mentionQuery.provider
+            )
+
+            return items.map(
+                (item): ContextItemOpenCtx => ({
+                    ...item,
+                    type: 'openctx',
+                    uri: URI.parse(item.uri),
+                    provider: 'openctx',
+                })
+            )
         }
     }
-}
-
-export function getEnabledContextMentionProviders(): ContextMentionProvider[] {
-    const isAllEnabled =
-        vscode.workspace.getConfiguration('cody').get<boolean>('experimental.noodle') === true
-    if (isAllEnabled) {
-        return CONTEXT_MENTION_PROVIDERS
-    }
-
-    const isURLProviderEnabled =
-        vscode.workspace.getConfiguration('cody').get<boolean>('experimental.urlContext') === true
-    const isPackageProviderEnabled =
-        vscode.workspace.getConfiguration('cody').get<boolean>('experimental.packageContext') === true
-
-    if (isURLProviderEnabled || isPackageProviderEnabled) {
-        return CONTEXT_MENTION_PROVIDERS.filter(
-            provider =>
-                (isURLProviderEnabled && provider.id === URL_CONTEXT_MENTION_PROVIDER.id) ||
-                (isPackageProviderEnabled && provider.id === PACKAGE_CONTEXT_MENTION_PROVIDER.id)
-        )
-    }
-    return []
-}
-
-function convertCancellationTokenToAbortSignal(token: vscode.CancellationToken): AbortSignal {
-    const controller = new AbortController()
-    const disposable = token.onCancellationRequested(() => {
-        controller.abort()
-        disposable.dispose()
-    })
-    return controller.signal
 }
