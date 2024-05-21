@@ -122,6 +122,10 @@ test.extend<ExpectedEvents>({
     // Submit a new chat question from the command menu.
     await page.getByLabel(/Commands \(/).click()
     await page.waitForTimeout(100)
+
+    // Chat should be focused initially.
+    await expect(firstChatInput).toBeFocused()
+
     // HACK: The 'delay' command is used to make sure the response is streamed 400ms after
     // the command is sent. This provides us with a small window to move the cursor
     // from the new opened chat window back to the editor, before the chat has finished
