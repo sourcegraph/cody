@@ -136,12 +136,40 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             if (event.key === 'Escape' && messageInProgress) {
                 vscodeAPI.postMessage({ command: 'abort' })
             }
+
+            // NOTE(sqs): I have a keybinding on my Linux machine Super+o to switch VS Code editor
+            // groups. This makes it so that that keybinding does not also input the letter 'o'.
+            // This is a workaround for (arguably) a VS Code issue.
+            if (event.metaKey && event.key === 'o') {
+                event.preventDefault()
+                event.stopPropagation()
+            }
         }
         window.addEventListener('keydown', handleKeyDown)
         return () => {
             window.removeEventListener('keydown', handleKeyDown)
         }
     }, [vscodeAPI, messageInProgress])
+
+    // Re-focus the input when the webview (re)gains focus if it was focused before the webview lost
+    // focus. This makes it so that the user can easily switch back to the Cody view and keep
+    // typing.
+    useEffect(() => {
+        const onFocus = (): void => {
+            // This works because for some reason Electron maintains the Selection but not the
+            // focus.
+            const focusNode = window.getSelection()?.focusNode
+            const focusElement = focusNode instanceof Element ? focusNode : focusNode?.parentElement
+            const focusEditor = focusElement?.closest<HTMLElement>('[data-lexical-editor="true"]')
+            if (focusEditor) {
+                focusEditor.focus()
+            }
+        }
+        window.addEventListener('focus', onFocus)
+        return () => {
+            window.removeEventListener('focus', onFocus)
+        }
+    }, [])
 
     return (
         <div className={clsx(styles.container)}>

@@ -352,17 +352,14 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     const context = useEnhancedContextContext()
     const [enabled, setEnabled] = React.useState<boolean>(useEnhancedContextEnabled())
     const enabledChanged = React.useCallback(
-        (shouldEnable: boolean, source: 'btn' | 'checkbox' | 'altKey'): void => {
+        (shouldEnable: boolean): void => {
             if (enabled !== shouldEnable) {
                 events.onEnabledChange(shouldEnable)
                 setEnabled(shouldEnable)
-                // Log when a user clicks on the Enhanced Context toggle. Event names:
-                // Checkbox click: `CodyVSCodeExtension:useEnhancedContextToggler:clicked`
-                // Button click: `CodyVSCodeExtension:useEnhancedContextTogglerBtn:clicked`
-                const eventName = source === 'btn' ? 'Btn' : source === 'altKey' ? 'AltKey' : ''
+                // Log when a user clicks on the Enhanced Context toggle.
                 getVSCodeAPI().postMessage({
                     command: 'event',
-                    eventName: `CodyVSCodeExtension:useEnhancedContextToggler${eventName}:clicked`,
+                    eventName: 'CodyVSCodeExtension:useEnhancedContextToggler:clicked',
                     properties: { useEnhancedContext: shouldEnable },
                 })
             }
@@ -371,18 +368,16 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     )
 
     // Holding down the Alt/Opt key unchecks the box if it is checked.
-    const [disabledByAltKeyDown, setDisabledByAltKeyDown] = React.useState(false)
+    const [isAltKeyDown, setIsAltKeyDown] = React.useState(false)
     React.useEffect(() => {
         const onKeyDown = (event: KeyboardEvent) => {
-            if (event.altKey && enabled) {
-                setDisabledByAltKeyDown(true)
-                enabledChanged(false, 'altKey')
+            if (event.altKey) {
+                setIsAltKeyDown(true)
             }
         }
         const onKeyUp = (event: KeyboardEvent) => {
-            if (!event.altKey && disabledByAltKeyDown) {
-                setDisabledByAltKeyDown(false)
-                enabledChanged(true, 'altKey')
+            if (!event.altKey && isAltKeyDown) {
+                setIsAltKeyDown(false)
             }
         }
         document.addEventListener('keydown', onKeyDown)
@@ -391,7 +386,7 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
             document.removeEventListener('keydown', onKeyDown)
             document.removeEventListener('keyup', onKeyUp)
         }
-    }, [enabled, disabledByAltKeyDown, enabledChanged])
+    }, [isAltKeyDown])
 
     // Handles removing a manually added remote search provider.
     const handleRemoveRemoteSearchRepo = React.useCallback(
@@ -411,12 +406,14 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
         localStorage.setItem(hasOpenedBeforeKey, 'true')
     }
 
+    const effectiveEnabled = enabled && !isAltKeyDown
+
     return (
         <ToolbarPopoverItem
             aria-label="Configure automatic code context"
             tooltip="Configure automatic code context"
             tabIndex={-1} // holding Alt/Opt is fastest way to toggle, doesn't need to be tabbable
-            iconStart={enabled ? BookMarkedIcon : BookDashedIcon}
+            iconStart={effectiveEnabled ? BookMarkedIcon : BookDashedIcon}
             iconEnd={null}
             defaultOpen={defaultOpen}
             onCloseByEscape={onCloseByEscape}
@@ -424,10 +421,12 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                 <div className={styles.container}>
                     <div>
                         <VSCodeCheckbox
-                            onChange={e =>
-                                enabledChanged((e.target as HTMLInputElement)?.checked, 'checkbox')
-                            }
-                            checked={enabled}
+                            onChange={e => {
+                                if (!isAltKeyDown) {
+                                    enabledChanged((e.target as HTMLInputElement)?.checked)
+                                }
+                            }}
+                            checked={effectiveEnabled}
                             autoFocus={true}
                             id="enhanced-context-checkbox"
                         />
@@ -466,4 +465,16 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
             )}
         />
     )
+}
+
+declare module 'react' {
+    interface HTMLAttributes<T> {
+        /**
+         * Indicates that the browser will ignore this element and its descendants,
+         * preventing some interactions and hiding it from assistive technology.
+         * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/inert
+         * @todo Remove this stub declaration after https://github.com/facebook/react/pull/24730 is merged.
+         */
+        inert?: '' | boolean
+    }
 }
