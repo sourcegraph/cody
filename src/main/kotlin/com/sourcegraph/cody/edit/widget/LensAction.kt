@@ -6,6 +6,7 @@ import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.EditorMouseEvent
+import com.intellij.ui.JBColor
 import com.sourcegraph.cody.edit.EditCommandPrompt
 import com.sourcegraph.cody.edit.EditUtil
 import com.sourcegraph.cody.edit.sessions.FixupSession
@@ -25,13 +26,6 @@ class LensAction(
     private val actionId: String
 ) : LensWidget(group) {
 
-  private val underline = mapOf(TextAttribute.UNDERLINE to TextAttribute.UNDERLINE_ON)
-
-  // TODO: Put in resources
-  private val actionColor = Color(44, 45, 50)
-  private val acceptColor = Color(37, 92, 53)
-  private val undoColor = Color(114, 38, 38)
-
   private val highlight =
       LabelHighlight(
           when (actionId) {
@@ -46,14 +40,17 @@ class LensAction(
 
   override fun calcHeightInPixels(fontMetrics: FontMetrics): Int = fontMetrics.height
 
+  @Suppress("UseJBColor")
   override fun paint(g: Graphics2D, x: Float, y: Float) {
     val originalFont = g.font
     val originalColor = g.color
     try {
       g.background = EditUtil.getEnhancedThemeColor("Panel.background")
+
       val metrics = g.fontMetrics
       val width = calcWidthInPixels(metrics)
       val textHeight = metrics.height
+
       highlight.drawHighlight(g, x, y, width, textHeight)
 
       if (mouseInBounds) {
@@ -61,14 +58,14 @@ class LensAction(
         g.color = UIManager.getColor("Link.hoverForeground")
       } else {
         g.font = g.font.deriveFont(Font.PLAIN)
-        g.color = baseTextColor
+        g.color = Color.WHITE
       }
+
       g.drawString(text, x + SIDE_MARGIN, y + g.fontMetrics.ascent)
 
       lastPaintedBounds =
           Rectangle2D.Float(x, y - metrics.ascent, width.toFloat(), textHeight.toFloat())
     } finally {
-      // Other lenses are using the same Graphics2D.
       g.font = originalFont
       g.color = originalColor
     }
@@ -117,5 +114,11 @@ class LensAction(
 
   companion object {
     const val SIDE_MARGIN = 5
+
+    private val underline = mapOf(TextAttribute.UNDERLINE to TextAttribute.UNDERLINE_ON)
+
+    val actionColor = JBColor(Color.DARK_GRAY, Color(44, 45, 50))
+    private val acceptColor = Color(37, 92, 53)
+    private val undoColor = Color(114, 38, 38)
   }
 }

@@ -242,6 +242,9 @@ All tests involving prompt history should end with:
 4. Click the expansion icon at the right of the text field.
     - The text field expands to allow more of your instructions to be visible.
     - You can collapse it to return to the regular view.
+5. Change the IDE font size to 22 and try the dialog. It should lay out correctly.
+    - then try at font size 6 to ensure it works there too.
+    
 
 #### File Path
 
@@ -319,6 +322,27 @@ All tests involving prompt history should end with:
     - Clicking or using the shortcut to Undo removes the inline edit as well as the code lens
     - Clicking or using the shortcut to Edit & Retry opens the Edit Code dialog, undoes the initial edit, and applies new edits according to your new instructions.
     - Clicking or using the shortcut to Show Diff opens a new tab with a diff view of the edits. 
+
+#### Lens layout and and appearance
+
+1. Initiate an inline edit and wait for the Accept lens group to appear.
+2. Switch IDE themes while the lenses are visible.
+   - Verify that the lenses switch to match the new theme.
+     - Note that the "buttons" remain dark on light themes.
+3. Keeping the code lenses visible, test it with different font sizes.
+   - In Settings/Preferences, change the Editor font size to 6
+     - Scroll until the code lenses are visible again, if necessary.
+     - Verify that they are drawing correctly for the new size.
+     - The widgets should not be taller than the inlay, padding should look right, etc.
+     - Try it all over again at font size 26 or higher. Everything in the lenses should still look good.
+4. While you have it set to a large font size, test the Working lens group.
+   - Undo the current inline edit
+   - Initiate a new inline edit, ideally one that will take a while
+     - For instance, you could make a large selection of 50+ lines and ask the LLM to add thorough inline comments.
+   - While Cody is "thinking", you should see the Working lens group.
+     - Check that the spinner is spinning, and is sized and positioned correctly when the font is large.
+     - Check that no other widgets are drawing out of bounds or oddly in some other way.
+5. Ensure that the Cody Logo, present in all lens groups, is scaling with the font size.
 
 ## Chat
 
