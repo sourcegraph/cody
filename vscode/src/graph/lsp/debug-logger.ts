@@ -14,12 +14,18 @@ export const IS_LSP_LIGHT_LOGGING_ENABLED = process.env.LSP_LIGHT_LOGGING_ENABLE
 
 const debugLogs: Map<string, unknown[][]> = new Map()
 
+/**
+ * console.log() when process.env.IS_LSP_LIGHT_LOGGING_ENABLED === 'true'
+ */
 export function debugLspLightLog(...rest: unknown[]) {
     if (IS_LSP_LIGHT_LOGGING_ENABLED) {
         console.log(...rest)
     }
 }
 
+/**
+ * Group logs by symbol names to log them together later
+ */
 export function debugLspLightSymbolLog(symbolName: string, ...rest: unknown[]) {
     if (!IS_LSP_LIGHT_LOGGING_ENABLED) {
         return
@@ -32,6 +38,9 @@ export function debugLspLightSymbolLog(symbolName: string, ...rest: unknown[]) {
     debugLogs.get(symbolName)!.push(rest)
 }
 
+/**
+ * console.log() logs grouped by symbols name when process.env.IS_LSP_LIGHT_LOGGING_ENABLED === 'true'
+ */
 export function flushLspLightDebugLogs() {
     for (const [symbolName, symbolLogs] of debugLogs.entries()) {
         for (const log of symbolLogs) {
