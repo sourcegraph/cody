@@ -1,16 +1,18 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 import type * as rpc from 'vscode-jsonrpc/node'
-import * as lsp from 'vscode-languageserver-protocol/node'
 
-import { Uri, vsCodeMocks } from '../../../../testutils/mocks'
+import { vsCodeMocks } from '../../../../testutils/mocks'
 import { parseDocument } from '../../../../tree-sitter/parse-tree-cache'
 import { documentFromFilePath, initTreeSitterParser } from '../../../test-helpers'
 
-import * as lspCommands from '../../../../graph/lsp/lsp-commands'
-import { locationLinkToLocation } from '../../../../graph/lsp/lsp-commands'
 import { LspLightRetriever } from './lsp-light-retriever'
-import { initialize, openWorkspaceFiles, startLanguageServer } from './lsp-test-helpers'
+import {
+    initLanguageServer,
+    mockLspCommands,
+    openWorkspaceFiles,
+    startLanguageServer,
+} from './lsp-test-helpers'
 
 vi.mock('vscode', () => ({
     ...vsCodeMocks,
@@ -30,15 +32,17 @@ const disposable = {
     dispose: () => {},
 }
 
+// To run these tests only with clean debug output:
 // pnpm vitest vscode/src/completions/context/retrievers/lsp-light/lsp-light-retriever.integration.test.ts --disableConsoleIntercept --hideSkippedTests --reporter=basic
 describe('LspLightRetriever', () => {
     let connection: rpc.MessageConnection
-    let mainFileUri: Uri
+    let mainFileUri: vscode.Uri
     let mainDocument: vscode.TextDocument
     let retriever: LspLightRetriever
-    let onDidChangeTextEditorSelection: any
+    // TODO: test preloading of symbols
+    // let onDidChangeTextEditorSelection: any
 
-    function positionForWordInSnippet(snippet: string, word: string): vscode.Position {
+    function positionForSubstringInSnippet(snippet: string, word: string): vscode.Position {
         const text = mainDocument.getText()
         const snippetOffset = text.indexOf(snippet)
         const wordOffset = text.indexOf(word, snippetOffset)
@@ -47,97 +51,14 @@ describe('LspLightRetriever', () => {
     }
 
     beforeAll(async () => {
-        await initTreeSitterParser()
-
         connection = startLanguageServer()
-        await initialize(connection)
-        const workspaceFileURIs = await openWorkspaceFiles(connection)
+        await Promise.all([initLanguageServer(connection), initTreeSitterParser()])
+        mockLspCommands(connection)
 
+        const workspaceFileURIs = await openWorkspaceFiles(connection)
         mainFileUri = workspaceFileURIs.find(uri => uri.fsPath.endsWith('main.ts'))!
         mainDocument = documentFromFilePath(mainFileUri.fsPath)
-
-        function processLocationsResponse(
-            response: lsp.Definition | lsp.LocationLink[] | null
-        ): vscode.Location[] {
-            if (response === null) {
-                return []
-            }
-
-            const locations = (Array.isArray(response) ? response : [response]) as unknown as (
-                | vscode.Location
-                | vscode.LocationLink
-            )[]
-
-            return locations.map(locationLinkToLocation).map(location => {
-                if (typeof location.uri === 'string') {
-                    return {
-                        ...location,
-                        uri: Uri.parse(location.uri),
-                    }
-                }
-
-                return location
-            })
-        }
-
-        // TODO: extract the LSP plumbing wrappers into a separate file.
-        vi.spyOn(lspCommands, 'getHover').mockImplementation(
-            async (uri: vscode.Uri, position: vscode.Position) => {
-                const params: lsp.TextDocumentPositionParams = {
-                    textDocument: { uri: uri.toString() },
-                    position,
-                }
-
-                const response = await connection.sendRequest(lsp.HoverRequest.type, params)
-                const hoverArray = (response ? [response] : []) as vscode.Hover[]
-                return hoverArray.map(hover => {
-                    if (Array.isArray(hover.contents)) {
-                        return hover
-                    }
-
-                    return {
-                        ...hover,
-                        contents: [hover.contents],
-                    }
-                })
-            }
-        )
-
-        vi.spyOn(lspCommands, 'getTypeDefinitionLocations').mockImplementation(
-            async (uri: vscode.Uri, position: vscode.Position) => {
-                const params: lsp.TextDocumentPositionParams = {
-                    textDocument: { uri: uri.toString() },
-                    position,
-                }
-
-                const response = await connection.sendRequest(lsp.TypeDefinitionRequest.type, params)
-                return processLocationsResponse(response)
-            }
-        )
-
-        vi.spyOn(lspCommands, 'getDefinitionLocations').mockImplementation(
-            async (uri: vscode.Uri, position: vscode.Position) => {
-                const params: lsp.TextDocumentPositionParams = {
-                    textDocument: { uri: uri.toString() },
-                    position,
-                }
-
-                const response = await connection.sendRequest(lsp.DefinitionRequest.type, params)
-                return processLocationsResponse(response)
-            }
-        )
-
-        vi.spyOn(lspCommands, 'getImplementationLocations').mockImplementation(
-            async (uri: vscode.Uri, position: vscode.Position) => {
-                const params: lsp.TextDocumentPositionParams = {
-                    textDocument: { uri: uri.toString() },
-                    position,
-                }
-
-                const response = await connection.sendRequest(lsp.ImplementationRequest.type, params)
-                return processLocationsResponse(response)
-            }
-        )
+        parseDocument(mainDocument)
     })
 
     afterAll(() => {
@@ -149,7 +70,7 @@ describe('LspLightRetriever', () => {
             {
                 // Mock VS Code event handlers so we can fire them manually
                 onDidChangeTextEditorSelection: (_onDidChangeTextEditorSelection: any) => {
-                    onDidChangeTextEditorSelection = _onDidChangeTextEditorSelection
+                    // onDidChangeTextEditorSelection = _onDidChangeTextEditorSelection
                     return disposable
                 },
             },
@@ -159,8 +80,6 @@ describe('LspLightRetriever', () => {
                 },
             }
         )
-
-        parseDocument(mainDocument)
     })
 
     afterEach(() => {
@@ -170,7 +89,7 @@ describe('LspLightRetriever', () => {
     it('function with nested symbols in the argument list', async () => {
         const contextSnippets = await retriever.retrieve({
             document: mainDocument,
-            position: positionForWordInSnippet('import { LabelledValue, printLabel', 'printLabel'),
+            position: positionForSubstringInSnippet('import { LabelledValue, printLabel', 'printLabel'),
             hints: { maxChars: 100, maxMs: 1000 },
         })
 
@@ -186,7 +105,7 @@ describe('LspLightRetriever', () => {
     it('function with nested symbols in the argument list and the return value', async () => {
         const contextSnippets = await retriever.retrieve({
             document: mainDocument,
-            position: positionForWordInSnippet(
+            position: positionForSubstringInSnippet(
                 'import { LabelledValue, printLabel, printLabelAndSquare }',
                 'printLabelAndSquare'
             ),
@@ -211,7 +130,7 @@ describe('LspLightRetriever', () => {
     it('interface', async () => {
         const contextSnippets = await retriever.retrieve({
             document: mainDocument,
-            position: positionForWordInSnippet('import { LabelledValue', 'LabelledValue'),
+            position: positionForSubstringInSnippet('import { LabelledValue', 'LabelledValue'),
             hints: { maxChars: 100, maxMs: 1000 },
         })
 
@@ -226,7 +145,7 @@ describe('LspLightRetriever', () => {
     it('class constructor with an interface in arguments', async () => {
         const contextSnippets = await retriever.retrieve({
             document: mainDocument,
-            position: positionForWordInSnippet('new Greeter("world")', 'Greeter'),
+            position: positionForSubstringInSnippet('new Greeter("world")', 'Greeter'),
             hints: { maxChars: 100, maxMs: 1000 },
         })
 
@@ -255,7 +174,7 @@ describe('LspLightRetriever', () => {
     it('class constructor with an enum in arguments', async () => {
         const contextSnippets = await retriever.retrieve({
             document: mainDocument,
-            position: positionForWordInSnippet('new Dog("Buddy", Color.Green)', 'Dog'),
+            position: positionForSubstringInSnippet('new Dog("Buddy", Color.Green)', 'Dog'),
             hints: { maxChars: 100, maxMs: 1000 },
         })
 
@@ -292,7 +211,7 @@ describe('LspLightRetriever', () => {
     it.skip('function return value assignment with the nested symbol in the arguments', async () => {
         const contextSnippets = await retriever.retrieve({
             document: mainDocument,
-            position: positionForWordInSnippet(
+            position: positionForSubstringInSnippet(
                 'import { Background, SquareConfig, createSquare }',
                 'createSquare'
             ),
@@ -316,7 +235,7 @@ describe('LspLightRetriever', () => {
     it('function return value assignment with the nested symbol in the arguments', async () => {
         const contextSnippets = await retriever.retrieve({
             document: mainDocument,
-            position: positionForWordInSnippet(
+            position: positionForSubstringInSnippet(
                 'let square = createSquare(squareConfig)',
                 'createSquare'
             ),
@@ -341,7 +260,7 @@ describe('LspLightRetriever', () => {
     it('return value object literal', async () => {
         const contextSnippets = await retriever.retrieve({
             document: mainDocument,
-            position: positionForWordInSnippet('return { color: "blue", width: 5 }', 'return'),
+            position: positionForSubstringInSnippet('return { color: "blue", width: 5 }', 'return'),
             hints: { maxChars: 100, maxMs: 1000 },
         })
 
@@ -363,7 +282,7 @@ describe('LspLightRetriever', () => {
     it('nested object field initialization', async () => {
         const contextSnippets = await retriever.retrieve({
             document: mainDocument,
-            position: positionForWordInSnippet('items: [square, square]', 'square'),
+            position: positionForSubstringInSnippet('items: [square, square]', 'square'),
             hints: { maxChars: 100, maxMs: 1000 },
         })
 
@@ -381,7 +300,7 @@ describe('LspLightRetriever', () => {
     it('nested object field getter', async () => {
         const contextSnippets = await retriever.retrieve({
             document: mainDocument,
-            position: positionForWordInSnippet('background.items[0].area', 'items[0]'),
+            position: positionForSubstringInSnippet('background.items[0].area', 'items[0]'),
             hints: { maxChars: 100, maxMs: 1000 },
         })
 
@@ -395,82 +314,4 @@ describe('LspLightRetriever', () => {
           Background.items: Square[]"
         `)
     })
-    // it('preloads the results when navigating to a line', async () => {
-    //     await onDidChangeTextEditorSelection({
-    //         textEditor: { document: testDocuments.document1 },
-    //         selections: [{ active: { line: 3, character: 0 } }],
-    //     })
-
-    //     // Preloading is debounced so we need to advance the timer manually
-    //     await vi.advanceTimersToNextTimerAsync()
-    //     expect(getSymbolContextSnippets).toHaveBeenCalledWith({
-    //         symbolsSnippetRequests: [
-    //             {
-    //                 uri: expect.anything(),
-    //                 languageId: 'typescript',
-    //                 nodeType: 'property_identifier',
-    //                 symbolName: 'log',
-    //                 position: new Position(2, 16),
-    //             },
-    //         ],
-    //         recursionLimit: expect.any(Number),
-    //         abortSignal: expect.anything(),
-    //     })
-
-    //     getSymbolContextSnippets.mockClear()
-
-    //     const [snippet] = await retriever.retrieve({
-    //         document: testDocuments.document1,
-    //         position: new Position(3, 0),
-    //         hints: { maxChars: 100, maxMs: 1000 },
-    //     })
-
-    //     expect(withPosixPaths(snippet)).toMatchObject({
-    //         content: ['log(): void'],
-    //         symbolName: 'log',
-    //         uri: document1Uri.toString(),
-    //     })
-    // })
-
-    // it('aborts the request navigating to a different line', async () => {
-    //     let abortSignal: any
-    //     getSymbolContextSnippets = getSymbolContextSnippets.mockImplementation(
-    //         ({ abortSignal: _abortSignal }) => {
-    //             abortSignal = _abortSignal
-    //             return new Promise(() => {})
-    //         }
-    //     )
-
-    //     await onDidChangeTextEditorSelection({
-    //         textEditor: { document: testDocuments.document1 },
-    //         selections: [{ active: { line: 1, character: 0 } }],
-    //     })
-    //     await vi.advanceTimersToNextTimerAsync()
-
-    //     expect(getSymbolContextSnippets).toHaveBeenCalledWith({
-    //         symbolsSnippetRequests: [
-    //             {
-    //                 uri: expect.anything(),
-    //                 languageId: 'typescript',
-    //                 nodeType: 'type_identifier',
-    //                 symbolName: 'Test',
-    //                 position: new Position(0, 13),
-    //             },
-    //         ],
-    //         recursionLimit: expect.any(Number),
-    //         abortSignal: expect.anything(),
-    //     })
-
-    //     getSymbolContextSnippets.mockClear()
-
-    //     // Move to a different line
-    //     getSymbolContextSnippets.mockImplementation(() => Promise.resolve([]))
-    //     await onDidChangeTextEditorSelection({
-    //         textEditor: { document: testDocuments.document1 },
-    //         selections: [{ active: { line: 2, character: 0 } }],
-    //     })
-    //     await vi.advanceTimersToNextTimerAsync()
-
-    //     expect(abortSignal.aborted).toBe(true)
-    // })
 })

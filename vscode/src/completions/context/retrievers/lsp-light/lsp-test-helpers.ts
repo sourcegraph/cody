@@ -2,10 +2,13 @@ import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 
+import ts from 'typescript'
+import { vi } from 'vitest'
+import type * as vscode from 'vscode'
 import * as rpc from 'vscode-jsonrpc/node'
 import * as lsp from 'vscode-languageserver-protocol/node'
 
-import ts from 'typescript'
+import * as lspCommands from '../../../../graph/lsp/lsp-commands'
 import { Uri } from '../../../../testutils/uri'
 
 export function startLanguageServer(): rpc.MessageConnection {
@@ -62,7 +65,9 @@ export function getFilesFromTsConfig(tsConfigPath: string): string[] {
     return configParseResult.fileNames
 }
 
-export async function initialize(connection: rpc.MessageConnection): Promise<lsp.InitializeResult> {
+export async function initLanguageServer(
+    connection: rpc.MessageConnection
+): Promise<lsp.InitializeResult> {
     const initializeParams = {
         processId: process.pid,
         rootUri: TEST_DATA_URI.toString(),
@@ -98,4 +103,88 @@ export async function openWorkspaceFiles(connection: rpc.MessageConnection): Pro
     await Promise.all(workspaceFileURIs.map(fileUri => didOpenTextDocument(connection, fileUri)))
 
     return workspaceFileURIs
+}
+
+export function mockLspCommands(connection: rpc.MessageConnection): void {
+    vi.spyOn(lspCommands, 'getHover').mockImplementation(
+        async (uri: vscode.Uri, position: vscode.Position) => {
+            const params: lsp.TextDocumentPositionParams = {
+                textDocument: { uri: uri.toString() },
+                position,
+            }
+
+            const response = await connection.sendRequest(lsp.HoverRequest.type, params)
+            const hoverArray = (response ? [response] : []) as vscode.Hover[]
+            return hoverArray.map(hover => {
+                if (Array.isArray(hover.contents)) {
+                    return hover
+                }
+
+                return {
+                    ...hover,
+                    contents: [hover.contents],
+                }
+            })
+        }
+    )
+
+    vi.spyOn(lspCommands, 'getTypeDefinitionLocations').mockImplementation(
+        async (uri: vscode.Uri, position: vscode.Position) => {
+            const params: lsp.TextDocumentPositionParams = {
+                textDocument: { uri: uri.toString() },
+                position,
+            }
+
+            const response = await connection.sendRequest(lsp.TypeDefinitionRequest.type, params)
+            return processLocationsResponse(response)
+        }
+    )
+
+    vi.spyOn(lspCommands, 'getDefinitionLocations').mockImplementation(
+        async (uri: vscode.Uri, position: vscode.Position) => {
+            const params: lsp.TextDocumentPositionParams = {
+                textDocument: { uri: uri.toString() },
+                position,
+            }
+
+            const response = await connection.sendRequest(lsp.DefinitionRequest.type, params)
+            return processLocationsResponse(response)
+        }
+    )
+
+    vi.spyOn(lspCommands, 'getImplementationLocations').mockImplementation(
+        async (uri: vscode.Uri, position: vscode.Position) => {
+            const params: lsp.TextDocumentPositionParams = {
+                textDocument: { uri: uri.toString() },
+                position,
+            }
+
+            const response = await connection.sendRequest(lsp.ImplementationRequest.type, params)
+            return processLocationsResponse(response)
+        }
+    )
+}
+
+function processLocationsResponse(
+    response: lsp.Definition | lsp.LocationLink[] | null
+): vscode.Location[] {
+    if (response === null) {
+        return []
+    }
+
+    const locations = (Array.isArray(response) ? response : [response]) as unknown as (
+        | vscode.Location
+        | vscode.LocationLink
+    )[]
+
+    return locations.map(lspCommands.locationLinkToLocation).map(location => {
+        if (typeof location.uri === 'string') {
+            return {
+                ...location,
+                uri: Uri.parse(location.uri),
+            }
+        }
+
+        return location
+    })
 }
