@@ -444,17 +444,11 @@ async function getSymbolSnippetForNodeType(
     }
 
     if (!symbolContextSnippet) {
-        // console.log(
-        //     `failed to find definition location for symbol ${symbolName} at ${uri} and ${position}`
-        // )
         definitionLocationCache.set(symbolSnippetRequest, EMPTY_CACHE_ENTRY)
         return undefined
     }
 
     if (symbolContextSnippet.content === undefined) {
-        // console.log(
-        //     `no definition for symbol ${symbolName} at ${symbolContextSnippet.uri} and ${symbolContextSnippet.startLine}`
-        // )
         definitionCache.set(symbolContextSnippet.location, EMPTY_CACHE_ENTRY)
         return undefined
     }
