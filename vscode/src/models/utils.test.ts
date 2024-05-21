@@ -50,7 +50,6 @@ describe('getEnterpriseContextWindow', () => {
         }
 
         it.each([
-            ['claude-3', extendedContextWindow],
             ['claude-3-opus', extendedContextWindow],
             ['claude-3-sonnet', extendedContextWindow],
             ['anthropic/claude-3-opus', extendedContextWindow],
@@ -61,6 +60,7 @@ describe('getEnterpriseContextWindow', () => {
             ['bedrock/gpt-4o', extendedContextWindow],
             ['sourcegraph/gpt-4o', extendedContextWindow],
             ['bedrock/gpt-4', nonExtendedContextWindow],
+            ['claude-3', nonExtendedContextWindow],
             ['claude-3-haiku', nonExtendedContextWindow],
             ['anthropic/claude-3-haiku-20240307', nonExtendedContextWindow],
             ['anthropic/claude-2.0', nonExtendedContextWindow],
