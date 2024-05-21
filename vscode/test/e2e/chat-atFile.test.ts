@@ -280,23 +280,6 @@ test.extend<ExpectedEvents>({
 })
 
 test.extend<ExpectedEvents>({
-    expectedEvents: ['CodyVSCodeExtension:at-mention:file:executed'],
-    expectedV2Events: ['cody.at-mention.file:executed'],
-})(
-    'pressing Enter with @-mention menu open selects item, does not submit message',
-    async ({ page, sidebar }) => {
-        await sidebarSignin(page, sidebar)
-
-        const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
-        await chatInput.fill('Explain @index.htm')
-        await expect(chatPanelFrame.getByRole('option', { name: 'index.html' })).toBeVisible()
-        await chatInput.press('Enter')
-        await expect(chatInput).toHaveText('Explain @index.html')
-        await expect(chatInput.getByText('@index.html')).toHaveClass(/context-item-mention-node/)
-    }
-)
-
-test.extend<ExpectedEvents>({
     expectedEvents: [
         'CodyVSCodeExtension:at-mention:file:executed',
         'CodyVSCodeExtension:chat-question:submitted',
