@@ -6,6 +6,7 @@ import { vsCodeMocks } from '../../../../testutils/mocks'
 import { parseDocument } from '../../../../tree-sitter/parse-tree-cache'
 import { documentFromFilePath, initTreeSitterParser } from '../../../test-helpers'
 
+import { clearLspCacheForTests } from '../../../../graph/lsp/symbol-context-snippets'
 import { LspLightRetriever } from './lsp-light-retriever'
 import {
     initLanguageServer,
@@ -83,6 +84,7 @@ describe('LspLightRetriever', () => {
     })
 
     afterEach(() => {
+        clearLspCacheForTests()
         retriever.dispose()
     })
 
@@ -157,6 +159,7 @@ describe('LspLightRetriever', () => {
           }
           Greeter.greeting: string
           GreeterConfig.message: string
+          Greeter.greet(): string
           export class Greeter {
               greeting: string;
 

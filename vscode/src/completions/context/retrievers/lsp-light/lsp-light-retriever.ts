@@ -2,7 +2,9 @@ import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
+import { debugLspLightLog } from '../../../../graph/lsp/debug-logger'
 import {
+    IS_LSP_LIGHT_CACHE_DISABLED,
     getSymbolContextSnippets,
     invalidateDocumentCache,
 } from '../../../../graph/lsp/symbol-context-snippets'
@@ -32,7 +34,7 @@ export interface GetGraphContextForPositionParams {
 export class LspLightRetriever implements ContextRetriever {
     public identifier = 'lsp-light'
     private disposables: vscode.Disposable[] = []
-    private isCacheEnabled = false
+    private isCacheDisabled = IS_LSP_LIGHT_CACHE_DISABLED
 
     private lastRequestKey: string | null = null
     private abortLastRequest: () => void = () => {}
@@ -88,7 +90,7 @@ export class LspLightRetriever implements ContextRetriever {
             )
             .join('::')
 
-        if (this.isCacheEnabled && resultKey === this.lastResultKey && this.lastResult) {
+        if (!this.isCacheDisabled && resultKey === this.lastResultKey && this.lastResult) {
             return this.lastResult
         }
 
@@ -102,16 +104,15 @@ export class LspLightRetriever implements ContextRetriever {
         this.lastResultKey = resultKey
         this.lastResult = contextSnippets
 
-        console.log(
+        debugLspLightLog(
             `[LspLightRetriever] got context snippets in ${(performance.now() - start).toFixed(2)}ms`
         )
 
-        console.log('-------------------------------------------------------------')
-        // biome-ignore lint/complexity/noForEach: <explanation>
-        contextSnippets.forEach(snippet => {
-            console.log(snippet.content)
-        })
-        console.log('-------------------------------------------------------------')
+        debugLspLightLog('-------------------------------------------------------------')
+        for (const snippet of contextSnippets) {
+            debugLspLightLog(snippet.content)
+        }
+        debugLspLightLog('-------------------------------------------------------------')
 
         if (maxChars === 0) {
             // This is likely just a preloading request, so we don't need to prepare the actual context
