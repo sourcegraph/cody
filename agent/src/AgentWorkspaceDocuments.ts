@@ -126,10 +126,11 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         ]
 
         clearArray(vscode_shim.visibleTextEditors)
-        clearArray(vscode_shim.workspaceTextDocuments)
+        const textDocuments = vscode_shim.workspaceTextDocuments()
+        clearArray(textDocuments)
 
         for (const document of this.allDocuments()) {
-            vscode_shim.workspaceTextDocuments.push(document)
+            textDocuments.push(document)
             vscode_shim.visibleTextEditors.push(this.newTextEditor(document))
         }
         vscode_shim.onDidChangeVisibleTextEditors.fire(vscode_shim.visibleTextEditors)

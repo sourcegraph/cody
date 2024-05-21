@@ -39,11 +39,13 @@ import {
     UIKind,
     Uri,
     ViewColumn,
+    vscodeWorkspaceTextDocuments,
     workspaceFs,
 } from '../../vscode/src/testutils/mocks'
 
 import { emptyDisposable } from '../../vscode/src/testutils/emptyDisposable'
 
+import { AgentDiagnostics } from './AgentDiagnostics'
 import { AgentQuickPick } from './AgentQuickPick'
 import { AgentTabGroups } from './AgentTabGroups'
 import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
@@ -61,6 +63,7 @@ export { AgentEventEmitter as EventEmitter } from '../../vscode/src/testutils/Ag
 export {
     CancellationTokenSource,
     CodeAction,
+    CodeActionTriggerKind,
     CodeActionKind,
     CodeLens,
     CommentMode,
@@ -75,6 +78,7 @@ export {
     FileType,
     InlineCompletionItem,
     InlineCompletionTriggerKind,
+    DiagnosticRelatedInformation,
     Location,
     MarkdownString,
     OverviewRulerLane,
@@ -176,7 +180,10 @@ export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments)
 }
 
 export const workspaceFolders: vscode.WorkspaceFolder[] = []
-export const workspaceTextDocuments: vscode.TextDocument[] = []
+
+export function workspaceTextDocuments(): vscode.TextDocument[] {
+    return vscodeWorkspaceTextDocuments
+}
 
 // vscode.workspace.onDidChangeConfiguration
 const _workspace: typeof vscode.workspace = {
@@ -206,7 +213,7 @@ const _workspace: typeof vscode.workspace = {
     registerFileSystemProvider: () => emptyDisposable,
     registerNotebookSerializer: () => emptyDisposable,
     saveAll: () => Promise.resolve(false),
-    textDocuments: workspaceTextDocuments,
+    textDocuments: vscodeWorkspaceTextDocuments,
     updateWorkspaceFolders: () => false,
     workspaceFile: undefined,
     registerTaskProvider: () => emptyDisposable,
@@ -970,6 +977,11 @@ const _env: Partial<typeof vscode.env> = {
 }
 export const env = _env as typeof vscode.env
 
+const newCodeActionProvider = new EventEmitter<vscode.CodeActionProvider>()
+const removeCodeActionProvider = new EventEmitter<vscode.CodeActionProvider>()
+export const onDidRegisterNewCodeActionProvider = newCodeActionProvider.event
+export const onDidUnregisterNewCodeActionProvider = removeCodeActionProvider.event
+
 const newCodeLensProvider = new EventEmitter<vscode.CodeLensProvider>()
 const removeCodeLensProvider = new EventEmitter<vscode.CodeLensProvider>()
 export const onDidRegisterNewCodeLensProvider = newCodeLensProvider.event
@@ -986,14 +998,20 @@ export function completionProvider(): Promise<InlineCompletionItemProvider> {
     return firstCompletionProvider
 }
 
+const diagnosticsChange = new EventEmitter<vscode.DiagnosticChangeEvent>()
+const onDidChangeDiagnostics = diagnosticsChange.event
 const foldingRangeProviders = new Set<vscode.FoldingRangeProvider>()
+export const diagnostics = new AgentDiagnostics()
 const _languages: Partial<typeof vscode.languages> = {
     getLanguages: () => Promise.resolve([]),
     registerFoldingRangeProvider: (_scope, provider) => {
         foldingRangeProviders.add(provider)
         return { dispose: () => foldingRangeProviders.delete(provider) }
     },
-    registerCodeActionsProvider: () => emptyDisposable,
+    registerCodeActionsProvider: (_selector, provider) => {
+        newCodeActionProvider.fire(provider)
+        return { dispose: () => removeCodeActionProvider.fire(provider) }
+    },
     registerCodeLensProvider: (_selector, provider) => {
         newCodeLensProvider.fire(provider)
         return { dispose: () => removeCodeLensProvider.fire(provider) }
@@ -1003,9 +1021,10 @@ const _languages: Partial<typeof vscode.languages> = {
         resolveFirstCompletionProvider(provider as any)
         return emptyDisposable
     },
+    onDidChangeDiagnostics,
     getDiagnostics: ((resource: vscode.Uri) => {
         if (resource) {
-            return [] as vscode.Diagnostic[] // return diagnostics for the specific resource
+            return diagnostics.forUri(resource)
         }
         return [[resource, []]] // return diagnostics for all resources
     }) as {
@@ -1014,7 +1033,7 @@ const _languages: Partial<typeof vscode.languages> = {
     },
 }
 
-export const languages = _languages as typeof vscode.languages
+export const languages = _languages
 
 const commentController: vscode.CommentController = {
     createCommentThread(uri, range, comments) {

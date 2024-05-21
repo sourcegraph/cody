@@ -31,7 +31,7 @@ export function completion(string: TemplateStringsArray, ...values: unknown[]): 
     }
 }
 
-const CURSOR_MARKER = '█'
+export const CURSOR_MARKER = '█'
 
 export function document(
     text: string,

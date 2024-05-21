@@ -5,16 +5,22 @@ import {
     isFileURI,
     isMacOS,
     isWindows,
+    logDebug,
     logError,
     tracer,
 } from '@sourcegraph/cody-shared'
 import ts from 'typescript'
 import * as vscode from 'vscode'
+import type {
+    ProtocolDiagnostic,
+    ProtocolRelatedInformationDiagnostic,
+} from '../../../../jsonrpc/agent-protocol'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { nextTick } from '../section-history/nextTick'
 import { SymbolFormatter, isStdLibNode } from './SymbolFormatter'
 import { getTSSymbolAtLocation } from './getTSSymbolAtLocation'
 import { type NodeMatchKind, relevantTypeIdentifiers } from './relevantTypeIdentifiers'
+import { supportedTscLanguages } from './supportedTscLanguages'
 
 interface LoadedCompiler {
     service: ts.LanguageService
@@ -117,7 +123,6 @@ export class TscRetriever implements ContextRetriever {
     }
 
     private servicesByTsconfigPath = new Map<string, TscLanguageService>()
-    private baseCompilerHost: ts.FormatDiagnosticsHost = ts.createCompilerHost({})
     private disposables: vscode.Disposable[] = []
     private documentRegistry = ts.createDocumentRegistry(isMacOS() || isWindows(), currentDirectory())
     private snapshots = new Map<string, DocumentSnapshot>()
@@ -128,7 +133,6 @@ export class TscRetriever implements ContextRetriever {
             return fromCache
         }
         this.loadCompiler(file)
-        this.documentRegistry.updateDocument
         return this.getCompiler(file)
     }
 
@@ -137,9 +141,11 @@ export class TscRetriever implements ContextRetriever {
         if (fromCache) {
             return fromCache
         }
-        for (const document of vscode.workspace.textDocuments) {
-            if (isFileURI(document.uri) && document.uri.fsPath === fileName) {
-                return { text: document.getText(), version: document.version.toString() }
+        if (!fileName.includes('node_modules')) {
+            for (const document of vscode.workspace.textDocuments) {
+                if (isFileURI(document.uri) && document.uri.fsPath === fileName) {
+                    return { text: document.getText(), version: document.version.toString() }
+                }
             }
         }
         const result = { text: ts.sys.readFile(fileName) ?? '', version: '0' }
@@ -147,14 +153,24 @@ export class TscRetriever implements ContextRetriever {
         return result
     }
 
+    private defaultWorkingDirectory() {
+        const uri = vscode.workspace.workspaceFolders?.[0]?.uri
+        if (uri && isFileURI(uri)) {
+            return uri.fsPath
+        }
+        return undefined
+    }
     private loadCompiler(file: FileURI): undefined {
         const config = this.findConfigFile(file)
         if (!config) {
             logError('tsc-retriever', `Could not find tsconfig.json for URI ${file}`)
         }
         const parsedCommandLine = loadConfigFile(config)
+        parsedCommandLine.options.strict = false
         const path = defaultPathFunctions()
-        const currentDirectory = config ? path.dirname(config) : process.cwd()
+        const currentDirectory = config
+            ? path.dirname(config)
+            : this.defaultWorkingDirectory() ?? process.cwd()
         const formatHost: ts.FormatDiagnosticsHost = ts.createCompilerHost(parsedCommandLine.options)
         const sourceFileNames: string[] = parsedCommandLine.fileNames
         const serviceHost: TscLanguageServiceHost = {
@@ -194,6 +210,13 @@ export class TscRetriever implements ContextRetriever {
                     'lib',
                     fileName
                 )
+                if (!ts.sys.fileExists(result)) {
+                    const fallback = path.resolve(path.dirname(ts.sys.getExecutingFilePath()), fileName)
+                    if (!ts.sys.fileExists(fallback)) {
+                        throw new Error(`Could not find default lib at ${fallback}`)
+                    }
+                    return fallback
+                }
                 return result
             },
             readFile: (path: string, encoding?: string | undefined): string | undefined =>
@@ -221,10 +244,6 @@ export class TscRetriever implements ContextRetriever {
         const sourceFile = program.getSourceFile(file.fsPath)
         if (sourceFile === undefined) {
             return undefined
-        }
-        const diagnostics = program.getGlobalDiagnostics()
-        if (diagnostics.length > 0) {
-            console.log(ts.formatDiagnostics(diagnostics, this.baseCompilerHost))
         }
         return {
             service,
@@ -284,6 +303,60 @@ export class TscRetriever implements ContextRetriever {
         return new SymbolCollector(compiler, this.options, options, options.position).relevantSymbols()
     }
 
+    public diagnostics(uri: FileURI): ProtocolDiagnostic[] {
+        const compiler = this.getOrLoadCompiler(uri)
+        if (!compiler) {
+            logDebug('tsc-retriever', `No compiler for URI ${uri}`)
+            return []
+        }
+        const diagnostics = compiler.program.getSemanticDiagnostics(compiler.sourceFile)
+        const result: ProtocolDiagnostic[] = []
+        for (const diagnostic of diagnostics) {
+            const { file, start, code, source } = diagnostic
+            if (file && start) {
+                const relatedInformation: ProtocolRelatedInformationDiagnostic[] = []
+                if (diagnostic.relatedInformation) {
+                    for (const info of diagnostic.relatedInformation) {
+                        if (!info.file || info.start === undefined) {
+                            continue
+                        }
+                        const start = info.file.getLineAndCharacterOfPosition(info.start)
+                        const end = info.file.getLineAndCharacterOfPosition(
+                            info.start + (info.length ?? 1)
+                        )
+                        relatedInformation.push({
+                            location: {
+                                uri: vscode.Uri.file(info.file.fileName).toString(),
+                                range: {
+                                    start: { line: start.line, character: start.character },
+                                    end: { line: end.line, character: end.character },
+                                },
+                            },
+                            message: formatMessageText(info.messageText),
+                        })
+                    }
+                }
+
+                const { line, character } = file.getLineAndCharacterOfPosition(start)
+                result.push({
+                    location: {
+                        uri: vscode.Uri.file(file.fileName).toString(),
+                        range: {
+                            start: { line, character },
+                            end: { line, character: character + (diagnostic.length ?? 1) },
+                        },
+                    },
+                    message: formatMessageText(diagnostic.messageText),
+                    severity: 'error',
+                    code: String(code),
+                    source,
+                    relatedInformation,
+                })
+            }
+        }
+        return result
+    }
+
     public async retrieve(options: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
         return tracer.startActiveSpan('graph-context.tsc', async span => {
             span.setAttribute('sampled', true)
@@ -299,12 +372,7 @@ export class TscRetriever implements ContextRetriever {
     }
 
     public isSupportedForLanguageId(languageId: string): boolean {
-        return (
-            languageId === 'typescript' ||
-            languageId === 'typescriptreact' ||
-            languageId === 'javascript' ||
-            languageId === 'javascriptreact'
-        )
+        return supportedTscLanguages.has(languageId)
     }
     public dispose() {}
 }
@@ -537,4 +605,21 @@ class SymbolCollector {
 enum SearchState {
     Done = 1,
     Continue = 2,
+}
+
+function formatMessageText(messageText: string | ts.DiagnosticMessageChain): string {
+    if (typeof messageText === 'string') {
+        return messageText
+    }
+    const messages: string[] = []
+    const loop = (chain: ts.DiagnosticMessageChain): void => {
+        messages.push(chain.messageText)
+        if (chain.next) {
+            for (const next of chain.next) {
+                loop(next)
+            }
+        }
+    }
+    loop(messageText)
+    return messages.join('\n')
 }

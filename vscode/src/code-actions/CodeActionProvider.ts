@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
 import type { Config, ContextProvider } from '../chat/ContextProvider'
-
 import { DocumentCodeAction } from './document'
 import { EditCodeAction } from './edit'
 import { ExplainCodeAction } from './explain'

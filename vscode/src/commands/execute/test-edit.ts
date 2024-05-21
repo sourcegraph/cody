@@ -4,6 +4,7 @@ import * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
 import { defaultCommands } from '.'
+import type { EditCommandResult } from '../../CommandResult'
 import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/context-filter'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import {
@@ -11,7 +12,6 @@ import {
     getEditDefaultProvidedRange,
 } from '../../edit/utils/edit-selection'
 import { getEditor } from '../../editor/active-editor'
-import type { EditCommandResult } from '../../main'
 import { execQueryWrapper } from '../../tree-sitter/query-sdk'
 import { getContextFilesForUnitTestCommand } from '../context/unit-test-file'
 import type { CodyCommandArgs } from '../types'
