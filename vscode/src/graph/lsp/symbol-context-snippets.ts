@@ -10,7 +10,12 @@ import {
 
 import { getLastNGraphContextIdentifiersFromString } from '../../completions/context/retrievers/graph/identifiers'
 import { lines } from '../../completions/text-processing'
-import { debugLspLightSymbolLog, flushLspLightDebugLogs } from './debug-logger'
+import {
+    debugLspLightSymbolLog,
+    flushLspLightDebugLogs,
+    formatUriAndPosition,
+    formatUriAndRange,
+} from './debug-logger'
 import { extractHoverContent, isUnhelpfulSymbolSnippet } from './hover'
 import { commonKeywords, isCommonImport } from './languages'
 import { createLimiter } from './limiter'
@@ -108,19 +113,13 @@ async function getSymbolSnippetForNodeType(
         debugLspLightSymbolLog(
             symbolName,
             'definitionLocations',
-            sortedDefinitionLocations.map(
-                location =>
-                    `${location.uri.toString().split('/').slice(-4).join('/')}:${
-                        location.range.start.line
-                    }:${location.range.start.character} – ${location.range.end.line}:${
-                        location.range.end.character
-                    }`
-            )
+            sortedDefinitionLocations.map(location => formatUriAndRange(location.uri, location.range))
         )
 
         // Sort for the narrowest definition range (e.g. used when we get full class implementation vs. constructor)
         const [definitionLocation] = sortedDefinitionLocations
         // const [definitionLocation] = definitionLocations
+
         if (
             definitionLocation === undefined ||
             (definitionLocation && isCommonImport(definitionLocation.uri))
@@ -132,8 +131,7 @@ async function getSymbolSnippetForNodeType(
         const definitionCacheKey = `${definitionRange.start.line}:${definitionRange.start.character}`
         debugLspLightSymbolLog(symbolName, 'location', {
             nodeType,
-            range: `${definitionRange.start.line}:${definitionRange.start.character} – ${definitionRange.end.line}:${definitionRange.end.character}`,
-            path: JSON.stringify(`${definitionUri.toString().split('/').slice(-4).join('/')}`),
+            location: formatUriAndRange(definitionUri, definitionRange),
         })
 
         const symbolContextSnippet = {
@@ -363,15 +361,13 @@ async function getSymbolSnippetForNodeType(
             initialNestedSymbolRequests: initialNestedSymbolRequests.map(r => {
                 return {
                     symbolName: r.symbolName,
-                    path: JSON.stringify(`${r.uri.toString().split('/').slice(-4).join('/')}`),
-                    range: `${r.position.line}:${r.position.character}`,
+                    position: formatUriAndPosition(r.uri, r.position),
                 }
             }),
             nestedSymbolRequests: nestedSymbolRequests.map(r => {
                 return {
                     symbolName: r.symbolName,
-                    path: JSON.stringify(`${r.uri.toString().split('/').slice(-4).join('/')}`),
-                    range: `${r.position.line}:${r.position.character}`,
+                    position: formatUriAndPosition(r.uri, r.position),
                 }
             }),
         })

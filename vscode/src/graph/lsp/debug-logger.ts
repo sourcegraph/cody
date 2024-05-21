@@ -79,3 +79,18 @@ export async function debugLSP(symbolSnippetRequest: SymbolSnippetsRequest) {
     console.log('type definition')
     await printHoverAndText(typeDefinitions)
 }
+
+export function formatUriAndRange(uri: vscode.Uri, range: vscode.Range) {
+    const path = uri.toString().split('/').slice(-4).join('/')
+    const start = `${range.start.line}:${range.start.character}`
+    const end = `${range.end.line}:${range.end.character}`
+
+    return `${path}:${start} – ${end}`
+}
+
+export function formatUriAndPosition(uri: vscode.Uri, position: vscode.Position) {
+    const path = uri.toString().split('/').slice(-4).join('/')
+    const start = `${position.line}:${position.character}`
+
+    return `${path}:${start}`
+}
