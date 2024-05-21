@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import { execQueryWrapper } from '../../../../tree-sitter/query-sdk'
 
+import { dedupeWith } from '@sourcegraph/cody-shared'
 import { asPoint } from '../../../../tree-sitter/parse-tree-cache'
 import { parseString } from '../../../../tree-sitter/parser'
 import { lines } from '../../../text-processing'
@@ -18,22 +19,6 @@ interface SymbolRequest {
     uri: vscode.Uri
     nodeType: string
     languageId: string
-}
-
-const dedupeWith = <T>(items: T[], key: keyof T | ((item: T) => string)): T[] => {
-    const seen = new Set()
-    const isKeyFunction = typeof key === 'function'
-
-    return items.reduce((result, item) => {
-        const itemKey = isKeyFunction ? key(item) : item[key]
-
-        if (!seen.has(itemKey)) {
-            seen.add(itemKey)
-            result.push(item)
-        }
-
-        return result
-    }, [] as T[])
 }
 
 export function getLastNGraphContextIdentifiersFromDocument(

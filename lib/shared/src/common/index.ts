@@ -32,7 +32,7 @@ export const dedupeWith = <T>(items: T[], key: keyof T | ((item: T) => string)):
 
         if (!seen.has(itemKey)) {
             seen.add(itemKey)
-            result.unshift(item)
+            result.push(item)
         }
 
         return result
