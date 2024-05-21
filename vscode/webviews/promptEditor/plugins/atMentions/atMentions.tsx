@@ -195,13 +195,15 @@ export default function MentionsPlugin(): JSX.Element | null {
         )
     }, [editor])
 
+    const onClose = useCallback(() => {
+        updateMentionMenuParams({ parentItem: null })
+    }, [updateMentionMenuParams])
+
     return (
         <LexicalTypeaheadMenuPlugin<MentionMenuOption>
             onQueryChange={updateQuery}
             onSelectOption={onSelectOption}
-            onClose={() => {
-                updateMentionMenuParams({ parentItem: null })
-            }}
+            onClose={onClose}
             triggerFn={scanForMentionTriggerInUserTextInput}
             options={DUMMY_OPTIONS}
             anchorClassName={styles.resetAnchor}

@@ -1,3 +1,4 @@
+import type { PopoverContentProps, PopoverProps } from '@radix-ui/react-popover'
 import { Slot } from '@radix-ui/react-slot'
 import { type VariantProps, cva } from 'class-variance-authority'
 import { ChevronDownIcon } from 'lucide-react'
@@ -104,6 +105,9 @@ export const ToolbarPopoverItem: FunctionComponent<
 
                 onCloseByEscape?: () => void
 
+                popoverRootProps?: Pick<PopoverProps, 'onOpenChange'>
+                popoverContentProps?: Omit<PopoverContentProps, 'align'>
+
                 /** For storybooks only. */
                 __storybook__open?: boolean
             }
@@ -113,6 +117,8 @@ export const ToolbarPopoverItem: FunctionComponent<
     popoverContent,
     defaultOpen,
     onCloseByEscape,
+    popoverRootProps,
+    popoverContentProps,
     __storybook__open,
     children,
     ...props
@@ -128,22 +134,47 @@ export const ToolbarPopoverItem: FunctionComponent<
         }
     }, [__storybook__open])
 
+    const popoverContentRef = useRef<HTMLDivElement>(null)
+
+    const onOpenChange = useCallback(
+        (open: boolean): void => {
+            popoverRootProps?.onOpenChange?.(open)
+
+            setIsOpen(open)
+
+            // Ensure we blur the popover content if it was focused, because React's `onBlur`
+            // doesn't get called when the focused event is unmounted (see
+            // https://github.com/facebook/react/issues/12363#issuecomment-1988608527). This causes
+            // a bug in our HumanMessageEditor where if you interact with any toolbar items that
+            // steal focus for their menu, then the HumanMessageRow stays with partial focus
+            // styling. See the "chat toolbar and row UI" e2e test.
+            if (
+                document.activeElement instanceof HTMLElement &&
+                popoverContentRef.current?.contains(document.activeElement)
+            ) {
+                anchorRef.current?.focus()
+            }
+        },
+        [popoverRootProps?.onOpenChange]
+    )
+
     const close = useCallback(() => {
-        setIsOpen(false)
-    }, [])
+        onOpenChange(false)
+    }, [onOpenChange])
 
     // After pressing Escape, return focus to the given component.
-    const onKeyDown = useCallback<KeyboardEventHandler<HTMLElement>>(
+    const onKeyDownInPopoverContent = useCallback<KeyboardEventHandler<HTMLDivElement>>(
         event => {
             if (event.key === 'Escape') {
                 onCloseByEscape?.()
             }
+            popoverContentProps?.onKeyDown?.(event)
         },
-        [onCloseByEscape]
+        [onCloseByEscape, popoverContentProps?.onKeyDown]
     )
 
     return (
-        <Popover open={isOpen} onOpenChange={setIsOpen} defaultOpen={defaultOpen}>
+        <Popover open={isOpen} onOpenChange={onOpenChange} defaultOpen={defaultOpen}>
             <PopoverTrigger asChild={true}>
                 <ToolbarButton
                     variant="secondary"
@@ -155,7 +186,12 @@ export const ToolbarPopoverItem: FunctionComponent<
                     {children}
                 </ToolbarButton>
             </PopoverTrigger>
-            <PopoverContent align="start" onKeyDown={onKeyDown}>
+            <PopoverContent
+                align="start"
+                onKeyDown={onKeyDownInPopoverContent}
+                ref={popoverContentRef}
+                {...popoverContentProps}
+            >
                 {popoverContent(close)}
             </PopoverContent>
         </Popover>

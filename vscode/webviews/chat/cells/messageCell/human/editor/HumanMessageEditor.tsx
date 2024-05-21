@@ -95,8 +95,12 @@ export const HumanMessageEditor: FunctionComponent<{
     }, [])
 
     const [isFocusWithin, setIsFocusWithin] = useState(false)
-    const onFocus = useCallback(() => setIsFocusWithin(true), [])
-    const onBlur = useCallback(() => setIsFocusWithin(false), [])
+    const onFocus = useCallback(() => {
+        setIsFocusWithin(true)
+    }, [])
+    const onBlur = useCallback(() => {
+        setIsFocusWithin(false)
+    }, [])
 
     useEffect(() => {
         if (isEditorInitiallyFocused) {
@@ -162,7 +166,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 styles.container,
                 {
                     [styles.sent]: isSent,
-                    [styles.focused]: isEditorFocused || __storybook__focus,
+                    [styles.focused]: isEditorFocused || isFocusWithin || __storybook__focus,
                 },
                 className
             )}

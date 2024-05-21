@@ -118,7 +118,6 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
                 models={chatModels}
                 onModelSelect={onModelSelect}
                 userInfo={userInfo}
-                align="start"
                 onCloseByEscape={focusEditor}
             />
         )

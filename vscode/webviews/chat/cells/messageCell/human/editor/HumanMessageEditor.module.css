@@ -14,12 +14,12 @@
 }
 
 /* Dim toolbar when unfocused. */
-.container:not(:is(:not(.sent), .focused, :focus-within, :focus-visible, :hover)) .toolbar {
+.container:not(:is(:not(.sent), .focused, :focus-within, :hover)) .toolbar {
     opacity: 0.5;
 }
 
 /* Make the whole container look like a big input field when focused. */
-.container:is(:not(.sent), .focused, :focus-within, :focus-visible, :hover) {
+.container:is(:not(.sent), .focused, :hover) {
     background-color: var(--vscode-input-background);
     color: var(--vscode-input-foreground);
 
@@ -39,11 +39,11 @@
 }
 
 /* Hide the toolbar unless focused on all but the last cell. */
-[role="row"]:has(.container:is(:not(.sent), .focused, :focus-within, :focus-visible)) {
+[role="row"]:has(.container:is(:not(.sent), .focused, :focus-within)) {
     /* HACK: Change HumanMessageCell style. */
     padding-bottom: var(--human-message-editor-cell-spacing-bottom);
 }
-.container.sent:not(:is(.focused, :focus-within, :focus-visible)) {
+.container.sent:not(:is(.focused, :focus-within)) {
     margin-bottom: calc(var(--human-message-editor-toolbar-height) + var(--human-message-editor-gap) - (var(--cell-spacing) - var(--human-message-editor-cell-spacing-bottom)));
     .toolbar {
         display: none;

@@ -168,7 +168,7 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
         await page.bringToFront()
 
         await sidebarSignin(page, sidebar)
-        const [chatPanel] = await createEmptyChatPanel(page)
+        const [chatPanel, lastChatInput] = await createEmptyChatPanel(page)
 
         function nthHumanMessageRow(n: number): Locator {
             return chatPanel
@@ -246,6 +246,13 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
         await expect(humanRow0.toolbar.enhancedContext).toBeVisible()
         await expect(humanRow0.toolbar.modelSelector).toBeVisible()
         await expect(humanRow0.toolbar.submit).toBeVisible()
+
+        // Now focus on the last input. The first row should be minimized.
+        await lastChatInput.click()
+        await expect(humanRow0.toolbar.mention).not.toBeVisible()
+        await expect(humanRow0.toolbar.enhancedContext).not.toBeVisible()
+        await expect(humanRow0.toolbar.modelSelector).not.toBeVisible()
+        await expect(humanRow0.toolbar.submit).not.toBeVisible()
     }
 )
 
