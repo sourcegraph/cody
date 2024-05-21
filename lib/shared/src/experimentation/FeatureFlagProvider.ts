@@ -53,6 +53,9 @@ export enum FeatureFlag {
 
     /** Interactive tutorial, primarily for onboarding */
     CodyInteractiveTutorial = 'cody-interactive-tutorial',
+
+    /** Automatically start indexing using embeddings. */
+    CodyEmbeddingsAutoIndexing = 'cody-embeddings-auto-indexing',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

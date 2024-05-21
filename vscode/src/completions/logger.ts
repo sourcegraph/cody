@@ -118,8 +118,9 @@ interface SharedEventPayload extends InteractionIDPayload {
     /** A list of known completion providers that are also enabled with this user. */
     otherCompletionProviders: string[]
 
-    /** The median of the last upstream requests */
-    medianUpstreamLatency?: number
+    /** The round trip timings to reach the Sourcegraph and Cody Gateway instances. */
+    upstreamLatency?: number
+    gatewayLatency?: number
 }
 
 /**
@@ -347,7 +348,7 @@ export interface CompletionBookkeepingEvent {
     id: CompletionLogID
     params: Omit<
         SharedEventPayload,
-        'items' | 'otherCompletionProviderEnabled' | 'otherCompletionProviders' | 'medianUpstreamLatency'
+        'items' | 'otherCompletionProviderEnabled' | 'otherCompletionProviders'
     >
     // The timestamp when the completion request started
     startedAt: number
@@ -831,7 +832,8 @@ function getSharedParams(event: CompletionBookkeepingEvent): SharedEventPayload 
         items: event.items.map(i => ({ ...i })),
         otherCompletionProviderEnabled: otherCompletionProviders.length > 0,
         otherCompletionProviders,
-        medianUpstreamLatency: upstreamHealthProvider.getMedianDuration(),
+        upstreamLatency: upstreamHealthProvider.getUpstreamLatency(),
+        gatewayLatency: upstreamHealthProvider.getGatewayLatency(),
     }
 }
 
