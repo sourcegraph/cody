@@ -51,6 +51,9 @@ describe('LspLightRetriever', () => {
         return mainDocument.positionAt(wordOffset)
     }
 
+    // 1. Start the typescript-language-server
+    // 2. Open typescript files in the `./test-data` directory
+    // 3. In the following tests, request context for the symbols in `./test-data/main.ts`
     beforeAll(async () => {
         connection = startLanguageServer()
         await Promise.all([initLanguageServer(connection), initTreeSitterParser()])
@@ -84,6 +87,8 @@ describe('LspLightRetriever', () => {
     })
 
     afterEach(() => {
+        // TODO: make the incremental symbol resolution work with caching. The integration test snapshots should be updated
+        // after that. Currently if symbols are not resolved because of the nested identifiers limit, the are never resolved.
         clearLspCacheForTests()
         retriever.dispose()
     })
