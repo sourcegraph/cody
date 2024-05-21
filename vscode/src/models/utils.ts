@@ -10,6 +10,7 @@ import {
     ModelProvider,
     ModelUsage,
     getDotComDefaultModels,
+    logError,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
@@ -25,6 +26,7 @@ export function syncModelProviders(authStatus: AuthStatus): void {
         return
     }
 
+    // For dotcom, we use the default models.
     if (authStatus.isDotCom) {
         ModelProvider.setProviders(getDotComDefaultModels())
         getChatModelsFromConfiguration()
@@ -44,9 +46,8 @@ export function syncModelProviders(authStatus: AuthStatus): void {
         ModelProvider.setProviders([
             new ModelProvider(
                 authStatus.configOverwrites.chatModel,
-                // TODO: Add configOverwrites.editModel for separate edit support
+                // TODO (umpox) Add configOverwrites.editModel for separate edit support
                 [ModelUsage.Chat, ModelUsage.Edit],
-                // TODO: Currently all enterprise models have a max output limit of 1000.
                 getEnterpriseContextWindow(
                     authStatus?.configOverwrites?.chatModel,
                     authStatus?.configOverwrites
@@ -62,35 +63,89 @@ export function getEnterpriseContextWindow(
 ): ModelContextWindow {
     const { chatModelMaxTokens, smartContext } = configOverwrites
 
-    // We need to support configuring the maximum output limit at an instance level.
-    // This will allow us to increase this limit whilst still supporting models with a lower output limit.
-    // See: https://github.com/sourcegraph/cody/issues/3648#issuecomment-2056954101
-    const contextWindow: ModelContextWindow = {
-        input: chatModelMaxTokens !== undefined ? chatModelMaxTokens : CHAT_INPUT_TOKEN_BUDGET,
-        output: ANSWER_TOKENS,
+    const defaultContextWindow: ModelContextWindow = {
+        input: chatModelMaxTokens ?? CHAT_INPUT_TOKEN_BUDGET,
+        output: getEnterpriseOutputLimit(chatModel),
     }
 
-    // For models with smart context, we need to update the input and output tokens to support the extended context window.
-    if (smartContext && isModelWithExtendedContextWindowSupport(chatModel)) {
-        contextWindow.input = EXTENDED_CHAT_INPUT_TOKEN_BUDGET
-        contextWindow.context = { user: EXTENDED_USER_CONTEXT_TOKEN_BUDGET }
-        contextWindow.output = CHAT_OUTPUT_TOKEN_BUDGET
+    if (!smartContext || !isModelWithExtendedContextWindowSupport(chatModel)) {
+        return applyLocalTokenLimitOverwrite(defaultContextWindow, chatModel)
     }
 
-    // Allow users to overwrite token limit for input locally for debugging purposes
-    const codyConfig = vscode.workspace.getConfiguration('cody')
-    const tokenLimitConfig = codyConfig?.get<number>('provider.limit.prompt')
-    if (tokenLimitConfig) {
-        contextWindow.input = tokenLimitConfig
+    const extendedContextWindow: ModelContextWindow = {
+        input: EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
+        context: { user: EXTENDED_USER_CONTEXT_TOKEN_BUDGET },
+        output: CHAT_OUTPUT_TOKEN_BUDGET,
+    }
+
+    return applyLocalTokenLimitOverwrite(extendedContextWindow, chatModel)
+}
+
+/**
+ * Applies a local token limit overwrite to the given context window if configured.
+ * If the configured limit is lower than the default, it will be applied to the input of the context window.
+ * If the configured limit is invalid, an error will be logged.
+ *
+ * @param contextWindow The context window to apply the token limit overwrite to.
+ * @param chatModel The chat model for which the token limit is being applied.
+ * @returns The updated context window with the token limit overwrite applied, or the original context window if no valid overwrite is configured.
+ */
+function applyLocalTokenLimitOverwrite(
+    contextWindow: ModelContextWindow,
+    chatModel: string
+): ModelContextWindow {
+    const config = vscode.workspace.getConfiguration('cody')?.get<number>('provider.limit.prompt')
+
+    // Allow users to overwrite token limit for input locally for debugging purposes if it's lower than the default.
+    if (config && config <= contextWindow.input) {
+        return { ...contextWindow, input: config }
+    }
+
+    if (config) {
+        logError('getEnterpriseContextWindow', `Invalid token limit configured for ${chatModel}`, config)
     }
 
     return contextWindow
 }
 
+/**
+ * Returns true if the given chat model supports extended context windows.
+ *
+ * @param chatModel - The name of the chat model.
+ * @returns True if the chat model supports extended context windows, false otherwise.
+ */
 function isModelWithExtendedContextWindowSupport(chatModel: string): boolean {
-    const isClaude3SonnetOrOpus = chatModel.includes('claude-3') && !chatModel.includes('haiku')
-    const isGPT4o = chatModel.includes('gpt-4o')
-    return isClaude3SonnetOrOpus || isGPT4o
+    const supportedModelSubStrings = ['claude-3-opus', 'claude-3-sonnet', 'gpt-4']
+    return supportedModelSubStrings.some(keyword => chatModel.includes(keyword))
+}
+
+// TODO: Currently all enterprise models have a max output limit of
+// 1000. We need to support configuring the maximum output limit at an
+// instance level. This will allow us to increase this limit whilst
+// still supporting models with a lower output limit.
+//
+// To avoid Enterprise instances being stuck with low token counts, we
+// will detect our recommended Cody Gateway models and Bedrock models
+// and use a higher limit.
+//
+// See: https://github.com/sourcegrcaph/cody/issues/3648#issuecomment-2056954101
+// See: https://github.com/sourcegraph/cody/pull/4203
+function getEnterpriseOutputLimit(model?: string) {
+    switch (model) {
+        // Cody Gateway models
+        case 'anthropic/claude-3-sonnet-20240229':
+        case 'anthropic/claude-3-opus-20240229':
+        case 'openai/gpt-4o':
+        case 'openai/gpt-4-turbo':
+
+        // Bedrock models:
+        case 'anthropic.claude-3-sonnet-20240229-v1:0':
+        case 'anthropic.claude-3-opus-20240229-v1:0 ':
+            return CHAT_OUTPUT_TOKEN_BUDGET
+
+        default:
+            return ANSWER_TOKENS
+    }
 }
 
 interface ChatModelProviderConfig {
