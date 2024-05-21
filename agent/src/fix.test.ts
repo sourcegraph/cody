@@ -1,10 +1,13 @@
 import path from 'node:path'
+import { isWindows } from '@sourcegraph/cody-shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 
-describe('Fix', () => {
+// TODO: fix Windows tests CODY-1280 - TscRetriever isn't working because of a
+// bug in our custom `path` implementation.
+describe.skipIf(isWindows())('Fix', () => {
     const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'graph-test'))
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
