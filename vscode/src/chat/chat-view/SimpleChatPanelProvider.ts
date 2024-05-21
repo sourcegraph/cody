@@ -676,10 +676,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     privateMetadata: { source },
                 })
             },
-            withProvider: provider => {
-                telemetryService.log(`CodyVSCodeExtension:at-mention:${provider}:executed`, { source })
+            withProvider: (provider, providerMetadata) => {
+                telemetryService.log(`CodyVSCodeExtension:at-mention:${provider}:executed`, {
+                    source,
+                    providerMetadata,
+                })
                 telemetryRecorder.recordEvent(`cody.at-mention.${provider}`, 'executed', {
-                    privateMetadata: { source },
+                    privateMetadata: { source, providerMetadata },
                 })
             },
         }

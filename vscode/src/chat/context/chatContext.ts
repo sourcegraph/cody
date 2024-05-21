@@ -23,7 +23,7 @@ export async function getChatContextItemsForMention(
     // query repeatedly, which is not needed.
     telemetryRecorder?: {
         empty: () => void
-        withProvider: (type: MentionQuery['provider']) => void
+        withProvider: (type: MentionQuery['provider'], metadata?: { id: string }) => void
     }
 ): Promise<ContextItem[]> {
     const MAX_RESULTS = 20
@@ -54,13 +54,13 @@ export async function getChatContextItemsForMention(
         }
 
         default: {
-            telemetryRecorder?.withProvider('openctx')
-            const openctxClient = openCtx.client
-            if (!openctxClient) {
+            telemetryRecorder?.withProvider('openctx', { id: mentionQuery.provider })
+
+            if (!openCtx.client) {
                 return []
             }
 
-            const items = await openctxClient.mentions(
+            const items = await openCtx.client.mentions(
                 { query: mentionQuery.text },
                 // get mention items for the selected provider only.
                 mentionQuery.provider
