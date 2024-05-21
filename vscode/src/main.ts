@@ -184,7 +184,7 @@ const register = async (
         })
     )
 
-    await authProvider.init()
+    void authProvider.init()
 
     graphqlClient.onConfigurationChange(initialConfig)
     githubClient.onConfigurationChange({ authToken: initialConfig.experimentalGithubAccessToken })
@@ -243,6 +243,18 @@ const register = async (
         symfRunner || null,
         guardrails
     )
+        // Register tree views
+        disposables.push(
+            chatManager,
+            vscode.window.registerWebviewViewProvider('cody.chat', chatManager.sidebarViewController, {
+                webviewOptions: { retainContextWhenHidden: true },
+            }),
+            // Update external services when configurationChangeEvent is fired by chatProvider
+            contextProvider.configurationChangeEvent.event(async () => {
+                const newConfig = await getFullConfig()
+                await onConfigurationChange(newConfig)
+            })
+        )
 
     const ghostHintDecorator = new GhostHintDecorator(authProvider)
     const editorManager = new EditManager({
@@ -287,18 +299,7 @@ const register = async (
         await Promise.all(promises)
     }
 
-    // Register tree views
-    disposables.push(
-        chatManager,
-        vscode.window.registerWebviewViewProvider('cody.chat', chatManager.sidebarViewController, {
-            webviewOptions: { retainContextWhenHidden: true },
-        }),
-        // Update external services when configurationChangeEvent is fired by chatProvider
-        contextProvider.configurationChangeEvent.event(async () => {
-            const newConfig = await getFullConfig()
-            await onConfigurationChange(newConfig)
-        })
-    )
+
 
     const statusBar = createStatusBar()
     const sourceControl = new CodySourceControl(chatClient)
@@ -354,6 +355,7 @@ const register = async (
     await chatManager.syncAuthStatus(initAuthStatus)
     editorManager.syncAuthStatus(initAuthStatus)
     ModelProvider.onConfigChange(initialConfig.experimentalOllamaChat)
+    
     statusBar.syncAuthStatus(initAuthStatus)
     sourceControl.syncAuthStatus(initAuthStatus)
 

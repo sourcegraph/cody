@@ -91,7 +91,7 @@
   },
   "main": "./dist/extension.node.js",
   "browser": "./dist/extension.web.js",
-  "activationEvents": ["onLanguage", "onStartupFinished", "onWebviewPanel:cody.chatPanel"],
+  "activationEvents": ["onLanguage", "onWebviewPanel:cody.chatPanel"],
   "contributes": {
     "walkthroughs": [
       {

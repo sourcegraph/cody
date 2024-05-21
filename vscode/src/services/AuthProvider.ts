@@ -263,13 +263,31 @@ export class AuthProvider {
             this.config = config
             this.client = new SourcegraphGraphQLAPIClient(config)
         }
-        // Version is for frontend to check if Cody is not enabled due to unsupported version when siteHasCodyEnabled is false
-        const [{ enabled, version }, codyLLMConfiguration, userInfo] = await Promise.all([
-            this.client.isCodyEnabled(),
-            this.client.getCodyLLMConfiguration(),
-            this.client.getCurrentUserInfo(),
-        ])
+        
+  // Fire the promises without waiting
+  const isCodyEnabledPromise = this.client.isCodyEnabled();
+  const getCodyLLMConfigurationPromise = this.client.getCodyLLMConfiguration();
+  const getCurrentUserInfoPromise = this.client.getCurrentUserInfo();
 
+  // Prepare default values
+  let enabled = false;
+  let version = '';
+  let codyLLMConfiguration: any = undefined;
+  let userInfo: any = { id: null, hasVerifiedEmail: false, avatarURL: '', username: '', displayName: '', primaryEmail: { email: '' } };
+
+  // Handle the promises
+  isCodyEnabledPromise.then(result => {
+      enabled = result.enabled;
+      version = result.version;
+  });
+
+  getCodyLLMConfigurationPromise.then(result => {
+      codyLLMConfiguration = result;
+  });
+
+  getCurrentUserInfoPromise.then(result => {
+      userInfo = result;
+  });
         const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
 
         const isDotCom = this.client.isDotCom()
