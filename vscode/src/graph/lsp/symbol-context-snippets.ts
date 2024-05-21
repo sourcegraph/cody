@@ -421,14 +421,6 @@ async function getSymbolSnippetForNodeType(
         ]
     }
 
-    if (['property_identifier'].includes(nodeType)) {
-        locationGetters = [
-            getTypeDefinitionLocations,
-            getDefinitionLocations,
-            getImplementationLocations,
-        ]
-    }
-
     let symbolContextSnippet: PartialSymbolSnippetInflightRequest | undefined
     for (const locationGetter of locationGetters) {
         debugLspLightSymbolLog(
