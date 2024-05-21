@@ -27,19 +27,6 @@ export function startLanguageServer(): rpc.MessageConnection {
     return connection
 }
 
-export async function didOpenTextDocument(connection: rpc.MessageConnection, uri: Uri) {
-    const textDocument = {
-        uri: uri.fsPath,
-        languageId: 'typescript',
-        version: 1,
-        text: fs.readFileSync(uri.fsPath, 'utf8'),
-    }
-
-    connection.sendNotification(lsp.DidOpenTextDocumentNotification.type, {
-        textDocument: textDocument,
-    })
-}
-
 // TODO: parameterize
 const TEST_DATA_PATH = path.join(__dirname, 'test-data')
 const TEST_DATA_URI = Uri.file(TEST_DATA_PATH)
@@ -95,6 +82,19 @@ export async function initLanguageServer(
 
     const response = await connection.sendRequest(lsp.InitializeRequest.type, initializeParams)
     return response
+}
+
+async function didOpenTextDocument(connection: rpc.MessageConnection, uri: Uri) {
+    const textDocument = {
+        uri: uri.fsPath,
+        languageId: 'typescript',
+        version: 1,
+        text: fs.readFileSync(uri.fsPath, 'utf8'),
+    }
+
+    connection.sendNotification(lsp.DidOpenTextDocumentNotification.type, {
+        textDocument: textDocument,
+    })
 }
 
 export async function openWorkspaceFiles(connection: rpc.MessageConnection): Promise<Uri[]> {
