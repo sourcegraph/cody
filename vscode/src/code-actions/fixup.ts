@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { PromptString, logDebug, ps } from '@sourcegraph/cody-shared'
+import { PromptString, ps } from '@sourcegraph/cody-shared'
 import type { ExecuteEditArguments } from '../edit/execute'
 import { getSmartSelection } from '../editor/utils'
 
@@ -22,7 +22,6 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
                 diagnostic.severity === vscode.DiagnosticSeverity.Error ||
                 diagnostic.severity === vscode.DiagnosticSeverity.Warning
         )
-        logDebug('fixup', 'diagnostics', diagnostics)
         if (diagnostics.length === 0) {
             return []
         }
