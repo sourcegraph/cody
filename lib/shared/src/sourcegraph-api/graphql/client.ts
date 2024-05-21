@@ -10,6 +10,7 @@ import { logDebug, logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
+import { hardcodeNonessentialNetworkTraffic } from './hardcodeNonessentialNetworkTraffic'
 import {
     CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_QUERY,
@@ -382,7 +383,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getSiteVersion(): Promise<string | Error> {
-        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+        if (hardcodeNonessentialNetworkTraffic()) {
             return '5.99.0'
         }
         return this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(
@@ -397,7 +398,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getSiteIdentification(): Promise<{ siteid: string; hashedLicenseKey: string } | Error> {
-        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+        if (hardcodeNonessentialNetworkTraffic()) {
             return { siteid: 'noodle-dev', hashedLicenseKey: 'noodle-dev' }
         }
 
@@ -448,7 +449,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getCurrentUserCodyProEnabled(): Promise<{ codyProEnabled: boolean } | Error> {
-        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+        if (hardcodeNonessentialNetworkTraffic()) {
             return {
                 codyProEnabled: true,
             }
@@ -464,7 +465,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getCurrentUserCodySubscription(): Promise<CurrentUserCodySubscription | Error> {
-        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+        if (hardcodeNonessentialNetworkTraffic()) {
             return {
                 applyProRateLimits: false,
                 plan: 'PRO',
@@ -486,9 +487,9 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getCurrentUserInfo(): Promise<CurrentUserInfo | Error> {
-        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
-            return { id: 'noodle-dev-id', username: 'noodle-dev', hasVerifiedEmail: true, avatarURL: '' }
-        }
+        // if (hardcodeNonessentialNetworkTraffic()) {
+        //     return { id: 'noodle-dev-id', username: 'noodle-dev', hasVerifiedEmail: true, avatarURL: '' }
+        // }
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserInfoResponse>>(
             CURRENT_USER_INFO_QUERY,
             {}
@@ -514,7 +515,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getCodyLLMConfiguration(): Promise<undefined | CodyLLMSiteConfiguration | Error> {
-        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+        if (hardcodeNonessentialNetworkTraffic()) {
             return undefined
         }
 
@@ -634,7 +635,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async contextFilters(): Promise<ContextFilters> {
-        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+        if (hardcodeNonessentialNetworkTraffic()) {
             return INCLUDE_EVERYTHING_CONTEXT_FILTERS
         }
 
@@ -692,7 +693,7 @@ export class SourcegraphGraphQLAPIClient {
      * If the field does not exist, Cody is assumed to be enabled for versions between 5.0.0 - 5.1.0.
      */
     public async isCodyEnabled(): Promise<{ enabled: boolean; version: string }> {
-        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+        if (hardcodeNonessentialNetworkTraffic()) {
             return { enabled: true, version: '5.99.0' }
         }
 
@@ -849,7 +850,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     private async sendEventLogRequestToDotComAPI(event: event): Promise<LogEventResponse | Error> {
-        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+        if (hardcodeNonessentialNetworkTraffic()) {
             return {}
         }
         this.anonymizeEvent(event)
@@ -861,7 +862,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     private async sendEventLogRequestToAPI(event: event): Promise<LogEventResponse | Error> {
-        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+        if (hardcodeNonessentialNetworkTraffic()) {
             return {}
         }
         this.anonymizeEvent(event)
@@ -906,7 +907,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getEvaluatedFeatureFlags(): Promise<Record<string, boolean> | Error> {
-        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+        if (hardcodeNonessentialNetworkTraffic()) {
             return {}
         }
         return this.fetchSourcegraphAPI<APIResponse<EvaluatedFeatureFlagsResponse>>(
@@ -923,7 +924,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async evaluateFeatureFlag(flagName: string): Promise<boolean | null | Error> {
-        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+        if (hardcodeNonessentialNetworkTraffic()) {
             return false
         }
         return this.fetchSourcegraphAPI<APIResponse<EvaluateFeatureFlagResponse>>(
@@ -1074,7 +1075,7 @@ export class ConfigFeaturesSingleton {
 
     // Fetches the config features from the server and handles errors
     private async fetchConfigFeatures(): Promise<CodyConfigFeatures> {
-        if (import.meta.env.CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS) {
+        if (hardcodeNonessentialNetworkTraffic()) {
             return { attribution: false, autoComplete: false, chat: true, commands: false }
         }
 

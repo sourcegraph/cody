@@ -78,6 +78,7 @@ interface TestClientParams {
     readonly name: string
     readonly credentials: TestingCredentials
     bin?: string
+    hardcodeNonessentialNetworkTraffic?: boolean
     telemetryExporter?: 'testing' | 'graphql' // defaults to testing, which doesn't send telemetry
     areFeatureFlagsEnabled?: boolean // do not evaluate feature flags by default
     logEventMode?: 'connected-instance-only' | 'all' | 'dotcom-only'
@@ -151,6 +152,9 @@ export class TestClient extends MessageHandler {
                 DISABLE_FEATURE_FLAGS: params.areFeatureFlagsEnabled ? undefined : 'true',
                 DISABLE_UPSTREAM_HEALTH_PINGS: 'true',
                 CODY_LOG_EVENT_MODE: params.logEventMode,
+                CODY_DEV_HARDCODE_SOME_NETWORK_REQUESTS: params.hardcodeNonessentialNetworkTraffic
+                    ? 'true'
+                    : undefined,
                 ...process.env,
             },
         })
