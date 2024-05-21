@@ -4,7 +4,7 @@ import {
     ps,
     reformatBotMessageForChat,
 } from '@sourcegraph/cody-shared'
-import { type FunctionComponent, useMemo } from 'react'
+import { type FunctionComponent, useEffect, useMemo, useRef } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
 import { chatModelIconComponent } from '../../../../components/ChatModelIcon'
 import { ChatMessageContent, type CodeBlockActionsProps } from '../../../ChatMessageContent'
@@ -51,12 +51,22 @@ export const AssistantMessageCell: FunctionComponent<{
     const chatModel = useChatModelByID(message.model)
     const ModelIcon = chatModel ? chatModelIconComponent(chatModel.model) : null
 
+    // If this message is in progress and it's out of the viewport when it first appears, scroll to
+    // make it visible or else the user might not realize there is a message streaming in below
+    // their viewport.
+    const someRef = useRef<HTMLElement | null>(null)
+    useEffect(() => {
+        if (isLoading) {
+            someRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        }
+    }, [isLoading])
+
     return (
         <BaseMessageCell
             speaker={message.speaker}
             speakerIcon={
                 chatModel && ModelIcon ? (
-                    <span title={`${chatModel.title} by ${chatModel.provider}`}>
+                    <span title={`${chatModel.title} by ${chatModel.provider}`} ref={someRef}>
                         <ModelIcon size={20} />
                     </span>
                 ) : null
