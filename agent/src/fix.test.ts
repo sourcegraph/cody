@@ -5,7 +5,7 @@ import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 
 describe('Fix', () => {
-    const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
+    const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'graph-test'))
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
         name: 'fixClient',
