@@ -212,6 +212,9 @@ function getEmptyLabel(
     mentionQuery: MentionQuery
 ): string {
     if (!parentItem) {
+        if (mentionQuery.text.length === 0) {
+            return 'Enter a file path to include the file in the context'
+        }
         return FILE_CONTEXT_MENTION_PROVIDER.emptyLabel!
     }
     if (parentItem.id === SYMBOL_CONTEXT_MENTION_PROVIDER.id && mentionQuery.text.length < 3) {

@@ -99,7 +99,7 @@ export const FILE_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata<'file
     id: 'file',
     title: 'Files',
     queryLabel: 'Search for a file to include...',
-    emptyLabel: 'No files found',
+    emptyLabel: 'No files found (temporary change)',
 }
 
 export const SYMBOL_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata<'symbol'> = {
