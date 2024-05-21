@@ -1,8 +1,8 @@
 # AI that knows your entire codebase
 
-[Cody](https://about.sourcegraph.com/cody?utm_source=marketplace.visualstudio.com&utm_medium=referral) is an AI coding assistant that can write, understand, fix, and find your code. Cody is powered by Sourcegraph’s code graph, and has knowledge of your entire codebase. Install Cody to get started with free AI-powered autocomplete, chat, commands, and more.
+[Cody](https://about.sourcegraph.com/cody?utm_source=marketplace.visualstudio.com&utm_medium=referral) is an AI coding assistant that helps you understand, write, and fix code faster. It uses advanced search to pull context from both local and remote codebases so that you can use context about APIs, symbols, and usage patterns from across your entire codebase at any scale, all from within VS Code. Plus, Cody Pro users can choose from the latest large language models—like GPT-4o and Claude 3 Opus—to customize Cody to their needs.
 
-Cody is now generally available. If you're using Cody Pro, make sure to update to the latest version of the IDE extension to get the latest features and unlimited rate limits.
+Install Cody to get started with free AI-powered autocomplete, chat, commands, and more.
 
 ## Autocomplete
 
@@ -59,9 +59,9 @@ You can find detailed information about Cody's available plans [on our website](
 
 Cody works for any programming language because it uses LLMs trained on broad data. Cody works great with Python, Go, JavaScript, and TypeScript code.
 
-## Code Graph
+## Code Search
 
-Cody is powered by Sourcegraph’s code graph, and uses context of your codebase to extend its capabilities. By using context from the entire repository, Cody is able to give more accurate answers and generate idiomatic code.
+Cody is powered by Sourcegraph’s code search, which it uses to retrieve context from your codebase and extend its capabilities. By using context from entire projects, Cody can give more accurate answers and generate idiomatic code.
 
 For example:
 
@@ -71,7 +71,7 @@ For example:
 
 ## Cody Enterprise
 
-Cody Enterprise is able to retrieve context from your entire remote codebase using Sourcegraph search. This gives Cody the ability to understand and answer questions about all of your code, even the repositories that don't live on your local machine.
+Cody Enterprise can search context from your entire remote codebase using Sourcegraph's code search. This allows Cody to answer questions about all of your code, even the repositories that don't live on your local machine.
 
 [Contact us](https://about.sourcegraph.com/contact/request-info?utm_source=marketplace.visualstudio.com&utm_medium=referral) to set up a trial of Cody Enterprise. If you’re an existing Sourcegraph Enterprise customer, contact your technical advisor.
 
