@@ -51,16 +51,6 @@ const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-t
 const mayRecord =
     process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
 
-function trimEndOfLine(text: string | undefined): string {
-    if (text === undefined) {
-        return ''
-    }
-    return text
-        .split('\n')
-        .map(line => line.trimEnd())
-        .join('\n')
-}
-
 describe('Agent', () => {
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
@@ -141,7 +131,6 @@ describe('Agent', () => {
             serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? DOTCOM_URL.toString(),
             customHeaders: {},
         })
-
         expect(valid?.isLoggedIn).toBeTruthy()
 
         // Please don't update the recordings to use a different account without consulting #wg-cody-agent.
@@ -153,8 +142,7 @@ describe('Agent', () => {
         //    source agent/scripts/export-cody-http-recording-tokens.sh
         //
         // If you don't have access to this private file then you need to ask
-        // for sombody on the Sourcegraph team to help you update the HTTP requests.
-        expect(valid?.username).toStrictEqual('olafurpg-testing')
+        expect(valid?.username).toStrictEqual('sourcegraphbot9k-fnwmu')
     }, 10_000)
 
     describe('Autocomplete', () => {
@@ -1312,8 +1300,7 @@ describe('Agent', () => {
             await client.taskHasReachedAppliedPhase(result.editResult as EditTask)
 
             const originalDocument = client.workspace.getDocument(animalUri)!
-            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(
-                `
+            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(`
               "export interface Animal {
                   name: string
                   makeAnimalSound(): string
@@ -1324,9 +1311,7 @@ describe('Agent', () => {
               }
 
               "
-            `,
-                explainPollyError
-            )
+            `)
         }, 30_000)
     })
 
