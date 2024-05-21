@@ -2,6 +2,7 @@ import {
     ANSWER_TOKENS,
     type AuthStatus,
     CHAT_INPUT_TOKEN_BUDGET,
+    CHAT_OUTPUT_TOKEN_BUDGET,
     ModelProvider,
     ModelUsage,
     getDotComDefaultModels,
@@ -43,13 +44,42 @@ export function syncModelProviders(authStatus: AuthStatus): void {
                 authStatus.configOverwrites.chatModel,
                 // TODO: Add configOverwrites.editModel for separate edit support
                 [ModelUsage.Chat, ModelUsage.Edit],
-                // TODO: Currently all enterprise models have a max output limit of 1000.
-                // We need to support configuring the maximum output limit at an instance level.
-                // This will allow us to increase this limit whilst still supporting models with a lower output limit.
-                // See: https://github.com/sourcegraph/cody/issues/3648#issuecomment-2056954101
-                { input: tokenLimit ?? CHAT_INPUT_TOKEN_BUDGET, output: ANSWER_TOKENS }
+
+                {
+                    input: tokenLimit ?? CHAT_INPUT_TOKEN_BUDGET,
+                    output: getEnterpriseOutputLimit(authStatus.configOverwrites?.chatModel),
+                }
             ),
         ])
+    }
+}
+
+// TODO: Currently all enterprise models have a max output limit of
+// 1000. We need to support configuring the maximum output limit at an
+// instance level. This will allow us to increase this limit whilst
+// still supporting models with a lower output limit.
+//
+// To avoid Enterprise instances being stuck with low token counts, we
+// will detect our recommended Cody Gateway models and Bedrock models
+// and use a higher limit.
+//
+// See: https://github.com/sourcegrcaph/cody/issues/3648#issuecomment-2056954101
+// See: https://github.com/sourcegraph/cody/pull/4203
+function getEnterpriseOutputLimit(model?: string) {
+    switch (model) {
+        // Cody Gateway models
+        case 'anthropic/claude-3-sonnet-20240229':
+        case 'anthropic/claude-3-opus-20240229':
+        case 'openai/gpt-4o':
+        case 'openai/gpt-4-turbo':
+
+        // Bedrock models:
+        case 'anthropic.claude-3-sonnet-20240229-v1:0':
+        case 'anthropic.claude-3-opus-20240229-v1:0 ':
+            return CHAT_OUTPUT_TOKEN_BUDGET
+
+        default:
+            return ANSWER_TOKENS
     }
 }
 
