@@ -1,14 +1,19 @@
 import dedent from 'dedent'
-import { type Mock, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { type MockInstance, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 
-import { testFileUri } from '@sourcegraph/cody-shared'
+import {
+    type AutocompleteContextSnippet,
+    type AutocompleteSymbolContextSnippet,
+    testFileUri,
+} from '@sourcegraph/cody-shared'
 
+import * as symbolContextSnippets from '../../../../graph/lsp/symbol-context-snippets'
+import type { GetSymbolContextSnippetsParams } from '../../../../graph/lsp/symbol-context-snippets'
 import { Position } from '../../../../testutils/mocks'
-import { withPosixPaths } from '../../../../testutils/textDocument'
+import { parseDocument } from '../../../../tree-sitter/parse-tree-cache'
 import { document, initTreeSitterParser } from '../../../test-helpers'
 
-import { parseDocument } from '../../../../tree-sitter/parse-tree-cache'
 import { LspLightRetriever } from './lsp-light-retriever'
 
 const document1Uri = testFileUri('document1.ts')
@@ -30,7 +35,10 @@ describe('LspLightRetriever', () => {
 
     let retriever: LspLightRetriever
     let onDidChangeTextEditorSelection: any
-    let getSymbolContextSnippets: Mock
+    let getSymbolContextSnippets: MockInstance<
+        [params: GetSymbolContextSnippetsParams],
+        Promise<AutocompleteContextSnippet[]>
+    >
 
     beforeEach(() => {
         vi.useFakeTimers()
@@ -67,12 +75,13 @@ describe('LspLightRetriever', () => {
         }
 
         getSymbolContextSnippets = vi
-            .fn()
+            .spyOn(symbolContextSnippets, 'getSymbolContextSnippets')
             .mockImplementation(() =>
                 Promise.resolve([
-                    { symbolName: 'log', content: ['log(): void'], uri: document1Uri.toString() },
-                ])
+                    { symbol: 'log', content: 'log(): void', uri: document1Uri },
+                ] as AutocompleteContextSnippet[])
             )
+
         retriever = new LspLightRetriever(
             {
                 // Mock VS Code event handlers so we can fire them manually
@@ -85,8 +94,7 @@ describe('LspLightRetriever', () => {
                 onDidChangeTextDocument: (_onDidChangeTextDocument: any) => {
                     return disposable
                 },
-            },
-            getSymbolContextSnippets
+            }
         )
 
         parseDocument(testDocuments.document1)
@@ -148,11 +156,9 @@ describe('LspLightRetriever', () => {
             hints: { maxChars: 100, maxMs: 1000 },
         })
 
-        expect(withPosixPaths(snippet)).toMatchObject({
-            content: ['log(): void'],
-            symbolName: 'log',
-            uri: document1Uri.toString(),
-        })
+        expect(snippet.content).toBe('log(): void')
+        expect((snippet as AutocompleteSymbolContextSnippet).symbol).toBe('log')
+        expect(snippet.uri.toString()).toBe(document1Uri.toString())
     })
 
     it('aborts the request navigating to a different line', async () => {

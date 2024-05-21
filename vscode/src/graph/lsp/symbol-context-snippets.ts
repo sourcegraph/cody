@@ -484,7 +484,7 @@ async function getSymbolContextSnippetsRecursive(
     return contextSnippets.flat().filter(isDefined)
 }
 
-interface GetSymbolContextSnippetsParams {
+export interface GetSymbolContextSnippetsParams {
     symbolsSnippetRequests: SymbolSnippetsRequest[]
     abortSignal: AbortSignal
     recursionLimit: number
@@ -825,6 +825,7 @@ function debugSymbolLog(symbolName: string, ...rest: unknown[]) {
     if (true) {
         return
     }
+    // @ts-ignore
     if (!debugLogs.has(symbolName)) {
         debugLogs.set(symbolName, [])
     }

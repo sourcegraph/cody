@@ -43,8 +43,7 @@ export class LspLightRetriever implements ContextRetriever {
     constructor(
         // All arguments are optional, because they are only used in tests.
         private window: Pick<typeof vscode.window, 'onDidChangeTextEditorSelection'> = vscode.window,
-        private workspace: Pick<typeof vscode.workspace, 'onDidChangeTextDocument'> = vscode.workspace,
-        private retrieveSymbolContextSnippets: typeof getSymbolContextSnippets = getSymbolContextSnippets
+        private workspace: Pick<typeof vscode.workspace, 'onDidChangeTextDocument'> = vscode.workspace
     ) {
         const onSelectionChange = debounce(this.onDidChangeTextEditorSelection.bind(this), 100)
         const onTextChange = debounce(this.onDidChangeTextDocument.bind(this), 50)
@@ -94,7 +93,7 @@ export class LspLightRetriever implements ContextRetriever {
         }
 
         const start = performance.now()
-        const contextSnippets = await this.retrieveSymbolContextSnippets({
+        const contextSnippets = await getSymbolContextSnippets({
             symbolsSnippetRequests,
             recursionLimit: RECURSION_LIMIT,
             abortSignal: abortController.signal,
