@@ -889,53 +889,53 @@ export class SourcegraphGraphQLAPIClient {
     public fetchSourcegraphAPI<T>(
         query: string,
         variables: Record<string, any> = {},
-        timeout: number = 2000 // Default timeout of 5000ms (5 seconds)
+        timeout = 2000 // Default timeout of 5000ms (5 seconds)
     ): Promise<T | Error> {
-        const headers = new Headers(this.config.customHeaders as HeadersInit);
-        headers.set('Content-Type', 'application/json; charset=utf-8');
+        const headers = new Headers(this.config.customHeaders as HeadersInit)
+        headers.set('Content-Type', 'application/json; charset=utf-8')
         if (this.config.accessToken) {
-            headers.set('Authorization', `token ${this.config.accessToken}`);
+            headers.set('Authorization', `token ${this.config.accessToken}`)
         }
         if (this.anonymousUserID && !process.env.CODY_WEB_DONT_SET_SOME_HEADERS) {
-            headers.set('X-Sourcegraph-Actor-Anonymous-UID', this.anonymousUserID);
+            headers.set('X-Sourcegraph-Actor-Anonymous-UID', this.anonymousUserID)
         }
-    
-        addTraceparent(headers);
-        addCustomUserAgent(headers);
-    
-        const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1];
-    
+
+        addTraceparent(headers)
+        addCustomUserAgent(headers)
+
+        const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
+
         const url = buildGraphQLUrl({
             request: query,
             baseUrl: this.config.serverEndpoint,
-        });
-    
+        })
+
         // Create an AbortController instance
-        const controller = new AbortController();
-        const signal = controller.signal;
-    
+        const controller = new AbortController()
+        const signal = controller.signal
+
         // Set a timeout to trigger the abort
-        const timeoutId = setTimeout(() => controller.abort(), timeout);
-    
+        const timeoutId = setTimeout(() => controller.abort(), timeout)
+
         return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
             fetch(url, {
                 method: 'POST',
                 body: JSON.stringify({ query, variables }),
                 headers,
-                signal // Pass the signal to the fetch request
+                signal, // Pass the signal to the fetch request
             })
                 .then(response => {
-                    clearTimeout(timeoutId); // Clear the timeout if the request completes in time
-                    return verifyResponseCode(response);
+                    clearTimeout(timeoutId) // Clear the timeout if the request completes in time
+                    return verifyResponseCode(response)
                 })
                 .then(response => response.json() as T)
                 .catch(error => {
                     if (error.name === 'AbortError') {
-                        return new Error(`Request timed out after ${timeout}ms (${url})`);
+                        return new Error(`Request timed out after ${timeout}ms (${url})`)
                     }
-                    return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`);
+                    return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
                 })
-        );
+        )
     }
     // make an anonymous request to the dotcom API
     private fetchSourcegraphDotcomAPI<T>(
