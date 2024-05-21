@@ -2,6 +2,11 @@ import {
     ANSWER_TOKENS,
     type AuthStatus,
     CHAT_INPUT_TOKEN_BUDGET,
+    CHAT_OUTPUT_TOKEN_BUDGET,
+    type CodyLLMSiteConfiguration,
+    EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
+    EXTENDED_USER_CONTEXT_TOKEN_BUDGET,
+    type ModelContextWindow,
     ModelProvider,
     ModelUsage,
     getDotComDefaultModels,
@@ -23,6 +28,7 @@ export function syncModelProviders(authStatus: AuthStatus): void {
     if (authStatus.isDotCom) {
         ModelProvider.setProviders(getDotComDefaultModels())
         getChatModelsFromConfiguration()
+        return
     }
 
     // In enterprise mode, we let the sg instance dictate the token limits and allow users to
@@ -34,23 +40,57 @@ export function syncModelProviders(authStatus: AuthStatus): void {
     //
     // NOTE: If authStatus?.configOverwrites?.chatModel is empty,
     // automatically fallback to use the default model configured on the instance.
-    if (!authStatus.isDotCom && authStatus?.configOverwrites?.chatModel) {
-        const codyConfig = vscode.workspace.getConfiguration('cody')
-        const tokenLimitConfig = codyConfig?.get<number>('provider.limit.prompt')
-        const tokenLimit = tokenLimitConfig ?? authStatus.configOverwrites?.chatModelMaxTokens
+    if (authStatus?.configOverwrites?.chatModel) {
         ModelProvider.setProviders([
             new ModelProvider(
                 authStatus.configOverwrites.chatModel,
                 // TODO: Add configOverwrites.editModel for separate edit support
                 [ModelUsage.Chat, ModelUsage.Edit],
                 // TODO: Currently all enterprise models have a max output limit of 1000.
-                // We need to support configuring the maximum output limit at an instance level.
-                // This will allow us to increase this limit whilst still supporting models with a lower output limit.
-                // See: https://github.com/sourcegraph/cody/issues/3648#issuecomment-2056954101
-                { input: tokenLimit ?? CHAT_INPUT_TOKEN_BUDGET, output: ANSWER_TOKENS }
+                getEnterpriseContextWindow(
+                    authStatus?.configOverwrites?.chatModel,
+                    authStatus?.configOverwrites
+                )
             ),
         ])
     }
+}
+
+export function getEnterpriseContextWindow(
+    chatModel: string,
+    configOverwrites: CodyLLMSiteConfiguration
+): ModelContextWindow {
+    const { chatModelMaxTokens, smartContext } = configOverwrites
+
+    // We need to support configuring the maximum output limit at an instance level.
+    // This will allow us to increase this limit whilst still supporting models with a lower output limit.
+    // See: https://github.com/sourcegraph/cody/issues/3648#issuecomment-2056954101
+    const contextWindow: ModelContextWindow = {
+        input: chatModelMaxTokens !== undefined ? chatModelMaxTokens : CHAT_INPUT_TOKEN_BUDGET,
+        output: ANSWER_TOKENS,
+    }
+
+    // For models with smart context, we need to update the input and output tokens to support the extended context window.
+    if (smartContext && isModelWithExtendedContextWindowSupport(chatModel)) {
+        contextWindow.input = EXTENDED_CHAT_INPUT_TOKEN_BUDGET
+        contextWindow.context = { user: EXTENDED_USER_CONTEXT_TOKEN_BUDGET }
+        contextWindow.output = CHAT_OUTPUT_TOKEN_BUDGET
+    }
+
+    // Allow users to overwrite token limit for input locally for debugging purposes
+    const codyConfig = vscode.workspace.getConfiguration('cody')
+    const tokenLimitConfig = codyConfig?.get<number>('provider.limit.prompt')
+    if (tokenLimitConfig) {
+        contextWindow.input = tokenLimitConfig
+    }
+
+    return contextWindow
+}
+
+function isModelWithExtendedContextWindowSupport(chatModel: string): boolean {
+    const isClaude3SonnetOrOpus = chatModel.includes('claude-3') && !chatModel.includes('haiku')
+    const isGPT4o = chatModel.includes('gpt-4o')
+    return isClaude3SonnetOrOpus || isGPT4o
 }
 
 interface ChatModelProviderConfig {

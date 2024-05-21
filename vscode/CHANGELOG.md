@@ -6,7 +6,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
-- Chat: Integerated OpenCtx providers with @-mention context menu. [pull/4201](https://github.com/sourcegraph/cody/pull/4201/files)
+- Chat: Integerated OpenCtx providers with @-mention context menu. [pull/4201](https://github.com/sourcegraph/cody/pull/4201)
+- Enterprise: Add support for the `smartContext` option in enterprise LLM configuration. [pull/](https://github.com/sourcegraph/cody/pull/)
 
 ### Fixed
 
