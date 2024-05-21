@@ -889,7 +889,7 @@ export class SourcegraphGraphQLAPIClient {
     public fetchSourcegraphAPI<T>(
         query: string,
         variables: Record<string, any> = {},
-        timeout = 2000 // Default timeout of 5000ms (5 seconds)
+        timeout = 3000 // Default timeout of 3000ms (3 seconds)
     ): Promise<T | Error> {
         const headers = new Headers(this.config.customHeaders as HeadersInit)
         headers.set('Content-Type', 'application/json; charset=utf-8')
