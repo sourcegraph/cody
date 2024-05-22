@@ -83,7 +83,9 @@ class CommandsTabPanel(
               ActionUtil.performActionDumbAwareWithCallbacks(action, event)
             }
 
-    button.add(JLabel(Icons.Edit.Beta), BorderLayout.LINE_START)
+    val betaIcon = JLabel(Icons.Edit.Beta)
+    betaIcon.border = BorderFactory.createEmptyBorder(0, 5, 0, 0)
+    button.add(betaIcon, BorderLayout.LINE_START)
   }
 
   private fun addCommandButton(commandId: CommandId) {
@@ -100,9 +102,10 @@ class CommandsTabPanel(
     buttons[actionId] = button
 
     button.layout = BorderLayout()
-    button.border = BorderFactory.createEmptyBorder(0, 5, 0, 10)
     ActionManagerEx.getInstanceEx().getAction(actionId).shortcutSet.shortcuts.firstOrNull()?.let {
-      button.add(JLabel(KeymapUtil.getShortcutText(it)), BorderLayout.LINE_END)
+      val shortcutLabel = JLabel(KeymapUtil.getShortcutText(it))
+      shortcutLabel.border = BorderFactory.createEmptyBorder(0, 0, 0, 10)
+      button.add(shortcutLabel, BorderLayout.LINE_END)
     }
     button.mnemonic = mnemonic
     button.displayedMnemonicIndex = displayName.indexOfFirst { it.code == mnemonic }
