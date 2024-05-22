@@ -9,7 +9,7 @@
     "**/.vscode-test": true,
     "**/.vscode-test-web": true
   },
-  "editor.formatOnSave": false,
+  "editor.formatOnSave": true,
   "npm.packageManager": "pnpm",
   "npm.runSilent": true,
   "typescript.preferences.quoteStyle": "single",

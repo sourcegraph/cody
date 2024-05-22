@@ -52,7 +52,11 @@ export async function _getSymfPath(
     // Releases (eg at https://github.com/sourcegraph/symf/releases) are named with the Zig platform
     // identifier (linux-musl, windows-gnu, macos).
     const zigPlatform =
-        platform === Platform.Linux ? 'linux-musl' : platform === Platform.Windows ? 'windows-gnu' : platform
+        platform === Platform.Linux
+            ? 'linux-musl'
+            : platform === Platform.Windows
+              ? 'windows-gnu'
+              : platform
 
     const symfFilename = `symf-${symfVersion}-${arch}-${platform}`
     const symfUnzippedFilename = `symf-${arch}-${zigPlatform}` // the filename inside the zip

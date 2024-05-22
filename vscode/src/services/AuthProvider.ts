@@ -10,9 +10,9 @@ import {
     defaultAuthStatus,
     isDotCom,
     isError,
+    logError,
     networkErrorAuthStatus,
     unauthenticatedStatus,
-    logError,
 } from '@sourcegraph/cody-shared'
 
 import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'

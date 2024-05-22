@@ -41,7 +41,12 @@
     "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts",
     "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts"
   },
-  "categories": ["Programming Languages", "Machine Learning", "Snippets", "Education"],
+  "categories": [
+    "Programming Languages",
+    "Machine Learning",
+    "Snippets",
+    "Education"
+  ],
   "keywords": [
     "ai",
     "openai",
@@ -94,7 +99,11 @@
   },
   "main": "./dist/extension.node.js",
   "browser": "./dist/extension.web.js",
-  "activationEvents": ["onLanguage", "onStartupFinished", "onWebviewPanel:cody.chatPanel"],
+  "activationEvents": [
+    "onLanguage",
+    "onStartupFinished",
+    "onWebviewPanel:cody.chatPanel"
+  ],
   "contributes": {
     "walkthroughs": [
       {
@@ -703,13 +712,17 @@
       },
       {
         "command": "cody.supercompletion.jumpTo",
-        "args": ["next"],
+        "args": [
+          "next"
+        ],
         "key": "shift+ctrl+down",
         "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
       },
       {
         "command": "cody.supercompletion.jumpTo",
-        "args": ["previous"],
+        "args": [
+          "previous"
+        ],
         "key": "shift+ctrl+up",
         "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
       }
@@ -1017,12 +1030,20 @@
           "order": 2,
           "type": "string",
           "markdownDescription": "A Git repository URL to use instead of allowing Cody to infer the Git repository from the workspace.",
-          "examples": ["https://github.com/sourcegraph/cody", "ssh://git@github.com/sourcegraph/cody"]
+          "examples": [
+            "https://github.com/sourcegraph/cody",
+            "ssh://git@github.com/sourcegraph/cody"
+          ]
         },
         "cody.useContext": {
           "order": 99,
           "type": "string",
-          "enum": ["embeddings", "keyword", "blended", "none"],
+          "enum": [
+            "embeddings",
+            "keyword",
+            "blended",
+            "none"
+          ],
           "default": "blended",
           "markdownDescription": "Controls which context providers Cody uses for chat, commands and inline edits. Use 'blended' for best results. For debugging other context sources, 'embeddings' will use an embeddings-based index if available. 'keyword' will use a search-based index. 'none' will not use embeddings or search-based indexes."
         },
@@ -1064,29 +1085,21 @@
           "markdownDescription": "Adds code lenses to current file for quick access to Cody commands.",
           "default": false
         },
-        "cody.experimental.guardrails": {
-          "order": 9,
-          "type": "boolean",
-          "markdownDescription": "Experimental feature for internal use.",
-          "default": false
-        },
-        "cody.experimental.localSymbols": {
-          "order": 9,
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Experimental feature for internal use."
-        },
         "cody.chat.preInstruction": {
           "order": 6,
           "type": "string",
           "markdownDescription": "A custom instruction to be included at the start of all chat messages (e.g. \"Answer all my questions in Spanish.\")",
-          "examples": ["Answer all my questions in Spanish."]
+          "examples": [
+            "Answer all my questions in Spanish."
+          ]
         },
         "cody.edit.preInstruction": {
           "order": 7,
           "type": "string",
           "markdownDescription": "A custom instruction to be included at the end of all instructions for edit commands (e.g. \"Write all unit tests with Jest instead of detected framework.\")",
-          "examples": ["Write all unit tests with Jest instead of detected framework."]
+          "examples": [
+            "Write all unit tests with Jest instead of detected framework."
+          ]
         },
         "cody.codeActions.enabled": {
           "order": 11,
@@ -1102,42 +1115,6 @@
           "markdownDescription": "Enable hints for Cody commands such as \"Opt+K to Edit\" or \"Opt+D to Document\"",
           "default": true
         },
-        "cody.experimental.simpleChatContext": {
-          "order": 99,
-          "type": "boolean",
-          "markdownDescription": "Uses the new simplifed chat context fetcher",
-          "default": true
-        },
-        "cody.experimental.ollamaChat": {
-          "order": 99,
-          "type": "boolean",
-          "markdownDescription": "Enable local Ollama models for chat and commands",
-          "default": false
-        },
-        "cody.experimental.symfContext": {
-          "order": 99,
-          "type": "boolean",
-          "markdownDescription": "Enable symf code search context for chat",
-          "default": true
-        },
-        "cody.experimental.symf.path": {
-          "order": 99,
-          "type": "string",
-          "markdownDescription": "Path to symf binary",
-          "default": ""
-        },
-        "cody.experimental.tracing": {
-          "order": 99,
-          "type": "boolean",
-          "markdownDescription": "Enable OpenTelemetry tracing",
-          "default": false
-        },
-        "cody.experimental.commitMessage": {
-          "order": 99,
-          "type": "boolean",
-          "markdownDescription": "Enable commit message generation",
-          "default": false
-        },
         "cody.debug.verbose": {
           "order": 99,
           "type": "boolean",
@@ -1151,8 +1128,14 @@
         "cody.telemetry.level": {
           "order": 99,
           "type": "string",
-          "enum": ["all", "off"],
-          "enumDescriptions": ["Sends usage data and errors.", "Disables all extension telemetry."],
+          "enum": [
+            "all",
+            "off"
+          ],
+          "enumDescriptions": [
+            "Sends usage data and errors.",
+            "Disables all extension telemetry."
+          ],
           "markdownDescription": "Controls the telemetry about Cody usage and errors. See [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).",
           "default": "all"
         },
@@ -1180,7 +1163,12 @@
         "cody.autocomplete.advanced.model": {
           "type": "string",
           "default": null,
-          "enum": [null, "starcoder-16b", "starcoder-7b", "llama-code-13b"],
+          "enum": [
+            null,
+            "starcoder-16b",
+            "starcoder-7b",
+            "llama-code-13b"
+          ],
           "markdownDescription": "Overwrite the  model used for code autocompletion inference. This is only supported with the `fireworks` provider"
         },
         "cody.autocomplete.completeSuggestWidgetSelection": {
@@ -1197,104 +1185,6 @@
           "type": "boolean",
           "default": false,
           "markdownDescription": "Prevent autocomplete requests while inside code comments."
-        },
-        "cody.experimental.foldingRanges": {
-          "type": "string",
-          "enum": ["lsp", "indentation-based"],
-          "enumDescriptions": [
-            "Use folding ranges that are enabled by default in VS Code, and are usually powered by LSP",
-            "Use custom implementation of folding ranges that is indentation based. This is the implementation that is used by other Cody clients like the JetBrains plugin"
-          ],
-          "markdownDescription": "Determines the algorithm Cody uses to detect folding ranges. Cody uses folding ranges for several features like the 'Document code' command",
-          "default": "all"
-        },
-        "cody.autocomplete.experimental.hotStreak": {
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Preload follow-up completions"
-        },
-        "cody.autocomplete.experimental.smartThrottle": {
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Changes the debounce time for autocomplete requests based on the amount of time since the last request."
-        },
-        "cody.autocomplete.experimental.graphContext": {
-          "type": "string",
-          "default": null,
-          "enum": [null, "bfg", "bfg-mixed", "tsc", "tsc-mixed"],
-          "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
-        },
-        "cody.autocomplete.experimental.fireworksOptions": {
-          "type": "object",
-          "markdownDescription": "Experimental options for the direct-Fireworks autocomplete provider.",
-          "properties": {
-            "url": {
-              "type": "string",
-              "description": "The URL of the Fireworks API.",
-              "default": "https://api.fireworks.ai/inference/v1/completions"
-            },
-            "token": {
-              "type": "string",
-              "description": "The access token of the Fireworks API."
-            },
-            "model": {
-              "type": "string",
-              "description": "The model ID can be acquired from `firectl list deployments`",
-              "default": "accounts/sourcegraph/models/starcoder2-7b"
-            },
-            "parameters": {
-              "type": "object",
-              "description": "Parameters for querying the the model.",
-              "properties": {
-                "temperature": "number",
-                "top_k": "number",
-                "top_p": "number",
-                "stop": {
-                  "type": "array",
-                  "default": [],
-                  "items": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "cody.autocomplete.experimental.ollamaOptions": {
-          "type": "object",
-          "markdownDescription": "Options for the [Ollama](https://ollama.ai/) experimental autocomplete provider.",
-          "default": {
-            "url": "http://localhost:11434",
-            "model": "deepseek-coder:6.7b-base-q4_K_M"
-          },
-          "properties": {
-            "url": {
-              "type": "string",
-              "description": "The URL of the Ollama API.",
-              "default": "http://localhost:11434"
-            },
-            "model": {
-              "type": "string",
-              "default": "deepseek-coder:6.7b-base-q4_K_M",
-              "examples": [
-                "codellama:7b-code",
-                "codellama:13b-code",
-                "deepseek-coder:6.7b-base-q4_K_M",
-                "starcoder2:7b",
-                "starcoder2:15b"
-              ]
-            },
-            "parameters": {
-              "type": "object",
-              "description": "Parameters for how Ollama will run the model. See Ollama [PARAMETER documentation](https://github.com/jmorganca/ollama/blob/main/docs/api.md#generate-request-with-options).",
-              "properties": {
-                "num_ctx": "number",
-                "temperature": "number",
-                "top_k": "number",
-                "top_p": "number"
-              }
-            }
-          }
         },
         "openctx.enable": {
           "type": "boolean",
