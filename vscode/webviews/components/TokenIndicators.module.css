@@ -1,0 +1,42 @@
+.tokenIndicators {
+    display: flex;
+    flex-direction: column;
+    margin-top: 4px;
+}
+
+.tokenIndicator {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-left: 30px;
+    flex: 1;
+}
+
+.tokenLabel {
+    font-weight: bold;
+    margin-right: 8px;
+    width: 70px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.tokenProgressContainer {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+}
+
+.tokenProgress {
+    width: 30%;
+    height: 10px;
+    appearance: none;
+    border-radius: 5px;
+    overflow: hidden;
+    background-color: #ffffff;
+}
+
+.tokenCount {
+    margin-left: 8px;
+    flex-shrink: 0;
+    margin-left: 8px;
+}

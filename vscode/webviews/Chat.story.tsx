@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { Chat } from './Chat'
+import { Chat, TokenIndicators } from './Chat'
 import { FIXTURE_TRANSCRIPT, FIXTURE_USER_ACCOUNT_INFO } from './chat/fixtures'
 import { ContextProvidersDecorator, VSCodeWebview } from './storybook/VSCodeStoryDecorator'
 
@@ -38,3 +38,18 @@ export default meta
 export const Default: StoryObj<typeof meta> = {}
 
 export const Disabled: StoryObj<typeof meta> = { args: { chatEnabled: false } }
+
+export const TokenIndi: StoryObj<typeof meta> = {
+    render: args => (
+        <>
+            <Chat {...args} />
+            <TokenIndicators
+                remainingTokens={{
+                    chat: 10000,
+                    user: 20000,
+                    enhanced: 5000,
+                }}
+            />
+        </>
+    ),
+}

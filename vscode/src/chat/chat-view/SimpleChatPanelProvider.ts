@@ -23,6 +23,7 @@ import {
     PromptString,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
+    type TokenCounter,
     Typewriter,
     allMentionProvidersMetadata,
     hydrateAfterPostMessage,
@@ -563,8 +564,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 }
 
                 try {
-                    const prompt = await this.buildPrompt(prompter, sendTelemetry)
+                    const { prompt, tokenCounter } = await this.buildPrompt(prompter, sendTelemetry)
                     this.streamAssistantResponse(requestID, prompt, span, firstTokenSpan)
+                    this.postRemainingTokensToWebview(tokenCounter)
                 } catch (error) {
                     if (isRateLimitError(error)) {
                         this.postError(error, 'transcript')
@@ -878,6 +880,20 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
     }
 
+    private postRemainingTokensToWebview(tokenCounter: TokenCounter): void {
+        // Get the remaining token counts
+        const remainingTokens = tokenCounter.getRemainingTokens()
+        // Send the remaining token counts to the webview
+        void this.postMessage({
+            type: 'remainingTokens',
+            remainingTokens,
+        })
+        /* void this.webviewPanel?.webview.postMessage({
+            type: 'remainingTokens',
+            remainingTokens,
+        }) */
+    }
+
     /**
      * Low-level utility to post a message to the webview, pending initialization.
      *
@@ -905,21 +921,21 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private async buildPrompt(
         prompter: DefaultPrompter,
         sendTelemetry?: (contextSummary: any, privateContextStats?: any) => void
-    ): Promise<Message[]> {
-        const { prompt, context } = await prompter.makePrompt(
+    ): Promise<{ prompt: Message[]; tokenCounter: TokenCounter }> {
+        const { promptInfo, tokenCounter } = await prompter.makePrompt(
             this.chatModel,
             this.authProvider.getAuthStatus().codyApiVersion
         )
 
         // Update UI based on prompt construction
         // Includes the excluded context items to display in the UI
-        this.chatModel.setLastMessageContext([...context.used, ...context.ignored])
+        this.chatModel.setLastMessageContext([...promptInfo.context.used, ...promptInfo.context.ignored])
 
         if (sendTelemetry) {
             // Create a summary of how many code snippets of each context source are being
             // included in the prompt
             const contextSummary: { [key: string]: number } = {}
-            for (const { source } of context.used) {
+            for (const { source } of promptInfo.context.used) {
                 if (!source) {
                     continue
                 }
@@ -939,13 +955,16 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 }
             // NOTE: The private context stats are only logged for DotCom users
             const privateContextStats = {
-                included: getContextStats(context.used.filter(f => f.source === 'user')),
-                excluded: getContextStats(context.ignored.filter(f => f.source === 'user')),
+                included: getContextStats(promptInfo.context.used.filter(f => f.source === 'user')),
+                excluded: getContextStats(promptInfo.context.ignored.filter(f => f.source === 'user')),
             }
             sendTelemetry(contextSummary, privateContextStats)
         }
-
-        return prompt
+        const prompt = promptInfo.prompt
+        return {
+            prompt,
+            tokenCounter: tokenCounter,
+        }
     }
 
     private streamAssistantResponse(
