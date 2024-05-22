@@ -47,6 +47,10 @@ const preview: Preview = {
                 title: 'VS Code Theme',
                 icon: 'photo',
                 items: [
+                    // todo(tim): We bundle these themes are "core" themes, but it would be nice
+                    // to support any theme via
+                    // https://main.vscode-cdn.net/stable/dc96b837cf6bb4af9cd736aa3af08cf8279f7685/extensions/theme-defaults/themes/dark_vs.json
+                    // etc (see devtools network tab in https://vscode.dev/)
                     { value: 'dark-plus', title: 'Dark+ Theme' },
                     { value: 'dark-modern', title: 'Dark Modern Theme' },
                     { value: 'dark-high-contrast', title: 'Dark High Contrast Theme' },
