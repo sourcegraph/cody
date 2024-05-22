@@ -3,7 +3,7 @@ import { TooltipProvider } from './components/shadcn/ui/tooltip'
 
 export const AppWrapper: FunctionComponent<{ children: ReactNode }> = ({ children }) => {
     return (
-        <TooltipProvider disableHoverableContent={true} delayDuration={700}>
+        <TooltipProvider disableHoverableContent={true} delayDuration={700} skipDelayDuration={1000}>
             {children}
         </TooltipProvider>
     )

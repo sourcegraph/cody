@@ -8,7 +8,6 @@ import {
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
 } from '../../../../../promptEditor/PromptEditor'
-import { useEnhancedContextEnabled } from '../../../../EnhancedContext'
 import styles from './HumanMessageEditor.module.css'
 import { Toolbar } from './toolbar/Toolbar'
 
@@ -64,15 +63,14 @@ export const HumanMessageEditor: FunctionComponent<{
         [onChange]
     )
 
-    const addEnhancedContext = useEnhancedContextEnabled()
     const onSubmitClick = useCallback(
-        (withEnhancedContext: boolean | undefined) => {
+        (addEnhancedContext: boolean) => {
             if (!editorRef.current) {
                 throw new Error('No editorRef')
             }
-            onSubmit(editorRef.current.getSerializedValue(), withEnhancedContext ?? addEnhancedContext)
+            onSubmit(editorRef.current.getSerializedValue(), addEnhancedContext)
         },
-        [onSubmit, addEnhancedContext]
+        [onSubmit]
     )
 
     const onEditorEnterKey = useCallback(
@@ -80,7 +78,8 @@ export const HumanMessageEditor: FunctionComponent<{
             // Submit input on Enter press (without shift) when input is not empty.
             if (event && !event.shiftKey && !event.isComposing && !isEmptyEditorValue) {
                 event.preventDefault()
-                onSubmitClick(event.altKey ? false : undefined)
+                const addEnhancedContext = !event.altKey
+                onSubmitClick(addEnhancedContext)
                 return
             }
         },
