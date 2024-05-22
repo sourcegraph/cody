@@ -6,8 +6,11 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+- Chat: Integerated OpenCtx providers with @-mention context menu. [pull/4201](https://github.com/sourcegraph/cody/pull/4201)
+- Enterprise: Adds support for the `completions.smartContext` (available in Sourcegraph v5.5.0+) site configuration. [pull/4236](https://github.com/sourcegraph/cody/pull/4236)
 - Chat: Integerated OpenCtx providers with @-mention context menu. [pull/4201](https://github.com/sourcegraph/cody/pull/4201/files)
 - Chat: Added a visual element under the chat view input field to show the remaining tokens of the user message, the user appended context and the enhanced context.
+- Keybinding: Assign the same keyboard shortcut for starting a new chat to the "New Chat with Selection" command.
 
 ### Fixed
 
