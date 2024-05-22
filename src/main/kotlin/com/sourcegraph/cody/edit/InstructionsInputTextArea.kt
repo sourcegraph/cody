@@ -50,7 +50,7 @@ class InstructionsInputTextArea(parentDisposable: Disposable) :
 
     lineWrap = true
     wrapStyleWord = true
-    border = JBUI.Borders.empty(JBUI.insets(5))
+    border = JBUI.Borders.empty(JBUI.insets(10, 15, 10, 15))
   }
 
   override fun paintComponent(g: Graphics) {
@@ -63,7 +63,7 @@ class InstructionsInputTextArea(parentDisposable: Disposable) :
         setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
         color = EditUtil.getThemeColor("Component.infoForeground")
         val leftMargin = 15
-        drawString(GHOST_TEXT, leftMargin, (fontMetrics.height * 1.5).toInt())
+        drawString(GHOST_TEXT, leftMargin, (fontMetrics.height * 1.5).toInt() - 2)
       }
     }
   }

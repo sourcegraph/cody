@@ -1,12 +1,13 @@
 package com.sourcegraph.cody.edit.widget
 
-import java.awt.Color
+import com.intellij.ui.JBColor
+import java.awt.Font
 import java.awt.FontMetrics
 import java.awt.Graphics2D
 
 class LensHotkey(group: LensWidgetGroup, private val text: String) : LensLabel(group, text) {
 
-  private val hotkeyHighlightColor = LensAction.actionColor
+  private val hotkeyHighlightColor = JBColor(0xDDDDDD, 0x252629)
 
   private val highlight = LabelHighlight(hotkeyHighlightColor)
 
@@ -16,13 +17,25 @@ class LensHotkey(group: LensWidgetGroup, private val text: String) : LensLabel(g
 
   @Suppress("UseJBColor")
   override fun paint(g: Graphics2D, x: Float, y: Float) {
-    // TODO: This will all break with larger font sizes. Use percentages of font width/height.
-    val width = g.fontMetrics.stringWidth(text) + 5
-    val height = g.fontMetrics.height - 3
-    highlight.drawHighlight(g, x + 2, y + 2, width, height)
+    // Resize font and get new metrics
+    val originalFont = g.font
+    val resizedFont = originalFont.deriveFont(Font.BOLD, originalFont.size * 0.8f)
+    g.font = resizedFont
+    val fontMetrics = g.fontMetrics
 
-    g.color = Color.white // JBColor.WHITE looks like crap in Darcula theme (very dark)
-    g.drawString(text, x + 4, y + g.fontMetrics.ascent)
+    // Calculate width and height with resized font
+    val width = fontMetrics.stringWidth(text) + 10
+    val height = fontMetrics.height + 3
+
+    // Draw highlight
+    highlight.drawHighlight(g, x + 2, y + 1, width, height - 2)
+
+    // Draw the text
+    g.color = JBColor(0x6F737A, 0x6F737A)
+    g.drawString(text, x + 7, y + fontMetrics.ascent + 1)
+
+    // Restore original font
+    g.font = originalFont
   }
 
   override fun toString(): String {

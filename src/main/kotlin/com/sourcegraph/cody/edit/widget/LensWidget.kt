@@ -8,6 +8,7 @@ import com.intellij.openapi.editor.colors.EditorColorsScheme
 import com.intellij.openapi.editor.event.EditorMouseEvent
 import com.intellij.openapi.ui.popup.Balloon
 import com.intellij.ui.HintHint
+import com.intellij.ui.JBColor
 import com.intellij.ui.LightweightHint
 import java.awt.Color
 import java.awt.FontMetrics
@@ -23,9 +24,7 @@ abstract class LensWidget(val parentGroup: LensWidgetGroup) : Disposable {
 
   protected var mouseInBounds = false
 
-  // Note: JBColor.white is actually a dark gray in some themes,
-  // which doesn't work with our widget backgrounds, which are red/green/gray.
-  @Suppress("UseJBColor") protected val baseTextColor: Color = Color.WHITE
+  @Suppress("UseJBColor") protected val baseTextColor: Color = JBColor(0x393B40, 0xDFE1E5)
 
   private var showingTooltip = false
   private var tooltip: LightweightHint? = null

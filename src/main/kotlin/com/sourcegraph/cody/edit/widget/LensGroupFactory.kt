@@ -95,6 +95,6 @@ class LensGroupFactory(val session: FixupSession) {
 
   companion object {
     const val ICON_SPACER = " "
-    const val SEPARATOR = " | "
+    const val SEPARATOR = " ∣ "
   }
 }

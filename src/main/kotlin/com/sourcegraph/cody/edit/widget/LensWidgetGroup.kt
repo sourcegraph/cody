@@ -19,11 +19,11 @@ import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.editor.impl.FontInfo
 import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.openapi.util.Disposer
+import com.intellij.ui.JBColor
 import com.intellij.util.concurrency.annotations.RequiresEdt
+import com.intellij.util.ui.UIUtil
 import com.sourcegraph.cody.agent.protocol.Range
-import com.sourcegraph.cody.edit.EditCommandPrompt
 import com.sourcegraph.cody.edit.sessions.FixupSession
-import com.sourcegraph.config.ThemeUtil
 import java.awt.Cursor
 import java.awt.Font
 import java.awt.FontMetrics
@@ -75,10 +75,7 @@ class LensWidgetGroup(val session: FixupSession, parentComponent: Editor) :
 
   private var listenersMuted = false
 
-  private val ideFont =
-      AtomicReference(EditorColorsManager.getInstance().globalScheme.getFont(EditorFontType.PLAIN))
-
-  val widgetFont = with(ideFont.get()) { AtomicReference(Font(name, style, size)) }
+  val widgetFont = AtomicReference(UIUtil.getLabelFont())
 
   // Compute inlay height based on the widget font, not the editor font.
   private val inlayHeight = AtomicReference(computeInlayHeight())
@@ -115,7 +112,6 @@ class LensWidgetGroup(val session: FixupSession, parentComponent: Editor) :
 
   private fun updateFonts() {
     val font = EditorColorsManager.getInstance().globalScheme.getFont(EditorFontType.PLAIN)
-    ideFont.set(font)
     widgetFont.set(Font(font.name, font.style, font.size))
     widgetFontMetrics = null // force recalculation
   }
@@ -204,10 +200,7 @@ class LensWidgetGroup(val session: FixupSession, parentComponent: Editor) :
     val inlayHeight = calcHeightInPixels(inlay)
 
     // Draw the inlay background across the width of the Editor.
-    g.color =
-        EditCommandPrompt.textFieldBackground().run {
-          if (ThemeUtil.isDarkTheme()) darker() else this
-        }
+    g.color = JBColor(0xECEDF2, 0x26282D)
     g.fillRect(
         targetRegion.x.roundToInt(),
         targetRegion.y.roundToInt(),
@@ -349,11 +342,13 @@ class LensWidgetGroup(val session: FixupSession, parentComponent: Editor) :
   }
 
   companion object {
-    private const val LEFT_MARGIN = 100f
+
+    // TODO: make it follow the identation of the block. for now it is fixed to the left
+    private const val LEFT_MARGIN = 20f
 
     // The height of the inlay is always scaled to the font height,
     // with room for the buttons and some top/bottom padding. This setting
     // was found empirically and seems to work well for all font sizes.
-    private const val INLAY_HEIGHT_SCALE_FACTOR = 1.3
+    private const val INLAY_HEIGHT_SCALE_FACTOR = 1.2
   }
 }

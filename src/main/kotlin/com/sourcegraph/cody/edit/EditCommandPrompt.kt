@@ -677,7 +677,7 @@ class EditCommandPrompt(
       val sb = StringBuilder()
 
       if (keyStroke.modifiers and InputEvent.CTRL_DOWN_MASK != 0) {
-        sb.append("^")
+        sb.append("⌃")
       }
       if (keyStroke.modifiers and InputEvent.META_DOWN_MASK != 0) {
         sb.append("⌘")
