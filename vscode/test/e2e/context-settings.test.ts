@@ -35,6 +35,10 @@ test.extend<ExpectedEvents>({
     const chatFrame = await newChat(page)
 
     // Opening the enhanced context settings should focus the checkbox for toggling it.
+    const openEnhancedContextButton = chatFrame.getByRole('button', {
+        name: 'Configure automatic code context',
+    })
+    await openEnhancedContextButton.click()
     const enhancedContextCheckbox = chatFrame.locator('#enhanced-context-checkbox')
     await expect(enhancedContextCheckbox).toBeFocused()
 
@@ -109,6 +113,11 @@ test.extend<ExpectedEvents>({
 
     await sidebarSignin(page, sidebar)
     const chatFrame = await newChat(page)
+
+    const openEnhancedContextButton = chatFrame.getByRole('button', {
+        name: 'Configure automatic code context',
+    })
+    await openEnhancedContextButton.click()
 
     // Because there are no repositories in the workspace, none should be selected by default.
     await expect(chatFrame.getByText('No repositories selected')).toBeVisible()

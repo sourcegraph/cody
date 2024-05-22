@@ -15,7 +15,6 @@ import styles from './Toolbar.module.css'
  */
 export const Toolbar: FunctionComponent<{
     userInfo: UserAccountInfo
-    isNewInstall?: boolean
 
     isEditorFocused: boolean
 
@@ -34,7 +33,6 @@ export const Toolbar: FunctionComponent<{
     className?: string
 }> = ({
     userInfo,
-    isNewInstall,
     isEditorFocused,
     isParentHovered,
     onMentionClick,
@@ -79,7 +77,6 @@ export const Toolbar: FunctionComponent<{
                 />
             )}
             <EnhancedContextSettings
-                defaultOpen={isNewInstall}
                 presentationMode={userInfo.isDotComUser ? 'consumer' : 'enterprise'}
                 onCloseByEscape={focusEditor}
             />
