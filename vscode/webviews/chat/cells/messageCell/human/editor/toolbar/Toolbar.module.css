@@ -1,0 +1,13 @@
+.container {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+
+    margin: 0;
+    margin-left: -4px; /* make leftmost toolbar icon flush with text */
+    padding: 0;
+}
+
+.spacer {
+    flex: 1;
+}

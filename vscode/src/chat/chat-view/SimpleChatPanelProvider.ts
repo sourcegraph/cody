@@ -676,10 +676,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     privateMetadata: { source },
                 })
             },
-            withProvider: provider => {
-                telemetryService.log(`CodyVSCodeExtension:at-mention:${provider}:executed`, { source })
+            withProvider: (provider, providerMetadata) => {
+                telemetryService.log(`CodyVSCodeExtension:at-mention:${provider}:executed`, {
+                    source,
+                    providerMetadata,
+                })
                 telemetryRecorder.recordEvent(`cody.at-mention.${provider}`, 'executed', {
-                    privateMetadata: { source },
+                    privateMetadata: { source, providerMetadata },
                 })
             },
         }
@@ -1129,6 +1132,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             (await this.repoPicker?.getDefaultRepos()) || [],
             RepoInclusion.Manual
         )
+
+        vscode.commands.executeCommand('setContext', 'cody.hasNewChatOpened', true)
     }
 
     // Attempts to restore the chat to the given sessionID, if it exists in
@@ -1178,6 +1183,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         this.chatModel = new SimpleChatModel(this.chatModel.modelID)
         this.postViewTranscript()
+
+        vscode.commands.executeCommand('setContext', 'cody.hasNewChatOpened', true)
     }
 
     // #endregion
@@ -1272,14 +1279,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             this._webviewPanel = undefined
             this._webview = undefined
             panel.dispose()
-        })
-
-        // Let the webview know if it is active
-        panel.onDidChangeViewState(event => {
-            this.postMessage({
-                type: 'webview-state',
-                isActive: event.webviewPanel.active,
-            })
         })
 
         this.disposables.push(

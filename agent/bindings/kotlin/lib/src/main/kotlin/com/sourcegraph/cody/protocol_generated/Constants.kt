@@ -24,7 +24,6 @@ object Constants {
   const val `enhanced-context` = "enhanced-context"
   const val attribution = "attribution"
   const val setChatEnabledConfigFeature = "setChatEnabledConfigFeature"
-  const val `webview-state` = "webview-state"
   const val `context_remote-repos` = "context/remote-repos"
   const val setConfigFeatures = "setConfigFeatures"
   const val allMentionProvidersMetadata = "allMentionProvidersMetadata"

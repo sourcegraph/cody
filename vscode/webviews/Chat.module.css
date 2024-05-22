@@ -1,7 +1,7 @@
-.inner-container {
+.container {
+    height: 100%;
     display: flex;
     flex-direction: column;
-    height: 100%;
 
     /* popups use a screen to capture clicks outside the popups; this is
        necessary so that the screen can extend to the extent of the view without
@@ -9,75 +9,10 @@
     overflow: clip;
 }
 
-.transcript-container {
-    flex: 1;
-}
-
-.input-row {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    padding: 0.5rem;
-    border-top: solid 1px var(--vscode-sideBarSectionHeader-border);
-    gap: 0.5rem;
-    padding: 0.75rem;
-}
-
-.editor-outer-container {
-    position: relative;
-    width: 100%;
-}
-
-.context-button {
-    color: var(--button-primary-background);
-    position: absolute;
-    right: 0.3125rem;
-    bottom: 0.3125rem;
-    fill: currentColor;
-    background: none;
-    border: none;
-    cursor: pointer;
-}
-
-.submit-button {
-    border: none;
-    cursor: pointer;
-
-    border-radius: 50%;
-    height: 2rem;
-    width: 2rem;
-
-    margin-left: 0.3125rem;
-
-    background: var(--vscode-button-background);
-    color: var(--vscode-button-foreground);
-    display: flex;
-    justify-content: center;
-}
-
-.submit-button,
-.submit-button-disabled {
-    margin-bottom: 0.0625rem;
-}
-
-.submit-button[disabled] {
-    opacity: 0.4;
-    cursor: default;
-}
-
-.submit-button svg {
-    opacity: 1;
-}
-
-/* Put the up arrow in the exact center */
-.send-icon-arrow-up {
-    transform: translateX(-0.5px);
-}
-
-.text-area-container {
-    position: relative;
-    width: 100%;
-    display: flex;
-    align-items: flex-end;
+.chat-disabled {
+    text-align: center;
+    padding: 0.5rem 0.25rem;
+    background-color: var(--vscode-inputValidation-errorBackground);
+    border-bottom: solid 1px var(--vscode-inputValidation-errorBorder);
+    color: var(--vscode-foreground);
 }
