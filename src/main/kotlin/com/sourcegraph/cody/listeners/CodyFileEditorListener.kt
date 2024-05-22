@@ -60,6 +60,7 @@ class CodyFileEditorListener : FileEditorManagerListener {
           }
         }
 
+        if (project.isDisposed) return@invokeLater
         FileEditorManager.getInstance(project).selectedTextEditor?.let { editor ->
           val file = fileDocumentManager.getFile(editor.document)
           try {
