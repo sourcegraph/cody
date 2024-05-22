@@ -931,7 +931,7 @@ export class SourcegraphGraphQLAPIClient {
                 .then(response => response.json() as T)
                 .catch(error => {
                     if (error.name === 'AbortError') {
-                        return new Error(`Request timed out after ${timeout}ms (${url})`)
+                        return new Error(`EHOSTUNREACH: Request timed out after ${timeout}ms (${url})`)
                     }
                     return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
                 })
