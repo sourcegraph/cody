@@ -27,11 +27,11 @@ our [issue tracker](https://github.com/sourcegraph/cody/issues/new/choose).
 
 | What                                                             | Command                                                                  |
 |------------------------------------------------------------------|--------------------------------------------------------------------------|
-| Run the plugin locally                                           | `./gradlew :runIDE`                                                      |
-| Run the plugin locally with fresh build of Cody                  | `./gradlew -PforceAgentBuild=true :runIDE`                               |
-| Run the plugin locally with fresh build of a local clone of Cody | `CODY_DIR=<path_to_cody> ./gradlew -PforceAgentBuild=true :runIDE`       |
-| Run the plugin locally with fresh build of Code Search assets    | `./gradlew -PforceCodeSearchBuild=true :runIDE`                          |
-| Run the plugin locally with different IntelliJ version           | `./gradlew -PplatformRuntimeVersion=2023.1 :runIDE`                      |
+| Run the plugin locally                                           | `./gradlew :runIde`                                                      |
+| Run the plugin locally with fresh build of Cody                  | `./gradlew -PforceAgentBuild=true :runIde`                               |
+| Run the plugin locally with fresh build of a local clone of Cody | `CODY_DIR=<path_to_cody> ./gradlew -PforceAgentBuild=true :runIde`       |
+| Run the plugin locally with fresh build of Code Search assets    | `./gradlew -PforceCodeSearchBuild=true :runIde`                          |
+| Run the plugin locally with different IntelliJ version           | `./gradlew -PplatformVersion=2023.1 :runIde`                             |
 | Build Code Search assets (separate terminal)                     | `pnpm build`                                                             |
 | Continuously re-build Code Search assets (separate terminal)     | `pnpm watch`                                                             |
 | Code Search "Find with Sourcegraph" window                       | `pnpm standalone && open http://localhost:3000/`                         |
