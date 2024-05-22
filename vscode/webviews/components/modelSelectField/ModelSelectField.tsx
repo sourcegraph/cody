@@ -1,6 +1,6 @@
 import { type ModelProvider, ModelUIGroup } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { ExternalLinkIcon, SettingsIcon } from 'lucide-react'
+import { BookOpenIcon, ExternalLinkIcon, SettingsIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -200,13 +200,14 @@ export const ModelSelectField: React.FunctionComponent<{
                             >
                                 <span className={styles.modelTitleWithIcon}>
                                     <span className={styles.modelIcon}>
-                                        <SettingsIcon size={16} strokeWidth={1.5} />
+                                        {/* wider than normal to fit in with provider icons */}
+                                        <BookOpenIcon size={16} strokeWidth={2} />{' '}
                                     </span>
                                     <span className={styles.modelName}>Documentation</span>
                                     <span className={styles.rightIcon}>
                                         <ExternalLinkIcon
                                             size={16}
-                                            strokeWidth={1.5}
+                                            strokeWidth={1.25}
                                             className="tw-opacity-80"
                                         />
                                     </span>
