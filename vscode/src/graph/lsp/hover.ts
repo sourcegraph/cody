@@ -2,6 +2,7 @@ import type * as vscode from 'vscode'
 
 import { lines } from '../../completions/text-processing'
 
+// TODO: adapt to other languages
 export function extractHoverContent(hover: vscode.Hover[]): ParsedHover[] {
     const parsedHovers = hover
         .flatMap(hover => hover.contents.map(c => (typeof c === 'string' ? c : c.value)))
@@ -10,10 +11,6 @@ export function extractHoverContent(hover: vscode.Hover[]): ParsedHover[] {
             s => s.trim()
             // TODO: handle loading states
             // .replace('(loading...) ', '')
-            // TODO: adapt to other languages
-            // .replace('(method)', 'function')
-            // .replace('constructor', 'function')
-            // .replace(/^\(\w+\) /, '')
         )
         .filter(s => s !== '')
         // Remove the last line if it's an import statement prefix
