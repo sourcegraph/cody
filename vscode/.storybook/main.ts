@@ -3,7 +3,14 @@ import { defineProjectWithDefaults } from '../../.config/viteShared'
 
 const config: StorybookConfig = {
     stories: ['../webviews/**/*.story.@(js|jsx|ts|tsx)'],
-    addons: ['@storybook/addon-essentials'],
+    addons: [
+        {
+            name: '@storybook/addon-essentials',
+            options: {
+                backgrounds: false, // We use our own theme selector
+            },
+        },
+    ],
     framework: {
         name: '@storybook/react-vite',
         options: {},
@@ -16,5 +23,6 @@ const config: StorybookConfig = {
                 postcss: __dirname + '/../webviews',
             },
         }),
+    staticDirs: ['./static'],
 }
 export default config
