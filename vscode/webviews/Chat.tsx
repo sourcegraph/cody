@@ -1,6 +1,6 @@
 import { clsx } from 'clsx'
 import type React from 'react'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import type {
     AuthStatus,
@@ -16,6 +16,7 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import styles from './Chat.module.css'
+import { TokenIndicators } from './components/RemainingTokens'
 
 interface ChatboxProps {
     welcomeMessage?: string
@@ -120,6 +121,30 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const postMessage = useCallback<ApiPostMessage>(msg => vscodeAPI.postMessage(msg), [vscodeAPI])
 
+    const [remainingTokens, setRemainingTokens] = useState<{
+        chat: number
+        user: number
+        enhanced: number
+    } | null>(null)
+
+    // Update the message handler to set the remaining token counts when received from the extension
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            const message = event.data
+            switch (message.type) {
+                case 'remainingTokens':
+                    setRemainingTokens(message.remainingTokens)
+                    break
+                // Handle other message types if needed
+            }
+        }
+
+        window.addEventListener('message', handleMessage)
+        return () => {
+            window.removeEventListener('message', handleMessage)
+        }
+    }, [])
+
     useEffect(() => {
         function handleKeyDown(event: KeyboardEvent) {
             // Opt+> and Alt+> focus the last editor input, to make it easy for users to ask a followup
@@ -193,6 +218,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 postMessage={postMessage}
                 guardrails={guardrails}
             />
+            <div className={clsx(styles.tokenIndicators)}>
+                {remainingTokens && <TokenIndicators remainingTokens={remainingTokens} />}
+            </div>
         </div>
     )
 }
@@ -204,3 +232,4 @@ export interface UserAccountInfo {
 }
 
 export type ApiPostMessage = (message: any) => void
+export { TokenIndicators }

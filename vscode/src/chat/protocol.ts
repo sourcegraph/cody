@@ -198,6 +198,14 @@ export type ExtensionMessage =
           type: 'allMentionProvidersMetadata'
           providers: ContextMentionProviderMetadata[]
       }
+    | {
+          type: 'remainingTokens'
+          remainingTokens: {
+              chat: number
+              user: number
+              enhanced: number
+          }
+      }
 
 interface ExtensionAttributionMessage {
     snippet: string

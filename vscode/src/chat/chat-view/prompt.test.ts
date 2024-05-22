@@ -20,7 +20,7 @@ describe('DefaultPrompter', () => {
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
 
-        const { prompt, context } = await new DefaultPrompter([], () => Promise.resolve([])).makePrompt(
+        const { promptInfo } = await new DefaultPrompter([], () => Promise.resolve([])).makePrompt(
             chat,
             0
         )
@@ -39,8 +39,8 @@ describe('DefaultPrompter', () => {
                 text: ps`Hello`,
             },
         ])
-        expect(context.used).toEqual([])
-        expect(context.ignored).toEqual([])
+        expect(promptInfo.context.used).toEqual([])
+        expect(promptInfo.context.ignored).toEqual([])
     })
 
     it('adds the cody.chat.preInstruction vscode setting if set', async () => {
@@ -58,7 +58,7 @@ describe('DefaultPrompter', () => {
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
 
-        const { prompt, context } = await new DefaultPrompter([], () => Promise.resolve([])).makePrompt(
+        const { promptInfo } = await new DefaultPrompter([], () => Promise.resolve([])).makePrompt(
             chat,
             0
         )
@@ -77,7 +77,7 @@ describe('DefaultPrompter', () => {
                 text: ps`Hello`,
             },
         ])
-        expect(context.used).toEqual([])
-        expect(context.ignored).toEqual([])
+        expect(promptInfo.context.used).toEqual([])
+        expect(promptInfo.context.ignored).toEqual([])
     })
 })

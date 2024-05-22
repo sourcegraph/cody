@@ -59,6 +59,14 @@ export class TokenCounter {
     }
 
     /**
+     * Returns the remaining token counts for different token types.
+     * @returns An object with the remaining token counts for chat, user, and enhanced token types.
+     */
+    public getRemainingTokens(): { chat: number; user: number; enhanced: number } {
+        return this.remainingTokens
+    }
+
+    /**
      * NOTE: Should only be used by @canAllocateTokens to determine if the token usage can be allocated in correct order.
      *
      * Calculates the remaining token budget for each token usage type.

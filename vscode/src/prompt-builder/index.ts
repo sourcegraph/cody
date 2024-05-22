@@ -41,6 +41,10 @@ export class PromptBuilder {
         this.tokenCounter = new TokenCounter(contextWindow)
     }
 
+    public get getTokenCounter() {
+        return this.tokenCounter
+    }
+
     public build(): Message[] {
         // Create context messages for each context item, where
         // assistant messages come first because the transcript is in reversed order.
