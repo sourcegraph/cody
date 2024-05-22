@@ -95,10 +95,10 @@ const MODEL_MAP = {
     'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
 
     // Fine-tuned model mapping
-    'fim-fine-tuned-model-variant-1': FIREWORKS_FIM_FINE_TUNED_MODEL_1,
-    'fim-fine-tuned-model-variant-2': FIREWORKS_FIM_FINE_TUNED_MODEL_2,
-    'fim-fine-tuned-model-variant-3': FIREWORKS_FIM_FINE_TUNED_MODEL_3,
-    'fim-fine-tuned-model-variant-4': FIREWORKS_FIM_FINE_TUNED_MODEL_4,
+    [FIREWORKS_FIM_FINE_TUNED_MODEL_1]: FIREWORKS_FIM_FINE_TUNED_MODEL_1,
+    [FIREWORKS_FIM_FINE_TUNED_MODEL_2]: FIREWORKS_FIM_FINE_TUNED_MODEL_2,
+    [FIREWORKS_FIM_FINE_TUNED_MODEL_3]: FIREWORKS_FIM_FINE_TUNED_MODEL_3,
+    [FIREWORKS_FIM_FINE_TUNED_MODEL_4]: FIREWORKS_FIM_FINE_TUNED_MODEL_4,
 }
 
 type FireworksModel =
@@ -129,9 +129,7 @@ function getMaxContextTokens(model: FireworksModel): number {
         case FIREWORKS_FIM_FINE_TUNED_MODEL_2:
         case FIREWORKS_FIM_FINE_TUNED_MODEL_3:
         case FIREWORKS_FIM_FINE_TUNED_MODEL_4: {
-            // We use llama3 8b and mixtral 8x7b variants for the fine-tuning model which support 8_192, 32_768 tokens respectively.
-            // Take a buffer of 1000 tokens
-            return 7192
+            return 2048
         }
         default:
             return 1200

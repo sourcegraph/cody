@@ -154,10 +154,9 @@ export async function createProviderConfig(
     return createAnthropicProviderConfig({ client })
 }
 
-async function resolveFinetunedModelProviderFromFeatureFlags(): Promise<{
-    provider: string
-    model?: FireworksOptions['model'] | AnthropicOptions['model']
-} | null> {
+async function resolveFinetunedModelProviderFromFeatureFlags(): ReturnType<
+    typeof resolveDefaultProviderFromVSCodeConfigOrFeatureFlags
+> {
     /**
      * The traffic allocated to the fine-tuned-base feature flag is further split between multiple feature flag in function.
      */
@@ -222,7 +221,7 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
 
     if (finetunedFIMModelExperiment) {
         // The traffic in this feature flag is interpreted as a traffic allocated to the fine-tuned experiment.
-        return await resolveFinetunedModelProviderFromFeatureFlags()
+        return resolveFinetunedModelProviderFromFeatureFlags()
     }
 
     if (llamaCode13B) {
