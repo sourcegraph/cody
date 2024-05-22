@@ -547,6 +547,11 @@ const definitionCache = new DefinitionCache()
 
 /**
  * Two level cache: document uri -> symbol snippet request key -> definition locations.
+ *
+ * We assume the symbol snippet request guarantees that it won't become stale. In practice,
+ * it can happen if the user changes the import statement path without changing the
+ * symbol name, type, and position. The probability of this happening is low,
+ * so the benefit outweighs the risk.
  */
 class DefinitionLocationCache {
     private isDisabled = IS_LSP_LIGHT_CACHE_DISABLED
