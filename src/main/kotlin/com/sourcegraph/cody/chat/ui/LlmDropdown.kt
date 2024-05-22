@@ -54,6 +54,8 @@ class LlmDropdown(
 
   @RequiresEdt
   private fun updateModelsInUI(models: List<ChatModelsResponse.ChatModelProvider>) {
+    if (project.isDisposed) return
+
     models.sortedBy { it.codyProOnly }.forEach(::addItem)
 
     CodyAuthenticationManager.getInstance(project).getActiveAccountTier().thenApply { accountTier ->
@@ -84,6 +86,7 @@ class LlmDropdown(
 
   @RequiresEdt
   override fun setSelectedItem(anObject: Any?) {
+    if (project.isDisposed) return
     val modelProvider = anObject as? ChatModelsResponse.ChatModelProvider
     if (modelProvider != null) {
       if (modelProvider.codyProOnly && isCurrentUserFree) {
