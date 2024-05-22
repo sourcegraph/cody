@@ -46,7 +46,7 @@ private constructor(
       val startOffsetColumn = max(startOffset.column, 0)
 
       val endOffset = editor.xyToLogicalPosition(Point(visibleArea.right, visibleArea.bottom))
-      val endOffsetLine = min(endOffset.line, editor.document.lineCount - 1)
+      val endOffsetLine = max(0, min(endOffset.line, editor.document.lineCount - 1))
       val endOffsetColumn = min(endOffset.column, editor.document.getLineEndOffset(endOffsetLine))
 
       return Range(
