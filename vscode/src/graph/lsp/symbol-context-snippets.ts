@@ -11,7 +11,7 @@ import {
 import { getLastNGraphContextIdentifiersFromString } from '../../completions/context/retrievers/graph/identifiers'
 import { lines } from '../../completions/text-processing'
 import {
-    debugLspLightSymbolLog,
+    debugSymbol,
     flushLspLightDebugLogs,
     formatUriAndPosition,
     formatUriAndRange,
@@ -47,12 +47,14 @@ export interface SymbolSnippetsRequest {
     languageId: string
 }
 
-type DefinitionCacheEntryPath = `${UriString}::${DefinitionCacheKey}`
-interface SymbolSnippetInflightRequest extends AutocompleteSymbolContextSnippet {
+interface SymbolSnippetWithContentResolved extends AutocompleteSymbolContextSnippet {
     key: DefinitionCacheEntryPath
     relatedDefinitionKeys?: Set<DefinitionCacheEntryPath>
     location: vscode.Location
 }
+
+type Optional<T, K extends keyof T> = { [key in K]: T[K] | undefined } & Omit<T, K>
+type SymbolSnippetWithLocationResolved = Optional<SymbolSnippetWithContentResolved, 'content'>
 
 interface GetSymbolSnippetForNodeTypeParams {
     symbolSnippetRequest: SymbolSnippetsRequest
@@ -61,9 +63,301 @@ interface GetSymbolSnippetForNodeTypeParams {
     abortSignal: AbortSignal
 }
 
+async function getSnippetForLocationGetter(
+    locationGetter: typeof getDefinitionLocations,
+    params: GetSymbolSnippetForNodeTypeParams
+): Promise<SymbolSnippetWithLocationResolved | undefined> {
+    const {
+        recursionLimit,
+        symbolSnippetRequest,
+        symbolSnippetRequest: { uri, position, nodeType, symbolName, languageId },
+        parentDefinitionCacheEntryPaths,
+        abortSignal,
+    } = params
+
+    let definitionLocations = definitionLocationCache.get(symbolSnippetRequest)
+
+    if (isEmptyCacheEntry(definitionLocations)) {
+        return undefined
+    }
+
+    if (!definitionLocations) {
+        definitionLocations = await lspRequestLimiter(() => locationGetter(uri, position))
+    }
+
+    const sortedDefinitionLocations = definitionLocations.sort((a, b) => {
+        const bLines = b.range.start.line - b.range.end.line
+        const aLines = a.range.start.line - a.range.end.line
+
+        return bLines - aLines
+    })
+
+    debugSymbol(
+        symbolName,
+        'definitionLocations',
+        sortedDefinitionLocations.map(location => formatUriAndRange(location.uri, location.range))
+    )
+
+    // Sort for the narrowest definition range (e.g. used when we get full class implementation vs. constructor)
+    const [definitionLocation] = sortedDefinitionLocations
+    // const [definitionLocation] = definitionLocations
+
+    if (
+        definitionLocation === undefined ||
+        (definitionLocation && isCommonImport(definitionLocation.uri))
+    ) {
+        return undefined
+    }
+
+    const { uri: definitionUri, range: definitionRange } = definitionLocation
+    debugSymbol(symbolName, 'location', {
+        nodeType,
+        location: formatUriAndRange(definitionUri, definitionRange),
+    })
+
+    const symbolContextSnippet = {
+        key: `${definitionUri}::${definitionRange.start.line}:${definitionRange.start.character}`,
+        uri: definitionUri,
+        startLine: definitionRange.start.line,
+        endLine: definitionRange.end.line,
+        symbol: symbolName,
+        location: definitionLocation,
+        content: undefined,
+    } satisfies SymbolSnippetWithLocationResolved
+
+    const cachedDefinition = definitionCache.get(definitionLocation)
+    if (cachedDefinition) {
+        updateParentDefinitionKeys(parentDefinitionCacheEntryPaths, symbolContextSnippet)
+
+        return {
+            ...symbolContextSnippet,
+            ...cachedDefinition,
+        }
+    }
+
+    let definitionString: string | undefined
+    let definitionHover: string | undefined
+    let isHover = false
+    let hoverKind: string | undefined
+    const resolutions = []
+    let shouldReturn = false
+
+    const hoverContent = await lspRequestLimiter(() => getHover(uri, position), abortSignal)
+    const [{ text, kind } = { text: '', kind: undefined }] = extractHoverContent(hoverContent) || [{}]
+
+    definitionString = text
+    hoverKind = kind
+    isHover = true
+
+    resolutions.push({
+        type: 'getHover (initial)',
+        definitionString,
+        hoverKind: kind,
+    })
+
+    if (isUnhelpfulSymbolSnippet(symbolName, definitionString)) {
+        definitionString = ''
+        hoverKind = undefined
+        isHover = false
+        if (nodeType === 'type_identifier') {
+            // TODO: add fallback here for unhelpful symbol snippets. Can happen if LSP lacks the
+            // location-links capability
+            definitionString = await getTextFromLocation(definitionLocation)
+            resolutions.push({
+                type: 'getTextFromLocation',
+                definitionString,
+            })
+        } else {
+            const hoverContent = await lspRequestLimiter(
+                () => getHover(definitionLocation.uri, definitionLocation.range.start),
+                abortSignal
+            )
+            const [{ text, kind } = { text: '', kind: undefined }] = extractHoverContent(
+                hoverContent
+            ) || [{}]
+
+            definitionString = text
+            hoverKind = kind
+            isHover = true
+
+            resolutions.push({
+                type: 'getHover',
+                definitionString,
+                hoverKind: kind,
+            })
+        }
+    }
+
+    if (isUnhelpfulSymbolSnippet(symbolName, definitionString)) {
+        isHover = false
+        definitionString = await getTextFromLocation(definitionLocation)
+        resolutions.push({
+            why: 'unhelpful snippet',
+            type: 'getTextFromLocation',
+            definitionString,
+        })
+
+        if (definitionString === `class ${symbolName}`) {
+            // Handle class constructors
+            const hoverContent = await lspRequestLimiter(
+                () => getHover(symbolSnippetRequest.uri, symbolSnippetRequest.position),
+                abortSignal
+            )
+            const [{ text, kind } = { text: '', kind: undefined }] = extractHoverContent(hoverContent)
+            definitionString = text
+            hoverKind = kind
+            isHover = true
+
+            resolutions.push({
+                why: 'unhelpful class snippet',
+                type: 'getHover',
+                definitionString,
+                hoverKind: kind,
+            })
+
+            if (isUnhelpfulSymbolSnippet(symbolName, definitionString)) {
+                shouldReturn = true
+            }
+        } else if (isUnhelpfulSymbolSnippet(symbolName, definitionString)) {
+            shouldReturn = true
+        }
+    }
+
+    if (lines(definitionString).length > 100) {
+        shouldReturn = true
+    }
+
+    if (shouldReturn) {
+        debugSymbol(symbolName, 'no helpful context found:', {
+            hoverKind: hoverKind,
+            definitionHover,
+            definitionString,
+            resolutions,
+        })
+
+        return symbolContextSnippet
+    }
+
+    definitionLocationCache.set(symbolSnippetRequest, definitionLocations)
+    definitionCache.set(definitionLocation, { content: definitionString })
+    updateParentDefinitionKeys(parentDefinitionCacheEntryPaths, symbolContextSnippet)
+
+    // TODO: required only for hover definitions
+    const definitionDocument = await vscode.workspace.openTextDocument(definitionLocation.uri)
+    let definitionFirstLines = definitionDocument.getText(
+        new vscode.Range(
+            new vscode.Position(definitionLocation.range.start.line, 0),
+            // TODO: number of lines should depend on the definitionString length
+            new vscode.Position(definitionLocation.range.start.line + 10, 0)
+        )
+    )
+
+    if (hoverKind === 'method') {
+        definitionFirstLines = 'function ' + definitionFirstLines
+    }
+
+    // TODO: add a generic solution for class/object methods
+    if (definitionFirstLines.trimStart().startsWith('constructor')) {
+        definitionFirstLines = `{${definitionFirstLines}}`
+    }
+
+    const initialNestedSymbolRequests = getLastNGraphContextIdentifiersFromString({
+        n: NESTED_IDENTIFIERS_TO_RESOLVE,
+        uri: definitionLocation.uri,
+        languageId,
+        source: definitionFirstLines,
+        prioritize: 'head',
+        // TODO: figure out the balance between the number of identifiers and empty
+        // results caused by broken parse-trees for hover strings.
+        // TODO: required for class property definitions
+        // getAllIdentifiers: true,
+    })
+
+    const nestedSymbolRequests = initialNestedSymbolRequests
+        .filter(request => {
+            return (
+                request.symbolName.length > 0 &&
+                // exclude current symbol
+                symbolName !== request.symbolName &&
+                // exclude common symbols
+                !commonKeywords.has(request.symbolName) &&
+                // exclude symbols not preset in the definition string (if it's a hover string)
+                (definitionFirstLines.includes('class') || definitionString.includes(request.symbolName))
+            )
+        })
+        .map(request => {
+            if (isHover) {
+                return {
+                    ...request,
+                    position: request.position.translate({
+                        lineDelta: definitionLocation.range.start.line,
+                    }),
+                }
+            }
+
+            return {
+                ...request,
+                position: request.position.translate({
+                    lineDelta: definitionLocation.range.start.line,
+                    characterDelta: definitionLocation.range.start.character,
+                }),
+            }
+        })
+        .filter(isDefined)
+
+    debugSymbol(symbolName, 'nested symbols:', {
+        hoverKind: hoverKind,
+        definitionHover,
+        definitionString,
+        definitionFirstLines,
+        resolutions,
+        initialNestedSymbolRequests: initialNestedSymbolRequests.map(r => {
+            return {
+                symbolName: r.symbolName,
+                position: formatUriAndPosition(r.uri, r.position),
+            }
+        }),
+        nestedSymbolRequests: nestedSymbolRequests.map(r => {
+            return {
+                symbolName: r.symbolName,
+                position: formatUriAndPosition(r.uri, r.position),
+            }
+        }),
+    })
+
+    if (nestedSymbolRequests.length === 0) {
+        return {
+            ...symbolContextSnippet,
+            content: definitionString,
+        }
+    }
+
+    const definitionCacheEntry = {
+        content: definitionString,
+        relatedDefinitionKeys: new Set(),
+    } satisfies DefinitionCacheEntry
+
+    definitionCache.set(definitionLocation, definitionCacheEntry)
+
+    await getSymbolContextSnippetsRecursive({
+        symbolsSnippetRequests: nestedSymbolRequests,
+        abortSignal,
+        recursionLimit: recursionLimit - 1,
+        parentDefinitionCacheEntryPaths: new Set([
+            symbolContextSnippet.key,
+            ...(parentDefinitionCacheEntryPaths || []),
+        ]),
+    })
+
+    return {
+        ...symbolContextSnippet,
+        ...definitionCacheEntry,
+    }
+}
+
 function updateParentDefinitionKeys(
     parentDefinitionCacheEntryPaths: GetSymbolSnippetForNodeTypeParams['parentDefinitionCacheEntryPaths'],
-    symbolContextSnippet: PartialSymbolSnippetInflightRequest
+    symbolContextSnippet: SymbolSnippetWithLocationResolved
 ) {
     if (parentDefinitionCacheEntryPaths) {
         for (const parentDefinitionCacheEntryPath of parentDefinitionCacheEntryPaths) {
@@ -76,357 +370,13 @@ function updateParentDefinitionKeys(
     }
 }
 
-type Optional<T, K extends keyof T> = { [key in K]: T[K] | undefined } & Omit<T, K>
-type PartialSymbolSnippetInflightRequest = Optional<SymbolSnippetInflightRequest, 'content'>
-
-async function getSymbolSnippetForNodeType(
-    params: GetSymbolSnippetForNodeTypeParams
-): Promise<SymbolSnippetInflightRequest[] | undefined> {
-    const {
-        recursionLimit,
-        symbolSnippetRequest,
-        symbolSnippetRequest: { uri, position, nodeType, symbolName, languageId },
-        parentDefinitionCacheEntryPaths,
-        abortSignal,
-    } = params
-
-    async function getSnippetForLocationGetter(
-        locationGetter: typeof getDefinitionLocations
-    ): Promise<PartialSymbolSnippetInflightRequest | undefined> {
-        let definitionLocations = definitionLocationCache.get(symbolSnippetRequest)
-
-        if (isEmptyCacheEntry(definitionLocations)) {
-            return undefined
-        }
-
-        if (!definitionLocations) {
-            definitionLocations = await lspRequestLimiter(() => locationGetter(uri, position))
-        }
-
-        const sortedDefinitionLocations = definitionLocations.sort((a, b) => {
-            const bLines = b.range.start.line - b.range.end.line
-            const aLines = a.range.start.line - a.range.end.line
-
-            return bLines - aLines
-        })
-
-        debugLspLightSymbolLog(
-            symbolName,
-            'definitionLocations',
-            sortedDefinitionLocations.map(location => formatUriAndRange(location.uri, location.range))
-        )
-
-        // Sort for the narrowest definition range (e.g. used when we get full class implementation vs. constructor)
-        const [definitionLocation] = sortedDefinitionLocations
-        // const [definitionLocation] = definitionLocations
-
-        if (
-            definitionLocation === undefined ||
-            (definitionLocation && isCommonImport(definitionLocation.uri))
-        ) {
-            return undefined
-        }
-
-        const { uri: definitionUri, range: definitionRange } = definitionLocation
-        const definitionCacheKey = `${definitionRange.start.line}:${definitionRange.start.character}`
-        debugLspLightSymbolLog(symbolName, 'location', {
-            nodeType,
-            location: formatUriAndRange(definitionUri, definitionRange),
-        })
-
-        const symbolContextSnippet = {
-            key: `${definitionUri}::${definitionCacheKey}`,
-            uri: definitionUri,
-            startLine: definitionRange.start.line,
-            endLine: definitionRange.end.line,
-            symbol: symbolName,
-            location: definitionLocation,
-            content: undefined,
-        } satisfies PartialSymbolSnippetInflightRequest
-
-        const cachedDefinition = definitionCache.get(definitionLocation)
-        if (cachedDefinition) {
-            updateParentDefinitionKeys(parentDefinitionCacheEntryPaths, symbolContextSnippet)
-
-            return {
-                ...symbolContextSnippet,
-                ...cachedDefinition,
-            }
-        }
-
-        let definitionString: string | undefined
-        let definitionHover: string | undefined
-        let isHover = false
-        let hoverKind: string | undefined
-        const resolutions = []
-        let shouldReturn = false
-
-        const hoverContent = await lspRequestLimiter(() => getHover(uri, position), abortSignal)
-        const [{ text, kind } = { text: '', kind: undefined }] = extractHoverContent(hoverContent) || [
-            {},
-        ]
-
-        definitionString = text
-        hoverKind = kind
-        isHover = true
-
-        resolutions.push({
-            type: 'getHover (initial)',
-            definitionString,
-            hoverKind: kind,
-        })
-
-        if (isUnhelpfulSymbolSnippet(symbolName, definitionString)) {
-            definitionString = ''
-            hoverKind = undefined
-            isHover = false
-            if (nodeType === 'type_identifier') {
-                // TODO: add fallback here for unhelpful symbol snippets. Can happen if LSP lacks the
-                // location-links capability
-                definitionString = await getTextFromLocation(definitionLocation)
-                resolutions.push({
-                    type: 'getTextFromLocation',
-                    definitionString,
-                })
-            } else {
-                const hoverContent = await lspRequestLimiter(
-                    () => getHover(definitionLocation.uri, definitionLocation.range.start),
-                    abortSignal
-                )
-                const [{ text, kind } = { text: '', kind: undefined }] = extractHoverContent(
-                    hoverContent
-                ) || [{}]
-
-                definitionString = text
-                hoverKind = kind
-                isHover = true
-
-                resolutions.push({
-                    type: 'getHover',
-                    definitionString,
-                    hoverKind: kind,
-                })
-            }
-        }
-
-        if (isUnhelpfulSymbolSnippet(symbolName, definitionString)) {
-            isHover = false
-            definitionString = await getTextFromLocation(definitionLocation)
-            resolutions.push({
-                why: 'unhelpful snippet',
-                type: 'getTextFromLocation',
-                definitionString,
-            })
-
-            if (definitionString === `class ${symbolName}`) {
-                // Handle class constructors
-                const hoverContent = await lspRequestLimiter(
-                    () => getHover(symbolSnippetRequest.uri, symbolSnippetRequest.position),
-                    abortSignal
-                )
-                const [{ text, kind } = { text: '', kind: undefined }] =
-                    extractHoverContent(hoverContent)
-                definitionString = text
-                hoverKind = kind
-                isHover = true
-
-                resolutions.push({
-                    why: 'unhelpful class snippet',
-                    type: 'getHover',
-                    definitionString,
-                    hoverKind: kind,
-                })
-
-                if (isUnhelpfulSymbolSnippet(symbolName, definitionString)) {
-                    shouldReturn = true
-                }
-            } else if (isUnhelpfulSymbolSnippet(symbolName, definitionString)) {
-                shouldReturn = true
-            }
-        }
-
-        if (lines(definitionString).length > 100) {
-            shouldReturn = true
-        }
-
-        if (shouldReturn) {
-            debugLspLightSymbolLog(symbolName, 'no helpful context found:', {
-                hoverKind: hoverKind,
-                definitionHover,
-                definitionString,
-                resolutions,
-            })
-
-            return symbolContextSnippet
-        }
-
-        definitionLocationCache.set(symbolSnippetRequest, definitionLocations)
-        definitionCache.set(definitionLocation, { content: definitionString })
-        updateParentDefinitionKeys(parentDefinitionCacheEntryPaths, symbolContextSnippet)
-
-        // TODO: required only for hover definitions
-        const definitionDocument = await vscode.workspace.openTextDocument(definitionLocation.uri)
-        let definitionFirstLines = definitionDocument.getText(
-            new vscode.Range(
-                new vscode.Position(definitionLocation.range.start.line, 0),
-                // TODO: number of lines should depend on the definitionString length
-                new vscode.Position(definitionLocation.range.start.line + 10, 0)
-            )
-        )
-
-        if (hoverKind === 'method') {
-            definitionFirstLines = 'function ' + definitionFirstLines
-        }
-
-        // TODO: add a generic solution for class/object methods
-        if (definitionFirstLines.trimStart().startsWith('constructor')) {
-            definitionFirstLines = `{${definitionFirstLines}}`
-        }
-
-        const initialNestedSymbolRequests = getLastNGraphContextIdentifiersFromString({
-            n: NESTED_IDENTIFIERS_TO_RESOLVE,
-            uri: definitionLocation.uri,
-            languageId,
-            source: definitionFirstLines,
-            prioritize: 'head',
-            // TODO: figure out the balance between the number of identifiers and empty
-            // results caused by broken parse-trees for hover strings.
-            // TODO: required for class property definitions
-            // getAllIdentifiers: true,
-        })
-
-        const nestedSymbolRequests = initialNestedSymbolRequests
-            .filter(request => {
-                return (
-                    request.symbolName.length > 0 &&
-                    // exclude current symbol
-                    symbolName !== request.symbolName &&
-                    // exclude common symbols
-                    !commonKeywords.has(request.symbolName) &&
-                    // exclude symbols not preset in the definition string (if it's a hover string)
-                    (definitionFirstLines.includes('class') ||
-                        definitionString.includes(request.symbolName))
-                )
-            })
-            .map(request => {
-                if (isHover) {
-                    return {
-                        ...request,
-                        position: request.position.translate({
-                            lineDelta: definitionLocation.range.start.line,
-                        }),
-                    }
-                }
-
-                return {
-                    ...request,
-                    position: request.position.translate({
-                        lineDelta: definitionLocation.range.start.line,
-                        characterDelta: definitionLocation.range.start.character,
-                    }),
-                }
-            })
-            .filter(isDefined)
-
-        debugLspLightSymbolLog(symbolName, 'nested symbols:', {
-            hoverKind: hoverKind,
-            definitionHover,
-            definitionString,
-            definitionFirstLines,
-            resolutions,
-            initialNestedSymbolRequests: initialNestedSymbolRequests.map(r => {
-                return {
-                    symbolName: r.symbolName,
-                    position: formatUriAndPosition(r.uri, r.position),
-                }
-            }),
-            nestedSymbolRequests: nestedSymbolRequests.map(r => {
-                return {
-                    symbolName: r.symbolName,
-                    position: formatUriAndPosition(r.uri, r.position),
-                }
-            }),
-        })
-
-        if (nestedSymbolRequests.length === 0) {
-            return {
-                ...symbolContextSnippet,
-                content: definitionString,
-            }
-        }
-
-        const definitionCacheEntry = {
-            content: definitionString,
-            relatedDefinitionKeys: new Set(),
-        } satisfies DefinitionCacheEntry
-
-        definitionCache.set(definitionLocation, definitionCacheEntry)
-
-        await getSymbolContextSnippetsRecursive({
-            symbolsSnippetRequests: nestedSymbolRequests,
-            abortSignal,
-            recursionLimit: recursionLimit - 1,
-            parentDefinitionCacheEntryPaths: new Set([
-                symbolContextSnippet.key,
-                ...(parentDefinitionCacheEntryPaths || []),
-            ]),
-        })
-
-        return {
-            ...symbolContextSnippet,
-            ...definitionCacheEntry,
-        }
-    }
-
-    // await debugLSP(symbolSnippetRequest)
-
-    let locationGetters = [
-        getTypeDefinitionLocations,
-        getDefinitionLocations,
-        getImplementationLocations,
-    ]
-    if (['type_identifier'].includes(nodeType)) {
-        locationGetters = [
-            getDefinitionLocations,
-            getTypeDefinitionLocations,
-            getImplementationLocations,
-        ]
-    }
-
-    let symbolContextSnippet: PartialSymbolSnippetInflightRequest | undefined
-    for (const locationGetter of locationGetters) {
-        debugLspLightSymbolLog(
-            symbolName,
-            '-------------------------------------------------------------'
-        )
-        debugLspLightSymbolLog(symbolName, `using locationGetter "${locationGetter.name}"`)
-        symbolContextSnippet = await getSnippetForLocationGetter(locationGetter)
-
-        if (symbolContextSnippet?.content !== undefined) {
-            break
-        }
-    }
-
-    if (!symbolContextSnippet) {
-        definitionLocationCache.set(symbolSnippetRequest, EMPTY_CACHE_ENTRY)
-        return undefined
-    }
-
-    if (symbolContextSnippet.content === undefined) {
-        definitionCache.set(symbolContextSnippet.location, EMPTY_CACHE_ENTRY)
-        return undefined
-    }
-
-    return [symbolContextSnippet as SymbolSnippetInflightRequest]
-}
-
 interface GetSymbolContextSnippetsRecursive extends GetSymbolContextSnippetsParams {
     parentDefinitionCacheEntryPaths?: Set<DefinitionCacheEntryPath>
 }
 
 async function getSymbolContextSnippetsRecursive(
     params: GetSymbolContextSnippetsRecursive
-): Promise<SymbolSnippetInflightRequest[]> {
+): Promise<SymbolSnippetWithContentResolved[]> {
     const { symbolsSnippetRequests, recursionLimit, parentDefinitionCacheEntryPaths, abortSignal } =
         params
 
@@ -435,18 +385,60 @@ async function getSymbolContextSnippetsRecursive(
     }
 
     const contextSnippets = await Promise.all(
-        symbolsSnippetRequests.map(symbolSnippetRequest => {
-            // logDebug(`requesting for "${symbolSnippetRequest.symbolName}"`)
-            return getSymbolSnippetForNodeType({
-                symbolSnippetRequest,
-                recursionLimit,
-                parentDefinitionCacheEntryPaths,
-                abortSignal,
-            })
+        symbolsSnippetRequests.map(async symbolSnippetRequest => {
+            const { nodeType, symbolName } = symbolSnippetRequest
+            // await debugLSP(symbolSnippetRequest)
+
+            let locationGetters = [
+                getTypeDefinitionLocations,
+                getDefinitionLocations,
+                getImplementationLocations,
+            ]
+            if (['type_identifier'].includes(nodeType)) {
+                locationGetters = [
+                    getDefinitionLocations,
+                    getTypeDefinitionLocations,
+                    getImplementationLocations,
+                ]
+            }
+
+            let symbolContextSnippet: SymbolSnippetWithLocationResolved | undefined
+            for (const locationGetter of locationGetters) {
+                debugSymbol(symbolName, '-------------------------------------------------------------')
+                debugSymbol(symbolName, `using locationGetter "${locationGetter.name}"`)
+
+                symbolContextSnippet = await getSnippetForLocationGetter(locationGetter, {
+                    symbolSnippetRequest,
+                    recursionLimit,
+                    parentDefinitionCacheEntryPaths,
+                    abortSignal,
+                })
+
+                // If we found a symbol snippet, we do not need to try any other location getters.
+                if (symbolContextSnippet?.content !== undefined) {
+                    break
+                }
+            }
+
+            // If we did not find a symbol location, we should cache this as an empty
+            // cache entry to avoid making redundant LSP calls later.
+            if (!symbolContextSnippet) {
+                definitionLocationCache.set(symbolSnippetRequest, EMPTY_CACHE_ENTRY)
+                return undefined
+            }
+
+            // If we did not find a helpful symbol snippet, we should cache this as an empty
+            // cache entry to avoid making redundant LSP calls later.
+            if (symbolContextSnippet.content === undefined) {
+                definitionCache.set(symbolContextSnippet.location, EMPTY_CACHE_ENTRY)
+                return undefined
+            }
+
+            return symbolContextSnippet as SymbolSnippetWithContentResolved
         })
     )
 
-    return contextSnippets.flat().filter(isDefined)
+    return contextSnippets.filter(isDefined)
 }
 
 export interface GetSymbolContextSnippetsParams {
@@ -499,8 +491,10 @@ interface DefinitionCacheEntryValue {
 }
 type DefinitionCacheEntry = DefinitionCacheEntryValue | typeof EMPTY_CACHE_ENTRY
 
+type LocationRangeStart = `${string}:${string}`
 type UriString = string
-type DefinitionCacheKey = string
+type DefinitionCacheKey = LocationRangeStart
+type DefinitionCacheEntryPath = `${UriString}::${DefinitionCacheKey}`
 type LocationCacheKey = string
 type LocationCacheEntryPath = `${UriString}::${LocationCacheKey}`
 
@@ -531,9 +525,9 @@ class DefinitionCache {
         return documentCache.get(this.toDefinitionCacheKey(location))
     }
 
-    public getByPath(path: LocationCacheEntryPath): DefinitionCacheEntry | undefined {
+    public getByPath(path: DefinitionCacheEntryPath): DefinitionCacheEntry | undefined {
         const [uri, key] = path.split('::')
-        return this.cache.get(uri)?.get(key)
+        return this.cache.get(uri)?.get(key as DefinitionCacheKey)
     }
 
     public set(location: vscode.Location, locations: DefinitionCacheEntry): void {

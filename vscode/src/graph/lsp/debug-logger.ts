@@ -26,7 +26,7 @@ export function debugLspLightLog(...rest: unknown[]) {
 /**
  * Group logs by symbol names to log them together later
  */
-export function debugLspLightSymbolLog(symbolName: string, ...rest: unknown[]) {
+export function debugSymbol(symbolName: string, ...rest: unknown[]) {
     if (!IS_LSP_LIGHT_LOGGING_ENABLED) {
         return
     }
