@@ -98,12 +98,14 @@ async function getSnippetForLocationGetter(
     }
 
     // Sort for the narrowest definition range (e.g. used when we get full class implementation vs. constructor)
-    const sortedDefinitionLocations = definitionLocations.sort((a, b) => {
-        const bLines = b.range.start.line - b.range.end.line
-        const aLines = a.range.start.line - a.range.end.line
+    const sortedDefinitionLocations = definitionLocations
+        .sort((a, b) => {
+            const bLines = b.range.start.line - b.range.end.line
+            const aLines = a.range.start.line - a.range.end.line
 
-        return bLines - aLines
-    })
+            return bLines - aLines
+        })
+        .filter(location => !isCommonImport(location.uri))
 
     debugSymbol(
         symbolName,
@@ -111,13 +113,11 @@ async function getSnippetForLocationGetter(
         sortedDefinitionLocations.map(location => formatUriAndRange(location.uri, location.range))
     )
 
+    // TODO: support multiple definition locations
     const [definitionLocation] = sortedDefinitionLocations
     // const [definitionLocation] = definitionLocations
 
-    if (
-        definitionLocation === undefined ||
-        (definitionLocation && isCommonImport(definitionLocation.uri))
-    ) {
+    if (definitionLocation === undefined) {
         return undefined
     }
 
