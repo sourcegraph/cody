@@ -194,10 +194,8 @@ export const ModelSelectField: React.FunctionComponent<{
                         <CommandGroup>
                             <CommandItem
                                 onSelect={() => {
-                                    window.open(
-                                        'https://sourcegraph.com/docs/cody/clients/install-vscode#supported-llm-models',
-                                        '_blank'
-                                    )
+                                    // TODO: open the following URL
+                                    // https://sourcegraph.com/docs/cody/clients/install-vscode#supported-llm-models
                                 }}
                             >
                                 <span className={styles.modelTitleWithIcon}>
