@@ -29,7 +29,6 @@ interface ChatboxProps {
     isTranscriptError: boolean
     userInfo: UserAccountInfo
     guardrails?: Guardrails
-    isNewInstall: boolean
     userContextFromSelection?: ContextItem[]
 }
 
@@ -44,7 +43,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     chatEnabled = true,
     userInfo,
     guardrails,
-    isNewInstall,
     userContextFromSelection,
 }) => {
     const feedbackButtonsOnSubmit = useCallback(
@@ -212,7 +210,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 insertButtonOnSubmit={insertButtonOnSubmit}
                 isTranscriptError={isTranscriptError}
                 userInfo={userInfo}
-                isNewInstall={isNewInstall}
                 chatEnabled={chatEnabled}
                 userContextFromSelection={userContextFromSelection}
                 postMessage={postMessage}

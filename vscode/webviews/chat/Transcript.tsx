@@ -33,7 +33,6 @@ export const Transcript: React.FunctionComponent<{
     insertButtonOnSubmit: CodeBlockActionsProps['insertButtonOnSubmit']
     isTranscriptError?: boolean
     userInfo: UserAccountInfo
-    isNewInstall?: boolean
     chatEnabled?: boolean
     userContextFromSelection?: ContextItem[]
     postMessage?: ApiPostMessage
@@ -48,7 +47,6 @@ export const Transcript: React.FunctionComponent<{
     insertButtonOnSubmit,
     isTranscriptError,
     userInfo,
-    isNewInstall,
     chatEnabled = true,
     userContextFromSelection,
     postMessage,
@@ -77,7 +75,6 @@ export const Transcript: React.FunctionComponent<{
                     key={messageIndexInTranscript}
                     message={message}
                     userInfo={userInfo}
-                    isNewInstall={isNewInstall}
                     chatEnabled={chatEnabled}
                     isFirstMessage={messageIndexInTranscript === 0}
                     isSent={true}
@@ -146,7 +143,6 @@ export const Transcript: React.FunctionComponent<{
                     isFirstMessage={transcript.length === 0}
                     isSent={false}
                     userInfo={userInfo}
-                    isNewInstall={isNewInstall}
                     chatEnabled={chatEnabled}
                     isEditorInitiallyFocused={transcript.length === 0}
                     userContextFromSelection={userContextFromSelection}
