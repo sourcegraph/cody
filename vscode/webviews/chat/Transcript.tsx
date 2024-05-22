@@ -96,12 +96,12 @@ export const Transcript: React.FunctionComponent<{
                     // response to finish.
                     isEditorInitiallyFocused={isLastHumanMessage}
                 />,
-                (message.contextFiles && message.contextFiles.length > 0) || isLastMessage ? (
-                    <ContextCell
-                        key={`${messageIndexInTranscript}-context`}
-                        contextFiles={message.contextFiles}
-                    />
-                ) : null,
+                <ContextCell
+                    key={`${messageIndexInTranscript}-context`}
+                    contextFiles={message.contextFiles}
+                    isLastHumanMessage={isLastHumanMessage}
+                    isDotComUser={userInfo.isDotComUser}
+                />,
             ].filter(isDefined)
         ) : (
             <AssistantMessageCell

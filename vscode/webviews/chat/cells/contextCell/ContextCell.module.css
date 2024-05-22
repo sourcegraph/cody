@@ -53,3 +53,14 @@
 .file-link {
     padding: 2px 4px 2px 2px;
 }
+
+.info {
+    font-size: smaller;
+    opacity: 0.6;
+}
+
+.settings-container {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    border: solid 1px var(--vscode-sideBarSectionHeader-border);
+}

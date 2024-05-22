@@ -57,7 +57,7 @@ export interface EnhancedContextEventHandlersT {
     onShouldBuildSymfIndex: (provider: LocalSearchProvider) => void
 }
 
-function useEnhancedContextContext(): EnhancedContextContextT {
+export function useEnhancedContextContext(): EnhancedContextContextT {
     return React.useContext(EnhancedContextContext)
 }
 
@@ -346,7 +346,22 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     __storybook__open,
     onCloseByEscape,
     className,
-}): React.ReactNode => {
+}): React.ReactNode => (
+    <ToolbarPopoverItem
+        aria-label="Configure automatic code context"
+        tooltip="Configure automatic code context"
+        iconStart={BookMarkedIcon}
+        iconEnd={null}
+        __storybook__open={__storybook__open}
+        onCloseByEscape={onCloseByEscape}
+        popoverContent={() => <EnhancedContextSettingsComponent presentationMode={presentationMode} />}
+        className={className}
+    />
+)
+
+export const EnhancedContextSettingsComponent: React.FunctionComponent<{
+    presentationMode: 'consumer' | 'enterprise'
+}> = ({ presentationMode }) => {
     const events = useEnhancedContextEventHandlers()
     const context = useEnhancedContextContext()
 
@@ -363,43 +378,32 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
     )
 
     return (
-        <ToolbarPopoverItem
-            aria-label="Configure automatic code context"
-            tooltip="Configure automatic code context"
-            iconStart={BookMarkedIcon}
-            iconEnd={null}
-            __storybook__open={__storybook__open}
-            onCloseByEscape={onCloseByEscape}
-            popoverContent={() => (
-                <div className={styles.container}>
-                    <h1>Automatic code context</h1>
-                    {presentationMode === EnhancedContextPresentationMode.Consumer ? (
-                        context.groups.length > 0 ? (
-                            <dl className={styles.foldersList}>
-                                {context.groups.map(group => (
-                                    <ContextGroupComponent
-                                        key={group.displayName}
-                                        group={group}
-                                        allGroups={context.groups}
-                                    />
-                                ))}
-                            </dl>
-                        ) : (
-                            <p className="tw-text-sm tw-text-muted-foreground">
-                                No automatic code context is available
-                            </p>
-                        )
-                    ) : (
-                        <CompactGroupsComponent
-                            groups={context.groups}
-                            handleChoose={handleChooseRemoteSearchRepo}
-                            handleRemove={handleRemoveRemoteSearchRepo}
-                        />
-                    )}
-                </div>
+        <div className={styles.container}>
+            <h1>Automatic code context</h1>
+            {presentationMode === EnhancedContextPresentationMode.Consumer ? (
+                context.groups.length > 0 ? (
+                    <dl className={styles.foldersList}>
+                        {context.groups.map(group => (
+                            <ContextGroupComponent
+                                key={group.displayName}
+                                group={group}
+                                allGroups={context.groups}
+                            />
+                        ))}
+                    </dl>
+                ) : (
+                    <p className="tw-text-sm tw-text-muted-foreground">
+                        No automatic code context is available
+                    </p>
+                )
+            ) : (
+                <CompactGroupsComponent
+                    groups={context.groups}
+                    handleChoose={handleChooseRemoteSearchRepo}
+                    handleRemove={handleRemoveRemoteSearchRepo}
+                />
             )}
-            className={className}
-        />
+        </div>
     )
 }
 
