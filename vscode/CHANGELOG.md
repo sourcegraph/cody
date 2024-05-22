@@ -13,6 +13,9 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Edit: Fixed an issue where streamed insertions used invalid document ranges. [pull/4172](https://github.com/sourcegraph/cody/pull/4172)
 - Chat: Fixed issues with chat commands where selection context is removed from context items. [pull/4229](https://github.com/sourcegraph/cody/pull/4229)
 - Auth: Fixed an issue where Login page is not reloaded when proxy settings have changed. []
+- Chat: Fixes issues with chat commands where selection context is removed from context items. [pull/4229](https://github.com/sourcegraph/cody/pull/4229)
+- Chat: Fixes intermittent issues with `Add Selection to Cody Chat` where sometimes the @-mention would not actually be added. [pull/4237](https://github.com/sourcegraph/cody/pull/4237)
+- Fixed an issue where the `Add Selection to Cody Chat` context menu item was incorrectly disabled when no new chat was open. [pull/4242](https://github.com/sourcegraph/cody/pull/4242)
 
 ### Changed
 
@@ -20,6 +23,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: You can now change the model after you send a chat message. Subsequent messages will be sent using your selected model. [pull/4189](https://github.com/sourcegraph/cody/pull/4189)
 - Chat: The `@`-mention menu now shows the types of context you can include. [pull/4188](https://github.com/sourcegraph/cody/pull/4188)
 - Increases the context window for the new `GPT-4o` model. [pull/4180](https://github.com/sourcegraph/cody/pull/4180)
+- Commands/Chat: Increased the maximum output limit of LLM responses for recommended Enterprise models. [pull/4203](https://github.com/sourcegraph/cody/pull/4203)
+- Chat: The chat UI has been updated to make messages editable in-place and stream down from the top. [pull/4209](https://github.com/sourcegraph/cody/pull/4209)
 
 ## [1.18.0]
 

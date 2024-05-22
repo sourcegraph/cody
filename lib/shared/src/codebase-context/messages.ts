@@ -175,8 +175,10 @@ export interface ContextItemOpenCtx extends ContextItemCommon {
     title: string
     uri: URI
     providerUri: string
-    description?: string
-    data?: any
+    mention?: {
+        uri: string
+        data?: any
+    }
 }
 
 /**

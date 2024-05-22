@@ -1,4 +1,4 @@
-@import '../../vscode/webviews/storybook/vscode-dark-theme.css';
+@import '../../vscode/.storybook/static/vscode-themes/dark-modern.css';
 @import '../../vscode/webviews/components/shadcn/shadcn.css';
 @import '../node_modules/@vscode/codicons/dist/codicon.css';
 
