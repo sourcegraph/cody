@@ -155,7 +155,7 @@ async function getSnippetForLocationGetter(
     let isHover = true
 
     debugResolutionSteps.push({
-        type: 'getHover (initial)',
+        type: 'getHover (current location)',
         definitionString,
         hoverKind,
     })
@@ -166,7 +166,10 @@ async function getSnippetForLocationGetter(
 
         if (nodeType === 'type_identifier') {
             definitionString = await getTextFromLocation(definitionLocation)
-            debugResolutionSteps.push({ type: 'getTextFromLocation', definitionString })
+            debugResolutionSteps.push({
+                type: 'getTextFromLocation (definition location)',
+                definitionString,
+            })
         }
 
         if (isUnhelpfulSymbolSnippet(symbolName, definitionString)) {
@@ -181,7 +184,7 @@ async function getSnippetForLocationGetter(
             isHover = true
 
             debugResolutionSteps.push({
-                type: 'getHover',
+                type: 'getHover (definition location)',
                 definitionString,
                 hoverKind: parsedHover.kind,
             })
@@ -195,7 +198,7 @@ async function getSnippetForLocationGetter(
         definitionString = await getTextFromLocation(definitionLocation)
         debugResolutionSteps.push({
             why: 'unhelpful snippet',
-            type: 'getTextFromLocation',
+            type: 'getTextFromLocation (definition location)',
             definitionString,
         })
     }
