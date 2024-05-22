@@ -764,165 +764,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: f480215a1e62687f4fbcfdaedb35d49b
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2801
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
-          - name: user-agent
-            value: defaultClient / v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 321
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example.test.ts: import {
-                  expect } from 'vitest'
-
-                  import { it } from 'vitest'
-
-                  import { describe } from 'vitest'
-
-
-                  describe('test block', () => {
-                      it('does 1', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does 2', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does something else', () => {
-                          // This line will error due to incorrect usage of `performance.now`
-                          const startTime = performance.now(/* CURSOR */)
-                      })
-                  })
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Here is my selected code from my codebase file
-                  src/trickyLogic.ts, enclosed in <SELECTEDCODE7662> tags:
-
-                  <SELECTEDCODE7662>export function trickyLogic(a: number, b: number): number {
-                      if (a === 0) {
-                          return 1
-                      }
-                      if (b === 2) {
-                          return 1
-                      }
-
-                      return a - b
-                  }
-
-
-
-                  </SELECTEDCODE7662>
-
-
-                  As my programming assistant and an expert in testing code, follow instructions below to generate code for my selected code: Review the shared context to identify the testing framework and libraries in use. Then, generate a suite of multiple unit tests for the selected function using the detected test framework and libraries. Be sure to import the function being tested. Use the same patterns, testing framework, conventions, and libraries as shown in the shared context. Only import modules, functions, dependencies, and mocks based on shared code. If a test suite for the selected code is in the shared context, focus on generating new tests for uncovered cases. If none are detected, import common unit test libraries for {languageName}. Focus on validating key functionality with simple and complete assertions. Before writing the tests, identify which testing libraries and frameworks to use and import. At the end, enclose the fully completed code for the new unit tests without any comments, fragments, or TODOs. The new tests should validate the expected functionality and cover edge cases for with all required imports, including the function being tested. Do not repeat tests from the shared context. Enclose only the complete runnable tests.
-
-
-                  RULES:
-
-                  - Do not enclose response with any markdown formatting or triple backticks.
-
-                  - Enclose only the unit tests between <CODE5711> XML tags.
-
-                  - Your response must start with the suggested file path between <TESTFILE7041> XML tags, ensuring it aligns with the directory structure and conventions from the shared context
-              - speaker: assistant
-                text: <CODE5711><TESTFILE7041>
-            model: anthropic/claude-3-sonnet-20240229
-            stopSequences:
-              - </CODE5711>
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 120354
-        content:
-          mimeType: text/event-stream
-          size: 120354
-          text: >+
-            event: completion
-
-            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { expect } from 'vitest'\nimport { describe } from 'vitest';\nimport { it } from 'vitest';\nimport { trickyLogic } from './trickyLogic';\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0', () =\u003e {\n        expect(trickyLogic(0, 5)).toBe(1);\n    });\n\n    it('should return 1 when b is 2', () =\u003e {\n        expect(trickyLogic(5, 2)).toBe(1);\n    });\n\n    it('should return a - b when a is not 0 and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2);\n        expect(trickyLogic(10, 5)).toBe(5);\n    });\n\n    it('should handle negative numbers', () =\u003e {\n        expect(trickyLogic(-5, 3)).toBe(-8);\n        expect(trickyLogic(5, -3)).toBe(8);\n    });\n});\n","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Thu, 02 May 2024 11:23:36 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-02T11:23:34.469Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: 9589c988342007a8f8e7e9081160f70f
       _order: 0
       cache: {}
@@ -3907,6 +3748,169 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-05-18T16:19:26.666Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 51b1f5cf04238df24b4ac36fb8eda3e9
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2797
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_b09f01644a4261b32aa2ee4aea4f279ba69a57cff389f9b119b5265e913c0ea4
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-b8fcb22ff383139b705f047652351ba3-56d61932522d0d20-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 415
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example.test.ts: import {
+                  expect } from 'vitest'
+
+                  import { it } from 'vitest'
+
+                  import { describe } from 'vitest'
+
+
+                  describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of `performance.now`
+                          const startTime = performance.now(/* CURSOR */)
+                      })
+                  })
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Here is my selected code from my codebase file
+                  src/trickyLogic.ts, enclosed in <SELECTEDCODE7662> tags:
+
+                  <SELECTEDCODE7662>export function trickyLogic(a: number, b: number): number {
+                      if (a === 0) {
+                          return 1
+                      }
+                      if (b === 2) {
+                          return 1
+                      }
+
+                      return a - b
+                  }
+
+
+
+                  </SELECTEDCODE7662>
+
+
+                  As my programming assistant and an expert in testing code, follow instructions below to generate code for my selected code: Review the shared context to identify the testing framework and libraries in use. Then, generate a suite of multiple unit tests for the selected function using the detected test framework and libraries. Be sure to import the function being tested. Use the same patterns, testing framework, conventions, and libraries as shown in the shared context. Only import modules, functions, dependencies, and mocks based on shared code. If a test suite for the selected code is in the shared context, focus on generating new tests for uncovered cases. If none are detected, import common unit test libraries for typescript. Focus on validating key functionality with simple and complete assertions. Before writing the tests, identify which testing libraries and frameworks to use and import. At the end, enclose the fully completed code for the new unit tests without any comments, fragments, or TODOs. The new tests should validate the expected functionality and cover edge cases for with all required imports, including the function being tested. Do not repeat tests from the shared context. Enclose only the complete runnable tests.
+
+
+                  RULES:
+
+                  - Do not enclose response with any markdown formatting or triple backticks.
+
+                  - Enclose only the unit tests between <CODE5711> XML tags.
+
+                  - Your response must start with the suggested file path between <TESTFILE7041> XML tags, ensuring it aligns with the directory structure and conventions from the shared context
+              - speaker: assistant
+                text: <CODE5711><TESTFILE7041>
+            model: anthropic/claude-3-sonnet-20240229
+            stopSequences:
+              - </CODE5711>
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 86759
+        content:
+          mimeType: text/event-stream
+          size: 86759
+          text: >+
+            event: completion
+
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { trickyLogic } from './trickyLogic'\nimport { expect } from 'vitest'\nimport { it } from 'vitest'\nimport { describe } from 'vitest'\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 if a is 0', () =\u003e {\n        expect(trickyLogic(0, 5)).toBe(1)\n    })\n\n    it('should return 1 if b is 2', () =\u003e {\n        expect(trickyLogic(5, 2)).toBe(1)\n    })\n\n    it('should return a - b for other cases', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2)\n        expect(trickyLogic(10, 7)).toBe(3)\n        expect(trickyLogic(0, 0)).toBe(0)\n    })\n})\n","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 22 May 2024 22:45:34 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-05-22T22:45:32.464Z
       time: 0
       timings:
         blocked: -1

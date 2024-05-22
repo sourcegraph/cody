@@ -910,30 +910,26 @@ describe('Agent', () => {
             const testDocument = client.workspace.getDocument(vscode.Uri.parse(untitledDocument ?? ''))
             expect(trimEndOfLine(testDocument?.getText())).toMatchInlineSnapshot(
                 `
-              "import { expect } from 'vitest'
-              import { describe } from 'vitest';
-              import { it } from 'vitest';
-              import { trickyLogic } from './trickyLogic';
+              "import { trickyLogic } from './trickyLogic'
+              import { expect } from 'vitest'
+              import { it } from 'vitest'
+              import { describe } from 'vitest'
 
               describe('trickyLogic', () => {
-                  it('should return 1 when a is 0', () => {
-                      expect(trickyLogic(0, 5)).toBe(1);
-                  });
+                  it('should return 1 if a is 0', () => {
+                      expect(trickyLogic(0, 5)).toBe(1)
+                  })
 
-                  it('should return 1 when b is 2', () => {
-                      expect(trickyLogic(5, 2)).toBe(1);
-                  });
+                  it('should return 1 if b is 2', () => {
+                      expect(trickyLogic(5, 2)).toBe(1)
+                  })
 
-                  it('should return a - b when a is not 0 and b is not 2', () => {
-                      expect(trickyLogic(5, 3)).toBe(2);
-                      expect(trickyLogic(10, 5)).toBe(5);
-                  });
-
-                  it('should handle negative numbers', () => {
-                      expect(trickyLogic(-5, 3)).toBe(-8);
-                      expect(trickyLogic(5, -3)).toBe(8);
-                  });
-              });
+                  it('should return a - b for other cases', () => {
+                      expect(trickyLogic(5, 3)).toBe(2)
+                      expect(trickyLogic(10, 7)).toBe(3)
+                      expect(trickyLogic(0, 0)).toBe(0)
+                  })
+              })
               "
             `,
                 explainPollyError
