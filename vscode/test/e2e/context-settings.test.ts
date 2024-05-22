@@ -54,16 +54,6 @@ test.extend<ExpectedEvents>({
     await expect(contextSettingsButton.and(page.locator(':focus'))).not.toBeVisible()
     const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
     await expect(chatInput).toBeFocused()
-
-    // Tab should move the focus to the Enhanced Context Toggle button
-    await chatInput.press('Tab')
-    await expect(chatFrame.getByTitle('Enable Enhanced Context')).toBeFocused()
-
-    // Enter/Space key should toggle the setting
-    await page.keyboard.press('Space') // From disabled to enabled
-    await expect(chatFrame.getByTitle('Disable Enhanced Context')).toBeFocused()
-    await page.keyboard.press('Enter') // From enabled to disabled
-    await expect(chatFrame.getByTitle('Enable Enhanced Context')).toBeFocused()
 })
 
 test.extend<ExpectedEvents>({

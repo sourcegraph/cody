@@ -37,6 +37,11 @@ test('existing installs should show the update toast when the last dismissed ver
     // Use chat.
     let [chatFrame, chatInput] = await createEmptyChatPanel(page)
 
+    // Submit a chat message
+    await chatInput.fill('hey buddy')
+    await chatInput.press('Enter')
+    await expect(chatFrame.getByText('hey buddy')).toBeVisible()
+
     // Forge an older dismissed version into local storage.
     expect(
         await chatFrame.locator(':root').evaluate((_, versionUpdateStorageKey) => {
@@ -45,10 +50,6 @@ test('existing installs should show the update toast when the last dismissed ver
         }, versionUpdateStorageKey)
     ).toBe('0.7')
 
-    // Submit a chat message
-    await chatInput.fill('hey buddy')
-    await chatInput.press('Enter')
-    await expect(chatFrame.getByText('hey buddy')).toBeVisible()
     await page.getByLabel(/Close /).click()
     await expect(chatFrame.getByText('hey buddy')).not.toBeVisible()
 

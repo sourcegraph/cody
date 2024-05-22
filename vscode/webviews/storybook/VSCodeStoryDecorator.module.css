@@ -20,18 +20,23 @@ vscode-button::part(control) {
     text-decoration: none;
 }
 
-.container--webview {
+.container--webview, .container--cell {
     max-width: 80%;
     margin: 2rem auto;
     background-color: var(--vscode-editor-background);
     border: solid 1px var(--vscode-tab-border);
 }
 
-.container-sidebar {
+.container--sidebar {
     max-width: 400px;
     margin: 2rem auto;
     background-color: var(--vscode-sideBar-background);
     border: solid 1px var(--vscode-sideBar-border);
+}
+
+.container--cell {
+    /* Cells have their own border-bottom. */
+    border-bottom: 0 !important;
 }
 
 .container-viewport {

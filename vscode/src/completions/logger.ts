@@ -875,6 +875,7 @@ const otherCompletionProviders = [
     'Codeium.codeium',
     'Continue.continue',
     'devsense.intelli-php-vscode',
+    'FittenTech.Fitten-Code',
     'GitHub.copilot-nightly',
     'GitHub.copilot',
     'mutable-ai.mutable-ai',
