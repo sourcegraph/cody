@@ -332,7 +332,7 @@ async function resolveContextMentionProviderContextItem(
 
     const mention = {
         ...item,
-        uri: item.uri.toString(),
+        uri: item.originalUri,
     }
 
     const items = await openCtxClient.items({ message: input.toString(), mention }, item.providerUri)
@@ -344,6 +344,7 @@ async function resolveContextMentionProviderContextItem(
                       type: 'openctx',
                       title: item.title,
                       uri: URI.parse(item.url || item.providerUri),
+                      originalUri: item.url || item.providerUri,
                       providerUri: item.providerUri,
                       content: item.ai.content,
                       provider: 'openctx',
