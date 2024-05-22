@@ -244,6 +244,22 @@ describe('Tracked Range', () => {
         it('should not track whitespace insertion after the range as a range expansion', () => {
             expect(track('[hello]( )', '  \n', { supportRangeAffix: true })).toBe('[hello]  \n')
         })
+
+        it('should track single character insertion within the range as a range expansion', () => {
+            expect(track('h[e()l]o', 'l', { supportRangeAffix: true })).toBe('h[ell]o')
+        })
+
+        it('should track single character deletion within the range as a range reduction', () => {
+            expect(track('h[e(l)l]o', '', { supportRangeAffix: true })).toBe('h[el]o')
+        })
+
+        it('should track single new line insertion within the range as a range expansion', () => {
+            expect(track('h[e()l]o', '\n', { supportRangeAffix: true })).toBe('h[e\nl]o')
+        })
+
+        it('should track single new line deletion within the range as a range reduction', () => {
+            expect(track('h[e(\n)l]o', '', { supportRangeAffix: true })).toBe('h[el]o')
+        })
     })
 })
 
