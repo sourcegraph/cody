@@ -138,9 +138,7 @@ describe('Custom Commands', () => {
         const originalDocument = client.workspace.getDocument(sumUri)!
         expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(
             `
-          "/* hello */ export function sum(a: number, b: number): number {
-              /* CURSOR */
-          }
+          "// hello
           export function sum(a: number, b: number): number {
               /* CURSOR */
           }"
