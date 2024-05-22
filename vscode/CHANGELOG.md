@@ -7,6 +7,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Added
 
 - Chat: Integerated OpenCtx providers with @-mention context menu. [pull/4201](https://github.com/sourcegraph/cody/pull/4201/files)
+- Chat: Added a visual element under the chat view input field to show the remaining tokens of the user message, the user appended context and the enhanced context.
 
 ### Fixed
 
