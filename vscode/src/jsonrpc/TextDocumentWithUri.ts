@@ -58,4 +58,8 @@ export class ProtocolTextDocumentWithUri {
     public get selection(): Range | undefined {
         return this.underlying.selection
     }
+
+    public get visibleRange(): Range | undefined {
+        return this.underlying.visibleRange
+    }
 }

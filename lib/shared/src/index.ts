@@ -61,6 +61,7 @@ export type {
 export {
     type ContextItem,
     type ContextItemFile,
+    type ContextItemOpenCtx,
     ContextItemSource,
     type ContextItemWithContent,
     type ContextItemSymbol,
@@ -269,10 +270,10 @@ export {
     scanForMentionTriggerInUserTextInput,
 } from './mentions/query'
 export {
-    CONTEXT_MENTION_PROVIDERS,
     type ContextMentionProvider,
     type ContextItemProps,
     allMentionProvidersMetadata,
+    openCtxMentionProviders,
     FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type ContextMentionProviderMetadata,
@@ -299,5 +300,5 @@ export { URL_CONTEXT_MENTION_PROVIDER } from './mentions/providers/urlMentions'
 export * from './githubClient'
 export {
     setOpenCtxClient,
-    getOpenCtxClient,
+    openCtx,
 } from './context/openctx/api'

@@ -1,0 +1,72 @@
+:root {
+    --toolbar-button-font-size: 11px;
+}
+
+.button {
+    &, & + aside {
+        /* Also style our popovers. */
+        font-size: var(--toolbar-button-font-size);
+        line-height: var(--toolbar-button-font-size);
+    }
+
+    user-select: none;
+    &:enabled {
+        cursor: pointer;
+    }
+
+    border-radius: 3px;
+    --padding-y: 2px;
+    --padding-x: 3px;
+    padding: var(--padding-y) var(--padding-x);
+
+    --icon-size: 13px;
+
+    --gap: 2px;
+    gap: var(--gap);
+
+    flex-shrink: 0;
+
+    > svg {
+        flex-shrink: 0;
+        width: var(--icon-size);
+        height: var(--icon-size);
+    }
+}
+
+.button--icon-end-chevron > svg:last-child {
+    margin-left: calc(-1*var(--gap));
+}
+
+.button--primary {
+    color: color-mix(in lch, var(--vscode-button-secondaryForeground) 50%, var(--vscode-button-foreground));
+    background-color: var(--tint-color);
+    &:disabled {
+        --tint-color: color-mix(in srgb, var(--vscode-button-secondaryBackground) 70%, var(--vscode-button-secondaryForeground));
+    }
+    &:enabled {
+        --tint-color: var(--vscode-button-background);
+    }
+
+    &.button--no-icon-start {
+        padding-left: calc(2*var(--padding-x));
+    }
+
+    &.button--no-icon-end {
+        padding-right: calc(2*var(--padding-x));
+    }
+}
+
+.button-secondary {
+    color: color-mix(in lch, var(--vscode-button-secondaryForeground) 60%, transparent);
+    background: transparent;
+}
+
+/* Hover state */
+.button:enabled:is(:hover, :focus-within) {
+    background-color: unset;
+    color: var(--vscode-button-foreground);
+    fill: var(--vscode-button-foreground);
+    &.button--primary {
+        background-color: var(--vscode-button-background);
+    }
+}

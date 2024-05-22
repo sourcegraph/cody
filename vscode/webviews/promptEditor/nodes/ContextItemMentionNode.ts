@@ -6,6 +6,7 @@ import {
     type ContextItemFile,
     type ContextItemGithubIssue,
     type ContextItemGithubPullRequest,
+    type ContextItemOpenCtx,
     type ContextItemPackage,
     type ContextItemSymbol,
     displayLineRange,
@@ -37,6 +38,7 @@ export type SerializedContextItem = { uri: string; title?: string; content?: und
     | Omit<ContextItemPackage, 'uri' | 'content'>
     | Omit<ContextItemGithubIssue, 'uri' | 'content'>
     | Omit<ContextItemGithubPullRequest, 'uri' | 'content'>
+    | Omit<ContextItemOpenCtx, 'uri' | 'content'>
 )
 
 export function serializeContextItem(
@@ -202,6 +204,8 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
 
         case 'github_issue':
             return `@github:issue:${contextItem.owner}/${contextItem.repoName}/${contextItem.issueNumber}`
+        case 'openctx':
+            return `@openctx:${contextItem.uri}`
     }
     // @ts-ignore
     throw new Error(`unrecognized context item type ${contextItem.type}`)

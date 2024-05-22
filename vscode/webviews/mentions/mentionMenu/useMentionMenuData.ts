@@ -5,21 +5,21 @@ import { prepareContextItemForMentionMenu } from '../../promptEditor/plugins/atM
 import { useContextProviders } from '../providers'
 
 export interface MentionMenuParams {
-    query: string
+    query: string | null
     parentItem: ContextMentionProviderMetadata | null
 }
 
 export function useMentionMenuParams(): {
     params: MentionMenuParams
-    updateQuery: (query: string) => void
+    updateQuery: (query: string | null) => void
     updateMentionMenuParams: MentionMenuContextValue['updateMentionMenuParams']
 } {
-    const [params, setParams] = useState<MentionMenuParams>({ query: '', parentItem: null })
+    const [params, setParams] = useState<MentionMenuParams>({ query: null, parentItem: null })
 
     return useMemo(
         () => ({
             params,
-            updateQuery: query => setParams(prev => ({ ...prev, query: query ?? '' })),
+            updateQuery: query => setParams(prev => ({ ...prev, query })),
             updateMentionMenuParams: update => setParams(prev => ({ ...prev, ...update })),
         }),
         [params]
@@ -41,19 +41,20 @@ export function useMentionMenuData(
     { remainingTokenBudget, limit }: { remainingTokenBudget: number; limit: number }
 ): MentionMenuData {
     const results = useChatContextItems(params.query, params.parentItem)
-    const queryLower = params.query.toLowerCase()
+    const queryLower = params.query?.toLowerCase() ?? null
 
     const providers = useContextProviders()
 
     return useMemo(
         () => ({
-            providers: params.parentItem
-                ? []
-                : providers.filter(
-                      provider =>
-                          provider.id.toLowerCase().includes(queryLower) ||
-                          provider.title?.toLowerCase().includes(queryLower)
-                  ),
+            providers:
+                params.parentItem || queryLower === null
+                    ? []
+                    : providers.filter(
+                          provider =>
+                              provider.id.toLowerCase().includes(queryLower) ||
+                              provider.title?.toLowerCase().includes(queryLower)
+                      ),
             items: results
                 ?.slice(0, limit)
                 .map(item => prepareContextItemForMentionMenu(item, remainingTokenBudget)),

@@ -1,11 +1,23 @@
 import { type ModelProvider, ModelUIGroup } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { type FunctionComponent, useCallback, useMemo } from 'react'
+import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { chatModelIconComponent } from '../ChatModelIcon'
-import { ComboBox, type SelectListOption } from '../shadcn/ui/combobox'
+import { Command, CommandGroup, CommandItem, CommandList } from '../shadcn/ui/command'
+import { ToolbarPopoverItem } from '../shadcn/ui/toolbar'
+import { cn } from '../shadcn/utils'
 import styles from './ModelSelectField.module.css'
+
+type Value = string
+
+interface SelectListOption {
+    value: Value | undefined
+    title: string | ReactNode
+    filterKeywords?: string[]
+    group?: string
+    disabled?: boolean
+}
 
 export const ModelSelectField: React.FunctionComponent<{
     models: ModelProvider[]
@@ -13,11 +25,19 @@ export const ModelSelectField: React.FunctionComponent<{
 
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
 
+    onCloseByEscape?: () => void
     className?: string
 
     /** For storybooks only. */
     __storybook__open?: boolean
-}> = ({ models, onModelSelect: parentOnModelSelect, userInfo, className, __storybook__open }) => {
+}> = ({
+    models,
+    onModelSelect: parentOnModelSelect,
+    userInfo,
+    onCloseByEscape,
+    className,
+    __storybook__open,
+}) => {
     const usableModels = useMemo(() => models.filter(m => !m.deprecated), [models])
     const selectedModel = usableModels.find(m => m.default) ?? usableModels[0]
 
@@ -49,18 +69,18 @@ export const ModelSelectField: React.FunctionComponent<{
         [showCodyProBadge, parentOnModelSelect]
     )
 
-    const onPopoverOpen = useCallback((): void => {
-        // Trigger `CodyVSCodeExtension:openLLMDropdown:clicked` only when dropdown is about to be opened.
-        getVSCodeAPI().postMessage({
-            command: 'event',
-            eventName: 'CodyVSCodeExtension:openLLMDropdown:clicked',
-            properties: undefined,
-        })
-    }, [])
+    const readOnly = !userInfo.isDotComUser
 
-    if (!usableModels.length || usableModels.length < 1) {
-        return null
-    }
+    const onOpenChange = useCallback((open: boolean): void => {
+        if (open) {
+            // Trigger `CodyVSCodeExtension:openLLMDropdown:clicked` only when dropdown is about to be opened.
+            getVSCodeAPI().postMessage({
+                command: 'event',
+                eventName: 'CodyVSCodeExtension:openLLMDropdown:clicked',
+                properties: undefined,
+            })
+        }
+    }, [])
 
     const options = useMemo<SelectListOption[]>(
         () =>
@@ -76,7 +96,6 @@ export const ModelSelectField: React.FunctionComponent<{
                                 modelAvailability={modelAvailability(userInfo, m)}
                             />
                         ),
-                        filterKeywords: [m.title, m.provider],
                         // needs-cody-pro models should be clickable (not disabled) so the user can
                         // be taken to the upgrade page.
                         disabled: !['available', 'needs-cody-pro'].includes(
@@ -87,6 +106,33 @@ export const ModelSelectField: React.FunctionComponent<{
             ),
         [usableModels, userInfo]
     )
+    const optionsByGroup: { group: string; options: SelectListOption[] }[] = useMemo(() => {
+        const groups = new Map<string, SelectListOption[]>()
+        for (const option of options) {
+            const groupOptions = groups.get(option.group ?? '')
+            if (groupOptions) {
+                groupOptions.push(option)
+            } else {
+                groups.set(option.group ?? '', [option])
+            }
+        }
+        return Array.from(groups.entries())
+            .sort((a, b) => {
+                const aIndex = GROUP_ORDER.indexOf(a[0])
+                const bIndex = GROUP_ORDER.indexOf(b[0])
+                if (aIndex !== -1 && bIndex !== -1) {
+                    return aIndex - bIndex
+                }
+                if (aIndex !== -1) {
+                    return -1
+                }
+                if (bIndex !== -1) {
+                    return 1
+                }
+                return 0
+            })
+            .map(([group, options]) => ({ group, options }))
+    }, [options])
 
     const onChange = useCallback(
         (value: string | undefined) => {
@@ -95,19 +141,65 @@ export const ModelSelectField: React.FunctionComponent<{
         [onModelSelect, usableModels]
     )
 
+    const onKeyDown = useCallback(
+        (event: React.KeyboardEvent<HTMLDivElement>) => {
+            if (event.key === 'Escape') {
+                onCloseByEscape?.()
+            }
+        },
+        [onCloseByEscape]
+    )
+
+    if (!usableModels.length || usableModels.length < 1) {
+        return null
+    }
+
+    const value = selectedModel.model
     return (
-        <ComboBox
-            options={options}
-            groupOrder={GROUP_ORDER}
-            pluralNoun="models"
-            value={selectedModel.model}
-            onChange={onChange}
-            className={className}
-            readOnly={!userInfo.isDotComUser}
-            onOpen={onPopoverOpen}
-            __storybook__open={__storybook__open}
-            aria-label="Choose a model"
-        />
+        <ToolbarPopoverItem
+            role="combobox"
+            iconEnd={readOnly ? undefined : 'chevron'}
+            className={cn('tw-justify-between', className)}
+            disabled={readOnly}
+            defaultOpen={__storybook__open}
+            aria-label="Select a model"
+            tabIndex={-1} // TODO(sqs): should add a keyboard shortcut for this
+            popoverContent={close => (
+                <Command loop={true} defaultValue={value} tabIndex={0} className="focus:tw-outline-none">
+                    <CommandList>
+                        {optionsByGroup.map(({ group, options }) => (
+                            <CommandGroup heading={group} key={group}>
+                                {options.map(option => (
+                                    <CommandItem
+                                        key={option.value}
+                                        value={option.value}
+                                        onSelect={currentValue => {
+                                            onChange(currentValue)
+                                            close()
+                                        }}
+                                        disabled={option.disabled}
+                                    >
+                                        {option.title}
+                                    </CommandItem>
+                                ))}
+                            </CommandGroup>
+                        ))}
+                    </CommandList>
+                </Command>
+            )}
+            popoverRootProps={{ onOpenChange }}
+            popoverContentProps={{
+                className: 'tw-min-w-[325px] tw-w-[unset] tw-max-w-[90%] !tw-p-0',
+                onKeyDown: onKeyDown,
+                onCloseAutoFocus: event => {
+                    // Prevent the popover trigger from stealing focus after the user selects an
+                    // item. We want the focus to return to the editor.
+                    event.preventDefault()
+                },
+            }}
+        >
+            {value !== undefined ? options.find(option => option.value === value)?.title : 'Select...'}
+        </ToolbarPopoverItem>
     )
 }
 

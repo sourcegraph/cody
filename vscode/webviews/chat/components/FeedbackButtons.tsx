@@ -5,7 +5,7 @@ import { CODY_FEEDBACK_URL } from '../../../src/chat/protocol'
 import styles from './FeedbackButtons.module.css'
 
 export interface FeedbackButtonsProps {
-    className: string
+    className?: string
     disabled?: boolean
     feedbackButtonsOnSubmit: (text: string) => void
 }
@@ -33,6 +33,7 @@ export const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({
                         appearance="icon"
                         type="button"
                         onClick={() => onFeedbackBtnSubmit('thumbsUp')}
+                        tabIndex={-1}
                     >
                         <i className="codicon codicon-thumbsup" />
                     </VSCodeButton>
@@ -41,6 +42,7 @@ export const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({
                         appearance="icon"
                         type="button"
                         onClick={() => onFeedbackBtnSubmit('thumbsDown')}
+                        tabIndex={-1}
                     >
                         <i className="codicon codicon-thumbsdown" />
                     </VSCodeButton>

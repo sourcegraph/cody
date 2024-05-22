@@ -1,15 +1,14 @@
 import { errorToChatError, ps } from '@sourcegraph/cody-shared'
-import { render, screen } from '@testing-library/react'
+import { render as render_, screen } from '@testing-library/react'
 import type { ComponentProps } from 'react'
 import { describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
+import { TooltipProvider } from '../components/shadcn/ui/tooltip'
 import { Transcript } from './Transcript'
 import { FIXTURE_USER_ACCOUNT_INFO } from './fixtures'
 
 const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
     messageInProgress: null,
-    messageBeingEdited: undefined,
-    setMessageBeingEdited: () => {},
     feedbackButtonsOnSubmit: () => {},
     copyButtonOnSubmit: () => {},
     insertButtonOnSubmit: () => {},
@@ -19,12 +18,21 @@ const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
 
 vi.mock('@vscode/webview-ui-toolkit/react', () => ({
     VSCodeButton: vi.fn(),
+    VSCodeCheckbox: vi.fn(),
 }))
+
+vi.mock('../utils/VSCodeApi', () => ({
+    getVSCodeAPI: vi.fn(),
+}))
+
+function render(element: JSX.Element): ReturnType<typeof render_> {
+    return render_(<TooltipProvider>{element}</TooltipProvider>)
+}
 
 describe('Transcript', () => {
     test('empty', () => {
         render(<Transcript {...PROPS} transcript={[]} />)
-        expectCells([{ message: 'help and tips' }])
+        expectCells([{ message: '' }, { message: 'help and tips' }])
     })
 
     test('interaction without context', () => {
@@ -37,7 +45,7 @@ describe('Transcript', () => {
                 ]}
             />
         )
-        expectCells([{ message: 'Hello' }, { message: 'Hi' }])
+        expectCells([{ message: 'Hello' }, { message: 'Hi' }, { message: '' }])
     })
 
     test('interaction with context', () => {
@@ -54,7 +62,7 @@ describe('Transcript', () => {
                 ]}
             />
         )
-        expectCells([{ message: 'Foo' }, { context: { files: 1 } }, { message: 'Bar' }])
+        expectCells([{ message: 'Foo' }, { context: { files: 1 } }, { message: 'Bar' }, { message: '' }])
     })
 
     test('2 interactions', () => {
@@ -69,7 +77,13 @@ describe('Transcript', () => {
                 ]}
             />
         )
-        expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: 'Baz' }, { message: 'Qux' }])
+        expectCells([
+            { message: 'Foo' },
+            { message: 'Bar' },
+            { message: 'Baz' },
+            { message: 'Qux' },
+            { message: '' },
+        ])
     })
 
     test('human message waiting for context', () => {

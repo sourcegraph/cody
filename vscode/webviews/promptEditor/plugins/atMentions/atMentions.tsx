@@ -10,8 +10,15 @@ import {
 } from '@floating-ui/react'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { LexicalTypeaheadMenuPlugin, type MenuOption } from '@lexical/react/LexicalTypeaheadMenuPlugin'
-import { $createTextNode, $getSelection, COMMAND_PRIORITY_NORMAL, type TextNode } from 'lexical'
-import { useCallback, useEffect, useState } from 'react'
+import {
+    $createTextNode,
+    $getSelection,
+    BLUR_COMMAND,
+    COMMAND_PRIORITY_NORMAL,
+    KEY_ESCAPE_COMMAND,
+    type TextNode,
+} from 'lexical'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import styles from './atMentions.module.css'
 
 import {
@@ -52,7 +59,7 @@ export function createMentionMenuOption(item: ContextItem): MentionMenuOption {
 }
 
 const FLOATING_OPTIONS: UseFloatingOptions = {
-    placement: 'top-start',
+    placement: 'bottom-start',
     middleware: [offset(6), flip(), shift()],
     transform: false,
 }
@@ -160,13 +167,43 @@ export default function MentionsPlugin(): JSX.Element | null {
         return cleanup
     }, [refs.reference.current, refs.floating.current])
 
+    // Close the menu when the editor loses focus.
+    const anchorElementRef2 = useRef<HTMLElement>()
+    useEffect(() => {
+        return editor.registerCommand(
+            BLUR_COMMAND,
+            event => {
+                // Ignore clicks in the mention menu itself.
+                const isInEditorOrMenu = Boolean(
+                    event.relatedTarget instanceof Node &&
+                        (editor.getRootElement()?.contains(event.relatedTarget) ||
+                            anchorElementRef2.current?.contains(event.relatedTarget))
+                )
+                if (isInEditorOrMenu) {
+                    // `editor.focus()` swallows clicks in the menu; this seems to work instead.
+                    editor.getRootElement()?.focus()
+                    return true
+                }
+
+                editor.dispatchCommand(
+                    KEY_ESCAPE_COMMAND,
+                    new KeyboardEvent('keydown', { key: 'Escape' })
+                )
+                return true
+            },
+            COMMAND_PRIORITY_NORMAL
+        )
+    }, [editor])
+
+    const onClose = useCallback(() => {
+        updateMentionMenuParams({ parentItem: null })
+    }, [updateMentionMenuParams])
+
     return (
         <LexicalTypeaheadMenuPlugin<MentionMenuOption>
-            onQueryChange={query => updateQuery(query ?? '')}
+            onQueryChange={updateQuery}
             onSelectOption={onSelectOption}
-            onClose={() => {
-                updateMentionMenuParams({ parentItem: null })
-            }}
+            onClose={onClose}
             triggerFn={scanForMentionTriggerInUserTextInput}
             options={DUMMY_OPTIONS}
             anchorClassName={styles.resetAnchor}
@@ -187,31 +224,34 @@ export default function MentionsPlugin(): JSX.Element | null {
                     },
                 })
             }}
-            menuRenderFn={(anchorElementRef, { selectOptionAndCleanUp }) =>
-                anchorElementRef.current && (
-                    <FloatingPortal root={anchorElementRef.current}>
-                        <div
-                            ref={ref => {
-                                refs.setFloating(ref)
-                            }}
-                            style={{
-                                position: strategy,
-                                top: y,
-                                left: x,
-                            }}
-                            className={clsx(styles.popover)}
-                        >
-                            <MentionMenu
-                                params={params}
-                                updateMentionMenuParams={updateMentionMenuParams}
-                                setEditorQuery={setEditorQuery}
-                                data={data}
-                                selectOptionAndCleanUp={selectOptionAndCleanUp}
-                            />
-                        </div>
-                    </FloatingPortal>
+            menuRenderFn={(anchorElementRef, { selectOptionAndCleanUp }) => {
+                anchorElementRef2.current = anchorElementRef.current ?? undefined
+                return (
+                    anchorElementRef.current && (
+                        <FloatingPortal root={anchorElementRef.current}>
+                            <div
+                                ref={ref => {
+                                    refs.setFloating(ref)
+                                }}
+                                style={{
+                                    position: strategy,
+                                    top: y,
+                                    left: x,
+                                }}
+                                className={clsx(styles.popover)}
+                            >
+                                <MentionMenu
+                                    params={params}
+                                    updateMentionMenuParams={updateMentionMenuParams}
+                                    setEditorQuery={setEditorQuery}
+                                    data={data}
+                                    selectOptionAndCleanUp={selectOptionAndCleanUp}
+                                />
+                            </div>
+                        </FloatingPortal>
+                    )
                 )
-            }
+            }}
         />
     )
 }

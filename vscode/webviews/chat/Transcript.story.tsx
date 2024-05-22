@@ -19,16 +19,10 @@ const meta: Meta<typeof Transcript> = {
             mapping: FIXTURE_TRANSCRIPT,
             control: { type: 'select' },
         },
-        messageBeingEdited: {
-            name: 'messageBeingEdited',
-            control: { type: 'number', step: 2 },
-        },
     },
     args: {
         transcript: FIXTURE_TRANSCRIPT.simple,
         messageInProgress: null,
-        messageBeingEdited: undefined,
-        setMessageBeingEdited: () => {},
         feedbackButtonsOnSubmit: () => {},
         copyButtonOnSubmit: () => {},
         insertButtonOnSubmit: () => {},
@@ -56,19 +50,6 @@ export const Empty: StoryObj<typeof meta> = {
 
 export const WithContext: StoryObj<typeof meta> = {
     args: {
-        transcript: FIXTURE_TRANSCRIPT.explainCode2,
-    },
-}
-
-export const Editing: StoryObj<typeof meta> = {
-    args: {
-        messageBeingEdited: 0,
-    },
-}
-
-export const EditingWithContext: StoryObj<typeof meta> = {
-    args: {
-        messageBeingEdited: 0,
         transcript: FIXTURE_TRANSCRIPT.explainCode2,
     },
 }
@@ -149,6 +130,24 @@ export const WithRateLimitError: StoryObj<typeof meta> = {
                 error: errorToChatError(
                     new RateLimitError('chat messages and commands', 'rate limit error', true)
                 ),
+            },
+        ]),
+        isTranscriptError: true,
+    },
+}
+
+export const TextWrapping: StoryObj<typeof meta> = {
+    args: {
+        transcript: transcriptFixture([
+            ...SIMPLE_TRANSCRIPT,
+            {
+                speaker: 'human',
+                text: ps`What color is the skyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskysky?`,
+                contextFiles: [],
+            },
+            {
+                speaker: 'assistant',
+                text: ps`The sky is blueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblue.\n\n\`\`\`\nconst color = 'blueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblue'\n\`\`\`\n\nMore info:\n\n- Color of sky: blueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblue`,
             },
         ]),
         isTranscriptError: true,
