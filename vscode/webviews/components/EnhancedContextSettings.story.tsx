@@ -34,7 +34,7 @@ interface SingleTileArgs {
 export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArgs> = {
     args: {
         presentationMode: EnhancedContextPresentationMode.Consumer,
-        defaultOpen: true,
+        __storybook__open: true,
         name: '~/sourcegraph',
         kind: 'search',
         type: 'local',
@@ -45,7 +45,6 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
             options: ['consumer', 'enterprise'],
             control: 'radio',
         },
-        defaultOpen: { control: 'boolean', defaultValue: true },
         name: { control: 'text' },
         kind: {
             options: ['embeddings', 'search'],
@@ -78,9 +77,6 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
             },
             onConsentToEmbeddings(provider: LocalEmbeddingsProvider): void {
                 updateArgs({ state: 'indexing' })
-            },
-            onEnabledChange(enabled: boolean): void {
-                console.log(`Thank you for ${enabled ? 'enabling' : 'disabling'} the enhanced context!`)
             },
             onRemoveRemoteSearchRepo(id): void {
                 alert(`Remove remote search repo "${id}"`)
@@ -139,7 +135,7 @@ export const ConsumerMultipleProviders: StoryObj<typeof EnhancedContextSettings>
                 }}
             >
                 <EnhancedContextSettings
-                    defaultOpen={true}
+                    __storybook__open={true}
                     presentationMode={EnhancedContextPresentationMode.Consumer}
                 />
             </EnhancedContextContext.Provider>
@@ -156,7 +152,7 @@ export const EnterpriseNoRepositories: StoryObj<typeof EnhancedContextSettings> 
                 }}
             >
                 <EnhancedContextSettings
-                    defaultOpen={true}
+                    __storybook__open={true}
                     presentationMode={EnhancedContextPresentationMode.Enterprise}
                 />
             </EnhancedContextContext.Provider>
@@ -213,7 +209,7 @@ export const EnterpriseMultipleRepositories: StoryObj<typeof EnhancedContextSett
                 }}
             >
                 <EnhancedContextSettings
-                    defaultOpen={true}
+                    __storybook__open={true}
                     presentationMode={EnhancedContextPresentationMode.Enterprise}
                 />
             </EnhancedContextContext.Provider>

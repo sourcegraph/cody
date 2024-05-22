@@ -1,8 +1,7 @@
 import { isMacOS } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
-import { type FunctionComponent, type MouseEventHandler, useCallback, useEffect, useState } from 'react'
+import type { FunctionComponent } from 'react'
 import { ToolbarButton } from '../../../../../../components/shadcn/ui/toolbar'
-import { useEnhancedContextEnabled } from '../../../../../EnhancedContext'
 import styles from './SubmitButton.module.css'
 
 export const SubmitButton: FunctionComponent<{
@@ -11,65 +10,53 @@ export const SubmitButton: FunctionComponent<{
     isParentHovered?: boolean
     disabled?: boolean
 }> = ({ onClick: parentOnClick, isEditorFocused, isParentHovered, disabled }) => {
-    const addEnhancedContext = useEnhancedContextEnabled()
-
-    const [isAltKeyDown, setIsAltKeyDown] = useState(false)
-    useEffect(() => {
-        if (!isEditorFocused && !isParentHovered) {
-            setIsAltKeyDown(false)
-            return undefined
-        }
-
-        const onKeyDown = (event: KeyboardEvent) => {
-            if (event.altKey) setIsAltKeyDown(true)
-        }
-        const onKeyUp = (event: KeyboardEvent) => {
-            if (!event.altKey) setIsAltKeyDown(false)
-        }
-        document.addEventListener('keydown', onKeyDown)
-        document.addEventListener('keyup', onKeyUp)
-        return () => {
-            document.removeEventListener('keydown', onKeyDown)
-            document.removeEventListener('keyup', onKeyUp)
-        }
-    }, [isEditorFocused, isParentHovered])
-
-    const onClick = useCallback<MouseEventHandler<HTMLButtonElement>>(() => {
-        parentOnClick(!isAltKeyDown)
-    }, [parentOnClick, isAltKeyDown])
-
-    const withEnhancedContext = !isAltKeyDown && addEnhancedContext
-
     return (
-        <ToolbarButton
-            type="submit"
-            variant="primary"
-            tooltip={
-                withEnhancedContext
-                    ? `Hold <${ALT_KEY_NAME}> to chat w/o context`
-                    : 'Use @-mentioned context only'
-            }
-            iconEnd={NO_ICON}
-            onClick={onClick}
-            aria-label="Submit message"
-            className={clsx(styles.button, {
-                [styles.editorFocused]: isEditorFocused || isParentHovered,
-            })}
-            disabled={disabled}
-            tabIndex={-1} // press Enter to invoke, doesn't need to be tabbable
-        >
-            Run{!withEnhancedContext && ' (no auto context)'}
-            <kbd>
-                {addEnhancedContext && isAltKeyDown ? `${ALT_KEY_NAME}+` : null}
-                <EnterKeyIcon width={7} height={7} />
-            </kbd>
-        </ToolbarButton>
+        <>
+            <ToolbarButton
+                type="submit"
+                variant="secondary"
+                tooltip="Send without automatic code context. Includes context from @-mentions. Faster and gives you more control."
+                iconEnd={NO_ICON}
+                onClick={() => parentOnClick(false)}
+                aria-label="Send without automatic code context"
+                className={clsx(styles.button, {
+                    [styles.editorFocused]: isEditorFocused || isParentHovered,
+                })}
+                disabled={disabled}
+                tabIndex={-1} // press Enter to invoke, doesn't need to be tabbable
+            >
+                w/o context
+                <kbd>
+                    {ALT_KEY_NAME}+
+                    <EnterKeyIcon width={7} height={7} />
+                </kbd>
+            </ToolbarButton>
+            <ToolbarButton
+                type="submit"
+                variant="primary"
+                tooltip="Send with automatic code context"
+                iconEnd={NO_ICON}
+                onClick={() => parentOnClick(true)}
+                aria-label="Send with automatic code context"
+                className={clsx(styles.button, {
+                    [styles.editorFocused]: isEditorFocused || isParentHovered,
+                })}
+                disabled={disabled}
+                tabIndex={-1} // press Enter to invoke, doesn't need to be tabbable
+            >
+                Send
+                <kbd>
+                    <EnterKeyIcon width={7} height={7} />
+                </kbd>
+            </ToolbarButton>
+        </>
     )
 }
 
 const NO_ICON = () => null
 
-const ALT_KEY_NAME = isMacOS() ? 'Opt' : 'Alt'
+// Lowercase because the button label is lowercase, and it looks weird if this is capitalized.
+const ALT_KEY_NAME = isMacOS() ? 'opt' : 'alt'
 
 const EnterKeyIcon: FunctionComponent<{ width?: number | string; height?: number | string }> = ({
     width,

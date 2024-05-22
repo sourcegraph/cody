@@ -14,7 +14,6 @@ import {
     isMacOS,
 } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from './Chat'
-import { EnhancedContextEnabled } from './chat/EnhancedContext'
 
 import type { AuthMethod, ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
 
@@ -55,7 +54,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [chatEnabled, setChatEnabled] = useState<boolean>(true)
     const [attributionEnabled, setAttributionEnabled] = useState<boolean>(false)
 
-    const [enhancedContextEnabled, setEnhancedContextEnabled] = useState<boolean>(true)
     const [enhancedContextStatus, setEnhancedContextStatus] = useState<EnhancedContextContextT>({
         groups: [],
     })
@@ -267,35 +265,28 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     value={{
                         onChooseRemoteSearchRepo,
                         onConsentToEmbeddings,
-                        onEnabledChange: (enabled): void => {
-                            if (enabled !== enhancedContextEnabled) {
-                                setEnhancedContextEnabled(enabled)
-                            }
-                        },
                         onRemoveRemoteSearchRepo,
                         onShouldBuildSymfIndex,
                     }}
                 >
                     <EnhancedContextContext.Provider value={enhancedContextStatus}>
-                        <EnhancedContextEnabled.Provider value={enhancedContextEnabled}>
-                            <ChatModelContextProvider value={chatModelContext}>
-                                <WithContextProviders>
-                                    <Chat
-                                        chatEnabled={chatEnabled}
-                                        userInfo={userAccountInfo}
-                                        messageInProgress={messageInProgress}
-                                        transcript={transcript}
-                                        vscodeAPI={vscodeAPI}
-                                        telemetryService={telemetryService}
-                                        telemetryRecorder={telemetryRecorder}
-                                        isTranscriptError={isTranscriptError}
-                                        welcomeMessage={welcomeMessageMarkdown}
-                                        guardrails={attributionEnabled ? guardrails : undefined}
-                                        userContextFromSelection={userContextFromSelection}
-                                    />
-                                </WithContextProviders>
-                            </ChatModelContextProvider>
-                        </EnhancedContextEnabled.Provider>
+                        <ChatModelContextProvider value={chatModelContext}>
+                            <WithContextProviders>
+                                <Chat
+                                    chatEnabled={chatEnabled}
+                                    userInfo={userAccountInfo}
+                                    messageInProgress={messageInProgress}
+                                    transcript={transcript}
+                                    vscodeAPI={vscodeAPI}
+                                    telemetryService={telemetryService}
+                                    telemetryRecorder={telemetryRecorder}
+                                    isTranscriptError={isTranscriptError}
+                                    welcomeMessage={welcomeMessageMarkdown}
+                                    guardrails={attributionEnabled ? guardrails : undefined}
+                                    userContextFromSelection={userContextFromSelection}
+                                />
+                            </WithContextProviders>
+                        </ChatModelContextProvider>
                     </EnhancedContextContext.Provider>
                 </EnhancedContextEventHandlers.Provider>
             )}

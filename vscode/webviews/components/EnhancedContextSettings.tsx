@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { VSCodeButton, VSCodeCheckbox } from '@vscode/webview-ui-toolkit/react'
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import { clsx } from 'clsx'
 
 import type {
@@ -11,10 +11,8 @@ import type {
     LocalSearchProvider,
     RemoteSearchProvider,
 } from '@sourcegraph/cody-shared'
-import { useEnhancedContextEnabled } from '../chat/EnhancedContext'
-import { getVSCodeAPI } from '../utils/VSCodeApi'
 
-import { BookDashedIcon, BookMarkedIcon } from 'lucide-react'
+import { BookMarkedIcon } from 'lucide-react'
 import styles from './EnhancedContextSettings.module.css'
 import { ToolbarPopoverItem } from './shadcn/ui/toolbar'
 
@@ -27,8 +25,11 @@ export enum EnhancedContextPresentationMode {
 
 interface EnhancedContextSettingsProps {
     presentationMode: 'consumer' | 'enterprise'
-    defaultOpen?: boolean
     onCloseByEscape?: () => void
+    className?: string
+
+    /** For storybooks only. */
+    __storybook__open?: boolean
 }
 
 function defaultEnhancedContextContext(): EnhancedContextContextT {
@@ -45,7 +46,6 @@ export const EnhancedContextEventHandlers: React.Context<EnhancedContextEventHan
     React.createContext({
         onChooseRemoteSearchRepo: (): void => {},
         onConsentToEmbeddings: (_): void => {},
-        onEnabledChange: (_): void => {},
         onRemoveRemoteSearchRepo: (_): void => {},
         onShouldBuildSymfIndex: (_): void => {},
     })
@@ -53,7 +53,6 @@ export const EnhancedContextEventHandlers: React.Context<EnhancedContextEventHan
 export interface EnhancedContextEventHandlersT {
     onChooseRemoteSearchRepo: () => void
     onConsentToEmbeddings: (provider: LocalEmbeddingsProvider) => void
-    onEnabledChange: (enabled: boolean) => void
     onRemoveRemoteSearchRepo: (id: string) => void
     onShouldBuildSymfIndex: (provider: LocalSearchProvider) => void
 }
@@ -109,7 +108,6 @@ const CompactGroupsComponent: React.FunctionComponent<{
 
     return (
         <div className={styles.enterpriseRepoList}>
-            <h1>Repositories</h1>
             {liftedProviders.length === 0 ? (
                 <p className={styles.noReposMessage}>No repositories selected</p>
             ) : (
@@ -345,48 +343,12 @@ const ContextProviderComponent: React.FunctionComponent<{
 
 export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSettingsProps> = ({
     presentationMode,
-    defaultOpen,
+    __storybook__open,
     onCloseByEscape,
+    className,
 }): React.ReactNode => {
     const events = useEnhancedContextEventHandlers()
     const context = useEnhancedContextContext()
-    const [enabled, setEnabled] = React.useState<boolean>(useEnhancedContextEnabled())
-    const enabledChanged = React.useCallback(
-        (shouldEnable: boolean): void => {
-            if (enabled !== shouldEnable) {
-                events.onEnabledChange(shouldEnable)
-                setEnabled(shouldEnable)
-                // Log when a user clicks on the Enhanced Context toggle.
-                getVSCodeAPI().postMessage({
-                    command: 'event',
-                    eventName: 'CodyVSCodeExtension:useEnhancedContextToggler:clicked',
-                    properties: { useEnhancedContext: shouldEnable },
-                })
-            }
-        },
-        [events, enabled]
-    )
-
-    // Holding down the Alt/Opt key unchecks the box if it is checked.
-    const [isAltKeyDown, setIsAltKeyDown] = React.useState(false)
-    React.useEffect(() => {
-        const onKeyDown = (event: KeyboardEvent) => {
-            if (event.altKey) {
-                setIsAltKeyDown(true)
-            }
-        }
-        const onKeyUp = (event: KeyboardEvent) => {
-            if (!event.altKey && isAltKeyDown) {
-                setIsAltKeyDown(false)
-            }
-        }
-        document.addEventListener('keydown', onKeyDown)
-        document.addEventListener('keyup', onKeyUp)
-        return () => {
-            document.removeEventListener('keydown', onKeyDown)
-            document.removeEventListener('keyup', onKeyUp)
-        }
-    }, [isAltKeyDown])
 
     // Handles removing a manually added remote search provider.
     const handleRemoveRemoteSearchRepo = React.useCallback(
@@ -400,69 +362,43 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
         [events]
     )
 
-    const hasOpenedBeforeKey = 'enhanced-context-settings.has-opened-before'
-    const hasOpenedBefore = localStorage.getItem(hasOpenedBeforeKey) === 'true'
-    if (defaultOpen && !hasOpenedBefore) {
-        localStorage.setItem(hasOpenedBeforeKey, 'true')
-    }
-
-    const effectiveEnabled = enabled && !isAltKeyDown
-
     return (
         <ToolbarPopoverItem
             aria-label="Configure automatic code context"
             tooltip="Configure automatic code context"
-            tabIndex={-1} // holding Alt/Opt is fastest way to toggle, doesn't need to be tabbable
-            iconStart={effectiveEnabled ? BookMarkedIcon : BookDashedIcon}
+            iconStart={BookMarkedIcon}
             iconEnd={null}
-            defaultOpen={defaultOpen}
+            __storybook__open={__storybook__open}
             onCloseByEscape={onCloseByEscape}
             popoverContent={() => (
                 <div className={styles.container}>
-                    <div>
-                        <VSCodeCheckbox
-                            onChange={e => {
-                                if (!isAltKeyDown) {
-                                    enabledChanged((e.target as HTMLInputElement)?.checked)
-                                }
-                            }}
-                            checked={effectiveEnabled}
-                            autoFocus={true}
-                            id="enhanced-context-checkbox"
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="enhanced-context-checkbox">
-                            <h1>Enhanced Context ✨</h1>
-                        </label>
-                        <p>
-                            Automatically include additional context from your codebase.{' '}
-                            <a href="https://sourcegraph.com/docs/cody/clients/install-vscode#enhanced-context-selector">
-                                Learn more
-                            </a>
-                        </p>
-                        {presentationMode === EnhancedContextPresentationMode.Consumer ? (
-                            context.groups.length > 0 ? (
-                                <dl className={styles.foldersList}>
-                                    {context.groups.map(group => (
-                                        <ContextGroupComponent
-                                            key={group.displayName}
-                                            group={group}
-                                            allGroups={context.groups}
-                                        />
-                                    ))}
-                                </dl>
-                            ) : null
+                    <h1>Automatic code context</h1>
+                    {presentationMode === EnhancedContextPresentationMode.Consumer ? (
+                        context.groups.length > 0 ? (
+                            <dl className={styles.foldersList}>
+                                {context.groups.map(group => (
+                                    <ContextGroupComponent
+                                        key={group.displayName}
+                                        group={group}
+                                        allGroups={context.groups}
+                                    />
+                                ))}
+                            </dl>
                         ) : (
-                            <CompactGroupsComponent
-                                groups={context.groups}
-                                handleChoose={handleChooseRemoteSearchRepo}
-                                handleRemove={handleRemoveRemoteSearchRepo}
-                            />
-                        )}
-                    </div>
+                            <p className="tw-text-sm tw-text-muted-foreground">
+                                No automatic code context is available
+                            </p>
+                        )
+                    ) : (
+                        <CompactGroupsComponent
+                            groups={context.groups}
+                            handleChoose={handleChooseRemoteSearchRepo}
+                            handleRemove={handleRemoveRemoteSearchRepo}
+                        />
+                    )}
                 </div>
             )}
+            className={className}
         />
     )
 }

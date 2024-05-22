@@ -6,9 +6,13 @@
         display: inline-flex;
         align-items: center;
         line-height: 1;
-        margin-bottom: -1px;
+        margin-bottom: -1.5px;
         opacity: 0.8;
-        border: none !important; /* override VS Code's builtin style */
+
+         /* Override VS Code's builtin styles. */
+        border: none !important;
+        color: unset !important;
+        background-color: unset !important;
     }
 }
 

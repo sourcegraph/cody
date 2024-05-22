@@ -162,8 +162,8 @@ export const ModelSelectField: React.FunctionComponent<{
             className={cn('tw-justify-between', className)}
             disabled={readOnly}
             defaultOpen={__storybook__open}
+            tooltip={readOnly ? undefined : 'Select a model'}
             aria-label="Select a model"
-            tabIndex={-1} // TODO(sqs): should add a keyboard shortcut for this
             popoverContent={close => (
                 <Command loop={true} defaultValue={value} tabIndex={0} className="focus:tw-outline-none">
                     <CommandList>
