@@ -66,11 +66,11 @@ export const HumanMessageEditor: FunctionComponent<{
 
     const addEnhancedContext = useEnhancedContextEnabled()
     const onSubmitClick = useCallback(
-        (withEnhancedContext: boolean) => {
+        (withEnhancedContext: boolean | undefined) => {
             if (!editorRef.current) {
                 throw new Error('No editorRef')
             }
-            onSubmit(editorRef.current.getSerializedValue(), addEnhancedContext && withEnhancedContext)
+            onSubmit(editorRef.current.getSerializedValue(), withEnhancedContext ?? addEnhancedContext)
         },
         [onSubmit, addEnhancedContext]
     )
@@ -80,7 +80,7 @@ export const HumanMessageEditor: FunctionComponent<{
             // Submit input on Enter press (without shift) when input is not empty.
             if (event && !event.shiftKey && !event.isComposing && !isEmptyEditorValue) {
                 event.preventDefault()
-                onSubmitClick(true)
+                onSubmitClick(event.altKey ? false : undefined)
                 return
             }
         },
