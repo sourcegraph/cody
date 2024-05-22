@@ -23,6 +23,7 @@ import type {
     CustomChatCommandResult,
     CustomEditCommandResult,
     EditTask,
+    NetworkRequest,
     Requests,
 } from './protocol-alias'
 import { trimEndOfLine } from './trimEndOfLine'
@@ -51,11 +52,41 @@ const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-t
 const mayRecord =
     process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
 
+function trimEndOfLine(text: string | undefined): string {
+    if (text === undefined) {
+        return ''
+    }
+    return text
+        .split('\n')
+        .map(line => line.trimEnd())
+        .join('\n')
+}
+
+function getTelemetryEvents(requests: NetworkRequest[]): {
+    telemetryEventsV2: string[]
+} {
+    const v2Requests = requests.filter(req => req.url.includes('RecordTelemetryEvents'))
+
+    const v2Events = v2Requests.flatMap(req => {
+        if (!req || !req.body) return []
+
+        const { variables } = JSON.parse(req.body)
+        return variables.events.map((event: { feature: string; action: string }) => {
+            return `${event.feature}.${event.action}`
+        })
+    })
+
+    return {
+        telemetryEventsV2: v2Events,
+    }
+}
+
 describe('Agent', () => {
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
         name: 'defaultClient',
         credentials: TESTING_CREDENTIALS.dotcom,
+        logEventMode: 'all',
     })
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
@@ -123,6 +154,8 @@ describe('Agent', () => {
             serverEndpoint: 'https://sourcegraph.com/',
             customHeaders: {},
         })
+        const { requests } = await client.request('testing/networkRequests', null)
+        console.log(requests)
         expect(invalid?.isLoggedIn).toBeFalsy()
         const valid = await client.request('extensionConfiguration/change', {
             ...client.info.extensionConfiguration,
@@ -165,6 +198,8 @@ describe('Agent', () => {
             client.notify('autocomplete/completionAccepted', {
                 completionID: completions.items[0].id,
             })
+            const { requests } = await client.request('testing/networkRequests', null)
+            console.log(requests)
         }, 10_000)
     })
 
@@ -182,6 +217,8 @@ describe('Agent', () => {
             "status": "ACTIVE",
           }
         `)
+        const { requests } = await client.request('testing/networkRequests', null)
+        console.log(requests)
     }, 10_000)
 
     describe('Chat', () => {
@@ -1527,6 +1564,8 @@ describe('Agent', () => {
 
                 const { remoteRepos } = await demoEnterpriseClient.request('chat/remoteRepos', { id })
                 expect(remoteRepos).toStrictEqual(repos)
+                const { requests } = await client.request('testing/networkRequests', null)
+                console.log(requests)
             },
             30_000
         )
@@ -1577,11 +1616,13 @@ describe('Agent', () => {
 
         afterAll(async () => {
             const { requests } = await demoEnterpriseClient.request('testing/networkRequests', null)
+            console.log(requests)
             const nonServerInstanceRequests = requests
                 .filter(({ url }) => !url.startsWith(demoEnterpriseClient.serverEndpoint))
                 .map(({ url }) => url)
             expect(JSON.stringify(nonServerInstanceRequests)).toStrictEqual('[]')
             await demoEnterpriseClient.shutdownAndExit()
+
             // Long timeout because to allow Polly.js to persist HTTP recordings
         }, 30_000)
     })
