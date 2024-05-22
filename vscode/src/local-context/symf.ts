@@ -25,7 +25,7 @@ import { logDebug } from '../log'
 
 import path from 'node:path'
 import { getSymfPath } from './download-symf'
-import { symfExpandQuery } from './symfExpandQuery'
+import { rewriteKeywordQuery } from './rewrite-keyword-query'
 
 const execFile = promisify(_execFile)
 const oneDayMillis = 1000 * 60 * 60 * 24
@@ -112,7 +112,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     }
 
     public getResults(userQuery: PromptString, scopeDirs: vscode.Uri[]): Promise<Promise<Result[]>[]> {
-        const expandedQuery = symfExpandQuery(this.completionsClient, userQuery)
+        const expandedQuery = rewriteKeywordQuery(this.completionsClient, userQuery)
         return Promise.resolve(
             scopeDirs
                 .filter(isFileURI)

@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { startPollyRecording } from '../testutils/polly'
 
 import { _getSymfPath } from './download-symf'
-import { symfExpandQuery } from './symfExpandQuery'
+import { rewriteKeywordQuery } from './rewrite-keyword-query'
 
 import { mkdtemp, open, rmdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -33,7 +33,7 @@ describe('symf', () => {
 
         function check(query: PromptString, expectedHandler: (expandedTerm: string) => void): void {
             it(query.toString(), async () => {
-                expectedHandler(await symfExpandQuery(client, query))
+                expectedHandler(await rewriteKeywordQuery(client, query))
             })
         }
 

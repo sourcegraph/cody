@@ -7,7 +7,7 @@ import {
     ps,
 } from '@sourcegraph/cody-shared'
 
-export async function symfExpandQuery(
+export async function rewriteKeywordQuery(
     completionsClient: SourcegraphCompletionsClient,
     query: PromptString
 ): Promise<string> {
