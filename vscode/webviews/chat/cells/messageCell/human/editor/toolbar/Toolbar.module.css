@@ -1,7 +1,9 @@
 .container {
     display: flex;
     align-items: center;
-    overflow: hidden;
+    overflow-y: hidden;
+    overflow-x: auto;
+    scrollbar-width: none;
 
     margin: 0;
     margin-left: -4px; /* make leftmost toolbar icon flush with text */

@@ -466,6 +466,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 command,
                 traceId: span.spanContext().traceId,
                 sessionID: this.chatModel.sessionID,
+                addEnhancedContext,
             }
             telemetryService.log('CodyVSCodeExtension:chat-question:submitted', sharedProperties)
             telemetryRecorder.recordEvent('cody.chat-question', 'submitted', {
@@ -473,6 +474,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
                     // See https://github.com/sourcegraph/sourcegraph/pull/59524
                     recordsPrivateMetadataTranscript: authStatus.endpoint && authStatus.isDotCom ? 1 : 0,
+                    addEnhancedContext: addEnhancedContext ? 1 : 0,
                 },
                 privateMetadata: {
                     ...sharedProperties,

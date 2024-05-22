@@ -32,8 +32,9 @@ describe('HumanMessageEditor', () => {
 
     describe('submitting', () => {
         test('empty editor', () => {
-            const { container, onSubmit } = renderWithMocks({ initialEditorState: undefined })
-            const submitButton = screen.getByRole('button', { name: 'Submit message' })
+            const { container, submitButton, onSubmit } = renderWithMocks({
+                initialEditorState: undefined,
+            })
             expect(submitButton).toBeDisabled()
 
             // Click
@@ -47,10 +48,9 @@ describe('HumanMessageEditor', () => {
         })
 
         test('submit', async () => {
-            const { container, onSubmit } = renderWithMocks({
+            const { container, submitButton, onSubmit } = renderWithMocks({
                 initialEditorState: FILE_MENTION_EDITOR_STATE_FIXTURE,
             })
-            const submitButton = screen.getByRole('button', { name: 'Submit message' })
             expect(submitButton).toBeEnabled()
 
             // Click
@@ -65,18 +65,20 @@ describe('HumanMessageEditor', () => {
             expect(onSubmit.mock.lastCall[1]).toBe(true) // addEnhancedContext === true
         })
 
-        test('alt/opt+submit', async () => {
+        test('submit w/o context', async () => {
             const { container, onSubmit } = renderWithMocks({
                 initialEditorState: FILE_MENTION_EDITOR_STATE_FIXTURE,
             })
-            const submitButton = screen.getByRole('button', { name: 'Submit message' })
-            const editor = container.querySelector<HTMLElement>('[data-lexical-editor="true"]')!
 
+            const editor = container.querySelector<HTMLElement>('[data-lexical-editor="true"]')!
             fireEvent.focus(editor)
 
-            // Alt+Click
+            // Click
+            const submitWithoutContextButton = screen.getByRole('button', {
+                name: 'Send without automatic code context',
+            })
             fireEvent.keyDown(container, ALT_KEYBOARD_EVENT_DATA)
-            fireEvent.click(submitButton)
+            fireEvent.click(submitWithoutContextButton)
             expect(onSubmit).toHaveBeenCalledTimes(1)
             expect(onSubmit.mock.lastCall[1]).toBe(false) // addEnhancedContext === false
 
@@ -91,6 +93,7 @@ describe('HumanMessageEditor', () => {
 
 function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor>>): {
     container: HTMLElement
+    submitButton: HTMLElement
     onChange: Mock
     onSubmit: Mock
 } {
@@ -113,6 +116,7 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
     })
     return {
         container,
+        submitButton: screen.getByRole('button', { name: 'Send with automatic code context' }),
         onChange,
         onSubmit,
     }
