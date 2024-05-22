@@ -50,7 +50,7 @@ import { AgentQuickPick } from './AgentQuickPick'
 import { AgentTabGroups } from './AgentTabGroups'
 import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import type { Agent } from './agent'
-import { matchesGlobPatterns } from './cli/evaluate-autocomplete/matchesGlobPatterns'
+import { matchesGlobPatterns } from './cli/cody-bench/matchesGlobPatterns'
 import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
 
 // Not using CODY_TESTING because it changes the URL endpoint we send requests

@@ -6,9 +6,11 @@ import * as vscode from 'vscode'
 
 import { newAgentClient } from '../../agent'
 
+import { allClientCapabilitiesEnabled } from '../../../../vscode/src/jsonrpc/allClientCapabilitiesEnabled'
 import { arrayOption, booleanOption, intOption } from './cli-parsers'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { evaluateBfgStrategy } from './strategy-bfg'
+import { evaluateFixStrategy } from './strategy-fix'
 import { evaluateGitLogStrategy } from './strategy-git-log'
 
 export interface EvaluateAutocompleteOptions {
@@ -57,6 +59,7 @@ interface EvaluationConfig extends Partial<EvaluateAutocompleteOptions> {
 
 enum EvaluationStrategy {
     BFG = 'bfg',
+    Fix = 'fix',
     GitLog = 'git-log',
 }
 
@@ -118,8 +121,8 @@ async function loadEvaluationConfig(
     return result
 }
 
-export const evaluateAutocompleteCommand = new commander.Command('evaluate-autocomplete')
-    .description('Evaluate Cody autocomplete by running the Agent in headless mode')
+export const codyBenchCommand = new commander.Command('cody-bench')
+    .description('Run Cody offline benchmarks')
     .option(
         '--workspace <path>',
         'The workspace directory where to run the autocomplete evaluation',
@@ -281,10 +284,10 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
 async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<void> {
     console.log(`starting evaluation: fixture=${options.fixture.name} workspace=${options.workspace}`)
 
-    if (!options.queriesDirectory) {
-        console.error('missing required options: --queries-directory')
-        process.exit(1)
-    }
+    // if (!options.queriesDirectory) {
+    //     console.error('missing required options: --queries-directory')
+    //     process.exit(1)
+    // }
     if (!options.srcAccessToken) {
         console.error('environment variable SRC_ACCESS_TOKEN must be non-empty')
         process.exit(1)
@@ -297,25 +300,33 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
     const workspaceRootUri = vscode.Uri.from({ scheme: 'file', path: options.workspace })
 
     const client = await newAgentClient({
-        name: 'evaluate-autocomplete',
+        name: 'cody-bench',
         version: '0.1.0',
         workspaceRootUri: workspaceRootUri.toString(),
+        capabilities: allClientCapabilitiesEnabled,
         extensionConfiguration: {
             accessToken: options.srcAccessToken,
             serverEndpoint: options.srcEndpoint,
             customHeaders: {},
             customConfiguration: options.fixture.customConfiguration,
         },
+        inheritStderr: true,
         codyAgentPath: options.codyAgentBinary,
     })
     try {
-        if (options.fixture.strategy === EvaluationStrategy.BFG) {
-            await evaluateBfgStrategy(client, options)
-        } else if (options.fixture.strategy === EvaluationStrategy.GitLog) {
-            await evaluateGitLogStrategy(client, options)
+        switch (options.fixture.strategy) {
+            case EvaluationStrategy.BFG:
+                await evaluateBfgStrategy(client, options)
+                break
+            case EvaluationStrategy.GitLog:
+                await evaluateGitLogStrategy(client, options)
+                break
+            case EvaluationStrategy.Fix:
+                await evaluateFixStrategy(client, options)
+                break
         }
     } catch (error) {
-        console.error('unexpected error running evaluate-autocomplete', error)
+        console.error('unexpected error running cody-bench', error)
     }
     await client.request('shutdown', null)
     client.notify('exit', null)

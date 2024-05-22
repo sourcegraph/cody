@@ -8,7 +8,7 @@ import { startPollyRecording } from '../../../vscode/src/testutils/polly'
 import { Agent } from '../agent'
 
 import { activate } from '../../../vscode/src/extension.node'
-import { booleanOption } from './evaluate-autocomplete/cli-parsers'
+import { booleanOption } from './cody-bench/cli-parsers'
 
 interface JsonrpcCommandOptions {
     expiresIn?: string | null | undefined

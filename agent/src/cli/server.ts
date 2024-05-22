@@ -3,7 +3,7 @@ import { Command } from 'commander'
 import { WebSocketServer } from 'ws'
 import { newAgentClient } from '../agent'
 import type { MessageHandler } from '../jsonrpc-alias'
-import { intOption } from './evaluate-autocomplete/cli-parsers'
+import { intOption } from './cody-bench/cli-parsers'
 
 interface ServerOptions {
     port: number
