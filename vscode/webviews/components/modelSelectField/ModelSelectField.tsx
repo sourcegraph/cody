@@ -242,11 +242,13 @@ const ModelTitleWithIcon: FunctionComponent<{
             [styles.disabled]: modelAvailability !== 'available',
         })}
     >
-        {showIcon && <ChatModelIcon model={model.model} className={styles.modelIcon} />}
+        {showIcon && <ChatModelIcon model={model.model} />}
         <span className={styles.modelText}>
             <span className={styles.modelName}>{model.title}</span>
         </span>
-        {modelAvailability === 'needs-cody-pro' && <span className={clsx(styles.badge)}>Cody Pro</span>}
+        {modelAvailability === 'needs-cody-pro' && (
+            <span className={clsx(styles.badge, styles.badgePro)}>Cody Pro</span>
+        )}
         {model.initialDefault && <span className={clsx(styles.badge)}>Default</span>}
         {model.provider === 'Ollama' && <span className={clsx(styles.badge)}>Experimental</span>}
         {(model.title === 'Claude 3 Opus' || model.title === 'GPT-4o') &&
