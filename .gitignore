@@ -11,4 +11,3 @@ playwright/**/*.webm
 **/*.iml
 **/*.vsix
 index.scip
-.tool-versions
