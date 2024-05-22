@@ -8,6 +8,7 @@ import { Command, CommandGroup, CommandItem, CommandList } from '../shadcn/ui/co
 import { ToolbarPopoverItem } from '../shadcn/ui/toolbar'
 import { cn } from '../shadcn/utils'
 import styles from './ModelSelectField.module.css'
+import { ExternalLinkIcon, SettingsIcon } from 'lucide-react'
 
 type Value = string
 
@@ -190,6 +191,30 @@ export const ModelSelectField: React.FunctionComponent<{
                                 ))}
                             </CommandGroup>
                         ))}
+                        <CommandGroup>
+                            <CommandItem
+                                onSelect={() => {
+                                    window.open(
+                                        'https://sourcegraph.com/docs/cody/clients/install-vscode#supported-llm-models',
+                                        '_blank'
+                                    )
+                                }}
+                            >
+                                <span className={styles.modelTitleWithIcon}>
+                                    <span className={styles.modelIcon}>
+                                        <SettingsIcon size={16} strokeWidth={1.5} />
+                                    </span>
+                                    <span className={styles.modelName}>Documentation</span>
+                                    <span className={styles.rightIcon}>
+                                        <ExternalLinkIcon
+                                            size={16}
+                                            strokeWidth={1.5}
+                                            className="tw-opacity-80"
+                                        />
+                                    </span>
+                                </span>
+                            </CommandItem>
+                        </CommandGroup>
                     </CommandList>
                 </Command>
             )}
@@ -242,10 +267,8 @@ const ModelTitleWithIcon: FunctionComponent<{
             [styles.disabled]: modelAvailability !== 'available',
         })}
     >
-        {showIcon && <ChatModelIcon model={model.model} />}
-        <span className={styles.modelText}>
-            <span className={styles.modelName}>{model.title}</span>
-        </span>
+        {showIcon && <ChatModelIcon model={model.model} className={styles.modelIcon} />}
+        <span className={styles.modelName}>{model.title}</span>
         {modelAvailability === 'needs-cody-pro' && (
             <span className={clsx(styles.badge, styles.badgePro)}>Cody Pro</span>
         )}
@@ -268,9 +291,3 @@ const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = 
     const ModelIcon = chatModelIconComponent(model)
     return ModelIcon ? <ModelIcon size={16} className={className} /> : null
 }
-
-const capitalize = (s: string): string =>
-    s
-        .split(' ')
-        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(' ')
