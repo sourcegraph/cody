@@ -37,6 +37,7 @@ const disposable = {
 
 // To run these tests only with clean debug output:
 // pnpm vitest vscode/src/completions/context/retrievers/lsp-light/lsp-light-retriever.integration.test.ts --disableConsoleIntercept --hideSkippedTests --reporter=basic
+// TODO: fix windows tests. Probably caused by the issues files paths.
 describe.skipIf(isWindows())('LspLightRetriever', () => {
     let connection: rpc.MessageConnection
     let mainFileUri: vscode.Uri
