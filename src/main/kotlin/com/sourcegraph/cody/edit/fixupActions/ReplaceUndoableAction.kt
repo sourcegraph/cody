@@ -7,21 +7,34 @@ import com.intellij.openapi.util.TextRange
 import com.sourcegraph.cody.agent.protocol.TextEdit
 
 // Handles deletion requests as well, which are just replacements with "".
-class ReplaceUndoableAction(
-    project: Project,
-    edit: TextEdit, // Instructions for the replacement.
-    document: Document
-) : FixupUndoableAction(project, edit, document) {
+class ReplaceUndoableAction : FixupUndoableAction {
 
-  private val replacementText = edit.value ?: "" // "" for deletions
-  private var beforeMarker = createBeforeMarker()
+  private val replacementText: String
   private var originalText: String? = null
+  private var beforeMarker: RangeMarker? = null
   private var afterMarker: RangeMarker? = null
+
+  private constructor(
+      project: Project,
+      edit: TextEdit,
+      replacementText: String,
+      document: Document
+  ) : super(project, edit, document) {
+    this.replacementText = replacementText
+  }
+
+  constructor(
+      project: Project,
+      edit: TextEdit,
+      document: Document
+  ) : this(project, edit, edit.value ?: "", document) {
+    this.beforeMarker = createBeforeMarker()
+  }
 
   private constructor(
       other: ReplaceUndoableAction,
       document: Document
-  ) : this(other.project, other.edit, document) {
+  ) : this(other.project, other.edit, other.replacementText, document) {
     this.beforeMarker =
         other.beforeMarker?.let { document.createRangeMarker(it.startOffset, it.endOffset) }
     this.afterMarker =
