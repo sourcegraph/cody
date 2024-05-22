@@ -1,11 +1,10 @@
 import React, { useCallback } from 'react'
 
-import { type ChatError, RateLimitError, telemetryRecorder } from '@sourcegraph/cody-shared'
+import { type ChatError, RateLimitError, type TelemetryRecorder } from '@sourcegraph/cody-shared'
 
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 
-import type { TelemetryRecorder } from '@sourcegraph/cody-shared'
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import styles from './ErrorItem.module.css'
 
@@ -17,7 +16,7 @@ export const ErrorItem: React.FunctionComponent<{
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
     postMessage?: ApiPostMessage
     telemetryRecorder: TelemetryRecorder
-}> = ({ error, userInfo, postMessage }) => {
+}> = ({ error, userInfo, postMessage, telemetryRecorder }) => {
     if (typeof error !== 'string' && error.name === RateLimitError.errorName && postMessage) {
         return (
             <RateLimitErrorItem
@@ -52,7 +51,7 @@ const RateLimitErrorItem: React.FunctionComponent<{
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
     postMessage: ApiPostMessage
     telemetryRecorder: TelemetryRecorder
-}> = ({ error, userInfo, postMessage }) => {
+}> = ({ error, userInfo, postMessage, telemetryRecorder }) => {
     // Only show Upgrades if both the error said an upgrade was available and we know the user
     // has not since upgraded.
     const isEnterpriseUser = userInfo.isDotComUser !== true
@@ -101,7 +100,7 @@ const RateLimitErrorItem: React.FunctionComponent<{
             // open the page in browser
             postMessage({ command: 'show-page', page })
         },
-        [postMessage, tier]
+        [postMessage, tier, telemetryRecorder]
     )
 
     return (
