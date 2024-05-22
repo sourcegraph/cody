@@ -43,10 +43,11 @@ export const ConnectionIssuesPage: React.FunctionComponent<
                 </div>
                 <div className={styles.messageContainer}>
                     <p className={styles.message}>
-                        Cody could not start due to a possible connection issue. Possible causes:
+                        Cody could not start due to a connection issue. Possible causes:
                     </p>
                     <ul className={styles.causes}>
                         <li>You don't have internet access</li>
+                        <li>Proxy settings might need to be configured</li>
                         <li>
                             The configured endpoint{' '}
                             {configuredEndpoint && (

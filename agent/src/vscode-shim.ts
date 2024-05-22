@@ -960,7 +960,7 @@ export const commands = _commands as typeof vscode.commands
 
 const _env: Partial<typeof vscode.env> = {
     uriScheme: 'file',
-    appRoot: process.cwd(),
+    appRoot: process.cwd?.(),
     uiKind: UIKind.Web,
     language: process.env.language,
     clipboard: {

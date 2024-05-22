@@ -43,7 +43,7 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
         if (this.config.accessToken) {
             headersInstance.set('Authorization', `token ${this.config.accessToken}`)
         }
-        const parameters = new URLSearchParams(window.location.search)
+        const parameters = new URLSearchParams(globalThis.location.search)
         const trace = parameters.get('trace')
         if (trace) {
             headersInstance.set('X-Sourcegraph-Should-Trace', 'true')
@@ -95,6 +95,7 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
                 // throw the error for not retrying
                 throw error
             },
+            fetch: globalThis.fetch,
         }).catch(error => {
             cb.onError(error.message)
             abort.abort()
@@ -108,7 +109,24 @@ const isRunningInWebWorker =
     typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope
 
 if (isRunningInWebWorker) {
-    // HACK: @microsoft/fetch-event-source tries to call document.removeEventListener, which is not
-    // available in a worker.
-    ;(self as any).document = { removeEventListener: () => {} }
+    // NOTE: If we need to add more hacks, or if this is janky, we should consider just setting
+    // `globalThis.window = globalThis` (see
+    // https://github.com/sourcegraph/cody/pull/4047#discussion_r1593823318).
+
+    ;(self as any).document = {
+        // HACK: @microsoft/fetch-event-source tries to call document.removeEventListener, which is
+        // not available in a worker.
+        removeEventListener: () => {},
+
+        // HACK: web-tree-sitter tries to read window.document.currentScript, which fails if this is
+        // running in a Web Worker.
+        currentScript: null,
+    }
+    ;(self as any).window = {
+        // HACK: @microsoft/fetch-event-source tries to call window.clearTimeout, which fails if this is
+        // running in a Web Worker.
+        clearTimeout: (...args: Parameters<typeof clearTimeout>) => clearTimeout(...args),
+
+        document: self.document,
+    }
 }

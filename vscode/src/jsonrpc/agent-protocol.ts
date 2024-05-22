@@ -551,6 +551,7 @@ export interface ProtocolTextDocument {
     content?: string
     selection?: Range
     contentChanges?: ProtocolTextDocumentContentChangeEvent[]
+    visibleRange?: Range
 }
 
 export interface ProtocolTextDocumentContentChangeEvent {

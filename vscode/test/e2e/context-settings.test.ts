@@ -6,67 +6,6 @@ import { type ExpectedEvents, newChat, test } from './helpers'
 import type { RepoListResponse } from '@sourcegraph/cody-shared'
 
 test.extend<ExpectedEvents>({
-    // list of events we expect this test to log, add to this list as needed
-    expectedEvents: [
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:useEnhancedContextToggler:clicked',
-    ],
-    expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
-        'cody.codyIgnore:hasFile',
-        'cody.auth:failed',
-        'cody.auth.login:clicked',
-        'cody.auth.signin.menu:clicked',
-        'cody.auth.login:firstEver',
-        'cody.auth.signin.token:clicked',
-        'cody.auth:connected',
-    ],
-})('enhanced context selector is keyboard accessible', async ({ page, sidebar }) => {
-    // This test requires that the window be focused in the OS window manager because it deals with
-    // focus.
-    await page.bringToFront()
-
-    await sidebarSignin(page, sidebar)
-    const chatFrame = await newChat(page)
-
-    // Opening the enhanced context settings should focus the checkbox for toggling it.
-    const enhancedContextCheckbox = chatFrame.locator('#enhanced-context-checkbox')
-    await expect(enhancedContextCheckbox).toBeFocused()
-
-    // Enhanced context should be enabled by default.
-    await expect(enhancedContextCheckbox).toBeChecked()
-    await page.keyboard.press('Space') // Disable enhanced context
-    // The keyboard should toggle the checkbox, but not dismiss the popup.
-    await expect(enhancedContextCheckbox).not.toBeChecked()
-    await expect(enhancedContextCheckbox).toBeVisible()
-
-    // The popup should be dismiss-able with the keyboard.
-    await page.keyboard.press('Escape')
-    // Closing the enhanced context settings should close the dialog...
-    await expect(enhancedContextCheckbox).not.toBeVisible()
-    // ... and the focus is moved to the chat input on close.
-    const contextSettingsButton = chatFrame.getByTitle('Configure Enhanced Context')
-    await expect(contextSettingsButton.and(page.locator(':focus'))).not.toBeVisible()
-    const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
-    await expect(chatInput).toBeFocused()
-
-    // Tab should move the focus to the Enhanced Context Toggle button
-    await chatInput.press('Tab')
-    await expect(chatFrame.getByTitle('Enable Enhanced Context')).toBeFocused()
-
-    // Enter/Space key should toggle the setting
-    await page.keyboard.press('Space') // From disabled to enabled
-    await expect(chatFrame.getByTitle('Disable Enhanced Context')).toBeFocused()
-    await page.keyboard.press('Enter') // From enabled to disabled
-    await expect(chatFrame.getByTitle('Enable Enhanced Context')).toBeFocused()
-})
-
-test.extend<ExpectedEvents>({
     expectedEvents: [
         'CodyInstalled',
         'CodyVSCodeExtension:codyIgnore:hasFile',
@@ -119,6 +58,11 @@ test.extend<ExpectedEvents>({
 
     await sidebarSignin(page, sidebar)
     const chatFrame = await newChat(page)
+
+    const openEnhancedContextButton = chatFrame.getByRole('button', {
+        name: 'Configure automatic code context',
+    })
+    await openEnhancedContextButton.click()
 
     // Because there are no repositories in the workspace, none should be selected by default.
     await expect(chatFrame.getByText('No repositories selected')).toBeVisible()

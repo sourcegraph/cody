@@ -9,5 +9,6 @@ data class CodyLLMSiteConfiguration(
   val completionModel: String? = null,
   val completionModelMaxTokens: Int? = null,
   val provider: String? = null,
+  val smartContext: Boolean? = null,
 )
 

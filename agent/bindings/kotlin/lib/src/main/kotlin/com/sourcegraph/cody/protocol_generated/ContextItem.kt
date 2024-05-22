@@ -18,6 +18,7 @@ sealed class ContextItem {
           "package" -> context.deserialize<ContextItemPackage>(element, ContextItemPackage::class.java)
           "github_pull_request" -> context.deserialize<ContextItemGithubPullRequest>(element, ContextItemGithubPullRequest::class.java)
           "github_issue" -> context.deserialize<ContextItemGithubIssue>(element, ContextItemGithubIssue::class.java)
+          "openctx" -> context.deserialize<ContextItemOpenCtx>(element, ContextItemOpenCtx::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
@@ -130,6 +131,28 @@ data class ContextItemGithubIssue(
 
   enum class TypeEnum {
     @SerializedName("github_issue") Github_issue,
+  }
+}
+
+data class ContextItemOpenCtx(
+  val uri: Uri,
+  val range: RangeData? = null,
+  val content: String? = null,
+  val repoName: String? = null,
+  val revision: String? = null,
+  val title: String? = null,
+  val source: ContextItemSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal, uri, package, history, github
+  val size: Int? = null,
+  val isIgnored: Boolean? = null,
+  val isTooLarge: Boolean? = null,
+  val provider: String? = null,
+  val type: TypeEnum, // Oneof: openctx
+  val providerUri: String,
+  val mention: MentionParams? = null,
+) : ContextItem() {
+
+  enum class TypeEnum {
+    @SerializedName("openctx") Openctx,
   }
 }
 

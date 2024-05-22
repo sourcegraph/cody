@@ -192,18 +192,24 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     }
 
     public newTextEditor(document: AgentTextDocument): vscode.TextEditor {
-        const selection: vscode.Selection = document.protocolDocument.selection
+        const protocolSelection = document.protocolDocument.selection
+        const selection: vscode.Selection = protocolSelection
             ? new vscode.Selection(
-                  new vscode.Position(
-                      document.protocolDocument.selection.start.line,
-                      document.protocolDocument.selection.start.character
-                  ),
-                  new vscode.Position(
-                      document.protocolDocument.selection.end.line,
-                      document.protocolDocument.selection.end.character
-                  )
+                  new vscode.Position(protocolSelection.start.line, protocolSelection.start.character),
+                  new vscode.Position(protocolSelection.end.line, protocolSelection.end.character)
               )
             : new vscode.Selection(new vscode.Position(0, 0), new vscode.Position(0, 0))
+
+        const protocolVisibleRange = document.protocolDocument.visibleRange
+        const visibleRange = protocolVisibleRange
+            ? new vscode.Selection(
+                  new vscode.Position(
+                      protocolVisibleRange.start.line,
+                      protocolVisibleRange.start.character
+                  ),
+                  new vscode.Position(protocolVisibleRange.end.line, protocolVisibleRange.end.character)
+              )
+            : selection
 
         return {
             // Looking at the implementation of the extension, we only need
@@ -230,7 +236,7 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
             },
             setDecorations: () => {},
             viewColumn: vscode.ViewColumn.Active,
-            visibleRanges: [selection],
+            visibleRanges: [visibleRange],
             show: () => {},
             hide: () => {},
         }

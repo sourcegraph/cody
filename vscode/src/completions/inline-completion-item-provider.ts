@@ -351,7 +351,16 @@ export class InlineCompletionItemProvider
             const isEagerCancellationEnabled = completionProviderConfig.getPrefetchedFlag(
                 FeatureFlag.CodyAutocompleteEagerCancellation
             )
-            const debounceInterval = isLocalProvider ? 125 : isEagerCancellationEnabled ? 10 : 75
+            const isReducedDebounceEnabled = completionProviderConfig.getPrefetchedFlag(
+                FeatureFlag.CodyAutocompleteReducedDebounce
+            )
+            const debounceInterval = isLocalProvider
+                ? 125
+                : isEagerCancellationEnabled
+                  ? 10
+                  : isReducedDebounceEnabled
+                    ? 25
+                    : 75
 
             try {
                 const result = await this.getInlineCompletions({

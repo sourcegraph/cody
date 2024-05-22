@@ -14,12 +14,11 @@ import styles from './ContextCell.module.css'
  */
 export const ContextCell: React.FunctionComponent<{
     contextFiles: ContextItem[] | undefined
-    disabled?: boolean
     className?: string
 
     /** For use in storybooks only. */
     __storybook__initialOpen?: boolean
-}> = ({ contextFiles, disabled, className, __storybook__initialOpen }) => {
+}> = ({ contextFiles, className, __storybook__initialOpen }) => {
     const usedContext = []
     const excludedAtContext = []
     if (contextFiles) {
@@ -54,7 +53,6 @@ export const ContextCell: React.FunctionComponent<{
         <Cell
             style="context"
             gutterIcon={<SourcegraphLogo width={20} height={20} />}
-            disabled={disabled}
             containerClassName={className}
             data-testid="context"
         >

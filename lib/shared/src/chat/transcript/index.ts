@@ -8,7 +8,16 @@ export interface SerializedChatTranscript {
     /** A unique and opaque identifier for this transcript. */
     id: string
 
+    /**
+     * The chat model used for the chat session.
+     *
+     * @deprecated The chat model is now a per-message property instead of applying to the entire
+     * chat session, to allow users to change the model partway through the chat. Use the last
+     * {@link SerializedChatMessage.model} instead. Can remove in v1.22 (after 1 major release,
+     * v1.20, where both fields are written).
+     */
     chatModel?: string
+
     chatTitle?: string
     interactions: SerializedChatInteraction[]
     lastInteractionTimestamp: string

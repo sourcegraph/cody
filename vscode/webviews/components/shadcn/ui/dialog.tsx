@@ -1,5 +1,5 @@
-import { XMarkIcon } from '@heroicons/react/16/solid'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
+import { XIcon } from 'lucide-react'
 import * as React from 'react'
 
 import { cn } from '../utils'
@@ -18,10 +18,7 @@ const DialogOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <DialogPrimitive.Overlay
         ref={ref}
-        className={cn(
-            'tw-fixed tw-inset-0 tw-z-50 tw-bg-black/80 tw- data-[state=open]:tw-animate-in data-[state=closed]:tw-animate-out data-[state=closed]:tw-fade-out-0 data-[state=open]:tw-fade-in-0',
-            className
-        )}
+        className={cn('tw-fixed tw-inset-0 tw-z-50 tw-bg-black/80', className)}
         {...props}
     />
 ))
@@ -42,8 +39,8 @@ const DialogContent = React.forwardRef<
             {...props}
         >
             {children}
-            <DialogPrimitive.Close className="tw-absolute tw-right-4 tw-top-4 tw-rounded-sm tw-opacity-70 tw-ring-offset-background tw-transition-opacity hover:tw-opacity-100 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-ring focus:tw-ring-offset-2 disabled:tw-pointer-events-none data-[state=open]:tw-bg-accent data-[state=open]:tw-text-muted-foreground">
-                <XMarkIcon className="tw-h-4 tw-w-4" />
+            <DialogPrimitive.Close className="tw-absolute tw-right-4 tw-top-4 tw-rounded-sm tw-opacity-70 tw-ring-offset-background hover:tw-opacity-100 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-ring focus:tw-ring-offset-2 disabled:tw-pointer-events-none data-[state=open]:tw-bg-accent data-[state=open]:tw-text-muted-foreground">
+                <XIcon size={16} strokeWidth={1.25} className="tw-h-4 tw-w-4" />
                 <span className="tw-sr-only">Close</span>
             </DialogPrimitive.Close>
         </DialogPrimitive.Content>

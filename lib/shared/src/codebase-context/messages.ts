@@ -111,6 +111,7 @@ export type ContextItem =
     | ContextItemPackage
     | ContextItemGithubPullRequest
     | ContextItemGithubIssue
+    | ContextItemOpenCtx
 
 /**
  * A Github pull request that is included as context in a chat message.
@@ -164,6 +165,20 @@ export interface ContextItemGithubIssue extends ContextItemCommon {
      * the title of this issue.
      */
     title: string
+}
+/**
+ * An OpenCtx context item returned from a provider.
+ */
+export interface ContextItemOpenCtx extends ContextItemCommon {
+    type: 'openctx'
+    provider: 'openctx'
+    title: string
+    uri: URI
+    providerUri: string
+    mention?: {
+        uri: string
+        data?: any
+    }
 }
 
 /**

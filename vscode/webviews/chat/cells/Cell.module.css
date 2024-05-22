@@ -1,13 +1,16 @@
 :root {
-    --cell-spacing: 1rem;
+    --cell-spacing: 15px;
+    --cell-gap: 12px;
 }
 
 .container {
-    padding: 15px;
+    padding: var(--cell-spacing);
     display: flex;
-    gap: 10px;
+    gap: var(--cell-gap);
 
-    border-bottom: solid 1px var(--vscode-sideBarSectionHeader-border);
+    &:not(:last-child) {
+        border-bottom: solid 1px var(--vscode-sideBarSectionHeader-border);
+    }
 }
 
 .gutter {
@@ -20,10 +23,7 @@
 
 .content {
     flex: 1 0;
-
-    overflow: auto;
-    word-break: break-word;
-    text-wrap: pretty;
+    overflow: hidden;
 }
 
 .container--disabled {

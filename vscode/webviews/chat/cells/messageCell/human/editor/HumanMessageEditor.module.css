@@ -1,0 +1,53 @@
+:root {
+    --human-message-editor-toolbar-height: 21px;
+    --human-message-editor-gap: 2px;
+    --human-message-editor-cell-spacing-bottom: 6px;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--human-message-editor-gap);
+
+    padding: var(--prompt-editor-padding-y) var(--prompt-editor-padding-x);
+    border-radius: 2px;
+}
+
+/* Dim toolbar when unfocused. */
+.container:not(:is(:not(.sent), .focused, :focus-within, :hover)) .toolbar {
+    opacity: 0.5;
+}
+
+/* Make the whole container look like a big input field when focused. */
+.container:is(:not(.sent), .focused, :hover) {
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+
+    outline: solid 1px var(--vscode-input-border);
+    outline-offset: -1px;
+}
+/* Show focus ring when the input is focused or a toolbar button within the input container is
+   focused, but NOT if something in a toolbar button's popover is focused. */
+.container:has([data-lexical-editor="true"]:focus-within, menu>button:focus) {
+    outline-color: var(--vscode-focusBorder);
+}
+
+.editor-content-editable {
+    min-height: 1lh;
+}
+
+.toolbar {
+    height: var(--human-message-editor-toolbar-height);
+}
+
+/* Hide the toolbar unless focused on all but the last cell. */
+[role="row"]:has(.container:is(:not(.sent), .focused, :focus-within)) {
+    /* HACK: Change HumanMessageCell style. */
+    padding-bottom: var(--human-message-editor-cell-spacing-bottom);
+}
+.container.sent:not(:is(.focused, :focus-within)) {
+    margin-bottom: calc(var(--human-message-editor-toolbar-height) + var(--human-message-editor-gap) - (var(--cell-spacing) - var(--human-message-editor-cell-spacing-bottom)));
+    .toolbar {
+        display: none;
+    }
+}

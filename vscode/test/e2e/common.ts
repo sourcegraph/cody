@@ -53,15 +53,19 @@ export function getChatPanel(page: Page): FrameLocator {
  * Create and open a new chat panel, and close the enhanced context settings window.
  * Returns the chat panel frame locator.
  */
-export async function createEmptyChatPanel(page: Page): Promise<[FrameLocator, Locator]> {
+export async function createEmptyChatPanel(
+    page: Page
+): Promise<[FrameLocator, Locator, Locator, Locator]> {
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
     const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    const enhancedContextCheckbox = chatFrame.locator('#enhanced-context-checkbox')
-    await expect(enhancedContextCheckbox).toBeFocused()
-    await page.keyboard.press('Escape')
-    await expect(enhancedContextCheckbox).not.toBeVisible()
-    const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
-    return [chatFrame, chatInput]
+    const chatInputs = chatFrame.getByRole('textbox', { name: 'Chat message' })
+
+    return [chatFrame, chatInputs.last(), chatInputs.first(), chatInputs]
+}
+
+export async function focusChatInputAtEnd(chatInput: Locator): Promise<void> {
+    await chatInput.focus()
+    await chatInput.press('End')
 }
 
 /**
@@ -87,9 +91,9 @@ export async function expectContextCellCounts(
     )
 }
 
-export function atMentionMenuHeading(chatPanel: FrameLocator, text: string | RegExp): Locator {
+export function atMentionMenuItem(chatPanel: FrameLocator, text: string | RegExp): Locator {
     // Can't just use getByRole because the [cmdk-group-heading] is the aria-labelledby of the
     // [cmdk-group-items], which Playwright deems hidden when it is empty (because its height is 0),
     // but we still want to be able to get the label for testing even when the list below is empty.
-    return chatPanel.locator('[cmdk-group-heading]', { hasText: text })
+    return chatPanel.locator(':is([cmdk-group-heading], [cmdk-empty])', { hasText: text })
 }

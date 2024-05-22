@@ -18,7 +18,6 @@ import {
     setLogger,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-
 import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
@@ -50,14 +49,15 @@ import { createInlineCompletionItemProvider } from './completions/create-inline-
 import { createInlineCompletionItemFromMultipleProviders } from './completions/create-multi-model-inline-completion-provider'
 import { getConfiguration, getFullConfig } from './configuration'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
-import { exposeOpenCtxExtensionAPIHandle } from './context/openctx'
+import { exposeOpenCtxClient } from './context/openctx'
 import { EditManager } from './edit/manager'
 import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInfo'
 import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
+import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
 import { logDebug, logError } from './log'
-import { getChatModelsFromConfiguration, syncModelProviders } from './models/utils'
+import { getChatModelsFromConfiguration, syncModelProviders } from './models/sync'
 import type { FixupTask } from './non-stop/FixupTask'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
@@ -86,7 +86,6 @@ import {
 import { openCodyIssueReporter } from './services/utils/issue-reporter'
 import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
-import { registerInteractiveTutorial } from './tutorial'
 import { version } from './version'
 
 /**
@@ -128,7 +127,7 @@ export async function start(
         })
     )
 
-    exposeOpenCtxExtensionAPIHandle()
+    exposeOpenCtxClient(context.secrets)
 
     return vscode.Disposable.from(...disposables)
 }
@@ -311,6 +310,11 @@ const register = async (
         const searchViewProvider = new SearchViewProvider(symfRunner)
         disposables.push(searchViewProvider)
         searchViewProvider.initialize()
+    }
+
+    if (localEmbeddings) {
+        // kick-off embeddings initialization
+        localEmbeddings.start()
     }
 
     if (config.experimentalSupercompletions) {
@@ -652,7 +656,10 @@ const register = async (
                 const config = await getFullConfig()
                 if (!config.autocomplete) {
                     disposeAutocomplete()
-                    if (config.isRunningInsideAgent) {
+                    if (
+                        config.isRunningInsideAgent &&
+                        !process.env.CODY_SUPPRESS_AGENT_AUTOCOMPLETE_WARNING
+                    ) {
                         throw new Error(
                             'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
                                 'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
@@ -714,9 +721,14 @@ const register = async (
         )
     }
 
-    registerInteractiveTutorial(context).then(disposable => {
-        disposables.push(...disposable)
-    })
+    if (!isRunningInsideAgent()) {
+        // TODO: The interactive tutorial is currently VS Code specific, both in terms of features and keyboard shortcuts.
+        // Consider opening this up to support dynamic content via Cody Agent.
+        // This would allow us the present the same tutorial but with client-specific steps.
+        // Alternatively, clients may not wish to use this tutorial and instead opt for something more suitable for their environment.
+        const { registerInteractiveTutorial } = await import('./tutorial')
+        registerInteractiveTutorial(context).then(disposable => disposables.push(...disposable))
+    }
 
     // INC-267 do NOT await on this promise. This promise triggers
     // `vscode.window.showInformationMessage()`, which only resolves after the

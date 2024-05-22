@@ -1,13 +1,11 @@
 import fuzzysort from 'fuzzysort'
 import throttle from 'lodash/throttle'
 import * as vscode from 'vscode'
-import { gitRemoteUrlsFromGitExtension } from '../../repository/git-extension-api'
 
 import {
     type ContextFileType,
     type ContextItem,
     type ContextItemFile,
-    type ContextItemProps,
     ContextItemSource,
     type ContextItemSymbol,
     type ContextItemWithContent,
@@ -16,16 +14,17 @@ import {
     type SymbolKind,
     TokenCounter,
     contextFiltersProvider,
-    convertGitCloneURLToCodebaseName,
     displayPath,
     isCodyIgnoredFile,
     isDefined,
     isWindows,
+    logError,
+    openCtx,
     toRangeData,
 } from '@sourcegraph/cody-shared'
 
+import { URI } from 'vscode-uri'
 import { getOpenTabsUris } from '.'
-import { getEnabledContextMentionProviders } from '../../chat/context/chatContext'
 import { toVSCodeRange } from '../../common/range'
 import { findWorkspaceFiles } from './findWorkspaceFiles'
 
@@ -130,8 +129,9 @@ export async function getSymbolContextFiles(
     query: string,
     maxResults = 20
 ): Promise<ContextItemSymbol[]> {
-    if (!query.trim()) {
-        return []
+    query = query.trim()
+    if (query.startsWith('#')) {
+        query = query.slice(1)
     }
 
     // doesn't support cancellation tokens :(
@@ -158,6 +158,7 @@ export async function getSymbolContextFiles(
     const results = fuzzysort.go(query, relevantQueryResults, {
         key: 'name',
         limit: maxResults,
+        all: true,
     })
 
     // TODO(toolmantim): Add fuzzysort.highlight data to the result so we can show it in the UI
@@ -318,17 +319,44 @@ async function resolveContextItem(
 }
 
 async function resolveContextMentionProviderContextItem(
-    { provider: itemProvider, ...item }: ContextItem,
+    { provider: providerUri, ...item }: ContextItem,
     input: PromptString
 ): Promise<ContextItemWithContent[]> {
-    for (const provider of getEnabledContextMentionProviders()) {
-        if (provider.id === itemProvider && provider.resolveContextItem) {
-            return provider.resolveContextItem({ ...item, provider: itemProvider }, input)
-        }
+    if (item.type !== 'openctx') {
+        return []
     }
 
-    // No resolver, so return the context item as-is if it has content.
-    return item.content !== undefined ? [item as ContextItemWithContent] : []
+    const openCtxClient = openCtx.client
+    if (!openCtxClient) {
+        return []
+    }
+
+    if (!item.mention) {
+        logError('OpenCtx', 'resolving context item is missing mention parameter', item)
+        return []
+    }
+
+    const mention = {
+        ...item.mention,
+        title: item.title,
+    }
+
+    const items = await openCtxClient.items({ message: input.toString(), mention }, item.providerUri)
+
+    return items
+        .map((item): ContextItemWithContent | null =>
+            item.ai?.content
+                ? {
+                      type: 'openctx',
+                      title: item.title,
+                      uri: URI.parse(item.url || item.providerUri),
+                      providerUri: item.providerUri,
+                      content: item.ai.content,
+                      provider: 'openctx',
+                  }
+                : null
+        )
+        .filter(context => context !== null) as ContextItemWithContent[]
 }
 
 async function resolveFileOrSymbolContextItem(
@@ -343,29 +371,4 @@ async function resolveFileOrSymbolContextItem(
         content,
         size: contextItem.size ?? TokenCounter.countTokens(content),
     }
-}
-
-export function getWorkspaceGitRemotes(): ContextItemProps['gitRemotes'] {
-    return (
-        vscode.workspace.workspaceFolders?.flatMap(folder => {
-            const remoteUrls = gitRemoteUrlsFromGitExtension(folder.uri)
-
-            if (remoteUrls?.length) {
-                return remoteUrls
-                    .map(url => {
-                        const codebaseName = convertGitCloneURLToCodebaseName(url)
-                        if (!codebaseName) {
-                            return null
-                        }
-
-                        const [hostname, owner, repoName] = codebaseName.split('/')
-
-                        return { hostname, owner, repoName, url }
-                    })
-                    .filter(remote => remote !== null) as ContextItemProps['gitRemotes']
-            }
-
-            return []
-        }) || []
-    )
 }

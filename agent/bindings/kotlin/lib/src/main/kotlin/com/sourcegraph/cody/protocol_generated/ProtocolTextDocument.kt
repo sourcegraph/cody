@@ -7,5 +7,6 @@ data class ProtocolTextDocument(
   val content: String? = null,
   val selection: Range? = null,
   val contentChanges: List<ProtocolTextDocumentContentChangeEvent>? = null,
+  val visibleRange: Range? = null,
 )
 
