@@ -357,6 +357,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     constructor(config: GraphQLAPIClientConfig | null = null) {
+        console.log('HELLO FROM GRAPHQL API CLIENT: ', this.dotcomUrl)
         this._config = config
     }
 
