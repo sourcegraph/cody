@@ -88,7 +88,7 @@ describe('LspLightRetriever', () => {
 
     afterEach(() => {
         // TODO: make the incremental symbol resolution work with caching. The integration test snapshots should be updated
-        // after that. Currently if symbols are not resolved because of the nested identifiers limit, the are never resolved.
+        // after that. Currently if nested symbols are not resolved because of the recursion limit, the are never resolved.
         clearLspCacheForTests()
         retriever.dispose()
     })

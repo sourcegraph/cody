@@ -50,6 +50,18 @@ export function getTextFromLocation(location: vscode.Location): Promise<string> 
     })
 }
 
+export function getLinesFromLocation(location: vscode.Location, lineCount: number): Promise<string> {
+    return getTextFromLocation(
+        new vscode.Location(
+            location.uri,
+            new vscode.Range(
+                new vscode.Position(location.range.start.line, 0),
+                new vscode.Position(location.range.start.line + lineCount, 0)
+            )
+        )
+    )
+}
+
 // TODO: experiment with workspace symbols to get symbol kind to help determine how to extract context snippet text
 export async function getWorkspaceSymbols(query: string): Promise<vscode.SymbolInformation[]> {
     return executeTracedCommand<vscode.SymbolInformation[]>(

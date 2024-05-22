@@ -1,5 +1,5 @@
 import { LRUCache } from 'lru-cache'
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import {
     type AutocompleteContextSnippet,
@@ -10,19 +10,22 @@ import {
 
 import { getLastNGraphContextIdentifiersFromString } from '../../completions/context/retrievers/graph/identifiers'
 import { lines } from '../../completions/text-processing'
+import { SupportedLanguage } from '../../tree-sitter/grammars'
+
 import {
     debugSymbol,
     flushLspLightDebugLogs,
     formatUriAndPosition,
     formatUriAndRange,
 } from './debug-logger'
-import { extractHoverContent, isUnhelpfulSymbolSnippet } from './hover'
+import { type ParsedHover, extractHoverContent, isUnhelpfulSymbolSnippet } from './hover'
 import { commonKeywords, isCommonImport } from './languages'
 import { createLimiter } from './limiter'
 import {
     getDefinitionLocations,
     getHover,
     getImplementationLocations,
+    getLinesFromLocation,
     getTextFromLocation,
     getTypeDefinitionLocations,
 } from './lsp-commands'
@@ -34,6 +37,15 @@ const lspRequestLimiter = createLimiter({
     // If any language server API takes more than 2 seconds to answer, we should cancel the request
     timeout: 2000,
 })
+
+async function getParsedHovers(
+    uri: vscode.Uri,
+    position: vscode.Position,
+    abortSignal: AbortSignal
+): Promise<ParsedHover[]> {
+    const hoverContent = await lspRequestLimiter(() => getHover(uri, position), abortSignal)
+    return extractHoverContent(hoverContent)
+}
 
 const NESTED_IDENTIFIERS_TO_RESOLVE = 5
 // For local testing purposes
@@ -85,6 +97,7 @@ async function getSnippetForLocationGetter(
         definitionLocations = await lspRequestLimiter(() => locationGetter(uri, position))
     }
 
+    // Sort for the narrowest definition range (e.g. used when we get full class implementation vs. constructor)
     const sortedDefinitionLocations = definitionLocations.sort((a, b) => {
         const bLines = b.range.start.line - b.range.end.line
         const aLines = a.range.start.line - a.range.end.line
@@ -98,7 +111,6 @@ async function getSnippetForLocationGetter(
         sortedDefinitionLocations.map(location => formatUriAndRange(location.uri, location.range))
     )
 
-    // Sort for the narrowest definition range (e.g. used when we get full class implementation vs. constructor)
     const [definitionLocation] = sortedDefinitionLocations
     // const [definitionLocation] = definitionLocations
 
@@ -135,104 +147,68 @@ async function getSnippetForLocationGetter(
         }
     }
 
-    let definitionString: string | undefined
-    let definitionHover: string | undefined
-    let isHover = false
-    let hoverKind: string | undefined
-    const resolutions = []
-    let shouldReturn = false
+    const debugResolutionSteps = []
 
-    const hoverContent = await lspRequestLimiter(() => getHover(uri, position), abortSignal)
-    const [{ text, kind } = { text: '', kind: undefined }] = extractHoverContent(hoverContent) || [{}]
+    const [parsedHover] = await getParsedHovers(uri, position, abortSignal)
+    let definitionString: string | undefined = parsedHover.text
+    let hoverKind: string | undefined = parsedHover.kind
+    let isHover = true
 
-    definitionString = text
-    hoverKind = kind
-    isHover = true
-
-    resolutions.push({
+    debugResolutionSteps.push({
         type: 'getHover (initial)',
         definitionString,
-        hoverKind: kind,
+        hoverKind,
     })
 
     if (isUnhelpfulSymbolSnippet(symbolName, definitionString)) {
-        definitionString = ''
         hoverKind = undefined
         isHover = false
+
         if (nodeType === 'type_identifier') {
-            // TODO: add fallback here for unhelpful symbol snippets. Can happen if LSP lacks the
-            // location-links capability
             definitionString = await getTextFromLocation(definitionLocation)
-            resolutions.push({
-                type: 'getTextFromLocation',
-                definitionString,
-            })
-        } else {
-            const hoverContent = await lspRequestLimiter(
-                () => getHover(definitionLocation.uri, definitionLocation.range.start),
+            debugResolutionSteps.push({ type: 'getTextFromLocation', definitionString })
+        }
+
+        if (isUnhelpfulSymbolSnippet(symbolName, definitionString)) {
+            const [parsedHover] = await getParsedHovers(
+                definitionLocation.uri,
+                definitionLocation.range.start,
                 abortSignal
             )
-            const [{ text, kind } = { text: '', kind: undefined }] = extractHoverContent(
-                hoverContent
-            ) || [{}]
 
-            definitionString = text
-            hoverKind = kind
+            definitionString = parsedHover.text
+            hoverKind = parsedHover.kind
             isHover = true
 
-            resolutions.push({
+            debugResolutionSteps.push({
                 type: 'getHover',
                 definitionString,
-                hoverKind: kind,
+                hoverKind: parsedHover.kind,
             })
         }
     }
 
     if (isUnhelpfulSymbolSnippet(symbolName, definitionString)) {
+        hoverKind = undefined
         isHover = false
+
         definitionString = await getTextFromLocation(definitionLocation)
-        resolutions.push({
+        debugResolutionSteps.push({
             why: 'unhelpful snippet',
             type: 'getTextFromLocation',
             definitionString,
         })
-
-        if (definitionString === `class ${symbolName}`) {
-            // Handle class constructors
-            const hoverContent = await lspRequestLimiter(
-                () => getHover(symbolSnippetRequest.uri, symbolSnippetRequest.position),
-                abortSignal
-            )
-            const [{ text, kind } = { text: '', kind: undefined }] = extractHoverContent(hoverContent)
-            definitionString = text
-            hoverKind = kind
-            isHover = true
-
-            resolutions.push({
-                why: 'unhelpful class snippet',
-                type: 'getHover',
-                definitionString,
-                hoverKind: kind,
-            })
-
-            if (isUnhelpfulSymbolSnippet(symbolName, definitionString)) {
-                shouldReturn = true
-            }
-        } else if (isUnhelpfulSymbolSnippet(symbolName, definitionString)) {
-            shouldReturn = true
-        }
     }
 
-    if (lines(definitionString).length > 100) {
-        shouldReturn = true
-    }
-
-    if (shouldReturn) {
+    if (
+        !definitionString ||
+        isUnhelpfulSymbolSnippet(symbolName, definitionString) ||
+        lines(definitionString).length > 100
+    ) {
         debugSymbol(symbolName, 'no helpful context found:', {
             hoverKind: hoverKind,
-            definitionHover,
             definitionString,
-            resolutions,
+            resolutions: debugResolutionSteps,
         })
 
         return symbolContextSnippet
@@ -242,30 +218,27 @@ async function getSnippetForLocationGetter(
     definitionCache.set(definitionLocation, { content: definitionString })
     updateParentDefinitionKeys(parentDefinitionCacheEntryPaths, symbolContextSnippet)
 
-    // TODO: required only for hover definitions
-    const definitionDocument = await vscode.workspace.openTextDocument(definitionLocation.uri)
-    let definitionFirstLines = definitionDocument.getText(
-        new vscode.Range(
-            new vscode.Position(definitionLocation.range.start.line, 0),
-            // TODO: number of lines should depend on the definitionString length
-            new vscode.Position(definitionLocation.range.start.line + 10, 0)
-        )
-    )
+    // TODO: the number of lines should be dynamic.
+    // TODO: it should be possible to use `definitionString` if it's from `getTextFromLocation`.
+    let nestedSymbolsSource = await getLinesFromLocation(definitionLocation, 10)
 
-    if (hoverKind === 'method') {
-        definitionFirstLines = 'function ' + definitionFirstLines
-    }
+    if (isJavascript(languageId)) {
+        // Hack: modify the source to allow tree-sitter to parse it properly.
+        if (hoverKind === 'method') {
+            nestedSymbolsSource = 'function ' + nestedSymbolsSource
+        }
 
-    // TODO: add a generic solution for class/object methods
-    if (definitionFirstLines.trimStart().startsWith('constructor')) {
-        definitionFirstLines = `{${definitionFirstLines}}`
+        // TODO: add a generic solution for class/object methods
+        if (nestedSymbolsSource.trimStart().startsWith('constructor')) {
+            nestedSymbolsSource = `{${nestedSymbolsSource}}`
+        }
     }
 
     const initialNestedSymbolRequests = getLastNGraphContextIdentifiersFromString({
         n: NESTED_IDENTIFIERS_TO_RESOLVE,
         uri: definitionLocation.uri,
         languageId,
-        source: definitionFirstLines,
+        source: nestedSymbolsSource,
         prioritize: 'head',
         // TODO: figure out the balance between the number of identifiers and empty
         // results caused by broken parse-trees for hover strings.
@@ -282,7 +255,7 @@ async function getSnippetForLocationGetter(
                 // exclude common symbols
                 !commonKeywords.has(request.symbolName) &&
                 // exclude symbols not preset in the definition string (if it's a hover string)
-                (definitionFirstLines.includes('class') || definitionString.includes(request.symbolName))
+                (nestedSymbolsSource.includes('class') || definitionString.includes(request.symbolName))
             )
         })
         .map(request => {
@@ -307,10 +280,9 @@ async function getSnippetForLocationGetter(
 
     debugSymbol(symbolName, 'nested symbols:', {
         hoverKind: hoverKind,
-        definitionHover,
         definitionString,
-        definitionFirstLines,
-        resolutions,
+        nestedSymbolsSource,
+        resolutions: debugResolutionSteps,
         initialNestedSymbolRequests: initialNestedSymbolRequests.map(r => {
             return {
                 symbolName: r.symbolName,
@@ -460,7 +432,7 @@ export async function getSymbolContextSnippets(
         }
 
         const relatedDefinitions = Array.from(snippet.relatedDefinitionKeys?.values())
-            .flatMap(key => {
+            .map(key => {
                 if (key === snippet.key) {
                     return undefined
                 }
@@ -485,6 +457,13 @@ export async function getSymbolContextSnippets(
     return resultWithRelatedSnippets
 }
 
+const EMPTY_CACHE_ENTRY = { isEmptyCacheEntry: true } as const
+function isEmptyCacheEntry(
+    value?: DefinitionLocationCacheEntry | DefinitionCacheEntry
+): value is typeof EMPTY_CACHE_ENTRY {
+    return Boolean(value && 'isEmptyCacheEntry' in value)
+}
+
 interface DefinitionCacheEntryValue {
     content: string
     relatedDefinitionKeys?: Set<DefinitionCacheEntryPath>
@@ -495,13 +474,18 @@ type LocationRangeStart = `${string}:${string}`
 type UriString = string
 type DefinitionCacheKey = LocationRangeStart
 type DefinitionCacheEntryPath = `${UriString}::${DefinitionCacheKey}`
-type LocationCacheKey = string
-type LocationCacheEntryPath = `${UriString}::${LocationCacheKey}`
+
+type DefinitionLocationCacheKey = string
+type DefinitionLocationCacheEntryPath = `${UriString}::${DefinitionLocationCacheKey}`
+type DefinitionLocationCacheEntry = vscode.Location[] | typeof EMPTY_CACHE_ENTRY
 
 const MAX_CACHED_DOCUMENTS = 100
 const MAX_CACHED_DEFINITION_LOCATIONS = 100
 const MAX_CACHED_DEFINITIONS = 100
 
+/**
+ * Two level cache: document -> definition position -> definition.
+ */
 class DefinitionCache {
     private isDisabled = IS_LSP_LIGHT_CACHE_DISABLED
     public cache = new LRUCache<UriString, LRUCache<DefinitionCacheKey, DefinitionCacheEntry>>({
@@ -558,18 +542,15 @@ class DefinitionCache {
 
 const definitionCache = new DefinitionCache()
 
-const EMPTY_CACHE_ENTRY = { isEmptyCacheEntry: true } as const
-type DefinitionLocationCacheEntry = vscode.Location[] | typeof EMPTY_CACHE_ENTRY
-
-function isEmptyCacheEntry(
-    value?: DefinitionLocationCacheEntry | DefinitionCacheEntry
-): value is typeof EMPTY_CACHE_ENTRY {
-    return Boolean(value && 'isEmptyCacheEntry' in value)
-}
-
+/**
+ * Two level cache: document uri -> symbol snippet request key -> definition locations.
+ */
 class DefinitionLocationCache {
     private isDisabled = IS_LSP_LIGHT_CACHE_DISABLED
-    public cache = new LRUCache<UriString, LRUCache<LocationCacheKey, DefinitionLocationCacheEntry>>({
+    public cache = new LRUCache<
+        UriString,
+        LRUCache<DefinitionLocationCacheKey, DefinitionLocationCacheEntry>
+    >({
         max: MAX_CACHED_DOCUMENTS,
     })
 
@@ -577,9 +558,9 @@ class DefinitionLocationCache {
      * Keeps track of the cache keys for each document so that we can quickly
      * invalidate the cache when a document is changed.
      */
-    public documentToLocationCacheKeyMap = new Map<UriString, Set<LocationCacheEntryPath>>()
+    public documentToLocationCacheKeyMap = new Map<UriString, Set<DefinitionLocationCacheEntryPath>>()
 
-    public toLocationCacheKey(request: SymbolSnippetsRequest): LocationCacheKey {
+    public toDefinitionLocationCacheKey(request: SymbolSnippetsRequest): DefinitionLocationCacheKey {
         const { position, nodeType, symbolName } = request
         return `${position.line}:${position.character}:${nodeType}:${symbolName}`
     }
@@ -594,7 +575,7 @@ class DefinitionLocationCache {
             return undefined
         }
 
-        return documentCache.get(this.toLocationCacheKey(request))
+        return documentCache.get(this.toDefinitionLocationCacheKey(request))
     }
 
     public set(request: SymbolSnippetsRequest, value: DefinitionLocationCacheEntry): void {
@@ -607,7 +588,7 @@ class DefinitionLocationCache {
             this.cache.set(uri, documentCache)
         }
 
-        const locationCacheKey = this.toLocationCacheKey(request)
+        const locationCacheKey = this.toDefinitionLocationCacheKey(request)
         documentCache.set(locationCacheKey, value)
 
         if (!isEmptyCacheEntry(value)) {
@@ -621,18 +602,18 @@ class DefinitionLocationCache {
         const documentCache = this.cache.get(request.uri.toString())
 
         if (documentCache) {
-            documentCache.delete(this.toLocationCacheKey(request))
+            documentCache.delete(this.toDefinitionLocationCacheKey(request))
         }
     }
 
-    addToDocumentToCacheKeyMap(uri: string, cacheKey: LocationCacheEntryPath) {
+    addToDocumentToCacheKeyMap(uri: string, cacheKey: DefinitionLocationCacheEntryPath) {
         if (!this.documentToLocationCacheKeyMap.has(uri)) {
             this.documentToLocationCacheKeyMap.set(uri, new Set())
         }
         this.documentToLocationCacheKeyMap.get(uri)!.add(cacheKey)
     }
 
-    removeFromDocumentToCacheKeyMap(uri: string, cacheKey: LocationCacheEntryPath) {
+    removeFromDocumentToCacheKeyMap(uri: string, cacheKey: DefinitionLocationCacheEntryPath) {
         if (this.documentToLocationCacheKeyMap.has(uri)) {
             this.documentToLocationCacheKeyMap.get(uri)!.delete(cacheKey)
             if (this.documentToLocationCacheKeyMap.get(uri)!.size === 0) {
@@ -664,9 +645,18 @@ export function invalidateDocumentCache(document: vscode.TextDocument) {
 }
 
 // TODO: make the incremental symbol resolution work with caching. The integration test snapshots should be updated
-// after that. Currently if symbols are not resolved because of the nested identifiers limit, the are never resolved.
+// after that. Currently if nested symbols are not resolved because of the recursion limit, the are never resolved.
 export function clearLspCacheForTests() {
     definitionCache.cache.clear()
     definitionLocationCache.cache.clear()
     definitionLocationCache.documentToLocationCacheKeyMap.clear()
+}
+
+function isJavascript(languageId: string) {
+    return [
+        SupportedLanguage.javascript,
+        SupportedLanguage.typescript,
+        SupportedLanguage.javascriptreact,
+        SupportedLanguage.typescriptreact,
+    ].includes(languageId as SupportedLanguage)
 }

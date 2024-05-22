@@ -3,33 +3,42 @@ import type * as vscode from 'vscode'
 import { lines } from '../../completions/text-processing'
 
 export function extractHoverContent(hover: vscode.Hover[]): ParsedHover[] {
-    return (
-        hover
-            .flatMap(hover => hover.contents.map(c => (typeof c === 'string' ? c : c.value)))
-            .map(extractMarkdownCodeBlock)
-            .map(
-                s => s.trim()
-                // TODO: handle loading states
-                // .replace('(loading...) ', '')
-                // TODO: adapt to other languages
-                // .replace('(method)', 'function')
-                // .replace('constructor', 'function')
-                // .replace(/^\(\w+\) /, '')
-            )
-            .filter(s => s !== '')
-            // Remove the last line if it's an import statement prefix
-            .map(s => {
-                const hoverLines = lines(s)
-                if (hoverLines.length > 1 && hoverLines.at(-1)?.startsWith('import')) {
-                    return hoverLines.slice(0, -1).join('\n')
-                }
-                return s
-            })
-            .map(s => parseHoverString(s))
-    )
+    const parsedHovers = hover
+        .flatMap(hover => hover.contents.map(c => (typeof c === 'string' ? c : c.value)))
+        .map(extractMarkdownCodeBlock)
+        .map(
+            s => s.trim()
+            // TODO: handle loading states
+            // .replace('(loading...) ', '')
+            // TODO: adapt to other languages
+            // .replace('(method)', 'function')
+            // .replace('constructor', 'function')
+            // .replace(/^\(\w+\) /, '')
+        )
+        .filter(s => s !== '')
+        // Remove the last line if it's an import statement prefix
+        .map(s => {
+            const hoverLines = lines(s)
+            if (hoverLines.length > 1 && hoverLines.at(-1)?.startsWith('import')) {
+                return hoverLines.slice(0, -1).join('\n')
+            }
+            return s
+        })
+        .map(s => parseHoverString(s))
+
+    if (parsedHovers.length === 0) {
+        return [
+            {
+                kind: undefined,
+                text: '',
+            },
+        ]
+    }
+
+    return parsedHovers
 }
 
-interface ParsedHover {
+export interface ParsedHover {
     kind: string | undefined
     text: string
 }
@@ -72,7 +81,11 @@ function extractMarkdownCodeBlock(string: string): string {
     return codeBlocks.join('\n')
 }
 
-export function isUnhelpfulSymbolSnippet(symbolName: string, symbolSnippet: string): boolean {
+export function isUnhelpfulSymbolSnippet(symbolName: string, symbolSnippet?: string): boolean {
+    if (!symbolSnippet) {
+        return true
+    }
+
     const trimmed = symbolSnippet.trim()
     return (
         symbolSnippet === '' ||
