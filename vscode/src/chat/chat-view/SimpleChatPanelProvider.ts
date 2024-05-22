@@ -466,6 +466,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 command,
                 traceId: span.spanContext().traceId,
                 sessionID: this.chatModel.sessionID,
+                addEnhancedContext,
             }
             telemetryService.log('CodyVSCodeExtension:chat-question:submitted', sharedProperties)
             telemetryRecorder.recordEvent('cody.chat-question', 'submitted', {
@@ -473,6 +474,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
                     // See https://github.com/sourcegraph/sourcegraph/pull/59524
                     recordsPrivateMetadataTranscript: authStatus.endpoint && authStatus.isDotCom ? 1 : 0,
+                    addEnhancedContext: addEnhancedContext ? 1 : 0,
                 },
                 privateMetadata: {
                     ...sharedProperties,
@@ -1132,6 +1134,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             (await this.repoPicker?.getDefaultRepos()) || [],
             RepoInclusion.Manual
         )
+
+        vscode.commands.executeCommand('setContext', 'cody.hasNewChatOpened', true)
     }
 
     // Attempts to restore the chat to the given sessionID, if it exists in
@@ -1181,6 +1185,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         this.chatModel = new SimpleChatModel(this.chatModel.modelID)
         this.postViewTranscript()
+
+        vscode.commands.executeCommand('setContext', 'cody.hasNewChatOpened', true)
     }
 
     // #endregion
@@ -1275,14 +1281,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             this._webviewPanel = undefined
             this._webview = undefined
             panel.dispose()
-        })
-
-        // Let the webview know if it is active
-        panel.onDidChangeViewState(event => {
-            this.postMessage({
-                type: 'webview-state',
-                isActive: event.webviewPanel.active,
-            })
         })
 
         this.disposables.push(

@@ -43,7 +43,7 @@ export const KeyboardEventPlugin: FunctionComponent<KeyboardEventPluginProps> = 
                     KEY_ENTER_COMMAND,
                     event => {
                         onEnterKey?.(event)
-                        return false
+                        return event?.defaultPrevented ?? false
                     },
                     COMMAND_PRIORITY_LOW
                 )

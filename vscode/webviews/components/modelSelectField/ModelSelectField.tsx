@@ -1,13 +1,11 @@
 import { type ModelProvider, ModelUIGroup } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { ChevronDownIcon } from 'lucide-react'
-import { type FunctionComponent, type ReactNode, useCallback, useMemo, useState } from 'react'
+import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { chatModelIconComponent } from '../ChatModelIcon'
-import { Button } from '../shadcn/ui/button'
 import { Command, CommandGroup, CommandItem, CommandList } from '../shadcn/ui/command'
-import { Popover, PopoverContent, PopoverTrigger } from '../shadcn/ui/popover'
+import { ToolbarPopoverItem } from '../shadcn/ui/toolbar'
 import { cn } from '../shadcn/utils'
 import styles from './ModelSelectField.module.css'
 
@@ -27,11 +25,19 @@ export const ModelSelectField: React.FunctionComponent<{
 
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
 
+    onCloseByEscape?: () => void
     className?: string
 
     /** For storybooks only. */
     __storybook__open?: boolean
-}> = ({ models, onModelSelect: parentOnModelSelect, userInfo, className, __storybook__open }) => {
+}> = ({
+    models,
+    onModelSelect: parentOnModelSelect,
+    userInfo,
+    onCloseByEscape,
+    className,
+    __storybook__open,
+}) => {
     const usableModels = useMemo(() => models.filter(m => !m.deprecated), [models])
     const selectedModel = usableModels.find(m => m.default) ?? usableModels[0]
 
@@ -64,10 +70,8 @@ export const ModelSelectField: React.FunctionComponent<{
     )
 
     const readOnly = !userInfo.isDotComUser
-    const [open, setOpen] = useState(__storybook__open && !readOnly)
 
     const onOpenChange = useCallback((open: boolean): void => {
-        setOpen(open)
         if (open) {
             // Trigger `CodyVSCodeExtension:openLLMDropdown:clicked` only when dropdown is about to be opened.
             getVSCodeAPI().postMessage({
@@ -137,38 +141,30 @@ export const ModelSelectField: React.FunctionComponent<{
         [onModelSelect, usableModels]
     )
 
+    const onKeyDown = useCallback(
+        (event: React.KeyboardEvent<HTMLDivElement>) => {
+            if (event.key === 'Escape') {
+                onCloseByEscape?.()
+            }
+        },
+        [onCloseByEscape]
+    )
+
     if (!usableModels.length || usableModels.length < 1) {
         return null
     }
 
     const value = selectedModel.model
     return (
-        <Popover open={open} onOpenChange={onOpenChange}>
-            <PopoverTrigger asChild>
-                <Button
-                    variant="combobox"
-                    role="combobox"
-                    aria-expanded={open}
-                    className={cn('tw-justify-between', className)}
-                    disabled={readOnly}
-                    aria-label="Select a model"
-                >
-                    {value !== undefined
-                        ? options.find(option => option.value === value)?.title
-                        : 'Select...'}
-                    {!readOnly && (
-                        <ChevronDownIcon
-                            strokeWidth={1.25}
-                            size={12}
-                            className="tw-ml-3 tw-shrink-0 tw-opacity-50"
-                        />
-                    )}
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent
-                className="tw-min-w-[325px] tw-w-[unset] tw-max-w-[90%] !tw-p-0"
-                align="start"
-            >
+        <ToolbarPopoverItem
+            role="combobox"
+            iconEnd={readOnly ? undefined : 'chevron'}
+            className={cn('tw-justify-between', className)}
+            disabled={readOnly}
+            defaultOpen={__storybook__open}
+            tooltip={readOnly ? undefined : 'Select a model'}
+            aria-label="Select a model"
+            popoverContent={close => (
                 <Command loop={true} defaultValue={value} tabIndex={0} className="focus:tw-outline-none">
                     <CommandList>
                         {optionsByGroup.map(({ group, options }) => (
@@ -179,7 +175,7 @@ export const ModelSelectField: React.FunctionComponent<{
                                         value={option.value}
                                         onSelect={currentValue => {
                                             onChange(currentValue)
-                                            setOpen(false)
+                                            close()
                                         }}
                                         disabled={option.disabled}
                                     >
@@ -190,8 +186,20 @@ export const ModelSelectField: React.FunctionComponent<{
                         ))}
                     </CommandList>
                 </Command>
-            </PopoverContent>
-        </Popover>
+            )}
+            popoverRootProps={{ onOpenChange }}
+            popoverContentProps={{
+                className: 'tw-min-w-[325px] tw-w-[unset] tw-max-w-[90%] !tw-p-0',
+                onKeyDown: onKeyDown,
+                onCloseAutoFocus: event => {
+                    // Prevent the popover trigger from stealing focus after the user selects an
+                    // item. We want the focus to return to the editor.
+                    event.preventDefault()
+                },
+            }}
+        >
+            {value !== undefined ? options.find(option => option.value === value)?.title : 'Select...'}
+        </ToolbarPopoverItem>
     )
 }
 

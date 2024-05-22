@@ -1,25 +1,20 @@
 import * as React from 'react'
 
-import { VSCodeButton, VSCodeCheckbox } from '@vscode/webview-ui-toolkit/react'
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import { clsx } from 'clsx'
 
-import {
-    type ContextGroup,
-    type ContextProvider,
-    type EnhancedContextContextT,
-    type LocalEmbeddingsProvider,
-    type LocalSearchProvider,
-    type RemoteSearchProvider,
-    isMacOS,
+import type {
+    ContextGroup,
+    ContextProvider,
+    EnhancedContextContextT,
+    LocalEmbeddingsProvider,
+    LocalSearchProvider,
+    RemoteSearchProvider,
 } from '@sourcegraph/cody-shared'
-import { useEnhancedContextEnabled } from '../chat/EnhancedContext'
 
-import { PopupFrame } from '../Popups/Popup'
-import { getVSCodeAPI } from '../utils/VSCodeApi'
-
-import popupStyles from '../Popups/Popup.module.css'
-import { SparkleSlash } from '../icons/SparkleSlash'
+import { BookMarkedIcon } from 'lucide-react'
 import styles from './EnhancedContextSettings.module.css'
+import { ToolbarPopoverItem } from './shadcn/ui/toolbar'
 
 export enum EnhancedContextPresentationMode {
     // An expansive display with heterogenous providers grouped by source.
@@ -30,8 +25,11 @@ export enum EnhancedContextPresentationMode {
 
 interface EnhancedContextSettingsProps {
     presentationMode: 'consumer' | 'enterprise'
-    isOpen: boolean
-    setOpen: (open: boolean) => void
+    onCloseByEscape?: () => void
+    className?: string
+
+    /** For storybooks only. */
+    __storybook__open?: boolean
 }
 
 function defaultEnhancedContextContext(): EnhancedContextContextT {
@@ -48,7 +46,6 @@ export const EnhancedContextEventHandlers: React.Context<EnhancedContextEventHan
     React.createContext({
         onChooseRemoteSearchRepo: (): void => {},
         onConsentToEmbeddings: (_): void => {},
-        onEnabledChange: (_): void => {},
         onRemoveRemoteSearchRepo: (_): void => {},
         onShouldBuildSymfIndex: (_): void => {},
     })
@@ -56,7 +53,6 @@ export const EnhancedContextEventHandlers: React.Context<EnhancedContextEventHan
 export interface EnhancedContextEventHandlersT {
     onChooseRemoteSearchRepo: () => void
     onConsentToEmbeddings: (provider: LocalEmbeddingsProvider) => void
-    onEnabledChange: (enabled: boolean) => void
     onRemoveRemoteSearchRepo: (id: string) => void
     onShouldBuildSymfIndex: (provider: LocalSearchProvider) => void
 }
@@ -112,7 +108,6 @@ const CompactGroupsComponent: React.FunctionComponent<{
 
     return (
         <div className={styles.enterpriseRepoList}>
-            <h1>Repositories</h1>
             {liftedProviders.length === 0 ? (
                 <p className={styles.noReposMessage}>No repositories selected</p>
             ) : (
@@ -348,53 +343,12 @@ const ContextProviderComponent: React.FunctionComponent<{
 
 export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSettingsProps> = ({
     presentationMode,
-    isOpen,
-    setOpen,
+    __storybook__open,
+    onCloseByEscape,
+    className,
 }): React.ReactNode => {
     const events = useEnhancedContextEventHandlers()
     const context = useEnhancedContextContext()
-    const [enabled, setEnabled] = React.useState<boolean>(useEnhancedContextEnabled())
-    const enabledChanged = React.useCallback(
-        (shouldEnable: boolean, source: 'btn' | 'checkbox' | 'altKey'): void => {
-            if (enabled !== shouldEnable) {
-                events.onEnabledChange(shouldEnable)
-                setEnabled(shouldEnable)
-                // Log when a user clicks on the Enhanced Context toggle. Event names:
-                // Checkbox click: `CodyVSCodeExtension:useEnhancedContextToggler:clicked`
-                // Button click: `CodyVSCodeExtension:useEnhancedContextTogglerBtn:clicked`
-                const eventName = source === 'btn' ? 'Btn' : source === 'altKey' ? 'AltKey' : ''
-                getVSCodeAPI().postMessage({
-                    command: 'event',
-                    eventName: `CodyVSCodeExtension:useEnhancedContextToggler${eventName}:clicked`,
-                    properties: { useEnhancedContext: shouldEnable },
-                })
-            }
-        },
-        [events, enabled]
-    )
-
-    // Holding down the Alt/Opt key unchecks the box if it is checked.
-    const [disabledByAltKeyDown, setDisabledByAltKeyDown] = React.useState(false)
-    React.useEffect(() => {
-        const onKeyDown = (event: KeyboardEvent) => {
-            if (event.altKey && enabled) {
-                setDisabledByAltKeyDown(true)
-                enabledChanged(false, 'altKey')
-            }
-        }
-        const onKeyUp = (event: KeyboardEvent) => {
-            if (!event.altKey && disabledByAltKeyDown) {
-                setDisabledByAltKeyDown(false)
-                enabledChanged(true, 'altKey')
-            }
-        }
-        document.addEventListener('keydown', onKeyDown)
-        document.addEventListener('keyup', onKeyUp)
-        return () => {
-            document.removeEventListener('keydown', onKeyDown)
-            document.removeEventListener('keyup', onKeyUp)
-        }
-    }, [enabled, disabledByAltKeyDown, enabledChanged])
 
     // Handles removing a manually added remote search provider.
     const handleRemoveRemoteSearchRepo = React.useCallback(
@@ -408,70 +362,19 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
         [events]
     )
 
-    const hasOpenedBeforeKey = 'enhanced-context-settings.has-opened-before'
-    const hasOpenedBefore = localStorage.getItem(hasOpenedBeforeKey) === 'true'
-    if (isOpen && !hasOpenedBefore) {
-        localStorage.setItem(hasOpenedBeforeKey, 'true')
-    }
-
-    // Can't point at and use VSCodeCheckBox type with 'ref'
-
-    const autofocusTarget = React.useRef<any>(null)
-    React.useEffect(() => {
-        if (isOpen) {
-            // Set focus to the checkbox when the popup is opened
-            // after a 100ms delay to ensure the popup is fully rendered
-            setTimeout(() => {
-                autofocusTarget.current?.focus()
-            }, 100)
-        }
-    }, [isOpen])
-
-    // Can't point at and use VSCodeButton type with 'ref'
-    const restoreFocusTarget = React.useRef<any>(null)
-    const handleDismiss = React.useCallback(() => {
-        setOpen(false)
-    }, [setOpen])
-
-    const onKeyDown = React.useCallback(
-        (event: React.KeyboardEvent<HTMLElement>): void => {
-            // Close the popup on escape
-            if (event.key === 'Escape') {
-                handleDismiss()
-            }
-        },
-        [handleDismiss]
-    )
-
     return (
-        <div className={clsx(popupStyles.popupHost)} onKeyDown={onKeyDown}>
-            <PopupFrame
-                isOpen={isOpen}
-                onDismiss={handleDismiss}
-                classNames={[popupStyles.popupTrail, styles.popup]}
-            >
+        <ToolbarPopoverItem
+            aria-label="Configure automatic code context"
+            tooltip="Configure automatic code context"
+            iconStart={BookMarkedIcon}
+            iconEnd={null}
+            __storybook__open={__storybook__open}
+            onCloseByEscape={onCloseByEscape}
+            popoverContent={() => (
                 <div className={styles.container}>
-                    <div>
-                        <VSCodeCheckbox
-                            onChange={e =>
-                                enabledChanged((e.target as HTMLInputElement)?.checked, 'checkbox')
-                            }
-                            checked={enabled}
-                            id="enhanced-context-checkbox"
-                            ref={autofocusTarget}
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="enhanced-context-checkbox">
-                            <h1>Enhanced Context ✨</h1>
-                        </label>
-                        <p>
-                            Automatically include additional context from your codebase.{' '}
-                            <a href="https://sourcegraph.com/docs/cody/clients/install-vscode#enhanced-context-selector">
-                                Learn more
-                            </a>
-                        </p>
-                        {presentationMode === EnhancedContextPresentationMode.Consumer ? (
+                    <h1>Automatic code context</h1>
+                    {presentationMode === EnhancedContextPresentationMode.Consumer ? (
+                        context.groups.length > 0 ? (
                             <dl className={styles.foldersList}>
                                 {context.groups.map(group => (
                                     <ContextGroupComponent
@@ -482,48 +385,32 @@ export const EnhancedContextSettings: React.FunctionComponent<EnhancedContextSet
                                 ))}
                             </dl>
                         ) : (
-                            <CompactGroupsComponent
-                                groups={context.groups}
-                                handleChoose={handleChooseRemoteSearchRepo}
-                                handleRemove={handleRemoveRemoteSearchRepo}
-                            />
-                        )}
-                        <p className={styles.hint}>
-                            Tip: To include a specific file or symbol as context, type @ in the message
-                            input.
-                        </p>
-                    </div>
+                            <p className="tw-text-sm tw-text-muted-foreground">
+                                No automatic code context is available
+                            </p>
+                        )
+                    ) : (
+                        <CompactGroupsComponent
+                            groups={context.groups}
+                            handleChoose={handleChooseRemoteSearchRepo}
+                            handleRemove={handleRemoveRemoteSearchRepo}
+                        />
+                    )}
                 </div>
-            </PopupFrame>
-            <VSCodeButton
-                className={clsx(
-                    styles.settingsBtns,
-                    styles.settingsIndicator,
-                    enabled && styles.settingsIndicatorActive
-                )}
-                onClick={() => enabledChanged(!enabled, 'btn')}
-                appearance="icon"
-                type="button"
-                title={`${enabled ? 'Disable' : 'Enable'} Enhanced Context (hold ${
-                    isMacOS() ? 'Opt' : 'Alt'
-                } to disable)`}
-            >
-                {enabled ? <i className="codicon codicon-sparkle" /> : <SparkleSlash />}
-            </VSCodeButton>
-            <VSCodeButton
-                className={clsx(
-                    styles.settingsBtns,
-                    styles.settingsBtn,
-                    isOpen && styles.settingsBtnActive
-                )}
-                appearance="icon"
-                type="button"
-                onClick={() => setOpen(!isOpen)}
-                title="Configure Enhanced Context"
-                ref={restoreFocusTarget}
-            >
-                <i className="codicon codicon-chevron-down" />
-            </VSCodeButton>
-        </div>
+            )}
+            className={className}
+        />
     )
+}
+
+declare module 'react' {
+    interface HTMLAttributes<T> {
+        /**
+         * Indicates that the browser will ignore this element and its descendants,
+         * preventing some interactions and hiding it from assistive technology.
+         * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/inert
+         * @todo Remove this stub declaration after https://github.com/facebook/react/pull/24730 is merged.
+         */
+        inert?: '' | boolean
+    }
 }

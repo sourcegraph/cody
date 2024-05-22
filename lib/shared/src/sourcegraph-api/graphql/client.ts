@@ -918,7 +918,8 @@ export class SourcegraphGraphQLAPIClient {
 
     public fetchSourcegraphAPI<T>(
         query: string,
-        variables: Record<string, any> = {}
+        variables: Record<string, any> = {},
+        timeout = 6000 // Default timeout of 6000ms (6 seconds)
     ): Promise<T | Error> {
         const headers = new Headers(this.config.customHeaders as HeadersInit)
         headers.set('Content-Type', 'application/json; charset=utf-8')
@@ -938,20 +939,34 @@ export class SourcegraphGraphQLAPIClient {
             request: query,
             baseUrl: this.config.serverEndpoint,
         })
+
+        // Create an AbortController instance
+        const controller = new AbortController()
+        const signal = controller.signal
+
+        // Set a timeout to trigger the abort
+        const timeoutId = setTimeout(() => controller.abort(), timeout)
+
         return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
             fetch(url, {
                 method: 'POST',
                 body: JSON.stringify({ query, variables }),
                 headers,
+                signal, // Pass the signal to the fetch request
             })
-                .then(verifyResponseCode)
+                .then(response => {
+                    clearTimeout(timeoutId) // Clear the timeout if the request completes in time
+                    return verifyResponseCode(response)
+                })
                 .then(response => response.json() as T)
                 .catch(error => {
+                    if (error.name === 'AbortError') {
+                        return new Error(`EHOSTUNREACH: Request timed out after ${timeout}ms (${url})`)
+                    }
                     return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
                 })
         )
     }
-
     // make an anonymous request to the dotcom API
     private fetchSourcegraphDotcomAPI<T>(
         query: string,
