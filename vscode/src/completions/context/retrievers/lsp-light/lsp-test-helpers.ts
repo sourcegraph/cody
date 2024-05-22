@@ -8,6 +8,7 @@ import type * as vscode from 'vscode'
 import * as rpc from 'vscode-jsonrpc/node'
 import * as lsp from 'vscode-languageserver-protocol/node'
 
+import { createLimiter } from '../../../../graph/lsp/limiter'
 import * as lspCommands from '../../../../graph/lsp/lsp-commands'
 import { Uri } from '../../../../testutils/uri'
 
@@ -106,6 +107,13 @@ export async function openWorkspaceFiles(connection: rpc.MessageConnection): Pro
 }
 
 export function mockLspCommands(connection: rpc.MessageConnection): void {
+    vi.spyOn(lspCommands, 'lspRequestLimiter').mockImplementation(
+        createLimiter({
+            limit: 3,
+            // Increased timeout to avoid TimeoutErrors in tests on CI because of the slow machines.
+            timeout: 5000,
+        })
+    )
     vi.spyOn(lspCommands, 'getHover').mockImplementation(
         async (uri: vscode.Uri, position: vscode.Position) => {
             const params: lsp.TextDocumentPositionParams = {

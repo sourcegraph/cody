@@ -1,5 +1,6 @@
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { createLimiter } from './limiter'
 
 type ResolvedLocations = (vscode.Location | vscode.LocationLink)[]
 
@@ -90,3 +91,11 @@ export const isLocationLink = (
 ): value is vscode.LocationLink => {
     return 'targetUri' in value
 }
+
+export const lspRequestLimiter = createLimiter({
+    // The concurrent requests limit is chosen very conservatively to avoid blocking the language
+    // server.
+    limit: 3,
+    // If any language server API takes more than 2 seconds to answer, we should cancel the request
+    timeout: 2000,
+})

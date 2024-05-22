@@ -20,7 +20,6 @@ import {
 } from './debug-logger'
 import { type ParsedHover, extractHoverContent, isUnhelpfulSymbolSnippet } from './hover'
 import { commonKeywords, isCommonImport } from './languages'
-import { createLimiter } from './limiter'
 import {
     getDefinitionLocations,
     getHover,
@@ -28,15 +27,8 @@ import {
     getLinesFromLocation,
     getTextFromLocation,
     getTypeDefinitionLocations,
+    lspRequestLimiter,
 } from './lsp-commands'
-
-const lspRequestLimiter = createLimiter({
-    // The concurrent requests limit is chosen very conservatively to avoid blocking the language
-    // server.
-    limit: 3,
-    // If any language server API takes more than 2 seconds to answer, we should cancel the request
-    timeout: 2000,
-})
 
 async function getParsedHovers(
     uri: vscode.Uri,
