@@ -97,6 +97,15 @@ query CurrentSiteCodyLlmConfiguration {
     }
 }`
 
+export const CURRENT_SITE_CODY_LLM_CONFIGURATION_SMART_CONTEXT = `
+query CurrentSiteCodyLlmConfiguration {
+    site {
+        codyLLMConfiguration {
+            smartContext
+        }
+    }
+}`
+
 export const REPOSITORY_LIST_QUERY = `
 query Repositories($first: Int!, $after: String) {
     repositories(first: $first, after: $after) {
