@@ -2,23 +2,20 @@ import * as vscode from 'vscode'
 
 import {
     type AuthStatus,
+    type AuthStatusProvider,
     type ConfigurationWithAccessToken,
     DOTCOM_URL,
     LOCAL_APP_URL,
     SourcegraphGraphQLAPIClient,
+    defaultAuthStatus,
     isDotCom,
     isError,
+    networkErrorAuthStatus,
+    unauthenticatedStatus,
 } from '@sourcegraph/cody-shared'
 
 import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'
-import {
-    ACCOUNT_USAGE_URL,
-    defaultAuthStatus,
-    isLoggedIn as isAuthenticated,
-    isSourcegraphToken,
-    networkErrorAuthStatus,
-    unauthenticatedStatus,
-} from '../chat/protocol'
+import { ACCOUNT_USAGE_URL, isLoggedIn as isAuthenticated, isSourcegraphToken } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
 import { getFullConfig } from '../configuration'
 import { logDebug } from '../log'
@@ -38,7 +35,8 @@ type Unsubscribe = () => void
 
 const HAS_AUTHENTICATED_BEFORE_KEY = 'has-authenticated-before'
 
-export class AuthProvider {
+type AuthConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
+export class AuthProvider implements AuthStatusProvider {
     private endpointHistory: string[] = []
 
     private client: SourcegraphGraphQLAPIClient | null = null
@@ -46,12 +44,14 @@ export class AuthProvider {
     private authStatus: AuthStatus = defaultAuthStatus
     private listeners: Set<Listener> = new Set()
 
-    constructor(
-        private config: Pick<
-            ConfigurationWithAccessToken,
-            'serverEndpoint' | 'accessToken' | 'customHeaders'
-        >
-    ) {
+    static create(config: AuthConfig) {
+        if (!authProvider) {
+            authProvider = new AuthProvider(config)
+        }
+        return authProvider
+    }
+
+    private constructor(private config: AuthConfig) {
         this.authStatus.endpoint = 'init'
         this.loadEndpointHistory()
     }
@@ -509,6 +509,10 @@ export class AuthProvider {
         return localStorage.set(HAS_AUTHENTICATED_BEFORE_KEY, 'true')
     }
 }
+/**
+ * Singleton instance of auth provider.
+ */
+export let authProvider: AuthProvider | null = null
 
 export function isNetworkError(error: Error): boolean {
     const message = error.message

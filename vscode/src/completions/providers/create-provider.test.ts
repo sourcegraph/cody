@@ -7,12 +7,12 @@ import {
     type Configuration,
     type ConfigurationWithAccessToken,
     type GraphQLAPIClientConfig,
+    defaultAuthStatus,
     graphqlClient,
 } from '@sourcegraph/cody-shared'
 
 import { DEFAULT_VSCODE_SETTINGS } from '../../testutils/mocks'
 
-import { defaultAuthStatus } from '../../chat/protocol'
 import { createProviderConfig } from './create-provider'
 
 const getVSCodeConfigurationWithAccessToken = (

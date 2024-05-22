@@ -9,7 +9,7 @@
     "**/.vscode-test": true,
     "**/.vscode-test-web": true
   },
-  "editor.formatOnSave": true,
+  "editor.formatOnSave": false,
   "npm.packageManager": "pnpm",
   "npm.runSilent": true,
   "typescript.preferences.quoteStyle": "single",
@@ -25,14 +25,11 @@
     "source.organizeImports.biome": "explicit"
   },
   "editor.insertSpaces": true,
-  "cSpell.words": [
-    "Supercompletion",
-    "Supercompletions"
-  ],
+  "cSpell.words": ["Supercompletion", "Supercompletions"],
   "[typescript]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
   "[typescriptreact]": {
     "editor.defaultFormatter": "biomejs.biome"
-  },
+  }
 }
