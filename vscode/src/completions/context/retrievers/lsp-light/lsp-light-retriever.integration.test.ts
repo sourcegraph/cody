@@ -2,11 +2,13 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import type * as vscode from 'vscode'
 import type * as rpc from 'vscode-jsonrpc/node'
 
+import { isWindows } from '@sourcegraph/cody-shared'
+
+import { clearLspCacheForTests } from '../../../../graph/lsp/symbol-context-snippets'
 import { vsCodeMocks } from '../../../../testutils/mocks'
 import { parseDocument } from '../../../../tree-sitter/parse-tree-cache'
 import { documentFromFilePath, initTreeSitterParser } from '../../../test-helpers'
 
-import { clearLspCacheForTests } from '../../../../graph/lsp/symbol-context-snippets'
 import { LspLightRetriever } from './lsp-light-retriever'
 import {
     initLanguageServer,
@@ -35,7 +37,7 @@ const disposable = {
 
 // To run these tests only with clean debug output:
 // pnpm vitest vscode/src/completions/context/retrievers/lsp-light/lsp-light-retriever.integration.test.ts --disableConsoleIntercept --hideSkippedTests --reporter=basic
-describe('LspLightRetriever', () => {
+describe.skipIf(isWindows())('LspLightRetriever', () => {
     let connection: rpc.MessageConnection
     let mainFileUri: vscode.Uri
     let mainDocument: vscode.TextDocument
