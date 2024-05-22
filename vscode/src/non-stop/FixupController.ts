@@ -133,14 +133,29 @@ export class FixupController
     }
 
     /**
-     * Reverts an applied fixup task by replacing the edited code range with the original code.
-     *
-     * TODO: It is possible the original code is out of date if the user edited it whilst the fixup was running.
-     * Handle this case better. Possibly take a copy of the previous code just before the fixup is applied.
+     * Reverts an applied fixup task by replacing the edited code range with the
+     * original code.
      */
     public async undo(task: FixupTask): Promise<void> {
+        const terminalState = await this.doUndo(task)
+        if (terminalState) {
+            this.setTaskState(task, terminalState)
+        }
+    }
+
+    /**
+     * Reverts an applied fixup task by replacing the edited code range with the
+     * original code.
+     *
+     * @returns the terminal state to set for the task.
+     *
+     * TODO: It is possible the original code is out of date if the user edited
+     * it whilst the fixup was running. Handle this case better. Possibly take a
+     * copy of the previous code just before the fixup is applied.
+     */
+    private async doUndo(task: FixupTask): Promise<CodyTaskState | undefined> {
         if (task.state !== CodyTaskState.Applied) {
-            return
+            return undefined
         }
 
         this.undoCommandEvent.fire(task.id)
@@ -154,8 +169,11 @@ export class FixupController
 
         const replacementText = task.replacement
         if (!replacementText) {
-            return
+            return undefined
         }
+
+        // From here on we will start reverting the task and will end up in a terminal state.
+        this.setTaskState(task, CodyTaskState.Reverting)
 
         editor.revealRange(task.selectionRange)
 
@@ -173,8 +191,6 @@ export class FixupController
             ...this.countEditInsertions(task),
             ...task.telemetryMetadata,
         }
-
-        this.setTaskState(task, editOk ? CodyTaskState.Finished : CodyTaskState.Error)
 
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         if (!editOk) {
@@ -200,6 +216,7 @@ export class FixupController
                 },
             })
         }
+        return editOk ? CodyTaskState.Finished : CodyTaskState.Error
     }
 
     // Undo the specified task, then prompt for a new set of instructions near
@@ -229,9 +246,9 @@ export class FixupController
         const updatedRange = input.range.isEqual(task.selectionRange) ? task.originalRange : input.range
 
         // Revert and remove the previous task
-        await this.undo(task)
+        const terminalState = await this.doUndo(task)
 
-        return executeEdit({
+        const newTask = await executeEdit({
             configuration: {
                 range: updatedRange,
                 instruction: input.instruction,
@@ -243,6 +260,13 @@ export class FixupController
             },
             source,
         })
+
+        task.retryID = newTask?.id
+        if (terminalState) {
+            this.setTaskState(task, terminalState)
+        }
+
+        return newTask
     }
 
     // FixupFileCollection
@@ -1018,7 +1042,7 @@ export class FixupController
         // User has changed an applied task, so we assume the user has accepted the change and wants to take control.
         // This helps ensure that the codelens doesn't stay around unnecessarily and become an annoyance.
         // Note: This will also apply if the user attempts to undo the applied change.
-        if (task.state === CodyTaskState.Applied) {
+        if (task.state === CodyTaskState.Applied || task.state === CodyTaskState.Reverting) {
             this.accept(task)
             return
         }

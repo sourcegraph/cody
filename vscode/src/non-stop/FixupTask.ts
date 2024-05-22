@@ -57,6 +57,10 @@ export class FixupTask {
      * they may run into an error that we can't anticipate
      */
     public formattingResolver: ((value: boolean) => void) | null = null
+    /**
+     * The ID of the task that is created when a user retries a task.
+     */
+    public retryID: FixupTaskID | undefined
 
     constructor(
         /**
