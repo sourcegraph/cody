@@ -175,6 +175,9 @@ importers:
       '@types/fast-json-stable-stringify':
         specifier: ^2.1.0
         version: 2.1.0
+      '@types/glob':
+        specifier: ^8.0.0
+        version: 8.0.0
       '@types/google-protobuf':
         specifier: 3.15.12
         version: 3.15.12
@@ -199,6 +202,9 @@ importers:
       fast-json-stable-stringify:
         specifier: ^2.1.0
         version: 2.1.0
+      glob:
+        specifier: ^7.2.3
+        version: 7.2.3
       google-protobuf:
         specifier: ^3.21.2
         version: 3.21.2

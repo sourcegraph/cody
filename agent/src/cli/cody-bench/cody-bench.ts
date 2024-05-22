@@ -299,6 +299,7 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
 
     const workspaceRootUri = vscode.Uri.from({ scheme: 'file', path: options.workspace })
 
+    const recordingDirectory = path.join(path.dirname(options.evaluationConfig), 'recordings')
     const client = await newAgentClient({
         name: 'cody-bench',
         version: '0.1.0',
@@ -312,6 +313,13 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
         },
         inheritStderr: true,
         codyAgentPath: options.codyAgentBinary,
+        extraEnvVariables: {
+            CODY_RECORDING_NAME: `${options.fixture.name}-${path.basename(options.workspace)}`,
+            CODY_RECORDING_DIRECTORY: recordingDirectory,
+            CODY_RECORDING_MODE: 'replay',
+            CODY_RECORD_IF_MISSING: 'true',
+            CODY_KEEP_UNUSED_RECORDINGS: 'true',
+        },
     })
     try {
         switch (options.fixture.strategy) {

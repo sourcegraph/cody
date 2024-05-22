@@ -22,14 +22,13 @@ export interface EvaluateFileParams {
 }
 
 export async function evaluateEachFile(
+    files: string[],
     options: EvaluateAutocompleteOptions,
     handler: (params: EvaluateFileParams) => Promise<EvaluationDocument | undefined>
 ): Promise<void> {
     const { workspace } = options
     const queries = new Queries(options.queriesDirectory)
     const grammarDirectory = path.normalize(options.treeSitterGrammars)
-    const files = execSync('git ls-files', { cwd: workspace }).toString().split('\n')
-    files.sort()
     const snapshots = new SnapshotWriter(options)
     await testInstall(options)
     try {
@@ -41,6 +40,7 @@ export async function evaluateEachFile(
             if (
                 !matchesGlobPatterns(options.includeFilepath ?? [], options.excludeFilepath ?? [], file)
             ) {
+                console.log(`Skipping file ${file} ${options.includeFilepath}`)
                 continue
             }
             const filePath = path.join(workspace, file)

@@ -137,7 +137,11 @@ export async function initializeVscodeExtension(
 }
 
 export async function newAgentClient(
-    clientInfo: ClientInfo & { codyAgentPath?: string; inheritStderr?: boolean }
+    clientInfo: ClientInfo & {
+        codyAgentPath?: string
+        inheritStderr?: boolean
+        extraEnvVariables?: Record<string, string>
+    }
 ): Promise<MessageHandler> {
     const asyncHandler = async (reject: (reason?: any) => void): Promise<MessageHandler> => {
         const nodeArguments = process.argv0.endsWith('node')
@@ -147,7 +151,7 @@ export async function newAgentClient(
         const arg0 = clientInfo.codyAgentPath ?? process.argv[0]
         const args = clientInfo.codyAgentPath ? [] : nodeArguments
         const child = spawn(arg0, args, {
-            env: { ENABLE_SENTRY: 'false', ...process.env },
+            env: { ...clientInfo.extraEnvVariables, ENABLE_SENTRY: 'false', ...process.env },
         })
         child.on('error', error => reject?.(error))
         child.on('exit', code => {
@@ -408,6 +412,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerNotification('initialized', () => {})
 
         this.registerRequest('shutdown', async () => {
+            // console.log('SHUTTING DOWN', this.params.polly)
             if (this?.params?.polly) {
                 this.params.polly.disconnectFrom('node-http')
                 await this.params.polly.stop()

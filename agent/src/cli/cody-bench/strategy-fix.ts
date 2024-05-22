@@ -1,18 +1,16 @@
+import path from 'node:path'
 import { calcSlices } from 'fast-myers-diff'
-
-import ts from 'typescript'
+import { glob } from 'glob'
 import * as vscode from 'vscode'
+import { fileExists } from '../../../../vscode/src/local-context/download-symf'
 import { TestClient } from '../../TestClient'
 import type { MessageHandler } from '../../jsonrpc-alias'
 import type { ProtocolDiagnostic } from '../../protocol-alias'
 import type { EvaluateAutocompleteOptions } from './cody-bench'
 import { evaluateEachFile } from './evaluateEachFile'
-import { Buckets } from './strategy-fix/Buckets'
-import { DiagnosticCode, isDiagnosticCode } from './strategy-fix/DiagnosticCode'
-import {
-    type FixCandidate,
-    generateTotallyFakeDiagnostics,
-} from './strategy-fix/generateTotallyFakeDiagnostics'
+import { DiagnosticCode } from './strategy-fix/DiagnosticCode'
+import type { FixCandidate } from './strategy-fix/generateTotallyFakeDiagnostics'
+import { runVoidCommand } from './testTypecheck'
 
 export async function evaluateFixStrategy(
     messageHandler: MessageHandler,
@@ -23,77 +21,52 @@ export async function evaluateFixStrategy(
         vscode.Uri.file(options.workspace),
         options.fixture.name
     )
-    let totalCandidates = 0
-    const globalBuckets = new Buckets<DiagnosticCode>(1_000)
-    let counter = options.testCount
-    let correctDiagnostics = 0
-    let totalDiagnostics = 0
-    // await runVoidCommand(options.installCommand, options.workspace)
-    await evaluateEachFile(options, async params => {
-        if (counter <= 0) {
-            return
-        }
-        const file = params.uri.fsPath
-        const sourceFile = ts.createSourceFile(file, params.content, ts.ScriptTarget.Latest, true)
-        const candidates = generateTotallyFakeDiagnostics(sourceFile, globalBuckets)
+    if (!(await fileExists(path.join(options.workspace, 'node_modules')))) {
+        // Run pnpm install only when `node_modules` doesn't exist.
+        await runVoidCommand(options.installCommand, options.workspace)
+    }
+    let totalErrors = 0
+    let fixedErrors = 0
+    const absoluteFiles = glob.sync(`${options.workspace}/**`, {
+        ignore: ['node_modules/**'],
+        nodir: true,
+    })
+    const files = absoluteFiles.map(file => path.relative(options.workspace, file))
+    await evaluateEachFile(files, options, async params => {
         client.openFile(params.uri, { text: params.content })
-        const { diagnostics: originalDiagnostics } = await client.request('testing/diagnostics', {
+        const { diagnostics } = await client.request('testing/diagnostics', {
             uri: params.uri.toString(),
         })
-        if (originalDiagnostics.length > 0) {
-            // TODO: investigate why these diagnostics  exist
-            return undefined
-        }
-        totalCandidates += candidates.length
-        for (const candidate of candidates) {
-            client.changeFile(params.uri, { text: candidate.newContent })
-            const { diagnostics } = await client.request('testing/diagnostics', {
+        await client.request('diagnostics/publish', { diagnostics })
+        for (const diagnostic of diagnostics) {
+            const { codeActions } = await client.request('codeActions/provide', {
+                location: diagnostic.location,
+                triggerKind: 'Invoke',
+            })
+            const fixAction = codeActions.find(action => action.title === 'Ask Cody to Fix')
+            if (!fixAction || !fixAction.commandID) {
+                console.log('No fix action found')
+                console.log(prettyDiagnostic(diagnostic))
+                continue
+            }
+            const editTask = await client.request('codeActions/trigger', { id: fixAction.id })
+            await client.acceptEditTask(params.uri, editTask)
+            const { diagnostics: newDiagnostics } = await client.request('testing/diagnostics', {
                 uri: params.uri.toString(),
             })
-            totalDiagnostics += diagnostics.length
-            counter -= diagnostics.length
-            for (const diagnostic of diagnostics) {
-                if (
-                    isDiagnosticCode(diagnostic.code) &&
-                    diagnostic.code !== candidate.expectedDiagnosticCode
-                ) {
-                    const isRelated = relatedDiagnosticCodes[
-                        candidate.expectedDiagnosticCode
-                    ]?.includes?.(diagnostic.code)
-                    if (isRelated) {
-                        // ignore
-                    } else {
-                        // Wrong diagnostic kind. Ignore it, and optionally uncomment below to debug why
-                        // printCandidate(file, candidate)
-                        // console.log(prettyDiagnostic(diagnostic))
-                    }
-                } else {
-                    await client.request('diagnostics/publish', { diagnostics: [diagnostic] })
-                    const { codeActions } = await client.request('codeActions/provide', {
-                        location: diagnostic.location,
-                        triggerKind: 'Invoke',
-                    })
-                    const fixAction = codeActions.find(action => action.title === 'Ask Cody to Fix')
-                    if (!fixAction || !fixAction.commandID) {
-                        console.log('No fix action found')
-                        console.log(prettyDiagnostic(diagnostic))
-                        continue
-                    }
-                    const editTask = await client.request('codeActions/trigger', { id: fixAction.id })
-                    await client.acceptEditTask(params.uri, editTask)
-                    // const newDiagnostics = await client.request('testing/diagnostics', {
-                    //     uri: params.uri.toString(),
-                    // })
-                    const newText = client.workspace.getDocument(params.uri)?.getText() ?? ''
-                    console.log(renderUnifiedDiff(params.content.split('\n'), newText.split('\n')))
-                    // TODO: publish diagnostic, trigger code actions
-                    correctDiagnostics++
-                }
+            const newText = client.workspace.getDocument(params.uri)?.getText() ?? ''
+            console.log({ message: diagnostic.message })
+            const isFixed = newDiagnostics.length === 0 && !newText.includes(diagnostic.message)
+            console.log(`${params.file}: ${isFixed ? 'Fixed!' : 'Still errors!'}`)
+            console.log(renderUnifiedDiff(params.content.split('\n'), newText.split('\n')))
+            totalErrors += 1
+            if (isFixed) {
+                fixedErrors += 1
             }
         }
         return undefined
     })
-    console.log({ correctDiagnostics, totalDiagnostics, totalCandidates })
+    console.log({ totalErrors, fixedErrors })
 }
 
 function renderUnifiedDiff(a: string[], b: string[]): string {
@@ -101,12 +74,12 @@ function renderUnifiedDiff(a: string[], b: string[]): string {
     const out = []
     for (const [kind, text] of patch) {
         const prefix = kind === 0 ? ' ' : kind === 1 ? '+' : '-'
-        out.push(`${prefix} ${text}`)
+        out.push(`${prefix} ${text.join('')}`)
     }
     return out.join('\n')
 }
 
-const relatedDiagnosticCodes: Partial<Record<DiagnosticCode, DiagnosticCode[]>> = {
+export const relatedDiagnosticCodes: Partial<Record<DiagnosticCode, DiagnosticCode[]>> = {
     [DiagnosticCode.TS2322]: [DiagnosticCode.TS2741, DiagnosticCode.TS2739, DiagnosticCode.TS2559],
     [DiagnosticCode.TS2345]: [DiagnosticCode.TS2740, DiagnosticCode.TS2769],
 }

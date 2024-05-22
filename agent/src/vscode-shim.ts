@@ -239,8 +239,8 @@ const _workspace: typeof vscode.workspace = {
             searchPattern = include.pattern
         }
 
-        if (exclude !== undefined && typeof exclude !== 'string') {
-            throw new TypeError('workspaces.findFiles: exclude must be a string')
+        if (exclude !== undefined && exclude !== null && typeof exclude !== 'string') {
+            throw new TypeError('workspaces.findFiles: exclude must be a string, null, or undefined')
         }
 
         const result: vscode.Uri[] = []

@@ -2,6 +2,7 @@ import * as path from 'node:path'
 
 import type { MessageHandler } from '../../jsonrpc-alias'
 
+import { execSync } from 'node:child_process'
 import { type AutocompleteMatchKind, AutocompleteMatcher } from './AutocompleteMatcher'
 import { EvaluationDocument } from './EvaluationDocument'
 import type { EvaluateAutocompleteOptions } from './cody-bench'
@@ -21,7 +22,10 @@ export async function evaluateBfgStrategy(
 ): Promise<void> {
     let remainingTests = options.testCount
     const matchCounts = new Map<AutocompleteMatchKind, number>()
+    const files = execSync('git ls-files', { cwd: options.workspace }).toString().split('\n')
+    files.sort()
     evaluateEachFile(
+        files,
         options,
         async ({ file, content, uri, languageid, revision, queries, grammarDirectory }) => {
             const document = new EvaluationDocument(
