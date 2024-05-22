@@ -34,6 +34,8 @@ export enum FeatureFlag {
     CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
     // Enable smart-throttling for more aggressive request cancellation and lower initial latencies
     CodyAutocompleteSmartThrottle = 'cody-autocomplete-smart-throttle',
+    // When activated, reduces the debounce time to 25ms (from 75ms).
+    CodyAutocompleteReducedDebounce = 'cody-autocomplete-reduced-debounce',
 
     // use-ssc-for-cody-subscription is a feature flag that enables the use of SSC as the source of truth for Cody subscription data.
     UseSscForCodySubscription = 'use-ssc-for-cody-subscription',
@@ -53,6 +55,9 @@ export enum FeatureFlag {
 
     /** Interactive tutorial, primarily for onboarding */
     CodyInteractiveTutorial = 'cody-interactive-tutorial',
+
+    /** Automatically start indexing using embeddings. */
+    CodyEmbeddingsAutoIndexing = 'cody-embeddings-auto-indexing',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

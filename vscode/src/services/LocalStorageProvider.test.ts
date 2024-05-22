@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
-import type { AuthStatus } from '@sourcegraph/cody-shared'
+import type { AuthStatus, UserLocalHistory } from '@sourcegraph/cody-shared'
 
 import { localStorage } from './LocalStorageProvider'
 
@@ -22,12 +22,47 @@ describe('LocalStorageProvider', () => {
 
     it('sets and gets chat history', async () => {
         await localStorage.setChatHistory(DUMMY_AUTH_STATUS, {
-            chat: { a: null as any },
+            chat: { a: { id: 'a', lastInteractionTimestamp: '123', interactions: [] } },
         })
 
         const loadedHistory = localStorage.getChatHistory(DUMMY_AUTH_STATUS)
-        expect(loadedHistory).toEqual({
-            chat: { a: null as any },
+        expect(loadedHistory).toEqual<UserLocalHistory>({
+            chat: { a: { id: 'a', lastInteractionTimestamp: '123', interactions: [] } },
+        })
+    })
+
+    it('converts chat history to use ChatMessage.model not just SerializedChatTranscript.chatModel', async () => {
+        const chatHistory: UserLocalHistory = {
+            chat: {
+                a: {
+                    id: 'a',
+                    lastInteractionTimestamp: '123',
+                    chatModel: 'my-model',
+                    interactions: [
+                        {
+                            humanMessage: { speaker: 'human', text: 'hello' },
+                            assistantMessage: { speaker: 'assistant', text: 'hi' },
+                        },
+                    ],
+                },
+            },
+        }
+        await localStorage.setChatHistory(DUMMY_AUTH_STATUS, chatHistory)
+        const loadedHistory = localStorage.getChatHistory(DUMMY_AUTH_STATUS)
+        expect(loadedHistory).toEqual<UserLocalHistory>({
+            chat: {
+                a: {
+                    id: 'a',
+                    lastInteractionTimestamp: '123',
+                    chatModel: 'my-model',
+                    interactions: [
+                        {
+                            humanMessage: { speaker: 'human', text: 'hello' },
+                            assistantMessage: { speaker: 'assistant', text: 'hi', model: 'my-model' },
+                        },
+                    ],
+                },
+            },
         })
     })
 })

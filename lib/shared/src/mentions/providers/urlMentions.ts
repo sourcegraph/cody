@@ -4,7 +4,8 @@ import type { ContextMentionProvider } from '../api'
 
 export const URL_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'url'> = {
     id: 'url',
-    triggerPrefixes: ['http://', 'https://'],
+    title: 'Web URL',
+    queryLabel: 'Type a URL to add a web page as context',
 
     /**
      * Given a possibly incomplete URL from user input (that the user may be typing), return context
@@ -28,7 +29,7 @@ export const URL_CONTEXT_MENTION_PROVIDER: ContextMentionProvider<'url'> = {
                     content,
                     title: tryGetHTMLDocumentTitle(content),
                     source: ContextItemSource.Uri,
-                    provider: 'url',
+                    provider: URL_CONTEXT_MENTION_PROVIDER.id,
                 },
             ]
         } catch (error) {

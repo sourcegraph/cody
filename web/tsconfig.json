@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "module": "ESNext",
+    "outDir": "dist",
+    "jsx": "react-jsx",
+    "lib": ["ESNext", "DOM"],
+  },
+  "include": ["src"],
+  "references": [{"path": "../agent"}, { "path": "../lib/shared" }, {"path": "../vscode"}],
+}

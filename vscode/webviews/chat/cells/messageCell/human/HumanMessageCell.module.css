@@ -1,0 +1,11 @@
+/* Align the speaker icon with the editor text, not the editor top outline. */
+.speaker-icon {
+    --visual-fudge-factor: 2px;
+
+    margin-top: calc(var(--visual-fudge-factor) + 0.5*var(--prompt-editor-padding-y));
+}
+
+/* Align the cell padding with the editor text, not the editor left outline. */
+.editor {
+    margin-left: calc(-1 * (1px + var(--prompt-editor-padding-x)));
+}

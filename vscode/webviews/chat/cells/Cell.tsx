@@ -10,17 +10,19 @@ export const Cell: FunctionComponent<
     PropsWithChildren<{
         style?: 'human' | 'context' | 'assistant'
         gutterIcon: React.ReactNode
-        disabled?: boolean
         containerClassName?: string
         contentClassName?: string
+        'aria-current'?: boolean
+        'aria-disabled'?: boolean
         'data-testid'?: string
     }>
 > = ({
     style,
     gutterIcon,
-    disabled,
     containerClassName,
     contentClassName,
+    'aria-current': ariaCurrent,
+    'aria-disabled': ariaDisabled,
     'data-testid': dataTestID,
     children,
 }) => (
@@ -30,11 +32,13 @@ export const Cell: FunctionComponent<
             {
                 [styles.containerStyleAssistant]: style === 'assistant',
                 [styles.containerStyleContext]: style === 'context',
-                [styles.containerDisabled]: disabled,
+                [styles.containerDisabled]: ariaDisabled,
             },
             containerClassName
         )}
         role="row"
+        aria-current={ariaCurrent}
+        aria-disabled={ariaDisabled}
         data-testid={dataTestID}
     >
         <div className={styles.gutter}>{gutterIcon}</div>

@@ -1,18 +1,5 @@
 .container {
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
     overflow-x: hidden;
-}
-
-.scroll-anchored-container {
-    overflow-anchor: none;
-}
-
-.scroll-anchor {
-    overflow-anchor: auto;
-    height: 5px; /* this is the grippy region for autoscroll */
-    width: 100vw;
 }
 
 .welcome-message-cell-content p:first-child {
@@ -25,9 +12,4 @@
     p {
         margin-block: 1rem;
     }
-}
-
-.model-select-field-container {
-    padding: 8px 10px 5px 12px;
-    border-bottom: solid 1px var(--vscode-sideBarSectionHeader-border);
 }

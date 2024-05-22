@@ -190,6 +190,7 @@ describe('Agent', () => {
             expect(lastMessage).toMatchInlineSnapshot(
                 `
               {
+                "model": "anthropic/claude-3-sonnet-20240229",
                 "speaker": "assistant",
                 "text": "Hello there! I'm Claude, an AI assistant created by Anthropic. It's nice to meet you. How can I help you today?",
               }
@@ -339,6 +340,7 @@ describe('Agent', () => {
   "interactions": [
     {
       "assistantMessage": {
+        "model": "anthropic/claude-2.0",
         "speaker": "assistant",
         "text": " I'm Claude, an AI assistant created by Anthropic.",
       },
@@ -787,106 +789,58 @@ describe('Agent', () => {
                 const lastMessage = await client.firstNonEmptyTranscript(id)
                 expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                     `
-                  "Based on the shared code context from \`src/example.test.ts\`, the test framework being used is Vitest, which is a modern test runner powered by Vite. It appears to be a test suite for a specific "test block" with multiple test cases.
+                  "To generate unit tests for the \`Animal\` interface, I will need to import the testing framework and assertion library used in the shared code context. Based on the file \`src/example.test.ts\`, the testing framework being used is Vitest.
 
-                  To generate a suite of unit tests for the \`Animal\` interface defined in \`src/animal.ts\`, we can use Vitest and the assertions provided by the \`vitest\` library.
+                  No new imports needed - using existing libs.
 
-                  Importing the required libraries:
+                  For the \`Animal\` interface, I can create unit tests to ensure that any class implementing this interface has the required properties and methods. Here's a possible test suite:
 
                   \`\`\`typescript
                   import { describe, it, expect } from 'vitest'
-                  \`\`\`
 
-                  Since the \`Animal\` interface is an exported module, we need to import it as well:
+                  // Import the class or module that implements the Animal interface
+                  import { /* ClassOrModuleImplementingAnimal */ } from '../src/path/to/class'
 
-                  \`\`\`typescript
-                  import { Animal } from './animal'
-                  \`\`\`
-
-                  Now, we can define a new test suite for the \`Animal\` interface:
-
-                  \`\`\`typescript
                   describe('Animal', () => {
-                    it('should have a name property', () => {
-                      const mockAnimal: Animal = {
-                        name: 'Lion',
-                        makeAnimalSound: () => 'Roar',
-                        isMammal: true,
-                      }
+                    let animal: Animal
 
-                      expect(mockAnimal).toHaveProperty('name')
+                    beforeEach(() => {
+                      // Create an instance of the class or module implementing Animal
+                      animal = new /* ClassOrModuleImplementingAnimal */()
+                    })
+
+                    it('should have a name property', () => {
+                      expect(animal).toHaveProperty('name')
                     })
 
                     it('should have a makeAnimalSound method', () => {
-                      const mockAnimal: Animal = {
-                        name: 'Parrot',
-                        makeAnimalSound: () => 'Squawk',
-                        isMammal: false,
-                      }
-
-                      expect(mockAnimal.makeAnimalSound).toBeInstanceOf(Function)
+                      expect(animal).toHaveProperty('makeAnimalSound')
+                      expect(typeof animal.makeAnimalSound).toBe('function')
                     })
 
                     it('should have an isMammal property', () => {
-                      const mockAnimal: Animal = {
-                        name: 'Dolphin',
-                        makeAnimalSound: () => 'Click',
-                        isMammal: true,
-                      }
+                      expect(animal).toHaveProperty('isMammal')
+                    })
 
-                      expect(mockAnimal).toHaveProperty('isMammal')
+                    it('should return a string when calling makeAnimalSound', () => {
+                      const sound = animal.makeAnimalSound()
+                      expect(typeof sound).toBe('string')
                     })
                   })
                   \`\`\`
 
-                  This suite covers the following aspects of the \`Animal\` interface:
+                  This test suite covers the following:
 
-                  1. Ensures that the \`name\` property exists on the object.
-                  2. Verifies that the \`makeAnimalSound\` property is a function.
-                  3. Checks if the \`isMammal\` property exists on the object.
+                  1. Ensures that any class implementing the \`Animal\` interface has the required \`name\`, \`makeAnimalSound\`, and \`isMammal\` properties.
+                  2. Verifies that the \`makeAnimalSound\` method is a function.
+                  3. Checks that the \`makeAnimalSound\` method returns a string.
 
-                  NOTE: Since we are testing an interface, we cannot instantiate it directly. Instead, we create mock objects that conform to the interface and use them for testing.
+                  Limitations:
+                  - The tests assume that there is a class or module that implements the \`Animal\` interface. If no such implementation exists, the tests will fail.
+                  - The tests do not cover any specific behavior or logic related to the \`makeAnimalSound\` method or the \`isMammal\` property. Additional tests may be needed to validate the expected behavior of these members.
+                  - The tests do not cover any edge cases or error handling scenarios.
 
-                  The generated test suite provides basic coverage for the \`Animal\` interface and its properties. However, it does not cover any specific implementation details or edge cases, as the \`Animal\` interface itself is a contract and does not contain any implementation logic.
-
-                  Here's the complete code for the new unit tests:
-
-                  \`\`\`typescript
-                  import { describe, it, expect } from 'vitest'
-                  import { Animal } from './animal'
-
-                  describe('Animal', () => {
-                    it('should have a name property', () => {
-                      const mockAnimal: Animal = {
-                        name: 'Lion',
-                        makeAnimalSound: () => 'Roar',
-                        isMammal: true,
-                      }
-
-                      expect(mockAnimal).toHaveProperty('name')
-                    })
-
-                    it('should have a makeAnimalSound method', () => {
-                      const mockAnimal: Animal = {
-                        name: 'Parrot',
-                        makeAnimalSound: () => 'Squawk',
-                        isMammal: false,
-                      }
-
-                      expect(mockAnimal.makeAnimalSound).toBeInstanceOf(Function)
-                    })
-
-                    it('should have an isMammal property', () => {
-                      const mockAnimal: Animal = {
-                        name: 'Dolphin',
-                        makeAnimalSound: () => 'Click',
-                        isMammal: true,
-                      }
-
-                      expect(mockAnimal).toHaveProperty('isMammal')
-                    })
-                  })
-                  \`\`\`"
+                  To fully test the implementation of the \`Animal\` interface, you might need to create additional tests based on the specific requirements and expected behavior of the classes or modules that implement it."
                 `,
                     explainPollyError
                 )

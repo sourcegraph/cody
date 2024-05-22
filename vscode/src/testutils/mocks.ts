@@ -835,6 +835,8 @@ export const DEFAULT_VSCODE_SETTINGS = {
     experimentalTracing: false,
     experimentalGithubAccessToken: '',
     experimentalCommitMessage: true,
+    experimentalNoodle: false,
+    experimentalURLContext: false,
     codeActions: true,
     commandHints: false,
     isRunningInsideAgent: false,

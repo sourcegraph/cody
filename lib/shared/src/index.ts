@@ -61,6 +61,7 @@ export type {
 export {
     type ContextItem,
     type ContextItemFile,
+    type ContextItemOpenCtx,
     ContextItemSource,
     type ContextItemWithContent,
     type ContextItemSymbol,
@@ -269,9 +270,13 @@ export {
     scanForMentionTriggerInUserTextInput,
 } from './mentions/query'
 export {
-    CONTEXT_MENTION_PROVIDERS,
     type ContextMentionProvider,
     type ContextItemProps,
+    allMentionProvidersMetadata,
+    openCtxMentionProviders,
+    FILE_CONTEXT_MENTION_PROVIDER,
+    SYMBOL_CONTEXT_MENTION_PROVIDER,
+    type ContextMentionProviderMetadata,
 } from './mentions/api'
 export { TokenCounter } from './token/counter'
 export { ENHANCED_CONTEXT_ALLOCATION } from './token/constants'
@@ -290,9 +295,10 @@ export * from './token/constants'
 export * from './configuration'
 export * from './mentions/providers/packageMentions'
 export * from './mentions/providers/sourcegraphSearch'
+export { GITHUB_CONTEXT_MENTION_PROVIDER } from './mentions/providers/githubMentions'
+export { URL_CONTEXT_MENTION_PROVIDER } from './mentions/providers/urlMentions'
 export * from './githubClient'
 export {
-    setOpenCtxExtensionAPI,
-    getOpenCtxExtensionAPI,
-    type OpenCtxExtensionAPI,
+    setOpenCtxClient,
+    openCtx,
 } from './context/openctx/api'

@@ -139,6 +139,8 @@ export function getConfiguration(
         experimentalSimpleChatContext: getHiddenSetting('experimental.simpleChatContext', true),
         experimentalSymfContext: getHiddenSetting('experimental.symfContext', true),
         experimentalCommitMessage: getHiddenSetting('experimental.commitMessage', true),
+        experimentalNoodle: getHiddenSetting('experimental.noodle', false),
+        experimentalURLContext: getHiddenSetting('experimental.urlContext', false),
 
         experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
         experimentalTracing: getHiddenSetting('experimental.tracing', false),

@@ -1,7 +1,14 @@
 import * as uuid from 'uuid'
 import type { Memento } from 'vscode'
 
-import type { AuthStatus, ChatHistory, UserLocalHistory } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    type ChatHistory,
+    type SerializedChatInteraction,
+    type SerializedChatMessage,
+    type UserLocalHistory,
+    logDebug,
+} from '@sourcegraph/cody-shared'
 
 import { isSourcegraphToken } from '../chat/protocol'
 
@@ -93,7 +100,16 @@ class LocalStorage {
     public getChatHistory(authStatus: AuthStatus): UserLocalHistory {
         const history = this.storage.get<AccountKeyedChatHistory | null>(this.KEY_LOCAL_HISTORY, null)
         const accountKey = getKeyForAuthStatus(authStatus)
-        return history?.[accountKey] ?? { chat: {} }
+
+        // Migrate chat history to set the `ChatMessage.model` property on each assistant message
+        // instead of `chatModel` on the overall transcript. Can remove when
+        // `SerializedChatTranscript.chatModel` property is removed in v1.22.
+        const migratedHistory = migrateHistoryForChatModelProperty(history)
+        if (history !== migratedHistory) {
+            this.storage.update(this.KEY_LOCAL_HISTORY, migratedHistory).then(() => {}, console.error)
+        }
+
+        return migratedHistory?.[accountKey] ?? { chat: {} }
     }
 
     public async setChatHistory(authStatus: AuthStatus, history: UserLocalHistory): Promise<void> {
@@ -202,4 +218,69 @@ export const localStorage = new LocalStorage()
 
 function getKeyForAuthStatus(authStatus: AuthStatus): ChatHistoryKey {
     return `${authStatus.endpoint}-${authStatus.username}`
+}
+
+/**
+ * Migrate chat history to set the {@link ChatMessage.model} property on each assistant message
+ * instead of {@link SerializedChatTranscript.chatModel} on the overall transcript. Can remove when
+ * {@link SerializedChatTranscript.chatModel} property is removed in v1.22.
+ */
+function migrateHistoryForChatModelProperty(
+    history: AccountKeyedChatHistory | null
+): AccountKeyedChatHistory | null {
+    if (!history) {
+        return null
+    }
+
+    let neededMigration = 0
+    function migrateAssistantMessage(
+        assistantMessage: SerializedChatMessage,
+        model: string | undefined
+    ): SerializedChatMessage {
+        if (assistantMessage.model) {
+            return assistantMessage
+        }
+        neededMigration++
+        return {
+            ...assistantMessage,
+            model: model ?? 'unknown',
+        }
+    }
+
+    const migratedHistory = Object.fromEntries(
+        Object.entries(history).map(([accountKey, userLocalHistory]) => [
+            accountKey,
+            {
+                chat: userLocalHistory.chat
+                    ? Object.fromEntries(
+                          Object.entries(userLocalHistory.chat).map(([id, transcript]) => [
+                              id,
+                              transcript
+                                  ? {
+                                        ...transcript,
+                                        interactions: transcript.interactions.map(
+                                            interaction =>
+                                                ({
+                                                    ...interaction,
+                                                    assistantMessage: interaction.assistantMessage
+                                                        ? migrateAssistantMessage(
+                                                              interaction.assistantMessage,
+                                                              transcript.chatModel
+                                                          )
+                                                        : null,
+                                                }) satisfies SerializedChatInteraction
+                                        ),
+                                    }
+                                  : transcript,
+                          ])
+                      )
+                    : {},
+            },
+        ])
+    )
+    if (neededMigration) {
+        logDebug('migrateHistoryForChatModelProperty', `${neededMigration} chat messages migrated`)
+        return migratedHistory
+    }
+    return history
 }

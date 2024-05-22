@@ -4,8 +4,6 @@ import type { Meta, StoryObj } from '@storybook/react'
 import type { ContextProvider, LocalEmbeddingsProvider, SearchProvider } from '@sourcegraph/cody-shared'
 
 import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
-
-import { useState } from 'react'
 import {
     EnhancedContextContext,
     EnhancedContextEventHandlers,
@@ -36,7 +34,7 @@ interface SingleTileArgs {
 export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArgs> = {
     args: {
         presentationMode: EnhancedContextPresentationMode.Consumer,
-        isOpen: true,
+        defaultOpen: true,
         name: '~/sourcegraph',
         kind: 'search',
         type: 'local',
@@ -47,7 +45,7 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
             options: ['consumer', 'enterprise'],
             control: 'radio',
         },
-        isOpen: { control: 'boolean' },
+        defaultOpen: { control: 'boolean', defaultValue: true },
         name: { control: 'text' },
         kind: {
             options: ['embeddings', 'search'],
@@ -73,7 +71,6 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
     },
     render: function Render() {
         const [args, updateArgs] = useArgs<SingleTileArgs>()
-        const [isOpen, setIsOpen] = useState<boolean>(args.isOpen)
 
         const eventHandlers: EnhancedContextEventHandlersT = {
             onChooseRemoteSearchRepo(): void {
@@ -114,20 +111,7 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
                 }}
             >
                 <EnhancedContextEventHandlers.Provider value={eventHandlers}>
-                    <div
-                        style={{
-                            position: 'absolute',
-                            bottom: 20,
-                            right: 20,
-                        }}
-                    >
-                        <EnhancedContextSettings
-                            isOpen={isOpen}
-                            setOpen={setIsOpen}
-                            presentationMode={args.presentationMode}
-                            isNewInstall={false}
-                        />
-                    </div>
+                    <EnhancedContextSettings {...args} />
                 </EnhancedContextEventHandlers.Provider>
             </EnhancedContextContext.Provider>
         )
@@ -136,7 +120,6 @@ export const SingleTile: StoryObj<typeof EnhancedContextSettings | SingleTileArg
 
 export const ConsumerMultipleProviders: StoryObj<typeof EnhancedContextSettings> = {
     render: function Render() {
-        const [isOpen, setIsOpen] = useState<boolean>(true)
         return (
             <EnhancedContextContext.Provider
                 value={{
@@ -155,20 +138,10 @@ export const ConsumerMultipleProviders: StoryObj<typeof EnhancedContextSettings>
                     ],
                 }}
             >
-                <div
-                    style={{
-                        position: 'absolute',
-                        bottom: 20,
-                        right: 20,
-                    }}
-                >
-                    <EnhancedContextSettings
-                        isOpen={isOpen}
-                        setOpen={setIsOpen}
-                        presentationMode={EnhancedContextPresentationMode.Consumer}
-                        isNewInstall={false}
-                    />
-                </div>
+                <EnhancedContextSettings
+                    defaultOpen={true}
+                    presentationMode={EnhancedContextPresentationMode.Consumer}
+                />
             </EnhancedContextContext.Provider>
         )
     },
@@ -176,27 +149,16 @@ export const ConsumerMultipleProviders: StoryObj<typeof EnhancedContextSettings>
 
 export const EnterpriseNoRepositories: StoryObj<typeof EnhancedContextSettings> = {
     render: function Render() {
-        const [isOpen, setIsOpen] = useState<boolean>(true)
         return (
             <EnhancedContextContext.Provider
                 value={{
                     groups: [],
                 }}
             >
-                <div
-                    style={{
-                        position: 'absolute',
-                        bottom: 20,
-                        right: 20,
-                    }}
-                >
-                    <EnhancedContextSettings
-                        presentationMode={EnhancedContextPresentationMode.Enterprise}
-                        isOpen={isOpen}
-                        setOpen={setIsOpen}
-                        isNewInstall={false}
-                    />
-                </div>
+                <EnhancedContextSettings
+                    defaultOpen={true}
+                    presentationMode={EnhancedContextPresentationMode.Enterprise}
+                />
             </EnhancedContextContext.Provider>
         )
     },
@@ -204,7 +166,6 @@ export const EnterpriseNoRepositories: StoryObj<typeof EnhancedContextSettings> 
 
 export const EnterpriseMultipleRepositories: StoryObj<typeof EnhancedContextSettings> = {
     render: function Render() {
-        const [isOpen, setIsOpen] = useState<boolean>(true)
         return (
             <EnhancedContextContext.Provider
                 value={{
@@ -251,20 +212,10 @@ export const EnterpriseMultipleRepositories: StoryObj<typeof EnhancedContextSett
                     ],
                 }}
             >
-                <div
-                    style={{
-                        position: 'absolute',
-                        bottom: 20,
-                        right: 20,
-                    }}
-                >
-                    <EnhancedContextSettings
-                        presentationMode={EnhancedContextPresentationMode.Enterprise}
-                        isOpen={isOpen}
-                        setOpen={setIsOpen}
-                        isNewInstall={false}
-                    />
-                </div>
+                <EnhancedContextSettings
+                    defaultOpen={true}
+                    presentationMode={EnhancedContextPresentationMode.Enterprise}
+                />
             </EnhancedContextContext.Provider>
         )
     },

@@ -40,11 +40,13 @@ sealed class WebviewMessage {
           "abort" -> context.deserialize<AbortWebviewMessage>(element, AbortWebviewMessage::class.java)
           "simplified-onboarding" -> context.deserialize<`simplified-onboardingWebviewMessage`>(element, `simplified-onboardingWebviewMessage`::class.java)
           "getUserContext" -> context.deserialize<GetUserContextWebviewMessage>(element, GetUserContextWebviewMessage::class.java)
+          "queryContextItems" -> context.deserialize<QueryContextItemsWebviewMessage>(element, QueryContextItemsWebviewMessage::class.java)
           "search" -> context.deserialize<SearchWebviewMessage>(element, SearchWebviewMessage::class.java)
           "show-search-result" -> context.deserialize<`show-search-resultWebviewMessage`>(element, `show-search-resultWebviewMessage`::class.java)
           "reset" -> context.deserialize<ResetWebviewMessage>(element, ResetWebviewMessage::class.java)
           "attribution-search" -> context.deserialize<`attribution-searchWebviewMessage`>(element, `attribution-searchWebviewMessage`::class.java)
           "troubleshoot/reloadAuth" -> context.deserialize<Troubleshoot_reloadAuthWebviewMessage>(element, Troubleshoot_reloadAuthWebviewMessage::class.java)
+          "getAllMentionProvidersMetadata" -> context.deserialize<GetAllMentionProvidersMetadataWebviewMessage>(element, GetAllMentionProvidersMetadataWebviewMessage::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
@@ -353,6 +355,16 @@ data class GetUserContextWebviewMessage(
   }
 }
 
+data class QueryContextItemsWebviewMessage(
+  val command: CommandEnum, // Oneof: queryContextItems
+  val query: MentionQuery,
+) : WebviewMessage() {
+
+  enum class CommandEnum {
+    @SerializedName("queryContextItems") QueryContextItems,
+  }
+}
+
 data class SearchWebviewMessage(
   val command: CommandEnum, // Oneof: search
   val query: String,
@@ -399,6 +411,15 @@ data class Troubleshoot_reloadAuthWebviewMessage(
 
   enum class CommandEnum {
     @SerializedName("troubleshoot/reloadAuth") Troubleshoot_reloadAuth,
+  }
+}
+
+data class GetAllMentionProvidersMetadataWebviewMessage(
+  val command: CommandEnum, // Oneof: getAllMentionProvidersMetadata
+) : WebviewMessage() {
+
+  enum class CommandEnum {
+    @SerializedName("getAllMentionProvidersMetadata") GetAllMentionProvidersMetadata,
   }
 }
 

@@ -16,6 +16,7 @@ class CompletionProviderConfig {
         FeatureFlag.CodyAutocompleteEagerCancellation,
         FeatureFlag.CodyAutocompleteTracing,
         FeatureFlag.CodyAutocompleteSmartThrottle,
+        FeatureFlag.CodyAutocompleteReducedDebounce,
     ] as const
 
     private get config() {
