@@ -4,11 +4,11 @@ import type * as rpc from 'vscode-jsonrpc/node'
 
 import { isWindows } from '@sourcegraph/cody-shared'
 
-import { clearLspCacheForTests } from '../../../../graph/lsp/symbol-context-snippets'
 import { vsCodeMocks } from '../../../../testutils/mocks'
 import { parseDocument } from '../../../../tree-sitter/parse-tree-cache'
 import { documentFromFilePath, initTreeSitterParser } from '../../../test-helpers'
 
+import { clearLspCacheForTests } from '../../../../graph/lsp/symbol-context-snippets'
 import { LspLightRetriever } from './lsp-light-retriever'
 import {
     initLanguageServer,
