@@ -1,7 +1,12 @@
 .container {
-    display: flex;
-    flex-direction: row;
-    gap: 0.5rem;
+    h1 {
+        text-transform: uppercase;
+        font-weight: 500;
+        font-size: 11px;
+        opacity: 0.8;
+        margin-bottom: 0.25rem;
+    }
+
 }
 
 .popup label {
@@ -9,28 +14,12 @@
     margin-bottom: 0.2rem;
 }
 
-.popup label h1 {
-    text-transform: none;
-    font-weight: 600;
-    display: inline;
-    cursor: pointer;
-    user-select: none;
-}
-
 .popup > p {
     display: block;
 }
 
 .folders-list, .enterprise-repo-list {
-    margin: 1rem 0 0.5rem;
-}
-
-.enterprise-repo-list h1 {
-    text-transform: uppercase;
-    font-weight: 500;
-    font-size: 11px;
-    opacity: 0.8;
-    margin-bottom: 0.25rem;
+    flex: 1;
 }
 
 .enterprise-repo-list-item:first-of-type {

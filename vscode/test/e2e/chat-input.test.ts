@@ -201,7 +201,7 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
                         name: 'Configure automatic code context',
                     }),
                     modelSelector: toolbar.getByRole('combobox', { name: 'Select a model' }),
-                    submit: toolbar.getByRole('button', { name: 'Submit message' }),
+                    submit: toolbar.getByRole('button', { name: 'Send with automatic code context' }),
                 },
             }
         }
@@ -241,15 +241,15 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
         await expect(humanRow0.toolbar.modelSelector).toBeVisible()
         await expect(humanRow0.toolbar.submit).toBeVisible()
         await expect(chatPanel.getByText('Optimized for Accuracy')).not.toBeVisible()
-        await expect(chatPanel.getByText('Enhanced Context ✨')).not.toBeVisible()
+        await expect(chatPanel.getByText('Automatic code context')).not.toBeVisible()
         // Open the model selector toolbar popover.
         await humanRow0.toolbar.modelSelector.click()
         await expect(chatPanel.getByText('Optimized for Accuracy')).toBeVisible()
-        await expect(chatPanel.getByText('Enhanced Context ✨')).not.toBeVisible()
+        await expect(chatPanel.getByText('Automatic code context')).not.toBeVisible()
         // Now click to the enhanced context toolbar popover. All toolbar items should still be visible, and the new popover should be open.
         await humanRow0.toolbar.enhancedContext.click()
         await expect(chatPanel.getByText('Optimized for Accuracy')).not.toBeVisible()
-        await expect(chatPanel.getByText('Enhanced Context ✨')).toBeVisible()
+        await expect(chatPanel.getByText('Automatic code context')).toBeVisible()
         await expect(humanRow0.toolbar.mention).toBeVisible()
         await expect(humanRow0.toolbar.enhancedContext).toBeVisible()
         await expect(humanRow0.toolbar.modelSelector).toBeVisible()

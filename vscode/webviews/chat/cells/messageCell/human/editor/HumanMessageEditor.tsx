@@ -8,7 +8,6 @@ import {
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
 } from '../../../../../promptEditor/PromptEditor'
-import { useEnhancedContextEnabled } from '../../../../EnhancedContext'
 import styles from './HumanMessageEditor.module.css'
 import { Toolbar } from './toolbar/Toolbar'
 
@@ -17,7 +16,6 @@ import { Toolbar } from './toolbar/Toolbar'
  */
 export const HumanMessageEditor: FunctionComponent<{
     userInfo: UserAccountInfo
-    isNewInstall?: boolean
     userContextFromSelection?: ContextItem[]
 
     initialEditorState: SerializedPromptEditorState | undefined
@@ -41,7 +39,6 @@ export const HumanMessageEditor: FunctionComponent<{
     __storybook__focus?: boolean
 }> = ({
     userInfo,
-    isNewInstall,
     userContextFromSelection,
     initialEditorState,
     placeholder,
@@ -66,15 +63,14 @@ export const HumanMessageEditor: FunctionComponent<{
         [onChange]
     )
 
-    const addEnhancedContext = useEnhancedContextEnabled()
     const onSubmitClick = useCallback(
-        (withEnhancedContext: boolean) => {
+        (addEnhancedContext: boolean) => {
             if (!editorRef.current) {
                 throw new Error('No editorRef')
             }
-            onSubmit(editorRef.current.getSerializedValue(), addEnhancedContext && withEnhancedContext)
+            onSubmit(editorRef.current.getSerializedValue(), addEnhancedContext)
         },
-        [onSubmit, addEnhancedContext]
+        [onSubmit]
     )
 
     const onEditorEnterKey = useCallback(
@@ -82,7 +78,8 @@ export const HumanMessageEditor: FunctionComponent<{
             // Submit input on Enter press (without shift) when input is not empty.
             if (event && !event.shiftKey && !event.isComposing && !isEmptyEditorValue) {
                 event.preventDefault()
-                onSubmitClick(true)
+                const addEnhancedContext = !event.altKey
+                onSubmitClick(addEnhancedContext)
                 return
             }
         },
@@ -191,7 +188,6 @@ export const HumanMessageEditor: FunctionComponent<{
             {!disabled && (
                 <Toolbar
                     userInfo={userInfo}
-                    isNewInstall={isNewInstall}
                     isEditorFocused={isEditorFocused || isFocusWithin}
                     isParentHovered={isHovered}
                     onMentionClick={onMentionClick}

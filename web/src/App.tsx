@@ -193,7 +193,6 @@ export const App: FunctionComponent = () => {
                             telemetryRecorder={telemetryRecorder}
                             isTranscriptError={isTranscriptError}
                             userContextFromSelection={[]}
-                            isNewInstall={false}
                         />
                     </ChatModelContextProvider>
                 )

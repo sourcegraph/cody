@@ -26,7 +26,9 @@
     outline: solid 1px var(--vscode-input-border);
     outline-offset: -1px;
 }
-.container:has(:focus-within) {
+/* Show focus ring when the input is focused or a toolbar button within the input container is
+   focused, but NOT if something in a toolbar button's popover is focused. */
+.container:has([data-lexical-editor="true"]:focus-within, menu>button:focus) {
     outline-color: var(--vscode-focusBorder);
 }
 

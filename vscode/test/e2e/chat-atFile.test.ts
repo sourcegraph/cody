@@ -2,7 +2,6 @@ import { type FrameLocator, type Locator, expect } from '@playwright/test'
 import { isWindows } from '@sourcegraph/cody-shared'
 import {
     atMentionMenuItem,
-    closeEnhancedContextSettings,
     createEmptyChatPanel,
     expectContextCellCounts,
     focusChatInputAtEnd,
@@ -437,7 +436,6 @@ test.extend<ExpectedEvents>({
     // Verify the chat input has the selected code as an @-mention item
     const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
     const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
-    await closeEnhancedContextSettings(page, chatFrame)
     await expect(chatInput).toHaveText('@buzz.ts:2-13 ')
 
     // Repeat the above steps to add another code selection as an @-mention item.

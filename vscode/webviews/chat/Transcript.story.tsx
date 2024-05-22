@@ -30,10 +30,7 @@ const meta: Meta<typeof Transcript> = {
         postMessage: () => {},
     } satisfies ComponentProps<typeof Transcript>,
 
-    decorators: [
-        story => <div style={{ minHeight: 'max(500px, 80vh)', display: 'flex' }}>{story()}</div>,
-        VSCodeWebview,
-    ],
+    decorators: [VSCodeWebview],
 }
 
 export default meta

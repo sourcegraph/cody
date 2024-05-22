@@ -15,7 +15,6 @@ import styles from './Toolbar.module.css'
  */
 export const Toolbar: FunctionComponent<{
     userInfo: UserAccountInfo
-    isNewInstall?: boolean
 
     isEditorFocused: boolean
 
@@ -34,7 +33,6 @@ export const Toolbar: FunctionComponent<{
     className?: string
 }> = ({
     userInfo,
-    isNewInstall,
     isEditorFocused,
     isParentHovered,
     onMentionClick,
@@ -75,11 +73,9 @@ export const Toolbar: FunctionComponent<{
                     iconStart={AtSignIcon}
                     onClick={onMentionClick}
                     aria-label="Add context"
-                    tabIndex={-1} // type '@' to invoke, doesn't need to be tabbable
                 />
             )}
             <EnhancedContextSettings
-                defaultOpen={isNewInstall}
                 presentationMode={userInfo.isDotComUser ? 'consumer' : 'enterprise'}
                 onCloseByEscape={focusEditor}
             />
@@ -98,7 +94,8 @@ export const Toolbar: FunctionComponent<{
 const ModelSelectFieldToolbarItem: FunctionComponent<{
     userInfo: UserAccountInfo
     focusEditor?: () => void
-}> = ({ userInfo, focusEditor }) => {
+    className?: string
+}> = ({ userInfo, focusEditor, className }) => {
     const { chatModels, onCurrentChatModelChange } = useChatModelContext()
 
     const onModelSelect = useCallback(
@@ -119,6 +116,7 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
                 onModelSelect={onModelSelect}
                 userInfo={userInfo}
                 onCloseByEscape={focusEditor}
+                className={className}
             />
         )
     )

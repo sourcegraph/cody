@@ -632,6 +632,11 @@
         "when": "cody.activated && !editorReadonly && editorTextFocus && editorHasSelection"
       },
       {
+        "command": "cody.mention.selection.new",
+        "key": "alt+l",
+        "when": "cody.activated && !editorReadonly && editorTextFocus && editorHasSelection"
+      },
+      {
         "command": "cody.tutorial.chat",
         "key": "alt+l",
         "when": "cody.activated && cody.tutorialActive"

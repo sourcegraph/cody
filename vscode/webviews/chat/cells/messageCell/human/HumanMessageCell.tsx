@@ -18,7 +18,6 @@ const isMac = isMacOS()
 export const HumanMessageCell: FunctionComponent<{
     message: ChatMessage | null
     userInfo: UserAccountInfo
-    isNewInstall?: boolean
     chatEnabled?: boolean
     userContextFromSelection?: ContextItem[]
 
@@ -38,7 +37,6 @@ export const HumanMessageCell: FunctionComponent<{
 }> = ({
     message,
     userInfo,
-    isNewInstall,
     chatEnabled = true,
     userContextFromSelection,
     isFirstMessage,
@@ -60,7 +58,6 @@ export const HumanMessageCell: FunctionComponent<{
             content={
                 <HumanMessageEditor
                     userInfo={userInfo}
-                    isNewInstall={isNewInstall}
                     userContextFromSelection={userContextFromSelection}
                     initialEditorState={initialEditorState}
                     placeholder={

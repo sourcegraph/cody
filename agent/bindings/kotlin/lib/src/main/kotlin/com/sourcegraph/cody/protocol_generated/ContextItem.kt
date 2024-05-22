@@ -148,8 +148,7 @@ data class ContextItemOpenCtx(
   val provider: String? = null,
   val type: TypeEnum, // Oneof: openctx
   val providerUri: String,
-  val description: String? = null,
-  val data: Any? = null,
+  val mention: MentionParams? = null,
 ) : ContextItem() {
 
   enum class TypeEnum {
