@@ -178,7 +178,10 @@ private constructor(
                   CodyBundle.getString("chat.rate-limit-error.upgrade")
               else -> CodyBundle.getString("chat.rate-limit-error.explain")
             }
-          } else CodyBundle.getString("chat.general-error").fmt(chatError.message, "")
+          } else {
+            val errorReportLink = CodyErrorSubmitter().getEncodedUrl(chatError.message)
+            CodyBundle.getString("chat.general-error").fmt(errorReportLink, chatError.message)
+          }
 
       addErrorMessageAsAssistantMessage(errorMessage)
     } finally {
@@ -192,9 +195,8 @@ private constructor(
 
       val message = ((e.cause as? CodyAgentException) ?: e).message ?: e.toString()
       val errorReportLink = CodyErrorSubmitter().getEncodedUrl(e.getThrowableText(), message)
-      val errorReportMsg = CodyBundle.getString("chat.general-error.report").fmt(errorReportLink)
       addErrorMessageAsAssistantMessage(
-          CodyBundle.getString("chat.general-error").fmt(message, errorReportMsg))
+          CodyBundle.getString("chat.general-error").fmt(errorReportLink, message))
     } finally {
       getCancellationToken().abort()
     }
