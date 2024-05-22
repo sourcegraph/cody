@@ -17,7 +17,6 @@ import { Toolbar } from './toolbar/Toolbar'
  */
 export const HumanMessageEditor: FunctionComponent<{
     userInfo: UserAccountInfo
-    isNewInstall?: boolean
     userContextFromSelection?: ContextItem[]
 
     initialEditorState: SerializedPromptEditorState | undefined
@@ -41,7 +40,6 @@ export const HumanMessageEditor: FunctionComponent<{
     __storybook__focus?: boolean
 }> = ({
     userInfo,
-    isNewInstall,
     userContextFromSelection,
     initialEditorState,
     placeholder,
@@ -191,7 +189,6 @@ export const HumanMessageEditor: FunctionComponent<{
             {!disabled && (
                 <Toolbar
                     userInfo={userInfo}
-                    isNewInstall={isNewInstall}
                     isEditorFocused={isEditorFocused || isFocusWithin}
                     isParentHovered={isHovered}
                     onMentionClick={onMentionClick}

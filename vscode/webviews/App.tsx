@@ -291,7 +291,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         isTranscriptError={isTranscriptError}
                                         welcomeMessage={welcomeMessageMarkdown}
                                         guardrails={attributionEnabled ? guardrails : undefined}
-                                        isNewInstall={isNewInstall}
                                         userContextFromSelection={userContextFromSelection}
                                     />
                                 </WithContextProviders>
