@@ -1,5 +1,6 @@
 import { type ModelProvider, ModelUIGroup } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
+import { ExternalLinkIcon, SettingsIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -8,7 +9,6 @@ import { Command, CommandGroup, CommandItem, CommandList } from '../shadcn/ui/co
 import { ToolbarPopoverItem } from '../shadcn/ui/toolbar'
 import { cn } from '../shadcn/utils'
 import styles from './ModelSelectField.module.css'
-import { ExternalLinkIcon, SettingsIcon } from 'lucide-react'
 
 type Value = string
 
