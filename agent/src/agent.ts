@@ -403,11 +403,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 this.workspace.loadDocumentWithChanges(documentWithUri)
             const textEditor = this.workspace.newTextEditor(textDocument)
             this.workspace.setActiveTextEditor(textEditor)
-            vscode_shim.onDidChangeTextDocument.fire({
-                document: textDocument,
-                contentChanges,
-                reason: undefined,
-            })
+
+            if (contentChanges) {
+                vscode_shim.onDidChangeTextDocument.fire({
+                    document: textDocument,
+                    contentChanges,
+                    reason: undefined,
+                })
+            }
 
             if (document.selection) {
                 vscode_shim.onDidChangeTextEditorSelection.fire({
