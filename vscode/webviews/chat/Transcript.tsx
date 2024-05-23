@@ -1,16 +1,9 @@
 import type React from 'react'
-import type { FunctionComponent } from 'react'
+import type { FunctionComponent, ReactNode } from 'react'
 
 import { clsx } from 'clsx'
 
-import {
-    type ChatMessage,
-    type ContextItem,
-    type Guardrails,
-    isDefined,
-    renderCodyMarkdown,
-} from '@sourcegraph/cody-shared'
-
+import { type ChatMessage, type ContextItem, type Guardrails, isDefined } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import { CodyLogo } from '../icons/CodyLogo'
@@ -25,7 +18,7 @@ import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
 export const Transcript: React.FunctionComponent<{
     transcript: ChatMessage[]
-    welcomeMessage?: string
+    welcomeMessage?: ReactNode
     messageInProgress: ChatMessage | null
     className?: string
     feedbackButtonsOnSubmit: (text: string) => void
@@ -167,18 +160,16 @@ export const Transcript: React.FunctionComponent<{
     )
 }
 
-const WelcomeMessageCell: FunctionComponent<{ welcomeMessage?: string }> = ({ welcomeMessage }) => (
+const WelcomeMessageCell: FunctionComponent<{ welcomeMessage?: ReactNode }> = ({ welcomeMessage }) => (
     <Cell gutterIcon={<CodyLogo size={20} />} data-testid="message">
-        <div
-            className={styles.welcomeMessageCellContent}
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: not from user input (and is sanitized)
-            dangerouslySetInnerHTML={{
-                __html: renderCodyMarkdown(
-                    welcomeMessage ??
-                        'See [Cody documentation](https://sourcegraph.com/docs/cody) for help and tips.'
-                ),
-            }}
-        />
+        <div className={styles.welcomeMessageCellContent}>
+            {welcomeMessage ?? (
+                <>
+                    See <a href="https://sourcegraph.com/docs/cody">Cody documentation</a> for help and
+                    tips.
+                </>
+            )}
+        </div>
     </Cell>
 )
 

@@ -22,7 +22,6 @@ export {
     type IgnoreFileContent,
     CODY_IGNORE_URI_PATH,
 } from './cody-ignore/ignore-helper'
-export { renderCodyMarkdown } from './chat/markdown'
 export { getSimplePreamble } from './chat/preamble'
 export type {
     SerializedChatInteraction,
@@ -99,7 +98,7 @@ export {
     markdownCodeBlockLanguageIDForFilename,
     extensionForLanguage,
 } from './common/languages'
-export { renderMarkdown, escapeHTML } from './common/markdown'
+export { escapeHTML } from './common/markdown'
 export {
     posixFilePaths,
     pathFunctionsForURI,

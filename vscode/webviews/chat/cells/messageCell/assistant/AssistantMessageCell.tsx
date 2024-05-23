@@ -77,7 +77,6 @@ export const AssistantMessageCell: FunctionComponent<{
                     {displayMarkdown ? (
                         <ChatMessageContent
                             displayMarkdown={displayMarkdown}
-                            wrapLinksWithCodyCommand={true}
                             copyButtonOnSubmit={copyButtonOnSubmit}
                             insertButtonOnSubmit={insertButtonOnSubmit}
                             guardrails={guardrails}

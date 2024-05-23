@@ -1,6 +1,7 @@
 :root {
     --vscode-font-size: 13px;
     --vscode-font-family: -apple-system, BlinkMacSystemFont, 'Ubuntu', 'Droid Sans', 'Segoe WPC', 'Segoe UI', sans-serif;
+    --vscode-editor-font-family: 'Monaco', 'Consolas', monospace;
 }
 
 body {

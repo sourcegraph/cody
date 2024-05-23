@@ -18,3 +18,43 @@
         margin-block: 1rem;
     }
 }
+
+.welcome-message-cell-content {
+    :global(.cody-icon) {
+        font: normal normal normal 16px/1 cody-icons;
+        display: inline-block;
+        text-decoration: none;
+        text-rendering: auto;
+        text-align: center;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        user-select: none;
+        transform: translateY(25%); /* Hacky adjustment for font baseline */
+    }
+
+    kbd {
+        color: var(--vscode-keybindingLabel-foreground);
+        display: inline-flex;
+        align-items: center;
+        line-height: 10px;
+        white-space: nowrap;
+    }
+
+    kbd > span {
+        display: inline-block;
+        background-color: var(--vscode-keybindingLabel-background);
+        border-width: 1px;
+        border-style: solid;
+        border-color: var(--vscode-keybindingLabel-border) var(--vscode-keybindingLabel-border) var(--vscode-keybindingLabel-bottomBorder) var(--vscode-keybindingLabel-border);
+        border-radius: 3px;
+        box-shadow: inset 0 -1px 0 var(--vscode-widget-shadow);
+        vertical-align: middle;
+        font-size: 11px;
+        padding: 3px 5px;
+        margin: 0 2px;
+    }
+
+    kbd > span:first-child {
+        margin-left: 0;
+    }
+}
