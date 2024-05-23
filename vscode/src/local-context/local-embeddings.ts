@@ -163,6 +163,7 @@ export class LocalEmbeddingsController
     public async start(): Promise<void> {
         logDebug('LocalEmbeddingsController', 'start')
         wrapInActiveSpan('embeddings.start', async span => {
+            span.setAttribute('sampled', true)
             span.setAttribute('provider', this.modelConfig.provider)
             await this.getService()
             const repoUri = vscode.workspace.workspaceFolders?.[0]?.uri
@@ -461,23 +462,23 @@ export class LocalEmbeddingsController
                                 }
                             )
                             logDebug('LocalEmbeddingsController', 'index-health', JSON.stringify(health))
+                            span.setAttribute('repoHealthSucceeded', true)
+                            span.setAttribute('repoFound', health.type === 'found')
                             if (health.type !== 'found') {
-                                span.setAttribute('repoFound', false)
                                 return
                             }
-                            span.setAttribute('repoFound', false)
                             span.setAttribute('numItems', health.numItems)
                             span.setAttribute('numFiles', health.numFiles)
                             span.setAttribute('needsEmbedding', health.numItemsNeedEmbedding > 0)
                             await this.onHealthReport(repoDir, health)
                         } catch (error) {
-                            recordErrorToSpan(span, error as Error)
                             logDebug(
                                 'LocalEmbeddingsController',
                                 'index-health',
                                 captureException(error),
                                 JSON.stringify(error)
                             )
+                            span.setAttribute('repoHealthSucceeded', false)
                         }
                     })
                 })()
@@ -488,7 +489,6 @@ export class LocalEmbeddingsController
                     captureException(error),
                     JSON.stringify(error)
                 )
-                recordErrorToSpan(span, error as Error)
 
                 const noRemoteErrorMessage =
                     "repository does not have a default fetch URL, so can't be named for an index"
