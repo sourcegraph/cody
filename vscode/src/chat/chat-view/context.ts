@@ -71,10 +71,7 @@ export async function getEnhancedContext({
         //  Get search (symf or remote search) context if config is not set to 'embeddings' only
         const remoteSearchContextItemsPromise =
             providers.remoteSearch && strategy !== 'embeddings'
-                ? retrieveContextGracefully(
-                      searchRemote(providers.remoteSearch, text),
-                      'remote-search'
-                  )
+                ? retrieveContextGracefully(searchRemote(providers.remoteSearch, text), 'remote-search')
                 : []
         const localSearchContextItemsPromise =
             providers.symf && strategy !== 'embeddings'
@@ -123,10 +120,7 @@ async function getEnhancedContextFromRanker({
             : []
 
         const remoteSearchContextItemsPromise = providers.remoteSearch
-            ? retrieveContextGracefully(
-                  searchRemote(providers.remoteSearch, text),
-                  'remote-search'
-              )
+            ? retrieveContextGracefully(searchRemote(providers.remoteSearch, text), 'remote-search')
             : []
 
         const keywordContextItemsPromise = (async () => [
