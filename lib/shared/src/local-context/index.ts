@@ -1,7 +1,7 @@
 import type { URI } from 'vscode-uri'
 
 import type { RangeData } from '..'
-import type { ContextItem, ContextItemFile } from '../codebase-context/messages'
+import type { ContextItem } from '../codebase-context/messages'
 import type { PromptString } from '../prompt/prompt-string'
 import type { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 
@@ -18,13 +18,6 @@ export interface FilenameContextFetcher {
 export interface LocalEmbeddingsFetcher {
     getContext(query: PromptString, numResults: number): Promise<EmbeddingsSearchResult[]>
 }
-
-// Minimal interface so inline edit can use remote search for context.
-export interface IRemoteSearch {
-    setWorkspaceUri(uri: URI): Promise<void>
-    search(query: PromptString): Promise<ContextItemFile[]>
-}
-
 interface Point {
     row: number
     col: number
