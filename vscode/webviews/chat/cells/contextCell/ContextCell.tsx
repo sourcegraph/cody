@@ -51,9 +51,10 @@ export const ContextCell: React.FunctionComponent<{
                 : ''
         }`
     } else if (!isEnhancedContextReady) {
-        fileCountLabel = !(isDotComUser && enhancedContextProviders?.length)
-            ? '⚠ Repository Not Found'
-            : '⚠ Automatic Code Context Unavailable'
+        fileCountLabel =
+            !isDotComUser && !enhancedContextProviders?.length
+                ? '⚠ Repository Not Found'
+                : '⚠ Automatic Code Context Unavailable'
     }
     // The info message to display when no context is used.
     const enhancedContextStatusInfo =

@@ -40,12 +40,17 @@ describe('Transcript', () => {
             <Transcript
                 {...PROPS}
                 transcript={[
-                    { speaker: 'human', text: ps`Hello` },
+                    { speaker: 'human', text: ps`Hello`, contextFiles: [] },
                     { speaker: 'assistant', text: ps`Hi` },
                 ]}
             />
         )
-        expectCells([{ message: 'Hello' }, { message: 'Hi' }, { message: '' }])
+        expectCells([
+            { message: 'Hello' },
+            { context: { files: 0 } },
+            { message: 'Hi' },
+            { message: '' },
+        ])
     })
 
     test('interaction with context', () => {
@@ -70,17 +75,19 @@ describe('Transcript', () => {
             <Transcript
                 {...PROPS}
                 transcript={[
-                    { speaker: 'human', text: ps`Foo` },
+                    { speaker: 'human', text: ps`Foo`, contextFiles: [] },
                     { speaker: 'assistant', text: ps`Bar` },
-                    { speaker: 'human', text: ps`Baz` },
+                    { speaker: 'human', text: ps`Baz`, contextFiles: [] },
                     { speaker: 'assistant', text: ps`Qux` },
                 ]}
             />
         )
         expectCells([
             { message: 'Foo' },
+            { context: { files: 0 } },
             { message: 'Bar' },
             { message: 'Baz' },
+            { context: { files: 0 } },
             { message: 'Qux' },
             { message: '' },
         ])
@@ -134,7 +141,7 @@ describe('Transcript', () => {
                 messageInProgress={{ speaker: 'assistant', text: undefined }}
             />
         )
-        expectCells([{ message: 'Foo' }, { message: { loading: true } }])
+        expectCells([{ message: 'Foo' }, { context: { files: 0 } }, { message: { loading: true } }])
     })
 
     test('human message with context, assistant message in progress', () => {
@@ -168,7 +175,7 @@ describe('Transcript', () => {
                 messageInProgress={{ speaker: 'assistant', text: ps`Bar` }}
             />
         )
-        expectCells([{ message: 'Foo' }, { message: 'Bar' }])
+        expectCells([{ message: 'Foo' }, { context: { files: 0 } }, { message: 'Bar' }])
     })
 
     test('assistant message with error', () => {
@@ -176,12 +183,16 @@ describe('Transcript', () => {
             <Transcript
                 {...PROPS}
                 transcript={[
-                    { speaker: 'human', text: ps`Foo` },
+                    { speaker: 'human', text: ps`Foo`, contextFiles: [] },
                     { speaker: 'assistant', error: errorToChatError(new Error('some error')) },
                 ]}
             />
         )
-        expectCells([{ message: 'Foo' }, { message: 'Request Failed: some error' }])
+        expectCells([
+            { message: 'Foo' },
+            { context: { files: 0 } },
+            { message: 'Request Failed: some error' },
+        ])
     })
 })
 
@@ -209,9 +220,15 @@ function expectCells(expectedCells: CellMatcher[]): void {
         } else if ('context' in expectedCell) {
             expect(cell).toHaveAttribute('data-testid', 'context')
             if (expectedCell.context.files !== undefined) {
-                expect(cell.querySelector('summary')).toHaveAccessibleDescription(
-                    `${expectedCell.context.files} file`
-                )
+                if (expectedCell.context.files === 0) {
+                    expect(cell.querySelector('summary')).toHaveAccessibleDescription(
+                        '⚠ Automatic Code Context Unavailable'
+                    )
+                } else {
+                    expect(cell.querySelector('summary')).toHaveAccessibleDescription(
+                        `${expectedCell.context.files} file`
+                    )
+                }
             } else if (expectedCell.context.loading) {
                 expect(cell.querySelector('[role="status"]')).toHaveAttribute('aria-busy')
             }

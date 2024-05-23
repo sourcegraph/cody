@@ -63,11 +63,8 @@ export const Transcript: React.FunctionComponent<{
         const isLoading = Boolean(
             messageInProgress && messageInProgress.speaker === 'assistant' && !messageInProgress.text
         )
-        const isLastMessage = messageIndexInTranscript === transcript.length - 1
         const isLastHumanMessage =
-            message.speaker === 'human' &&
-            (messageIndexInTranscript === transcript.length - 1 ||
-                messageIndexInTranscript === transcript.length - 2)
+            message.speaker === 'human' && messageIndexInTranscript >= transcript.length - 2
 
         return message.speaker === 'human' ? (
             [
