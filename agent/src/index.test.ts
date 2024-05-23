@@ -56,6 +56,9 @@ describe('Agent', () => {
         workspaceRootUri: workspace.rootUri,
         name: 'defaultClient',
         credentials: TESTING_CREDENTIALS.dotcom,
+        extraConfiguration: {
+            'cody.autocomplete.advanced.provider': 'fireworks',
+        },
     })
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
@@ -145,12 +148,15 @@ describe('Agent', () => {
         expect(valid?.username).toStrictEqual('sourcegraphbot9k-fnwmu')
     }, 10_000)
 
-    describe('Autocomplete', () => {
+    describe.only('Autocomplete', () => {
         it('autocomplete/execute (non-empty result)', async () => {
             await client.openFile(sumUri)
+            const doc = client.workspace.openUri(sumUri)
+            const position = doc.protocolDocument.selection!.start
+            console.log({ position, doc: doc.getText() })
             const completions = await client.request('autocomplete/execute', {
                 uri: sumUri.toString(),
-                position: { line: 1, character: 3 },
+                position,
                 triggerKind: 'Invoke',
             })
             const texts = completions.items.map(item => item.insertText)

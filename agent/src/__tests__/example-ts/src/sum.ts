@@ -1,3 +1,4 @@
 export function sum(a: number, b: number): number {
-    /* CURSOR */
+    const /* CURSOR */ = b + a
+    return finalResult
 }
