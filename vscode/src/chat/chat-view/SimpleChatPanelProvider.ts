@@ -289,6 +289,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 break
             case 'chatModel/openDocumentation':
                 await vscode.env.openExternal(vscode.Uri.parse(CODY_CHAT_MODEL_DOCS_URL.href))
+                telemetryService.log('CodyVSCodeExtension:chatModel:docsLink:clicked', {
+                    hasV2Event: true,
+                })
+                telemetryRecorder.recordEvent('cody.chatModel.docsLink', 'clicked')
                 break
             case 'get-chat-models':
                 this.postChatModels()
