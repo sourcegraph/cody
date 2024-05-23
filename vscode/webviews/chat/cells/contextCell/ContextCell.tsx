@@ -38,10 +38,13 @@ export const ContextCell: React.FunctionComponent<{
     }
 
     const fileCount = usedContext.length ? new Set(usedContext.map(file => file.uri.toString())).size : 0
+    const repoCount = isDotComUser ? 0 : new Set(usedContext.map(file => file.repoName)).size
     const excludedCount = excludedAtContext.length
 
     const enhancedContextProviders = useEnhancedContextContext()?.groups?.[0]?.providers
     const isEnhancedContextReady = enhancedContextProviders?.some(p => p.state === 'ready') ?? false
+
+    console.log(repoCount, 'repoCount')
 
     let fileCountLabel = 'None'
     if (fileCount) {
@@ -56,6 +59,7 @@ export const ContextCell: React.FunctionComponent<{
                 ? '⚠ Repository Not Found'
                 : '⚠ Automatic Code Context Unavailable'
     }
+
     // The info message to display when no context is used.
     const enhancedContextStatusInfo =
         // Only show the enhanced context status message on the last human message,
@@ -122,6 +126,15 @@ export const ContextCell: React.FunctionComponent<{
                                     />
                                 </li>
                             ))}
+                            {repoCount && (
+                                <li key="repo-count" className={styles.listItem}>
+                                    <span className={styles.repoCount}>
+                                        <i className="codicon codicon-sparkle" />
+                                        Automatic Code Context: Using {repoCount} Repositor
+                                        {repoCount > 1 ? 'ies' : 'y'}
+                                    </span>
+                                </li>
+                            )}
                         </ul>
                     ) : (
                         <div className={styles.listItem}>

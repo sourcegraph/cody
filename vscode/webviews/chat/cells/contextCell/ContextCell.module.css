@@ -32,7 +32,7 @@
     align-items: center;
     gap: 0.35rem;
 }
-.stats {
+.stats, .repo-count {
     font-weight: normal;
     opacity: 0.6;
 }
@@ -63,4 +63,10 @@
     margin-top: 0.5rem;
     padding: 0.5rem;
     border: solid 1px var(--vscode-sideBarSectionHeader-border);
+}
+
+.repo-count {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.2rem;
 }
