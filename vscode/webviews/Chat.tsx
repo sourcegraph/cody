@@ -1,6 +1,6 @@
 import { clsx } from 'clsx'
 import type React from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useState } from 'react'
 
 import type {
     AuthStatus,
@@ -19,7 +19,7 @@ import styles from './Chat.module.css'
 import { TokenIndicators } from './components/RemainingTokens'
 
 interface ChatboxProps {
-    welcomeMessage?: string
+    welcomeMessage?: ReactNode
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]

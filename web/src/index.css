@@ -1,5 +1,6 @@
 @import '../../vscode/.storybook/static/vscode-themes/dark-modern.css';
 @import '../../vscode/webviews/components/shadcn/shadcn.css';
+@import '../../vscode/webviews/utils/highlight.css';
 @import '../node_modules/@vscode/codicons/dist/codicon.css';
 
 :root {
@@ -7,6 +8,7 @@
 
     --vscode-font-size: 13px;
     --vscode-font-family: -apple-system, BlinkMacSystemFont, 'Ubuntu', 'Droid Sans', 'Segoe WPC', 'Segoe UI', sans-serif;
+    --vscode-editor-font-family: 'Monaco', 'Consolas', monospace;
 }
 
 body {

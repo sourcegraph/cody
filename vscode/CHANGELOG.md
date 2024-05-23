@@ -20,6 +20,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Fixes issues with chat commands where selection context is removed from context items. [pull/4229](https://github.com/sourcegraph/cody/pull/4229)
 - Chat: Fixes intermittent issues with `Add Selection to Cody Chat` where sometimes the @-mention would not actually be added. [pull/4237](https://github.com/sourcegraph/cody/pull/4237)
 - Menu: Fixes an issue where the `Add Selection to Cody Chat` context menu item was incorrectly disabled when no new chat was open. [pull/4242](https://github.com/sourcegraph/cody/pull/4242)
+- Fixed an issue where the test file name was incorrectly inserted with the unit test command. [pull/4262](https://github.com/sourcegraph/cody/pull/4262)
+- Chat: Fixed a long-standing bug where it was not possible to copy code from Cody's response before it was finished. [pull/4268](https://github.com/sourcegraph/cody/pull/4268)
 
 ### Changed
 
@@ -29,6 +31,29 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Increases the context window for the new `GPT-4o` model. [pull/4180](https://github.com/sourcegraph/cody/pull/4180)
 - Commands/Chat: Increased the maximum output limit of LLM responses for recommended Enterprise models. [pull/4203](https://github.com/sourcegraph/cody/pull/4203)
 - Chat: The chat UI has been updated to make messages editable in-place and stream down from the top. [pull/4209](https://github.com/sourcegraph/cody/pull/4209)
+- Chat: Improved chat model selector UI with GPT-4o now as a recommended model, improved usability for Cody Free users, and a chat models documentation link. [pull/4254](https://github.com/sourcegraph/cody/pull/4254)
+
+## [1.18.2]
+
+### Added
+
+- Feature flags for the fine-tuning model experiment for code completions. [pull/4245](https://github.com/sourcegraph/cody/pull/4245) 
+
+### Fixed
+
+### Changed
+
+## [1.18.1]
+
+### Added
+
+- Automatically start embeddings indexing using Sourcegraph embeddings API. [pull/4091](https://github.com/sourcegraph/cody/pull/4091/)
+- Simplify upstream latency collector and measure Cody Gateway latency[pull/4193](https://github.com/sourcegraph/cody/pull/4193)
+
+### Fixed
+
+### Changed
+
 
 ## [1.18.0]
 
