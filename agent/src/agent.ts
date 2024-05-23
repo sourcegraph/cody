@@ -404,7 +404,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             const textEditor = this.workspace.newTextEditor(textDocument)
             this.workspace.setActiveTextEditor(textEditor)
 
-            if (contentChanges) {
+            if (contentChanges.length > 0) {
                 vscode_shim.onDidChangeTextDocument.fire({
                     document: textDocument,
                     contentChanges,
