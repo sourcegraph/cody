@@ -688,23 +688,6 @@ describe('Agent', () => {
         )
     }
 
-    function checkEditCodeCommand(
-        documentClient: TestClient,
-        name: string,
-        filename: string,
-        instruction: string,
-        assertion: (obtained: string) => void
-    ): void {
-        checkEditCommand(
-            documentClient,
-            'editCommands/code',
-            name,
-            filename,
-            { instruction: instruction },
-            assertion
-        )
-    }
-
     function checkDocumentCommand(
         documentClient: TestClient,
         name: string,
