@@ -77,7 +77,7 @@ export class EditProvider {
             multiplexer.sub(responseTopic, {
                 onResponse: async (content: string) => {
                     text += content
-                    typewriter.update(responsePrefix + text)
+                    typewriter.update(text)
                     return Promise.resolve()
                 },
                 onTurnComplete: async () => {
