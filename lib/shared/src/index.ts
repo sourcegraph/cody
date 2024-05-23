@@ -155,7 +155,6 @@ export type {
     FilenameContextFetcher,
     IndexedKeywordContextFetcher,
     LocalEmbeddingsFetcher,
-    IRemoteSearch,
     Result,
     SearchPanelFile,
     SearchPanelSnippet,
