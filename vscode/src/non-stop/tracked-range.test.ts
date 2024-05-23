@@ -245,7 +245,7 @@ describe('Tracked Range', () => {
             expect(track('()[ello] world', 'h', { supportRangeAffix: true })).toBe('[hello] world')
         })
 
-        it('should track single character insertion after the range as a range expansion', () => {
+        it('should track multiple character insertion after the range as a range expansion', () => {
             expect(track('[he]( ) world', 'llo', { supportRangeAffix: true })).toBe('[hello] world')
         })
 

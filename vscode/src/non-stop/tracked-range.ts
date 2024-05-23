@@ -61,10 +61,20 @@ export function updateRange(
     }
     const hasInsertedNewLines = lines.length > 1
     const linesAddedByChange = change.range.start.line - change.range.end.line + lines.length - 1
-    const charactersAddedByChangeInLastLine =
-        (hasInsertedNewLines ? 0 : change.range.start.character) -
-        change.range.end.character +
-        insertedLastLine
+    const charactersAddedByChangeToSelectionStart =
+        change.range.end.line === range.start.line && change.range.end.character <= range.start.character
+            ? (hasInsertedNewLines ? 0 : change.range.start.character) -
+              change.range.end.character +
+              insertedLastLine
+            : 0
+    const charactersAddedByChangeToSelectionEnd =
+        change.range.end.line === range.end.line &&
+        (change.range.end.character <= range.end.character ||
+            change.range.start.character === range.end.character) // selection expansion
+            ? (hasInsertedNewLines ? 0 : change.range.start.character) -
+              change.range.end.character +
+              insertedLastLine
+            : 0
 
     // Handle edits
     // support combining non-whitespace appended changes with the original range
@@ -75,7 +85,7 @@ export function updateRange(
     ) {
         return new vscode.Range(
             range.start,
-            change.range.end.translate(linesAddedByChange, charactersAddedByChangeInLastLine)
+            change.range.end.translate(linesAddedByChange, charactersAddedByChangeToSelectionEnd)
         )
     }
     // support combining non-whitespace prepended changes with the original range
@@ -86,7 +96,7 @@ export function updateRange(
     ) {
         return new vscode.Range(
             change.range.start,
-            range.end.translate(linesAddedByChange, charactersAddedByChangeInLastLine)
+            range.end.translate(linesAddedByChange, charactersAddedByChangeToSelectionEnd)
         )
     }
 
@@ -97,14 +107,8 @@ export function updateRange(
     // ...before
     if (change.range.end.isBeforeOrEqual(range.start)) {
         range = range.with(
-            range.start.translate(
-                linesAddedByChange,
-                change.range.end.line === range.start.line ? charactersAddedByChangeInLastLine : 0
-            ),
-            range.end.translate(
-                linesAddedByChange,
-                change.range.end.line === range.end.line ? charactersAddedByChangeInLastLine : 0
-            )
+            range.start.translate(linesAddedByChange, charactersAddedByChangeToSelectionStart),
+            range.end.translate(linesAddedByChange, charactersAddedByChangeToSelectionEnd)
         )
     }
     // ...around
@@ -121,19 +125,16 @@ export function updateRange(
     ) {
         range = range.with(
             range.start,
-            range.end.translate(
-                linesAddedByChange,
-                change.range.end.line === range.end.line ? charactersAddedByChangeInLastLine : 0
-            )
+            range.end.translate(linesAddedByChange, charactersAddedByChangeToSelectionEnd)
         )
     }
     // ...overlapping start
     else if (change.range.end.isBefore(range.end)) {
         range = range.with(
             // Move the start of the decoration to the end of the change
-            change.range.end.translate(linesAddedByChange, charactersAddedByChangeInLastLine),
+            change.range.end.translate(linesAddedByChange, charactersAddedByChangeToSelectionEnd),
             // Adjust the end of the decoration for the range deletion
-            range.end.translate(linesAddedByChange, charactersAddedByChangeInLastLine)
+            range.end.translate(linesAddedByChange, charactersAddedByChangeToSelectionEnd)
         )
     }
     // ...overlapping end
