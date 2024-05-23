@@ -199,6 +199,9 @@ describe('Tracked Range', () => {
     it('should track intra-line deletion overlapping the start of the range by truncating the start of the range', () => {
         expect(track('"(hello[, )world]"', '')).toBe('"[world]"')
     })
+    it('should track intra-line new line insertion overlapping the start of the range', () => {
+        expect(track('(hello[, )world]', 'hello\n')).toBe('hello\n[world]')
+    })
     it('should track single character insertion before the range', () => {
         expect(track('()[ello]\nworld', 'h')).toBe('h[ello]\nworld')
     })
@@ -229,11 +232,11 @@ describe('Tracked Range', () => {
             'hello everybody\naround the [world]!'
         )
     })
-    it('should track single new line insertions before the range before', () => {
-        expect(track(' [()]hello', '\n//\n', { supportRangeAffix: true })).toBe(' [\n//\n]hello')
-    })
 
     describe('when supporting range affix', () => {
+        it('should track new line insertions before the range as a range expansion', () => {
+            expect(track(' [()]hello', '\n//\n', { supportRangeAffix: true })).toBe(' [\n//\n]hello')
+        })
         it('should track single character insertion before the range as a range expansion', () => {
             expect(track('( )[llo] world', 'he', { supportRangeAffix: true })).toBe('[hello] world')
         })

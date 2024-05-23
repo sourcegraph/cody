@@ -55,15 +55,16 @@ export function updateRange(
 ): vscode.Range {
     const lines = change.text.split(/\r\n|\r|\n/m)
 
-    const lineBreakShortener =
-        change.range.end.line === range.end.line && lines.length > 1 ? change.range.start.character : 0
-
     const insertedLastLine = lines.at(-1)?.length
     if (insertedLastLine === undefined) {
         throw new TypeError('unreachable') // Any string .split produces a non-empty array.
     }
-
-    const insertedLineBreaks = lines.length - 1
+    const hasInsertedNewLines = lines.length > 1
+    const linesAddedByChange = change.range.start.line - change.range.end.line + lines.length - 1
+    const charactersAddedByChangeInLastLine =
+        (hasInsertedNewLines ? 0 : change.range.start.character) -
+        change.range.end.character +
+        insertedLastLine
 
     // Handle edits
     // support combining non-whitespace appended changes with the original range
@@ -74,15 +75,7 @@ export function updateRange(
     ) {
         return new vscode.Range(
             range.start,
-            change.range.end.translate(
-                change.range.start.line - change.range.end.line + insertedLineBreaks,
-                change.range.end.line === range.end.line
-                    ? change.range.start.character -
-                          change.range.end.character +
-                          insertedLastLine -
-                          lineBreakShortener
-                    : 0
-            )
+            change.range.end.translate(linesAddedByChange, charactersAddedByChangeInLastLine)
         )
     }
     // support combining non-whitespace prepended changes with the original range
@@ -93,14 +86,7 @@ export function updateRange(
     ) {
         return new vscode.Range(
             change.range.start,
-            range.end.translate(
-                change.range.start.line - change.range.end.line + insertedLineBreaks,
-                change.range.end.line === range.end.line
-                    ? insertedLastLine -
-                          change.range.end.character +
-                          (insertedLineBreaks === 0 ? change.range.start.character : 0)
-                    : 0
-            )
+            range.end.translate(linesAddedByChange, charactersAddedByChangeInLastLine)
         )
     }
 
@@ -112,20 +98,12 @@ export function updateRange(
     if (change.range.end.isBeforeOrEqual(range.start)) {
         range = range.with(
             range.start.translate(
-                change.range.start.line - change.range.end.line + insertedLineBreaks,
-                change.range.end.line === range.start.line
-                    ? insertedLastLine +
-                          -change.range.end.character +
-                          (insertedLineBreaks === 0 ? change.range.start.character : 0)
-                    : 0
+                linesAddedByChange,
+                change.range.end.line === range.start.line ? charactersAddedByChangeInLastLine : 0
             ),
             range.end.translate(
-                change.range.start.line - change.range.end.line + insertedLineBreaks,
-                change.range.end.line === range.end.line
-                    ? insertedLastLine -
-                          change.range.end.character +
-                          (insertedLineBreaks === 0 ? change.range.start.character : 0)
-                    : 0
+                linesAddedByChange,
+                change.range.end.line === range.end.line ? charactersAddedByChangeInLastLine : 0
             )
         )
     }
@@ -144,13 +122,8 @@ export function updateRange(
         range = range.with(
             range.start,
             range.end.translate(
-                change.range.start.line - change.range.end.line + insertedLineBreaks,
-                change.range.end.line === range.end.line
-                    ? change.range.start.character -
-                          change.range.end.character +
-                          insertedLastLine -
-                          lineBreakShortener
-                    : 0
+                linesAddedByChange,
+                change.range.end.line === range.end.line ? charactersAddedByChangeInLastLine : 0
             )
         )
     }
@@ -158,23 +131,9 @@ export function updateRange(
     else if (change.range.end.isBefore(range.end)) {
         range = range.with(
             // Move the start of the decoration to the end of the change
-            change.range.end.translate(
-                change.range.start.line - change.range.end.line,
-                change.range.start.character -
-                    change.range.end.character +
-                    insertedLastLine -
-                    lineBreakShortener
-            ),
+            change.range.end.translate(linesAddedByChange, charactersAddedByChangeInLastLine),
             // Adjust the end of the decoration for the range deletion
-            range.end.translate(
-                change.range.start.line - change.range.end.line,
-                change.range.end.line === range.end.line
-                    ? change.range.start.character -
-                          change.range.end.character +
-                          insertedLastLine -
-                          lineBreakShortener
-                    : 0
-            )
+            range.end.translate(linesAddedByChange, charactersAddedByChangeInLastLine)
         )
     }
     // ...overlapping end
