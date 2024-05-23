@@ -76,7 +76,13 @@ test.extend<ExpectedEvents>({
     // but the current file is excluded (ignoredByCody.css) and not on the context list
     await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
     const contextCell = getContextCell(chatPanel)
-    await expect(contextCell).not.toBeVisible()
+
+    // The context cell should be visible on all chat messages even if no context was included.
+    await expect(contextCell).toBeVisible()
+    await expect(chatPanel.getByRole('option', { name: 'ignoredByCody.css' })).not.toBeVisible()
+
+    // The repository should not be found as embeddings are not supported in e2e tests.
+    await expect(chatPanel.getByText('Repository Not Found')).toBeVisible()
 
     /* TEST: At-file - Ignored file does not show up as context when using @-mention */
     await chatInput.focus()

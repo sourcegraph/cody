@@ -41,7 +41,7 @@ test.extend<ExpectedEvents>({
     // Submit three new messages
     await lastChatInput.fill('One')
     await lastChatInput.press('Enter')
-    await expect(chatFrame.getByText('One')).toBeVisible()
+    await expect(chatFrame.getByText('One', { exact: true })).toBeVisible()
     await lastChatInput.fill('Two')
     await lastChatInput.press('Enter')
     await expect(chatFrame.getByText('Two')).toBeVisible()
@@ -53,7 +53,7 @@ test.extend<ExpectedEvents>({
     // The text area should automatically get the focuse,
     // and contains the original message text,
     // The submit button will also be replaced with "Update Message" button
-    await chatFrame.getByText('One').hover()
+    await chatFrame.getByText('One', { exact: true }).hover()
     await focusChatInputAtEnd(firstChatInput)
     await expect(firstChatInput).toBeFocused()
     await expect(firstChatInput).toHaveText('One')
@@ -71,11 +71,13 @@ test.extend<ExpectedEvents>({
     // Only two messages are left after the edit (e.g. "One", "Four"),
     // as all the messages after the edited message have be removed
     await expect(chatInputs).toHaveCount(3 /* 2 + the 1 for the next not-yet-sent message */)
-    await expect(chatFrame.getByText('One')).toBeVisible()
+    await expect(chatFrame.getByText('One', { exact: true })).toBeVisible()
     await expect(chatFrame.getByText('Two')).not.toBeVisible()
     await expect(chatFrame.getByText('Three')).not.toBeVisible()
     await expect(chatFrame.getByText('Four')).toBeVisible()
 
     // Chat input should still have focus.
     await expect(secondChatInput).toBeFocused()
+
+    expect(chatFrame.getByText('repository could not be automatically matched')).toBeDefined()
 })
