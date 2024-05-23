@@ -53,7 +53,7 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
             const changes = applyContentChanges(fromCache, document.contentChanges)
             contentChanges.push(...changes.contentChanges)
             document.underlying.content = changes.newText
-        } else if (document.content !== undefined) {
+        } else if (document.content !== undefined && document.content != null) {
             for (const change of calculateContentChanges(fromCache, document.content)) {
                 contentChanges.push(change)
             }
@@ -65,6 +65,10 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
 
         if (document.selection === undefined) {
             document.underlying.selection = fromCache.protocolDocument.selection
+        }
+
+        if (document.visibleRange === undefined) {
+            document.underlying.visibleRange = fromCache.protocolDocument.visibleRange
         }
 
         fromCache.update(document)
