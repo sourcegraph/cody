@@ -6,8 +6,8 @@ import {
     featureFlagProvider,
 } from '@sourcegraph/cody-shared'
 
+import * as vscode from 'vscode'
 import { logError } from '../../log'
-
 import {
     type AnthropicOptions,
     createProviderConfig as createAnthropicProviderConfig,
@@ -219,7 +219,13 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
             ),
         ])
 
-    if (finetunedFIMModelExperiment) {
+    // We run fine tuning experiment for VSC client only.
+    // We disable for all agent clients like the JetBrains plugin.
+    const isFinetuningExperimentDisabled = vscode.workspace
+        .getConfiguration()
+        .get<boolean>('cody.advanced.agent.running', false)
+
+    if (!isFinetuningExperimentDisabled && finetunedFIMModelExperiment) {
         // The traffic in this feature flag is interpreted as a traffic allocated to the fine-tuned experiment.
         return resolveFinetunedModelProviderFromFeatureFlags()
     }
