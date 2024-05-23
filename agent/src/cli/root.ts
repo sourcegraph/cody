@@ -1,7 +1,7 @@
 import { Command } from 'commander'
 
 import { cliCommand } from '../../../cli/src/command'
-import { evaluateAutocompleteCommand } from './evaluate-autocomplete/evaluate-autocomplete'
+import { codyBenchCommand } from './cody-bench/cody-bench'
 import { jsonrpcCommand } from './jsonrpc'
 import { serverCommand } from './server'
 
@@ -14,5 +14,5 @@ export const rootCommand = new Command()
     )
     .addCommand(serverCommand)
     .addCommand(jsonrpcCommand)
-    .addCommand(evaluateAutocompleteCommand)
+    .addCommand(codyBenchCommand)
     .addCommand(cliCommand)

@@ -53,17 +53,17 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
             const changes = applyContentChanges(fromCache, document.contentChanges)
             contentChanges.push(...changes.contentChanges)
             document.underlying.content = changes.newText
-        } else if (document.content !== undefined) {
+        } else if (typeof document.content === 'string') {
             for (const change of calculateContentChanges(fromCache, document.content)) {
                 contentChanges.push(change)
             }
         }
 
-        if (document.content === undefined) {
-            document.underlying.content = fromCache.getText()
+        if (typeof document.content !== 'string') {
+            document.underlying.content = fromCache.content
         }
 
-        if (document.selection === undefined) {
+        if (typeof document.selection !== 'object') {
             document.underlying.selection = fromCache.protocolDocument.selection
         }
 

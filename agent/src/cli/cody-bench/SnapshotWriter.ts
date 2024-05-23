@@ -5,7 +5,7 @@ import type { CsvWriter } from 'csv-writer/src/lib/csv-writer'
 import { rimraf } from 'rimraf'
 
 import { type EvaluationDocument, autocompleteItemHeaders } from './EvaluationDocument'
-import type { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
+import type { EvaluateAutocompleteOptions } from './cody-bench'
 
 export class SnapshotWriter {
     public csvWriter: CsvWriter<any> | undefined
