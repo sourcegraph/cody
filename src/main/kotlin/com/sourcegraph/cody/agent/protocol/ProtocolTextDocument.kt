@@ -3,20 +3,23 @@ package com.sourcegraph.cody.agent.protocol
 import com.intellij.codeInsight.codeVision.ui.popup.layouter.bottom
 import com.intellij.codeInsight.codeVision.ui.popup.layouter.right
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.LogicalPosition
+import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.vfs.VirtualFile
 import java.awt.Point
 import java.nio.file.FileSystems
-import java.util.Locale
+import java.util.*
 import kotlin.math.max
 import kotlin.math.min
 
 class ProtocolTextDocument
 private constructor(
     val uri: String,
-    val content: String?,
-    val selection: Range?,
-    val visibleRange: Range?
+    val content: String? = null,
+    val selection: Range? = null,
+    val visibleRange: Range? = null,
+    val contentChanges: List<ProtocolTextDocumentContentChangeEvent>? = null,
 ) {
 
   companion object {
@@ -54,9 +57,44 @@ private constructor(
     }
 
     @JvmStatic
+    fun fromEditorWithOffsetSelection(
+        editor: Editor,
+        newPosition: LogicalPosition
+    ): ProtocolTextDocument? {
+      val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return null
+      val position = Position(newPosition.line, newPosition.column)
+      return ProtocolTextDocument(uri = uriFor(file), selection = Range(position, position))
+    }
+
+    @JvmStatic
+    fun fromEditorWithRangeSelection(editor: Editor): ProtocolTextDocument? {
+      val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return null
+      return ProtocolTextDocument(uri = uriFor(file), selection = getSelection(editor))
+    }
+
+    @JvmStatic
+    fun fromEditorForDocumentEvent(editor: Editor, event: DocumentEvent): ProtocolTextDocument? {
+      val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return null
+      return ProtocolTextDocument(
+          uri = uriFor(file),
+          content = editor.document.text,
+          // TODO(olafurpg): let's implement incremental document synchronization later.
+          //                 Incremental document synchronization is very difficult to get
+          //                 100% right so we need to be careful.
+          //          contentChanges =
+          //              listOf(
+          //                  ProtocolTextDocumentContentChangeEvent(
+          //                      Range(
+          //                          position(editor.document, event.offset),
+          //                          position(editor.document, event.offset + event.oldLength)),
+          //                      event.newFragment.toString()))
+      )
+    }
+
+    @JvmStatic
     fun fromEditor(editor: Editor): ProtocolTextDocument? {
-      val file = FileDocumentManager.getInstance().getFile(editor.document)
-      return if (file != null) fromVirtualFile(editor, file) else null
+      val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return null
+      return fromVirtualFile(editor, file)
     }
 
     @JvmStatic
@@ -65,9 +103,14 @@ private constructor(
         file: VirtualFile,
     ): ProtocolTextDocument {
       val text = FileDocumentManager.getInstance().getDocument(file)?.text
-      return ProtocolTextDocument(uriFor(file), text, getSelection(editor), getVisibleRange(editor))
+      return ProtocolTextDocument(
+          uri = uriFor(file),
+          content = text,
+          selection = getSelection(editor),
+          visibleRange = getVisibleRange(editor))
     }
 
+    @JvmStatic
     private fun uriFor(file: VirtualFile): String {
       val uri = FileSystems.getDefault().getPath(file.path).toUri().toString()
       return uri.replace(Regex("file:///(\\w):/")) {

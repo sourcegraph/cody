@@ -2,7 +2,6 @@ package com.sourcegraph.cody.listeners
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
-import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.editor.event.BulkAwareDocumentListener
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -15,7 +14,6 @@ import com.sourcegraph.cody.autocomplete.action.AcceptCodyAutocompleteAction
 import com.sourcegraph.cody.chat.CodeEditorFactory
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
 import com.sourcegraph.telemetry.GraphQlLogger
-import com.sourcegraph.utils.CodyEditorUtil
 
 class CodyDocumentListener(val project: Project) : BulkAwareDocumentListener {
 
@@ -49,20 +47,19 @@ class CodyDocumentListener(val project: Project) : BulkAwareDocumentListener {
     logCodeCopyPastedFromChat(event)
     CodyAutocompleteManager.instance.clearAutocompleteSuggestions(editor)
 
-    if (CodyEditorUtil.isImplicitAutocompleteEnabledForEditor(editor) &&
-        CodyEditorUtil.isEditorValidForAutocomplete(editor) &&
-        !CommandProcessor.getInstance().isUndoTransparentActionInProgress) {
+    // IMPORTANT: we must do document synchronization even if autocomplete isn't auto-triggered.
+    // This is esp. important with incremental document synchronization where the server goes out
+    // of sync if it doesn't get all changes.
 
-      ProtocolTextDocument.fromEditor(editor)?.let { textDocument ->
-        CodyAgentService.withAgent(project) { agent ->
-          agent.server.textDocumentDidChange(textDocument)
+    ProtocolTextDocument.fromEditorForDocumentEvent(editor, event)?.let { textDocument ->
+      CodyAgentService.withAgent(project) { agent ->
+        agent.server.textDocumentDidChange(textDocument)
 
-          // This notification must be sent after the above, see tracker comment for more
-          // details.
-          AcceptCodyAutocompleteAction.tracker.getAndSet(null)?.let { completionID ->
-            agent.server.completionAccepted(CompletionItemParams(completionID))
-            agent.server.autocompleteClearLastCandidate()
-          }
+        // This notification must be sent after the above, see tracker comment for more
+        // details.
+        AcceptCodyAutocompleteAction.tracker.getAndSet(null)?.let { completionID ->
+          agent.server.completionAccepted(CompletionItemParams(completionID))
+          agent.server.autocompleteClearLastCandidate()
         }
       }
 

@@ -10,11 +10,11 @@ import com.sourcegraph.config.ConfigUtil
 
 class CodySelectionListener(val project: Project) : SelectionListener {
   override fun selectionChanged(e: SelectionEvent) {
-    if (!ConfigUtil.isCodyEnabled()) {
+    if (!ConfigUtil.isCodyEnabled() || e.editor == null) {
       return
     }
 
-    ProtocolTextDocument.fromEditor(e.editor)?.let { textDocument ->
+    ProtocolTextDocument.fromEditorWithRangeSelection(e.editor)?.let { textDocument ->
       CodyAgentService.withAgent(project) { agent ->
         agent.server.textDocumentDidChange(textDocument)
       }
