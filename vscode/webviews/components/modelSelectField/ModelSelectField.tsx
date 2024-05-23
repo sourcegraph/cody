@@ -194,12 +194,39 @@ export const ModelSelectField: React.FunctionComponent<{
                         <CommandGroup>
                             <CommandItem
                                 onSelect={() => {
-                                    getVSCodeAPI().postMessage({
-                                        command: 'chatModel/openDocumentation',
-                                    })
+                                    // TODO: When cmdk supports links, use that instead. This
+                                    // workaround is only needed because the link's native onClick
+                                    // is not being fired because cmdk traps it. See
+                                    // https://github.com/pacocoursey/cmdk/issues/258.
+
+                                    const link = document.querySelector<HTMLAnchorElement>(
+                                        `[cmdk-list] a[href=${JSON.stringify(DOCS_URL)}]`
+                                    )
+                                    if (link) {
+                                        // This workaround successfully opens an external link in VS
+                                        // Code webviews (which block `window.open` and plain click
+                                        // MouseEvents) and in browsers.
+                                        link.focus()
+                                        try {
+                                            link.dispatchEvent(
+                                                new MouseEvent('click', {
+                                                    button: 0,
+                                                    ctrlKey: true,
+                                                    metaKey: true,
+                                                })
+                                            )
+                                        } catch (error) {
+                                            console.error(error)
+                                        }
+                                    }
                                 }}
                             >
-                                <span className={styles.modelTitleWithIcon}>
+                                <a
+                                    href={DOCS_URL}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className={styles.modelTitleWithIcon}
+                                >
                                     <span className={styles.modelIcon}>
                                         {/* wider than normal to fit in with provider icons */}
                                         <BookOpenIcon size={16} strokeWidth={2} />{' '}
@@ -212,7 +239,7 @@ export const ModelSelectField: React.FunctionComponent<{
                                             className="tw-opacity-80"
                                         />
                                     </span>
-                                </span>
+                                </a>
                             </CommandItem>
                         </CommandGroup>
                     </CommandList>
@@ -233,6 +260,8 @@ export const ModelSelectField: React.FunctionComponent<{
         </ToolbarPopoverItem>
     )
 }
+
+const DOCS_URL = 'https://sourcegraph.com/docs/cody/clients/install-vscode#supported-llm-models'
 
 const GROUP_ORDER = [
     ModelUIGroup.Accuracy,

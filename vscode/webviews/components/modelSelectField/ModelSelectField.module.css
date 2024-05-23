@@ -1,9 +1,12 @@
 .model-title-with-icon {
     flex: 1;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     gap: 0.375rem;
     line-height: 16px;
+    &:is(a) {
+        outline: none !important;
+    }
 
     .model-name {
         font-weight: 500;
@@ -51,4 +54,9 @@ button > .model-title-with-icon {
     .model-icon, .model-provider, .badge {
         display: none;
     }
+}
+
+/* Show link as normal text in popover. */
+[cmdk-list] .model-title-with-icon {
+    color: var(--vscode-foreground) !important;
 }

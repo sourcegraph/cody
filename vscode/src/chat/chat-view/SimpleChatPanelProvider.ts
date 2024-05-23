@@ -77,13 +77,12 @@ import { gitCommitIdFromGitExtension } from '../../repository/git-extension-api'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import type { MessageErrorType } from '../MessageProvider'
 import { getChatContextItemsForMention } from '../context/chatContext'
-import {
-    CODY_CHAT_MODEL_DOCS_URL,
-    type ChatSubmitType,
-    type ConfigurationSubsetForWebview,
-    type ExtensionMessage,
-    type LocalEnv,
-    type WebviewMessage,
+import type {
+    ChatSubmitType,
+    ConfigurationSubsetForWebview,
+    ExtensionMessage,
+    LocalEnv,
+    WebviewMessage,
 } from '../protocol'
 import { ChatHistoryManager } from './ChatHistoryManager'
 import { CodyChatPanelViewType, addWebviewViewHTML } from './ChatManager'
@@ -286,13 +285,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 break
             case 'chatModel':
                 this.handleSetChatModel(message.model)
-                break
-            case 'chatModel/openDocumentation':
-                await vscode.env.openExternal(vscode.Uri.parse(CODY_CHAT_MODEL_DOCS_URL.href))
-                telemetryService.log('CodyVSCodeExtension:chatModel:docsLink:clicked', {
-                    hasV2Event: true,
-                })
-                telemetryRecorder.recordEvent('cody.chatModel.docsLink', 'clicked')
                 break
             case 'get-chat-models':
                 this.postChatModels()

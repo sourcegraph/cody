@@ -24,7 +24,6 @@ sealed class WebviewMessage {
           "links" -> context.deserialize<LinksWebviewMessage>(element, LinksWebviewMessage::class.java)
           "show-page" -> context.deserialize<`show-pageWebviewMessage`>(element, `show-pageWebviewMessage`::class.java)
           "chatModel" -> context.deserialize<ChatModelWebviewMessage>(element, ChatModelWebviewMessage::class.java)
-          "chatModel/openDocumentation" -> context.deserialize<ChatModel_openDocumentationWebviewMessage>(element, ChatModel_openDocumentationWebviewMessage::class.java)
           "get-chat-models" -> context.deserialize<`get-chat-modelsWebviewMessage`>(element, `get-chat-modelsWebviewMessage`::class.java)
           "openFile" -> context.deserialize<OpenFileWebviewMessage>(element, OpenFileWebviewMessage::class.java)
           "openLocalFileWithRange" -> context.deserialize<OpenLocalFileWithRangeWebviewMessage>(element, OpenLocalFileWithRangeWebviewMessage::class.java)
@@ -171,15 +170,6 @@ data class ChatModelWebviewMessage(
 
   enum class CommandEnum {
     @SerializedName("chatModel") ChatModel,
-  }
-}
-
-data class ChatModel_openDocumentationWebviewMessage(
-  val command: CommandEnum, // Oneof: chatModel/openDocumentation
-) : WebviewMessage() {
-
-  enum class CommandEnum {
-    @SerializedName("chatModel/openDocumentation") ChatModel_openDocumentation,
   }
 }
 

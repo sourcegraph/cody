@@ -78,7 +78,6 @@ export type WebviewMessage =
           page: string
       }
     | { command: 'chatModel'; model: string }
-    | { command: 'chatModel/openDocumentation' }
     | { command: 'get-chat-models' }
     | {
           command: 'openFile'
@@ -258,9 +257,6 @@ export const CODY_FEEDBACK_URL = new URL('https://github.com/sourcegraph/cody/is
 export const CODY_SUPPORT_URL = new URL('https://srcgr.ph/cody-support')
 export const CODY_OLLAMA_DOCS_URL = new URL(
     'https://sourcegraph.com/docs/cody/clients/install-vscode#supported-local-ollama-models-with-cody'
-)
-export const CODY_CHAT_MODEL_DOCS_URL = new URL(
-    'https://sourcegraph.com/docs/cody/clients/install-vscode#supported-llm-models'
 )
 // Account
 export const ACCOUNT_UPGRADE_URL = new URL('https://sourcegraph.com/cody/subscription')
