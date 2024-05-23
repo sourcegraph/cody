@@ -129,7 +129,7 @@ function getMaxContextTokens(model: FireworksModel): number {
         case FIREWORKS_FIM_FINE_TUNED_MODEL_2:
         case FIREWORKS_FIM_FINE_TUNED_MODEL_3:
         case FIREWORKS_FIM_FINE_TUNED_MODEL_4: {
-            return 2048
+            return 4096
         }
         default:
             return 1200
@@ -423,6 +423,7 @@ class FireworksProvider extends Provider {
                         ...(self.fireworksConfig?.parameters?.stop || []),
                     ],
                     stream: true,
+                    languageId: self.options.document.languageId,
                 }
 
                 const headers = new Headers()

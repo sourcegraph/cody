@@ -20,7 +20,7 @@ export enum FeatureFlag {
     // Enable the FineTuned model as the default model via Fireworks
 
     // Enable various feature flags to experiment with FIM trained fine-tuned models via Fireworks
-    CodyAutocompleteFIMFineTunedModelBaseFeatureFlag = 'cody-autocomplete-fim-fine-tuned-model-base-feature-flag',
+    CodyAutocompleteFIMFineTunedModelBaseFeatureFlag = 'cody-autocomplete-fim-fine-tuned-model-experiment-flag',
     CodyAutocompleteFIMFineTunedModelControl = 'cody-autocomplete-fim-fine-tuned-model-control',
     CodyAutocompleteFIMFineTunedModelVariant1 = 'cody-autocomplete-fim-fine-tuned-model-variant-1',
     CodyAutocompleteFIMFineTunedModelVariant2 = 'cody-autocomplete-fim-fine-tuned-model-variant-2',
