@@ -194,8 +194,9 @@ export const ModelSelectField: React.FunctionComponent<{
                         <CommandGroup>
                             <CommandItem
                                 onSelect={() => {
-                                    // TODO: open the following URL
-                                    // https://sourcegraph.com/docs/cody/clients/install-vscode#supported-llm-models
+                                    getVSCodeAPI().postMessage({
+                                        command: 'chatModel/openDocumentation',
+                                    })
                                 }}
                             >
                                 <span className={styles.modelTitleWithIcon}>
