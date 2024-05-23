@@ -1,6 +1,4 @@
 import { type Locator, expect } from '@playwright/test'
-
-import { isMacOS } from '@sourcegraph/cody-shared'
 import * as mockServer from '../fixtures/mock-server'
 import { createEmptyChatPanel, sidebarExplorer, sidebarSignin } from './common'
 import {
@@ -132,7 +130,7 @@ test.extend<ExpectedEvents>({
     // (`Cody: New Chat`) to switch back to the chat window we already opened and check that the
     // input is focused.
     await page.getByText("fizzbuzz.push('Buzz')").click()
-    await page.keyboard.press(`${isMacOS() ? 'Opt' : 'Alt'}+L`)
+    await page.keyboard.press('Alt+L')
     await expect(firstChatInput).toBeFocused()
 
     // Submit a new chat question from the command menu.
