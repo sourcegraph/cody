@@ -344,6 +344,14 @@ All tests involving prompt history should end with:
      - Check that no other widgets are drawing out of bounds or oddly in some other way.
 5. Ensure that the Cody Logo, present in all lens groups, is scaling with the font size.
 
+### Important additional notes for testing inline edit commands (Edit, Document, and Test)
+
+It is critical to test sequential commands and insure that each command continues to behave as expected: 
+- Run multiple Edit commands and try each of the code lenses
+- Run multiple Document commands and try each of the code lenses
+- Run multiple Test commands and try each of the code lenses
+- Run various combinations of commands (e.g. Run a Document command, then a Test command, and then an Edit) 
+
 ## Chat
 
 ### Autoscroll to latest message
