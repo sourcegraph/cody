@@ -86,7 +86,7 @@ class FixupService(val project: Project) : Disposable {
       // We want to enable parallel edits in JetBrains soon, so this would be a wasted effort.
       if (currentSession.isShowingAcceptLens()) {
         currentSession.accept()
-        currentSession.dismiss()
+        currentSession.dispose()
       } else throw IllegalStateException("Cannot start new session when one is already active")
     }
     activeSession = newSession

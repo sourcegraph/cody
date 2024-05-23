@@ -13,6 +13,6 @@ import com.sourcegraph.cody.edit.FixupService
 // So we have our own Action for it.
 class EditDismissAction : InlineEditAction() {
   override fun performAction(e: AnActionEvent, project: Project) {
-    FixupService.getInstance(project).getActiveSession()?.dismiss()
+    FixupService.getInstance(project).getActiveSession()?.dispose()
   }
 }

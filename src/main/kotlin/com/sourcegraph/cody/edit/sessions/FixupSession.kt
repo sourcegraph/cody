@@ -88,14 +88,6 @@ abstract class FixupSession(
         } catch (x: Exception) {
           logger.debug("Session cleanup error", x)
         }
-
-        runInEdt {
-          try { // Disposing inlay requires EDT.
-            Disposer.dispose(this)
-          } catch (x: Exception) {
-            logger.warn("Error disposing fixup session $this", x)
-          }
-        }
       }
 
   @Volatile private var undoInProgress: Boolean = false
@@ -180,8 +172,8 @@ abstract class FixupSession(
       // Tasks remain in this state until explicit accept/undo/cancel.
       CodyTaskState.Applied -> showAcceptGroup()
       // Then they transition to finished.
-      CodyTaskState.Finished -> cancellationToken.dispose()
-      CodyTaskState.Error -> cancellationToken.dispose()
+      CodyTaskState.Finished -> dispose()
+      CodyTaskState.Error -> dispose()
       CodyTaskState.Pending -> {}
     }
   }
@@ -248,7 +240,7 @@ abstract class FixupSession(
 
   fun cancel() {
     if (taskId == null) {
-      dismiss()
+      dispose()
     } else {
       CodyAgentService.withAgent(project) { agent ->
         agent.server.cancelEditTask(TaskIdParam(taskId!!))
@@ -275,10 +267,6 @@ abstract class FixupSession(
 
   fun afterSessionFinished(action: Runnable) {
     completionFuture.thenRun(action)
-  }
-
-  fun dismiss() {
-    cancellationToken.dispose()
   }
 
   fun performWorkspaceEdit(workspaceEditParams: WorkspaceEditParams) {
@@ -411,6 +399,8 @@ abstract class FixupSession(
     if (project.isDisposed) return
     performedActions.forEach { it.dispose() }
     editor.document.removeDocumentListener(documentListener)
+    lensGroup?.dispose()
+    cancellationToken.dispose()
   }
 
   fun isShowingWorkingLens(): Boolean {

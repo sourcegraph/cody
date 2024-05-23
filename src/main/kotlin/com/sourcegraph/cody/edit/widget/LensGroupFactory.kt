@@ -1,6 +1,5 @@
 package com.sourcegraph.cody.edit.widget
 
-import com.intellij.openapi.diagnostic.Logger
 import com.sourcegraph.cody.Icons
 import com.sourcegraph.cody.edit.EditCommandPrompt
 import com.sourcegraph.cody.edit.sessions.FixupSession
@@ -8,7 +7,6 @@ import javax.swing.Icon
 
 /** Handles assembling standard groups of lenses. */
 class LensGroupFactory(val session: FixupSession) {
-  private val logger = Logger.getInstance(LensGroupFactory::class.java)
 
   fun createTaskWorkingGroup(): LensWidgetGroup {
     return LensWidgetGroup(session, session.editor).apply {
