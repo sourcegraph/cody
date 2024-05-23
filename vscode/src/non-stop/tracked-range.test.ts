@@ -26,13 +26,17 @@ function show(text: string, range: Range): string {
     const buffer = []
     let line = 0
     let beginningOfLine = 0
+    let outputRangeBegin = false
+    let outputRangeEnd = false
     for (let i = 0; i <= text.length; i++) {
         const position = new Position(line, i - beginningOfLine)
         if (position.isEqual(range.start)) {
             buffer.push('[')
+            outputRangeBegin = true
         }
         if (position.isEqual(range.end)) {
             buffer.push(']')
+            outputRangeEnd = true
         }
         if (i < text.length) {
             const ch = text[i]
@@ -42,6 +46,12 @@ function show(text: string, range: Range): string {
                 beginningOfLine = i + 1
             }
         }
+    }
+    if (!(outputRangeBegin && outputRangeEnd)) {
+        // We did not represent the range, so dump a message indicating what it was.
+        buffer.push(
+            ` Range=${range.start.line}:${range.start.character}-${range.end.line}:${range.end.character}`
+        )
     }
     return buffer.join('')
 }
@@ -253,8 +263,24 @@ describe('Tracked Range', () => {
             expect(track('h[e(l)l]o', '', { supportRangeAffix: true })).toBe('h[el]o')
         })
 
-        it('should track single new line insertion within the range as a range expansion', () => {
+        it('should track single new line insertion within the range as a range expansion (first line)', () => {
+            expect(track('h[e()l\nll]o', '\n', { supportRangeAffix: true })).toBe('h[e\nl\nll]o')
+        })
+
+        it('should track single new line insertion within the range as a range expansion (interior)', () => {
+            expect(track('h[e\nee()ll\nl]o', '\n', { supportRangeAffix: true })).toBe('h[e\nee\nll\nl]o')
+        })
+
+        it('should track single new line insertion within the range as a range expansion (last line)', () => {
+            expect(track('h[e\nee()l]o', '\n', { supportRangeAffix: true })).toBe('h[e\nee\nl]o')
+        })
+
+        it('should track single new line insertion within the range as a range expansion (single line)', () => {
             expect(track('h[e()l]o', '\n', { supportRangeAffix: true })).toBe('h[e\nl]o')
+        })
+
+        it('should track single new line insertion within the range as a range expansion (single line; support range affix off)', () => {
+            expect(track('h[e()l]o', '\n', { supportRangeAffix: false })).toBe('h[e\nl]o')
         })
 
         it('should track single new line deletion within the range as a range reduction', () => {
