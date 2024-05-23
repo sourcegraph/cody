@@ -875,30 +875,28 @@ describe('Agent', () => {
             const testDocument = client.workspace.getDocument(vscode.Uri.parse(untitledDocument ?? ''))
             expect(trimEndOfLine(testDocument?.getText())).toMatchInlineSnapshot(
                 `
-              "import { expect } from 'vitest'
-              import { describe } from 'vitest';
-              import { it } from 'vitest';
-              import { trickyLogic } from './trickyLogic';
+              "import { expect, it, describe } from 'vitest'
+              import { trickyLogic } from './trickyLogic'
 
               describe('trickyLogic', () => {
                   it('should return 1 when a is 0', () => {
-                      expect(trickyLogic(0, 5)).toBe(1);
-                  });
+                      expect(trickyLogic(0, 5)).toBe(1)
+                  })
 
                   it('should return 1 when b is 2', () => {
-                      expect(trickyLogic(5, 2)).toBe(1);
-                  });
+                      expect(trickyLogic(10, 2)).toBe(1)
+                  })
 
                   it('should return a - b when a is not 0 and b is not 2', () => {
-                      expect(trickyLogic(5, 3)).toBe(2);
-                      expect(trickyLogic(10, 5)).toBe(5);
-                  });
+                      expect(trickyLogic(10, 5)).toBe(5)
+                      expect(trickyLogic(5, 3)).toBe(2)
+                  })
 
                   it('should handle negative numbers', () => {
-                      expect(trickyLogic(-5, 3)).toBe(-8);
-                      expect(trickyLogic(5, -3)).toBe(8);
-                  });
-              });
+                      expect(trickyLogic(-5, 3)).toBe(-8)
+                      expect(trickyLogic(5, -3)).toBe(8)
+                  })
+              })
               "
             `,
                 explainPollyError
