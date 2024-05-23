@@ -6,7 +6,7 @@ import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 describe('AgentWorkspaceDocuments', () => {
     let documents: AgentWorkspaceDocuments
     beforeEach(() => {
-        documents = new AgentWorkspaceDocuments()
+        documents = new AgentWorkspaceDocuments({})
     })
     const uri = vscode.Uri.parse('file:///foo.txt')
 
@@ -71,6 +71,33 @@ describe('AgentWorkspaceDocuments', () => {
         expect(document.getText()).toBe('xbc\ndyf\nghz')
     })
 
+    it('selection', () => {
+        const document = documents.loadAndUpdateDocument(ProtocolTextDocumentWithUri.from(uri, {}))
+        const editor = documents.newTextEditor(document)
+        expect(editor.selection).toStrictEqual(new vscode.Selection(0, 0, 0, 0))
+        documents.loadAndUpdateDocument(
+            ProtocolTextDocumentWithUri.from(uri, {
+                content: 'hello\ngoodbye\nworld\nsayonara\n',
+                selection: { start: { line: 0, character: 0 }, end: { line: 1, character: 5 } },
+            })
+        )
+        const expectedSelection = new vscode.Selection(0, 0, 1, 5)
+        expect(editor.selection).toStrictEqual(expectedSelection)
+        documents.loadAndUpdateDocument(
+            ProtocolTextDocumentWithUri.from(uri, {
+                content: 'something\nis\nhappening',
+                visibleRange: undefined,
+            })
+        )
+        expect(editor.selection).toStrictEqual(expectedSelection)
+        documents.loadAndUpdateDocument(
+            ProtocolTextDocumentWithUri.from(uri, {
+                selection: { start: { line: 1, character: 1 }, end: { line: 2, character: 3 } },
+            })
+        )
+        expect(editor.selection).toStrictEqual(new vscode.Selection(1, 1, 2, 3))
+    })
+
     it('visibleRanges', () => {
         const document = documents.loadAndUpdateDocument(
             ProtocolTextDocumentWithUri.from(uri, {
@@ -79,6 +106,14 @@ describe('AgentWorkspaceDocuments', () => {
             })
         )
         const editor = documents.newTextEditor(document)
-        expect(editor.visibleRanges).toStrictEqual([new vscode.Selection(0, 0, 1, 5)])
+        const expectedSelection = new vscode.Selection(0, 0, 1, 5)
+        expect(editor.visibleRanges).toStrictEqual([expectedSelection])
+        documents.loadAndUpdateDocument(
+            ProtocolTextDocumentWithUri.from(uri, {
+                content: 'something\nis\nhappening',
+                visibleRange: undefined,
+            })
+        )
+        expect(editor.visibleRanges).toStrictEqual([expectedSelection])
     })
 })

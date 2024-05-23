@@ -177,7 +177,7 @@ export class TestClient extends MessageHandler {
     public progressIDs = new Map<string, number>()
     public progressStartEvents = new vscode.EventEmitter<ProgressStartParams>()
     public readonly name: string
-    public workspace = new AgentWorkspaceDocuments()
+    public workspace = new AgentWorkspaceDocuments({})
     public workspaceEditParams: WorkspaceEditParams[] = []
     public textDocumentEditParams: TextDocumentEditParams[] = []
 
