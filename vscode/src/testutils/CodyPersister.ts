@@ -60,7 +60,7 @@ export class CodyPersister extends FSPersister {
         this.api = new PollyYamlWriter(this.options.recordingsDir)
     }
     public static get id(): string {
-        return 'cody-fs'
+        return 'fs'
     }
 
     public async onFindRecording(recordingId: string): Promise<Har | null> {
