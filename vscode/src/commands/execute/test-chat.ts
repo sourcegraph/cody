@@ -1,8 +1,8 @@
 import { type ContextItem, DefaultChatCommands, logDebug, logError, ps } from '@sourcegraph/cody-shared'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
+import type { ChatCommandResult } from '../../CommandResult'
 import { getEditor } from '../../editor/active-editor'
-import type { ChatCommandResult } from '../../main'
 // biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
 import { getContextFileFromCursor } from '../context/selection'

@@ -16,9 +16,10 @@ import { logDebug } from '../../log'
 // biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
 
+import type { CommandResult } from '../../CommandResult'
+import type { ChatCommandResult, EditCommandResult } from '../../CommandResult'
 import { sortContextFiles } from '../../chat/chat-view/agentContextSorting'
 import { getEditor } from '../../editor/active-editor'
-import type { ChatCommandResult, CommandResult, EditCommandResult } from '../../main'
 import { getCommandContextFiles } from '../context'
 import { executeChat } from '../execute/ask'
 import type { CodyCommandArgs } from '../types'
