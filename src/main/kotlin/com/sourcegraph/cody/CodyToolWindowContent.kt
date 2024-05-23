@@ -64,7 +64,10 @@ class CodyToolWindowContent(private val project: Project) {
 
     refreshPanelsVisibility()
     refreshMyAccountTab()
-    switchToChatSession(AgentChatSession.createNew(project))
+    val codyAuthenticationManager = CodyAuthenticationManager.getInstance(project)
+    if (codyAuthenticationManager.getActiveAccount() != null) {
+      switchToChatSession(AgentChatSession.createNew(project))
+    }
   }
 
   fun removeAllChatSessions() {

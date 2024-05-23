@@ -46,15 +46,17 @@ class FixupService(val project: Project) : Disposable {
   fun startDocumentCode(editor: Editor) {
     runInEdt {
       if (isEligibleForInlineEdit(editor)) {
-        editor.project?.let { project -> DocumentCodeSession(this, editor, project) }
+        DocumentCodeSession(this, editor, editor.project ?: return@runInEdt)
       }
     }
   }
 
   /** Entry point for the test code command, called by the action handler. */
   fun startTestCode(editor: Editor) {
-    if (isEligibleForInlineEdit(editor)) {
-      TestCodeSession(this, editor, editor.project ?: return)
+    runInEdt {
+      if (isEligibleForInlineEdit(editor)) {
+        TestCodeSession(this, editor, editor.project ?: return@runInEdt)
+      }
     }
   }
 
