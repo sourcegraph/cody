@@ -438,7 +438,14 @@ export async function getSymbolContextSnippets(
             return snippet
         }
 
-        const relatedDefinitions = Array.from(snippet.relatedDefinitionKeys?.values())
+        let relatedDefinitionKeys = Array.from(snippet.relatedDefinitionKeys?.values())
+
+        if (process.env.VITEST) {
+            // Sort related definition keys to keep test snapshots stable on CI.
+            relatedDefinitionKeys = relatedDefinitionKeys.sort((a, b) => b.localeCompare(a))
+        }
+
+        const relatedDefinitions = relatedDefinitionKeys
             .map(key => {
                 if (key === snippet.key) {
                     return undefined

@@ -163,11 +163,11 @@ describe.skipIf(isWindows())('LspLightRetriever', () => {
         expect(contextSnippets.length).toBe(1)
         // TODO: add only constructor to context snippets
         expect(contextSnippets[0].content).toMatchInlineSnapshot(`
-          "interface GreeterConfig {
+          "Greeter.greeting: string
+          GreeterConfig.message: string
+          interface GreeterConfig {
               message: string
           }
-          Greeter.greeting: string
-          GreeterConfig.message: string
           Greeter.greet(): string
           export class Greeter {
               greeting: string;
@@ -197,8 +197,7 @@ describe.skipIf(isWindows())('LspLightRetriever', () => {
           "export interface LabelledValue {
               label: string;
           }
-          export enum Color { Red, Green, Blue }
-          Color.Green = 1
+          Animal.name: string
           export class Animal {
               name: string;
               color: Color;
@@ -212,8 +211,9 @@ describe.skipIf(isWindows())('LspLightRetriever', () => {
                   console.log(\`\${this.name} moved \${distanceInMeters}m. Color: \${Color[this.color]}\`);
               }
           }
+          Color.Green = 1
           Animal.color: Color
-          Animal.name: string
+          export enum Color { Red, Green, Blue }
           new Dog(name: string, color: Color): Dog"
         `
         )
@@ -260,11 +260,11 @@ describe.skipIf(isWindows())('LspLightRetriever', () => {
               color?: Color;
               width?: number;
           }
-          export enum Color { Red, Green, Blue }
           export interface Square {
               color: Color
               area: number
           }
+          export enum Color { Red, Green, Blue }
           createSquare(config: SquareConfig, version?: number): VersionedSquare (+1 overload)"
         `)
     })
@@ -278,12 +278,12 @@ describe.skipIf(isWindows())('LspLightRetriever', () => {
 
         expect(contextSnippets.length).toBe(1)
         expect(contextSnippets[0].content).toMatchInlineSnapshot(`
-          "export enum Color { Red, Green, Blue }
-          export interface Square {
+          "export interface Square {
               color: Color
               area: number
           }
           Color.Green = 1
+          export enum Color { Red, Green, Blue }
           export interface SquareConfig {
               color?: Color;
               width?: number;
