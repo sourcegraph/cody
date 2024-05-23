@@ -258,6 +258,19 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
     private authenticationPromise: Promise<AuthStatus | undefined> = Promise.resolve(undefined)
 
+    // Only used when testing to ensure stable behavior. Add promises that you
+    // want to await on before the next JSON-RPC request. For example, when
+    // changing text contents of files, we await on the file to finish parsing
+    // before triggering the next request.
+    private pendingPromisesForTestingPurposes = new Set<Promise<unknown>>()
+    private addPendingPromise(promise: Promise<unknown>): void {
+        if (!vscode_shim.isTesting) {
+            return
+        }
+        this.pendingPromisesForTestingPurposes.add(promise)
+        promise.finally(() => this.pendingPromisesForTestingPurposes.delete(promise))
+    }
+
     private clientInfo: ClientInfo | null = null
 
     /**
@@ -392,15 +405,21 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerNotification('textDocument/didOpen', document => {
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
-            const textDocument = this.workspace.loadDocument(documentWithUri)
+            const { document: textDocument, pendingPromise } =
+                this.workspace.loadDocumentWithChanges(documentWithUri)
+            this.addPendingPromise(pendingPromise)
             vscode_shim.onDidOpenTextDocument.fire(textDocument)
             this.workspace.setActiveTextEditor(this.workspace.newTextEditor(textDocument))
         })
 
         this.registerNotification('textDocument/didChange', document => {
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
-            const { document: textDocument, contentChanges } =
-                this.workspace.loadDocumentWithChanges(documentWithUri)
+            const {
+                document: textDocument,
+                contentChanges,
+                pendingPromise,
+            } = this.workspace.loadDocumentWithChanges(documentWithUri)
+            this.addPendingPromise(pendingPromise)
             const textEditor = this.workspace.newTextEditor(textDocument)
             this.workspace.setActiveTextEditor(textEditor)
             vscode_shim.onDidChangeTextDocument.fire({
@@ -1327,6 +1346,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
     ): void {
         this.registerRequest(method, async (params, token) => {
             await this.authenticationPromise
+            if (vscode_shim.isTesting) {
+                await Promise.all(this.pendingPromisesForTestingPurposes.values())
+            }
             return callback(params, token)
         })
     }

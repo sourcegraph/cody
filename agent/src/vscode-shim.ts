@@ -39,6 +39,7 @@ import {
     UIKind,
     Uri,
     ViewColumn,
+    vscodeWorkspaceTextDocuments,
     workspaceFs,
 } from '../../vscode/src/testutils/mocks'
 
@@ -176,7 +177,10 @@ export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments)
 }
 
 export const workspaceFolders: vscode.WorkspaceFolder[] = []
-export const workspaceTextDocuments: vscode.TextDocument[] = []
+
+export function workspaceTextDocuments(): vscode.TextDocument[] {
+    return vscodeWorkspaceTextDocuments
+}
 
 // vscode.workspace.onDidChangeConfiguration
 const _workspace: typeof vscode.workspace = {
@@ -206,7 +210,7 @@ const _workspace: typeof vscode.workspace = {
     registerFileSystemProvider: () => emptyDisposable,
     registerNotebookSerializer: () => emptyDisposable,
     saveAll: () => Promise.resolve(false),
-    textDocuments: workspaceTextDocuments,
+    textDocuments: vscodeWorkspaceTextDocuments,
     updateWorkspaceFolders: () => false,
     workspaceFile: undefined,
     registerTaskProvider: () => emptyDisposable,

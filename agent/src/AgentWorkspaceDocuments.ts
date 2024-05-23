@@ -100,6 +100,7 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     public loadDocumentWithChanges(document: ProtocolTextDocumentWithUri): {
         document: AgentTextDocument
         contentChanges: vscode.TextDocumentContentChangeEvent[]
+        pendingPromise: Promise<unknown>
     } {
         const { document: agentDocument, contentChanges } =
             this.loadAndUpdateDocumentWithChanges(document)
@@ -126,15 +127,18 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         ]
 
         clearArray(vscode_shim.visibleTextEditors)
-        clearArray(vscode_shim.workspaceTextDocuments)
+        const textDocuments = vscode_shim.workspaceTextDocuments()
+        clearArray(textDocuments)
 
         for (const document of this.allDocuments()) {
-            vscode_shim.workspaceTextDocuments.push(document)
+            textDocuments.push(document)
             vscode_shim.visibleTextEditors.push(this.newTextEditor(document))
         }
-        vscode_shim.onDidChangeVisibleTextEditors.fire(vscode_shim.visibleTextEditors)
+        const pendingPromise = vscode_shim.onDidChangeVisibleTextEditors.cody_fireAsync(
+            vscode_shim.visibleTextEditors
+        )
 
-        return { document: agentDocument, contentChanges }
+        return { document: agentDocument, contentChanges, pendingPromise }
     }
 
     public deleteDocument(uri: vscode.Uri): void {
