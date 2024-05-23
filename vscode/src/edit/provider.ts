@@ -96,21 +96,23 @@ export class EditProvider {
                         this.config.task.id,
                         this.config.task.destinationFile
                     )
-                } else {
-                    // Listen to test file name suggestion from responses
-                    // Allows Cody to let us know which test file we should add the new content to
-                    let filepath = ''
-                    multiplexer.sub(PROMPT_TOPICS.FILENAME.toString(), {
-                        onResponse: async (content: string) => {
-                            filepath += content
-                            void this.handleFileCreationResponse(filepath, true)
-                            return Promise.resolve()
-                        },
-                        onTurnComplete: async () => {
-                            return Promise.resolve()
-                        },
-                    })
                 }
+
+                // Listen to test file name suggestion from responses and create the file if we don't have one.
+                // This allows Cody to let us know which test file we should add the new content to.
+                // NOTE: Keep this multiplexer even if a destination file is set to catch the PROMPT_TOPICS.
+                let filepath = ''
+                multiplexer.sub(PROMPT_TOPICS.FILENAME.toString(), {
+                    onResponse: async (content: string) => {
+                        filepath += content
+                        // handleFileCreationResponse will verify if task.destinationFile is set before creating a new file.
+                        void this.handleFileCreationResponse(filepath, true)
+                        return Promise.resolve()
+                    },
+                    onTurnComplete: async () => {
+                        return Promise.resolve()
+                    },
+                })
             }
 
             this.abortController = new AbortController()
