@@ -2,7 +2,7 @@ import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
-import { debugLspLightLog } from '../../../../graph/lsp/debug-logger'
+import { IS_LSP_LIGHT_LOGGING_ENABLED } from '../../../../graph/lsp/debug-logger'
 import {
     IS_LSP_LIGHT_CACHE_DISABLED,
     getSymbolContextSnippets,
@@ -104,15 +104,17 @@ export class LspLightRetriever implements ContextRetriever {
         this.lastResultKey = resultKey
         this.lastResult = contextSnippets
 
-        debugLspLightLog(
-            `[LspLightRetriever] got context snippets in ${(performance.now() - start).toFixed(2)}ms`
-        )
+        if (IS_LSP_LIGHT_LOGGING_ENABLED) {
+            console.log(
+                `[LspLightRetriever] got context snippets in ${(performance.now() - start).toFixed(2)}ms`
+            )
 
-        debugLspLightLog('-------------------------------------------------------------')
-        for (const snippet of contextSnippets) {
-            debugLspLightLog(snippet.content)
+            console.log('-------------------------------------------------------------')
+            for (const snippet of contextSnippets) {
+                console.log(snippet.content)
+            }
+            console.log('-------------------------------------------------------------')
         }
-        debugLspLightLog('-------------------------------------------------------------')
 
         if (maxChars === 0) {
             // This is likely just a preloading request, so we don't need to prepare the actual context

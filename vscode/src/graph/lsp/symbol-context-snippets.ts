@@ -13,6 +13,7 @@ import { lines } from '../../completions/text-processing'
 import { SupportedLanguage } from '../../tree-sitter/grammars'
 
 import {
+    IS_LSP_LIGHT_LOGGING_ENABLED,
     debugSymbol,
     flushLspLightDebugLogs,
     formatUriAndPosition,
@@ -99,11 +100,13 @@ async function getSnippetForLocationGetter(
         })
         .filter(location => !isCommonImport(location.uri))
 
-    debugSymbol(
-        symbolName,
-        'definitionLocations',
-        sortedDefinitionLocations.map(location => formatUriAndRange(location.uri, location.range))
-    )
+    if (IS_LSP_LIGHT_LOGGING_ENABLED) {
+        debugSymbol(
+            symbolName,
+            'definitionLocations',
+            sortedDefinitionLocations.map(location => formatUriAndRange(location.uri, location.range))
+        )
+    }
 
     // TODO: support multiple definition locations
     const [definitionLocation] = sortedDefinitionLocations
@@ -114,10 +117,13 @@ async function getSnippetForLocationGetter(
     }
 
     const { uri: definitionUri, range: definitionRange } = definitionLocation
-    debugSymbol(symbolName, 'location', {
-        nodeType,
-        location: formatUriAndRange(definitionUri, definitionRange),
-    })
+
+    if (IS_LSP_LIGHT_LOGGING_ENABLED) {
+        debugSymbol(symbolName, 'location', {
+            nodeType,
+            location: formatUriAndRange(definitionUri, definitionRange),
+        })
+    }
 
     const symbolContextSnippet = {
         key: `${definitionUri}::${definitionRange.start.line}:${definitionRange.start.character}`,
@@ -200,11 +206,13 @@ async function getSnippetForLocationGetter(
         isUnhelpfulSymbolSnippet(symbolName, definitionString) ||
         lines(definitionString).length > 100
     ) {
-        debugSymbol(symbolName, 'no helpful context found:', {
-            hoverKind: hoverKind,
-            definitionString,
-            resolutions: debugResolutionSteps,
-        })
+        if (IS_LSP_LIGHT_LOGGING_ENABLED) {
+            debugSymbol(symbolName, 'no helpful context found:', {
+                hoverKind: hoverKind,
+                definitionString,
+                resolutions: debugResolutionSteps,
+            })
+        }
 
         return symbolContextSnippet
     }
@@ -273,24 +281,26 @@ async function getSnippetForLocationGetter(
         })
         .filter(isDefined)
 
-    debugSymbol(symbolName, 'nested symbols:', {
-        hoverKind: hoverKind,
-        definitionString,
-        nestedSymbolsSource,
-        resolutions: debugResolutionSteps,
-        initialNestedSymbolRequests: initialNestedSymbolRequests.map(r => {
-            return {
-                symbolName: r.symbolName,
-                position: formatUriAndPosition(r.uri, r.position),
-            }
-        }),
-        nestedSymbolRequests: nestedSymbolRequests.map(r => {
-            return {
-                symbolName: r.symbolName,
-                position: formatUriAndPosition(r.uri, r.position),
-            }
-        }),
-    })
+    if (IS_LSP_LIGHT_LOGGING_ENABLED) {
+        debugSymbol(symbolName, 'nested symbols:', {
+            hoverKind: hoverKind,
+            definitionString,
+            nestedSymbolsSource,
+            resolutions: debugResolutionSteps,
+            initialNestedSymbolRequests: initialNestedSymbolRequests.map(r => {
+                return {
+                    symbolName: r.symbolName,
+                    position: formatUriAndPosition(r.uri, r.position),
+                }
+            }),
+            nestedSymbolRequests: nestedSymbolRequests.map(r => {
+                return {
+                    symbolName: r.symbolName,
+                    position: formatUriAndPosition(r.uri, r.position),
+                }
+            }),
+        })
+    }
 
     if (nestedSymbolRequests.length === 0) {
         return {
@@ -371,8 +381,10 @@ async function getSymbolContextSnippetsRecursive(
 
             let symbolContextSnippet: SymbolSnippetWithLocationResolved | undefined
             for (const locationGetter of locationGetters) {
-                debugSymbol(symbolName, '-------------------------------------------------------------')
-                debugSymbol(symbolName, `using locationGetter "${locationGetter.name}"`)
+                if (IS_LSP_LIGHT_LOGGING_ENABLED) {
+                    debugSymbol(symbolName, '---------------------------------------------------------')
+                    debugSymbol(symbolName, `using locationGetter "${locationGetter.name}"`)
+                }
 
                 symbolContextSnippet = await getSnippetForLocationGetter(locationGetter, {
                     symbolSnippetRequest,

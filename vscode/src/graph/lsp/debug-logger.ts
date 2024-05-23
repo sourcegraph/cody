@@ -15,22 +15,9 @@ export const IS_LSP_LIGHT_LOGGING_ENABLED = process.env.LSP_LIGHT_LOGGING_ENABLE
 const debugLogs: Map<string, unknown[][]> = new Map()
 
 /**
- * console.log() when process.env.IS_LSP_LIGHT_LOGGING_ENABLED === 'true'
- */
-export function debugLspLightLog(...rest: unknown[]) {
-    if (IS_LSP_LIGHT_LOGGING_ENABLED) {
-        console.log(...rest)
-    }
-}
-
-/**
  * Group logs by symbol names to log them together later
  */
 export function debugSymbol(symbolName: string, ...rest: unknown[]) {
-    if (!IS_LSP_LIGHT_LOGGING_ENABLED) {
-        return
-    }
-
     if (!debugLogs.has(symbolName)) {
         debugLogs.set(symbolName, [])
     }
