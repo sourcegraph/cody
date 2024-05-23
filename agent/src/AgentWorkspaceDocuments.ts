@@ -44,31 +44,51 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     } {
         const fromCache = this.agentDocuments.get(document.underlying.uri)
         if (!fromCache) {
-            return { document: new AgentTextDocument(document), contentChanges: [] }
+            const result = new AgentTextDocument(document)
+            this.agentDocuments.set(document.underlying.uri, result)
+            return { document: result, contentChanges: [] }
         }
 
+        // We have seen this document before, which means we mutate the existing
+        // document to reflect the latest chagnes. For each URI, we keep a
+        // singleton document so that `AgentTextDocument.getText()` always
+        // reflects the latest value.
         const contentChanges: vscode.TextDocumentContentChangeEvent[] = []
-
         if (document.contentChanges && document.contentChanges.length > 0) {
+            // Incremental document sync.
             const changes = applyContentChanges(fromCache, document.contentChanges)
             contentChanges.push(...changes.contentChanges)
             document.underlying.content = changes.newText
-        } else if (document.content !== undefined && document.content != null) {
+        } else if (typeof document.content === 'string') {
+            // Full document sync.
             for (const change of calculateContentChanges(fromCache, document.content)) {
                 contentChanges.push(change)
             }
-        }
-
-        if (document.content === undefined) {
+        } else {
+            // No document sync. Use content from last update.
             document.underlying.content = fromCache.getText()
         }
 
-        if (document.selection === undefined) {
+        if (document.selection) {
             document.underlying.selection = fromCache.protocolDocument.selection
         }
 
-        if (document.visibleRange === undefined) {
+        if (document.visibleRange) {
             document.underlying.visibleRange = fromCache.protocolDocument.visibleRange
+        }
+
+        // The client may send null values that we convert to undefined here.
+        if (document.content === null) {
+            document.underlying.content = undefined
+        }
+        if (document.contentChanges === null) {
+            document.underlying.contentChanges = undefined
+        }
+        if (document.selection === null) {
+            document.underlying.selection = undefined
+        }
+        if (document.visibleRange === null) {
+            document.underlying.visibleRange = undefined
         }
 
         fromCache.update(document)
@@ -107,7 +127,6 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     } {
         const { document: agentDocument, contentChanges } =
             this.loadAndUpdateDocumentWithChanges(document)
-        this.agentDocuments.set(document.underlying.uri, agentDocument)
 
         const tabs: vscode.Tab[] = []
         for (const uri of this.allUris()) {
