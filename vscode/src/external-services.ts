@@ -7,7 +7,7 @@ import {
     type Guardrails,
     SourcegraphGuardrailsClient,
     graphqlClient,
-    isError,
+    isError, SourcegraphCompletionsClient,
 } from '@sourcegraph/cody-shared'
 
 import { createClient as createCodeCompletionsClient } from './completions/client'
@@ -21,6 +21,7 @@ import type { AuthProvider } from './services/AuthProvider'
 
 interface ExternalServices {
     chatClient: ChatClient
+    completionsClient: SourcegraphCompletionsClient
     codeCompletionsClient: CodeCompletionsClient
     guardrails: Guardrails
     contextRanking: ContextRankingController | undefined
@@ -89,6 +90,7 @@ export async function configureExternalServices(
 
     return {
         chatClient,
+        completionsClient,
         codeCompletionsClient,
         guardrails,
         localEmbeddings,

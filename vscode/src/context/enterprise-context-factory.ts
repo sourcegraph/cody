@@ -4,6 +4,7 @@ import { RemoteSearch } from './remote-search'
 import { type Repo, RepoFetcher } from './repo-fetcher'
 import { RemoteRepoPicker } from './repo-picker'
 import { WorkspaceRepoMapper } from './workspace-repo-mapper'
+import {SourcegraphCompletionsClient} from "@sourcegraph/cody-shared";
 
 export class EnterpriseContextFactory implements vscode.Disposable {
     // Only one RemoteRepoPicker can be displayed at once, so we share one
@@ -13,7 +14,7 @@ export class EnterpriseContextFactory implements vscode.Disposable {
     private readonly fetcher: RepoFetcher
     private readonly workspaceRepoMapper: WorkspaceRepoMapper
 
-    constructor() {
+    constructor(private completions: SourcegraphCompletionsClient) {
         this.fetcher = new RepoFetcher()
         this.workspaceRepoMapper = new WorkspaceRepoMapper()
         this.repoPicker = new RemoteRepoPicker(this.fetcher, this.workspaceRepoMapper)
@@ -38,7 +39,7 @@ export class EnterpriseContextFactory implements vscode.Disposable {
     // configuration updates; this is fine for the SimpleChatPanelProvider
     // client because chats are restarted if the configuration changes.
     public createRemoteSearch(): RemoteSearch {
-        return new RemoteSearch()
+        return new RemoteSearch(this.completions)
     }
 
     // Gets an object that can map codebase repo names into repository IDs on
