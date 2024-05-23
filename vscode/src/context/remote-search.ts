@@ -6,10 +6,12 @@ import {
     type ContextStatusProvider,
     type Disposable,
     type PromptString,
+    type SourcegraphCompletionsClient,
     contextFiltersProvider,
     graphqlClient,
 } from '@sourcegraph/cody-shared'
 
+import { rewriteKeywordQuery } from '../local-context/rewrite-keyword-query'
 import type * as repofetcher from './repo-fetcher'
 
 export enum RepoInclusion {
@@ -25,7 +27,7 @@ export class RemoteSearch implements ContextStatusProvider {
     public static readonly MAX_REPO_COUNT = 10
     private disposeOnContextFilterChanged: () => void
 
-    constructor() {
+    constructor(private completions: SourcegraphCompletionsClient) {
         this.disposeOnContextFilterChanged = contextFiltersProvider.onContextFiltersChanged(() => {
             this.statusChangedEmitter.fire(this)
         })
@@ -113,8 +115,8 @@ export class RemoteSearch implements ContextStatusProvider {
     }
 
     public async query(query: PromptString): Promise<ContextSearchResult[]> {
-        // Sending prompt strings to the Sourcegraph search backend is fine.
-        const result = await graphqlClient.contextSearch(this.getRepoIdSet(), query.toString())
+        const rewritten = await rewriteKeywordQuery(this.completions, query, true)
+        const result = await graphqlClient.contextSearch(this.getRepoIdSet(), rewritten)
         if (result instanceof Error) {
             throw result
         }
