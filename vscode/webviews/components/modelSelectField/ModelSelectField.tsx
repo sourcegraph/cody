@@ -1,5 +1,6 @@
 import { type ModelProvider, ModelUIGroup } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
+import { BookOpenIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -14,6 +15,7 @@ type Value = string
 interface SelectListOption {
     value: Value | undefined
     title: string | ReactNode
+    tooltip: string
     filterKeywords?: string[]
     group?: string
     disabled?: boolean
@@ -84,26 +86,30 @@ export const ModelSelectField: React.FunctionComponent<{
 
     const options = useMemo<SelectListOption[]>(
         () =>
-            usableModels.map(
-                m =>
-                    ({
-                        value: m.model,
-                        title: (
-                            <ModelTitleWithIcon
-                                model={m}
-                                showIcon={true}
-                                showProvider={true}
-                                modelAvailability={modelAvailability(userInfo, m)}
-                            />
-                        ),
-                        // needs-cody-pro models should be clickable (not disabled) so the user can
-                        // be taken to the upgrade page.
-                        disabled: !['available', 'needs-cody-pro'].includes(
-                            modelAvailability(userInfo, m)
-                        ),
-                        group: m.uiGroup ?? 'Other',
-                    }) satisfies SelectListOption
-            ),
+            usableModels.map(m => {
+                const availability = modelAvailability(userInfo, m)
+                return {
+                    value: m.model,
+                    title: (
+                        <ModelTitleWithIcon
+                            model={m}
+                            showIcon={true}
+                            showProvider={true}
+                            modelAvailability={availability}
+                        />
+                    ),
+                    // needs-cody-pro models should be clickable (not disabled) so the user can
+                    // be taken to the upgrade page.
+                    disabled: !['available', 'needs-cody-pro'].includes(availability),
+                    group: m.uiGroup ?? 'Other',
+                    tooltip:
+                        availability === 'not-selectable-on-enterprise'
+                            ? 'Chat model set by your Sourcegraph Enterprise admin'
+                            : availability === 'needs-cody-pro'
+                              ? `Upgrade to Cody Pro to use ${m.title} by ${m.provider}`
+                              : `${m.title} by ${m.provider}`,
+                } satisfies SelectListOption
+            }),
         [usableModels, userInfo]
     )
     const optionsByGroup: { group: string; options: SelectListOption[] }[] = useMemo(() => {
@@ -178,12 +184,64 @@ export const ModelSelectField: React.FunctionComponent<{
                                             close()
                                         }}
                                         disabled={option.disabled}
+                                        tooltip={option.tooltip}
                                     >
                                         {option.title}
                                     </CommandItem>
                                 ))}
                             </CommandGroup>
                         ))}
+                        <CommandGroup>
+                            <CommandItem
+                                onSelect={() => {
+                                    // TODO: When cmdk supports links, use that instead. This
+                                    // workaround is only needed because the link's native onClick
+                                    // is not being fired because cmdk traps it. See
+                                    // https://github.com/pacocoursey/cmdk/issues/258.
+
+                                    const link = document.querySelector<HTMLAnchorElement>(
+                                        `[cmdk-list] a[href=${JSON.stringify(DOCS_URL)}]`
+                                    )
+                                    if (link) {
+                                        // This workaround successfully opens an external link in VS
+                                        // Code webviews (which block `window.open` and plain click
+                                        // MouseEvents) and in browsers.
+                                        link.focus()
+                                        try {
+                                            link.dispatchEvent(
+                                                new MouseEvent('click', {
+                                                    button: 0,
+                                                    ctrlKey: true,
+                                                    metaKey: true,
+                                                })
+                                            )
+                                        } catch (error) {
+                                            console.error(error)
+                                        }
+                                    }
+                                }}
+                            >
+                                <a
+                                    href={DOCS_URL}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className={styles.modelTitleWithIcon}
+                                >
+                                    <span className={styles.modelIcon}>
+                                        {/* wider than normal to fit in with provider icons */}
+                                        <BookOpenIcon size={16} strokeWidth={2} />{' '}
+                                    </span>
+                                    <span className={styles.modelName}>Documentation</span>
+                                    <span className={styles.rightIcon}>
+                                        <ExternalLinkIcon
+                                            size={16}
+                                            strokeWidth={1.25}
+                                            className="tw-opacity-80"
+                                        />
+                                    </span>
+                                </a>
+                            </CommandItem>
+                        </CommandGroup>
                     </CommandList>
                 </Command>
             )}
@@ -202,6 +260,8 @@ export const ModelSelectField: React.FunctionComponent<{
         </ToolbarPopoverItem>
     )
 }
+
+const DOCS_URL = 'https://sourcegraph.com/docs/cody/clients/install-vscode#supported-llm-models'
 
 const GROUP_ORDER = [
     ModelUIGroup.Accuracy,
@@ -235,31 +295,15 @@ const ModelTitleWithIcon: FunctionComponent<{
         className={clsx(styles.modelTitleWithIcon, {
             [styles.disabled]: modelAvailability !== 'available',
         })}
-        title={
-            modelAvailability === 'not-selectable-on-enterprise'
-                ? 'Chat model set by your Sourcegraph Enterprise admin'
-                : modelAvailability === 'needs-cody-pro'
-                  ? `Upgrade to Cody Pro to use ${model.title}`
-                  : undefined
-        }
     >
         {showIcon && <ChatModelIcon model={model.model} className={styles.modelIcon} />}
-        <span className={styles.modelText}>
-            <span className={styles.modelName}>{model.title}</span>
-            <span className={styles.modelProvider}>
-                {showProvider && model.provider !== 'Ollama' && `by ${capitalize(model.provider)}`}
-            </span>
-        </span>
+        <span className={styles.modelName}>{model.title}</span>
         {modelAvailability === 'needs-cody-pro' && (
-            <span className={clsx(styles.badge, styles.codyProBadge)}>Cody Pro</span>
+            <span className={clsx(styles.badge, styles.badgePro)}>Cody Pro</span>
         )}
-        {model.initialDefault && (
-            <span className={clsx(styles.badge, styles.otherBadge, styles.defaultBadge)}>Default</span>
-        )}
-        {model.provider === 'Ollama' && (
-            <span className={clsx(styles.badge, styles.otherBadge)}>Experimental</span>
-        )}
-        {(model.title === 'Claude 3 Opus' || model.title === 'GPT-4 Turbo') &&
+        {model.initialDefault && <span className={clsx(styles.badge)}>Default</span>}
+        {model.provider === 'Ollama' && <span className={clsx(styles.badge)}>Experimental</span>}
+        {(model.title === 'Claude 3 Opus' || model.title === 'GPT-4o') &&
         !model.initialDefault &&
         modelAvailability !== 'needs-cody-pro' ? (
             <span className={clsx(styles.badge, styles.otherBadge, styles.recommendedBadge)}>
@@ -276,9 +320,3 @@ const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = 
     const ModelIcon = chatModelIconComponent(model)
     return ModelIcon ? <ModelIcon size={16} className={className} /> : null
 }
-
-const capitalize = (s: string): string =>
-    s
-        .split(' ')
-        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(' ')
