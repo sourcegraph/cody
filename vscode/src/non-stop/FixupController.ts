@@ -1024,7 +1024,7 @@ export class FixupController
         // notification back to the Agent after we finish applying the
         // changes. https://github.com/sourcegraph/cody-issues/issues/315 is one example
         // of a bug caused by auto-accepting here, but there were others as well.
-        if (!isRunningInsideAgent) {
+        if (!isRunningInsideAgent()) {
             if (task.state === CodyTaskState.Applied) {
                 // User has changed an applied task, so we assume the user has accepted
                 // the change and wants to take control.  This helps ensure that the
