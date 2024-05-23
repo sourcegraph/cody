@@ -159,6 +159,7 @@ export const Transcript: React.FunctionComponent<{
                             addEnhancedContext,
                         })
                     }}
+                    className={styles.lastHumanMessage}
                 />
             )}
             {transcript.length === 0 && <WelcomeMessageCell welcomeMessage={welcomeMessage} />}

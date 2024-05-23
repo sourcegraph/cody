@@ -1,5 +1,10 @@
 .container {
     overflow-x: hidden;
+
+}
+
+.last-human-message {
+    margin-bottom: 2rem;
 }
 
 .welcome-message-cell-content p:first-child {
