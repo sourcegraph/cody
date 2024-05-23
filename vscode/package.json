@@ -31,7 +31,8 @@
     "download-wasm": "ts-node-transpile-only ./scripts/download-wasm-modules.ts",
     "release:dry-run": "pnpm run download-wasm && CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
     "storybook": "storybook dev -p 6007 --no-open --no-version-updates",
-    "test:e2e": "if [ -z \"${NOBUILD}\" ]; then tsc --build && node dist/tsc/test/e2e/install-deps.js && pnpm run -s build:dev:desktop; fi && playwright test",
+    "test:e2e": "tsc --build && node dist/tsc/test/e2e/install-deps.js && pnpm run -s build:dev:desktop && pnpm run -s test:e2e:run",
+    "test:e2e:run": "playwright test",
     "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
     "test:unit": "vitest",
     "vscode:prepublish": "pnpm -s run build",
@@ -625,6 +626,11 @@
       },
       {
         "command": "cody.mention.selection",
+        "key": "alt+l",
+        "when": "cody.activated && !editorReadonly && editorTextFocus && editorHasSelection"
+      },
+      {
+        "command": "cody.mention.selection.new",
         "key": "alt+l",
         "when": "cody.activated && !editorReadonly && editorTextFocus && editorHasSelection"
       },

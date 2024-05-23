@@ -2831,6 +2831,108 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 5ab09d79e07eec0e53127c44d3759797
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 159
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_b20717265e7ab1d132874d8ff0be053ab9c1dacccec8dce0bbba76888b6a0a69
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: enterpriseClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "159"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 339
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query CurrentSiteCodyLlmConfiguration {
+                  site {
+                      codyLLMConfiguration {
+                          smartContext
+                      }
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: CurrentSiteCodyLlmConfiguration
+            value: null
+        url: https://demo.sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
+      response:
+        bodySize: 195
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 195
+          text: "[\"H4sIAAAAAAAAAyTMsQrDIBAG4FeRfw6FUrq4uqZPUDNIcgmC3rV6QiX47oV2/JbvBJUip\
+            cI+T2SqNRwECxeYRc27Uelmj5Q241FzKOqElT7qYQ==\",\"hI32FxkPJ1uf54cT3uP\
+            RStAo7HHBhCTrT/8/RSbY+4RVUssMe72NZSzjCwAA//8DAGikhMWFAAAA\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 21 May 2024 02:07:07 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1248
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-05-21T02:07:07.584Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: ce5b1e7cdbf1da3406b7de4cf77fe38d
       _order: 0
       cache: {}
