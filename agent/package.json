@@ -16,6 +16,7 @@
     "build": "pnpm run -s build:root && pnpm run -s build:agent",
     "build-minify": "pnpm run build --minify",
     "agent": "pnpm run build && node dist/index.js",
+    "quick-agent": "pnpm run build:agent && node dist/index.js",
     "agent:debug": "pnpm run build && CODY_AGENT_TRACE_PATH=/tmp/agent.json CODY_AGENT_DEBUG_REMOTE=true node --enable-source-maps ./dist/index.js",
     "build-ts": "tsc --build",
     "build-agent-binaries": "pnpm run build && pkg --options \"max-old-space-size=4096\" --compress GZip --no-bytecode --public-packages \"*\" --public . --out-path ${AGENT_EXECUTABLE_TARGET_DIRECTORY:-dist}",
@@ -59,6 +60,7 @@
   "devDependencies": {
     "@types/dedent": "^0.7.0",
     "@types/diff": "^5.0.9",
+    "@types/fast-json-stable-stringify": "^2.1.0",
     "@types/google-protobuf": "3.15.12",
     "@types/minimatch": "^5.1.2",
     "@types/uuid": "^9.0.2",
@@ -66,6 +68,7 @@
     "@types/ws": "^8.5.10",
     "diff": "^5.2.0",
     "esbuild": "^0.18.19",
+    "fast-json-stable-stringify": "^2.1.0",
     "google-protobuf": "^3.21.2",
     "parse-git-diff": "^0.0.14",
     "pkg": "^5.8.1",
