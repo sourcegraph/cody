@@ -61,6 +61,7 @@ export { AgentEventEmitter as EventEmitter } from '../../vscode/src/testutils/Ag
 export {
     CancellationTokenSource,
     CodeAction,
+    CodeActionTriggerKind,
     CodeActionKind,
     CodeLens,
     CommentMode,
@@ -75,6 +76,7 @@ export {
     FileType,
     InlineCompletionItem,
     InlineCompletionTriggerKind,
+    DiagnosticRelatedInformation,
     Location,
     MarkdownString,
     OverviewRulerLane,
