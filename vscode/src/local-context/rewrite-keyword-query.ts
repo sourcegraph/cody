@@ -7,10 +7,25 @@ import {
     ps,
 } from '@sourcegraph/cody-shared'
 
+
+const containsNonAscii = /[^\u0000-\u007F]/
+const containsMultipleSentences = /[.!?][\s\r\n][\w+]/
+
 export async function rewriteKeywordQuery(
     completionsClient: SourcegraphCompletionsClient,
-    query: PromptString
+    query: PromptString,
+    restrictRewrite?: boolean,
 ): Promise<string> {
+    if (restrictRewrite) {
+        // For some context backends, rewriting the query can make performance worse. So we restrict the rewrite
+        // to cases where it clearly helps: there are non-ASCII characters (meaning it's very likely in a foreign
+        // language), or there are multiple sentences (so we need to distill the question).
+        const queryString = query.toString()
+        if (!containsNonAscii.test(queryString) && ! containsMultipleSentences.test(queryString)) {
+            return queryString
+        }
+    }
+
     const preamble = getSimplePreamble(undefined, 0)
     const stream = completionsClient.stream(
         {

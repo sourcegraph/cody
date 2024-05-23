@@ -20,7 +20,7 @@ describe('symf', () => {
         customHeaders: {},
     })
 
-    describe('expand-query', () => {
+    describe('rewrite-query', () => {
         let polly: Polly
         beforeAll(() => {
             polly = startPollyRecording({
@@ -31,39 +31,53 @@ describe('symf', () => {
             })
         })
 
-        function check(query: PromptString, expectedHandler: (expandedTerm: string) => void): void {
+        function check(query: PromptString, restrictRewrite: boolean, expectedHandler: (expandedTerm: string) => void): void {
             it(query.toString(), async () => {
-                expectedHandler(await rewriteKeywordQuery(client, query))
+                expectedHandler(await rewriteKeywordQuery(client, query, restrictRewrite))
             })
         }
 
-        check(ps`ocean`, expanded =>
+        check(ps`ocean`, false,expanded =>
             expect(expanded).toMatchInlineSnapshot(
                 `"circulation current ebb flow ocean ppt psu salinity salt sea stream surf tidal tide water wave waves"`
             )
         )
 
-        check(ps`How do I write a file to disk in Go`, expanded =>
+        check(ps`How do I write a file to disk in Go`, false,expanded =>
             expect(expanded).toMatchInlineSnapshot(
                 `"disk drive file files go golang storage write writefile writetofile"`
             )
         )
 
-        check(ps`Where is authentication router defined?`, expanded =>
+        check(ps`Where is authentication router defined?`, false,expanded =>
             expect(expanded).toMatchInlineSnapshot(
                 '"auth authenticate authentication define defined definition route router routing"'
             )
         )
 
-        check(ps`parse file with tree-sitter`, expanded =>
+        check(ps`parse file with tree-sitter`, false,expanded =>
             expect(expanded).toMatchInlineSnapshot(
                 `"file parse parser parsing read reading reads tree tree-sitter treesitter"`
             )
         )
 
-        check(ps`scan tokens in C++`, expanded =>
+        check(ps`scan tokens in C++`, false,expanded =>
             expect(expanded).toMatchInlineSnapshot(`"C++ c++ cpp scan scanner scanning token tokens"`)
         )
+
+        // Test that when the 'restricted' parameter is enabled,  we only rewrite non-ASCII and multi-sentence queries
+        check(ps`scan tokens in C++! `, true,expanded =>
+            expect(expanded).toMatchInlineSnapshot(`"scan tokens in C++! "`)
+        )
+
+        check(ps`C'est ou la logique pour recloner les dépôts?`, true,expanded =>
+            expect(expanded).toMatchInlineSnapshot(`""`)
+        )
+
+        check(ps`Explain how the context window limit is calculated. how much budget is given to @-mentions vs. search context?`, true,expanded =>
+            expect(expanded).toMatchInlineSnapshot(`""`)
+        )
+
         afterAll(async () => {
             await polly.stop()
         })
