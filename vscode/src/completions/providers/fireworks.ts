@@ -25,7 +25,6 @@ import {
     tokensToChars,
     tracer,
 } from '@sourcegraph/cody-shared'
-
 import { fetch } from '@sourcegraph/cody-shared'
 import { getLanguageConfig } from '../../tree-sitter/language'
 import { getSuffixAfterFirstNewline } from '../text-processing'
@@ -69,6 +68,19 @@ const PROVIDER_IDENTIFIER = 'fireworks'
 const EOT_STARCODER = '<|endoftext|>'
 const EOT_LLAMA_CODE = ' <EOT>'
 
+// Fireworks hosted model identifier strings
+export const FIREWORKS_FIM_FINE_TUNED_MODEL_1 = 'fim-fine-tuned-model-variant-1'
+export const FIREWORKS_FIM_FINE_TUNED_MODEL_2 = 'fim-fine-tuned-model-variant-2'
+export const FIREWORKS_FIM_FINE_TUNED_MODEL_3 = 'fim-fine-tuned-model-variant-3'
+export const FIREWORKS_FIM_FINE_TUNED_MODEL_4 = 'fim-fine-tuned-model-variant-4'
+
+const FIREWORKS_FIM_FINE_TUNED_MODEL_FAMILY = [
+    FIREWORKS_FIM_FINE_TUNED_MODEL_1,
+    FIREWORKS_FIM_FINE_TUNED_MODEL_2,
+    FIREWORKS_FIM_FINE_TUNED_MODEL_3,
+    FIREWORKS_FIM_FINE_TUNED_MODEL_4,
+]
+
 // Model identifiers can be found in https://docs.fireworks.ai/explore/ and in our internal
 // conversations
 const MODEL_MAP = {
@@ -83,8 +95,10 @@ const MODEL_MAP = {
     'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
 
     // Fine-tuned model mapping
-    'fireworks-completions-fine-tuned':
-        'fireworks/accounts/sourcegraph/models/codecompletion-mixtral-rust-152k-005e',
+    [FIREWORKS_FIM_FINE_TUNED_MODEL_1]: FIREWORKS_FIM_FINE_TUNED_MODEL_1,
+    [FIREWORKS_FIM_FINE_TUNED_MODEL_2]: FIREWORKS_FIM_FINE_TUNED_MODEL_2,
+    [FIREWORKS_FIM_FINE_TUNED_MODEL_3]: FIREWORKS_FIM_FINE_TUNED_MODEL_3,
+    [FIREWORKS_FIM_FINE_TUNED_MODEL_4]: FIREWORKS_FIM_FINE_TUNED_MODEL_4,
 }
 
 type FireworksModel =
@@ -111,8 +125,12 @@ function getMaxContextTokens(model: FireworksModel): number {
             // Llama 2 on Fireworks supports up to 4k tokens. We're constraining it here to better
             // compare the results
             return 2048
-        case 'fireworks-completions-fine-tuned':
-            return 2048
+        case FIREWORKS_FIM_FINE_TUNED_MODEL_1:
+        case FIREWORKS_FIM_FINE_TUNED_MODEL_2:
+        case FIREWORKS_FIM_FINE_TUNED_MODEL_3:
+        case FIREWORKS_FIM_FINE_TUNED_MODEL_4: {
+            return 3072
+        }
         default:
             return 1200
     }
@@ -180,7 +198,10 @@ class FireworksProvider extends Provider {
         const languageConfig = getLanguageConfig(this.options.document.languageId)
 
         // In StarCoder we have a special token to announce the path of the file
-        if (!isStarCoderFamily(this.model) && this.model !== 'fireworks-completions-fine-tuned') {
+        if (
+            !isStarCoderFamily(this.model) &&
+            !FIREWORKS_FIM_FINE_TUNED_MODEL_FAMILY.includes(this.model)
+        ) {
             intro.push(ps`Path: ${PromptString.fromDisplayPath(this.options.document.uri)}`)
         }
 
@@ -192,6 +213,13 @@ class FireworksProvider extends Provider {
                 if (contextPrompts.symbol) {
                     intro.push(
                         ps`Additional documentation for \`${contextPrompts.symbol}\`:\n\n${contextPrompts.content}`
+                    )
+                } else if (FIREWORKS_FIM_FINE_TUNED_MODEL_FAMILY.includes(this.model)) {
+                    // Fine-tuned model have a additional <file_sep> tag.
+                    intro.push(
+                        ps`<file_sep>Here is a reference snippet of code from ${PromptString.fromDisplayPath(
+                            snippet.uri
+                        )}\n${contextPrompts.content}`
                     )
                 } else {
                     intro.push(
@@ -257,7 +285,10 @@ class FireworksProvider extends Provider {
             model,
         } satisfies CodeCompletionsParams
 
-        if (requestParams.model.includes('starcoder2')) {
+        if (
+            requestParams.model.includes('starcoder2') ||
+            FIREWORKS_FIM_FINE_TUNED_MODEL_FAMILY.includes(requestParams.model)
+        ) {
             requestParams.stopSequences = [
                 ...(requestParams.stopSequences || []),
                 '<fim_prefix>',
@@ -322,12 +353,8 @@ class FireworksProvider extends Provider {
             // c.f. https://github.com/facebookresearch/codellama/blob/main/llama/generation.py#L402
             return ps`<PRE> ${intro}${prefix} <SUF>${suffix} <MID>`
         }
-        if (this.model === 'fireworks-completions-fine-tuned') {
-            const fixedPrompt = ps`You are an expert in writing code in many different languages.
-                Your goal is to perform code completion for the following code, keeping in mind the rest of the code and the file meta data.
-                Metadata details: filename: ${filename}. The code of the file until where you have to start completion:
-            `
-            return ps`${intro} \n ${fixedPrompt}\n${prefix}`
+        if (FIREWORKS_FIM_FINE_TUNED_MODEL_FAMILY.includes(this.model)) {
+            return ps`${intro}<fim_suffix>${filename}\n${suffix}<fim_prefix>${prefix}<fim_middle>`
         }
         console.error('Could not generate infilling prompt for', this.model)
         return ps`${intro}${prefix}`
@@ -396,6 +423,7 @@ class FireworksProvider extends Provider {
                         ...(self.fireworksConfig?.parameters?.stop || []),
                     ],
                     stream: true,
+                    languageId: self.options.document.languageId,
                 }
 
                 const headers = new Headers()

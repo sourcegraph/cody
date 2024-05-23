@@ -8,7 +8,7 @@ import type { RangeData } from '../../common/range'
  * https://github.com/microsoft/vscode/issues/178868#issuecomment-1494826381); you can't pass a
  * selection or viewColumn. We need to proxy `vscode.open` to be able to pass these args.
  *
- * Also update `lib/shared/src/chat/markdown.ts`'s `ALLOWED_URI_REGEXP` if you change this.
+ * Also update MarkdownFromCody's `ALLOWED_URI_REGEXP` if you change this.
  */
 export const CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID = '_cody.vscode.open'
 

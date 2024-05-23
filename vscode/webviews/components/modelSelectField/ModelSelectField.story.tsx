@@ -73,12 +73,3 @@ export const ProUser: Story = {
         },
     },
 }
-
-export const EnterpriseUser: Story = {
-    args: {
-        userInfo: {
-            isDotComUser: false,
-            isCodyProUser: false,
-        },
-    },
-}
