@@ -28,6 +28,11 @@ export function startLanguageServer(): rpc.MessageConnection {
     return connection
 }
 
+export async function stopLanguageServer(connection: rpc.MessageConnection): Promise<void> {
+    await connection.sendRequest(lsp.ShutdownRequest.type)
+    connection.dispose()
+}
+
 // TODO: parameterize
 const TEST_DATA_PATH = path.join(__dirname, 'test-data')
 const TEST_DATA_URI = Uri.file(TEST_DATA_PATH)

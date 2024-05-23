@@ -15,6 +15,7 @@ import {
     mockLspCommands,
     openWorkspaceFiles,
     startLanguageServer,
+    stopLanguageServer,
 } from './lsp-test-helpers'
 
 vi.mock('vscode', () => ({
@@ -68,8 +69,8 @@ describe.skipIf(isWindows())('LspLightRetriever', () => {
         parseDocument(mainDocument)
     })
 
-    afterAll(() => {
-        connection.dispose()
+    afterAll(async () => {
+        await stopLanguageServer(connection)
     })
 
     beforeEach(() => {
