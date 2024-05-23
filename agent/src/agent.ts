@@ -19,6 +19,7 @@ import {
     featureFlagProvider,
     graphqlClient,
     isError,
+    isFileURI,
     isRateLimitError,
     logDebug,
     logError,
@@ -29,10 +30,13 @@ import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import { SimpleChatModel } from '../../vscode/src/chat/chat-view/SimpleChatModel'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
+import { supportedTscLanguages } from '../../vscode/src/completions/context/retrievers/tsc/supportedTscLanguages'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
+import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 
 import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
+import * as uuid from 'uuid'
 import {
     AbstractMessageReader,
     AbstractMessageWriter,
@@ -43,6 +47,7 @@ import {
 } from 'vscode-jsonrpc'
 import { ModelUsage } from '../../lib/shared/src/models/types'
 import type { CommandResult } from '../../vscode/src/CommandResult'
+import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
 import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/execute'
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
@@ -52,13 +57,14 @@ import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
 import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
-import { AgentCodeLenses } from './AgentCodeLenses'
+import { AgentProviders } from './AgentCodeLenses'
 import { AgentFixupControls } from './AgentFixupControls'
 import { AgentGlobalState } from './AgentGlobalState'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import type { PollyRequestError } from './cli/jsonrpc'
 import { MessageHandler, type RequestCallback, type RequestMethodName } from './jsonrpc-alias'
+import { getLanguageForFileName } from './language'
 import type {
     AutocompleteItem,
     ClientInfo,
@@ -131,15 +137,21 @@ export async function initializeVscodeExtension(
 }
 
 export async function newAgentClient(
-    clientInfo: ClientInfo & { codyAgentPath?: string }
+    clientInfo: ClientInfo & {
+        codyAgentPath?: string
+        inheritStderr?: boolean
+        extraEnvVariables?: Record<string, string>
+    }
 ): Promise<MessageHandler> {
     const asyncHandler = async (reject: (reason?: any) => void): Promise<MessageHandler> => {
-        const nodeArguments = process.argv0.endsWith('node') ? process.argv.slice(1, 2) : []
+        const nodeArguments = process.argv0.endsWith('node')
+            ? ['--enable-source-maps', ...process.argv.slice(1, 2)]
+            : []
         nodeArguments.push('jsonrpc')
         const arg0 = clientInfo.codyAgentPath ?? process.argv[0]
         const args = clientInfo.codyAgentPath ? [] : nodeArguments
         const child = spawn(arg0, args, {
-            env: { ENABLE_SENTRY: 'false', ...process.env },
+            env: { ...clientInfo.extraEnvVariables, ENABLE_SENTRY: 'false', ...process.env },
         })
         child.on('error', error => reject?.(error))
         child.on('exit', code => {
@@ -147,6 +159,9 @@ export async function newAgentClient(
                 reject?.(new Error(`exit: ${code}`))
             }
         })
+        if (clientInfo.inheritStderr) {
+            child.stderr.pipe(process.stderr)
+        }
 
         const conn = createMessageConnection(
             new StreamMessageReader(child.stdout),
@@ -155,6 +170,9 @@ export async function newAgentClient(
         const serverHandler = new MessageHandler(conn)
         serverHandler.registerNotification('debug/message', params => {
             console.error(`${params.channel}: ${params.message}`)
+        })
+        serverHandler.registerRequest('window/showMessage', async (): Promise<null> => {
+            return null
         })
         conn.listen()
         serverHandler.conn.onClose(() => reject())
@@ -210,24 +228,9 @@ export function errorToCodyError(error?: Error): CodyError | undefined {
 }
 
 export class Agent extends MessageHandler implements ExtensionClient {
-    // Used to track background work of the extension, like tree-sitter parsing.
-    // In several places in the extension, we register event handler that run
-    // background work (`Promise<void>` that we don't await on). We sometimes
-    // need to await on these promises, for example when writing deterministic
-    // tests.
-    private pendingPromises = new Set<Promise<any>>()
-    public codeLenses = new AgentCodeLenses()
+    public codeLens = new AgentProviders<vscode.CodeLensProvider>()
+    public codeAction = new AgentProviders<vscode.CodeActionProvider>()
     public workspace = new AgentWorkspaceDocuments({
-        doPanic: (message: string) => {
-            const panicMessage =
-                '!PANIC! Client document content is out of sync with server document content'
-            process.stderr.write(panicMessage)
-            process.stderr.write(message + '\n')
-            this.notify('debug/message', {
-                channel: 'Document Sync Check',
-                message: panicMessage + '\n' + message,
-            })
-        },
         edit: (uri, callback, options) => {
             if (this.clientInfo?.capabilities?.edit !== 'enabled') {
                 logDebug('CodyAgent', 'client does not support operation: textDocument/edit')
@@ -313,16 +316,24 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
             this.workspace.workspaceRootUri = vscode.Uri.parse(clientInfo.workspaceRootUri)
             vscode_shim.setWorkspaceDocuments(this.workspace)
+            if (clientInfo.capabilities?.codeActions === 'enabled') {
+                vscode_shim.onDidRegisterNewCodeActionProvider(codeActionProvider => {
+                    this.codeAction.addProvider(codeActionProvider, undefined)
+                })
+                vscode_shim.onDidUnregisterNewCodeActionProvider(codeActionProvider =>
+                    this.codeAction.removeProvider(codeActionProvider)
+                )
+            }
             if (clientInfo.capabilities?.codeLenses === 'enabled') {
                 vscode_shim.onDidRegisterNewCodeLensProvider(codeLensProvider => {
-                    this.codeLenses.add(
+                    this.codeLens.addProvider(
                         codeLensProvider,
                         codeLensProvider.onDidChangeCodeLenses?.(() => this.updateCodeLenses())
                     )
                     this.updateCodeLenses()
                 })
                 vscode_shim.onDidUnregisterNewCodeLensProvider(codeLensProvider =>
-                    this.codeLenses.remove(codeLensProvider)
+                    this.codeLens.removeProvider(codeLensProvider)
                 )
             }
             if (clientInfo.capabilities?.ignore === 'enabled') {
@@ -353,7 +364,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 ? vscode.Uri.parse(clientInfo.workspaceRootUri)
                 : vscode.Uri.from({
                       scheme: 'file',
-                      path: clientInfo.workspaceRootPath ?? undefined,
+                      path: clientInfo.workspaceRootPath,
                   })
             try {
                 await initializeVscodeExtension(
@@ -388,6 +399,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerNotification('initialized', () => {})
 
         this.registerRequest('shutdown', async () => {
+            // console.log('SHUTTING DOWN', this.params.polly)
             if (this?.params?.polly) {
                 this.params.polly.disconnectFrom('node-http')
                 await this.params.polly.stop()
@@ -404,14 +416,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
             this.workspace.setActiveTextEditor(
                 this.workspace.newTextEditor(this.workspace.loadDocument(documentWithUri))
             )
-            this.pushPendingPromise(this.workspace.fireVisibleTextEditorsDidChange())
         })
 
         this.registerNotification('textDocument/didOpen', document => {
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
             const textDocument = this.workspace.loadDocument(documentWithUri)
             vscode_shim.onDidOpenTextDocument.fire(textDocument)
-            this.pushPendingPromise(this.workspace.fireVisibleTextEditorsDidChange())
             this.workspace.setActiveTextEditor(this.workspace.newTextEditor(textDocument))
         })
 
@@ -421,16 +431,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 this.workspace.loadDocumentWithChanges(documentWithUri)
             const textEditor = this.workspace.newTextEditor(textDocument)
             this.workspace.setActiveTextEditor(textEditor)
-
-            if (contentChanges.length > 0) {
-                this.pushPendingPromise(
-                    vscode_shim.onDidChangeTextDocument.cody_fireAsync({
-                        document: textDocument,
-                        contentChanges,
-                        reason: undefined,
-                    })
-                )
-            }
+            vscode_shim.onDidChangeTextDocument.fire({
+                document: textDocument,
+                contentChanges,
+                reason: undefined,
+            })
 
             if (document.selection) {
                 vscode_shim.onDidChangeTextEditorSelection.fire({
@@ -448,7 +453,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 this.workspace.deleteDocument(documentWithUri.uri)
                 vscode_shim.onDidCloseTextDocument.fire(oldDocument)
             }
-            this.pushPendingPromise(this.workspace.fireVisibleTextEditorsDidChange())
         })
 
         this.registerNotification('textDocument/didSave', async params => {
@@ -481,48 +485,139 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
-        this.registerAuthenticatedRequest('testing/awaitPendingPromises', async () => {
-            if (!vscode_shim.isTesting) {
-                throw new Error(
-                    'testing/awaitPendingPromises can only be called from tests. ' +
-                        'To fix this problem, set the environment variable CODY_SHIM_TESTING=true.'
-                )
-            }
-            await Promise.all(this.pendingPromises.values())
-            return null
-        })
-
-        this.registerAuthenticatedRequest('testing/memoryUsage', async () => {
-            if (!global.gc) {
-                throw new Error('testing/memoryUsage requires running node with --expose-gc')
-            }
-            global.gc()
-            return { usage: process.memoryUsage() }
-        })
         this.registerAuthenticatedRequest('testing/networkRequests', async () => {
             const requests = this.params.networkRequests ?? []
             return {
                 requests: requests.map(req => ({ url: req.url, body: req.body })),
             }
         })
+
+        // Store in-memory copy of the most recent Code action
+        const codeActionById = new Map<string, vscode.CodeAction>()
+        this.registerAuthenticatedRequest('codeActions/provide', async (params, token) => {
+            codeActionById.clear()
+            const document = this.workspace.getDocument(vscode.Uri.parse(params.location.uri))
+            if (!document) {
+                throw new Error(`codeActions/provide: document not found for ${params.location.uri}`)
+            }
+            const codeActions: agent_protocol.ProtocolCodeAction[] = []
+            for (const providers of this.codeAction.providers()) {
+                const diagnostics = vscode.languages.getDiagnostics(document.uri)
+                const result = await providers.provideCodeActions(
+                    document,
+                    vscodeRange(params.location.range),
+                    {
+                        diagnostics,
+                        only: undefined,
+                        triggerKind:
+                            params.triggerKind === 'Automatic'
+                                ? vscode.CodeActionTriggerKind.Automatic
+                                : vscode.CodeActionTriggerKind.Invoke,
+                    },
+                    token
+                )
+                for (const vscAction of result ?? []) {
+                    if (vscAction instanceof vscode.CodeAction) {
+                        const diagnostics: agent_protocol.ProtocolDiagnostic[] = []
+                        for (const diagnostic of vscAction.diagnostics ?? []) {
+                            diagnostics.push({
+                                location: {
+                                    uri: params.location.uri,
+                                    range: diagnostic.range,
+                                },
+                                severity: 'error',
+                                source: diagnostic.source,
+                                message: diagnostic.message,
+                            })
+                        }
+                        const id = uuid.v4()
+                        const codeAction: agent_protocol.ProtocolCodeAction = {
+                            id,
+                            title: vscAction.title,
+                            commandID: vscAction.command?.command,
+                            diagnostics,
+                        }
+                        codeActionById.set(id, vscAction)
+                        codeActions.push(codeAction)
+                    }
+                }
+            }
+            return { codeActions }
+        })
+
+        this.registerAuthenticatedRequest('codeActions/trigger', async ({ id }) => {
+            const codeAction = codeActionById.get(id)
+            if (!codeAction || !codeAction.command) {
+                throw new Error(`codeActions/trigger: unknown ID ${id}`)
+            }
+            const args: ExecuteEditArguments = codeAction.command.arguments?.[0]
+            if (!args) {
+                throw new Error(`codeActions/trigger: no arguments for ID ${id}`)
+            }
+            return this.createEditTask(
+                executeEdit(args).then<CommandResult | undefined>(task => ({ type: 'edit', task }))
+            )
+        })
+
+        this.registerAuthenticatedRequest('testing/diagnostics', async params => {
+            const uri = vscode.Uri.parse(params.uri)
+            const language = getLanguageForFileName(uri.fsPath)
+            const retriever = loadTscRetriever()
+            if (!isFileURI(uri) || !supportedTscLanguages.has(language) || !retriever) {
+                throw new Error(`testing/diagnostics: unsupported file type ${language} for URI ${uri}`)
+            }
+            return {
+                diagnostics: retriever.diagnostics(uri),
+            }
+        })
+
+        this.registerAuthenticatedRequest('diagnostics/publish', async params => {
+            const result = new Map<string, vscode.Diagnostic[]>()
+            for (const diagnostic of params.diagnostics) {
+                let diagnostics = result.get(diagnostic.location.uri)
+                if (diagnostics === undefined) {
+                    diagnostics = []
+                    result.set(diagnostic.location.uri, diagnostics)
+                }
+                const relatedInformation: vscode.DiagnosticRelatedInformation[] = []
+                for (const related of diagnostic.relatedInformation ?? []) {
+                    relatedInformation.push({
+                        location: vscodeLocation(related.location),
+                        message: related.message,
+                    })
+                }
+                diagnostics.push({
+                    message: diagnostic.message,
+                    range: vscodeRange(diagnostic.location.range),
+                    severity: vscode.DiagnosticSeverity.Error,
+                    code: diagnostic.code,
+                    source: diagnostic.source,
+                    relatedInformation,
+                })
+            }
+            vscode_shim.diagnostics.publish(result)
+            return null
+        })
+
         this.registerAuthenticatedRequest('testing/closestPostData', async ({ url, postData }) => {
             const polly = this.params.polly
             let closestDistance = Number.MAX_VALUE
             let closest = ''
-            if (polly) {
-                // @ts-ignore
-                const persister = polly.persister._cache as Map<string, Har>
-                for (const [, har] of persister) {
-                    for (const entry of har?.log?.entries ?? []) {
-                        if (entry.request.url !== url) {
-                            continue
-                        }
-                        const entryPostData = entry.request.postData?.text ?? ''
-                        const distance = levenshtein(postData, entryPostData)
-                        if (distance < closestDistance) {
-                            closest = entryPostData
-                            closestDistance = distance
-                        }
+            if (!polly) {
+                throw new Error('testing/closestPostData: Polly is not enabled')
+            }
+            // @ts-ignore
+            const persister = polly.persister._cache as Map<string, Promise<Har>>
+            for (const [, har] of persister) {
+                for (const entry of (await har)?.log?.entries ?? []) {
+                    if (entry.request.url !== url) {
+                        continue
+                    }
+                    const entryPostData = entry.request.postData?.text ?? ''
+                    const distance = levenshtein(postData, entryPostData)
+                    if (distance < closestDistance) {
+                        closest = entryPostData
+                        closestDistance = distance
                     }
                 }
             }
@@ -858,11 +953,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerAuthenticatedRequest('editCommands/code', params => {
             const instruction = PromptString.unsafe_fromUserQuery(params.instruction)
             const args: ExecuteEditArguments = {
-                configuration: {
-                    instruction,
-                    model: params.model ?? undefined,
-                    mode: params.mode ?? 'edit',
-                },
+                configuration: { instruction, model: params.model },
             }
             return this.createEditTask(executeEdit(args).then(task => task && { type: 'edit', task }))
         })
@@ -1047,9 +1138,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('remoteRepo/list', async ({ query, first, afterId }) => {
             const result = await this.extension.enterpriseContextFactory.repoSearcher.list(
-                query ?? undefined,
+                query,
                 first,
-                afterId ?? undefined
+                afterId
             )
             return {
                 repos: result.repos,
@@ -1074,14 +1165,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
             contextFiltersProvider.setTestingContextFilters(contextFilters)
             return null
         })
-    }
-
-    private pushPendingPromise(pendingPromise: Promise<unknown>): void {
-        if (!vscode_shim.isTesting) {
-            return
-        }
-        this.pendingPromises.add(pendingPromise)
-        pendingPromise.finally(() => this.pendingPromises.delete(pendingPromise))
     }
 
     // ExtensionClient callbacks.
@@ -1177,7 +1260,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.codeLensToken.cancel()
         this.codeLensToken = new vscode.CancellationTokenSource()
         const promises: Promise<vscode.CodeLens[]>[] = []
-        for (const provider of this.codeLenses.providers()) {
+        for (const provider of this.codeLens.providers()) {
             promises.push(this.provideCodeLenses(provider, document))
         }
         const lenses = (await Promise.all(promises)).flat()
@@ -1293,11 +1376,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 } else if (message.type === 'errors') {
                     panel.messageInProgressChange.fire(message)
                 } else if (message.type === 'attribution') {
-                    panel.pushAttribution({
-                        ...message,
-                        attribution: message.attribution ?? undefined,
-                        error: message.error ?? undefined,
-                    })
+                    panel.pushAttribution(message)
                 }
 
                 this.notify('webview/postMessage', {
@@ -1323,7 +1402,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         const result = (await commandResult) ?? { type: 'empty-command-result' }
         if (result?.type !== 'edit' || result.task === undefined) {
             throw new TypeError(
-                `Expected a non-empty edit command result. Got ${JSON.stringify(result)}`
+                `Expected a non-empty edit command result. Got ${JSON.stringify(result, null, 2)}`
             )
         }
         return AgentFixupControls.serialize(result.task)
@@ -1385,10 +1464,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
     ): void {
         this.registerRequest(method, async (params, token) => {
             await this.authenticationPromise
-            return callback(params, token).catch(err => {
-                console.error(`Uncaught error from method '${method}'`, err)
-                throw err
-            })
+            return callback(params, token)
         })
     }
 
@@ -1415,4 +1491,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         throw new TypeError(`Expected AgentWorkspaceEdit, got ${edit}`)
     }
+}
+
+function vscodeRange(range: agent_protocol.Range): vscode.Range {
+    return new vscode.Range(
+        new vscode.Position(range.start.line, range.start.character),
+        new vscode.Position(range.end.line, range.end.character)
+    )
+}
+function vscodeLocation(location: agent_protocol.ProtocolLocation): vscode.Location {
+    return new vscode.Location(vscode.Uri.parse(location.uri), vscodeRange(location.range))
 }

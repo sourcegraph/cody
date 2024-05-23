@@ -3,6 +3,7 @@ export function trimEndOfLine(text: string | undefined): string {
         return ''
     }
     return text
+        .trim()
         .split('\n')
         .map(line => line.trimEnd())
         .join('\n')

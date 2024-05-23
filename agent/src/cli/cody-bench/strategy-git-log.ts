@@ -10,7 +10,7 @@ import { getLanguageForFileName } from '../../language'
 
 import { EvaluationDocument } from './EvaluationDocument'
 import { SnapshotWriter } from './SnapshotWriter'
-import type { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
+import type { EvaluateAutocompleteOptions } from './cody-bench'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { testCleanup, testInstall } from './testTypecheck'
 import { triggerAutocomplete } from './triggerAutocomplete'

@@ -20,6 +20,7 @@ import {
 import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../vscode/src/chat/protocol'
 import { doesFileExist } from '../../vscode/src/commands/utils/workspace-files'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
+import { allClientCapabilitiesEnabled } from '../../vscode/src/jsonrpc/allClientCapabilitiesEnabled'
 import { CodyTaskState } from '../../vscode/src/non-stop/utils'
 import {
     TESTING_CREDENTIALS,
@@ -129,6 +130,17 @@ function buildAgentBinary(): void {
 }
 
 export class TestClient extends MessageHandler {
+    public static fromConnection(
+        conn: MessageConnection,
+        workspace: vscode.Uri,
+        name: string
+    ): TestClient {
+        return new TestClient(conn, {
+            workspaceRootUri: workspace,
+            name,
+            credentials: TESTING_CREDENTIALS.dotcom,
+        })
+    }
     public static create({ bin = 'node', ...params }: TestClientParams): TestClient {
         buildAgentBinary()
         const agentDir = getAgentDir()
@@ -343,13 +355,31 @@ export class TestClient extends MessageHandler {
         })
         this.registerRequest('textDocument/edit', params => {
             this.textDocumentEditParams.push(params)
-            return Promise.resolve(this.editDocument(params).success)
+            const { success, protocolDocument } = this.editDocument(params)
+            if (protocolDocument) {
+                this.notify('textDocument/didChange', protocolDocument.underlying)
+            }
+            return Promise.resolve(success)
         })
         this.registerRequest('textDocument/show', () => {
             return Promise.resolve(true)
         })
         this.registerNotification('debug/message', message => {
             this.logMessage(message)
+        })
+        this.registerNotification('editTask/didUpdate', params => {
+            this.taskUpdate.fire(params)
+        })
+        this.registerNotification('editTask/didDelete', params => {
+            this.taskDelete.fire(params)
+        })
+
+        this.registerNotification('webview/postMessage', params => {
+            this.webviewMessages.push(params)
+            this.webviewMessagesEmitter.fire(params)
+        })
+        this.registerNotification('remoteRepo/didChange', () => {
+            // Do nothing
         })
     }
 
@@ -394,7 +424,7 @@ export class TestClient extends MessageHandler {
 
     public openFile(
         uri: Uri,
-        params?: { selectionName?: string; removeCursor?: boolean }
+        params?: { text?: string; selectionName?: string; removeCursor?: boolean }
     ): Promise<void> {
         return this.textDocumentEvent(uri, 'textDocument/didOpen', params)
     }
@@ -610,21 +640,6 @@ export class TestClient extends MessageHandler {
     }
 
     public async initialize(additionalConfig?: Partial<ExtensionConfiguration>): Promise<ServerInfo> {
-        this.registerNotification('editTask/didUpdate', params => {
-            this.taskUpdate.fire(params)
-        })
-        this.registerNotification('editTask/didDelete', params => {
-            this.taskDelete.fire(params)
-        })
-
-        this.registerNotification('webview/postMessage', params => {
-            this.webviewMessages.push(params)
-            this.webviewMessagesEmitter.fire(params)
-        })
-        this.registerNotification('remoteRepo/didChange', () => {
-            // Do nothing
-        })
-
         this.conn.listen()
 
         try {
@@ -895,16 +910,7 @@ ${patch}`
             version: 'v1',
             workspaceRootUri: this.params.workspaceRootUri.toString(),
             workspaceRootPath: this.params.workspaceRootUri.fsPath,
-            capabilities: {
-                progressBars: 'enabled',
-                edit: 'enabled',
-                editWorkspace: 'enabled',
-                untitledDocuments: 'enabled',
-                showDocument: 'enabled',
-                codeLenses: 'enabled',
-                showWindowMessage: 'request',
-                ignore: 'enabled',
-            },
+            capabilities: allClientCapabilitiesEnabled,
             extensionConfiguration: {
                 anonymousUserID: `${this.name}abcde1234`,
                 accessToken: this.params.credentials.token ?? this.params.credentials.redactedToken,

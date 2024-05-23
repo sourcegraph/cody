@@ -52,6 +52,10 @@ interface CodyAgentServer {
   fun editTask_getFoldingRanges(params: GetFoldingRangeParams): CompletableFuture<GetFoldingRangeResult>
   @JsonRequest("command/execute")
   fun command_execute(params: ExecuteCommandParams): CompletableFuture<Any>
+  @JsonRequest("codeActions/provide")
+  fun codeActions_provide(params: CodeActions_ProvideParams): CompletableFuture<CodeActions_ProvideResult>
+  @JsonRequest("codeActions/trigger")
+  fun codeActions_trigger(params: CodeActions_TriggerParams): CompletableFuture<EditTask>
   @JsonRequest("autocomplete/execute")
   fun autocomplete_execute(params: AutocompleteParams): CompletableFuture<AutocompleteResult>
   @JsonRequest("graphql/getRepoIds")
@@ -78,6 +82,8 @@ interface CodyAgentServer {
   fun webview_didDispose(params: Webview_DidDisposeParams): CompletableFuture<Null?>
   @JsonRequest("webview/receiveMessage")
   fun webview_receiveMessage(params: Webview_ReceiveMessageParams): CompletableFuture<Null?>
+  @JsonRequest("diagnostics/publish")
+  fun diagnostics_publish(params: Diagnostics_PublishParams): CompletableFuture<Null?>
   @JsonRequest("testing/progress")
   fun testing_progress(params: Testing_ProgressParams): CompletableFuture<Testing_ProgressResult>
   @JsonRequest("testing/networkRequests")
@@ -86,10 +92,8 @@ interface CodyAgentServer {
   fun testing_requestErrors(params: Null?): CompletableFuture<Testing_RequestErrorsResult>
   @JsonRequest("testing/closestPostData")
   fun testing_closestPostData(params: Testing_ClosestPostDataParams): CompletableFuture<Testing_ClosestPostDataResult>
-  @JsonRequest("testing/memoryUsage")
-  fun testing_memoryUsage(params: Null?): CompletableFuture<Testing_MemoryUsageResult>
-  @JsonRequest("testing/awaitPendingPromises")
-  fun testing_awaitPendingPromises(params: Null?): CompletableFuture<Null?>
+  @JsonRequest("testing/diagnostics")
+  fun testing_diagnostics(params: Testing_DiagnosticsParams): CompletableFuture<Testing_DiagnosticsResult>
   @JsonRequest("testing/progressCancelation")
   fun testing_progressCancelation(params: Testing_ProgressCancelationParams): CompletableFuture<Testing_ProgressCancelationResult>
   @JsonRequest("testing/reset")
