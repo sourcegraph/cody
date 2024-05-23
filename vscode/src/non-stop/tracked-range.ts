@@ -54,10 +54,15 @@ export function updateRange(
     options: UpdateRangeOptions = {}
 ): vscode.Range {
     const lines = change.text.split(/\r\n|\r|\n/m)
+
+    const lineBreakShortener =
+        change.range.end.line === range.end.line && lines.length > 1 ? change.range.start.character : 0
+
     const insertedLastLine = lines.at(-1)?.length
     if (insertedLastLine === undefined) {
         throw new TypeError('unreachable') // Any string .split produces a non-empty array.
     }
+
     const insertedLineBreaks = lines.length - 1
 
     // Handle edits
@@ -72,7 +77,10 @@ export function updateRange(
             change.range.end.translate(
                 change.range.start.line - change.range.end.line + insertedLineBreaks,
                 change.range.end.line === range.end.line
-                    ? change.range.start.character - change.range.end.character + insertedLastLine
+                    ? change.range.start.character -
+                          change.range.end.character +
+                          insertedLastLine -
+                          lineBreakShortener
                     : 0
             )
         )
@@ -138,7 +146,10 @@ export function updateRange(
             range.end.translate(
                 change.range.start.line - change.range.end.line + insertedLineBreaks,
                 change.range.end.line === range.end.line
-                    ? change.range.start.character - change.range.end.character + insertedLastLine
+                    ? change.range.start.character -
+                          change.range.end.character +
+                          insertedLastLine -
+                          lineBreakShortener
                     : 0
             )
         )
@@ -149,13 +160,19 @@ export function updateRange(
             // Move the start of the decoration to the end of the change
             change.range.end.translate(
                 change.range.start.line - change.range.end.line,
-                change.range.start.character - change.range.end.character + insertedLastLine
+                change.range.start.character -
+                    change.range.end.character +
+                    insertedLastLine -
+                    lineBreakShortener
             ),
             // Adjust the end of the decoration for the range deletion
             range.end.translate(
                 change.range.start.line - change.range.end.line,
                 change.range.end.line === range.end.line
-                    ? change.range.start.character - change.range.end.character + insertedLastLine
+                    ? change.range.start.character -
+                          change.range.end.character +
+                          insertedLastLine -
+                          lineBreakShortener
                     : 0
             )
         )

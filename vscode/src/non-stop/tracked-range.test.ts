@@ -229,6 +229,9 @@ describe('Tracked Range', () => {
             'hello everybody\naround the [world]!'
         )
     })
+    it('should track single new line insertions before the range before', () => {
+        expect(track(' [()]hello', '\n//\n', { supportRangeAffix: true })).toBe(' [\n//\n]hello')
+    })
 
     describe('when supporting range affix', () => {
         it('should track single character insertion before the range as a range expansion', () => {
