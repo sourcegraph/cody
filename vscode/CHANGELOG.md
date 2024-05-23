@@ -10,6 +10,16 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+## [1.18.2]
+
+### Added
+
+- Feature flags for the fine-tuning model experiment for code completions. [pull/4245](https://github.com/sourcegraph/cody/pull/4245) 
+
+### Fixed
+
+### Changed
+
 ## [1.18.1]
 
 ### Added
