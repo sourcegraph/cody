@@ -56,7 +56,7 @@ class CodyDocumentListener(val project: Project) : BulkAwareDocumentListener {
     // This is esp. important with incremental document synchronization where the server goes out
     // of sync if it doesn't get all changes.
 
-    ProtocolTextDocument.fromEditorForDocumentEvent(editor, event)?.let { textDocument ->
+    ProtocolTextDocument.fromEditor(editor)?.let { textDocument ->
       CodyAgentService.withAgent(project) { agent ->
         agent.server.textDocumentDidChange(textDocument)
 
