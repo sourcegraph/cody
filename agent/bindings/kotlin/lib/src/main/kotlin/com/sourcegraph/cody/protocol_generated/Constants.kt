@@ -103,6 +103,7 @@ object Constants {
   const val links = "links"
   const val `show-page` = "show-page"
   const val chatModel = "chatModel"
+  const val chatModel_openDocumentation = "chatModel/openDocumentation"
   const val `get-chat-models` = "get-chat-models"
   const val openFile = "openFile"
   const val openLocalFileWithRange = "openLocalFileWithRange"
