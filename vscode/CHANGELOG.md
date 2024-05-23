@@ -6,12 +6,21 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+- Chat: Integerated OpenCtx providers with @-mention context menu. [pull/4201](https://github.com/sourcegraph/cody/pull/4201)
+- Enterprise: Adds support for the `completions.smartContext` (available in Sourcegraph v5.5.0+) site configuration. [pull/4236](https://github.com/sourcegraph/cody/pull/4236)
 - Chat: Integerated OpenCtx providers with @-mention context menu. [pull/4201](https://github.com/sourcegraph/cody/pull/4201/files)
+- Keybinding: Assign the same keyboard shortcut for starting a new chat to the "New Chat with Selection" command.
 
 ### Fixed
 
 - Edit: Fixed an issue where streamed insertions used invalid document ranges. [pull/4172](https://github.com/sourcegraph/cody/pull/4172)
+- Chat: Fixed issues with chat commands where selection context is removed from context items. [pull/4229](https://github.com/sourcegraph/cody/pull/4229)
+- Auth: Fixes an issue where Login page is not reloaded when proxy settings have changed. [pull/4233](https://github.com/sourcegraph/cody/pull/4233)
 - Chat: Fixes issues with chat commands where selection context is removed from context items. [pull/4229](https://github.com/sourcegraph/cody/pull/4229)
+- Chat: Fixes intermittent issues with `Add Selection to Cody Chat` where sometimes the @-mention would not actually be added. [pull/4237](https://github.com/sourcegraph/cody/pull/4237)
+- Menu: Fixes an issue where the `Add Selection to Cody Chat` context menu item was incorrectly disabled when no new chat was open. [pull/4242](https://github.com/sourcegraph/cody/pull/4242)
+- Fixed an issue where the test file name was incorrectly inserted with the unit test command. [pull/4262](https://github.com/sourcegraph/cody/pull/4262)
+- Chat: Fixed a long-standing bug where it was not possible to copy code from Cody's response before it was finished. [pull/4268](https://github.com/sourcegraph/cody/pull/4268)
 
 ### Changed
 
@@ -20,6 +29,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: The `@`-mention menu now shows the types of context you can include. [pull/4188](https://github.com/sourcegraph/cody/pull/4188)
 - Increases the context window for the new `GPT-4o` model. [pull/4180](https://github.com/sourcegraph/cody/pull/4180)
 - Commands/Chat: Increased the maximum output limit of LLM responses for recommended Enterprise models. [pull/4203](https://github.com/sourcegraph/cody/pull/4203)
+- Chat: The chat UI has been updated to make messages editable in-place and stream down from the top. [pull/4209](https://github.com/sourcegraph/cody/pull/4209)
+- Chat: Improved chat model selector UI with GPT-4o now as a recommended model, improved usability for Cody Free users, and a chat models documentation link. [pull/4254](https://github.com/sourcegraph/cody/pull/4254)
 
 ## [1.18.0]
 

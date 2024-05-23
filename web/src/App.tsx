@@ -192,10 +192,7 @@ export const App: FunctionComponent = () => {
                             telemetryService={telemetryService}
                             telemetryRecorder={telemetryRecorder}
                             isTranscriptError={isTranscriptError}
-                            chatIDHistory={[]}
                             userContextFromSelection={[]}
-                            isWebviewActive={true}
-                            isNewInstall={false}
                         />
                     </ChatModelContextProvider>
                 )

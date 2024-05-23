@@ -196,7 +196,12 @@ const JS_SHARED_CONTEXT_IDENTIFIERS_QUERY = dedent`
     (import_specifier (identifier) @identifier)
     (call_expression function: (identifier) @identifier)
     (expression_statement (identifier) @identifier)
+    (new_expression constructor: (identifier) @identifier)
     (member_expression (property_identifier) @identifier)
+    (pair (property_identifier) @identifier)
+    (variable_declarator value: (identifier) @identifier)
+    (labeled_statement body: (expression_statement (identifier) @identifier))
+    (labeled_statement body: (expression_statement (_ (identifier) @identifier)))
 `
 
 const JS_GRAPH_CONTEXT_IDENTIFIERS_QUERY = dedent`
@@ -212,7 +217,7 @@ const JSX_GRAPH_CONTEXT_IDENTIFIERS_QUERY = dedent`
 const TS_GRAPH_CONTEXT_IDENTIFIERS_QUERY = dedent`
     ${JS_SHARED_CONTEXT_IDENTIFIERS_QUERY}
     (extends_clause (identifier) @identifier)
-    (type_annotation (type_identifier) @identifier)
+    (type_identifier) @identifier
 `
 
 const TSX_GRAPH_CONTEXT_IDENTIFIERS_QUERY = dedent`
@@ -228,11 +233,21 @@ const JS_ENCLOSING_FUNCTION_QUERY = dedent`
     (method_definition (property_identifier) @symbol.function) @range.function
 `
 
+const JS_IDENTIFIERS = `
+    (identifier) @identifier
+    (property_identifier) @identifier
+`
+const TS_IDENTIFIERS = `
+    ${JS_IDENTIFIERS}
+    (type_identifier) @identifier
+`
+
 export const javascriptQueries = {
     [SupportedLanguage.javascript]: {
         singlelineTriggers: '',
         intents: JS_INTENTS_QUERY,
         documentableNodes: JS_DOCUMENTABLE_NODES_QUERY,
+        identifiers: JS_IDENTIFIERS,
         graphContextIdentifiers: JS_GRAPH_CONTEXT_IDENTIFIERS_QUERY,
         enclosingFunction: JS_ENCLOSING_FUNCTION_QUERY,
     },
@@ -240,6 +255,7 @@ export const javascriptQueries = {
         singlelineTriggers: '',
         intents: JSX_INTENTS_QUERY,
         documentableNodes: JS_DOCUMENTABLE_NODES_QUERY,
+        identifiers: JS_IDENTIFIERS,
         graphContextIdentifiers: JSX_GRAPH_CONTEXT_IDENTIFIERS_QUERY,
         enclosingFunction: JS_ENCLOSING_FUNCTION_QUERY,
     },
@@ -247,6 +263,7 @@ export const javascriptQueries = {
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
         intents: TS_INTENTS_QUERY,
         documentableNodes: TS_DOCUMENTABLE_NODES_QUERY,
+        identifiers: TS_IDENTIFIERS,
         graphContextIdentifiers: TS_GRAPH_CONTEXT_IDENTIFIERS_QUERY,
         enclosingFunction: JS_ENCLOSING_FUNCTION_QUERY,
     },
@@ -254,6 +271,7 @@ export const javascriptQueries = {
         singlelineTriggers: TS_SINGLELINE_TRIGGERS_QUERY,
         intents: TSX_INTENTS_QUERY,
         documentableNodes: TS_DOCUMENTABLE_NODES_QUERY,
+        identifiers: TS_IDENTIFIERS,
         graphContextIdentifiers: TSX_GRAPH_CONTEXT_IDENTIFIERS_QUERY,
         enclosingFunction: JS_ENCLOSING_FUNCTION_QUERY,
     },

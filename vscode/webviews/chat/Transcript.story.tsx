@@ -3,7 +3,8 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { Transcript } from './Transcript'
 import { FIXTURE_TRANSCRIPT, FIXTURE_USER_ACCOUNT_INFO, transcriptFixture } from './fixtures'
 
-import { RateLimitError, errorToChatError, ps } from '@sourcegraph/cody-shared'
+import { PromptString, RateLimitError, errorToChatError, ps } from '@sourcegraph/cody-shared'
+import { useArgs, useEffect, useState } from '@storybook/preview-api'
 import type { ComponentProps } from 'react'
 import { URI } from 'vscode-uri'
 import { VSCodeWebview } from '../storybook/VSCodeStoryDecorator'
@@ -19,16 +20,10 @@ const meta: Meta<typeof Transcript> = {
             mapping: FIXTURE_TRANSCRIPT,
             control: { type: 'select' },
         },
-        messageBeingEdited: {
-            name: 'messageBeingEdited',
-            control: { type: 'number', step: 2 },
-        },
     },
     args: {
         transcript: FIXTURE_TRANSCRIPT.simple,
         messageInProgress: null,
-        messageBeingEdited: undefined,
-        setMessageBeingEdited: () => {},
         feedbackButtonsOnSubmit: () => {},
         copyButtonOnSubmit: () => {},
         insertButtonOnSubmit: () => {},
@@ -36,10 +31,7 @@ const meta: Meta<typeof Transcript> = {
         postMessage: () => {},
     } satisfies ComponentProps<typeof Transcript>,
 
-    decorators: [
-        story => <div style={{ minHeight: 'max(500px, 80vh)', display: 'flex' }}>{story()}</div>,
-        VSCodeWebview,
-    ],
+    decorators: [VSCodeWebview],
 }
 
 export default meta
@@ -56,19 +48,6 @@ export const Empty: StoryObj<typeof meta> = {
 
 export const WithContext: StoryObj<typeof meta> = {
     args: {
-        transcript: FIXTURE_TRANSCRIPT.explainCode2,
-    },
-}
-
-export const Editing: StoryObj<typeof meta> = {
-    args: {
-        messageBeingEdited: 0,
-    },
-}
-
-export const EditingWithContext: StoryObj<typeof meta> = {
-    args: {
-        messageBeingEdited: 0,
         transcript: FIXTURE_TRANSCRIPT.explainCode2,
     },
 }
@@ -170,5 +149,53 @@ export const TextWrapping: StoryObj<typeof meta> = {
             },
         ]),
         isTranscriptError: true,
+    },
+}
+
+export const Streaming: StoryObj<typeof meta> = {
+    render: () => {
+        const [args] = useArgs<Required<NonNullable<(typeof meta)['args']>>>()
+
+        const [reply, setReply] = useState<string>('hello world, aaaaa bbbbb ccccc ')
+        useEffect(() => {
+            let i = 0
+            const handle = setInterval(() => {
+                setReply(
+                    reply =>
+                        reply +
+                        ` ${String.fromCharCode(
+                            Math.floor(Math.random() * 26 + 97)
+                        )}${String.fromCharCode(
+                            Math.floor(Math.random() * 26 + 97)
+                        )}${String.fromCharCode(
+                            Math.floor(Math.random() * 26 + 97)
+                        )}${String.fromCharCode(Math.floor(Math.random() * 26 + 97))}${
+                            i % 3 === 1
+                                ? `\n\n\`\`\`javascript\nconst ${String.fromCharCode(
+                                      Math.floor(Math.random() * 26 + 97)
+                                  )} = ${Math.floor(Math.random() * 100)}\n\`\`\`\n`
+                                : i % 3 === 2
+                                  ? '\n\n* [item1](https://example.com)\n* item2: `hello`\n\n'
+                                  : ''
+                        }`
+                )
+                i++
+            }, 1000)
+            return () => clearInterval(handle)
+        }, [])
+
+        return (
+            <Transcript
+                {...args}
+                transcript={transcriptFixture([
+                    { speaker: 'human', text: ps`Hello, world!`, contextFiles: [] },
+                ])}
+                messageInProgress={{
+                    speaker: 'assistant',
+                    model: 'my-model',
+                    text: PromptString.unsafe_fromLLMResponse(`${reply}`),
+                }}
+            />
+        )
     },
 }

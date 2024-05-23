@@ -14,7 +14,6 @@ import {
     isMacOS,
 } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from './Chat'
-import { EnhancedContextEnabled } from './chat/EnhancedContext'
 
 import type { AuthMethod, ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
 
@@ -37,8 +36,6 @@ import { createWebviewTelemetryRecorder, createWebviewTelemetryService } from '.
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<(LocalEnv & ConfigurationSubsetForWebview) | null>(null)
     const [view, setView] = useState<View | undefined>()
-    // If the current webview is active (vs user is working in another editor tab)
-    const [isWebviewActive, setIsWebviewActive] = useState<boolean>(true)
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
 
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
@@ -57,7 +54,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [chatEnabled, setChatEnabled] = useState<boolean>(true)
     const [attributionEnabled, setAttributionEnabled] = useState<boolean>(false)
 
-    const [enhancedContextEnabled, setEnhancedContextEnabled] = useState<boolean>(true)
     const [enhancedContextStatus, setEnhancedContextStatus] = useState<EnhancedContextContextT>({
         groups: [],
     })
@@ -146,9 +142,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'view':
                         setView(message.view)
-                        break
-                    case 'webview-state':
-                        setIsWebviewActive(message.isActive)
                         break
                     case 'transcript-errors':
                         setIsTranscriptError(message.isTranscriptError)
@@ -272,38 +265,28 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     value={{
                         onChooseRemoteSearchRepo,
                         onConsentToEmbeddings,
-                        onEnabledChange: (enabled): void => {
-                            if (enabled !== enhancedContextEnabled) {
-                                setEnhancedContextEnabled(enabled)
-                            }
-                        },
                         onRemoveRemoteSearchRepo,
                         onShouldBuildSymfIndex,
                     }}
                 >
                     <EnhancedContextContext.Provider value={enhancedContextStatus}>
-                        <EnhancedContextEnabled.Provider value={enhancedContextEnabled}>
-                            <ChatModelContextProvider value={chatModelContext}>
-                                <WithContextProviders>
-                                    <Chat
-                                        chatEnabled={chatEnabled}
-                                        userInfo={userAccountInfo}
-                                        messageInProgress={messageInProgress}
-                                        transcript={transcript}
-                                        vscodeAPI={vscodeAPI}
-                                        telemetryService={telemetryService}
-                                        telemetryRecorder={telemetryRecorder}
-                                        isTranscriptError={isTranscriptError}
-                                        welcomeMessage={welcomeMessageMarkdown}
-                                        guardrails={attributionEnabled ? guardrails : undefined}
-                                        chatIDHistory={chatIDHistory}
-                                        isWebviewActive={isWebviewActive}
-                                        isNewInstall={isNewInstall}
-                                        userContextFromSelection={userContextFromSelection}
-                                    />
-                                </WithContextProviders>
-                            </ChatModelContextProvider>
-                        </EnhancedContextEnabled.Provider>
+                        <ChatModelContextProvider value={chatModelContext}>
+                            <WithContextProviders>
+                                <Chat
+                                    chatEnabled={chatEnabled}
+                                    userInfo={userAccountInfo}
+                                    messageInProgress={messageInProgress}
+                                    transcript={transcript}
+                                    vscodeAPI={vscodeAPI}
+                                    telemetryService={telemetryService}
+                                    telemetryRecorder={telemetryRecorder}
+                                    isTranscriptError={isTranscriptError}
+                                    welcomeMessage={welcomeMessageMarkdown}
+                                    guardrails={attributionEnabled ? guardrails : undefined}
+                                    userContextFromSelection={userContextFromSelection}
+                                />
+                            </WithContextProviders>
+                        </ChatModelContextProvider>
                     </EnhancedContextContext.Provider>
                 </EnhancedContextEventHandlers.Provider>
             )}
@@ -330,15 +313,24 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
         </div>
     )
 
-const welcomeMessageMarkdown = `Welcome to Cody! Start writing code and Cody will autocomplete lines and entire functions for you.
-
-To run [Cody Commands](command:cody.menu.commands) use the keyboard shortcut <span class="keyboard-shortcut"><span>${
-    isMacOS() ? '⌥' : 'Alt'
-}</span><span>C</span></span>, the <span class="cody-icons">A</span> button, or right-click anywhere in your code.
-
-You can start a new chat at any time with <span class="keyboard-shortcut"><span>${
-    isMacOS() ? '⌥' : 'Alt'
-}</span><span>/</span></span> or using the <span class="cody-icons">H</span> button.
-
-For more tips and tricks, see the [Getting Started Guide](command:cody.welcome) and [docs](https://sourcegraph.com/docs/cody).
-`
+const welcomeMessageMarkdown = (
+    <div>
+        <p>
+            Welcome to Cody! Start writing code and Cody will autocomplete lines and entire functions for
+            you.
+        </p>
+        <p>
+            To run <a href="command:cody.menu.commands">Cody Commands</a>, use the keyboard shortcut{' '}
+            <kbd>{isMacOS() ? '⌥' : 'Alt'}+C</kbd>, the <span className="cody-icon">A</span> button, or
+            right-click anywhere in your code.
+        </p>
+        <p>
+            You can start a new chat at any time with <kbd>{isMacOS() ? '⌥' : 'Alt'}+/</kbd> or using the{' '}
+            <span className="cody-icon">H</span> button.
+        </p>
+        <p>
+            For more tips and tricks, see the <a href="command:cody.welcome">Getting Started Guide</a>{' '}
+            and <a href="https://sourcegraph.com/docs/cody">docs</a>.
+        </p>
+    </div>
+)

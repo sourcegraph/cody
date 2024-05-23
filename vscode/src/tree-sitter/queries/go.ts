@@ -55,6 +55,7 @@ export const goQueries = {
         singlelineTriggers: SINGLE_LINE_TRIGGERS,
         intents: '',
         documentableNodes: DOCUMENTABLE_NODES,
+        identifiers: '',
         graphContextIdentifiers: dedent`
             (call_expression (identifier) @identifier)
             (qualified_type (type_identifier) @identifier)

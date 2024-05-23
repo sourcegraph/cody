@@ -249,7 +249,9 @@ export class ChatPanelsManager implements vscode.Disposable {
         const panels = this.panelProviders.some(p => p.webviewPanel?.title === 'New Chat')
         const current = this.activePanelProvider?.webviewPanel?.title === 'New Chat'
         vscode.commands.executeCommand('setContext', 'cody.hasNewChatOpened', panels || current)
-        vscode.commands.executeCommand('setContext', 'cody.chatPanelsOpened', this.panelProviders.length)
+
+        const hasChatPanels = this.panelProviders.length > 0
+        vscode.commands.executeCommand('setContext', 'cody.hasChatPanelsOpened', hasChatPanels)
     }
 
     private selectTreeItem(chatID: ChatID): void {

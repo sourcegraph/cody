@@ -15,6 +15,7 @@ import {
     CONTEXT_SEARCH_QUERY,
     CURRENT_SITE_CODY_CONFIG_FEATURES,
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
+    CURRENT_SITE_CODY_LLM_CONFIGURATION_SMART_CONTEXT,
     CURRENT_SITE_CODY_LLM_PROVIDER,
     CURRENT_SITE_GRAPHQL_FIELDS_QUERY,
     CURRENT_SITE_HAS_CODY_ENABLED_QUERY,
@@ -94,6 +95,10 @@ interface CodyConfigFeatures {
 
 interface CodyConfigFeaturesResponse {
     site: { codyConfigFeatures: CodyConfigFeatures | null } | null
+}
+
+interface CodyEnterpriseConfigSmartContextResponse {
+    site: { codyLLMConfiguration: { smartContext: string } | null } | null
 }
 
 interface CurrentUserCodyProEnabledResponse {
@@ -259,6 +264,7 @@ export interface CodyLLMSiteConfiguration {
     completionModel?: string
     completionModelMaxTokens?: number
     provider?: string
+    smartContext?: boolean
 }
 
 export interface CurrentUserCodySubscription {
@@ -491,13 +497,14 @@ export class SourcegraphGraphQLAPIClient {
 
     public async getCodyLLMConfiguration(): Promise<undefined | CodyLLMSiteConfiguration | Error> {
         // fetch Cody LLM provider separately for backward compatability
-        const [configResponse, providerResponse] = await Promise.all([
+        const [configResponse, providerResponse, smartContext] = await Promise.all([
             this.fetchSourcegraphAPI<APIResponse<CodyLLMSiteConfigurationResponse>>(
                 CURRENT_SITE_CODY_LLM_CONFIGURATION
             ),
             this.fetchSourcegraphAPI<APIResponse<CodyLLMSiteConfigurationProviderResponse>>(
                 CURRENT_SITE_CODY_LLM_PROVIDER
             ),
+            this.getCodyLLMConfigurationSmartContext(),
         ])
 
         const config = extractDataOrError(
@@ -517,7 +524,30 @@ export class SourcegraphGraphQLAPIClient {
             provider = llmProvider
         }
 
-        return { ...config, provider }
+        return { ...config, provider, smartContext }
+    }
+
+    private async getCodyLLMConfigurationSmartContext(): Promise<boolean> {
+        return (
+            this.fetchSourcegraphAPI<APIResponse<CodyEnterpriseConfigSmartContextResponse>>(
+                CURRENT_SITE_CODY_LLM_CONFIGURATION_SMART_CONTEXT,
+                {}
+            )
+                .then(response => {
+                    const smartContextResponse = extractDataOrError(
+                        response,
+                        data => data?.site?.codyLLMConfiguration?.smartContext ?? ''
+                    )
+
+                    if (isError(smartContextResponse)) {
+                        throw new Error(smartContextResponse.message)
+                    }
+
+                    return smartContextResponse !== 'disabled'
+                })
+                // For backward compatibility, return false by default when the query fails.
+                .catch(() => false)
+        )
     }
 
     public async getPackageList(
@@ -888,7 +918,8 @@ export class SourcegraphGraphQLAPIClient {
 
     public fetchSourcegraphAPI<T>(
         query: string,
-        variables: Record<string, any> = {}
+        variables: Record<string, any> = {},
+        timeout = 6000 // Default timeout of 6000ms (6 seconds)
     ): Promise<T | Error> {
         const headers = new Headers(this.config.customHeaders as HeadersInit)
         headers.set('Content-Type', 'application/json; charset=utf-8')
@@ -908,20 +939,34 @@ export class SourcegraphGraphQLAPIClient {
             request: query,
             baseUrl: this.config.serverEndpoint,
         })
+
+        // Create an AbortController instance
+        const controller = new AbortController()
+        const signal = controller.signal
+
+        // Set a timeout to trigger the abort
+        const timeoutId = setTimeout(() => controller.abort(), timeout)
+
         return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
             fetch(url, {
                 method: 'POST',
                 body: JSON.stringify({ query, variables }),
                 headers,
+                signal, // Pass the signal to the fetch request
             })
-                .then(verifyResponseCode)
+                .then(response => {
+                    clearTimeout(timeoutId) // Clear the timeout if the request completes in time
+                    return verifyResponseCode(response)
+                })
                 .then(response => response.json() as T)
                 .catch(error => {
+                    if (error.name === 'AbortError') {
+                        return new Error(`EHOSTUNREACH: Request timed out after ${timeout}ms (${url})`)
+                    }
                     return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
                 })
         )
     }
-
     // make an anonymous request to the dotcom API
     private fetchSourcegraphDotcomAPI<T>(
         query: string,

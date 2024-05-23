@@ -79,6 +79,7 @@ export const pythonQueries = {
         singlelineTriggers: '',
         intents: INTENTS_QUERY,
         documentableNodes: DOCUMENTABLE_NODES_QUERY,
+        identifiers: '',
         graphContextIdentifiers: '(call (identifier) @identifier)',
         enclosingFunction: ENCLOSING_FUNCTION_QUERY,
     },

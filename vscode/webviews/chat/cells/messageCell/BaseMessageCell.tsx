@@ -15,14 +15,19 @@ export const BaseMessageCell: FunctionComponent<{
     focused?: boolean
     disabled?: boolean
     footer?: React.ReactNode
-}> = ({ speaker, speakerIcon, content, contentClassName, focused, disabled, footer }) => (
+    className?: string
+}> = ({ speaker, speakerIcon, content, contentClassName, focused, disabled, footer, className }) => (
     <Cell
         style={speaker === 'human' ? 'human' : 'assistant'}
         gutterIcon={speakerIcon}
-        containerClassName={clsx(styles.cellContainer, {
-            [styles.focused]: focused,
-            [styles.disabled]: disabled,
-        })}
+        containerClassName={clsx(
+            styles.cellContainer,
+            {
+                [styles.focused]: focused,
+                [styles.disabled]: disabled,
+            },
+            className
+        )}
         contentClassName={contentClassName}
         aria-disabled={disabled}
         aria-current={focused}

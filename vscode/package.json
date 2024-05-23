@@ -6,7 +6,7 @@
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
-  "description": "AI coding assistant that understands your codebase. Cody brings autocomplete, chat, and commands to your IDE, helping you generate code, write unit tests, create documentation, and explain complex or legacy code using AI. Choose from several LLMs including GPT-3.5 Turbo, GPT-4 Turbo, and Claude 3, or run local models using Ollama. Cody supports all major languages including JavaScript, TypeScript, Python, Java, Go, and C/C++.",
+  "description": "AI coding assistant that uses search and codebase context to help you write code faster. Cody brings autocomplete, chat, and commands to VS Code, so you can generate code, write unit tests, create docs, and explain complex code using AI. Choose from the latest LLMs, including GPT-4o and Claude 3.",
   "scripts": {
     "postinstall": "pnpm download-wasm",
     "dev": "pnpm run -s dev:desktop",
@@ -31,7 +31,8 @@
     "download-wasm": "ts-node-transpile-only ./scripts/download-wasm-modules.ts",
     "release:dry-run": "pnpm run download-wasm && CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
     "storybook": "storybook dev -p 6007 --no-open --no-version-updates",
-    "test:e2e": "tsc --build && node dist/tsc/test/e2e/install-deps.js && pnpm run -s build:dev:desktop && playwright test",
+    "test:e2e": "tsc --build && node dist/tsc/test/e2e/install-deps.js && pnpm run -s build:dev:desktop && pnpm run -s test:e2e:run",
+    "test:e2e:run": "playwright test",
     "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
     "test:unit": "vitest",
     "vscode:prepublish": "pnpm -s run build",
@@ -517,7 +518,7 @@
         "group": "Chat",
         "title": "Add Selection to Cody Chat",
         "icon": "$(mention)",
-        "enablement": "cody.activated && editorHasSelection && !explorerViewletFocus && cody.hasNewChatOpened"
+        "enablement": "cody.activated && editorHasSelection && cody.hasChatPanelsOpened"
       },
       {
         "command": "cody.mention.selection.new",
@@ -525,7 +526,7 @@
         "group": "Chat",
         "title": "New Chat with Selection",
         "icon": "$(mention)",
-        "enablement": "cody.activated && editorHasSelection && !explorerViewletFocus && !cody.hasNewChatOpened"
+        "enablement": "cody.activated && editorHasSelection && !cody.hasNewChatOpened"
       },
       {
         "command": "cody.mention.file",
@@ -533,7 +534,7 @@
         "group": "Chat",
         "title": "Add File to Cody Chat",
         "icon": "$(mention)",
-        "enablement": "cody.activated && resourceScheme == file && cody.hasNewChatOpened"
+        "enablement": "cody.activated && resourceScheme == file && cody.hasChatPanelsOpened"
       },
       {
         "command": "cody.mention.file.new",
@@ -625,6 +626,11 @@
       },
       {
         "command": "cody.mention.selection",
+        "key": "alt+l",
+        "when": "cody.activated && !editorReadonly && editorTextFocus && editorHasSelection"
+      },
+      {
+        "command": "cody.mention.selection.new",
         "key": "alt+l",
         "when": "cody.activated && !editorReadonly && editorTextFocus && editorHasSelection"
       },
@@ -790,7 +796,7 @@
         {
           "command": "cody.mention.selection",
           "group": "0_cody",
-          "when": "cody.activated && !editorReadonly && editorHasSelection && cody.chatPanelsOpened > 0"
+          "when": "cody.activated && !editorReadonly && editorHasSelection && cody.hasChatPanelsOpened"
         },
         {
           "command": "cody.mention.selection.new",
@@ -800,7 +806,7 @@
         {
           "command": "cody.mention.file",
           "group": "0_cody",
-          "when": "cody.activated && !editorReadonly && !editorHasSelection && cody.chatPanelsOpened > 0"
+          "when": "cody.activated && !editorReadonly && !editorHasSelection && cody.hasChatPanelsOpened"
         },
         {
           "command": "cody.mention.file.new",
@@ -972,7 +978,7 @@
         {
           "command": "cody.mention.file",
           "group": "0_cody",
-          "when": "cody.activated && resourceScheme == file && cody.chatPanelsOpened > 0"
+          "when": "cody.activated && resourceScheme == file && cody.hasChatPanelsOpened"
         },
         {
           "command": "cody.mention.file.new",
@@ -1402,6 +1408,7 @@
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-popover": "^1.0.7",
     "@radix-ui/react-slot": "^1.0.2",
+    "@radix-ui/react-tooltip": "^1.0.7",
     "@sentry/browser": "^7.107.0",
     "@sentry/core": "^7.107.0",
     "@sentry/node": "^7.107.0",
@@ -1429,13 +1436,19 @@
     "js-levenshtein": "^1.1.6",
     "lexical": "^0.13.1",
     "lodash": "^4.17.21",
+    "lowlight": "^3.1.0",
     "lru-cache": "^10.0.0",
     "lucide-react": "^0.378.0",
     "mac-ca": "^2.0.3",
+    "marked": "^4.0.16",
     "mkdirp": "^3.0.1",
     "os-browserify": "^0.3.0",
     "parse-git-diff": "^0.0.14",
     "proxy-agent": "^6.4.0",
+    "react-markdown": "^9.0.1",
+    "rehype-highlight": "^7.0.0",
+    "rehype-sanitize": "^6.0.0",
+    "remark-gfm": "^4.0.0",
     "semver": "^7.5.4",
     "socks-proxy-agent": "^8.0.1",
     "tailwind-merge": "^2.3.0",
@@ -1466,6 +1479,7 @@
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/js-levenshtein": "^1.1.1",
     "@types/lodash": "^4.14.195",
+    "@types/marked": "^5.0.0",
     "@types/mocha": "^10.0.6",
     "@types/pako": "^2.0.3",
     "@types/progress": "^2.0.5",
@@ -1490,6 +1504,10 @@
     "playwright": "1.39.0",
     "postcss": "^8.4.38",
     "progress": "^2.0.3",
+    "react-head": "^3.4.2",
+    "typescript-language-server": "^4.3.3",
+    "vscode-jsonrpc": "^8.2.0",
+    "vscode-languageserver-protocol": "^3.17.5",
     "yaml": "^2.3.4"
   }
 }

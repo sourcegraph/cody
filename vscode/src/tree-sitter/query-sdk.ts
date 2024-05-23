@@ -112,6 +112,7 @@ export interface QueryWrappers {
                   meta: { showHint: boolean }
               },
           ]
+    getIdentifiers: (node: SyntaxNode, start: Point, end?: Point) => QueryCapture[]
     getGraphContextIdentifiers: (node: SyntaxNode, start: Point, end?: Point) => QueryCapture[]
     getEnclosingFunction: (node: SyntaxNode, start: Point, end?: Point) => QueryCapture[]
     getTestableNode: (
@@ -248,6 +249,9 @@ function getLanguageSpecificQueryWrappers(
                     meta: { showHint },
                 },
             ]
+        },
+        getIdentifiers: (root, start, end) => {
+            return queries.identifiers.compiled.captures(root, start, end)
         },
         getGraphContextIdentifiers: (root, start, end) => {
             return queries.graphContextIdentifiers.compiled.captures(root, start, end)
