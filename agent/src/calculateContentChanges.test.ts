@@ -32,4 +32,117 @@ describe('calculateContentChanges', () => {
           ]
         `)
     })
+    it('hard (expected)', () => {
+        const document = AgentTextDocument.from(
+            Uri.file('basic.ts'),
+            dedent`
+        class Hello {
+            val x = 0
+        }`
+        )
+        const newText = dedent`
+        class Hello {
+            val x = 0
+
+            /**
+             * Prints a greeting message to the console.
+             */
+            fun main() {
+                println("Hello, world!")
+            }
+
+        }`
+        const contentChanges = [...calculateContentChanges(document, newText)]
+        const applied = applyContentChanges(document, contentChanges)
+        expect(applied.newText).toStrictEqual(newText)
+        expect(applied.contentChanges).toMatchObject([
+            {
+                range: {
+                    end: {
+                        character: 0,
+                        line: 2,
+                    },
+                    start: {
+                        character: 0,
+                        line: 2,
+                    },
+                },
+                rangeLength: 0,
+                rangeOffset: 28,
+                text: `
+    /**
+     * Prints a greeting message to the console.
+     */
+    fun main() {
+        println("Hello, world!")
+    }
+
+`,
+            },
+        ])
+    })
+    it('hard (actual)', () => {
+        const document = AgentTextDocument.from(
+            Uri.file('basic.ts'),
+            dedent`
+        class Hello {
+            val x = 0
+        }`
+        )
+        const newText = dedent`
+        class Hello {
+            val x = 0
+
+            /**
+             * Prints a greeting message to the console.
+             */
+            fun main() {
+                println("Hello, world!")
+            }
+
+        }`
+        const contentChanges = [...calculateContentChanges(document, newText)]
+        const applied = applyContentChanges(document, contentChanges)
+        expect(applied.newText).toStrictEqual(newText)
+        expect(applied.contentChanges).toMatchObject([
+            {
+                range: {
+                    end: {
+                        character: 0,
+                        line: 2,
+                    },
+                    start: {
+                        character: 0,
+                        line: 2,
+                    },
+                },
+                rangeLength: 0,
+                rangeOffset: 28,
+                text: `
+    /**
+     * Prints a greeting message to the console.
+     */
+    fun main() {
+        println("Hello, world!")
+    `,
+            },
+            {
+                range: {
+                    end: {
+                        character: 0,
+                        line: 3,
+                    },
+                    start: {
+                        character: 0,
+                        line: 3,
+                    },
+                },
+                rangeLength: 0,
+                rangeOffset: 29,
+                text: `
+
+}`,
+            },
+        ])
+    })
 })
