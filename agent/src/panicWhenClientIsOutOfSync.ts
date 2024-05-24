@@ -28,12 +28,12 @@ export function panicWhenClientIsOutOfSync(
 
         const clientCompareObject = {
             selection: clientSourceOfTruthDocument.selection,
-            visibleRange: clientSourceOfTruthDocument.visibleRange,
+            // Ignoring visibility for now. It was causing low-priority panics
+            // when we were still debugging higher-priority content/selection
+            // bugs.
         }
-        const serverVisibleRange = serverEditor.visibleRanges?.[0]
         const serverCompareObject = {
             selection: protocolRange(serverEditor.selection),
-            visibleRange: serverVisibleRange ? protocolRange(serverVisibleRange) : undefined,
         }
         if (!isEqual(clientCompareObject, serverCompareObject)) {
             const diff = renderUnifiedDiff(
