@@ -80,7 +80,9 @@ interface IndexResult {
 
 interface LoadResult {
     repoName: string
+    indexSizeBytes: number
 }
+
 export type Requests = {
     'embeddings/echo': [string, string]
     // Instruct local embeddings to index the specified repository path.

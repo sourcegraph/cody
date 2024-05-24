@@ -9,6 +9,7 @@ import {
     type PromptString,
     isDotCom,
     isFileURI,
+    telemetryRecorder,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -191,6 +192,18 @@ export class ContextRankingController implements ContextRanker {
                 contextItems,
                 rankedItemsOrder.prediction
             )
+
+            const rankerLogData = rankedItemsOrder.prediction.map(prediction => {
+                const item = contextItems[prediction.document_id]
+                return { source: item.source, score: prediction.score, provider: item.provider }
+            })
+
+            telemetryRecorder.recordEvent('cody.context.ranker', 'done', {
+                privateMetadata: {
+                    rankerData: rankerLogData,
+                },
+            })
+
             return reRankedContextItems
         } catch (error) {
             return contextItems
