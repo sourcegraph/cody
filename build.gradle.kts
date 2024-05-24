@@ -291,6 +291,18 @@ tasks {
     return buildCodyDir
   }
 
+  // System properties that are used for testing purposes. These properties
+  // should be consistently set in different local dev environments, like `./gradlew :runIde`,
+  // `./gradlew test` or when testing inside IntelliJ
+  val agentProperties =
+      mapOf<String, Any>(
+          "cody-agent.trace-path" to "$buildDir/sourcegraph/cody-agent-trace.json",
+          "cody-agent.directory" to buildCodyDir.parent,
+          "sourcegraph.verbose-logging" to "true",
+          "cody-agent.panic-when-out-of-sync" to "true",
+          "cody.autocomplete.enableFormatting" to
+              (project.property("cody.autocomplete.enableFormatting") ?: "true"))
+
   fun getIdeaInstallDir(ideaVersion: String): File? {
     val gradleHome = project.gradle.gradleUserHomeDir
     val cacheDir = File(gradleHome, "caches/modules-2/files-2.1/com.jetbrains.intellij.idea/ideaIC")
@@ -369,12 +381,8 @@ tasks {
   runIde {
     dependsOn(project.tasks.getByPath("buildCody"))
     jvmArgs("-Djdk.module.illegalAccess.silent=true")
-    systemProperty("cody-agent.trace-path", "$buildDir/sourcegraph/cody-agent-trace.json")
-    systemProperty("cody-agent.directory", buildCodyDir.parent)
-    systemProperty("sourcegraph.verbose-logging", "true")
-    systemProperty(
-        "cody.autocomplete.enableFormatting",
-        project.property("cody.autocomplete.enableFormatting") ?: "true")
+
+    agentProperties.forEach { (key, value) -> systemProperty(key, value) }
 
     val platformRuntimeVersion = project.findProperty("platformRuntimeVersion")
     if (platformRuntimeVersion != null) {
@@ -426,7 +434,8 @@ tasks {
   }
 
   test {
-    systemProperty("cody-agent.directory", buildCodyDir.parent)
+    agentProperties.forEach { (key, value) -> systemProperty(key, value) }
+
     dependsOn(project.tasks.getByPath("buildCody"))
   }
 }

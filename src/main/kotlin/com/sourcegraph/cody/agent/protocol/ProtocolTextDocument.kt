@@ -19,9 +19,30 @@ private constructor(
     val selection: Range? = null,
     val visibleRange: Range? = null,
     val contentChanges: List<ProtocolTextDocumentContentChangeEvent>? = null,
+    val testing: TestingParams? = null,
 ) {
 
   companion object {
+
+    private fun getTestingParams(editor: Editor): TestingParams? {
+      if (!TestingParams.doIncludeTestingParam) {
+        return null
+      }
+      val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return null
+      val text = FileDocumentManager.getInstance().getDocument(file)?.text
+      // NOTE(olafurpg) intentionally don't use fromVirtualFile because we don't want infinite
+      // recursion. Could have added a boolean parameter but chose not to. Feel free to refactor if
+      // you don't like the duplicate implementation here.
+      return TestingParams(
+          selectedText = editor.selectionModel.selectedText,
+          sourceOfTruthDocument =
+              ProtocolTextDocument(
+                  uri = uriFor(file),
+                  content = text,
+                  selection = getSelection(editor),
+                  visibleRange = getVisibleRange(editor),
+              ))
+    }
 
     private fun getSelection(editor: Editor): Range {
       val selectionModel = editor.selectionModel
@@ -62,13 +83,17 @@ private constructor(
     ): ProtocolTextDocument? {
       val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return null
       val position = newPosition.codyPosition()
-      return ProtocolTextDocument(uri = uriFor(file), selection = Range(position, position))
+      return ProtocolTextDocument(
+          uri = uriFor(file),
+          selection = Range(position, position),
+          testing = getTestingParams(editor))
     }
 
     @JvmStatic
     fun fromEditorWithRangeSelection(editor: Editor): ProtocolTextDocument? {
       val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return null
-      return ProtocolTextDocument(uri = uriFor(file), selection = getSelection(editor))
+      return ProtocolTextDocument(
+          uri = uriFor(file), selection = getSelection(editor), testing = getTestingParams(editor))
     }
 
     @JvmStatic
@@ -87,7 +112,8 @@ private constructor(
           uri = uriFor(file),
           content = text,
           selection = getSelection(editor),
-          visibleRange = getVisibleRange(editor))
+          visibleRange = getVisibleRange(editor),
+          testing = getTestingParams(editor))
     }
 
     @JvmStatic
