@@ -254,8 +254,7 @@ export class AuthProvider implements AuthStatusProvider {
         config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
     ): Promise<AuthStatus> {
         const endpoint = config.serverEndpoint
-        const token = config.accessToken
-        if (!token || !endpoint) {
+        if (!endpoint) {
             return { ...defaultAuthStatus, endpoint }
         }
         // Cache the config and the GraphQL client
