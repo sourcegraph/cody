@@ -425,5 +425,8 @@ tasks {
     }
   }
 
-  test { dependsOn(project.tasks.getByPath("buildCody")) }
+  test {
+    systemProperty("cody-agent.directory", buildCodyDir.parent)
+    dependsOn(project.tasks.getByPath("buildCody"))
+  }
 }
