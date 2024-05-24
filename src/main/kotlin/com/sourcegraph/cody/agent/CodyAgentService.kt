@@ -16,8 +16,7 @@ import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.cody.listeners.CodyFileEditorListener
 import com.sourcegraph.cody.statusbar.CodyStatusService
 import com.sourcegraph.utils.CodyEditorUtil
-import java.util.Timer
-import java.util.TimerTask
+import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -295,7 +294,7 @@ class CodyAgentService(private val project: Project) : Disposable {
     suspend fun <T> coWithAgent(project: Project, callback: suspend (CodyAgent) -> T) =
         coWithAgent(project, false, callback)
 
-    suspend fun <T> coWithAgent(
+    private suspend fun <T> coWithAgent(
         project: Project,
         restartIfNeeded: Boolean,
         callback: suspend (CodyAgent) -> T

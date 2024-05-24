@@ -592,8 +592,6 @@ class EditCommandPrompt(
     }
   }
 
-  // TODO: Was hoping this would help avoid flicker while resizing.
-  // Needs more work, but I think this is likely the right general approach.
   class DoubleBufferedRootPane : JRootPane() {
     private var offscreenImage: BufferedImage? = null
 

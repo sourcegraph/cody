@@ -16,6 +16,8 @@ class FixupSessionDocumentListener(private val session: FixupSession) : BulkAwar
     if (isAcceptLensGroupShown.get()) {
       logger.info("Auto-accepting current Fixup session: ${session.taskId}")
       session.accept()
+    } else {
+      session.resetLensGroup()
     }
   }
 

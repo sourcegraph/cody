@@ -15,10 +15,12 @@ import com.intellij.openapi.editor.colors.EditorFontType
 import com.intellij.openapi.editor.event.EditorMouseEvent
 import com.intellij.openapi.editor.event.EditorMouseListener
 import com.intellij.openapi.editor.event.EditorMouseMotionListener
+import com.intellij.openapi.editor.ex.util.EditorUtil
 import com.intellij.openapi.editor.impl.EditorImpl
 import com.intellij.openapi.editor.impl.FontInfo
 import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.TextRange
 import com.intellij.ui.JBColor
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.UIUtil
@@ -87,6 +89,8 @@ class LensWidgetGroup(val session: FixupSession, parentComponent: Editor) :
   var inlay: Inlay<EditorCustomElementRenderer>? = null
 
   private var prevCursor: Cursor? = null
+
+  private var lastComputedIndent = RECOMPUTE
 
   var isInWorkingGroup = false
   var isAcceptGroup = false
@@ -178,7 +182,7 @@ class LensWidgetGroup(val session: FixupSession, parentComponent: Editor) :
   fun widgetXY(widget: LensWidget): Point {
     val ourXY = widgetGroupXY()
     val fontMetrics = widgetFontMetrics ?: editor.getFontMetrics(Font.PLAIN)
-    var sum = LEFT_MARGIN.toInt()
+    var sum = leftMargin()
     for (w in widgets) {
       if (w == widget) break
       sum += w.calcWidthInPixels(fontMetrics)
@@ -212,7 +216,7 @@ class LensWidgetGroup(val session: FixupSession, parentComponent: Editor) :
     val verticalPadding = (inlayHeight - fontHeight) / 2
 
     val top = targetRegion.y + verticalPadding
-    val left = targetRegion.x + LEFT_MARGIN
+    val left = targetRegion.x + leftMargin()
 
     // Draw all the widgets left to right, keeping track of their x-position.
     widgets.fold(left) { acc, widget ->
@@ -226,7 +230,7 @@ class LensWidgetGroup(val session: FixupSession, parentComponent: Editor) :
   }
 
   private fun findWidgetAt(x: Int, y: Int): LensWidget? {
-    var currentX = LEFT_MARGIN
+    var currentX = leftMargin()
     val fontMetrics = widgetFontMetrics ?: return null
     if (inlay?.bounds?.contains(x, y) == false) return null
 
@@ -248,6 +252,52 @@ class LensWidgetGroup(val session: FixupSession, parentComponent: Editor) :
 
   fun registerWidgets() {
     widgets.forEach { Disposer.register(this, it) }
+  }
+
+  // Computes the X coordinate in the Editor where the first widget is drawn.
+  private fun leftMargin(): Int {
+    if (lastComputedIndent != RECOMPUTE) {
+      return lastComputedIndent
+    }
+    try {
+      val document = editor.document
+      val inlayOffset = inlay?.offset
+      if (inlayOffset == null) {
+        lastComputedIndent = DEFAULT_MARGIN
+        return DEFAULT_MARGIN
+      }
+
+      val lineCount = document.lineCount
+      val inlayLineNumber = document.getLineNumber(inlayOffset)
+
+      // Find next non-blank line.
+      for (lineNumber in inlayLineNumber until lineCount) {
+        val lineStartOffset = document.getLineStartOffset(lineNumber)
+        val lineEndOffset = document.getLineEndOffset(lineNumber)
+        val lineText = document.getText(TextRange(lineStartOffset, lineEndOffset))
+
+        // Compute the pixel width of the indentation.
+        if (lineText.isNotBlank()) {
+          val tabSize = EditorUtil.getTabSize(editor)
+          val spaceWidth = EditorUtil.getSpaceWidth(Font.PLAIN, editor)
+          val indentationLevel =
+              lineText
+                  .takeWhile { it.isWhitespace() }
+                  .sumOf { if (it == '\t') tabSize * spaceWidth else spaceWidth }
+
+          lastComputedIndent = indentationLevel
+          return indentationLevel
+        }
+      }
+    } catch (x: Exception) {
+      logger.warn("Error computing code lens left margin", x)
+    }
+    lastComputedIndent = DEFAULT_MARGIN
+    return DEFAULT_MARGIN
+  }
+
+  fun reset() {
+    lastComputedIndent = RECOMPUTE
   }
 
   // Dispatch mouse click events to the appropriate widget.
@@ -342,13 +392,14 @@ class LensWidgetGroup(val session: FixupSession, parentComponent: Editor) :
   }
 
   companion object {
-
-    // TODO: make it follow the identation of the block. for now it is fixed to the left
-    private const val LEFT_MARGIN = 20f
+    private const val DEFAULT_MARGIN = 20
 
     // The height of the inlay is always scaled to the font height,
     // with room for the buttons and some top/bottom padding. This setting
     // was found empirically and seems to work well for all font sizes.
     private const val INLAY_HEIGHT_SCALE_FACTOR = 1.2
+
+    // Flag to force recomputation of left margin.
+    private const val RECOMPUTE = -1
   }
 }

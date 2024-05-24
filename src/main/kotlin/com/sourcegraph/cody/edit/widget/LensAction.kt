@@ -14,10 +14,8 @@ import java.awt.Font
 import java.awt.FontMetrics
 import java.awt.Graphics2D
 import java.awt.event.MouseEvent
-import java.awt.font.TextAttribute
 import java.awt.geom.Rectangle2D
 
-@Suppress("UseJBColor")
 class LensAction(
     val group: LensWidgetGroup,
     private val text: String,
@@ -38,7 +36,6 @@ class LensAction(
 
   override fun calcHeightInPixels(fontMetrics: FontMetrics): Int = fontMetrics.height
 
-  @Suppress("UseJBColor")
   override fun paint(g: Graphics2D, x: Float, y: Float) {
     val originalFont = g.font
     val originalColor = g.color
@@ -107,8 +104,6 @@ class LensAction(
 
   companion object {
     const val SIDE_MARGIN = 9
-
-    private val underline = mapOf(TextAttribute.UNDERLINE to TextAttribute.UNDERLINE_ON)
 
     val actionColor = JBColor(0x4C4D54, 0x393B40)
     private val acceptColor = JBColor(0x369650, 0x388119)

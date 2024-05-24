@@ -181,35 +181,46 @@ abstract class FixupSession(
   // which may require switching to the EDT. This is primarily to help smooth
   // integration testing, but also because there's no real harm blocking pool threads.
   private fun showLensGroup(group: LensWidgetGroup) {
-    lensGroup?.let { if (!it.isDisposed.get()) Disposer.dispose(it) }
-    lensGroup = group
-
-    var range =
-        selectionRange?.let {
-          val position = Position(Range.fromRangeMarker(it).start.line, character = 0)
-          Range(start = position, end = position)
-        }
-
-    if (range == null) {
-      // Be defensive, as the protocol has been fragile with respect to selection ranges.
-      logger.warn("No selection range for session: $this")
-      // Last-ditch effort to show it somewhere other than top of file.
-      val position = Position(editor.caretModel.currentCaret.logicalPosition.line, 0)
-      range = Range(start = position, end = position)
-    }
-    val future = group.show(range)
-    // Make sure the lens is visible.
-    ApplicationManager.getApplication().invokeLater {
-      if (!editor.isDisposed) {
-        val logicalPosition = LogicalPosition(range.start.line, range.start.character)
-        editor.scrollingModel.scrollTo(logicalPosition, ScrollType.CENTER)
+    runInEdt {
+      try {
+        lensGroup?.let { if (!it.isDisposed.get()) Disposer.dispose(it) }
+      } catch (x: Exception) {
+        logger.warn("Error disposing previous lens group", x)
       }
-    }
-    if (!ApplicationManager.getApplication().isDispatchThread) { // integration test
-      future.get()
-    }
+      lensGroup = group
 
-    controller.notifySessionStateChanged()
+      var range =
+          selectionRange?.let {
+            val position = Position(Range.fromRangeMarker(it).start.line, character = 0)
+            Range(start = position, end = position)
+          }
+
+      if (range == null) {
+        // Be defensive, as the protocol has been fragile with respect to selection ranges.
+        logger.warn("No selection range for session: $this")
+        // Last-ditch effort to show it somewhere other than top of file.
+        val position = Position(editor.caretModel.currentCaret.logicalPosition.line, 0)
+        range = Range(start = position, end = position)
+      }
+      val future = group.show(range)
+      // Make sure the lens is visible.
+      ApplicationManager.getApplication().invokeLater {
+        if (!editor.isDisposed) {
+          val logicalPosition = LogicalPosition(range.start.line, range.start.character)
+          editor.scrollingModel.scrollTo(logicalPosition, ScrollType.CENTER)
+        }
+      }
+      if (!ApplicationManager.getApplication().isDispatchThread) { // integration test
+        future.get()
+      }
+
+      controller.notifySessionStateChanged()
+    }
+  }
+
+  // An optimization to avoid recomputing widget indentation in a tight loop.
+  fun resetLensGroup() {
+    lensGroup?.reset()
   }
 
   private fun showWorkingGroup() {
