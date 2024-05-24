@@ -85,7 +85,7 @@ describe('panicWhenClientIsOutOfSync', () => {
         )
     })
 
-    it.fails('visibleRange', () => {
+    it('visibleRange', () => {
         textDocumentDidChange(
             { ...sourceOfTruth },
             {
