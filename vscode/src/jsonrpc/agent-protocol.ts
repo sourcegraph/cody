@@ -547,6 +547,15 @@ export interface ProtocolTextDocument {
     selection?: Range
     contentChanges?: ProtocolTextDocumentContentChangeEvent[]
     visibleRange?: Range
+
+    // Only used during testing. When defined, the agent server will
+    // run additional validation to ensure that the document state of
+    // the client is correctly synchronized with the docment state of
+    // server.
+    testing?: {
+        selectedText?: string
+        sourceOfTruthDocument?: ProtocolTextDocument
+    }
 }
 
 export interface ProtocolTextDocumentContentChangeEvent {

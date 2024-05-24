@@ -12,6 +12,7 @@ import { AgentTextEditor } from './AgentTextEditor'
 import { applyContentChanges } from './applyContentChanges'
 import { calculateContentChanges } from './calculateContentChanges'
 import { clearArray } from './clearArray'
+import { panicWhenClientIsOutOfSync } from './panicWhenClientIsOutOfSync'
 import * as vscode_shim from './vscode-shim'
 
 export type EditFunction = (
@@ -25,7 +26,13 @@ export type EditFunction = (
  * and changing text contents, selections and visible ranges.
  */
 export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
-    constructor(private params?: { edit?: EditFunction }) {}
+    constructor(
+        private params?: {
+            edit?: EditFunction
+            doPanic?: (message: string) => void
+        }
+    ) {}
+
     // Keys are `vscode.Uri.toString()` formatted. We don't use `vscode.Uri` as
     // keys because hashcode/equals behave unreliably.
     private readonly agentDocuments: Map<
@@ -35,6 +42,8 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
 
     public workspaceRootUri: vscode.Uri | undefined
     public activeDocumentFilePath: vscode.Uri | null = null
+
+    private doPanic = this.params?.doPanic ? { doPanic: this.params.doPanic } : undefined
 
     public openUri(uri: vscode.Uri): AgentTextDocument {
         return this.loadAndUpdateDocument(ProtocolTextDocumentWithUri.from(uri))
@@ -101,6 +110,8 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         }
 
         fromCache.update(document)
+
+        panicWhenClientIsOutOfSync(document.underlying, cached.editor, this.doPanic)
 
         return { document: fromCache, editor: cached.editor, contentChanges }
     }

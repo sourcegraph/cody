@@ -8,7 +8,7 @@ export class AgentTextEditor implements vscode.TextEditor {
         private readonly agentDocument: AgentTextDocument,
         private readonly params?: { edit?: EditFunction }
     ) {}
-    get document(): vscode.TextDocument {
+    get document(): AgentTextDocument {
         return this.agentDocument
     }
     get selection(): vscode.Selection {

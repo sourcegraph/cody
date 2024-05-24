@@ -41,6 +41,7 @@ import type {
     ProgressReportParams,
     ProgressStartParams,
     ProtocolCodeLens,
+    ProtocolTextDocument,
     RenameFileOperation,
     ServerInfo,
     ShowWindowMessageParams,
@@ -49,6 +50,7 @@ import type {
     WorkspaceEditParams,
 } from './protocol-alias'
 import { trimEndOfLine } from './trimEndOfLine'
+import { protocolRange } from './vscode-type-converters'
 
 type ProgressMessage = ProgressStartMessage | ProgressReportMessage | ProgressEndMessage
 
@@ -429,12 +431,27 @@ export class TestClient extends MessageHandler {
                   : undefined
         const end =
             cursor >= 0 ? start : selectionEnd >= 0 ? document.positionAt(selectionEnd) : undefined
-        const protocolDocument = {
+        const protocolDocument: ProtocolTextDocument = {
             uri: uri.toString(),
             content,
             selection: start && end ? { start, end } : undefined,
         }
-        this.workspace.loadDocument(ProtocolTextDocumentWithUri.fromDocument(protocolDocument))
+        const clientDocument = this.workspace.loadDocument(
+            ProtocolTextDocumentWithUri.fromDocument(protocolDocument)
+        )
+        const clientEditor = this.workspace.newTextEditor(clientDocument)
+        const visibleRange = clientEditor.visibleRanges?.[0]
+
+        protocolDocument.testing = {
+            selectedText: clientDocument.getText(clientEditor.selection),
+            sourceOfTruthDocument: {
+                uri: clientDocument.uri.toString(),
+                content: clientDocument.getText(),
+                selection: protocolRange(clientEditor.selection),
+                visibleRange: visibleRange ? protocolRange(visibleRange) : undefined,
+            },
+        }
+
         this.workspace.activeDocumentFilePath = uri
         this.notify(method, protocolDocument)
     }
