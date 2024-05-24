@@ -2,21 +2,14 @@ import * as vscode from 'vscode'
 
 import {
     type ContextGroup,
-    type ContextItem,
-    type ContextItemFile,
-    ContextItemSource,
     type ContextSearchResult,
     type ContextStatusProvider,
     type Disposable,
-    type IRemoteSearch,
     type PromptString,
     contextFiltersProvider,
     graphqlClient,
-    isError,
 } from '@sourcegraph/cody-shared'
 
-import type { URI } from 'vscode-uri'
-import { repoNameResolver } from '../repository/repo-name-resolver'
 import type * as repofetcher from './repo-fetcher'
 
 export enum RepoInclusion {
@@ -28,7 +21,7 @@ interface DisplayRepo {
     displayName: string
 }
 
-export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
+export class RemoteSearch implements ContextStatusProvider {
     public static readonly MAX_REPO_COUNT = 10
     private disposeOnContextFilterChanged: () => void
 
@@ -126,48 +119,5 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
             throw result
         }
         return result || []
-    }
-
-    // IRemoteSearch implementation. This is only used for inline edit context.
-
-    public async setWorkspaceUri(uri: URI): Promise<void> {
-        const [codebase] = await repoNameResolver.getRepoNamesFromWorkspaceUri(uri)
-        if (!codebase) {
-            this.setRepos([], RepoInclusion.Automatic)
-            return
-        }
-        const repos = await graphqlClient.getRepoIds([codebase], 10)
-        if (isError(repos)) {
-            throw repos
-        }
-        this.setRepos(repos, RepoInclusion.Automatic)
-    }
-
-    public async search(query: PromptString): Promise<ContextItemFile[]> {
-        const results = await this.query(query)
-        if (isError(results)) {
-            throw results
-        }
-        return (results || []).map(
-            result =>
-                ({
-                    type: 'file',
-                    uri: result.uri,
-                    repoName: result.repoName,
-                    revision: result.commit,
-                    source: ContextItemSource.Unified,
-                    content: result.content,
-                    range: {
-                        start: {
-                            line: result.startLine,
-                            character: 0,
-                        },
-                        end: {
-                            line: result.endLine,
-                            character: 0,
-                        },
-                    },
-                }) satisfies ContextItem
-        )
     }
 }

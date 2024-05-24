@@ -32,6 +32,8 @@ const dummyVSCodeAPI: VSCodeWrapper = {
             },
             authStatus: {
                 ...defaultAuthStatus,
+                displayName: 'Tim Lucas',
+                avatarURL: 'https://avatars.githubusercontent.com/u/153?v=4',
                 isLoggedIn: true,
                 authenticated: true,
                 hasVerifiedEmail: true,

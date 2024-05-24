@@ -32,6 +32,8 @@ export const HumanMessageCell: FunctionComponent<{
 
     isEditorInitiallyFocused?: boolean
 
+    className?: string
+
     /** For use in storybooks only. */
     __storybook__focus?: boolean
 }> = ({
@@ -44,6 +46,7 @@ export const HumanMessageCell: FunctionComponent<{
     onChange,
     onSubmit,
     isEditorInitiallyFocused,
+    className,
     __storybook__focus,
 }) => {
     const initialEditorState = useMemo(
@@ -75,6 +78,7 @@ export const HumanMessageCell: FunctionComponent<{
                 />
             }
             contentClassName={styles.editor}
+            className={className}
         />
     )
 }

@@ -59,6 +59,8 @@ class CompletionProviderConfig {
 
     public get contextStrategy(): ContextStrategy {
         switch (this.config.autocompleteExperimentalGraphContext as string) {
+            case 'lsp-light':
+                return 'lsp-light'
             case 'tsc-mixed':
                 return 'tsc-mixed'
             case 'tsc':

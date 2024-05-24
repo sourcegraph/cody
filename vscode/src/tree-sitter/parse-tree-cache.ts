@@ -34,7 +34,7 @@ export function getCachedParseTreeForDocument(document: TextDocument): ParseTree
     return { tree, parser, cacheKey }
 }
 
-async function parseDocument(document: TextDocument): Promise<void> {
+export async function parseDocument(document: TextDocument): Promise<void> {
     const parseLanguage = getLanguageIfTreeSitterEnabled(document)
 
     if (!parseLanguage) {

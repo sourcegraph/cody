@@ -1,7 +1,6 @@
 import { type ContextItem, PromptString, logError, ps } from '@sourcegraph/cody-shared'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import type { URI } from 'vscode-uri'
 
 import { defaultCommands } from '.'
 import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/context-filter'
@@ -90,44 +89,44 @@ export async function executeTestEditCommand(
 
         const editor = getEditor()?.active
         const document = editor?.document
-        if (!document) {
-            return
-        }
+        const uri = document?.uri
 
-        if (await isUriIgnoredByContextFilterWithNotification(document.uri, 'test')) {
+        if (!document || !uri || (await isUriIgnoredByContextFilterWithNotification(uri, 'test'))) {
             return
         }
 
         // Selection will be added by the edit command
         // Only add context from available test files
-        const contextFiles: ContextItem[] = []
-
-        try {
-            const files = await getContextFilesForUnitTestCommand(document.uri)
-            contextFiles.push(...files)
-        } catch (error) {
+        const contextFiles: ContextItem[] = await getContextFilesForUnitTestCommand(uri).catch(error => {
             logError('executeNewTestCommand', 'failed to fetch context', { verbose: error })
-        }
+            return []
+        })
 
         // Loop through current context to see if the file has an exisiting test file
-        let destinationFile: URI | undefined
-        for (const testFile of contextFiles) {
-            if (!destinationFile?.path && isTestFileForOriginal(document.uri, testFile.uri)) {
-                span.addEvent('hasExistingTestFile')
-                destinationFile = testFile.uri
-            }
+        const destinationFile = contextFiles.find(testFile =>
+            isTestFileForOriginal(uri, testFile.uri)
+        )?.uri
+
+        if (destinationFile) {
+            span.addEvent('hasExistingTestFile')
         }
+
+        // The prompt to use depends on whether the file has an existing test file.
+        const prompt = destinationFile?.path ? newTestSuitePrompt : newTestFilePrompt
 
         return {
             type: 'edit',
             task: await executeEdit({
                 configuration: {
-                    instruction: destinationFile?.path ? newTestSuitePrompt : newTestFilePrompt,
+                    instruction: prompt.replaceAll(
+                        '{languageName}',
+                        PromptString.fromMarkdownCodeBlockLanguageIDForFilename(uri)
+                    ),
                     document,
                     range: getTestableRange(editor),
                     intent: 'test',
                     mode: 'insert',
-                    // use 3 context files as sharing too many context could result in quality issue
+                    // Limit to 3 context as too many context could result in quality issue.
                     userContextFiles: contextFiles.slice(0, 2),
                     destinationFile,
                 },

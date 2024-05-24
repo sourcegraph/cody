@@ -313,15 +313,24 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
         </div>
     )
 
-const welcomeMessageMarkdown = `Welcome to Cody! Start writing code and Cody will autocomplete lines and entire functions for you.
-
-To run [Cody Commands](command:cody.menu.commands) use the keyboard shortcut <span class="keyboard-shortcut"><span>${
-    isMacOS() ? '⌥' : 'Alt'
-}</span><span>C</span></span>, the <span class="cody-icons">A</span> button, or right-click anywhere in your code.
-
-You can start a new chat at any time with <span class="keyboard-shortcut"><span>${
-    isMacOS() ? '⌥' : 'Alt'
-}</span><span>/</span></span> or using the <span class="cody-icons">H</span> button.
-
-For more tips and tricks, see the [Getting Started Guide](command:cody.welcome) and [docs](https://sourcegraph.com/docs/cody).
-`
+const welcomeMessageMarkdown = (
+    <div>
+        <p>
+            Welcome to Cody! Start writing code and Cody will autocomplete lines and entire functions for
+            you.
+        </p>
+        <p>
+            To run <a href="command:cody.menu.commands">Cody Commands</a>, use the keyboard shortcut{' '}
+            <kbd>{isMacOS() ? '⌥' : 'Alt'}+C</kbd>, the <span className="cody-icon">A</span> button, or
+            right-click anywhere in your code.
+        </p>
+        <p>
+            You can start a new chat at any time with <kbd>{isMacOS() ? '⌥' : 'Alt'}+/</kbd> or using the{' '}
+            <span className="cody-icon">H</span> button.
+        </p>
+        <p>
+            For more tips and tricks, see the <a href="command:cody.welcome">Getting Started Guide</a>{' '}
+            and <a href="https://sourcegraph.com/docs/cody">docs</a>.
+        </p>
+    </div>
+)

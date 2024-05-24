@@ -1,5 +1,6 @@
 import type { Preview } from '@storybook/react'
 import '../webviews/components/shadcn/shadcn.css'
+import '../webviews/utils/highlight.css'
 // biome-ignore lint/correctness/noUnusedImports: needed because UMD import
 import React from 'react'
 import { HeadProvider, Link } from 'react-head'
