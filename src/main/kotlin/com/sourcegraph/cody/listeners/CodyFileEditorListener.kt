@@ -6,6 +6,7 @@ import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
+import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.sourcegraph.cody.agent.CodyAgent
@@ -17,12 +18,13 @@ class CodyFileEditorListener : FileEditorManagerListener {
 
   override fun fileOpened(source: FileEditorManager, file: VirtualFile) {
     try {
-      source.selectedTextEditor?.let { editor ->
-        val protocolTextFile = fromVirtualFile(editor, file)
-        EditorChangesBus.documentChanged(editor.project, protocolTextFile)
-        withAgent(source.project) { agent: CodyAgent ->
-          agent.server.textDocumentDidOpen(protocolTextFile)
-        }
+      val textEditor = source.getSelectedEditor(file) as? TextEditor ?: return
+      val editor = textEditor.editor
+      val protocolTextFile = fromVirtualFile(editor, file)
+      EditorChangesBus.documentChanged(editor.project, protocolTextFile)
+
+      withAgent(source.project) { agent: CodyAgent ->
+        agent.server.textDocumentDidOpen(protocolTextFile)
       }
     } catch (x: Exception) {
       logger.warn("Error in fileOpened method for file: ${file.path}", x)
@@ -46,6 +48,8 @@ class CodyFileEditorListener : FileEditorManagerListener {
   companion object {
     private val logger = Logger.getInstance(CodyFileEditorListener::class.java)
 
+    // When IDEA starts for the first time, we send duplicate `textDocument/didOpen` notifications
+    // with `fileOpened` above. This function is only needed when we restart the agent process.
     fun registerAllOpenedFiles(project: Project, codyAgent: CodyAgent) {
 
       ApplicationManager.getApplication().invokeLater {
