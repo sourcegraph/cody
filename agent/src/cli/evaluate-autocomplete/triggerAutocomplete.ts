@@ -114,7 +114,7 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
                 resultTypechecks,
                 resultParses,
                 resultNonInsertPatch: true,
-                event: result.completionEvent,
+                event: result.completionEvent ?? undefined,
                 info,
             })
         } else if (patches.length > 0) {
@@ -126,7 +126,7 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
                     range,
                     resultExact: true,
                     resultParses,
-                    event: result.completionEvent,
+                    event: result.completionEvent ?? undefined,
                     resultTypechecks,
                 })
             } else {
@@ -136,7 +136,7 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
                     range,
                     resultText: text,
                     resultParses,
-                    event: result.completionEvent,
+                    event: result.completionEvent ?? undefined,
                     resultTypechecks,
                 })
             }
@@ -146,7 +146,7 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
                 info,
                 range,
                 resultEmpty: true,
-                event: result.completionEvent,
+                event: result.completionEvent ?? undefined,
                 resultParses,
             })
         }

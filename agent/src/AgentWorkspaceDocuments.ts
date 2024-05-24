@@ -75,7 +75,7 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
             const changes = applyContentChanges(fromCache, document.contentChanges)
             contentChanges.push(...changes.contentChanges)
             document.underlying.content = changes.newText
-        } else if (typeof document.content === 'string') {
+        } else if (document.content !== undefined) {
             // Full document sync.
             for (const change of calculateContentChanges(fromCache, document.content)) {
                 contentChanges.push(change)
@@ -93,20 +93,6 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         if (!document.visibleRange) {
             // No changes to the visible range, populate from cache
             document.underlying.visibleRange = fromCache.protocolDocument.visibleRange
-        }
-
-        // The client may send null values that we convert to undefined here.
-        if (document.content === null) {
-            document.underlying.content = undefined
-        }
-        if (document.contentChanges === null) {
-            document.underlying.contentChanges = undefined
-        }
-        if (document.selection === null) {
-            document.underlying.selection = undefined
-        }
-        if (document.visibleRange === null) {
-            document.underlying.visibleRange = undefined
         }
 
         fromCache.update(document)
