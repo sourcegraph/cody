@@ -8,8 +8,18 @@ export class CodyTraceExporter extends OTLPTraceExporter {
     private isTracingEnabled = false
     private queuedSpans: Map<string, { span: ReadableSpan; enqueuedAt: number }> = new Map()
 
-    constructor({ traceUrl, isTracingEnabled }: { traceUrl: string; isTracingEnabled: boolean }) {
-        super({ url: traceUrl, httpAgentOptions: { rejectUnauthorized: false } })
+    constructor({
+        traceUrl,
+        accessToken,
+        isTracingEnabled,
+    }: { traceUrl: string; accessToken: string | null; isTracingEnabled: boolean }) {
+        super({
+            url: traceUrl,
+            httpAgentOptions: { rejectUnauthorized: false },
+            headers: {
+                ...(accessToken ? { Authorization: `token ${accessToken}` } : {}),
+            },
+        })
         this.isTracingEnabled = isTracingEnabled
     }
 
