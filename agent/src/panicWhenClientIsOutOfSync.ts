@@ -33,7 +33,7 @@ export function panicWhenClientIsOutOfSync(
                     text: clientSourceOfTruthDocument.content ?? '',
                 },
                 {
-                    header: `${clientSourceOfTruthDocument.uri} (server side)`,
+                    header: `${serverDocument.uri} (server side)`,
                     text: serverDocument.content ?? '',
                 }
             )
@@ -57,7 +57,7 @@ export function panicWhenClientIsOutOfSync(
                         text: JSON.stringify(clientCompareObject, null, 2),
                     },
                     {
-                        header: `${clientSourceOfTruthDocument.uri} (server side)`,
+                        header: `${serverDocument.uri} (server side)`,
                         text: JSON.stringify(serverCompareObject, null, 2),
                     }
                 )
