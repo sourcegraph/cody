@@ -8,7 +8,7 @@ import * as vscode from 'vscode'
 
 import { logDebug } from '../log'
 import type { AuthProvider } from '../services/AuthProvider'
-import type { CodyStatusBar } from '../services/StatusBar'
+import type { CodyStatusBar } from '../services/status-bar/StatusBar'
 
 import { completionProviderConfig } from './completion-provider-config'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'

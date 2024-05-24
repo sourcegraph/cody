@@ -12,7 +12,7 @@ import {
 
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
-import type { CodyStatusBar } from '../services/StatusBar'
+import type { CodyStatusBar } from '../services/status-bar/StatusBar'
 import { telemetryService } from '../services/telemetry'
 
 import { type CodyIgnoreType, showCodyIgnoreNotification } from '../cody-ignore/notification'

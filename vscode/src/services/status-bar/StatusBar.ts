@@ -7,15 +7,15 @@ import {
     isCodyIgnoredFile,
 } from '@sourcegraph/cody-shared'
 
-import { getConfiguration } from '../configuration'
+import { getConfiguration } from '../../configuration'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
-import type { CodyIgnoreType } from '../cody-ignore/notification'
-import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
-import { FeedbackOptionItems, SupportOptionItems } from './FeedbackOptions'
+import type { CodyIgnoreType } from '../../cody-ignore/notification'
+import { getGhostHintEnablement } from '../../commands/GhostHintDecorator'
+import { FeedbackOptionItems, SupportOptionItems } from '../FeedbackOptions'
 // biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from './telemetry'
-import { enableVerboseDebugMode } from './utils/export-logs'
+import { telemetryService } from '../telemetry'
+import { enableVerboseDebugMode } from '../utils/export-logs'
 
 interface StatusBarError {
     title: string
@@ -51,7 +51,7 @@ const QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX = '\u00A0\u00A0\u00A0\u00A0\u00A0 '
 
 const ONE_HOUR = 60 * 60 * 1000
 
-type StatusBarErrorName = 'auth' | 'RateLimitError' | 'AutoCompleteDisabledByAdmin'
+export type StatusBarErrorName = 'auth' | 'RateLimitError' | 'AutoCompleteDisabledByAdmin'
 
 interface StatusBarItem extends vscode.QuickPickItem {
     onSelect: () => Promise<void>
