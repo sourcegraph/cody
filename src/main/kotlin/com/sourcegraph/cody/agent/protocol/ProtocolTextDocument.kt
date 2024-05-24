@@ -4,11 +4,12 @@ import com.intellij.codeInsight.codeVision.ui.popup.layouter.bottom
 import com.intellij.codeInsight.codeVision.ui.popup.layouter.right
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.LogicalPosition
+import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.vfs.VirtualFile
 import java.awt.Point
 import java.nio.file.FileSystems
-import java.util.*
+import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 
@@ -94,6 +95,27 @@ private constructor(
       val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return null
       return ProtocolTextDocument(
           uri = uriFor(file), selection = getSelection(editor), testing = getTestingParams(editor))
+    }
+
+    @JvmStatic
+    fun fromEditorForDocumentEvent(editor: Editor, event: DocumentEvent): ProtocolTextDocument? {
+      val oldFragment = event.oldFragment.toString()
+      val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return null
+      val startPosition = editor.offsetToLogicalPosition(event.offset).codyPosition()
+      // allocate List once to avoid three unnecessary duplicate allocations
+      val oldFragmentLines = oldFragment.lines()
+      val endCharacter =
+          if (oldFragmentLines.size > 1) oldFragmentLines.last().length
+          else startPosition.character + oldFragment.length
+      val endPosition = Position(startPosition.line + oldFragmentLines.size - 1, endCharacter)
+
+      return ProtocolTextDocument(
+          uri = uriFor(file),
+          content = null,
+          contentChanges =
+              listOf(
+                  ProtocolTextDocumentContentChangeEvent(
+                      Range(startPosition, endPosition), event.newFragment.toString())))
     }
 
     @JvmStatic

@@ -17,6 +17,7 @@ class CodyFocusChangeListener(val project: Project) : FocusChangeListener {
     CodyAgentCodebase.getInstance(project).onFileOpened(file)
 
     ProtocolTextDocument.fromEditor(editor)?.let { textDocument ->
+      EditorChangesBus.documentChanged(project, textDocument)
       CodyAgentService.withAgent(project) { agent: CodyAgent ->
         agent.server.textDocumentDidFocus(textDocument)
       }

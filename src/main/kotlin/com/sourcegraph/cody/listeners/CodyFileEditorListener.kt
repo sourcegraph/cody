@@ -19,6 +19,7 @@ class CodyFileEditorListener : FileEditorManagerListener {
     try {
       source.selectedTextEditor?.let { editor ->
         val protocolTextFile = fromVirtualFile(editor, file)
+        EditorChangesBus.documentChanged(editor.project, protocolTextFile)
         withAgent(source.project) { agent: CodyAgent ->
           agent.server.textDocumentDidOpen(protocolTextFile)
         }
@@ -32,6 +33,7 @@ class CodyFileEditorListener : FileEditorManagerListener {
     try {
       source.selectedTextEditor?.let { editor ->
         val protocolTextFile = fromVirtualFile(editor, file)
+        EditorChangesBus.documentChanged(editor.project, protocolTextFile)
         withAgent(source.project) { agent: CodyAgent ->
           agent.server.textDocumentDidClose(protocolTextFile)
         }
