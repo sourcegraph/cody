@@ -24,6 +24,10 @@ import com.sourcegraph.telemetry.TelemetryInitializerActivity
  *   compatibility.
  */
 class PostStartupActivity : StartupActivity.DumbAware {
+
+  // TODO(olafurpg): this activity is taking ~2.5s to run during tests, which indicates that we're
+  // doing something wrong, which may be slowing down agent startup. Not fixing it now but this
+  // deserves more investigation.
   override fun runActivity(project: Project) {
     TelemetryInitializerActivity().runActivity(project)
     SettingsMigration().runActivity(project)

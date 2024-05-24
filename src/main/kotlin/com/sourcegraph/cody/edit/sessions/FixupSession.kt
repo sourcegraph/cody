@@ -56,7 +56,6 @@ abstract class FixupSession(
     val project: Project,
     var editor: Editor
 ) : Disposable {
-
   private val logger = Logger.getInstance(FixupSession::class.java)
   private val fixupService = FixupService.getInstance(project)
   private val documentListener by lazy { FixupSessionDocumentListener(this) }
@@ -93,7 +92,7 @@ abstract class FixupSession(
   @Volatile private var undoInProgress: Boolean = false
 
   init {
-    editor.document.addDocumentListener(documentListener, /* parentDisposable = */ this)
+    editor.document.addDocumentListener(documentListener, /* parentDisposable= */ this)
     Disposer.register(controller, this)
     triggerFixupAsync()
   }

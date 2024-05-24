@@ -4,7 +4,6 @@ import com.intellij.codeInsight.codeVision.ui.popup.layouter.bottom
 import com.intellij.codeInsight.codeVision.ui.popup.layouter.right
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.LogicalPosition
-import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.vfs.VirtualFile
 import java.awt.Point
@@ -49,7 +48,7 @@ private constructor(
       val startOffsetColumn = max(startOffset.column, 0)
 
       val endOffset = editor.xyToLogicalPosition(Point(visibleArea.right, visibleArea.bottom))
-      val endOffsetLine = max(0, min(endOffset.line, editor.document.lineCount - 1))
+      val endOffsetLine = max(0, min(endOffset.line, editor.document.lineCount))
       val endOffsetColumn = min(endOffset.column, editor.document.getLineEndOffset(endOffsetLine))
 
       return Range(
@@ -62,7 +61,7 @@ private constructor(
         newPosition: LogicalPosition
     ): ProtocolTextDocument? {
       val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return null
-      val position = Position(newPosition.line, newPosition.column)
+      val position = newPosition.codyPosition()
       return ProtocolTextDocument(uri = uriFor(file), selection = Range(position, position))
     }
 
@@ -70,25 +69,6 @@ private constructor(
     fun fromEditorWithRangeSelection(editor: Editor): ProtocolTextDocument? {
       val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return null
       return ProtocolTextDocument(uri = uriFor(file), selection = getSelection(editor))
-    }
-
-    @JvmStatic
-    fun fromEditorForDocumentEvent(editor: Editor, event: DocumentEvent): ProtocolTextDocument? {
-      val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return null
-      return ProtocolTextDocument(
-          uri = uriFor(file),
-          content = editor.document.text,
-          // TODO(olafurpg): let's implement incremental document synchronization later.
-          //                 Incremental document synchronization is very difficult to get
-          //                 100% right so we need to be careful.
-          //          contentChanges =
-          //              listOf(
-          //                  ProtocolTextDocumentContentChangeEvent(
-          //                      Range(
-          //                          position(editor.document, event.offset),
-          //                          position(editor.document, event.offset + event.oldLength)),
-          //                      event.newFragment.toString()))
-      )
     }
 
     @JvmStatic
@@ -120,4 +100,9 @@ private constructor(
       }
     }
   }
+}
+
+// Logical positions are 0-based (!), just like in VS Code.
+private fun LogicalPosition.codyPosition(): Position {
+  return Position(this.line, this.column)
 }
