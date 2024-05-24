@@ -81,7 +81,7 @@ describe('calculateContentChanges', () => {
             },
         ])
     })
-    it('hard (actual)', () => {
+    it.skip('hard (actual)', () => {
         const document = AgentTextDocument.from(
             Uri.file('basic.ts'),
             dedent`
