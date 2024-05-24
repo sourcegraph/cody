@@ -59,15 +59,15 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
             }
         }
 
-        if (document.content === undefined) {
+        if ((document.content ?? undefined) === undefined) {
             document.underlying.content = fromCache.getText()
         }
 
-        if (document.selection === undefined) {
+        if ((document.content ?? undefined) === undefined) {
             document.underlying.selection = fromCache.protocolDocument.selection
         }
 
-        if (document.visibleRange === undefined) {
+        if ((document.content ?? undefined) === undefined) {
             document.underlying.visibleRange = fromCache.protocolDocument.visibleRange
         }
 
