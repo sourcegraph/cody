@@ -15,7 +15,6 @@ import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.util.TextRange
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentCodebase
@@ -40,7 +39,6 @@ import com.sourcegraph.cody.edit.widget.LensGroupFactory
 import com.sourcegraph.cody.edit.widget.LensWidgetGroup
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.utils.CodyEditorUtil
-import com.sourcegraph.utils.CodyFormatter
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
@@ -88,8 +86,6 @@ abstract class FixupSession(
           logger.debug("Session cleanup error", x)
         }
       }
-
-  @Volatile private var undoInProgress: Boolean = false
 
   init {
     editor.document.addDocumentListener(documentListener, /* parentDisposable= */ this)
@@ -262,7 +258,6 @@ abstract class FixupSession(
   fun undo() {
     runInEdt { showWorkingGroup() }
     CodyAgentService.withAgent(project) { agent ->
-      undoInProgress = true
       agent.server.undoEditTask(TaskIdParam(taskId!!))
     }
   }
@@ -365,23 +360,6 @@ abstract class FixupSession(
             throw EditExecutionException(action, e)
           }
         }
-
-        // Skip the formatting if these edits are part of an undo operation.
-        if (!undoInProgress) {
-          // It is safe to use selectionRange here, because it is set in the constructor
-          // by calling triggerFixupAsync() which in turn calls ensureSelectionRange().
-          selectionRange!!.let {
-            val tr = TextRange(it.startOffset, it.endOffset)
-            val input = document.getText(tr)
-            val formatted =
-                CodyFormatter.formatStringBasedOnDocument(
-                    input, project, document, tr, tr.startOffset)
-            document.replaceString(tr.startOffset, tr.endOffset, formatted)
-          }
-        }
-
-        // If this has been an undo operation, it has been completed by now
-        undoInProgress = false
 
         performedActions += currentActions
       }
