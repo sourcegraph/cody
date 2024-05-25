@@ -1,7 +1,3 @@
-.cell-container {
-    overflow: hidden;
-}
-
 /* Make footer take up less vertical space */
 .footer {
     margin-top: calc(0.25*var(--cell-spacing));
