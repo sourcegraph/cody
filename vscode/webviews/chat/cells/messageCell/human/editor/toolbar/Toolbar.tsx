@@ -18,8 +18,6 @@ export const Toolbar: FunctionComponent<{
 
     isEditorFocused: boolean
 
-    isParentHovered: boolean
-
     onMentionClick?: () => void
 
     onSubmitClick: (withEnhancedContext: boolean) => void
@@ -34,7 +32,6 @@ export const Toolbar: FunctionComponent<{
 }> = ({
     userInfo,
     isEditorFocused,
-    isParentHovered,
     onMentionClick,
     onSubmitClick,
     submitDisabled,
@@ -84,7 +81,6 @@ export const Toolbar: FunctionComponent<{
             <SubmitButton
                 onClick={onSubmitClick}
                 isEditorFocused={isEditorFocused}
-                isParentHovered={isParentHovered}
                 disabled={submitDisabled}
             />
         </menu>

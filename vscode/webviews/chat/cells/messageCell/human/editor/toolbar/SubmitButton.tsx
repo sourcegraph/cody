@@ -7,9 +7,8 @@ import styles from './SubmitButton.module.css'
 export const SubmitButton: FunctionComponent<{
     onClick: (withEnhancedContext: boolean) => void
     isEditorFocused?: boolean
-    isParentHovered?: boolean
     disabled?: boolean
-}> = ({ onClick: parentOnClick, isEditorFocused, isParentHovered, disabled }) => {
+}> = ({ onClick: parentOnClick, isEditorFocused, disabled }) => {
     return (
         <>
             <ToolbarButton
@@ -20,7 +19,7 @@ export const SubmitButton: FunctionComponent<{
                 onClick={() => parentOnClick(false)}
                 aria-label="Send without automatic code context"
                 className={clsx(styles.button, {
-                    [styles.editorFocused]: isEditorFocused || isParentHovered,
+                    [styles.editorFocused]: isEditorFocused,
                 })}
                 disabled={disabled}
                 tabIndex={-1} // press Enter to invoke, doesn't need to be tabbable
@@ -39,7 +38,7 @@ export const SubmitButton: FunctionComponent<{
                 onClick={() => parentOnClick(true)}
                 aria-label="Send with automatic code context"
                 className={clsx(styles.button, {
-                    [styles.editorFocused]: isEditorFocused || isParentHovered,
+                    [styles.editorFocused]: isEditorFocused,
                 })}
                 disabled={disabled}
                 tabIndex={-1} // press Enter to invoke, doesn't need to be tabbable

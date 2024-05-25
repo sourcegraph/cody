@@ -131,10 +131,6 @@ export const HumanMessageEditor: FunctionComponent<{
         [onGapClick]
     )
 
-    const [isHovered, setIsHovered] = useState(false)
-    const onMouseEnter = useCallback(() => setIsHovered(true), [])
-    const onMouseLeave = useCallback(() => setIsHovered(false), [])
-
     const onMentionClick = useCallback((): void => {
         if (!editorRef.current) {
             throw new Error('No editorRef')
@@ -169,8 +165,6 @@ export const HumanMessageEditor: FunctionComponent<{
             )}
             onMouseDown={onMaybeGapClick}
             onClick={onMaybeGapClick}
-            onMouseEnter={onMouseEnter}
-            onMouseLeave={onMouseLeave}
             onFocus={onFocus}
             onBlur={onBlur}
         >
@@ -189,7 +183,6 @@ export const HumanMessageEditor: FunctionComponent<{
                 <Toolbar
                     userInfo={userInfo}
                     isEditorFocused={isEditorFocused || isFocusWithin}
-                    isParentHovered={isHovered}
                     onMentionClick={onMentionClick}
                     onSubmitClick={onSubmitClick}
                     submitDisabled={isEmptyEditorValue}
