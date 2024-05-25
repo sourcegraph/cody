@@ -256,7 +256,7 @@
       },
       {
         "view": "cody.commands.disabled.view",
-        "contents": "Commands are disabled for this file by an admin setting. Other Cody features are also disabled.\nMore info about [Cody Ignore](https://sourcegraph.com/docs/cody/capabilities/ignore-context#cody-ignore)",
+        "contents": "Commands are disabled for this file by an admin setting. Other Cody features are also disabled.\nMore info about [Cody Context Filters](https://sourcegraph.com/docs/cody/capabilities/ignore-context#cody-ignore)",
         "when": "cody.activated && cody.currentFileIgnored"
       }
     ],
