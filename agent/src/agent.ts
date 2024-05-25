@@ -337,7 +337,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 ? vscode.Uri.parse(clientInfo.workspaceRootUri)
                 : vscode.Uri.from({
                       scheme: 'file',
-                      path: clientInfo.workspaceRootPath,
+                      path: clientInfo.workspaceRootPath ?? undefined,
                   })
             try {
                 await initializeVscodeExtension(
@@ -819,7 +819,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerAuthenticatedRequest('editCommands/code', params => {
             const instruction = PromptString.unsafe_fromUserQuery(params.instruction)
             const args: ExecuteEditArguments = {
-                configuration: { instruction, model: params.model, mode: params.mode ?? 'edit' },
+                configuration: {
+                    instruction,
+                    model: params.model ?? undefined,
+                    mode: params.mode ?? 'edit',
+                },
             }
             return this.createEditTask(executeEdit(args).then(task => task && { type: 'edit', task }))
         })
@@ -1004,9 +1008,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('remoteRepo/list', async ({ query, first, afterId }) => {
             const result = await this.extension.enterpriseContextFactory.repoSearcher.list(
-                query,
+                query ?? undefined,
                 first,
-                afterId
+                afterId ?? undefined
             )
             return {
                 repos: result.repos,
@@ -1242,7 +1246,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 } else if (message.type === 'errors') {
                     panel.messageInProgressChange.fire(message)
                 } else if (message.type === 'attribution') {
-                    panel.pushAttribution(message)
+                    panel.pushAttribution({
+                        ...message,
+                        attribution: message.attribution ?? undefined,
+                        error: message.error ?? undefined,
+                    })
                 }
 
                 this.notify('webview/postMessage', {

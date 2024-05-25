@@ -39,7 +39,7 @@ type RepoName = string
 type IsRepoNameIgnored = boolean
 
 // These schemes are always deemed safe. Remote context has https URIs, but
-// the remote applies Cody ignore rules.
+// the remote applies Cody Context Filters rules.
 const allowedSchemes = new Set(['http', 'https'])
 
 export class ContextFiltersProvider implements vscode.Disposable {

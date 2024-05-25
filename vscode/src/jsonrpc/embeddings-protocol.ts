@@ -5,7 +5,7 @@
 interface InitializeParams {
     codyGatewayEndpoint: string
     indexPath: string
-    chunkingPolicy?: ChunkingPolicy
+    chunkingPolicy?: ChunkingPolicy | undefined | null
 }
 
 interface ChunkingPolicy {

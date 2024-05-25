@@ -350,7 +350,7 @@ const _workspace: typeof vscode.workspace = {
         }
         return relativePath
     },
-    // TODO: used for Cody Ignore, WorkspaceRepoMapper and custom commands
+    // TODO: used for Cody Context Filters, WorkspaceRepoMapper and custom commands
     // https://github.com/sourcegraph/cody/issues/4136
     createFileSystemWatcher: () => emptyFileWatcher,
     getConfiguration: (section, scope): vscode.WorkspaceConfiguration => {

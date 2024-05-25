@@ -45,7 +45,7 @@ describe('Agent', () => {
         ModelProvider.setProviders(getDotComDefaultModels())
         await workspace.beforeAll()
 
-        // Init a repo in the workspace to make the parent-dirs repo-name resolver work for Cody Ignore tests.
+        // Init a repo in the workspace to make the parent-dirs repo-name resolver work for Cody Context Filters tests.
         spawnSync('git', ['init'], { cwd: workspace.rootPath, stdio: 'inherit' })
         spawnSync('git', ['remote', 'add', 'origin', 'git@github.com:sourcegraph/cody.git'], {
             cwd: workspace.rootPath,
@@ -1496,8 +1496,8 @@ describe('Agent', () => {
             expect(error).null
         }, 20_000)
 
-        // Use S2 instance for Cody Ignore enterprise tests
-        describe('Cody Ignore for enterprise', () => {
+        // Use S2 instance for Cody Context Filters enterprise tests
+        describe('Cody Context Filters for enterprise', () => {
             it('testing/ignore/overridePolicy', async () => {
                 const onChangeCallback = vi.fn()
 
