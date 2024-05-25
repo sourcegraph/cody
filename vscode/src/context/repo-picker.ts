@@ -219,6 +219,6 @@ function showIgnoredRepoNotification(names: string[]) {
     vscode.window.showErrorMessage(
         `The ${pluralize('repository', names.length, 'repositories')} ${names.join(
             ', '
-        )} is ignored by your Cody ignore policy.`
+        )} is ignored due to Cody Context Filters.`
     )
 }
