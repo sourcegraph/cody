@@ -29,7 +29,7 @@ export class EvaluationDocument {
         public readonly snapshotDirectory?: string
     ) {
         this.lines = text.split('\n')
-        this.textDocument = new AgentTextDocument(
+        this.textDocument = AgentTextDocument.fromProtocol(
             ProtocolTextDocumentWithUri.from(uri, { content: text })
         )
     }

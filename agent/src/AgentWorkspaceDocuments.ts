@@ -9,8 +9,6 @@ import { doesFileExist } from '../../vscode/src/commands/utils/workspace-files'
 import { resetActiveEditor } from '../../vscode/src/editor/active-editor'
 import { AgentTextDocument } from './AgentTextDocument'
 import { AgentTextEditor } from './AgentTextEditor'
-import { applyContentChanges } from './applyContentChanges'
-import { calculateContentChanges } from './calculateContentChanges'
 import { clearArray } from './clearArray'
 import { panicWhenClientIsOutOfSync } from './panicWhenClientIsOutOfSync'
 import * as vscode_shim from './vscode-shim'
@@ -58,7 +56,7 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     } {
         const cached = this.agentDocuments.get(document.underlying.uri)
         if (!cached) {
-            const result = new AgentTextDocument(document)
+            const result = AgentTextDocument.fromProtocol(document)
             const editor = new AgentTextEditor(result, this.params)
             this.agentDocuments.set(document.underlying.uri, { document: result, editor })
             return { document: result, editor, contentChanges: [] }
@@ -66,6 +64,9 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         const { document: fromCache } = cached
 
         // The client may send null values that we convert to undefined here.
+        // NOTE(olafurpg): this should no longer be needed after
+        // https://github.com/sourcegraph/cody/pull/4286
+        // However, the old caused so many problems for JB so we are keeping it.
         if (document.content === null) {
             document.underlying.content = undefined
         }
@@ -83,33 +84,7 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         // document to reflect the latest chagnes. For each URI, we keep a
         // singleton document so that `AgentTextDocument.getText()` always
         // reflects the latest value.
-        const contentChanges: vscode.TextDocumentContentChangeEvent[] = []
-        if (document.contentChanges && document.contentChanges.length > 0) {
-            // Incremental document sync.
-            const changes = applyContentChanges(fromCache, document.contentChanges)
-            contentChanges.push(...changes.contentChanges)
-            document.underlying.content = changes.newText
-        } else if (document.content !== undefined) {
-            // Full document sync.
-            for (const change of calculateContentChanges(fromCache, document.content)) {
-                contentChanges.push(change)
-            }
-        } else {
-            // No document sync. Use content from last update.
-            document.underlying.content = fromCache.getText()
-        }
-
-        if (!document.selection) {
-            // No changes to the selection, populate from cache
-            document.underlying.selection = fromCache.protocolDocument.selection
-        }
-
-        if (!document.visibleRange) {
-            // No changes to the visible range, populate from cache
-            document.underlying.visibleRange = fromCache.protocolDocument.visibleRange
-        }
-
-        fromCache.update(document)
+        const contentChanges = fromCache.updateFromClientDocument(document)
 
         panicWhenClientIsOutOfSync(document.underlying, cached.editor, this.doPanic)
 
@@ -232,8 +207,8 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
 
     public newTextEditor(document: AgentTextDocument): vscode.TextEditor {
         return (
-            this.agentDocuments.get(document.protocolDocument.underlying.uri)?.editor ??
-            new AgentTextEditor(document, this.params)
+            this.agentDocuments.get(document.uriString)?.editor ??
+            new AgentTextEditor(document, this.params) // TODO: remove this ugly hack
         )
     }
 }

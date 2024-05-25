@@ -36,6 +36,7 @@
   "bin": "dist/index.js",
   "files": ["dist/index.js", "dist/index.js.map", "dist/*.wasm"],
   "dependencies": {
+    "@codemirror/state": "^6.4.1",
     "@pollyjs/core": "^6.0.6",
     "@pollyjs/persister": "^6.0.6",
     "@pollyjs/persister-fs": "^6.0.6",

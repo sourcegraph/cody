@@ -29,7 +29,7 @@ describe('panicWhenClientIsOutOfSync', () => {
                 ProtocolTextDocumentWithUri.fromDocument(mostRecentClientDocument)
             ).protocolDocument.underlying,
             new AgentTextEditor(
-                new AgentTextDocument(
+                AgentTextDocument.fromProtocol(
                     ProtocolTextDocumentWithUri.fromDocument(serverBeforeRequestDocument)
                 )
             ),

@@ -9,29 +9,34 @@ import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocume
 
 import { AgentTextDocument } from './AgentTextDocument'
 
+// TODO: this test suite is failing
 describe('AgentTextDocument', () => {
     const uri = testFileUri('foo')
-    const basic = new AgentTextDocument(ProtocolTextDocumentWithUri.from(uri, { content: 'a\nb\n' }))
-    const basicCrlf = new AgentTextDocument(
+    const basic = AgentTextDocument.fromProtocol(
+        ProtocolTextDocumentWithUri.from(uri, { content: 'a\nb\n' })
+    )
+    const basicCrlf = AgentTextDocument.fromProtocol(
         ProtocolTextDocumentWithUri.from(uri, { content: 'a\r\nb\r\n' })
     )
-    const emptyLine = new AgentTextDocument(ProtocolTextDocumentWithUri.from(uri, { content: 'a\n\n' }))
-    const noEndOfFileNewline = new AgentTextDocument(
+    const emptyLine = AgentTextDocument.fromProtocol(
+        ProtocolTextDocumentWithUri.from(uri, { content: 'a\n\n' })
+    )
+    const noEndOfFileNewline = AgentTextDocument.fromProtocol(
         ProtocolTextDocumentWithUri.from(uri, { content: 'a\nb' })
     )
-    const emptyFirstLine = new AgentTextDocument(
+    const emptyFirstLine = AgentTextDocument.fromProtocol(
         ProtocolTextDocumentWithUri.from(uri, { content: '\nb' })
     )
-    const emptyFirstLineCrlf = new AgentTextDocument(
+    const emptyFirstLineCrlf = AgentTextDocument.fromProtocol(
         ProtocolTextDocumentWithUri.from(uri, { content: '\r\nb' })
     )
-    const noIndentation = new AgentTextDocument(
+    const noIndentation = AgentTextDocument.fromProtocol(
         ProtocolTextDocumentWithUri.from(uri, { content: 'sss\n' })
     )
-    const indentation = new AgentTextDocument(
+    const indentation = AgentTextDocument.fromProtocol(
         ProtocolTextDocumentWithUri.from(uri, { content: '  a\n' })
     )
-    const indentationTab = new AgentTextDocument(
+    const indentationTab = AgentTextDocument.fromProtocol(
         ProtocolTextDocumentWithUri.from(uri, { content: '\t\tab\n' })
     )
 
@@ -47,7 +52,6 @@ describe('AgentTextDocument', () => {
         assert.equal(basicCrlf.lineCount, 2)
         assert.equal(emptyFirstLine.lineCount, 2)
         assert.equal(noEndOfFileNewline.lineCount, 2)
-        assert.equal(emptyFirstLine.lineCount, 2)
         assert.equal(emptyFirstLineCrlf.lineCount, 2)
     })
 

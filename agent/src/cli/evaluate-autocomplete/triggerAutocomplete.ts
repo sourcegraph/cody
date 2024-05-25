@@ -65,7 +65,7 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
         return
     }
 
-    const textDocument = new AgentTextDocument(
+    const textDocument = AgentTextDocument.fromProtocol(
         ProtocolTextDocumentWithUri.from(document.uri, { content: modifiedContent })
     )
     for (const [index, item] of result.items.entries()) {
@@ -80,7 +80,7 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
         )
         const start = new vscode.Position(item.range.start.line, item.range.start.character)
         const end = new vscode.Position(item.range.end.line, item.range.end.character)
-        const modifiedDocument = new AgentTextDocument(
+        const modifiedDocument = AgentTextDocument.fromProtocol(
             ProtocolTextDocumentWithUri.from(document.uri, { content: parameters.modifiedContent })
         )
         const newText = [

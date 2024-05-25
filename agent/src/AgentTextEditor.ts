@@ -5,38 +5,31 @@ import type { EditFunction } from './AgentWorkspaceDocuments'
 
 export class AgentTextEditor implements vscode.TextEditor {
     constructor(
-        private readonly agentDocument: AgentTextDocument,
+        public readonly document: AgentTextDocument,
         private readonly params?: { edit?: EditFunction }
     ) {}
-    get document(): AgentTextDocument {
-        return this.agentDocument
-    }
     get selection(): vscode.Selection {
-        const protocolSelection = this.agentDocument.protocolDocument.selection
-        const selection: vscode.Selection = protocolSelection
-            ? new vscode.Selection(
-                  new vscode.Position(protocolSelection.start.line, protocolSelection.start.character),
-                  new vscode.Position(protocolSelection.end.line, protocolSelection.end.character)
-              )
-            : // Default to putting the cursor at the start of the file.
-              new vscode.Selection(new vscode.Position(0, 0), new vscode.Position(0, 0))
-        return selection
+        const cmSelection = this.document.state.selection
+        return new vscode.Selection(
+            this.document.positionAt(cmSelection.main.from),
+            this.document.positionAt(cmSelection.main.to)
+        )
     }
     get selections(): readonly vscode.Selection[] {
-        return [this.selection]
+        const cmSelection = this.document.state.selection
+        return cmSelection.ranges.map(
+            range =>
+                new vscode.Selection(
+                    this.document.positionAt(range.from),
+                    this.document.positionAt(range.to)
+                )
+        )
     }
     get visibleRanges(): readonly vscode.Range[] {
-        const protocolVisibleRange = this.agentDocument.protocolDocument.visibleRange
-        const visibleRange = protocolVisibleRange
-            ? new vscode.Selection(
-                  new vscode.Position(
-                      protocolVisibleRange.start.line,
-                      protocolVisibleRange.start.character
-                  ),
-                  new vscode.Position(protocolVisibleRange.end.line, protocolVisibleRange.end.character)
-              )
-            : this.selection
-        return [visibleRange]
+        return this.document.visibleRange
+            ? [this.document.visibleRange]
+            : // TODO: should we have a better default?
+              []
     }
     get options(): vscode.TextEditorOptions {
         return {
@@ -47,6 +40,7 @@ export class AgentTextEditor implements vscode.TextEditor {
             tabSize: 2,
         }
     }
+
     viewColumn = vscode.ViewColumn.Active
 
     // IMPORTANT(olafurpg): `edit` must be defined as a fat arrow. The tests
@@ -56,7 +50,7 @@ export class AgentTextEditor implements vscode.TextEditor {
         options?: { readonly undoStopBefore: boolean; readonly undoStopAfter: boolean } | undefined
     ): Promise<boolean> => {
         if (this.params?.edit) {
-            return this.params.edit(this.agentDocument.uri, callback, options)
+            return this.params.edit(this.document.uri, callback, options)
         }
         logDebug('AgentTextEditor:edit()', 'not supported')
         return Promise.resolve(false)

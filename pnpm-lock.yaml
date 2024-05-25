@@ -108,6 +108,9 @@ importers:
 
   agent:
     dependencies:
+      '@codemirror/state':
+        specifier: ^6.4.1
+        version: 6.4.1
       '@pollyjs/core':
         specifier: ^6.0.6
         version: 6.0.6
@@ -2188,6 +2191,10 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /@codemirror/state@6.4.1:
+    resolution: {integrity: sha512-QkEyUiLhsJoZkbumGZlswmAhA7CBU02Wrz7zvH4SrcifbsqwlXShVXg65f3v/ts57W3dqyamEriMhij1Z3Zz4A==}
+    dev: false
 
   /@colors/colors@1.5.0:
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
