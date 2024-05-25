@@ -7,8 +7,12 @@ import styles from './SubmitButton.module.css'
 export const SubmitButton: FunctionComponent<{
     onClick: (withEnhancedContext: boolean) => void
     isEditorFocused?: boolean
+
+    /** Whether this editor is for a message whose assistant response is in progress. */
+    isPendingResponse: boolean
+
     disabled?: boolean
-}> = ({ onClick: parentOnClick, isEditorFocused, disabled }) => {
+}> = ({ onClick: parentOnClick, isEditorFocused, isPendingResponse, disabled }) => {
     return (
         <>
             <ToolbarButton
@@ -39,6 +43,7 @@ export const SubmitButton: FunctionComponent<{
                 aria-label="Send with automatic code context"
                 className={clsx(styles.button, {
                     [styles.editorFocused]: isEditorFocused,
+                    [styles.buttonFlashFade]: isPendingResponse,
                 })}
                 disabled={disabled}
                 tabIndex={-1} // press Enter to invoke, doesn't need to be tabbable

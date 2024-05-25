@@ -18,6 +18,9 @@ export const Toolbar: FunctionComponent<{
 
     isEditorFocused: boolean
 
+    /** Whether this editor is for a message whose assistant response is in progress. */
+    isPendingResponse: boolean
+
     onMentionClick?: () => void
 
     onSubmitClick: (withEnhancedContext: boolean) => void
@@ -28,15 +31,18 @@ export const Toolbar: FunctionComponent<{
 
     focusEditor?: () => void
 
+    hidden?: boolean
     className?: string
 }> = ({
     userInfo,
     isEditorFocused,
+    isPendingResponse,
     onMentionClick,
     onSubmitClick,
     submitDisabled,
     onGapClick,
     focusEditor,
+    hidden,
     className,
 }) => {
     /**
@@ -59,6 +65,8 @@ export const Toolbar: FunctionComponent<{
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
         <menu
             role="toolbar"
+            aria-hidden={hidden}
+            hidden={hidden}
             className={clsx(styles.container, className)}
             onMouseDown={onMaybeGapClick}
             onClick={onMaybeGapClick}
@@ -81,6 +89,7 @@ export const Toolbar: FunctionComponent<{
             <SubmitButton
                 onClick={onSubmitClick}
                 isEditorFocused={isEditorFocused}
+                isPendingResponse={isPendingResponse}
                 disabled={submitDisabled}
             />
         </menu>

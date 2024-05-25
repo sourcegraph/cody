@@ -1,6 +1,13 @@
 import type { ContextItem } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
-import { type FunctionComponent, useCallback, useEffect, useRef, useState } from 'react'
+import {
+    type FocusEventHandler,
+    type FunctionComponent,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from 'react'
 import type { UserAccountInfo } from '../../../../../Chat'
 import {
     PromptEditor,
@@ -27,6 +34,9 @@ export const HumanMessageEditor: FunctionComponent<{
     /** Whether this editor is for a message that has been sent already. */
     isSent: boolean
 
+    /** Whether this editor is for a message whose assistant response is in progress. */
+    isPendingResponse: boolean
+
     disabled?: boolean
 
     onChange?: (editorState: SerializedPromptEditorValue) => void
@@ -37,6 +47,9 @@ export const HumanMessageEditor: FunctionComponent<{
 
     /** For use in storybooks only. */
     __storybook__focus?: boolean
+
+    /** For use in tests only. */
+    __test_dontTemporarilyDisableSubmit?: boolean
 }> = ({
     userInfo,
     userContextFromSelection,
@@ -44,14 +57,19 @@ export const HumanMessageEditor: FunctionComponent<{
     placeholder,
     isFirstMessage,
     isSent,
+    isPendingResponse,
     disabled = false,
     onChange,
     onSubmit,
     isEditorInitiallyFocused,
     className,
     __storybook__focus,
+    __test_dontTemporarilyDisableSubmit,
 }) => {
     const editorRef = useRef<PromptEditorRefAPI>(null)
+
+    /** Avoid users pressing <Enter> repeatedly and accidentally sending lots of messages. */
+    const [isSubmitTemporarilyDisabled, setIsSubmitTemporarilyDisabled] = useState<boolean>(false)
 
     // The only PromptEditor state we really need to track in our own state is whether it's empty.
     const [isEmptyEditorValue, setIsEmptyEditorValue] = useState(initialEditorState === undefined)
@@ -59,18 +77,35 @@ export const HumanMessageEditor: FunctionComponent<{
         (value: SerializedPromptEditorValue): void => {
             onChange?.(value)
             setIsEmptyEditorValue(!value?.text?.trim())
+
+            // Any change should immediately reenable submit.
+            setIsSubmitTemporarilyDisabled(false)
         },
         [onChange]
     )
 
     const onSubmitClick = useCallback(
         (addEnhancedContext: boolean) => {
+            if (isSubmitTemporarilyDisabled) {
+                console.log(
+                    'Prevented submit because it was temporarily disabled after a recent previous submit.'
+                )
+                return
+            }
+
             if (!editorRef.current) {
                 throw new Error('No editorRef')
             }
             onSubmit(editorRef.current.getSerializedValue(), addEnhancedContext)
+
+            if (!__test_dontTemporarilyDisableSubmit) {
+                setIsSubmitTemporarilyDisabled(true)
+                setTimeout((): void => {
+                    setIsSubmitTemporarilyDisabled(false)
+                }, 2000)
+            }
         },
-        [onSubmit]
+        [isSubmitTemporarilyDisabled, onSubmit, __test_dontTemporarilyDisableSubmit]
     )
 
     const onEditorEnterKey = useCallback(
@@ -95,7 +130,14 @@ export const HumanMessageEditor: FunctionComponent<{
     const onFocus = useCallback(() => {
         setIsFocusWithin(true)
     }, [])
-    const onBlur = useCallback(() => {
+    const onBlur = useCallback<FocusEventHandler>(event => {
+        // If we're shifting focus to one of our child elements, just skip this call because we'll
+        // immediately set it back to true.
+        const container = event.currentTarget as HTMLElement
+        if (event.relatedTarget && container.contains(event.relatedTarget)) {
+            return
+        }
+
         setIsFocusWithin(false)
     }, [])
 
@@ -152,14 +194,22 @@ export const HumanMessageEditor: FunctionComponent<{
 
     const focusEditor = useCallback(() => editorRef.current?.setFocus(true), [])
 
+    useEffect(() => {
+        if (__storybook__focus && editorRef.current) {
+            setTimeout(() => focusEditor())
+        }
+    }, [__storybook__focus, focusEditor])
+
+    const focused = Boolean(isEditorFocused || isFocusWithin || __storybook__focus)
+
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
         <div
             className={clsx(
                 styles.container,
                 {
-                    [styles.sent]: isSent,
-                    [styles.focused]: isEditorFocused || isFocusWithin || __storybook__focus,
+                    [styles.sentComplete]: isSent && !isPendingResponse,
+                    [styles.focused]: focused,
                 },
                 className
             )}
@@ -182,12 +232,14 @@ export const HumanMessageEditor: FunctionComponent<{
             {!disabled && (
                 <Toolbar
                     userInfo={userInfo}
-                    isEditorFocused={isEditorFocused || isFocusWithin}
+                    isEditorFocused={focused}
+                    isPendingResponse={isPendingResponse}
                     onMentionClick={onMentionClick}
                     onSubmitClick={onSubmitClick}
-                    submitDisabled={isEmptyEditorValue}
+                    submitDisabled={isEmptyEditorValue || isSubmitTemporarilyDisabled}
                     onGapClick={onGapClick}
                     focusEditor={focusEditor}
+                    hidden={!focused && isSent && !isPendingResponse}
                     className={styles.toolbar}
                 />
             )}

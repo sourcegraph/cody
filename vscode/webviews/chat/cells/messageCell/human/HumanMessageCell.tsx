@@ -27,6 +27,9 @@ export const HumanMessageCell: FunctionComponent<{
     /** Whether this editor is for a message that has been sent already. */
     isSent: boolean
 
+    /** Whether this editor is for a message whose assistant response is in progress. */
+    isPendingResponse: boolean
+
     onChange?: (editorState: SerializedPromptEditorValue) => void
     onSubmit: (editorValue: SerializedPromptEditorValue, addEnhancedContext: boolean) => void
 
@@ -43,6 +46,7 @@ export const HumanMessageCell: FunctionComponent<{
     userContextFromSelection,
     isFirstMessage,
     isSent,
+    isPendingResponse,
     onChange,
     onSubmit,
     isEditorInitiallyFocused,
@@ -68,6 +72,7 @@ export const HumanMessageCell: FunctionComponent<{
                     }
                     isFirstMessage={isFirstMessage}
                     isSent={isSent}
+                    isPendingResponse={isPendingResponse}
                     onChange={onChange}
                     onSubmit={onSubmit}
                     disabled={!chatEnabled}

@@ -61,6 +61,7 @@ export const Transcript: React.FunctionComponent<{
                     chatEnabled={chatEnabled}
                     isFirstMessage={messageIndexInTranscript === 0}
                     isSent={true}
+                    isPendingResponse={isLastHumanMessage && isLoading}
                     onSubmit={(
                         editorValue: SerializedPromptEditorValue,
                         addEnhancedContext: boolean
@@ -125,6 +126,7 @@ export const Transcript: React.FunctionComponent<{
                     message={null}
                     isFirstMessage={transcript.length === 0}
                     isSent={false}
+                    isPendingResponse={false}
                     userInfo={userInfo}
                     chatEnabled={chatEnabled}
                     isEditorInitiallyFocused={true}
