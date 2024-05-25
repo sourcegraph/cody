@@ -83,7 +83,11 @@ export type ClientRequests = {
 
     // Trigger commands that edit the code.
     'editCommands/code': [
-        { instruction: string; model?: string | undefined | null; mode?: 'edit' | 'insert' },
+        {
+            instruction: string
+            model?: string | undefined | null
+            mode?: 'edit' | 'insert' | undefined | null
+        },
         EditTask,
     ]
     'editCommands/test': [null, EditTask]
