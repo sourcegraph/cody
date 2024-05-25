@@ -40,7 +40,7 @@ export function panicWhenClientIsOutOfSync(
             params.doPanic(diff)
         }
 
-        if (typeof clientSourceOfTruthDocument.selection === 'object') {
+        if ((clientSourceOfTruthDocument.selection ?? undefined) !== undefined) {
             const clientCompareObject = {
                 selection: clientSourceOfTruthDocument.selection,
                 // Ignoring visibility for now. It was causing low-priority panics
