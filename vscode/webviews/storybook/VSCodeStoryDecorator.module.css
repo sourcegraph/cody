@@ -21,6 +21,11 @@ vscode-button::part(control) {
     text-decoration: none;
 }
 
+.container--webview {
+    max-height: max(500px, calc(100vh - 6rem));
+    overflow: auto;
+}
+
 .container--webview, .container--cell {
     max-width: 80%;
     margin: 2rem auto;
