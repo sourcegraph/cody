@@ -1,10 +1,6 @@
 import { clsx } from 'clsx'
 import type React from 'react'
-<<<<<<< HEAD
-import { type ReactNode, useCallback, useEffect } from 'react'
-=======
-import { useCallback, useEffect, useState } from 'react'
->>>>>>> 2ec71667 (feat(chat): add remaining token indicators to chat view)
+import { type ReactNode, useCallback, useEffect, useState } from 'react'
 
 import type {
     AuthStatus,
