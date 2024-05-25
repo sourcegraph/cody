@@ -273,7 +273,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 await this.handleEdit(
                     uuid.v4(),
                     PromptString.unsafe_fromUserQuery(message.text),
-                    message.index,
+                    message.index ?? undefined,
                     message.contextFiles ?? [],
                     message.editorState,
                     message.addEnhancedContext || false
@@ -308,10 +308,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 void openExternalLinks(message.value)
                 break
             case 'openFile':
-                await openFile(message.uri, message.range, this.webviewPanel?.viewColumn)
+                await openFile(message.uri, message.range ?? undefined, this.webviewPanel?.viewColumn)
                 break
             case 'openLocalFileWithRange':
-                await openLocalFileWithRange(message.filePath, message.range)
+                await openLocalFileWithRange(message.filePath, message.range ?? undefined)
                 break
             case 'newFile':
                 handleCodeFromSaveToNewFile(message.text)
@@ -325,7 +325,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 break
             }
             case 'context/choose-remote-search-repo': {
-                await this.handleChooseRemoteSearchRepo(message.explicitRepos)
+                await this.handleChooseRemoteSearchRepo(message.explicitRepos ?? undefined)
                 break
             }
             case 'context/remove-remote-search-repo':
@@ -351,7 +351,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 await this.clearAndRestartSession()
                 break
             case 'event':
-                telemetryService.log(message.eventName, message.properties)
+                telemetryService.log(message.eventName, message.properties ?? undefined)
                 break
             case 'recordEvent':
                 telemetryRecorder.recordEvent(
