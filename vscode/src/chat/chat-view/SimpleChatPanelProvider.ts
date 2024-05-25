@@ -23,7 +23,7 @@ import {
     PromptString,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
-    type TokenCounter,
+    TokenCounter,
     Typewriter,
     allMentionProvidersMetadata,
     hydrateAfterPostMessage,
@@ -429,6 +429,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         this.postChatModels()
         await this.saveSession()
+        this.postRemainingTokensToWebview(new TokenCounter(this.chatModel.contextWindow))
         this.initDoer.signalInitialized()
     }
 
@@ -1204,6 +1205,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         this.chatModel = new SimpleChatModel(this.chatModel.modelID)
         this.postViewTranscript()
+        this.postRemainingTokensToWebview(new TokenCounter(this.chatModel.contextWindow))
 
         vscode.commands.executeCommand('setContext', 'cody.hasNewChatOpened', true)
     }
