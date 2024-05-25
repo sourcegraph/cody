@@ -158,7 +158,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             const focusElement = focusNode instanceof Element ? focusNode : focusNode?.parentElement
             const focusEditor = focusElement?.closest<HTMLElement>('[data-lexical-editor="true"]')
             if (focusEditor) {
-                focusEditor.focus()
+                focusEditor.focus({ preventScroll: true })
             }
         }
         window.addEventListener('focus', onFocus)

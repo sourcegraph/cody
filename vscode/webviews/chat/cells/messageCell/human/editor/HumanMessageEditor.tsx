@@ -108,7 +108,7 @@ export const HumanMessageEditor: FunctionComponent<{
             const userHasIntentionalSelection = selection && !selection.isCollapsed
             const userHasIntentionalScroll = window.scrollY !== 0
             if (!userHasIntentionalSelection && !userHasIntentionalScroll) {
-                editorRef.current?.setFocus(true, true)
+                editorRef.current?.setFocus(true, { moveCursorToEnd: true })
             }
         }
     }, [isEditorInitiallyFocused])
@@ -117,7 +117,7 @@ export const HumanMessageEditor: FunctionComponent<{
      * If the user clicks in a gap, focus the editor so that the whole component "feels" like an input field.
      */
     const onGapClick = useCallback(() => {
-        editorRef.current?.setFocus(true, true)
+        editorRef.current?.setFocus(true, { moveCursorToEnd: true })
     }, [])
     const onMaybeGapClick = useCallback(
         (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {

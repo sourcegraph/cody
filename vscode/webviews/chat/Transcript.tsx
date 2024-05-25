@@ -127,7 +127,7 @@ export const Transcript: React.FunctionComponent<{
                     isSent={false}
                     userInfo={userInfo}
                     chatEnabled={chatEnabled}
-                    isEditorInitiallyFocused={transcript.length === 0}
+                    isEditorInitiallyFocused={true}
                     userContextFromSelection={userContextFromSelection}
                     onSubmit={(
                         editorValue: SerializedPromptEditorValue,

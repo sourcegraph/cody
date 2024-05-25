@@ -4,6 +4,7 @@ import { clsx } from 'clsx'
 import {
     $createTextNode,
     $getRoot,
+    $getSelection,
     $insertNodes,
     CLEAR_HISTORY_COMMAND,
     type LexicalEditor,
@@ -40,7 +41,7 @@ interface Props extends KeyboardEventPluginProps {
 export interface PromptEditorRefAPI {
     setEditorState(value: SerializedPromptEditorState | null): void
     getSerializedValue(): SerializedPromptEditorValue
-    setFocus(focus: boolean, moveCursorToEnd?: boolean): void
+    setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }): void
     appendText(text: string, ensureWhitespaceBefore?: boolean): void
     addContextItemAsToken(items: ContextItem[]): void
 }
@@ -91,16 +92,32 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 }
                 return toSerializedPromptEditorValue(editorRef.current)
             },
-            setFocus(focus, moveCursorToEnd): void {
+            setFocus(focus, { moveCursorToEnd } = {}): void {
                 const editor = editorRef.current
                 if (editor) {
                     if (focus) {
-                        editor.focus(
-                            moveCursorToEnd
-                                ? () => {
-                                      editor.update(() => $getRoot().selectEnd())
-                                  }
-                                : undefined
+                        editor.update(
+                            () => {
+                                const selection = $getSelection()
+                                const root = $getRoot()
+
+                                // Copied from LexicalEditor#focus, but we need to set the
+                                // `skip-scroll-into-view` tag so that we don't always autoscroll.
+                                if (selection !== null) {
+                                    selection.dirty = true
+                                } else if (root.getChildrenSize() !== 0) {
+                                    root.selectEnd()
+                                }
+
+                                if (moveCursorToEnd) {
+                                    root.selectEnd()
+                                }
+
+                                // Ensure element is focused in case the editor is empty. Copied
+                                // from LexicalAutoFocusPlugin.
+                                editor.getRootElement()?.focus({ preventScroll: true })
+                            },
+                            { tag: 'skip-scroll-into-view' }
                         )
                     } else {
                         editor.blur()
