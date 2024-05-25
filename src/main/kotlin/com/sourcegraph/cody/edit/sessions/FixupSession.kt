@@ -69,6 +69,10 @@ abstract class FixupSession(
 
   private var selectionRange: RangeMarker? = null
 
+  // Whether the session has inserted text into the document.
+  val isInserted: Boolean
+    get() = performedActions.any { it is InsertUndoableAction }
+
   // The prompt that the Agent used for this task. For Edit, it's the same as
   // the most recent prompt the user sent, which we already have. But for Document Code,
   // it enables us to show the user what we sent and let them hand-edit it.
