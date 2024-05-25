@@ -819,7 +819,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerAuthenticatedRequest('editCommands/code', params => {
             const instruction = PromptString.unsafe_fromUserQuery(params.instruction)
             const args: ExecuteEditArguments = {
-                configuration: { instruction, model: params.model ?? undefined },
+                configuration: {
+                    instruction,
+                    model: params.model ?? undefined,
+                    mode: params.mode ?? 'edit',
+                },
             }
             return this.createEditTask(executeEdit(args).then(task => task && { type: 'edit', task }))
         })

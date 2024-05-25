@@ -1,4 +1,4 @@
-import { type ContextItem, PromptString, logError, ps } from '@sourcegraph/cody-shared'
+import { type ContextItem, PromptString, logDebug, logError, ps } from '@sourcegraph/cody-shared'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
@@ -81,6 +81,7 @@ export async function executeTestEditCommand(
 ): Promise<EditCommandResult | undefined> {
     return wrapInActiveSpan('command.test', async span => {
         span.setAttribute('sampled', true)
+        logDebug('executeTestEditCommand', 'executing', { verbose: args })
 
         // The prompt for generating tests in a new test file
         const newTestFilePrompt = PromptString.fromDefaultCommands(defaultCommands, 'test')
@@ -93,6 +94,14 @@ export async function executeTestEditCommand(
 
         if (!document || !uri || (await isUriIgnoredByContextFilterWithNotification(uri, 'test'))) {
             return
+        }
+
+        const range = getTestableRange(editor)
+
+        const selectionText = document?.getText(range)
+
+        if (!selectionText?.trim()) {
+            throw new Error('Cannot generate unit test on empty selection.')
         }
 
         // Selection will be added by the edit command
@@ -123,7 +132,7 @@ export async function executeTestEditCommand(
                         PromptString.fromMarkdownCodeBlockLanguageIDForFilename(uri)
                     ),
                     document,
-                    range: getTestableRange(editor),
+                    range,
                     intent: 'test',
                     mode: 'insert',
                     // Limit to 3 context as too many context could result in quality issue.

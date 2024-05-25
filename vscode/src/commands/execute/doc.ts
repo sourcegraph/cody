@@ -117,7 +117,7 @@ export async function executeDocCommand(
 ): Promise<EditCommandResult | undefined> {
     return wrapInActiveSpan('command.doc', async span => {
         span.setAttribute('sampled', true)
-        logDebug('executeDocCommand', 'executing', { args })
+        logDebug('executeDocCommand', 'executing', { verbose: args })
 
         let prompt = PromptString.fromDefaultCommands(defaultCommands, 'doc')
         if (args?.additionalInstruction) {
@@ -137,6 +137,13 @@ export async function executeDocCommand(
         }
 
         const { range, insertionPoint } = getDocumentableRange(editor)
+
+        const selectionText = document?.getText(range)
+        logDebug('executeDocCommand', `selectionText: ${selectionText}`)
+
+        if (!selectionText?.trim()) {
+            throw new Error('Cannot document an empty selection.')
+        }
 
         return {
             type: 'edit',
