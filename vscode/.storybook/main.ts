@@ -11,6 +11,17 @@ const config: StorybookConfig = {
             },
         },
     ],
+    previewHead: head => `
+    ${head}
+    <style>
+      @media (prefers-color-scheme: dark) {
+          body {
+              /* Avoid white flash when changing stories. */
+              background-color: var(--vscode-editor-background, #1f1f1f) !important;
+          }
+      }
+    </style>
+  `,
     framework: {
         name: '@storybook/react-vite',
         options: {},
