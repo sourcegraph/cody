@@ -169,7 +169,7 @@ private constructor(
     }
 
     @JvmStatic
-    private fun uriFor(file: VirtualFile): String {
+    fun uriFor(file: VirtualFile): String {
       val uri = FileSystems.getDefault().getPath(file.path).toUri().toString()
       return uri.replace(Regex("file:///(\\w):/")) {
         val driveLetter =

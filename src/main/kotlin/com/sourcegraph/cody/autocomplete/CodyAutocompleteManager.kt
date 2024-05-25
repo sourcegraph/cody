@@ -33,6 +33,7 @@ import com.sourcegraph.cody.agent.protocol.CompletionItemParams
 import com.sourcegraph.cody.agent.protocol.ErrorCode
 import com.sourcegraph.cody.agent.protocol.ErrorCodeUtils.toErrorCode
 import com.sourcegraph.cody.agent.protocol.Position
+import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument.Companion.uriFor
 import com.sourcegraph.cody.agent.protocol.RateLimitError.Companion.toRateLimitError
 import com.sourcegraph.cody.agent.protocol.SelectedCompletionInfo
 import com.sourcegraph.cody.autocomplete.render.AutocompleteRendererType
@@ -225,14 +226,14 @@ class CodyAutocompleteManager {
     val params =
         if (lookupString.isNullOrEmpty())
             AutocompleteParams(
-                virtualFile.url,
+                uriFor(virtualFile),
                 Position(position.line, position.character),
                 if (triggerKind == InlineCompletionTriggerKind.INVOKE)
                     AutocompleteTriggerKind.INVOKE.value
                 else AutocompleteTriggerKind.AUTOMATIC.value)
         else
             AutocompleteParams(
-                virtualFile.url,
+                uriFor(virtualFile),
                 Position(position.line, position.character),
                 AutocompleteTriggerKind.AUTOMATIC.value,
                 SelectedCompletionInfo(
