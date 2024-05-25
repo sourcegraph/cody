@@ -67,9 +67,7 @@ const GENERIC_PROMPTS: Record<EditIntent, PromptVariant> = {
             This is part of the file: {filePath}
 
             The user has the following code in their selection:
-            <${PROMPT_TOPICS.SELECTED}>
-            {selectedText}
-            </${PROMPT_TOPICS.SELECTED}>
+            <${PROMPT_TOPICS.SELECTED}>{selectedText}</${PROMPT_TOPICS.SELECTED}>
 
             The user wants you to correct problems in their code by following their instructions.
             Provide your fixed code using the following instructions:
@@ -80,9 +78,7 @@ const GENERIC_PROMPTS: Record<EditIntent, PromptVariant> = {
     test: {
         instruction: psDedent`
             Here is my selected code from my codebase file {filePath}, enclosed in <${PROMPT_TOPICS.SELECTED}> tags:
-            <${PROMPT_TOPICS.SELECTED}>
-            {selectedText}
-            </${PROMPT_TOPICS.SELECTED}>
+            <${PROMPT_TOPICS.SELECTED}>{selectedText}</${PROMPT_TOPICS.SELECTED}>
 
             As my programming assistant and an expert in testing code, follow instructions below to generate code for my selected code: {instruction}
 
@@ -106,9 +102,7 @@ const GENERIC_PROMPTS: Record<EditIntent, PromptVariant> = {
             This is part of the file: {filePath}
 
             The user has the following code in their selection:
-            <${PROMPT_TOPICS.SELECTED}>
-            {selectedText}
-            </${PROMPT_TOPICS.SELECTED}>
+            <${PROMPT_TOPICS.SELECTED}>{selectedText}</${PROMPT_TOPICS.SELECTED}>
 
             The user wants you to generate documentation for the selected code by following their instructions.
             Provide your generated documentation using the following instructions:
@@ -128,7 +122,7 @@ export const buildGenericPrompt = (
                 system: GENERIC_PROMPTS.edit.system,
                 instruction: GENERIC_PROMPTS.edit.instruction
                     .replaceAll('{instruction}', instruction)
-                    .replaceAll('{selectedText}', selectedText?.trimEnd())
+                    .replaceAll('{selectedText}', selectedText)
                     .replaceAll('{filePath}', PromptString.fromDisplayPath(uri)),
             }
         case 'add':
@@ -143,7 +137,7 @@ export const buildGenericPrompt = (
                 system: GENERIC_PROMPTS.fix.system,
                 instruction: GENERIC_PROMPTS.fix.instruction
                     .replaceAll('{instruction}', instruction)
-                    .replaceAll('{selectedText}', selectedText?.trimEnd())
+                    .replaceAll('{selectedText}', selectedText)
                     .replaceAll('{filePath}', PromptString.fromDisplayPath(uri)),
             }
         case 'test':
@@ -151,7 +145,7 @@ export const buildGenericPrompt = (
                 system: GENERIC_PROMPTS.test.system,
                 instruction: GENERIC_PROMPTS.test.instruction
                     .replaceAll('{instruction}', instruction)
-                    .replaceAll('{selectedText}', selectedText?.trimEnd())
+                    .replaceAll('{selectedText}', selectedText)
                     .replaceAll('{filePath}', PromptString.fromDisplayPath(uri)),
             }
         case 'doc':
@@ -159,7 +153,7 @@ export const buildGenericPrompt = (
                 system: GENERIC_PROMPTS.doc.system,
                 instruction: GENERIC_PROMPTS.doc.instruction
                     .replaceAll('{instruction}', instruction)
-                    .replaceAll('{selectedText}', selectedText?.trimEnd())
+                    .replaceAll('{selectedText}', selectedText)
                     .replaceAll('{filePath}', PromptString.fromDisplayPath(uri)),
             }
     }
