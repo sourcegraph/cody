@@ -40,11 +40,6 @@ vscode-button::part(control) {
     border: solid 1px var(--vscode-sideBar-border);
 }
 
-.container--cell {
-    /* Cells have their own border-bottom. */
-    border-bottom: 0 !important;
-}
-
 .container-viewport {
     width: 100vw;
     height: 100vh;
