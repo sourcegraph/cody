@@ -106,7 +106,6 @@ describe('HumanMessageEditor', () => {
         test('empty editor', () => {
             const { container, submitButton, onSubmit } = renderWithMocks({
                 initialEditorState: undefined,
-                __test_dontTemporarilyDisableSubmit: true,
             })
             expect(submitButton).toBeDisabled()
 
@@ -123,7 +122,6 @@ describe('HumanMessageEditor', () => {
         test('submit', async () => {
             const { container, submitButton, onSubmit } = renderWithMocks({
                 initialEditorState: FILE_MENTION_EDITOR_STATE_FIXTURE,
-                __test_dontTemporarilyDisableSubmit: true,
             })
             expect(submitButton).toBeEnabled()
 
@@ -142,7 +140,6 @@ describe('HumanMessageEditor', () => {
         test('submit w/o context', async () => {
             const { container, editor, onSubmit } = renderWithMocks({
                 initialEditorState: FILE_MENTION_EDITOR_STATE_FIXTURE,
-                __test_dontTemporarilyDisableSubmit: true,
             })
             fireEvent.focus(editor)
 

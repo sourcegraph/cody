@@ -50,9 +50,6 @@ export const HumanMessageEditor: FunctionComponent<{
 
     /** For use in storybooks only. */
     __storybook__focus?: boolean
-
-    /** For use in tests only. */
-    __test_dontTemporarilyDisableSubmit?: boolean
 }> = ({
     userInfo,
     userContextFromSelection,
@@ -68,12 +65,8 @@ export const HumanMessageEditor: FunctionComponent<{
     isEditorInitiallyFocused,
     className,
     __storybook__focus,
-    __test_dontTemporarilyDisableSubmit,
 }) => {
     const editorRef = useRef<PromptEditorRefAPI>(null)
-
-    /** Avoid users pressing <Enter> repeatedly and accidentally sending lots of messages. */
-    const [isSubmitTemporarilyDisabled, setIsSubmitTemporarilyDisabled] = useState<boolean>(false)
 
     // The only PromptEditor state we really need to track in our own state is whether it's empty.
     const [isEmptyEditorValue, setIsEmptyEditorValue] = useState(initialEditorState === undefined)
@@ -81,35 +74,18 @@ export const HumanMessageEditor: FunctionComponent<{
         (value: SerializedPromptEditorValue): void => {
             onChange?.(value)
             setIsEmptyEditorValue(!value?.text?.trim())
-
-            // Any change should immediately reenable submit.
-            setIsSubmitTemporarilyDisabled(false)
         },
         [onChange]
     )
 
     const onSubmitClick = useCallback(
         (addEnhancedContext: boolean) => {
-            if (isSubmitTemporarilyDisabled) {
-                console.log(
-                    'Prevented submit because it was temporarily disabled after a recent previous submit.'
-                )
-                return
-            }
-
             if (!editorRef.current) {
                 throw new Error('No editorRef')
             }
             onSubmit(editorRef.current.getSerializedValue(), addEnhancedContext)
-
-            if (!__test_dontTemporarilyDisableSubmit) {
-                setIsSubmitTemporarilyDisabled(true)
-                setTimeout((): void => {
-                    setIsSubmitTemporarilyDisabled(false)
-                }, 2000)
-            }
         },
-        [isSubmitTemporarilyDisabled, onSubmit, __test_dontTemporarilyDisableSubmit]
+        [onSubmit]
     )
 
     const onEditorEnterKey = useCallback(
@@ -240,7 +216,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     isPendingResponse={isPendingResponse}
                     onMentionClick={onMentionClick}
                     onSubmitClick={onSubmitClick}
-                    submitDisabled={isEmptyEditorValue || isSubmitTemporarilyDisabled}
+                    submitDisabled={isEmptyEditorValue}
                     onGapClick={onGapClick}
                     focusEditor={focusEditor}
                     hidden={!focused && isSent && !isPendingResponse}
