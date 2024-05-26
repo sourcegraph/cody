@@ -1,5 +1,5 @@
 import { type ChatMessage, type ContextItem, type Guardrails, isDefined } from '@sourcegraph/cody-shared'
-import type React from 'react'
+import { useCallback } from 'react'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import type { SerializedPromptEditorValue } from '../promptEditor/PromptEditor'
@@ -102,6 +102,20 @@ export const Transcript: React.FunctionComponent<{
         )
     }
 
+    const onFollowupSubmit = useCallback(
+        (editorValue: SerializedPromptEditorValue, addEnhancedContext: boolean): void => {
+            getVSCodeAPI().postMessage({
+                command: 'submit',
+                submitType: 'user',
+                text: editorValue.text,
+                editorState: editorValue.editorState,
+                contextFiles: editorValue.contextItems,
+                addEnhancedContext,
+            })
+        },
+        []
+    )
+
     return (
         <>
             {transcript.flatMap(messageToTranscriptItem)}
@@ -130,19 +144,7 @@ export const Transcript: React.FunctionComponent<{
                     chatEnabled={chatEnabled}
                     isEditorInitiallyFocused={true}
                     userContextFromSelection={userContextFromSelection}
-                    onSubmit={(
-                        editorValue: SerializedPromptEditorValue,
-                        addEnhancedContext: boolean
-                    ): void => {
-                        getVSCodeAPI().postMessage({
-                            command: 'submit',
-                            submitType: 'user',
-                            text: editorValue.text,
-                            editorState: editorValue.editorState,
-                            contextFiles: editorValue.contextItems,
-                            addEnhancedContext,
-                        })
-                    }}
+                    onSubmit={onFollowupSubmit}
                 />
             )}
             {transcript.length === 0 && <WelcomeMessage />}
