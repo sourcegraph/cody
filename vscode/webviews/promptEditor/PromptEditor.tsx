@@ -57,10 +57,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
     onFocusChange,
     disabled,
     editorRef: ref,
-
-    // KeyboardEventPluginProps
     onEnterKey,
-    onEscapeKey,
 }) => {
     const editorRef = useRef<LexicalEditor>(null)
 
@@ -153,10 +150,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
             placeholder={placeholder}
             disabled={disabled}
             aria-label="Chat message"
-            //
-            // KeyboardEventPluginProps
             onEnterKey={onEnterKey}
-            onEscapeKey={onEscapeKey}
         />
     )
 }

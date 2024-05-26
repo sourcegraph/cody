@@ -41,10 +41,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
     className,
     contentEditableClassName,
     'aria-label': ariaLabel,
-
-    // KeyboardEventPluginProps
     onEnterKey,
-    onEscapeKey,
 }) => {
     // biome-ignore lint/correctness/useExhaustiveDependencies: We do not want to update initialConfig because LexicalComposer is meant to be an uncontrolled component.
     const initialConfig = useMemo<InitialConfigType>(
@@ -86,7 +83,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
                     <CodeHighlightPlugin />
                     {onFocusChange && <OnFocusChangePlugin onFocusChange={onFocusChange} />}
                     {editorRef && <EditorRefPlugin editorRef={editorRef} />}
-                    <KeyboardEventPlugin onEnterKey={onEnterKey} onEscapeKey={onEscapeKey} />
+                    <KeyboardEventPlugin onEnterKey={onEnterKey} />
                     <DisableEscapeKeyBlursPlugin />
                 </LexicalComposer>
             </div>
