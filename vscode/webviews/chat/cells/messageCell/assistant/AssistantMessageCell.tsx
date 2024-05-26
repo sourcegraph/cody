@@ -21,7 +21,6 @@ export const AssistantMessageCell: FunctionComponent<{
     message: ChatMessage
     userInfo: UserAccountInfo
     isLoading: boolean
-    disabled?: boolean
 
     showFeedbackButtons: boolean
     feedbackButtonsOnSubmit?: (text: string) => void
@@ -35,7 +34,6 @@ export const AssistantMessageCell: FunctionComponent<{
     message,
     userInfo,
     isLoading,
-    disabled,
     showFeedbackButtons,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
@@ -92,7 +90,6 @@ export const AssistantMessageCell: FunctionComponent<{
                     <FeedbackButtons feedbackButtonsOnSubmit={feedbackButtonsOnSubmit} />
                 )
             }
-            disabled={disabled}
         />
     )
 }
