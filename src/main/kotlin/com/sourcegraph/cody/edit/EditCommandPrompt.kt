@@ -548,27 +548,31 @@ class EditCommandPrompt(
   @RequiresEdt
   fun performOKAction() {
     val text = instructionsField.text
-    if (text.isNotBlank()) {
-      promptHistory.add(text)
-      val project = editor.project
-      // TODO: How do we show user feedback when an error like this happens?
-      if (project == null) {
-        logger.warn("Project was null when trying to add an edit session")
-        return
-      }
-
-      val activeSession = controller.getActiveSession()
-      activeSession?.let {
-        it.afterSessionFinished {
-          runInEdt {
-            EditCodeSession(
-                controller, editor, text, llmDropdown.item, if (it.isInserted) "insert" else "edit")
-          }
-        }
-        it.undo()
-      } ?: run { runInEdt { EditCodeSession(controller, editor, text, llmDropdown.item) } }
+    if (text.isBlank()) {
+      clearActivePrompt()
+      return
     }
+    val activeSession = controller.getActiveSession()
+    promptHistory.add(text)
+    if (editor.project == null) {
+      val msg = "Null project for new edit session"
+      controller.getActiveSession()?.showErrorGroup(msg)
+      logger.warn(msg)
+      return
+    }
+
+    activeSession?.let { session ->
+      session.afterSessionFinished {
+        startEditCodeSession(text, if (session.isInserted) "insert" else "edit")
+      }
+      session.undo()
+    } ?: run { startEditCodeSession(text) }
+
     clearActivePrompt()
+  }
+
+  private fun startEditCodeSession(text: String, mode: String = "edit") {
+    runInEdt { EditCodeSession(controller, editor, text, llmDropdown.item, mode) }
   }
 
   private fun makeCornerShape(width: Int, height: Int): RoundRectangle2D {

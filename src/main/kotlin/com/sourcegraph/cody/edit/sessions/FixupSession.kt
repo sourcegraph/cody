@@ -245,7 +245,7 @@ abstract class FixupSession(
     documentListener.setAcceptLensGroupShown(true)
   }
 
-  private fun showErrorGroup(hoverText: String) {
+  fun showErrorGroup(hoverText: String) {
     showLensGroup(LensGroupFactory(this).createErrorGroup(hoverText))
   }
 
@@ -253,8 +253,14 @@ abstract class FixupSession(
   abstract fun makeEditingRequest(agent: CodyAgent): CompletableFuture<EditTask>
 
   fun accept() {
-    CodyAgentService.withAgent(project) { agent ->
-      agent.server.acceptEditTask(TaskIdParam(taskId!!))
+    try {
+      CodyAgentService.withAgent(project) { agent ->
+        agent.server.acceptEditTask(TaskIdParam(taskId!!))
+      }
+    } catch (x: Exception) {
+      // Don't show error lens here; it's sort of pointless.
+      logger.warn("Error sending editTask/accept for taskId: ${x.localizedMessage}")
+      dispose()
     }
   }
 
@@ -262,16 +268,26 @@ abstract class FixupSession(
     if (taskId == null) {
       dispose()
     } else {
-      CodyAgentService.withAgent(project) { agent ->
-        agent.server.cancelEditTask(TaskIdParam(taskId!!))
+      try {
+        CodyAgentService.withAgent(project) { agent ->
+          agent.server.cancelEditTask(TaskIdParam(taskId!!))
+        }
+      } catch (x: Exception) {
+        // Error lens here is counterproductive as well.
+        logger.warn("Error sending editTask/accept for taskId: ${x.localizedMessage}")
+        dispose()
       }
     }
   }
 
   fun undo() {
     runInEdt { showWorkingGroup() }
-    CodyAgentService.withAgent(project) { agent ->
-      agent.server.undoEditTask(TaskIdParam(taskId!!))
+    try {
+      CodyAgentService.withAgent(project) { agent ->
+        agent.server.undoEditTask(TaskIdParam(taskId!!))
+      }
+    } catch (x: Exception) {
+      showErrorGroup("Error sending editTask/undo for taskId: ${x.localizedMessage}")
     }
   }
 
