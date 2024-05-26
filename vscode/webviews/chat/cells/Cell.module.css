@@ -1,16 +1,13 @@
 :root {
-    --cell-spacing: 15px;
+    --cell-spacing-y: 15px;
+    --cell-spacing-x: 15px;
     --cell-gap: 12px;
 }
 
 .container {
-    padding: var(--cell-spacing);
+    padding: var(--cell-spacing-y) var(--cell-spacing-x);
     display: flex;
     gap: var(--cell-gap);
-
-    &:not(:last-child) {
-        border-bottom: solid 1px var(--vscode-sideBarSectionHeader-border);
-    }
 }
 
 .gutter {

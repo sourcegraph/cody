@@ -1,6 +1,6 @@
 /* Make footer take up less vertical space */
 .footer {
-    margin-top: calc(0.25*var(--cell-spacing));
+    margin-top: calc(0.25*var(--cell-spacing-y));
 }
 
 /* Footer on hover */

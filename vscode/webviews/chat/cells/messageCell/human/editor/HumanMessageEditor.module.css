@@ -46,7 +46,7 @@
     padding-bottom: var(--human-message-editor-cell-spacing-bottom);
 }
 .container.sent-complete:not(.focused) {
-    margin-bottom: calc(var(--human-message-editor-toolbar-height) + var(--human-message-editor-gap) - (var(--cell-spacing) - var(--human-message-editor-cell-spacing-bottom)));
+    margin-bottom: calc(var(--human-message-editor-toolbar-height) + var(--human-message-editor-gap) - (var(--cell-spacing-y) - var(--human-message-editor-cell-spacing-bottom)));
     .toolbar {
         display: none;
     }
