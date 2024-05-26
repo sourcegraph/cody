@@ -189,6 +189,7 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
         placeholder: 'my-placeholder',
         isFirstMessage: true,
         isPendingResponse: false,
+        isPendingPriorResponse: false,
         isSent: false,
         onChange,
         onSubmit,

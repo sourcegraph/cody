@@ -62,6 +62,7 @@ export const Transcript: React.FunctionComponent<{
                     isFirstMessage={messageIndexInTranscript === 0}
                     isSent={true}
                     isPendingResponse={isLastHumanMessage && isLoading}
+                    isPendingPriorResponse={false}
                     onSubmit={(
                         editorValue: SerializedPromptEditorValue,
                         addEnhancedContext: boolean
@@ -75,10 +76,6 @@ export const Transcript: React.FunctionComponent<{
                             addEnhancedContext,
                         })
                     }}
-                    // Keep the editor focused after hitting enter on a not-yet-isSent message. This
-                    // lets the user edit and resend the message while they're waiting for the
-                    // response to finish.
-                    isEditorInitiallyFocused={isLastHumanMessage}
                 />,
                 (message.contextFiles && message.contextFiles.length > 0) || isLastMessage ? (
                     <ContextCell
@@ -121,12 +118,14 @@ export const Transcript: React.FunctionComponent<{
                         userInfo={userInfo}
                     />
                 )}
-            {!messageInProgress && !isLastAssistantMessageError(transcript) && (
+            {!isLastAssistantMessageError(transcript) && (
                 <HumanMessageCell
+                    key={transcript.length}
                     message={null}
                     isFirstMessage={transcript.length === 0}
                     isSent={false}
                     isPendingResponse={false}
+                    isPendingPriorResponse={true}
                     userInfo={userInfo}
                     chatEnabled={chatEnabled}
                     isEditorInitiallyFocused={true}
