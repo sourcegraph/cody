@@ -6,8 +6,7 @@ import {
     type SerializedPromptEditorValue,
     serializedPromptEditorStateFromChatMessage,
 } from '../../../../promptEditor/PromptEditor'
-import { BaseMessageCell } from '../BaseMessageCell'
-import styles from './HumanMessageCell.module.css'
+import { BaseMessageCell, MESSAGE_CELL_AVATAR_SIZE } from '../BaseMessageCell'
 import { HumanMessageEditor } from './editor/HumanMessageEditor'
 
 /**
@@ -63,7 +62,7 @@ export const HumanMessageCell: FunctionComponent<{
     return (
         <BaseMessageCell
             speaker="human"
-            speakerIcon={<UserAvatar user={userInfo.user} size={24} className={styles.speakerIcon} />}
+            speakerIcon={<UserAvatar user={userInfo.user} size={MESSAGE_CELL_AVATAR_SIZE} />}
             content={
                 <HumanMessageEditor
                     userInfo={userInfo}
@@ -81,7 +80,6 @@ export const HumanMessageCell: FunctionComponent<{
                     __storybook__focus={__storybook__focus}
                 />
             }
-            contentClassName={styles.editor}
             className={className}
         />
     )

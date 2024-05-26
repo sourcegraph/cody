@@ -188,7 +188,7 @@ export const HumanMessageEditor: FunctionComponent<{
             className={clsx(
                 styles.container,
                 {
-                    [styles.sentComplete]: isSent && !isPendingResponse,
+                    [styles.sent]: isSent,
                     [styles.focused]: focused,
                 },
                 className

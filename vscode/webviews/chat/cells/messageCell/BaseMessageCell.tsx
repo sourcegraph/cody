@@ -26,3 +26,5 @@ export const BaseMessageCell: FunctionComponent<{
         {footer && <div className={styles.footer}>{footer}</div>}
     </Cell>
 )
+
+export const MESSAGE_CELL_AVATAR_SIZE = 27.5

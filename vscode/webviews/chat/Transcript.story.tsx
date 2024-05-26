@@ -13,6 +13,7 @@ import {
 import { useArgs, useCallback, useEffect, useRef, useState } from '@storybook/preview-api'
 import type { ComponentProps } from 'react'
 import { URI } from 'vscode-uri'
+import chatStyles from '../Chat.module.css'
 import { VSCodeWebview } from '../storybook/VSCodeStoryDecorator'
 
 const meta: Meta<typeof Transcript> = {
@@ -37,7 +38,7 @@ const meta: Meta<typeof Transcript> = {
         postMessage: () => {},
     } satisfies ComponentProps<typeof Transcript>,
 
-    decorators: [VSCodeWebview],
+    decorators: [story => <div className={chatStyles.container}>{story()}</div>, VSCodeWebview],
 }
 
 export default meta
