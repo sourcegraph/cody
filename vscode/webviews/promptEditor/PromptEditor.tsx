@@ -6,7 +6,6 @@ import {
     $getRoot,
     $getSelection,
     $insertNodes,
-    CLEAR_HISTORY_COMMAND,
     type LexicalEditor,
     type SerializedEditorState,
 } from 'lexical'
@@ -39,7 +38,6 @@ interface Props extends KeyboardEventPluginProps {
 }
 
 export interface PromptEditorRefAPI {
-    setEditorState(value: SerializedPromptEditorState | null): void
     getSerializedValue(): SerializedPromptEditorValue
     setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }): void
     appendText(text: string, ensureWhitespaceBefore?: boolean): void
@@ -69,23 +67,6 @@ export const PromptEditor: FunctionComponent<Props> = ({
     useImperativeHandle(
         ref,
         (): PromptEditorRefAPI => ({
-            setEditorState(value: SerializedPromptEditorState | null): void {
-                if (value === null) {
-                    // Clearing seems to require a different code path because focusing fails if
-                    // the editor is empty.
-                    editorRef.current?.update(() => {
-                        $getRoot().clear()
-                    })
-                    return
-                }
-
-                const editor = editorRef.current
-                if (editor) {
-                    editor.setEditorState(editor.parseEditorState(value.lexicalEditorState))
-                    editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined)
-                    editor.focus()
-                }
-            },
             getSerializedValue(): SerializedPromptEditorValue {
                 if (!editorRef.current) {
                     throw new Error('PromptEditor has no Lexical editor ref')
