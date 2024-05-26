@@ -1,4 +1,4 @@
-import { type ChatMessage, type ContextItem, isMacOS } from '@sourcegraph/cody-shared'
+import type { ChatMessage, ContextItem } from '@sourcegraph/cody-shared'
 import { type FunctionComponent, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../Chat'
 import { UserAvatar } from '../../../../components/UserAvatar'
@@ -9,8 +9,6 @@ import {
 import { BaseMessageCell } from '../BaseMessageCell'
 import styles from './HumanMessageCell.module.css'
 import { HumanMessageEditor } from './editor/HumanMessageEditor'
-
-const isMac = isMacOS()
 
 /**
  * A component that displays a chat message from the human.
@@ -67,9 +65,7 @@ export const HumanMessageCell: FunctionComponent<{
                     userInfo={userInfo}
                     userContextFromSelection={userContextFromSelection}
                     initialEditorState={initialEditorState}
-                    placeholder={
-                        isFirstMessage ? 'Message' : `Followup message (${isMac ? 'Opt' : 'Alt'}+>)`
-                    }
+                    placeholder={isFirstMessage ? 'Message' : 'Followup message'}
                     isFirstMessage={isFirstMessage}
                     isSent={isSent}
                     isPendingResponse={isPendingResponse}
