@@ -12,7 +12,7 @@ export function transcriptFixture(transcript: ChatMessage[]): ChatMessage[] {
 }
 
 export const FIXTURE_TRANSCRIPT: Record<
-    'simple' | 'simple2' | 'codeQuestion' | 'explainCode' | 'explainCode2',
+    'simple' | 'simple2' | 'codeQuestion' | 'explainCode' | 'explainCode2' | 'long',
     ChatMessage[]
 > = {
     simple: transcriptFixture([
@@ -103,6 +103,35 @@ export const FIXTURE_TRANSCRIPT: Record<
         {
             speaker: 'assistant',
             text: ps`This code is very cool.`,
+        },
+    ]),
+    long: transcriptFixture([
+        {
+            speaker: 'human',
+            text: ps`What are some colors?`,
+            contextFiles: [{ type: 'file', uri: URI.file('dir/dir/file-a-1.py') }],
+        },
+        {
+            speaker: 'assistant',
+            text: ps`Here are some colors:\n\n* Red\n* Green\n* Blue\n* Yellow\n* Cyan\n* Magenta\n* Black\n* White\n`,
+        },
+        {
+            speaker: 'human',
+            text: ps`What are some letters?`,
+            contextFiles: [{ type: 'file', uri: URI.file('dir/dir/file-a-2.py') }],
+        },
+        {
+            speaker: 'assistant',
+            text: ps`Here are some letters:\n\n* A\n* B\n* C\n* D\n* E\n* F\n* G\n* H\n* I\n* J\n* K\n* L\n* M\n* N\n* O\n* P\n* Q\n* R\n* S\n* T\n* U\n* V\n* W\n* X\n* Y\n* Z\n`,
+        },
+        {
+            speaker: 'human',
+            text: ps`What are some numbers?`,
+            contextFiles: [{ type: 'file', uri: URI.file('dir/dir/file-a-3.py') }],
+        },
+        {
+            speaker: 'assistant',
+            text: ps`Here are some numbers:\n\n* 1\n* 2\n* 3\n* 4\n* 5\n* 6\n* 7\n* 8\n* 9\n* 10\n`,
         },
     ]),
 }

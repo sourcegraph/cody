@@ -1,8 +1,6 @@
 import type React from 'react'
 import type { FunctionComponent, ReactNode } from 'react'
 
-import { clsx } from 'clsx'
-
 import { type ChatMessage, type ContextItem, type Guardrails, isDefined } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
@@ -20,7 +18,6 @@ export const Transcript: React.FunctionComponent<{
     transcript: ChatMessage[]
     welcomeMessage?: ReactNode
     messageInProgress: ChatMessage | null
-    className?: string
     feedbackButtonsOnSubmit: (text: string) => void
     copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit: CodeBlockActionsProps['insertButtonOnSubmit']
@@ -34,7 +31,6 @@ export const Transcript: React.FunctionComponent<{
     transcript,
     welcomeMessage,
     messageInProgress,
-    className,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
@@ -115,7 +111,7 @@ export const Transcript: React.FunctionComponent<{
     }
 
     return (
-        <div className={clsx(className, styles.container)}>
+        <>
             {transcript.flatMap(messageToTranscriptItem)}
             {messageInProgress &&
                 messageInProgress.speaker === 'assistant' &&
@@ -156,7 +152,7 @@ export const Transcript: React.FunctionComponent<{
                 />
             )}
             {transcript.length === 0 && <WelcomeMessageCell welcomeMessage={welcomeMessage} />}
-        </div>
+        </>
     )
 }
 

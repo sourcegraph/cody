@@ -60,7 +60,6 @@ export const PromptEditor: FunctionComponent<Props> = ({
     editorRef: ref,
 
     // KeyboardEventPluginProps
-    onKeyDown,
     onEnterKey,
     onEscapeKey,
 }) => {
@@ -158,7 +157,6 @@ export const PromptEditor: FunctionComponent<Props> = ({
             aria-label="Chat message"
             //
             // KeyboardEventPluginProps
-            onKeyDown={onKeyDown}
             onEnterKey={onEnterKey}
             onEscapeKey={onEscapeKey}
         />
