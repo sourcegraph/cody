@@ -123,6 +123,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         chat: number
         user: number
         enhanced: number
+        maxChat: number
+        maxUser: number
+        maxEnhanced: number
     } | null>(null)
 
     // Update the message handler to set the remaining token counts when received from the extension

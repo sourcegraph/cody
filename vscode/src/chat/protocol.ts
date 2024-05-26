@@ -204,6 +204,9 @@ export type ExtensionMessage =
               chat: number
               user: number
               enhanced: number
+              maxChat: number
+              maxUser: number
+              maxEnhanced: number
           }
       }
 

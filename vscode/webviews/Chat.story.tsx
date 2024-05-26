@@ -45,9 +45,12 @@ export const TokenIndi: StoryObj<typeof meta> = {
             <Chat {...args} />
             <TokenIndicators
                 remainingTokens={{
-                    chat: 10000,
-                    user: 20000,
-                    enhanced: 5000,
+                    chat: 6000,
+                    user: 5000,
+                    enhanced: 300,
+                    maxChat: 10000,
+                    maxUser: 10000,
+                    maxEnhanced: 1000,
                 }}
             />
         </>

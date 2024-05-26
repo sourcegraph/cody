@@ -3,7 +3,14 @@ import type React from 'react'
 import tokenStyles from './TokenIndicators.module.css'
 
 export const TokenIndicators: React.FunctionComponent<{
-    remainingTokens: { chat: number; user: number; enhanced: number }
+    remainingTokens: {
+        chat: number
+        user: number
+        enhanced: number
+        maxChat: number
+        maxUser: number
+        maxEnhanced: number
+    }
 }> = ({ remainingTokens }) => {
     // Add a new state variable to store the remaining token counts
 
@@ -15,7 +22,7 @@ export const TokenIndicators: React.FunctionComponent<{
                     <progress
                         className={tokenStyles.tokenProgress}
                         value={remainingTokens.chat}
-                        max={15000}
+                        max={remainingTokens.maxChat}
                     />
                     <span className={tokenStyles.tokenCount}>{remainingTokens.chat}</span>
                 </span>
@@ -26,7 +33,7 @@ export const TokenIndicators: React.FunctionComponent<{
                     <progress
                         className={tokenStyles.tokenProgress}
                         value={remainingTokens.user}
-                        max={30000}
+                        max={remainingTokens.maxUser}
                     />
                     <span className={tokenStyles.tokenCount}>{remainingTokens.user}</span>
                 </span>
@@ -37,7 +44,7 @@ export const TokenIndicators: React.FunctionComponent<{
                     <progress
                         className={tokenStyles.tokenProgress}
                         value={remainingTokens.enhanced}
-                        max={9000}
+                        max={remainingTokens.maxEnhanced}
                     />
                     <span className={tokenStyles.tokenCount}>{remainingTokens.enhanced}</span>
                 </span>

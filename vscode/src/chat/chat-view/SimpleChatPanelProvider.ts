@@ -633,6 +633,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private async handleSetChatModel(modelID: string): Promise<void> {
         this.chatModel.updateModel(modelID)
         await chatModel.set(modelID)
+        this.postRemainingTokensToWebview(new TokenCounter(this.chatModel.contextWindow))
     }
 
     private async handleGetAllMentionProvidersMetadata(): Promise<void> {
@@ -884,10 +885,18 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private postRemainingTokensToWebview(tokenCounter: TokenCounter): void {
         // Get the remaining token counts
         const remainingTokens = tokenCounter.getRemainingTokens()
+        const maxTokens = {
+            maxChat: tokenCounter.maxChatTokens,
+            maxUser: tokenCounter.maxContextTokens.user,
+            maxEnhanced: tokenCounter.maxContextTokens.enhanced,
+        }
         // Send the remaining token counts to the webview
         void this.postMessage({
             type: 'remainingTokens',
-            remainingTokens,
+            remainingTokens: {
+                ...remainingTokens,
+                ...maxTokens,
+            },
         })
         /* void this.webviewPanel?.webview.postMessage({
             type: 'remainingTokens',
