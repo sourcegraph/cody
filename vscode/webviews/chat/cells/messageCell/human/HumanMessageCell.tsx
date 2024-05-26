@@ -64,9 +64,7 @@ export const HumanMessageCell: FunctionComponent<{
                     userContextFromSelection={userContextFromSelection}
                     initialEditorState={initialEditorState}
                     placeholder={
-                        isFirstMessage
-                            ? 'Ask... (type @ to add context)'
-                            : `Ask followup... (${isMac ? 'Opt' : 'Alt'}+>)`
+                        isFirstMessage ? 'Message' : `Followup message (${isMac ? 'Opt' : 'Alt'}+>)`
                     }
                     isFirstMessage={isFirstMessage}
                     isSent={isSent}
