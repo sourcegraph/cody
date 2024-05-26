@@ -100,7 +100,7 @@ export const WelcomeMessage: FunctionComponent = () => {
                     files as context
                 </FeatureRow>
                 <FeatureRow icon={NewChatIcon}>
-                    Start a new chat use <Kbd>{isMacOS() ? '⌥' : 'Alt'}+/</Kbd> or the{' '}
+                    Start a new chat using <Kbd>{isMacOS() ? '⌥' : 'Alt'}+/</Kbd> or the{' '}
                     <CodyIcon character="H" /> button in the top right of any file
                 </FeatureRow>
                 <FeatureRow icon={SettingsIcon}>
