@@ -26,14 +26,14 @@ const ALT_KEYBOARD_EVENT_DATA: Pick<KeyboardEvent, 'key' | 'code' | 'keyCode' | 
 }
 
 describe('HumanMessageEditor', () => {
-    test('renders textarea', () => {
-        renderWithMocks({})
-        expect(screen.getByRole('textbox')).toBeInTheDocument()
+    test('renders textarea', async () => {
+        const { editor } = renderWithMocks({})
+        expect(editor).toHaveTextContent('What does @#Symbol1')
     })
 
     describe('states', () => {
         function expectState(
-            { container, mentionButton, submitButton }: ReturnType<typeof renderWithMocks>,
+            { mentionButton, submitButton }: ReturnType<typeof renderWithMocks>,
             expected: {
                 toolbarVisible?: boolean
                 submitButtonEnabled?: boolean
@@ -57,7 +57,7 @@ describe('HumanMessageEditor', () => {
             }
         }
 
-        test('unsent', () => {
+        test('!isSent', () => {
             expectState(
                 renderWithMocks({
                     initialEditorState: serializedPromptEditorStateFromText('abc'),
@@ -67,16 +67,13 @@ describe('HumanMessageEditor', () => {
             )
         })
 
-        describe('sent pending', () => {
+        describe('isSent && isPendingResponse', () => {
             function renderSentPending(): ReturnType<typeof renderWithMocks> {
                 const rendered = renderWithMocks({
                     initialEditorState: serializedPromptEditorStateFromText('abc'),
                     isSent: true,
-                    isEditorInitiallyFocused: true,
                     isPendingResponse: true,
                 })
-                typeInEditor(rendered.editor, 'x')
-                fireEvent.keyDown(rendered.editor, ENTER_KEYBOARD_EVENT_DATA)
                 return rendered
             }
 
@@ -84,29 +81,38 @@ describe('HumanMessageEditor', () => {
                 const rendered = renderSentPending()
                 expectState(rendered, {
                     toolbarVisible: true,
-                    submitButtonEnabled: false,
+                    submitButtonEnabled: true,
                     submitButtonText: 'Send',
                 })
             })
         })
 
-        test('sent complete', () => {
+        test('isSent && !isPendingResponse', () => {
             const rendered = renderWithMocks({
                 initialEditorState: undefined,
                 isSent: true,
+                isPendingResponse: false,
             })
             expectState(rendered, { toolbarVisible: false })
-
             fireEvent.focus(rendered.editor)
+            expectState(rendered, { toolbarVisible: true })
+        })
+
+        test('isPendingPriorResponse', () => {
+            const rendered = renderWithMocks({
+                initialEditorState: undefined,
+                isPendingPriorResponse: true,
+            })
             expectState(rendered, { toolbarVisible: true })
         })
     })
 
     describe('submitting', () => {
-        test('empty editor', () => {
-            const { container, submitButton, onSubmit } = renderWithMocks({
-                initialEditorState: undefined,
-            })
+        function testNoSubmitting({
+            container,
+            submitButton,
+            onSubmit,
+        }: ReturnType<typeof renderWithMocks>): void {
             expect(submitButton).toBeDisabled()
 
             // Click
@@ -117,6 +123,23 @@ describe('HumanMessageEditor', () => {
             const editor = container.querySelector<HTMLElement>('[data-lexical-editor="true"]')!
             fireEvent.keyDown(editor, ENTER_KEYBOARD_EVENT_DATA)
             expect(onSubmit).toHaveBeenCalledTimes(0)
+        }
+
+        test('empty editor', () => {
+            testNoSubmitting(
+                renderWithMocks({
+                    initialEditorState: undefined,
+                })
+            )
+        })
+
+        test('isPendingPriorResponse', () => {
+            testNoSubmitting(
+                renderWithMocks({
+                    initialEditorState: serializedPromptEditorStateFromText('abc'),
+                    isPendingPriorResponse: true,
+                })
+            )
         })
 
         test('submit', async () => {
@@ -162,12 +185,6 @@ describe('HumanMessageEditor', () => {
 })
 
 type EditorHTMLElement = HTMLDivElement & { dataset: { lexicalEditor: 'true' } }
-
-function typeInEditor(editor: EditorHTMLElement, text: string): void {
-    fireEvent.focus(editor)
-    fireEvent.click(editor)
-    fireEvent.input(editor, { data: text })
-}
 
 function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor>>): {
     container: HTMLElement

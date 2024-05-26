@@ -1,7 +1,7 @@
 import { errorToChatError, ps } from '@sourcegraph/cody-shared'
 import { render as render_, screen } from '@testing-library/react'
 import type { ComponentProps } from 'react'
-import { describe, expect, test, vi } from 'vitest'
+import { type Assertion, describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 import { TooltipProvider } from '../components/shadcn/ui/tooltip'
 import { Transcript } from './Transcript'
@@ -100,7 +100,11 @@ describe('Transcript', () => {
                 messageInProgress={{ speaker: 'assistant', text: undefined }}
             />
         )
-        expectCells([{ message: 'Foo' }, { context: { loading: true } }])
+        expectCells([
+            { message: 'Foo' },
+            { context: { loading: true } },
+            { message: '', canSubmit: false },
+        ])
     })
 
     test('human message with context, waiting for assistant message', () => {
@@ -117,7 +121,12 @@ describe('Transcript', () => {
                 messageInProgress={{ speaker: 'assistant', text: undefined }}
             />
         )
-        expectCells([{ message: 'Foo' }, { context: { files: 1 } }, { message: { loading: true } }])
+        expectCells([
+            { message: 'Foo' },
+            { context: { files: 1 } },
+            { message: { loading: true } },
+            { message: '', canSubmit: false },
+        ])
     })
 
     test('human message with no context, waiting for assistant message', () => {
@@ -134,7 +143,11 @@ describe('Transcript', () => {
                 messageInProgress={{ speaker: 'assistant', text: undefined }}
             />
         )
-        expectCells([{ message: 'Foo' }, { message: { loading: true } }])
+        expectCells([
+            { message: 'Foo' },
+            { message: { loading: true } },
+            { message: '', canSubmit: false },
+        ])
     })
 
     test('human message with context, assistant message in progress', () => {
@@ -151,7 +164,12 @@ describe('Transcript', () => {
                 messageInProgress={{ speaker: 'assistant', text: ps`Bar` }}
             />
         )
-        expectCells([{ message: 'Foo' }, { context: { files: 1 } }, { message: 'Bar' }])
+        expectCells([
+            { message: 'Foo' },
+            { context: { files: 1 } },
+            { message: 'Bar' },
+            { message: '', canSubmit: false },
+        ])
     })
 
     test('human message with no context, assistant message in progress', () => {
@@ -168,7 +186,7 @@ describe('Transcript', () => {
                 messageInProgress={{ speaker: 'assistant', text: ps`Bar` }}
             />
         )
-        expectCells([{ message: 'Foo' }, { message: 'Bar' }])
+        expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: '', canSubmit: false }])
     })
 
     test('assistant message with error', () => {
@@ -188,6 +206,7 @@ describe('Transcript', () => {
 type CellMatcher =
     | {
           message: string | { loading: boolean }
+          canSubmit?: boolean
       }
     | {
           context: { files?: number; loading?: boolean }
@@ -206,6 +225,12 @@ function expectCells(expectedCells: CellMatcher[]): void {
             } else if ('loading' in expectedCell.message) {
                 expect(cell.querySelector('[role="status"]')).toHaveAttribute('aria-busy')
             }
+            if (expectedCell.canSubmit !== undefined) {
+                notUnless(
+                    expect(cell.querySelector('button[type="submit"]')),
+                    expectedCell.canSubmit
+                ).toBeEnabled()
+            }
         } else if ('context' in expectedCell) {
             expect(cell).toHaveAttribute('data-testid', 'context')
             if (expectedCell.context.files !== undefined) {
@@ -218,5 +243,9 @@ function expectCells(expectedCells: CellMatcher[]): void {
         } else {
             throw new Error('unknown cell')
         }
+    }
+
+    function notUnless<T>(assertion: Assertion<T>, value: boolean): Assertion<T> {
+        return value ? assertion : assertion.not
     }
 }

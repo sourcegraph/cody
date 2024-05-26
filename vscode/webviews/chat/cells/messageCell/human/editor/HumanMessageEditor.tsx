@@ -16,6 +16,7 @@ import {
     type SerializedPromptEditorValue,
 } from '../../../../../promptEditor/PromptEditor'
 import styles from './HumanMessageEditor.module.css'
+import type { SubmitButtonDisabled } from './toolbar/SubmitButton'
 import { Toolbar } from './toolbar/Toolbar'
 
 /**
@@ -78,14 +79,24 @@ export const HumanMessageEditor: FunctionComponent<{
         [onChange]
     )
 
+    const submitDisabled: SubmitButtonDisabled = isPendingPriorResponse
+        ? 'isPendingPriorResponse'
+        : isEmptyEditorValue
+          ? 'emptyEditorValue'
+          : false
+
     const onSubmitClick = useCallback(
         (addEnhancedContext: boolean) => {
+            if (submitDisabled) {
+                return
+            }
+
             if (!editorRef.current) {
                 throw new Error('No editorRef')
             }
             onSubmit(editorRef.current.getSerializedValue(), addEnhancedContext)
         },
-        [onSubmit]
+        [submitDisabled, onSubmit]
     )
 
     const onEditorEnterKey = useCallback(
@@ -216,7 +227,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     isPendingResponse={isPendingResponse}
                     onMentionClick={onMentionClick}
                     onSubmitClick={onSubmitClick}
-                    submitDisabled={isEmptyEditorValue}
+                    submitDisabled={submitDisabled}
                     onGapClick={onGapClick}
                     focusEditor={focusEditor}
                     hidden={!focused && isSent && !isPendingResponse}

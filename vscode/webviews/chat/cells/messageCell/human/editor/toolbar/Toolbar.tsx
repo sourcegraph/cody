@@ -7,7 +7,7 @@ import { EnhancedContextSettings } from '../../../../../../components/EnhancedCo
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { ToolbarButton } from '../../../../../../components/shadcn/ui/toolbar'
 import { useChatModelContext } from '../../../../../models/chatModelContext'
-import { SubmitButton } from './SubmitButton'
+import { SubmitButton, type SubmitButtonDisabled } from './SubmitButton'
 import styles from './Toolbar.module.css'
 
 /**
@@ -24,7 +24,7 @@ export const Toolbar: FunctionComponent<{
     onMentionClick?: () => void
 
     onSubmitClick: (withEnhancedContext: boolean) => void
-    submitDisabled: boolean
+    submitDisabled: SubmitButtonDisabled
 
     /** Handler for clicks that are in the "gap" (dead space), not any toolbar items. */
     onGapClick?: () => void

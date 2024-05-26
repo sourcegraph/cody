@@ -139,7 +139,7 @@ export const Transcript: React.FunctionComponent<{
                     isFirstMessage={transcript.length === 0}
                     isSent={false}
                     isPendingResponse={false}
-                    isPendingPriorResponse={true}
+                    isPendingPriorResponse={messageInProgress !== null}
                     userInfo={userInfo}
                     chatEnabled={chatEnabled}
                     isEditorInitiallyFocused={true}
