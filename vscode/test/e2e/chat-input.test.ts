@@ -10,65 +10,6 @@ import {
 } from './helpers'
 
 test.extend<ExpectedEvents>({
-    // list of events we expect this test to log, add to this list as needed
-    expectedEvents: [
-        'CodyInstalled',
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-    ],
-    expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
-        'cody.codyIgnore:hasFile',
-        'cody.auth:failed',
-        'cody.auth.login:clicked',
-        'cody.auth.signin.menu:clicked',
-        'cody.auth.login:firstEver',
-        'cody.auth.signin.token:clicked',
-        'cody.auth:connected',
-        'cody.chat-question:submitted',
-        'cody.chat-question:executed',
-        'cody.chatResponse:noCode',
-    ],
-})('editing messages in the chat input', async ({ page, sidebar }) => {
-    await sidebarSignin(page, sidebar)
-
-    const [_chatFrame, , firstChatInput] = await createEmptyChatPanel(page)
-
-    // Test that empty chat messages cannot be submitted.
-    await firstChatInput.fill(' ')
-    await firstChatInput.press('Enter')
-    await expect(firstChatInput).toHaveText(' ')
-    await firstChatInput.press('Backspace')
-    await firstChatInput.clear()
-
-    // Test that Ctrl+Arrow jumps by a word.
-    await firstChatInput.focus()
-    await firstChatInput.type('One')
-    await firstChatInput.press('Control+ArrowLeft')
-    await firstChatInput.type('Two')
-    await expect(firstChatInput).toHaveText('TwoOne')
-
-    // Test that Ctrl+Shift+Arrow highlights a word by trying to delete it.
-    await firstChatInput.clear()
-    await firstChatInput.type('One')
-    await firstChatInput.press('Control+Shift+ArrowLeft')
-    await firstChatInput.press('Delete')
-    await expect(firstChatInput).toHaveText('')
-
-    // Chat input should have focused after sending a message.
-    await expect(firstChatInput).toBeFocused()
-    await firstChatInput.fill('Chat events on submit')
-    await firstChatInput.press('Enter')
-})
-
-test.extend<ExpectedEvents>({
     expectedEvents: [
         'CodyInstalled',
         'CodyVSCodeExtension:codyIgnore:hasFile',

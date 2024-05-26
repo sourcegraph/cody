@@ -6,13 +6,7 @@ import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { PlainTextPlugin } from '@lexical/react/LexicalPlainTextPlugin'
 import { clsx } from 'clsx'
-import {
-    $getRoot,
-    $getSelection,
-    type EditorState,
-    type LexicalEditor,
-    type SerializedEditorState,
-} from 'lexical'
+import { $getRoot, type EditorState, type LexicalEditor, type SerializedEditorState } from 'lexical'
 import { type FunctionComponent, type RefObject, useMemo } from 'react'
 import styles from './BaseEditor.module.css'
 import { RICH_EDITOR_NODES } from './nodes'
@@ -48,7 +42,6 @@ export const BaseEditor: FunctionComponent<Props> = ({
     'aria-label': ariaLabel,
 
     // KeyboardEventPluginProps
-    onKeyDown,
     onEnterKey,
     onEscapeKey,
 }) => {
@@ -92,11 +85,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
                     <CodeHighlightPlugin />
                     {onFocusChange && <OnFocusChangePlugin onFocusChange={onFocusChange} />}
                     {editorRef && <EditorRefPlugin editorRef={editorRef} />}
-                    <KeyboardEventPlugin
-                        onKeyDown={onKeyDown}
-                        onEnterKey={onEnterKey}
-                        onEscapeKey={onEscapeKey}
-                    />
+                    <KeyboardEventPlugin onEnterKey={onEnterKey} onEscapeKey={onEscapeKey} />
                 </LexicalComposer>
             </div>
         </div>
@@ -105,9 +94,4 @@ export const BaseEditor: FunctionComponent<Props> = ({
 
 export function editorStateToText(editorState: EditorState): string {
     return editorState.read(() => $getRoot().getTextContent())
-}
-
-export function editorSelectionStart(editorState: EditorState): number | null {
-    const points = editorState.read(() => $getSelection()?.getStartEndPoints())
-    return points ? points[0].offset : null
 }
