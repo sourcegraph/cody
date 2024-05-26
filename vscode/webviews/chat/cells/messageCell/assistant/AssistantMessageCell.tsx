@@ -85,10 +85,11 @@ export const AssistantMessageCell: FunctionComponent<{
                 </>
             }
             footer={
-                showFeedbackButtons &&
-                feedbackButtonsOnSubmit && (
-                    <FeedbackButtons feedbackButtonsOnSubmit={feedbackButtonsOnSubmit} />
-                )
+                <>
+                    {showFeedbackButtons && feedbackButtonsOnSubmit && (
+                        <FeedbackButtons feedbackButtonsOnSubmit={feedbackButtonsOnSubmit} />
+                    )}
+                </>
             }
         />
     )

@@ -39,7 +39,7 @@
     padding-bottom: var(--human-message-editor-cell-spacing-bottom);
 }
 .container.sent:not(.focused) {
-    margin-bottom: calc(var(--human-message-editor-toolbar-height) + var(--human-message-editor-gap) + var(--human-message-editor-cell-spacing-bottom));
+    margin-bottom: calc(var(--human-message-editor-toolbar-height) + var(--human-message-editor-gap) + var(--human-message-editor-cell-spacing-bottom) - var(--cell-spacing-y));
     .toolbar {
         display: none;
     }

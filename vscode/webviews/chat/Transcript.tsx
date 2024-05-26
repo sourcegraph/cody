@@ -89,7 +89,7 @@ export const Transcript: React.FunctionComponent<{
                 key={messageIndexInTranscript}
                 message={message}
                 userInfo={userInfo}
-                isLoading={isLoading}
+                isLoading={false}
                 showFeedbackButtons={
                     messageIndexInTranscript !== 0 && !isTranscriptError && !message.error
                 }

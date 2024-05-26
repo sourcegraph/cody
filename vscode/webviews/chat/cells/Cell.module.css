@@ -1,5 +1,11 @@
+:root {
+    --cell-spacing-y: 15px;
+    --cell-spacing-x: 15px;
+    --cell-internal-gap: 12px;
+}
+
 .container {
-    padding: 0 var(--cell-spacing-x); /* <Chat/>'s gap is our padding-y */
+    padding: var(--cell-spacing-y) var(--cell-spacing-x);
     display: flex;
     gap: var(--cell-internal-gap);
 }
