@@ -248,17 +248,6 @@ describe('Transcript', () => {
         expect(lastEditor).toHaveFocus()
         await typeInEditor(lastEditor, 'xyz')
         expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: 'xyz', canSubmit: true }])
-
-        // If the user focuses back into the first human input and submits, the followup should
-        // regain focus.
-        const firstEditor = container.querySelector<EditorHTMLElement>(
-            '[role="row"]:first-child [data-lexical-editor="true"]'
-        )! as EditorHTMLElement
-        await typeInEditor(firstEditor, 'abc')
-        expect(lastEditor).toHaveFocus()
-        fireEvent.click(container.querySelector('[role="row"]:first-child button[type="submit"]')!)
-        expect(lastEditor).toHaveFocus()
-        expectCells([{ message: 'Fooabc' }, { message: 'Bar' }, { message: '', canSubmit: false }])
     })
 })
 

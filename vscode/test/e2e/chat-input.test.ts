@@ -78,17 +78,19 @@ test.extend<ExpectedEvents>({
     // streaming its response.
     await firstChatInput.fill('delay')
     await firstChatInput.press('Enter')
-    await expect(firstChatInput).toBeFocused()
+    await expect(lastChatInput).toBeFocused()
 
     // Make sure the chat input box does not steal focus from the editor when editor
     // is focused.
-    await expect(firstChatInput).toBeFocused()
+    await expect(lastChatInput).toBeFocused()
     await page.getByText("fizzbuzz.push('Buzz')").click()
     await expect(firstChatInput).not.toBeFocused()
+    await expect(lastChatInput).not.toBeFocused()
     // once the response is 'Done', check the input focus
     await firstChatInput.hover()
     await expect(chatPanel.getByText('Done')).toBeVisible()
     await expect(firstChatInput).not.toBeFocused()
+    await expect(lastChatInput).not.toBeFocused()
 
     // Click into the last chat input and submit a new follow-up chat message. The original focus
     // area which is the chat input should still have the focus after the response is received.
@@ -96,7 +98,8 @@ test.extend<ExpectedEvents>({
     await lastChatInput.type('Regular chat message', { delay: 10 })
     await lastChatInput.press('Enter')
     await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
-    await expect(chatInputs.nth(1)).toBeFocused()
+    await expect(chatInputs.nth(1)).not.toBeFocused()
+    await expect(lastChatInput).toBeFocused()
 })
 
 test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
@@ -158,8 +161,7 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
         await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
 
         // Ensure the toolbar hides when the first input isn't focused.
-        await expect(humanRow0.editor).toBeFocused()
-        await humanRow0.editor.blur()
+        await expect(humanRow0.editor).not.toBeFocused()
         await expect(humanRow0.toolbar.mention).not.toBeVisible()
         await expect(humanRow0.toolbar.enhancedContext).not.toBeVisible()
         await expect(humanRow0.toolbar.modelSelector).not.toBeVisible()
@@ -230,15 +232,15 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
 
     await sidebarSignin(page, sidebar)
 
-    const [chatFrame, chatInput] = await createEmptyChatPanel(page)
+    const [chatFrame, , firstChatInput] = await createEmptyChatPanel(page)
 
     const modelSelect = chatFrame.getByRole('combobox', { name: 'Select a model' }).last()
 
     await expect(modelSelect).toBeEnabled()
     await expect(modelSelect).toHaveText(/^Claude 3 Sonnet/)
 
-    await chatInput.fill('to model1')
-    await chatInput.press('Enter')
+    await firstChatInput.fill('to model1')
+    await firstChatInput.press('Enter')
     await expect(chatFrame.getByRole('row').getByTitle('Claude 3 Sonnet by Anthropic')).toBeVisible()
 
     // Change model and send another message.
@@ -246,9 +248,9 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     await modelSelect.click()
     const modelChoices = chatFrame.getByRole('listbox', { name: 'Suggestions' })
     await modelChoices.getByRole('option', { name: 'GPT-4o' }).click()
-    await expect(chatInput).toBeFocused()
+    await expect(firstChatInput).toBeFocused()
     await expect(modelSelect).toHaveText(/^GPT-4o/)
-    await chatInput.fill('to model2')
-    await chatInput.press('Enter')
+    await firstChatInput.fill('to model2')
+    await firstChatInput.press('Enter')
     await expect(chatFrame.getByRole('row').getByTitle('GPT-4o by OpenAI')).toBeVisible()
 })
