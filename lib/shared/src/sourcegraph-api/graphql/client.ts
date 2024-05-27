@@ -570,10 +570,15 @@ export class SourcegraphGraphQLAPIClient {
      * @param after the last repository retrieved, if any, to continue enumerating the list.
      * @returns the list of repositories. If `endCursor` is null, this is the end of the list.
      */
-    public async getRepoList(first: number, after?: string): Promise<RepoListResponse | Error> {
+    public async getRepoList(
+        first: number,
+        after?: string,
+        query?: string
+    ): Promise<RepoListResponse | Error> {
         return this.fetchSourcegraphAPI<APIResponse<RepoListResponse>>(REPOSITORY_LIST_QUERY, {
             first,
             after: after || null,
+            query,
         }).then(response => extractDataOrError(response, data => data))
     }
 

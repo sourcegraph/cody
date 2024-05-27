@@ -107,8 +107,8 @@ query CurrentSiteCodyLlmConfiguration {
 }`
 
 export const REPOSITORY_LIST_QUERY = `
-query Repositories($first: Int!, $after: String) {
-    repositories(first: $first, after: $after) {
+query Repositories($first: Int!, $after: String, $query: String) {
+    repositories(first: $first, after: $after, query: $query) {
         nodes {
             id
             name
