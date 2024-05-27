@@ -305,7 +305,7 @@ tasks {
           "cody-agent.directory" to buildCodyDir.parent,
           "sourcegraph.verbose-logging" to "true",
           "cody-agent.panic-when-out-of-sync" to
-              (System.getProperty("cody-agent.panic-when-out-of-sync") ?: "false"),
+              (System.getProperty("cody-agent.panic-when-out-of-sync") ?: "true"),
           "cody.autocomplete.enableFormatting" to
               (project.property("cody.autocomplete.enableFormatting") ?: "true"))
 
