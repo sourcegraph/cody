@@ -13,16 +13,11 @@
 
 body {
     margin: 0;
-    height: 100vh;
 
     background-color: var(--vscode-editor-background);
     font-size: var(--vscode-font-size);
     font-family: var(--vscode-font-family);
     color: var(--vscode-editor-foreground);
-}
-
-#root {
-    height: 100%;
 }
 
 a {

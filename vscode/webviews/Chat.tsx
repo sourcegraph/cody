@@ -16,6 +16,7 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import styles from './Chat.module.css'
+import { ScrollDown } from './components/ScrollDown'
 
 interface ChatboxProps {
     chatEnabled: boolean
@@ -157,8 +158,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         }
     }, [])
 
+    const focusLastHumanMessageEditor = useCallback(() => {
+        const elements = document.querySelectorAll<HTMLElement>('[data-lexical-editor]')
+        const lastEditor = elements.item(elements.length - 1)
+        lastEditor?.focus()
+    }, [])
+
     return (
-        <div className={clsx(styles.container)}>
+        <div className={clsx(styles.container, 'tw-relative')}>
             {!chatEnabled && (
                 <div className={styles.chatDisabled}>
                     Cody chat is disabled by your Sourcegraph site administrator
@@ -177,6 +184,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 postMessage={postMessage}
                 guardrails={guardrails}
             />
+            <ScrollDown onClick={focusLastHumanMessageEditor} />
         </div>
     )
 }

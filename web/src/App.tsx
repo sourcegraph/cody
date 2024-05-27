@@ -19,7 +19,6 @@ import {
     createWebviewTelemetryRecorder,
     createWebviewTelemetryService,
 } from '../../vscode/webviews/utils/telemetry'
-import styles from './App.module.css'
 import { type AgentClient, createAgentClient } from './agent/client'
 
 let ACCESS_TOKEN = localStorage.getItem('accessToken')
@@ -176,29 +175,25 @@ export const App: FunctionComponent = () => {
         [chatModels, onCurrentChatModelChange]
     )
 
-    return (
-        <div className={styles.container}>
-            {client && userAccountInfo && chatModels ? (
-                isErrorLike(client) ? (
-                    <p>Error: {client.message}</p>
-                ) : (
-                    <ChatModelContextProvider value={chatModelContext}>
-                        <Chat
-                            chatEnabled={true}
-                            userInfo={userAccountInfo}
-                            messageInProgress={messageInProgress}
-                            transcript={transcript}
-                            vscodeAPI={vscodeAPI}
-                            telemetryService={telemetryService}
-                            telemetryRecorder={telemetryRecorder}
-                            isTranscriptError={isTranscriptError}
-                            userContextFromSelection={[]}
-                        />
-                    </ChatModelContextProvider>
-                )
-            ) : (
-                <>Loading...</>
-            )}
-        </div>
+    return client && userAccountInfo && chatModels ? (
+        isErrorLike(client) ? (
+            <p>Error: {client.message}</p>
+        ) : (
+            <ChatModelContextProvider value={chatModelContext}>
+                <Chat
+                    chatEnabled={true}
+                    userInfo={userAccountInfo}
+                    messageInProgress={messageInProgress}
+                    transcript={transcript}
+                    vscodeAPI={vscodeAPI}
+                    telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
+                    isTranscriptError={isTranscriptError}
+                    userContextFromSelection={[]}
+                />
+            </ChatModelContextProvider>
+        )
+    ) : (
+        <>Loading...</>
     )
 }
