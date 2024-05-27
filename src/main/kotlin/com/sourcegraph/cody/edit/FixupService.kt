@@ -9,12 +9,16 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.util.concurrency.annotations.RequiresEdt
+import com.sourcegraph.cody.agent.CodyStartingNotification
+import com.sourcegraph.cody.agent.EditingNotAvailableNotification
 import com.sourcegraph.cody.edit.sessions.DocumentCodeSession
 import com.sourcegraph.cody.edit.sessions.FixupSession
 import com.sourcegraph.cody.edit.sessions.TestCodeSession
 import com.sourcegraph.cody.ignore.ActionInIgnoredFileNotification
 import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.cody.ignore.IgnorePolicy
+import com.sourcegraph.cody.statusbar.CodyStatus
+import com.sourcegraph.cody.statusbar.CodyStatusService
 import com.sourcegraph.config.ConfigUtil.isCodyEnabled
 import com.sourcegraph.utils.CodyEditorUtil
 import java.util.concurrent.atomic.AtomicReference
@@ -66,7 +70,13 @@ class FixupService(val project: Project) : Disposable {
       logger.warn("Edit code invoked when Cody not enabled")
       return false
     }
+    if (CodyStatusService.getCurrentStatus() == CodyStatus.CodyAgentNotRunning) {
+      runInEdt { CodyStartingNotification().notify(project) }
+      logger.warn("The agent is not connected")
+      return false
+    }
     if (!CodyEditorUtil.isEditorValidForAutocomplete(editor)) {
+      runInEdt { EditingNotAvailableNotification().notify(project) }
       logger.warn("Edit code invoked when editing not available")
       return false
     }
