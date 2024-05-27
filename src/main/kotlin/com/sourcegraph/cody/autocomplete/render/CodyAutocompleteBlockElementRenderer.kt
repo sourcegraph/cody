@@ -34,10 +34,11 @@ class CodyAutocompleteBlockElementRenderer(
       targetRegion: Rectangle,
       textAttributes: TextAttributes
   ) {
-    g.font = font
+    val fontInfo = fontInfoForText(text)
+    g.font = fontInfo.font
     g.color = themeAttributes.foregroundColor
     val x = targetRegion.x
-    val baseYOffset = fontYOffset()
+    val baseYOffset = fontYOffset(fontInfo).toInt()
     for ((i, line) in text.lines().withIndex()) {
       val y = targetRegion.y + baseYOffset + i * editor.lineHeight
       g.drawString(line, x, y)

@@ -19,10 +19,11 @@ class CodyAutocompleteSingleLineRenderer(
       targetRegion: Rectangle,
       textAttributes: TextAttributes
   ) {
-    g.font = font
+    val fontInfo = fontInfoForText(text)
+    g.font = fontInfo.font
     g.color = themeAttributes.foregroundColor
     val x = targetRegion.x
-    val y = targetRegion.y + fontYOffset()
+    val y = targetRegion.y + fontYOffset(fontInfo).toInt()
     g.drawString(text, x, y)
   }
 }

@@ -3,24 +3,11 @@ package com.sourcegraph.cody.autocomplete.render
 import com.intellij.openapi.editor.DefaultLanguageHighlighterColors
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.Inlay
-import com.intellij.openapi.editor.impl.FontInfo
 import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.ui.JBColor
 import com.sourcegraph.cody.autocomplete.render.InlayModelUtil.getAllInlaysForEditor
-import java.awt.Font
-import kotlin.math.ceil
 
 object AutocompleteRenderUtil {
-  @JvmStatic
-  fun fontYOffset(font: Font, editor: Editor): Double {
-    val metrics =
-        FontInfo.getFontMetrics(font, FontInfo.getFontRenderContext(editor.contentComponent))
-    val fontBaseline =
-        font.createGlyphVector(metrics.fontRenderContext, "Hello world!").visualBounds.height
-    val linePadding = (editor.lineHeight - fontBaseline) / 2
-    return ceil(fontBaseline + linePadding)
-  }
-
   @JvmStatic
   fun getTextAttributesForEditor(editor: Editor): TextAttributes =
       try {
