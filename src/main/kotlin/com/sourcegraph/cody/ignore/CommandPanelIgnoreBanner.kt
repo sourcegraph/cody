@@ -17,9 +17,9 @@ class CommandPanelIgnoreBanner() : NonOpaquePanel() {
 
     add(
         EditorNotificationPanel().apply {
-          text = CodyBundle.getString("ignore.sidebar-panel-ignored-file.text")
+          text = CodyBundle.getString("filter.sidebar-panel-ignored-file.text")
           createActionLabel(
-              CodyBundle.getString("ignore.sidebar-panel-ignored-file.learn-more-cta"),
+              CodyBundle.getString("filter.sidebar-panel-ignored-file.learn-more-cta"),
               { BrowserUtil.browse(CODY_IGNORE_DOCS_URL) },
               false)
           icon(Icons.CodyLogoSlash)

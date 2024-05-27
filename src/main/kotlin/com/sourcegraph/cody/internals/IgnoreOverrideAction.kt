@@ -26,7 +26,7 @@ data object ignoreOverrideModel {
 class IgnoreOverrideDialog(val project: Project) : DialogWrapper(project) {
   init {
     super.init()
-    title = "Testing: Cody Ignore"
+    title = "Testing: Cody Context Filters"
   }
 
   override fun createCenterPanel(): JComponent {

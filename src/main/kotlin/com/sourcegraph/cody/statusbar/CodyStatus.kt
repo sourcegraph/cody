@@ -28,7 +28,7 @@ enum class CodyStatus : PresentableEnum, WithIcon {
   },
   InIgnoredFile {
     override fun getPresentableText(): String =
-        CodyBundle.getString("ignore.status-bar-ignored-file.tooltip")
+        CodyBundle.getString("filter.status-bar-ignored-file.tooltip")
 
     override val icon: Icon = Icons.StatusBar.CodyAutocompleteDisabled
   },

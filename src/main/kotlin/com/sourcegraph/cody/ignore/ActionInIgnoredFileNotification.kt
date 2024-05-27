@@ -15,8 +15,8 @@ const val CODY_IGNORE_DOCS_URL = "https://sourcegraph.com/docs/cody/capabilities
 class ActionInIgnoredFileNotification :
     Notification(
         NotificationGroups.SOURCEGRAPH_ERRORS,
-        CodyBundle.getString("ignore.action-in-ignored-file.title"),
-        CodyBundle.getString("ignore.action-in-ignored-file.detail"),
+        CodyBundle.getString("filter.action-in-ignored-file.title"),
+        CodyBundle.getString("filter.action-in-ignored-file.detail"),
         NotificationType.INFORMATION),
     NotificationFullContent {
 
@@ -26,7 +26,7 @@ class ActionInIgnoredFileNotification :
     addAction(
         object :
             NotificationAction(
-                CodyBundle.getString("ignore.action-in-ignored-file.learn-more-cta")) {
+                CodyBundle.getString("filter.action-in-ignored-file.learn-more-cta")) {
           override fun actionPerformed(event: AnActionEvent, notification: Notification) {
             BrowserUtil.browse(CODY_IGNORE_DOCS_URL)
           }
