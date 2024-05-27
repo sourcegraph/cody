@@ -12,7 +12,7 @@ const buttonVariants = cva(
                 outline:
                     'tw-border tw-border-input tw-bg-background hover:tw-bg-accent hover:tw-text-accent-foreground',
                 toolbarItem:
-                    'tw-border tw-border-input tw-bg-none hover:tw-text-accent-foreground disabled:!tw-opacity-100 disabled:tw-border-transparent',
+                    'tw-border tw-border-input tw-bg-none hover:tw-text-accent-foreground disabled:tw-border-transparent',
                 secondary: 'tw-bg-secondary tw-text-secondary-foreground hover:tw-bg-secondary/80',
                 ghost: 'hover:tw-bg-accent hover:tw-text-accent-foreground',
                 link: 'tw-text-primary tw-underline-offset-4 hover:tw-underline',
