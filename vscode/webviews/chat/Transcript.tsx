@@ -5,6 +5,7 @@ import type { ApiPostMessage } from '../Chat'
 import type { SerializedPromptEditorValue } from '../promptEditor/PromptEditor'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
+import styles from './Transcript.module.css'
 import { ContextCell } from './cells/contextCell/ContextCell'
 import { AssistantMessageCell } from './cells/messageCell/assistant/AssistantMessageCell'
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
@@ -145,6 +146,7 @@ export const Transcript: React.FunctionComponent<{
                     isEditorInitiallyFocused={true}
                     userContextFromSelection={userContextFromSelection}
                     onSubmit={onFollowupSubmit}
+                    className={styles.lastHumanMessage}
                 />
             )}
             {transcript.length === 0 && <WelcomeMessage />}
