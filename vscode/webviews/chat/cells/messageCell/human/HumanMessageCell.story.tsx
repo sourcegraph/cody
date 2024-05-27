@@ -10,10 +10,8 @@ const meta: Meta<typeof HumanMessageCell> = {
     component: HumanMessageCell,
 
     args: {
-        message: null,
         userInfo: FIXTURE_USER_ACCOUNT_INFO,
         onSubmit: () => {},
-        __storybook__focus: false,
     },
 
     decorators: [VSCodeCell],
@@ -21,29 +19,32 @@ const meta: Meta<typeof HumanMessageCell> = {
 
 export default meta
 
-export const FirstMessageEmpty: StoryObj<typeof meta> = {
-    args: {
-        isFirstMessage: true,
-    },
-}
-
-export const FirstMessageWithText: StoryObj<typeof meta> = {
+export const NonEmptyFirstMessage: StoryObj<typeof meta> = {
     args: {
         message: FIXTURE_TRANSCRIPT.explainCode2[0],
-        isFirstMessage: true,
+        __storybook__focus: true,
     },
 }
 
-export const FollowupEmpty: StoryObj<typeof meta> = {
+export const EmptyFollowup: StoryObj<typeof meta> = {
     args: {
         message: null,
-        isFirstMessage: false,
+        __storybook__focus: true,
     },
 }
 
-export const FollowupWithText: StoryObj<typeof meta> = {
+export const SentPending: StoryObj<typeof meta> = {
     args: {
         message: FIXTURE_TRANSCRIPT.explainCode2[0],
-        isFirstMessage: false,
+        isSent: true,
+        isPendingResponse: true,
+        __storybook__focus: true,
+    },
+}
+
+export const SentComplete: StoryObj<typeof meta> = {
+    args: {
+        message: FIXTURE_TRANSCRIPT.explainCode2[0],
+        isSent: true,
     },
 }

@@ -20,14 +20,12 @@
     font-family: var(--vscode-font-family);
     color: var(--vscode-sideBar-foreground);
     background-color: var(--vscode-sideBar-background);
-    height: 100%;
     /* Override VS Code Webview Toolkit elements */
     --border-width: none;
 }
 
 html,
 body {
-    height: 100%;
     margin: 0;
     padding: 0;
 }

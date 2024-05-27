@@ -1,16 +1,7 @@
 .container {
-    height: 100%;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
-
-    /* Make it so that after a user submits a followup message, the response is
-       visible when the viewport is scrolled all the way down. */
-    padding-bottom: max(4rem, 15vh);
-
-    /* popups use a screen to capture clicks outside the popups; this is
-       necessary so that the screen can extend to the extent of the view without
-       scrollbars */
-    overflow: auto;
 }
 
 .chat-disabled {

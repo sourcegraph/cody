@@ -49,9 +49,9 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         return this.loadAndUpdateDocument(ProtocolTextDocumentWithUri.from(uri))
     }
     public loadAndUpdateDocument(document: ProtocolTextDocumentWithUri): AgentTextDocument {
-        return this.loadAndUpdate(document).document
+        return this.loadDocumentWithChanges(document).document
     }
-    public loadAndUpdate(document: ProtocolTextDocumentWithUri): {
+    public loadDocumentWithChanges(document: ProtocolTextDocumentWithUri): {
         document: AgentTextDocument
         editor: AgentTextEditor
         contentChanges: vscode.TextDocumentContentChangeEvent[]
@@ -141,12 +141,8 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     public loadDocument(document: ProtocolTextDocumentWithUri): AgentTextDocument {
         return this.loadDocumentWithChanges(document).document
     }
-    public loadDocumentWithChanges(document: ProtocolTextDocumentWithUri): {
-        document: AgentTextDocument
-        contentChanges: vscode.TextDocumentContentChangeEvent[]
-    } {
-        const { document: agentDocument, contentChanges } = this.loadAndUpdate(document)
 
+    public fireVisibleTextEditorsDidChange(): Promise<void> {
         const tabs: vscode.Tab[] = []
         for (const uri of this.allUris()) {
             const document = this.getDocumentFromUriString(uri)
@@ -174,9 +170,11 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
             vscode_shim.workspaceTextDocuments.push(document)
             vscode_shim.visibleTextEditors.push(this.newTextEditor(document))
         }
-        vscode_shim.onDidChangeVisibleTextEditors.fire(vscode_shim.visibleTextEditors)
 
-        return { document: agentDocument, contentChanges }
+        const pendingPromise = vscode_shim.onDidChangeVisibleTextEditors.cody_fireAsync(
+            vscode_shim.visibleTextEditors
+        )
+        return pendingPromise
     }
 
     public deleteDocument(uri: vscode.Uri): void {

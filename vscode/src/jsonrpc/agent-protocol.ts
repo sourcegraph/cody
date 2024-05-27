@@ -150,6 +150,8 @@ export type ClientRequests = {
     'testing/networkRequests': [null, { requests: NetworkRequest[] }]
     'testing/requestErrors': [null, { errors: NetworkRequest[] }]
     'testing/closestPostData': [{ url: string; postData: string }, { closestBody: string }]
+    'testing/memoryUsage': [null, { usage: MemoryUsage }]
+    'testing/awaitPendingPromises': [null, null]
 
     // Only used for testing purposes. This operation runs indefinitely unless
     // the client sends progress/cancel.
@@ -815,4 +817,13 @@ export interface GetFoldingRangeResult {
 export interface RemoteRepoFetchState {
     state: 'paused' | 'fetching' | 'errored' | 'complete'
     error?: CodyError | undefined | null
+}
+
+// Copy-pasted from @types/node
+export interface MemoryUsage {
+    rss: number
+    heapTotal: number
+    heapUsed: number
+    external: number
+    arrayBuffers: number
 }

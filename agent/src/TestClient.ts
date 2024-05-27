@@ -135,7 +135,15 @@ export class TestClient extends MessageHandler {
         const recordingDirectory = path.join(agentDir, 'recordings')
         const agentScript = path.join(agentDir, 'dist', 'index.js')
 
-        const args = bin === 'node' ? ['--enable-source-maps', agentScript, 'jsonrpc'] : ['jsonrpc']
+        const args =
+            bin === 'node'
+                ? [
+                      '--enable-source-maps',
+                      // '--expose-gc', // Uncoment when running memory.test.ts
+                      agentScript,
+                      'jsonrpc',
+                  ]
+                : ['jsonrpc']
 
         const child = spawn(bin, args, {
             stdio: 'pipe',

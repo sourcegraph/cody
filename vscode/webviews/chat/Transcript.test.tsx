@@ -1,9 +1,9 @@
 import { errorToChatError, ps } from '@sourcegraph/cody-shared'
-import { render as render_, screen } from '@testing-library/react'
+import { fireEvent, render as render_, screen } from '@testing-library/react'
 import type { ComponentProps } from 'react'
-import { describe, expect, test, vi } from 'vitest'
+import { type Assertion, describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
-import { TooltipProvider } from '../components/shadcn/ui/tooltip'
+import { AppWrapper } from '../AppWrapper'
 import { Transcript } from './Transcript'
 import { FIXTURE_USER_ACCOUNT_INFO } from './fixtures'
 
@@ -22,17 +22,17 @@ vi.mock('@vscode/webview-ui-toolkit/react', () => ({
 }))
 
 vi.mock('../utils/VSCodeApi', () => ({
-    getVSCodeAPI: vi.fn(),
+    getVSCodeAPI: vi.fn().mockReturnValue({ postMessage: () => {} }),
 }))
 
 function render(element: JSX.Element): ReturnType<typeof render_> {
-    return render_(<TooltipProvider>{element}</TooltipProvider>)
+    return render_(element, { wrapper: AppWrapper })
 }
 
 describe('Transcript', () => {
     test('empty', () => {
         render(<Transcript {...PROPS} transcript={[]} />)
-        expectCells([{ message: '' }, { message: 'help and tips' }])
+        expectCells([{ message: '' }])
     })
 
     test('interaction without context', () => {
@@ -100,7 +100,11 @@ describe('Transcript', () => {
                 messageInProgress={{ speaker: 'assistant', text: undefined }}
             />
         )
-        expectCells([{ message: 'Foo' }, { context: { loading: true } }])
+        expectCells([
+            { message: 'Foo' },
+            { context: { loading: true } },
+            { message: '', canSubmit: false },
+        ])
     })
 
     test('human message with context, waiting for assistant message', () => {
@@ -117,7 +121,12 @@ describe('Transcript', () => {
                 messageInProgress={{ speaker: 'assistant', text: undefined }}
             />
         )
-        expectCells([{ message: 'Foo' }, { context: { files: 1 } }, { message: { loading: true } }])
+        expectCells([
+            { message: 'Foo' },
+            { context: { files: 1 } },
+            { message: { loading: true } },
+            { message: '', canSubmit: false },
+        ])
     })
 
     test('human message with no context, waiting for assistant message', () => {
@@ -134,7 +143,11 @@ describe('Transcript', () => {
                 messageInProgress={{ speaker: 'assistant', text: undefined }}
             />
         )
-        expectCells([{ message: 'Foo' }, { message: { loading: true } }])
+        expectCells([
+            { message: 'Foo' },
+            { message: { loading: true } },
+            { message: '', canSubmit: false },
+        ])
     })
 
     test('human message with context, assistant message in progress', () => {
@@ -151,7 +164,12 @@ describe('Transcript', () => {
                 messageInProgress={{ speaker: 'assistant', text: ps`Bar` }}
             />
         )
-        expectCells([{ message: 'Foo' }, { context: { files: 1 } }, { message: 'Bar' }])
+        expectCells([
+            { message: 'Foo' },
+            { context: { files: 1 } },
+            { message: 'Bar' },
+            { message: '', canSubmit: false },
+        ])
     })
 
     test('human message with no context, assistant message in progress', () => {
@@ -168,7 +186,7 @@ describe('Transcript', () => {
                 messageInProgress={{ speaker: 'assistant', text: ps`Bar` }}
             />
         )
-        expectCells([{ message: 'Foo' }, { message: 'Bar' }])
+        expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: '', canSubmit: false }])
     })
 
     test('assistant message with error', () => {
@@ -183,11 +201,69 @@ describe('Transcript', () => {
         )
         expectCells([{ message: 'Foo' }, { message: 'Request Failed: some error' }])
     })
+
+    test('does not clobber user input into followup while isPendingPriorResponse when it completes', async () => {
+        const { container, rerender } = render(
+            <Transcript
+                {...PROPS}
+                transcript={[{ speaker: 'human', text: ps`Foo`, contextFiles: [] }]}
+                messageInProgress={{ speaker: 'assistant', text: ps`Bar` }}
+            />
+        )
+        const editor = container.querySelector<EditorHTMLElement>(
+            '[role="row"]:last-child [data-lexical-editor="true"]'
+        )! as EditorHTMLElement
+        await typeInEditor(editor, 'qux')
+        expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: 'qux', canSubmit: false }])
+
+        rerender(
+            <Transcript
+                {...PROPS}
+                transcript={[
+                    { speaker: 'human', text: ps`Foo`, contextFiles: [] },
+                    { speaker: 'assistant', text: ps`Bar` },
+                ]}
+                messageInProgress={null}
+            />
+        )
+        await typeInEditor(editor, 'yap')
+        expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: 'qux', canSubmit: true }])
+    })
+
+    test('focus', async () => {
+        const { container } = render(
+            <Transcript
+                {...PROPS}
+                transcript={[
+                    { speaker: 'human', text: ps`Foo`, contextFiles: [] },
+                    { speaker: 'assistant', text: ps`Bar` },
+                ]}
+            />
+        )
+
+        // Followup initially has the focus.
+        const lastEditor = container.querySelector<EditorHTMLElement>(
+            '[role="row"]:last-child [data-lexical-editor="true"]'
+        )! as EditorHTMLElement
+        expect(lastEditor).toHaveFocus()
+        await typeInEditor(lastEditor, 'xyz')
+        expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: 'xyz', canSubmit: true }])
+    })
 })
+
+type EditorHTMLElement = HTMLDivElement & { dataset: { lexicalEditor: 'true' } }
+
+async function typeInEditor(editor: EditorHTMLElement, text: string): Promise<void> {
+    fireEvent.focus(editor)
+    fireEvent.click(editor)
+    fireEvent.input(editor, { data: text })
+    await new Promise(resolve => setTimeout(resolve))
+}
 
 type CellMatcher =
     | {
           message: string | { loading: boolean }
+          canSubmit?: boolean
       }
     | {
           context: { files?: number; loading?: boolean }
@@ -206,6 +282,12 @@ function expectCells(expectedCells: CellMatcher[]): void {
             } else if ('loading' in expectedCell.message) {
                 expect(cell.querySelector('[role="status"]')).toHaveAttribute('aria-busy')
             }
+            if (expectedCell.canSubmit !== undefined) {
+                notUnless(
+                    expect(cell.querySelector('button[type="submit"]')),
+                    expectedCell.canSubmit
+                ).toBeEnabled()
+            }
         } else if ('context' in expectedCell) {
             expect(cell).toHaveAttribute('data-testid', 'context')
             if (expectedCell.context.files !== undefined) {
@@ -218,5 +300,9 @@ function expectCells(expectedCells: CellMatcher[]): void {
         } else {
             throw new Error('unknown cell')
         }
+    }
+
+    function notUnless<T>(assertion: Assertion<T>, value: boolean): Assertion<T> {
+        return value ? assertion : assertion.not
     }
 }

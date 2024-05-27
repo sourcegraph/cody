@@ -7,6 +7,7 @@ import { MENTION_CLASS_NAME } from '../../../promptEditor/nodes/ContextItemMenti
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
 import { LoadingDots } from '../../components/LoadingDots'
 import { Cell } from '../Cell'
+import { NON_HUMAN_CELL_AVATAR_SIZE } from '../messageCell/assistant/AssistantMessageCell'
 import styles from './ContextCell.module.css'
 
 /**
@@ -52,7 +53,12 @@ export const ContextCell: React.FunctionComponent<{
     return contextFiles === undefined || contextFiles.length !== 0 ? (
         <Cell
             style="context"
-            gutterIcon={<SourcegraphLogo width={20} height={20} />}
+            gutterIcon={
+                <SourcegraphLogo
+                    width={NON_HUMAN_CELL_AVATAR_SIZE}
+                    height={NON_HUMAN_CELL_AVATAR_SIZE}
+                />
+            }
             containerClassName={className}
             data-testid="context"
         >

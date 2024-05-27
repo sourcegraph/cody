@@ -21,7 +21,9 @@ describe('panicWhenClientIsOutOfSync', () => {
         mostRecentClientDocument: ProtocolTextDocument
     ): void {
         const documents = new AgentWorkspaceDocuments({ doPanic })
-        documents.loadAndUpdate(ProtocolTextDocumentWithUri.fromDocument(serverBeforeRequestDocument))
+        documents.loadDocumentWithChanges(
+            ProtocolTextDocumentWithUri.fromDocument(serverBeforeRequestDocument)
+        )
         panicWhenClientIsOutOfSync(
             documents.loadAndUpdateDocument(
                 ProtocolTextDocumentWithUri.fromDocument(mostRecentClientDocument)
