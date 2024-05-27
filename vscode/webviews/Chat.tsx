@@ -1,6 +1,6 @@
 import { clsx } from 'clsx'
 import type React from 'react'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 import type {
     AuthStatus,
@@ -16,6 +16,7 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import styles from './Chat.module.css'
+import { ScrollDown } from './components/ScrollDown'
 
 interface ChatboxProps {
     chatEnabled: boolean
@@ -167,8 +168,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         }
     }, [])
 
+    const scrollContainerRef = useRef<HTMLDivElement>(null)
+
     return (
-        <div className={clsx(styles.container)}>
+        <div className={clsx(styles.container, 'tw-relative')} ref={scrollContainerRef}>
             {!chatEnabled && (
                 <div className={styles.chatDisabled}>
                     Cody chat is disabled by your Sourcegraph site administrator
@@ -187,6 +190,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 postMessage={postMessage}
                 guardrails={guardrails}
             />
+            <ScrollDown scrollContainerRef={scrollContainerRef} />
         </div>
     )
 }
