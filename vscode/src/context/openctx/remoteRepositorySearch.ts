@@ -28,8 +28,11 @@ const RemoteRepositorySearch: Provider & {
             return repositories.map(
                 repo =>
                     ({
-                        uri: repo.id,
+                        uri: repo.url,
                         title: repo.name,
+                        data: {
+                            repoId: repo.id,
+                        },
                     }) as Mention
             )
         } catch (error) {
@@ -38,11 +41,14 @@ const RemoteRepositorySearch: Provider & {
     },
 
     async items({ message, mention }) {
-        if (!mention?.uri || !message) {
+        if (!mention?.data?.repoId || !message) {
             return []
         }
 
-        const dataOrError = await graphqlClient.contextSearch(new Set([mention.uri]), message)
+        const dataOrError = await graphqlClient.contextSearch(
+            new Set([mention?.data?.repoId as string]),
+            message
+        )
         if (isError(dataOrError) || dataOrError === null) {
             return []
         }

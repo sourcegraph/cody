@@ -112,6 +112,7 @@ query Repositories($first: Int!, $after: String, $query: String) {
         nodes {
             id
             name
+            url
         }
         pageInfo {
             endCursor

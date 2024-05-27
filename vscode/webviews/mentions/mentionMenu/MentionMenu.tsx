@@ -159,10 +159,14 @@ export const MentionMenu: FunctionComponent<
             <CommandList>
                 {data.providers.length > 0 && (
                     <CommandGroup>
-                        {data.providers.map(provider =>
-                            // show remote repositories search provider  only if the user is connected to a non-dotcom instance.
-                            provider.id !== RemoteRepositorySearch.providerUri ||
-                            (userInfo && !userInfo.isDotComUser) ? (
+                        {data.providers
+                            .filter(
+                                provider =>
+                                    provider.id !== RemoteRepositorySearch.providerUri ||
+                                    (userInfo && !userInfo.isDotComUser)
+                            )
+                            .map(provider => (
+                                // show remote repositories search provider  only if the user is connected to a non-dotcom instance.
                                 <CommandItem
                                     key={commandRowValue(provider)}
                                     value={commandRowValue(provider)}
@@ -171,8 +175,7 @@ export const MentionMenu: FunctionComponent<
                                 >
                                     <MentionMenuProviderItemContent provider={provider} />
                                 </CommandItem>
-                            ) : null
-                        )}
+                            ))}
                     </CommandGroup>
                 )}
 
