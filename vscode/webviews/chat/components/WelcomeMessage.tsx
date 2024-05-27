@@ -59,10 +59,11 @@ export const WelcomeMessage: FunctionComponent = () => {
                 <div className="tw-absolute tw-bottom-0 tw-w-full tw-flex tw-justify-end tw-pb-8 tw-pr-8">
                     <button
                         type="button"
-                        className="tw-text-sm tw-opacity-40 hover:tw-opacity-100 hover:tw-text-link tw-flex tw-gap-2"
+                        className="tw-text-sm tw-opacity-40 hover:tw-opacity-100 tw-flex tw-gap-2"
                         onClick={onShowClicked}
                     >
-                        <HelpCircleIcon strokeWidth={2} className="tw-h-8 tw-w-8" /> Cody Chat Help
+                        <HelpCircleIcon strokeWidth={2} className="tw-h-8 tw-w-8" />{' '}
+                        <span>Cody Chat Help</span>
                     </button>
                 </div>
             </div>
