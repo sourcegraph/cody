@@ -38,18 +38,18 @@ const NewChatIcon: FunctionComponent = (props): ReactElement => (
     </svg>
 )
 
-const key = 'chat.welcome-message-dismissed'
+export const localStorageKey = 'chat.welcome-message-dismissed'
 
 export const WelcomeMessage: FunctionComponent = () => {
-    const [showMessage, setShowMessage] = useState<boolean>(localStorage.getItem(key) !== 'true')
+    const [showMessage, setShowMessage] = useState<boolean>(localStorage.getItem(localStorageKey) !== 'true')
 
     const onDismissClicked = useCallback((): void => {
-        localStorage.setItem(key, 'true')
+        localStorage.setItem(localStorageKey, 'true')
         setShowMessage(false)
     }, [])
 
     const onShowClicked = useCallback((): void => {
-        localStorage.removeItem(key)
+        localStorage.removeItem(localStorageKey)
         setShowMessage(true)
     }, [])
 
@@ -61,6 +61,7 @@ export const WelcomeMessage: FunctionComponent = () => {
                         type="button"
                         className="tw-text-sm tw-opacity-40 hover:tw-opacity-100 tw-flex tw-gap-2"
                         onClick={onShowClicked}
+                        aria-label="Cody Chat Help"
                     >
                         <HelpCircleIcon strokeWidth={2} className="tw-h-8 tw-w-8" />{' '}
                         <span>Cody Chat Help</span>
@@ -78,6 +79,7 @@ export const WelcomeMessage: FunctionComponent = () => {
                     size="icon"
                     className="tw-absolute tw-right-4 tw-top-4"
                     onClick={onDismissClicked}
+                    title="Close"
                 >
                     <XIcon strokeWidth={1.5} className="tw-h-8 tw-w-8" />
                 </Button>
