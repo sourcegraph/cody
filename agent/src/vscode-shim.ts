@@ -54,7 +54,7 @@ import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
 // Not using CODY_TESTING because it changes the URL endpoint we send requests
 // to and we want to send requests to sourcegraph.com because we record the HTTP
 // traffic.
-const isTesting = process.env.CODY_SHIM_TESTING === 'true'
+export const isTesting = process.env.CODY_SHIM_TESTING === 'true'
 
 export { AgentEventEmitter as EventEmitter } from '../../vscode/src/testutils/AgentEventEmitter'
 
