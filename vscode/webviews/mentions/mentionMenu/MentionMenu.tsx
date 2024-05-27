@@ -160,6 +160,7 @@ export const MentionMenu: FunctionComponent<
                 {data.providers.length > 0 && (
                     <CommandGroup>
                         {data.providers.map(provider =>
+                            // show remote repositories search provider  only if the user is connected to a non-dotcom instance.
                             provider.id !== RemoteRepositorySearch.providerUri ||
                             (userInfo && !userInfo.isDotComUser) ? (
                                 <CommandItem
