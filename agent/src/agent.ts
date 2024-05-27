@@ -218,6 +218,16 @@ export class Agent extends MessageHandler implements ExtensionClient {
     private pendingPromises = new Set<Promise<any>>()
     public codeLenses = new AgentCodeLenses()
     public workspace = new AgentWorkspaceDocuments({
+        doPanic: (message: string) => {
+            const panicMessage =
+                '!PANIC! Client document content is out of sync with server document content'
+            process.stderr.write(panicMessage)
+            process.stderr.write(message + '\n')
+            this.notify('debug/message', {
+                channel: 'Document Sync Check',
+                message: panicMessage + '\n' + message,
+            })
+        },
         edit: (uri, callback, options) => {
             if (this.clientInfo?.capabilities?.edit !== 'enabled') {
                 logDebug('CodyAgent', 'client does not support operation: textDocument/edit')
