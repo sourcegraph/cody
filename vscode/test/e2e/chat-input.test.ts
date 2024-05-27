@@ -294,7 +294,7 @@ test.extend<ExpectedEvents>({
     const [chatFrame, chatInput] = await createEmptyChatPanel(page)
 
     // Use the width of the welcome chat to determine if the chat messages are wrapped.
-    const welcomeText = chatFrame.getByText('Welcome to Cody')
+    const welcomeText = chatFrame.getByText('Start a new chat using')
     const welcomeTextContainer = await welcomeText.boundingBox()
     const welcomeTextContainerWidth = welcomeTextContainer?.width || 0
     expect(welcomeTextContainerWidth).toBeGreaterThan(0)

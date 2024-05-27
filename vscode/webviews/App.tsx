@@ -11,7 +11,6 @@ import {
     type ModelProvider,
     PromptString,
     type SerializedChatTranscript,
-    isMacOS,
 } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from './Chat'
 
@@ -281,7 +280,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                     telemetryService={telemetryService}
                                     telemetryRecorder={telemetryRecorder}
                                     isTranscriptError={isTranscriptError}
-                                    welcomeMessage={welcomeMessageMarkdown}
                                     guardrails={attributionEnabled ? guardrails : undefined}
                                     userContextFromSelection={userContextFromSelection}
                                 />
@@ -312,25 +310,3 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
             ))}
         </div>
     )
-
-const welcomeMessageMarkdown = (
-    <div>
-        <p>
-            Welcome to Cody! Start writing code and Cody will autocomplete lines and entire functions for
-            you.
-        </p>
-        <p>
-            To run <a href="command:cody.menu.commands">Cody Commands</a>, use the keyboard shortcut{' '}
-            <kbd>{isMacOS() ? '⌥' : 'Alt'}+C</kbd>, the <span className="cody-icon">A</span> button, or
-            right-click anywhere in your code.
-        </p>
-        <p>
-            You can start a new chat at any time with <kbd>{isMacOS() ? '⌥' : 'Alt'}+/</kbd> or using the{' '}
-            <span className="cody-icon">H</span> button.
-        </p>
-        <p>
-            For more tips and tricks, see the <a href="command:cody.welcome">Getting Started Guide</a>{' '}
-            and <a href="https://sourcegraph.com/docs/cody">docs</a>.
-        </p>
-    </div>
-)
