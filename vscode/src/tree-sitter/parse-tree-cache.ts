@@ -46,8 +46,6 @@ export async function parseDocument(document: TextDocument): Promise<void> {
         return
     }
 
-    console.log('boom')
-
     updateParseTreeCache(document, parser)
 }
 
