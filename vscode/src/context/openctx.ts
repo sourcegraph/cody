@@ -1,4 +1,4 @@
-import { setOpenCtxClient } from '@sourcegraph/cody-shared'
+import { isDotCom, setOpenCtxClient } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 import { logDebug, outputChannel } from '../log'
 import RemoteRepositorySearch from './openctx/remoteRepositorySearch'
@@ -15,13 +15,15 @@ export function exposeOpenCtxClient(
                     outputChannel,
                     secrets,
                     features: {},
-                    providers: [
-                        {
-                            providerUri: RemoteRepositorySearch.providerUri,
-                            settings: true,
-                            provider: RemoteRepositorySearch,
-                        },
-                    ],
+                    providers: isDotCom(config.serverEndpoint)
+                        ? []
+                        : [
+                              {
+                                  providerUri: RemoteRepositorySearch.providerUri,
+                                  settings: true,
+                                  provider: RemoteRepositorySearch,
+                              },
+                          ],
                 }).controller.client
             )
         })
