@@ -14,8 +14,6 @@ import {
     uriBasename,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-
-import { getContextFileFromSelection } from '../../commands/context/selection'
 import type { RemoteSearch } from '../../context/remote-search'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ContextRankingController } from '../../local-context/context-ranking'
@@ -309,8 +307,6 @@ async function getPriorityContext(
 ): Promise<ContextItem[]> {
     return wrapInActiveSpan('chat.context.priority', async () => {
         const priorityContext: ContextItem[] = []
-        const selectionContext = await getContextFileFromSelection()
-        priorityContext.push(...selectionContext)
         if (needsUserAttentionContext(text)) {
             // Query refers to current editor
             priorityContext.push(...getVisibleEditorContext(editor))
