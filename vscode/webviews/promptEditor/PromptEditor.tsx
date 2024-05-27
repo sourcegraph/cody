@@ -4,8 +4,8 @@ import { clsx } from 'clsx'
 import {
     $createTextNode,
     $getRoot,
+    $getSelection,
     $insertNodes,
-    CLEAR_HISTORY_COMMAND,
     type LexicalEditor,
     type SerializedEditorState,
 } from 'lexical'
@@ -38,11 +38,11 @@ interface Props extends KeyboardEventPluginProps {
 }
 
 export interface PromptEditorRefAPI {
-    setEditorState(value: SerializedPromptEditorState | null): void
     getSerializedValue(): SerializedPromptEditorValue
-    setFocus(focus: boolean, moveCursorToEnd?: boolean): void
+    setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }): void
     appendText(text: string, ensureWhitespaceBefore?: boolean): void
     addContextItemAsToken(items: ContextItem[]): void
+    isEmpty(): boolean
 }
 
 /**
@@ -58,49 +58,51 @@ export const PromptEditor: FunctionComponent<Props> = ({
     onFocusChange,
     disabled,
     editorRef: ref,
-
-    // KeyboardEventPluginProps
     onEnterKey,
-    onEscapeKey,
 }) => {
     const editorRef = useRef<LexicalEditor>(null)
 
     useImperativeHandle(
         ref,
         (): PromptEditorRefAPI => ({
-            setEditorState(value: SerializedPromptEditorState | null): void {
-                if (value === null) {
-                    // Clearing seems to require a different code path because focusing fails if
-                    // the editor is empty.
-                    editorRef.current?.update(() => {
-                        $getRoot().clear()
-                    })
-                    return
-                }
-
-                const editor = editorRef.current
-                if (editor) {
-                    editor.setEditorState(editor.parseEditorState(value.lexicalEditorState))
-                    editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined)
-                    editor.focus()
-                }
-            },
             getSerializedValue(): SerializedPromptEditorValue {
                 if (!editorRef.current) {
                     throw new Error('PromptEditor has no Lexical editor ref')
                 }
                 return toSerializedPromptEditorValue(editorRef.current)
             },
-            setFocus(focus, moveCursorToEnd): void {
+            setFocus(focus, { moveCursorToEnd } = {}): void {
                 const editor = editorRef.current
                 if (editor) {
                     if (focus) {
-                        editor.focus(
-                            moveCursorToEnd
-                                ? () => {
-                                      editor.update(() => $getRoot().selectEnd())
-                                  }
-                                : undefined
+                        editor.update(
+                            () => {
+                                const selection = $getSelection()
+                                const root = $getRoot()
+
+                                // Copied from LexicalEditor#focus, but we need to set the
+                                // `skip-scroll-into-view` tag so that we don't always autoscroll.
+                                if (selection !== null) {
+                                    selection.dirty = true
+                                } else if (root.getChildrenSize() !== 0) {
+                                    root.selectEnd()
+                                }
+
+                                if (moveCursorToEnd) {
+                                    root.selectEnd()
+                                }
+
+                                // Ensure element is focused in case the editor is empty. Copied
+                                // from LexicalAutoFocusPlugin.
+                                const doFocus = () =>
+                                    editor.getRootElement()?.focus({ preventScroll: true })
+                                doFocus()
+
+                                // HACK(sqs): Needed in VS Code webviews to actually get it to focus
+                                // on initial load, for some reason.
+                                setTimeout(doFocus)
+                            },
+                            { tag: 'skip-scroll-into-view' }
                         )
                     } else {
                         editor.blur()
@@ -108,7 +110,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 }
             },
             appendText(text: string, ensureWhitespaceBefore?: boolean): void {
-                editorRef?.current?.update(() => {
+                editorRef.current?.update(() => {
                     const root = $getRoot()
                     const needsWhitespaceBefore = !/(^|\s)$/.test(root.getTextContent())
                     root.selectEnd()
@@ -121,11 +123,20 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 })
             },
             addContextItemAsToken(items: ContextItem[]) {
-                editorRef?.current?.update(() => {
+                editorRef.current?.update(() => {
                     const spaceNode = $createTextNode(' ')
                     const mentionNodes = items.map($createContextItemMentionNode)
                     $insertNodes([spaceNode, ...mentionNodes, spaceNode])
                     spaceNode.select()
+                })
+            },
+            isEmpty(): boolean {
+                if (!editorRef.current) {
+                    throw new Error('PromptEditor has no Lexical editor ref')
+                }
+                return editorRef.current.getEditorState().read(() => {
+                    const root = $getRoot()
+                    return root.getChildrenSize() === 0
                 })
             },
         }),
@@ -155,10 +166,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
             placeholder={placeholder}
             disabled={disabled}
             aria-label="Chat message"
-            //
-            // KeyboardEventPluginProps
             onEnterKey={onEnterKey}
-            onEscapeKey={onEscapeKey}
         />
     )
 }

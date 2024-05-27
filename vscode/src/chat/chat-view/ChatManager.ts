@@ -137,13 +137,15 @@ export class ChatManager implements vscode.Disposable {
         command,
     }: ExecuteChatArguments): Promise<ChatSession | undefined> {
         const provider = await this.chatPanelsManager.getNewChatPanel()
-        await provider?.handleUserMessageSubmission(
+        const abortSignal = provider.startNewSubmitOrEditOperation()
+        await provider.handleUserMessageSubmission(
             uuid.v4(),
             text,
             submitType,
             contextFiles ?? [],
             editorState,
             addEnhancedContext ?? true,
+            abortSignal,
             source,
             command
         )
@@ -160,7 +162,7 @@ export class ChatManager implements vscode.Disposable {
             mode === 'new-chat'
                 ? await this.chatPanelsManager.getNewChatPanel()
                 : await this.chatPanelsManager.getActiveChatPanel()
-        await provider?.handleGetUserEditorContext(uri)
+        await provider.handleGetUserEditorContext(uri)
     }
 
     private async editChatHistory(treeItem?: vscode.TreeItem): Promise<void> {

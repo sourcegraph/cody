@@ -4,15 +4,15 @@ import * as React from 'react'
 import { cn } from '../utils'
 
 const buttonVariants = cva(
-    'tw-inline-flex tw-items-center tw-justify-center tw-whitespace-nowrap tw-rounded-md tw-font-medium focus-visible:tw-border-ring focus-visible:tw-outline-none disabled:tw-pointer-events-none disabled:tw-opacity-50',
+    'tw-inline-flex tw-items-center tw-justify-center tw-whitespace-nowrap tw-rounded-md focus-visible:tw-border-ring focus-visible:tw-outline-none disabled:tw-pointer-events-none disabled:tw-opacity-50',
     {
         variants: {
             variant: {
                 default: 'tw-bg-primary tw-text-primary-foreground hover:tw-bg-primary/90',
                 outline:
-                    'tw-border tw-border-input tw-bg-background hover:tw-bg-accent hover:tw-text-accent-foreground',
+                    'tw-border tw-border-border tw-bg-background hover:tw-bg-accent hover:tw-text-accent-foreground',
                 toolbarItem:
-                    'tw-border tw-border-input tw-bg-none hover:tw-text-accent-foreground disabled:tw-border-transparent',
+                    'tw-border tw-border-border tw-bg-none hover:tw-text-accent-foreground disabled:tw-border-transparent',
                 secondary: 'tw-bg-secondary tw-text-secondary-foreground hover:tw-bg-secondary/80',
                 ghost: 'hover:tw-bg-border hover:tw-bg-border',
                 link: 'tw-text-primary tw-underline-offset-4 hover:tw-underline',

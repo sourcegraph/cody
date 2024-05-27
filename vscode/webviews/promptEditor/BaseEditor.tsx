@@ -12,6 +12,7 @@ import styles from './BaseEditor.module.css'
 import { RICH_EDITOR_NODES } from './nodes'
 import MentionsPlugin from './plugins/atMentions/atMentions'
 import CodeHighlightPlugin from './plugins/codeHighlight'
+import { DisableEscapeKeyBlursPlugin } from './plugins/disableEscapeKeyBlurs'
 import { KeyboardEventPlugin, type KeyboardEventPluginProps } from './plugins/keyboardEvent'
 import { OnFocusChangePlugin } from './plugins/onFocus'
 
@@ -40,10 +41,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
     className,
     contentEditableClassName,
     'aria-label': ariaLabel,
-
-    // KeyboardEventPluginProps
     onEnterKey,
-    onEscapeKey,
 }) => {
     // biome-ignore lint/correctness/useExhaustiveDependencies: We do not want to update initialConfig because LexicalComposer is meant to be an uncontrolled component.
     const initialConfig = useMemo<InitialConfigType>(
@@ -85,7 +83,8 @@ export const BaseEditor: FunctionComponent<Props> = ({
                     <CodeHighlightPlugin />
                     {onFocusChange && <OnFocusChangePlugin onFocusChange={onFocusChange} />}
                     {editorRef && <EditorRefPlugin editorRef={editorRef} />}
-                    <KeyboardEventPlugin onEnterKey={onEnterKey} onEscapeKey={onEscapeKey} />
+                    <KeyboardEventPlugin onEnterKey={onEnterKey} />
+                    <DisableEscapeKeyBlursPlugin />
                 </LexicalComposer>
             </div>
         </div>

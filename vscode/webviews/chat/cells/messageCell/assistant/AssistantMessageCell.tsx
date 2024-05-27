@@ -12,7 +12,7 @@ import { ErrorItem, RequestErrorItem } from '../../../ErrorItem'
 import { FeedbackButtons } from '../../../components/FeedbackButtons'
 import { LoadingDots } from '../../../components/LoadingDots'
 import { useChatModelByID } from '../../../models/chatModelContext'
-import { BaseMessageCell } from '../BaseMessageCell'
+import { BaseMessageCell, MESSAGE_CELL_AVATAR_SIZE } from '../BaseMessageCell'
 
 /**
  * A component that displays a chat message from the assistant.
@@ -21,7 +21,6 @@ export const AssistantMessageCell: FunctionComponent<{
     message: ChatMessage
     userInfo: UserAccountInfo
     isLoading: boolean
-    disabled?: boolean
 
     showFeedbackButtons: boolean
     feedbackButtonsOnSubmit?: (text: string) => void
@@ -35,7 +34,6 @@ export const AssistantMessageCell: FunctionComponent<{
     message,
     userInfo,
     isLoading,
-    disabled,
     showFeedbackButtons,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
@@ -57,7 +55,7 @@ export const AssistantMessageCell: FunctionComponent<{
             speakerIcon={
                 chatModel && ModelIcon ? (
                     <span title={`${chatModel.title} by ${chatModel.provider}`}>
-                        <ModelIcon size={20} />
+                        <ModelIcon size={NON_HUMAN_CELL_AVATAR_SIZE} />
                     </span>
                 ) : null
             }
@@ -87,12 +85,15 @@ export const AssistantMessageCell: FunctionComponent<{
                 </>
             }
             footer={
-                showFeedbackButtons &&
-                feedbackButtonsOnSubmit && (
-                    <FeedbackButtons feedbackButtonsOnSubmit={feedbackButtonsOnSubmit} />
-                )
+                <>
+                    {showFeedbackButtons && feedbackButtonsOnSubmit && (
+                        <FeedbackButtons feedbackButtonsOnSubmit={feedbackButtonsOnSubmit} />
+                    )}
+                </>
             }
-            disabled={disabled}
         />
     )
 }
+
+export const NON_HUMAN_CELL_AVATAR_SIZE =
+    MESSAGE_CELL_AVATAR_SIZE * 0.83 /* make them "look" the same size as the human avatar icons */

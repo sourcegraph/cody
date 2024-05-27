@@ -10,12 +10,13 @@ import type {
     TelemetryRecorder,
     TelemetryService,
 } from '@sourcegraph/cody-shared'
-import { Transcript } from './chat/Transcript'
+import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import styles from './Chat.module.css'
+import { ScrollDown } from './components/ScrollDown'
 
 interface ChatboxProps {
     chatEnabled: boolean
@@ -118,16 +119,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     useEffect(() => {
         function handleKeyDown(event: KeyboardEvent) {
-            // Opt+> and Alt+> focus the last editor input, to make it easy for users to ask a followup
-            // question.
-            if (event.altKey && event.key === '>') {
-                event.preventDefault()
-                event.stopPropagation()
-                const allEditors = document.querySelectorAll<HTMLElement>('[data-lexical-editor="true"]')
-                const lastEditor = allEditors.item(allEditors.length - 1) as HTMLElement | undefined
-                lastEditor?.focus()
-            }
-
             // Esc to abort the message in progress.
             if (event.key === 'Escape' && messageInProgress) {
                 vscodeAPI.postMessage({ command: 'abort' })
@@ -158,7 +149,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             const focusElement = focusNode instanceof Element ? focusNode : focusNode?.parentElement
             const focusEditor = focusElement?.closest<HTMLElement>('[data-lexical-editor="true"]')
             if (focusEditor) {
-                focusEditor.focus()
+                focusEditor.focus({ preventScroll: true })
             }
         }
         window.addEventListener('focus', onFocus)
@@ -168,7 +159,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     }, [])
 
     return (
-        <div className={clsx(styles.container)}>
+        <div className={clsx(styles.container, 'tw-relative')}>
             {!chatEnabled && (
                 <div className={styles.chatDisabled}>
                     Cody chat is disabled by your Sourcegraph site administrator
@@ -187,6 +178,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 postMessage={postMessage}
                 guardrails={guardrails}
             />
+            <ScrollDown onClick={focusLastHumanMessageEditor} />
         </div>
     )
 }

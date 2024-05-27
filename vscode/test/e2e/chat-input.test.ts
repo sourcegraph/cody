@@ -1,6 +1,6 @@
 import { type Locator, expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
-import { createEmptyChatPanel, sidebarExplorer, sidebarSignin } from './common'
+import { createEmptyChatPanel, focusChatInputAtEnd, sidebarExplorer, sidebarSignin } from './common'
 import { type DotcomUrlOverride, type ExpectedEvents, executeCommandInPalette, test } from './helpers'
 
 test.extend<ExpectedEvents>({
@@ -78,17 +78,19 @@ test.extend<ExpectedEvents>({
     // streaming its response.
     await firstChatInput.fill('delay')
     await firstChatInput.press('Enter')
-    await expect(firstChatInput).toBeFocused()
+    await expect(lastChatInput).toBeFocused()
 
     // Make sure the chat input box does not steal focus from the editor when editor
     // is focused.
-    await expect(firstChatInput).toBeFocused()
+    await expect(lastChatInput).toBeFocused()
     await page.getByText("fizzbuzz.push('Buzz')").click()
     await expect(firstChatInput).not.toBeFocused()
+    await expect(lastChatInput).not.toBeFocused()
     // once the response is 'Done', check the input focus
     await firstChatInput.hover()
     await expect(chatPanel.getByText('Done')).toBeVisible()
     await expect(firstChatInput).not.toBeFocused()
+    await expect(lastChatInput).not.toBeFocused()
 
     // Click into the last chat input and submit a new follow-up chat message. The original focus
     // area which is the chat input should still have the focus after the response is received.
@@ -96,7 +98,8 @@ test.extend<ExpectedEvents>({
     await lastChatInput.type('Regular chat message', { delay: 10 })
     await lastChatInput.press('Enter')
     await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
-    await expect(chatInputs.nth(1)).toBeFocused()
+    await expect(chatInputs.nth(1)).not.toBeFocused()
+    await expect(lastChatInput).toBeFocused()
 })
 
 test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
@@ -158,8 +161,7 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
         await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
 
         // Ensure the toolbar hides when the first input isn't focused.
-        await expect(humanRow0.editor).toBeFocused()
-        await humanRow0.editor.blur()
+        await expect(humanRow0.editor).not.toBeFocused()
         await expect(humanRow0.toolbar.mention).not.toBeVisible()
         await expect(humanRow0.toolbar.enhancedContext).not.toBeVisible()
         await expect(humanRow0.toolbar.modelSelector).not.toBeVisible()
@@ -230,15 +232,15 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
 
     await sidebarSignin(page, sidebar)
 
-    const [chatFrame, chatInput] = await createEmptyChatPanel(page)
+    const [chatFrame, lastChatInput, firstChatInput] = await createEmptyChatPanel(page)
 
     const modelSelect = chatFrame.getByRole('combobox', { name: 'Select a model' }).last()
 
     await expect(modelSelect).toBeEnabled()
     await expect(modelSelect).toHaveText(/^Claude 3 Sonnet/)
 
-    await chatInput.fill('to model1')
-    await chatInput.press('Enter')
+    await firstChatInput.fill('to model1')
+    await firstChatInput.press('Enter')
     await expect(chatFrame.getByRole('row').getByTitle('Claude 3 Sonnet by Anthropic')).toBeVisible()
 
     // Change model and send another message.
@@ -246,9 +248,107 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     await modelSelect.click()
     const modelChoices = chatFrame.getByRole('listbox', { name: 'Suggestions' })
     await modelChoices.getByRole('option', { name: 'GPT-4o' }).click()
-    await expect(chatInput).toBeFocused()
+    await expect(lastChatInput).toBeFocused()
     await expect(modelSelect).toHaveText(/^GPT-4o/)
-    await chatInput.fill('to model2')
-    await chatInput.press('Enter')
+    await lastChatInput.fill('to model2')
+    await lastChatInput.press('Enter')
     await expect(chatFrame.getByRole('row').getByTitle('GPT-4o by OpenAI')).toBeVisible()
+})
+
+test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
+    expectedEvents: [
+        'CodyInstalled',
+        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
+        'CodyVSCodeExtension:login:clicked',
+        'CodyVSCodeExtension:auth:selectSigninMenu',
+        'CodyVSCodeExtension:auth:fromToken',
+        'CodyVSCodeExtension:Auth:connected',
+        'CodyVSCodeExtension:chat-question:submitted',
+        'CodyVSCodeExtension:chat-question:executed',
+        'CodyVSCodeExtension:chatResponse:noCode',
+        'CodyVSCodeExtension:editChatButton:clicked',
+    ],
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+        'cody.extension:savedLogin',
+        'cody.codyIgnore:hasFile',
+        'cody.auth:failed',
+        'cody.auth.login:clicked',
+        'cody.auth.signin.menu:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.signin.token:clicked',
+        'cody.auth:connected',
+        'cody.auth:connected',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
+        'cody.editChatButton:clicked',
+    ],
+})('editing follow-up messages in chat view', async ({ page, sidebar }) => {
+    await sidebarSignin(page, sidebar)
+
+    const [chatFrame, lastChatInput, firstChatInput, chatInputs] = await createEmptyChatPanel(page)
+
+    // Submit three new messages
+    await lastChatInput.fill('One')
+    await lastChatInput.press('Enter')
+    await expect(chatFrame.getByText('One')).toBeVisible()
+    await lastChatInput.fill('Two')
+    await lastChatInput.press('Enter')
+    await expect(chatFrame.getByText('Two')).toBeVisible()
+    await lastChatInput.fill('Three')
+    await lastChatInput.press('Enter')
+    await expect(chatFrame.getByText('Three')).toBeVisible()
+
+    // Click on the first input to get into the editing mode
+    // The text area should automatically get the focuse,
+    // and contains the original message text,
+    // The submit button will also be replaced with "Update Message" button
+    await chatFrame.getByText('One').hover()
+    await focusChatInputAtEnd(firstChatInput)
+    await expect(firstChatInput).toBeFocused()
+    await expect(firstChatInput).toHaveText('One')
+
+    // click on the second edit button to get into the editing mode again
+    // edit the message from "Two" to "Four"
+    const secondChatInput = chatInputs.nth(1)
+    await chatFrame.getByText('Two').hover()
+    // the original message text should shows up in the text box
+    await expect(secondChatInput).toHaveText('Two')
+    await secondChatInput.click()
+    await secondChatInput.fill('Four')
+    await expect(chatInputs.nth(2)).toHaveText('Three')
+    await page.keyboard.press('Enter')
+    await expect(secondChatInput).not.toBeFocused()
+    await expect(chatInputs.nth(2)).toBeFocused()
+    await expect(chatInputs.nth(2)).not.toHaveText('Three')
+
+    // Try editing again to make sure the focus behavior remains consistent.
+    await chatInputs.nth(2).click()
+    await chatInputs.nth(2).fill('Dummy')
+    await expect(chatInputs.nth(2)).toHaveText('Dummy')
+    await secondChatInput.click()
+    await secondChatInput.fill('Five')
+    await page.keyboard.press('Enter')
+    await expect(chatInputs.nth(2)).toHaveText('Dummy')
+    await expect(secondChatInput).not.toBeFocused()
+    await expect(chatInputs.nth(2)).toBeFocused()
+
+    // Only two messages are left after the edit (e.g. "One", "Four"),
+    // as all the messages after the edited message have be removed
+    await expect(chatInputs).toHaveCount(3 /* 2 + the 1 for the next not-yet-sent message */)
+    await expect(chatFrame.getByText('One')).toBeVisible()
+    await expect(chatFrame.getByText('Two')).not.toBeVisible()
+    await expect(chatFrame.getByText('Three')).not.toBeVisible()
+    await expect(chatFrame.getByText('Five')).toBeVisible()
+
+    // Chat input should still have focus.
+    await expect(chatInputs.nth(2)).toBeFocused()
+
+    // Send another new message.
+    await chatInputs.nth(2).click()
+    await chatInputs.nth(2).fill('Six')
+    await page.keyboard.press('Enter')
+    await expect(chatInputs.nth(3)).toBeFocused()
 })
