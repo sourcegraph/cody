@@ -86,6 +86,10 @@ interface CodyAgentServer {
   fun testing_requestErrors(params: Null?): CompletableFuture<Testing_RequestErrorsResult>
   @JsonRequest("testing/closestPostData")
   fun testing_closestPostData(params: Testing_ClosestPostDataParams): CompletableFuture<Testing_ClosestPostDataResult>
+  @JsonRequest("testing/memoryUsage")
+  fun testing_memoryUsage(params: Null?): CompletableFuture<Testing_MemoryUsageResult>
+  @JsonRequest("testing/awaitPendingPromises")
+  fun testing_awaitPendingPromises(params: Null?): CompletableFuture<Null?>
   @JsonRequest("testing/progressCancelation")
   fun testing_progressCancelation(params: Testing_ProgressCancelationParams): CompletableFuture<Testing_ProgressCancelationResult>
   @JsonRequest("testing/reset")
