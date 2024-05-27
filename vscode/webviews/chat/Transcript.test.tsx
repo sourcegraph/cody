@@ -32,7 +32,7 @@ function render(element: JSX.Element): ReturnType<typeof render_> {
 describe('Transcript', () => {
     test('empty', () => {
         render(<Transcript {...PROPS} transcript={[]} />)
-        expectCells([{ message: '' }, { message: 'help and tips' }])
+        expectCells([{ message: '' }])
     })
 
     test('interaction without context', () => {
