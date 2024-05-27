@@ -11,6 +11,7 @@ import {
 } from 'lexical'
 import type { EditorState, SerializedLexicalNode } from 'lexical'
 import { type FunctionComponent, useCallback, useImperativeHandle, useRef } from 'react'
+import type { UserAccountInfo } from '../Chat'
 import { BaseEditor, editorStateToText } from './BaseEditor'
 import styles from './PromptEditor.module.css'
 import {
@@ -22,6 +23,7 @@ import {
 import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
 
 interface Props extends KeyboardEventPluginProps {
+    userInfo?: UserAccountInfo
     editorClassName?: string
     contentEditableClassName?: string
     seamless?: boolean
@@ -49,6 +51,7 @@ export interface PromptEditorRefAPI {
  * The component for composing and editing prompts.
  */
 export const PromptEditor: FunctionComponent<Props> = ({
+    userInfo,
     editorClassName,
     contentEditableClassName,
     seamless,
@@ -154,6 +157,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
 
     return (
         <BaseEditor
+            userInfo={userInfo}
             className={clsx(styles.editor, editorClassName, {
                 [styles.disabled]: disabled,
                 [styles.seamless]: seamless,

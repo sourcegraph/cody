@@ -1,9 +1,12 @@
-import { graphqlClient, setOpenCtxClient } from '@sourcegraph/cody-shared'
+import { setOpenCtxClient } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 import { logDebug, outputChannel } from '../log'
 import RemoteRepositorySearch from './openctx/remoteRepositorySearch'
 
-export function exposeOpenCtxClient(secrets: vscode.SecretStorage): void {
+export function exposeOpenCtxClient(
+    secrets: vscode.SecretStorage,
+    config: { serverEndpoint: string }
+): void {
     logDebug('openctx', 'OpenCtx is enabled in Cody')
     import('@openctx/vscode-lib')
         .then(({ createController }) => {
@@ -12,15 +15,13 @@ export function exposeOpenCtxClient(secrets: vscode.SecretStorage): void {
                     outputChannel,
                     secrets,
                     features: {},
-                    providers: graphqlClient.isDotCom()
-                        ? []
-                        : [
-                              {
-                                  providerUri: 'internal-remote-repository-search',
-                                  settings: true,
-                                  provider: RemoteRepositorySearch,
-                              },
-                          ],
+                    providers: [
+                        {
+                            providerUri: RemoteRepositorySearch.providerUri,
+                            settings: true,
+                            provider: RemoteRepositorySearch,
+                        },
+                    ],
                 }).controller.client
             )
         })

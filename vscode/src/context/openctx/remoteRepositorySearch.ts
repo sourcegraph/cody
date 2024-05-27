@@ -2,7 +2,11 @@ import { graphqlClient, isError } from '@sourcegraph/cody-shared'
 
 import type { Item, Mention, Provider } from '@openctx/client'
 
-const RemoteRepositorySearch: Provider = {
+const RemoteRepositorySearch: Provider & {
+    providerUri: string
+} = {
+    providerUri: 'internal-remote-repository-search',
+
     meta() {
         return { name: 'Repositories', features: { mentions: true } }
     },

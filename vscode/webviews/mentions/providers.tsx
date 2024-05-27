@@ -1,20 +1,16 @@
-import {
-    type ContextMentionProviderMetadata,
-    allMentionProvidersMetadata,
-} from '@sourcegraph/cody-shared'
+import type { ContextMentionProviderMetadata } from '@sourcegraph/cody-shared'
 import { createContext, useContext, useEffect, useState } from 'react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 /** React context data for the available context providers. */
 export interface ContextProviderContext {
-    providers: Promise<ContextMentionProviderMetadata[]> | ContextMentionProviderMetadata[]
+    providers: ContextMentionProviderMetadata[]
+    reload: () => void
 }
 
 const context = createContext<ContextProviderContext>({
-    providers: allMentionProvidersMetadata({
-        experimentalNoodle: false,
-        experimentalURLContext: false,
-    }),
+    providers: [],
+    reload: () => {},
 })
 
 const getAllMentionProvidersMetadata = async (): Promise<ContextMentionProviderMetadata[]> => {
@@ -45,23 +41,30 @@ const getAllMentionProvidersMetadata = async (): Promise<ContextMentionProviderM
 }
 
 export const WithContextProviders = (props: { children: React.ReactElement }): React.ReactElement => {
+    const [providersPromise, setProvidersPromise] = useState(getAllMentionProvidersMetadata())
+    const [providers, setProviders] = useState<ContextMentionProviderMetadata[]>([])
+
+    useEffect(() => {
+        void (async () => {
+            const providers = await providersPromise
+            setProviders(providers)
+        })()
+    }, [providersPromise])
+
     return (
-        <context.Provider value={{ providers: getAllMentionProvidersMetadata() }}>
+        <context.Provider
+            value={{
+                providers,
+                reload: () => {
+                    setProvidersPromise(getAllMentionProvidersMetadata())
+                },
+            }}
+        >
             {props.children}
         </context.Provider>
     )
 }
 
-export function useContextProviders(): ContextMentionProviderMetadata[] {
-    const [resolvedProviders, setResolvedProviders] = useState<ContextMentionProviderMetadata[]>([])
-    const { providers: providerPromise } = useContext(context)
-
-    useEffect(() => {
-        void (async () => {
-            const providers = await providerPromise
-            setResolvedProviders(providers)
-        })()
-    }, [providerPromise])
-
-    return resolvedProviders
+export function useContextProviders(): ContextProviderContext {
+    return useContext(context)
 }

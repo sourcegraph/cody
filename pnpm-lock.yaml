@@ -364,8 +364,8 @@ importers:
         specifier: ^7.2.96
         version: 7.2.96
       '@openctx/vscode-lib':
-        specifier: ^0.0.5
-        version: 0.0.5
+        specifier: ^0.0.7
+        version: 0.0.7
       '@opentelemetry/api':
         specifier: ^1.7.0
         version: 1.7.0
@@ -3287,8 +3287,8 @@ packages:
     dependencies:
       '@octokit/openapi-types': 22.2.0
 
-  /@openctx/client@0.0.12:
-    resolution: {integrity: sha512-HwG2yvHnXXl0hCuw57OSVHi16gXBy/JbnXluWDs5PhhUnQscSSoDGrRiedS3OfWQq/SfdXGsFTnLMUqwrb1BgQ==}
+  /@openctx/client@0.0.14:
+    resolution: {integrity: sha512-p10yvBXq9+J6filXpWvbJ4I5DvNneAjGmTGUyuvtMleFrRDxZeTaH1FPr1fO+df4yh7PMdwnIjjBniXQy/u8eg==}
     dependencies:
       '@openctx/protocol': 0.0.11
       '@openctx/provider': 0.0.11
@@ -3350,10 +3350,10 @@ packages:
       xss: 1.0.15
     dev: false
 
-  /@openctx/vscode-lib@0.0.5:
-    resolution: {integrity: sha512-uxN/WxeBpi52zgrg5OgrLf4DtC2GvjXDk1hk2ZeRxVkQInc+vm11b6wjNIne/JrFcCEO/3/hvJidRgDnEL32yg==}
+  /@openctx/vscode-lib@0.0.7:
+    resolution: {integrity: sha512-EVukMGf6b8sM6mWTnx0NrHDY3R0DAHh8Qa5S7GwLiyjR4oVuEGWJXJ3prf/bW+znOwBpTrg5KzZtvinNUx+8cw==}
     dependencies:
-      '@openctx/client': 0.0.12
+      '@openctx/client': 0.0.14
       '@openctx/ui-common': 0.0.9
       rxjs: 7.8.1
     dev: false

@@ -8,6 +8,7 @@ import { PlainTextPlugin } from '@lexical/react/LexicalPlainTextPlugin'
 import { clsx } from 'clsx'
 import { $getRoot, type EditorState, type LexicalEditor, type SerializedEditorState } from 'lexical'
 import { type FunctionComponent, type RefObject, useMemo } from 'react'
+import type { UserAccountInfo } from '../Chat'
 import styles from './BaseEditor.module.css'
 import { RICH_EDITOR_NODES } from './nodes'
 import MentionsPlugin from './plugins/atMentions/atMentions'
@@ -17,6 +18,7 @@ import { KeyboardEventPlugin, type KeyboardEventPluginProps } from './plugins/ke
 import { OnFocusChangePlugin } from './plugins/onFocus'
 
 interface Props extends KeyboardEventPluginProps {
+    userInfo?: UserAccountInfo
     initialEditorState: SerializedEditorState | null
     onChange: (editorState: EditorState, editor: LexicalEditor) => void
     onFocusChange?: (focused: boolean) => void
@@ -32,6 +34,7 @@ interface Props extends KeyboardEventPluginProps {
  * The low-level rich editor for messages to Cody.
  */
 export const BaseEditor: FunctionComponent<Props> = ({
+    userInfo,
     initialEditorState,
     onChange,
     onFocusChange,
@@ -79,7 +82,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
                     />
                     <HistoryPlugin />
                     <OnChangePlugin onChange={onChange} ignoreSelectionChange={true} />
-                    <MentionsPlugin />
+                    <MentionsPlugin userInfo={userInfo} />
                     <CodeHighlightPlugin />
                     {onFocusChange && <OnFocusChangePlugin onFocusChange={onFocusChange} />}
                     {editorRef && <EditorRefPlugin editorRef={editorRef} />}

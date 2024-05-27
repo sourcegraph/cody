@@ -13,6 +13,8 @@ import {
     FILE_RANGE_TOOLTIP_LABEL,
     NO_SYMBOL_MATCHES_HELP_LABEL,
 } from '../../../src/chat/context/constants'
+import RemoteRepositorySearch from '../../../src/context/openctx/remoteRepositorySearch'
+import type { UserAccountInfo } from '../../Chat'
 import {
     Command,
     CommandEmpty,
@@ -48,6 +50,7 @@ import type { MentionMenuData, MentionMenuParams } from './useMentionMenuData'
  */
 export const MentionMenu: FunctionComponent<
     {
+        userInfo?: UserAccountInfo
         params: MentionMenuParams
         updateMentionMenuParams: (update: Partial<Pick<MentionMenuParams, 'parentItem'>>) => void
         setEditorQuery: (query: string) => void
@@ -57,6 +60,7 @@ export const MentionMenu: FunctionComponent<
         __storybook__focus?: boolean
     } & Pick<Parameters<MenuRenderFn<MentionMenuOption>>[1], 'selectOptionAndCleanUp'>
 > = ({
+    userInfo,
     params,
     updateMentionMenuParams,
     setEditorQuery,
@@ -155,16 +159,19 @@ export const MentionMenu: FunctionComponent<
             <CommandList>
                 {data.providers.length > 0 && (
                     <CommandGroup>
-                        {data.providers.map(provider => (
-                            <CommandItem
-                                key={commandRowValue(provider)}
-                                value={commandRowValue(provider)}
-                                onSelect={onProviderSelect}
-                                className={styles.item}
-                            >
-                                <MentionMenuProviderItemContent provider={provider} />
-                            </CommandItem>
-                        ))}
+                        {data.providers.map(provider =>
+                            provider.id !== RemoteRepositorySearch.providerUri ||
+                            (userInfo && !userInfo.isDotComUser) ? (
+                                <CommandItem
+                                    key={commandRowValue(provider)}
+                                    value={commandRowValue(provider)}
+                                    onSelect={onProviderSelect}
+                                    className={styles.item}
+                                >
+                                    <MentionMenuProviderItemContent provider={provider} />
+                                </CommandItem>
+                            ) : null
+                        )}
                     </CommandGroup>
                 )}
 
