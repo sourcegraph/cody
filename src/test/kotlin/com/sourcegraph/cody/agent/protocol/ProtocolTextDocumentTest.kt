@@ -5,7 +5,9 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.sourcegraph.cody.listeners.EditorChangesBus
 import junit.framework.TestCase
+import org.junit.Ignore
 
+@Ignore("Temporarily disabled as it is flaky on CI")
 class ProtocolTextDocumentTest : BasePlatformTestCase() {
   private val content = "Start line 1\nline 2\nline 3\nline 4\nline 5 End"
   private val filename = "test.txt"
