@@ -48,6 +48,8 @@ public class CodyAgentClient {
   // Callback for the "workspace/edit" request from the agent.
   @Nullable Function<WorkspaceEditParams, Boolean> onWorkspaceEdit;
 
+  @Nullable Consumer<DebugMessage> onDebugMessage;
+
   @JsonNotification("editTask/didUpdate")
   public CompletableFuture<Void> editTaskDidUpdate(EditTask params) {
     return acceptOnEventThread("editTask/didUpdate", onEditTaskDidUpdate, params);
@@ -160,6 +162,9 @@ public class CodyAgentClient {
   @JsonNotification("debug/message")
   public void debugMessage(@NotNull DebugMessage msg) {
     logger.warn(String.format("%s: %s", msg.getChannel(), msg.getMessage()));
+    if (onDebugMessage != null) {
+      onDebugMessage.accept(msg);
+    }
   }
 
   @JsonNotification("webview/postMessage")
