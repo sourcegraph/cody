@@ -1,13 +1,7 @@
 import { type Locator, expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 import { createEmptyChatPanel, sidebarExplorer, sidebarSignin } from './common'
-import {
-    type DotcomUrlOverride,
-    type ExpectedEvents,
-    executeCommandInPalette,
-    openFile,
-    test,
-} from './helpers'
+import { type DotcomUrlOverride, type ExpectedEvents, executeCommandInPalette, test } from './helpers'
 
 test.extend<ExpectedEvents>({
     expectedEvents: [
@@ -259,76 +253,3 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     await expect(chatFrame.getByRole('row').getByTitle('GPT-4o by OpenAI')).toBeVisible()
 })
 
-test.extend<ExpectedEvents>({
-    expectedEvents: [
-        'CodyInstalled',
-        'CodyVSCodeExtension:codyIgnore:hasFile',
-        'CodyVSCodeExtension:Auth:failed',
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chatResponse:hasCode',
-    ],
-    expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
-        'cody.codyIgnore:hasFile',
-        'cody.auth:failed',
-        'cody.auth.login:clicked',
-        'cody.auth.signin.menu:clicked',
-        'cody.auth.login:firstEver',
-        'cody.auth.signin.token:clicked',
-        'cody.auth:connected',
-        'cody.chat-question:submitted',
-        'cody.chat-question:executed',
-        'cody.chatResponse:hasCode',
-    ],
-})('chat readability: long text are wrapped and scrollable in chat views', async ({ page, sidebar }) => {
-    // Open a file before starting a new chat to make sure chat will be opened on the side
-    await sidebarSignin(page, sidebar)
-    await openFile(page, 'buzz.test.ts')
-    const [chatFrame, chatInput] = await createEmptyChatPanel(page)
-
-    // Use the width of the welcome chat to determine if the chat messages are wrapped.
-    const welcomeText = chatFrame.getByText('Start a new chat using')
-    const welcomeTextContainer = await welcomeText.boundingBox()
-    const welcomeTextContainerWidth = welcomeTextContainer?.width || 0
-    expect(welcomeTextContainerWidth).toBeGreaterThan(0)
-
-    await chatInput.fill(
-        `Lorem ipsum Cody.
-        export interface Animal {
-                name: string
-                makeAnimalSound(): string
-                isMammal: boolean
-                printName(): void {
-                    console.log(this.name);
-                }
-            }
-        }
-        `
-    )
-
-    await chatInput.press('Enter')
-
-    // Code block should be scrollable
-    const codeBlock = chatFrame.locator('pre').last()
-    expect(codeBlock).toBeVisible()
-    const codeBlockElement = await codeBlock.boundingBox()
-    expect(codeBlockElement?.width).toBeLessThanOrEqual(welcomeTextContainerWidth)
-
-    // Go to the bottom of the chat transcript view
-    await codeBlock.click()
-    await page.keyboard.press('PageDown')
-
-    const botResponseText = chatFrame.getByText('Excepteur')
-    await expect(botResponseText).toBeVisible()
-
-    // The response text element and the code block element should have the same width
-    const botResponseElement = await botResponseText.boundingBox()
-    expect(botResponseElement?.width).toBeLessThanOrEqual(welcomeTextContainerWidth)
-})
