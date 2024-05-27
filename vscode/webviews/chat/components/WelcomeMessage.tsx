@@ -2,7 +2,6 @@ import { isMacOS } from '@sourcegraph/cody-shared'
 import {
     AtSignIcon,
     BookOpenTextIcon,
-    FileIcon,
     HelpCircleIcon,
     SettingsIcon,
     TextIcon,
@@ -92,25 +91,17 @@ export const WelcomeMessage: FunctionComponent = () => {
                     Type <Kbd>@</Kbd> to add context to your chat
                 </FeatureRow>
                 <FeatureRow icon={TextIcon}>
-                    Right click lines of code and use{' '}
-                    <MenuExample>Add Selection to Cody Chat</MenuExample> to add code as context
-                </FeatureRow>
-                <FeatureRow icon={FileIcon}>
-                    Right click files and use <MenuExample>Add File to Cody Chat</MenuExample> to add
-                    files as context
+                    To add code context from an editor, or the file explorer, right click and use{' '}
+                    <MenuExample>Add to Cody Chat</MenuExample>
                 </FeatureRow>
                 <FeatureRow icon={NewChatIcon}>
                     Start a new chat using <Kbd>{isMacOS() ? '⌥' : 'Alt'}+/</Kbd> or the{' '}
                     <CodyIcon character="H" /> button in the top right of any file
                 </FeatureRow>
                 <FeatureRow icon={SettingsIcon}>
-                    Customize Cody Chat setting press the{' '}
-                    <i className="codicon codicon-settings-gear tw-translate-y-[3px] tw-mx-1" /> button
-                </FeatureRow>
-                <FeatureRow icon={BookOpenTextIcon}>
-                    For more tips and tricks, see the{' '}
-                    <a href="command:cody.welcome">Getting Started Guide</a> and{' '}
-                    <a href="https://sourcegraph.com/docs/cody">docs</a>.
+                    Customize chat settings with the{' '}
+                    <i className="codicon codicon-settings-gear tw-translate-y-[3px] tw-mx-1" /> button,
+                    or see the <a href="https://sourcegraph.com/docs/cody">documentation</a>
                 </FeatureRow>
             </div>
         </div>
