@@ -38,14 +38,8 @@
 }
 
 .button--primary {
-    color: color-mix(in lch, var(--vscode-button-secondaryForeground) 50%, var(--vscode-button-foreground));
-    background-color: var(--tint-color);
-    &:disabled {
-        --tint-color: color-mix(in srgb, var(--vscode-button-secondaryBackground) 70%, var(--vscode-button-secondaryForeground));
-    }
-    &:enabled {
-        --tint-color: var(--vscode-button-background);
-    }
+    color: var(--vscode-button-foreground);
+    background-color: var(--vscode-button-background);
 
     &.button--no-icon-start {
         padding-left: calc(2*var(--padding-x));
@@ -56,17 +50,20 @@
     }
 }
 
-.button-secondary {
-    color: color-mix(in lch, var(--vscode-button-secondaryForeground) 60%, transparent);
-    background: transparent;
+.button--secondary {
+    /* Make it look like text in an input. */
+    color: color-mix(in lch, var(--vscode-input-foreground) 60%, transparent);
+    background-color: unset;
+
+    &:enabled:is(:hover, :focus-within) {
+        color: var(--vscode-input-foreground);
+        fill: var(--vscode-input-foreground);
+    }
 }
 
-/* Hover state */
-.button:enabled:is(:hover, :focus-within) {
-    background-color: unset;
-    color: var(--vscode-button-foreground);
-    fill: var(--vscode-button-foreground);
-    &.button--primary {
-        background-color: var(--vscode-button-background);
+.button:disabled {
+    opacity: 0.5;
+    &.button--secondary {
+        opacity: 0.7;
     }
 }

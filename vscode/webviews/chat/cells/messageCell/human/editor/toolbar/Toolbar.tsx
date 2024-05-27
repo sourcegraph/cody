@@ -7,7 +7,7 @@ import { EnhancedContextSettings } from '../../../../../../components/EnhancedCo
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { ToolbarButton } from '../../../../../../components/shadcn/ui/toolbar'
 import { useChatModelContext } from '../../../../../models/chatModelContext'
-import { SubmitButton } from './SubmitButton'
+import { SubmitButton, type SubmitButtonDisabled } from './SubmitButton'
 import styles from './Toolbar.module.css'
 
 /**
@@ -18,28 +18,31 @@ export const Toolbar: FunctionComponent<{
 
     isEditorFocused: boolean
 
-    isParentHovered: boolean
+    /** Whether this editor is for a message whose assistant response is in progress. */
+    isPendingResponse: boolean
 
     onMentionClick?: () => void
 
     onSubmitClick: (withEnhancedContext: boolean) => void
-    submitDisabled: boolean
+    submitDisabled: SubmitButtonDisabled
 
     /** Handler for clicks that are in the "gap" (dead space), not any toolbar items. */
     onGapClick?: () => void
 
     focusEditor?: () => void
 
+    hidden?: boolean
     className?: string
 }> = ({
     userInfo,
     isEditorFocused,
-    isParentHovered,
+    isPendingResponse,
     onMentionClick,
     onSubmitClick,
     submitDisabled,
     onGapClick,
     focusEditor,
+    hidden,
     className,
 }) => {
     /**
@@ -62,6 +65,8 @@ export const Toolbar: FunctionComponent<{
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
         <menu
             role="toolbar"
+            aria-hidden={hidden}
+            hidden={hidden}
             className={clsx(styles.container, className)}
             onMouseDown={onMaybeGapClick}
             onClick={onMaybeGapClick}
@@ -84,7 +89,7 @@ export const Toolbar: FunctionComponent<{
             <SubmitButton
                 onClick={onSubmitClick}
                 isEditorFocused={isEditorFocused}
-                isParentHovered={isParentHovered}
+                isPendingResponse={isPendingResponse}
                 disabled={submitDisabled}
             />
         </menu>

@@ -97,10 +97,12 @@ export function isAbortError(error: unknown): error is AbortError {
         isError(error) &&
         // custom abort error
         ((error instanceof AbortError && error.isAbortError) ||
+            error.name === 'AbortError' ||
             // http module
             error.message === 'aborted' ||
             // fetch
             error.message.includes('The operation was aborted') ||
+            error.message === 'This operation was aborted' ||
             error.message.includes('The user aborted a request'))
     )
 }

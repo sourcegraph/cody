@@ -6,18 +6,13 @@ import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { PlainTextPlugin } from '@lexical/react/LexicalPlainTextPlugin'
 import { clsx } from 'clsx'
-import {
-    $getRoot,
-    $getSelection,
-    type EditorState,
-    type LexicalEditor,
-    type SerializedEditorState,
-} from 'lexical'
+import { $getRoot, type EditorState, type LexicalEditor, type SerializedEditorState } from 'lexical'
 import { type FunctionComponent, type RefObject, useMemo } from 'react'
 import styles from './BaseEditor.module.css'
 import { RICH_EDITOR_NODES } from './nodes'
 import MentionsPlugin from './plugins/atMentions/atMentions'
 import CodeHighlightPlugin from './plugins/codeHighlight'
+import { DisableEscapeKeyBlursPlugin } from './plugins/disableEscapeKeyBlurs'
 import { KeyboardEventPlugin, type KeyboardEventPluginProps } from './plugins/keyboardEvent'
 import { OnFocusChangePlugin } from './plugins/onFocus'
 
@@ -46,11 +41,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
     className,
     contentEditableClassName,
     'aria-label': ariaLabel,
-
-    // KeyboardEventPluginProps
-    onKeyDown,
     onEnterKey,
-    onEscapeKey,
 }) => {
     // biome-ignore lint/correctness/useExhaustiveDependencies: We do not want to update initialConfig because LexicalComposer is meant to be an uncontrolled component.
     const initialConfig = useMemo<InitialConfigType>(
@@ -92,11 +83,8 @@ export const BaseEditor: FunctionComponent<Props> = ({
                     <CodeHighlightPlugin />
                     {onFocusChange && <OnFocusChangePlugin onFocusChange={onFocusChange} />}
                     {editorRef && <EditorRefPlugin editorRef={editorRef} />}
-                    <KeyboardEventPlugin
-                        onKeyDown={onKeyDown}
-                        onEnterKey={onEnterKey}
-                        onEscapeKey={onEscapeKey}
-                    />
+                    <KeyboardEventPlugin onEnterKey={onEnterKey} />
+                    <DisableEscapeKeyBlursPlugin />
                 </LexicalComposer>
             </div>
         </div>
@@ -105,9 +93,4 @@ export const BaseEditor: FunctionComponent<Props> = ({
 
 export function editorStateToText(editorState: EditorState): string {
     return editorState.read(() => $getRoot().getTextContent())
-}
-
-export function editorSelectionStart(editorState: EditorState): number | null {
-    const points = editorState.read(() => $getSelection()?.getStartEndPoints())
-    return points ? points[0].offset : null
 }

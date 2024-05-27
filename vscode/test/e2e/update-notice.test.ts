@@ -4,7 +4,7 @@ import { createEmptyChatPanel, sidebarSignin } from './common'
 import { test } from './helpers'
 
 const versionUpdateStorageKey = 'notices.last-dismissed-version'
-const greetingChatText = 'Welcome to Cody!'
+const greetingChatText = 'Start a new chat using'
 const updateToastText = /Cody updated to v\d+\.\d+/
 
 test('new installs should not show the update toast', async ({ page, sidebar }) => {

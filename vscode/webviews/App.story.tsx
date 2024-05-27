@@ -8,8 +8,7 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 const meta: Meta<typeof App> = {
     title: 'cody/App',
     component: App,
-
-    decorators: [VSCodeWebview],
+    decorators: [story => <div style={{ height: '80vh' }}> {story()} </div>, VSCodeWebview],
 }
 
 export default meta

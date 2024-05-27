@@ -4,33 +4,40 @@ import type { FunctionComponent } from 'react'
 import { ToolbarButton } from '../../../../../../components/shadcn/ui/toolbar'
 import styles from './SubmitButton.module.css'
 
+export type SubmitButtonDisabled = false | 'emptyEditorValue' | 'isPendingPriorResponse'
+
 export const SubmitButton: FunctionComponent<{
     onClick: (withEnhancedContext: boolean) => void
     isEditorFocused?: boolean
-    isParentHovered?: boolean
-    disabled?: boolean
-}> = ({ onClick: parentOnClick, isEditorFocused, isParentHovered, disabled }) => {
+
+    /** Whether this editor is for a message whose assistant response is in progress. */
+    isPendingResponse: boolean
+
+    disabled?: SubmitButtonDisabled
+}> = ({ onClick: parentOnClick, isEditorFocused, isPendingResponse, disabled = false }) => {
     return (
         <>
-            <ToolbarButton
-                type="submit"
-                variant="secondary"
-                tooltip="Send without automatic code context. Includes context from @-mentions. Faster and gives you more control."
-                iconEnd={NO_ICON}
-                onClick={() => parentOnClick(false)}
-                aria-label="Send without automatic code context"
-                className={clsx(styles.button, {
-                    [styles.editorFocused]: isEditorFocused || isParentHovered,
-                })}
-                disabled={disabled}
-                tabIndex={-1} // press Enter to invoke, doesn't need to be tabbable
-            >
-                w/o context
-                <kbd>
-                    {ALT_KEY_NAME}+
-                    <EnterKeyIcon width={7} height={7} />
-                </kbd>
-            </ToolbarButton>
+            {disabled !== 'isPendingPriorResponse' && (
+                <ToolbarButton
+                    type="button"
+                    variant="secondary"
+                    tooltip="Send without automatic code context. Includes context from @-mentions. Faster and gives you more control."
+                    iconEnd={NO_ICON}
+                    onClick={() => parentOnClick(false)}
+                    aria-label="Send without automatic code context"
+                    className={clsx(styles.button, {
+                        [styles.editorFocused]: isEditorFocused,
+                    })}
+                    disabled={disabled !== false}
+                    tabIndex={-1} // press Enter to invoke, doesn't need to be tabbable
+                >
+                    w/o context
+                    <kbd>
+                        {ALT_KEY_NAME}+
+                        <EnterKeyIcon width={7} height={7} />
+                    </kbd>
+                </ToolbarButton>
+            )}
             <ToolbarButton
                 type="submit"
                 variant="primary"
@@ -39,15 +46,22 @@ export const SubmitButton: FunctionComponent<{
                 onClick={() => parentOnClick(true)}
                 aria-label="Send with automatic code context"
                 className={clsx(styles.button, {
-                    [styles.editorFocused]: isEditorFocused || isParentHovered,
+                    [styles.editorFocused]: isEditorFocused,
+                    [styles.buttonFlashFade]: isPendingResponse,
                 })}
-                disabled={disabled}
+                disabled={disabled !== false}
                 tabIndex={-1} // press Enter to invoke, doesn't need to be tabbable
             >
-                Send
-                <kbd>
-                    <EnterKeyIcon width={7} height={7} />
-                </kbd>
+                {disabled === 'isPendingPriorResponse' ? (
+                    'Waiting...'
+                ) : (
+                    <>
+                        Send
+                        <kbd>
+                            <EnterKeyIcon width={7} height={7} />
+                        </kbd>
+                    </>
+                )}
             </ToolbarButton>
         </>
     )

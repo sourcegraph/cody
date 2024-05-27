@@ -15,8 +15,3 @@
         background-color: unset !important;
     }
 }
-
-/* State: Disabled or editor unfocused */
-.button:is(:not(.editorFocused), :disabled) {
-    --tint-color: color-mix(in srgb, var(--vscode-button-secondaryBackground) 60%, var(--vscode-button-secondaryForeground));
-}

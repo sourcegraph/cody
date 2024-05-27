@@ -41,6 +41,7 @@ import type {
     ProgressReportParams,
     ProgressStartParams,
     ProtocolCodeLens,
+    ProtocolTextDocument,
     RenameFileOperation,
     ServerInfo,
     ShowWindowMessageParams,
@@ -49,6 +50,7 @@ import type {
     WorkspaceEditParams,
 } from './protocol-alias'
 import { trimEndOfLine } from './trimEndOfLine'
+import { protocolRange } from './vscode-type-converters'
 
 type ProgressMessage = ProgressStartMessage | ProgressReportMessage | ProgressEndMessage
 
@@ -133,7 +135,15 @@ export class TestClient extends MessageHandler {
         const recordingDirectory = path.join(agentDir, 'recordings')
         const agentScript = path.join(agentDir, 'dist', 'index.js')
 
-        const args = bin === 'node' ? ['--enable-source-maps', agentScript, 'jsonrpc'] : ['jsonrpc']
+        const args =
+            bin === 'node'
+                ? [
+                      '--enable-source-maps',
+                      // '--expose-gc', // Uncoment when running memory.test.ts
+                      agentScript,
+                      'jsonrpc',
+                  ]
+                : ['jsonrpc']
 
         const child = spawn(bin, args, {
             stdio: 'pipe',
@@ -177,7 +187,7 @@ export class TestClient extends MessageHandler {
     public progressIDs = new Map<string, number>()
     public progressStartEvents = new vscode.EventEmitter<ProgressStartParams>()
     public readonly name: string
-    public workspace = new AgentWorkspaceDocuments()
+    public workspace = new AgentWorkspaceDocuments({})
     public workspaceEditParams: WorkspaceEditParams[] = []
     public textDocumentEditParams: TextDocumentEditParams[] = []
 
@@ -429,12 +439,27 @@ export class TestClient extends MessageHandler {
                   : undefined
         const end =
             cursor >= 0 ? start : selectionEnd >= 0 ? document.positionAt(selectionEnd) : undefined
-        const protocolDocument = {
+        const protocolDocument: ProtocolTextDocument = {
             uri: uri.toString(),
             content,
             selection: start && end ? { start, end } : undefined,
         }
-        this.workspace.loadDocument(ProtocolTextDocumentWithUri.fromDocument(protocolDocument))
+        const clientDocument = this.workspace.loadDocument(
+            ProtocolTextDocumentWithUri.fromDocument(protocolDocument)
+        )
+        const clientEditor = this.workspace.newTextEditor(clientDocument)
+        const visibleRange = clientEditor.visibleRanges?.[0]
+
+        protocolDocument.testing = {
+            selectedText: clientDocument.getText(clientEditor.selection),
+            sourceOfTruthDocument: {
+                uri: clientDocument.uri.toString(),
+                content: clientDocument.getText(),
+                selection: protocolRange(clientEditor.selection),
+                visibleRange: visibleRange ? protocolRange(visibleRange) : undefined,
+            },
+        }
+
         this.workspace.activeDocumentFilePath = uri
         this.notify(method, protocolDocument)
     }
