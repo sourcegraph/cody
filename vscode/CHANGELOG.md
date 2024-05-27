@@ -11,6 +11,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Integerated OpenCtx providers with @-mention context menu. [pull/4201](https://github.com/sourcegraph/cody/pull/4201/files)
 - Keybinding: Assign the same keyboard shortcut for starting a new chat to the "New Chat with Selection" command.
 - Chat: Added a visual element under the chat view input field to show the remaining tokens of the user message, the user appended context and the enhanced context.
+- Chat: Editor selection is now included in all chats by default. []()
 
 ### Fixed
 
@@ -38,7 +39,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
-- Feature flags for the fine-tuning model experiment for code completions. [pull/4245](https://github.com/sourcegraph/cody/pull/4245) 
+- Feature flags for the fine-tuning model experiment for code completions. [pull/4245](https://github.com/sourcegraph/cody/pull/4245)
 
 ### Fixed
 
@@ -54,7 +55,6 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Fixed
 
 ### Changed
-
 
 ## [1.18.0]
 
