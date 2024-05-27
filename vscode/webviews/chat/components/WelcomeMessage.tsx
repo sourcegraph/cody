@@ -1,12 +1,5 @@
 import { isMacOS } from '@sourcegraph/cody-shared'
-import {
-    AtSignIcon,
-    BookOpenTextIcon,
-    HelpCircleIcon,
-    SettingsIcon,
-    TextIcon,
-    XIcon,
-} from 'lucide-react'
+import { AtSignIcon, HelpCircleIcon, SettingsIcon, TextIcon, XIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactElement, useCallback, useState } from 'react'
 import { Button } from '../../components/shadcn/ui/button'
 

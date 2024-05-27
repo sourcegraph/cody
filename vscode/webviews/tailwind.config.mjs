@@ -1,5 +1,3 @@
-import { link } from 'fs'
-
 /** @type {import('tailwindcss').Config} */
 export default {
     content: {
