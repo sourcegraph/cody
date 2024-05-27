@@ -210,6 +210,12 @@ export function errorToCodyError(error?: Error): CodyError | undefined {
 }
 
 export class Agent extends MessageHandler implements ExtensionClient {
+    // Used to track background work of the extension, like tree-sitter parsing.
+    // In several places in the extension, we register event handler that run
+    // background work (`Promise<void>` that we don't await on). We sometimes
+    // need to await on these promises, for example when writing deterministic
+    // tests.
+    private pendingPromises = new Set<Promise<any>>()
     public codeLenses = new AgentCodeLenses()
     public workspace = new AgentWorkspaceDocuments({
         edit: (uri, callback, options) => {
@@ -388,12 +394,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
             this.workspace.setActiveTextEditor(
                 this.workspace.newTextEditor(this.workspace.loadDocument(documentWithUri))
             )
+            this.pushPendingPromise(this.workspace.fireVisibleTextEditorsDidChange())
         })
 
         this.registerNotification('textDocument/didOpen', document => {
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
             const textDocument = this.workspace.loadDocument(documentWithUri)
             vscode_shim.onDidOpenTextDocument.fire(textDocument)
+            this.pushPendingPromise(this.workspace.fireVisibleTextEditorsDidChange())
             this.workspace.setActiveTextEditor(this.workspace.newTextEditor(textDocument))
         })
 
@@ -405,11 +413,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
             this.workspace.setActiveTextEditor(textEditor)
 
             if (contentChanges.length > 0) {
-                vscode_shim.onDidChangeTextDocument.fire({
-                    document: textDocument,
-                    contentChanges,
-                    reason: undefined,
-                })
+                this.pushPendingPromise(
+                    vscode_shim.onDidChangeTextDocument.cody_fireAsync({
+                        document: textDocument,
+                        contentChanges,
+                        reason: undefined,
+                    })
+                )
             }
 
             if (document.selection) {
@@ -428,6 +438,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 this.workspace.deleteDocument(documentWithUri.uri)
                 vscode_shim.onDidCloseTextDocument.fire(oldDocument)
             }
+            this.pushPendingPromise(this.workspace.fireVisibleTextEditorsDidChange())
         })
 
         this.registerNotification('textDocument/didSave', async params => {
@@ -460,6 +471,24 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
+        this.registerAuthenticatedRequest('testing/awaitPendingPromises', async () => {
+            if (!vscode_shim.isTesting) {
+                throw new Error(
+                    'testing/awaitPendingPromises can only be called from tests. ' +
+                        'To fix this problem, set the environment variable CODY_SHIM_TESTING=true.'
+                )
+            }
+            await Promise.all(this.pendingPromises.values())
+            return null
+        })
+
+        this.registerAuthenticatedRequest('testing/memoryUsage', async () => {
+            if (!global.gc) {
+                throw new Error('testing/memoryUsage requires running node with --expose-gc')
+            }
+            global.gc()
+            return { usage: process.memoryUsage() }
+        })
         this.registerAuthenticatedRequest('testing/networkRequests', async () => {
             const requests = this.params.networkRequests ?? []
             return {
@@ -1035,6 +1064,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
             contextFiltersProvider.setTestingContextFilters(contextFilters)
             return null
         })
+    }
+
+    private pushPendingPromise(pendingPromise: Promise<unknown>): void {
+        if (!vscode_shim.isTesting) {
+            return
+        }
+        this.pendingPromises.add(pendingPromise)
+        pendingPromise.finally(() => this.pendingPromises.delete(pendingPromise))
     }
 
     // ExtensionClient callbacks.
