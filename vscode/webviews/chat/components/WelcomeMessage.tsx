@@ -61,7 +61,7 @@ export const WelcomeMessage: FunctionComponent = () => {
                 <div className="tw-absolute tw-bottom-0 tw-w-full tw-flex tw-justify-end tw-pb-8 tw-pr-8">
                     <button
                         type="button"
-                        className="tw-text-sm tw-opacity-40 hover:tw-opacity-100 tw-flex tw-gap-2"
+                        className="tw-text-sm tw-opacity-50 hover:tw-opacity-100 tw-flex tw-gap-2"
                         onClick={onShowClicked}
                         aria-label="Cody Chat Help"
                     >
