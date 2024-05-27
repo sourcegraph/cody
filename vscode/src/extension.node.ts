@@ -70,9 +70,9 @@ export function activate(
     })
 }
 
-// When cody is deactivated, we serialize the current configuration to disk,
-// so that it can be restored when the post-uninstall script is run, and the
-// vscode API is not available
+// When Cody is deactivated, we serialize the current configuration to disk,
+// so that it can be sent with Telemetry when the post-uninstall script runs.
+// The vscode API is not available in the post-uninstall script.
 export async function deactivate(): Promise<void> {
     const config = localStorage.getConfig() ?? (await getFullConfig())
     const authStatus = authProvider?.getAuthStatus() ?? defaultAuthStatus
