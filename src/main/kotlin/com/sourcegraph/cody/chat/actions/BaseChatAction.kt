@@ -5,9 +5,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
 import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.config.CodyAuthenticationManager
-import com.sourcegraph.common.ui.DumbAwareBGTAction
+import com.sourcegraph.common.ui.DumbAwareEDTAction
 
-abstract class BaseChatAction : DumbAwareBGTAction() {
+abstract class BaseChatAction : DumbAwareEDTAction() {
 
   abstract fun doAction(project: Project)
 

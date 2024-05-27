@@ -8,7 +8,7 @@ import com.intellij.openapi.project.Project
 import com.sourcegraph.Icons
 import com.sourcegraph.cody.agent.protocol.RateLimitError
 import com.sourcegraph.common.BrowserOpener.openInBrowser
-import com.sourcegraph.common.ui.SimpleDumbAwareBGTAction
+import com.sourcegraph.common.ui.SimpleDumbAwareEDTAction
 import java.util.concurrent.atomic.AtomicReference
 
 class UpgradeToCodyProNotification
@@ -18,16 +18,16 @@ private constructor(title: String, content: String, shouldShowUpgradeOption: Boo
   init {
     icon = Icons.CodyLogo
     val learnMoreAction =
-        SimpleDumbAwareBGTAction("Learn more") { anActionEvent ->
+        SimpleDumbAwareEDTAction("Learn more") { anActionEvent ->
           val learnMoreLink = if (shouldShowUpgradeOption) UPGRADE_URL else RATE_LIMITS_URL
           openInBrowser(anActionEvent.project, learnMoreLink)
           hideBalloon()
         }
-    val dismissAction: AnAction = SimpleDumbAwareBGTAction("Dismiss") { hideBalloon() }
+    val dismissAction: AnAction = SimpleDumbAwareEDTAction("Dismiss") { hideBalloon() }
 
     if (shouldShowUpgradeOption) {
       val upgradeAction =
-          SimpleDumbAwareBGTAction("Upgrade") { anActionEvent ->
+          SimpleDumbAwareEDTAction("Upgrade") { anActionEvent ->
             openInBrowser(anActionEvent.project, UPGRADE_URL)
             hideBalloon()
           }

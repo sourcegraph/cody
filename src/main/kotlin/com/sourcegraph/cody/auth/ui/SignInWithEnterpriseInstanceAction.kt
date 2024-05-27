@@ -6,13 +6,13 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.config.CodyPersistentAccountsHost
 import com.sourcegraph.cody.config.signInWithSourcegrapDialog
-import com.sourcegraph.common.ui.DumbAwareBGTAction
+import com.sourcegraph.common.ui.DumbAwareEDTAction
 import com.sourcegraph.config.ConfigUtil
 import java.awt.Dimension
 
 class SignInWithEnterpriseInstanceAction(
     private val defaultServer: String = ConfigUtil.DOTCOM_URL
-) : DumbAwareBGTAction("Sign in with Sourcegraph") {
+) : DumbAwareEDTAction("Sign in with Sourcegraph") {
   override fun actionPerformed(e: AnActionEvent) {
     val project = e.project ?: return
     val accountsHost = CodyPersistentAccountsHost(project)

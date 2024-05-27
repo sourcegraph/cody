@@ -4,7 +4,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.ui.Messages
 import com.sourcegraph.cody.Icons
 import com.sourcegraph.common.BrowserOpener
-import com.sourcegraph.common.ui.DumbAwareBGTAction
+import com.sourcegraph.common.ui.DumbAwareEDTAction
 import com.sourcegraph.config.ConfigUtil
 
 class RateLimitErrorWarningAction(
@@ -12,7 +12,7 @@ class RateLimitErrorWarningAction(
     private val dialogContent: String,
     private val dialogTitle: String,
     private val shouldShowUpgradeOption: Boolean
-) : DumbAwareBGTAction(actionText) {
+) : DumbAwareEDTAction(actionText) {
   override fun actionPerformed(e: AnActionEvent) {
 
     val actions =

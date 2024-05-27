@@ -4,11 +4,11 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.util.NlsActions;
 import com.sourcegraph.cody.config.ui.AccountConfigurable;
-import com.sourcegraph.common.ui.DumbAwareBGTAction;
+import com.sourcegraph.common.ui.DumbAwareEDTAction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class OpenPluginSettingsAction extends DumbAwareBGTAction {
+public class OpenPluginSettingsAction extends DumbAwareEDTAction {
   public OpenPluginSettingsAction() {
     super();
   }

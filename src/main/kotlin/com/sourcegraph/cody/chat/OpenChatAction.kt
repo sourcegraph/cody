@@ -4,9 +4,9 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.wm.ToolWindowManager
 import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.CodyToolWindowFactory
-import com.sourcegraph.common.ui.DumbAwareBGTAction
+import com.sourcegraph.common.ui.DumbAwareEDTAction
 
-class OpenChatAction : DumbAwareBGTAction() {
+class OpenChatAction : DumbAwareEDTAction() {
 
   override fun actionPerformed(event: AnActionEvent) {
     val project = event.project ?: return

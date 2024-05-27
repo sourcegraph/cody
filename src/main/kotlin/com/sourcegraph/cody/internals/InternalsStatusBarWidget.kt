@@ -21,7 +21,7 @@ class InternalsStatusBarWidget(project: Project) : EditorBasedStatusBarPopup(pro
     return state
   }
 
-  override fun createPopup(context: DataContext?): ListPopup {
+  override fun createPopup(context: DataContext): ListPopup {
     val actionGroup =
         ActionManager.getInstance().getAction("InternalStatusBarActions") as? ActionGroup
             ?: InternalsStatusBarActionGroup()
@@ -42,7 +42,7 @@ class InternalsStatusBarWidget(project: Project) : EditorBasedStatusBarPopup(pro
 
     fun update(project: Project) {
       val widget: InternalsStatusBarWidget? = findWidget(project)
-      widget?.update { widget.myStatusBar.updateWidget(InternalsStatusBarWidgetFactory.ID) }
+      widget?.update { widget.myStatusBar?.updateWidget(InternalsStatusBarWidgetFactory.ID) }
     }
 
     private fun findWidget(project: Project): InternalsStatusBarWidget? {

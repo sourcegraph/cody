@@ -26,7 +26,7 @@ import com.sourcegraph.cody.history.state.ChatState
 import com.sourcegraph.cody.history.ui.DurationGroupFormatter
 import com.sourcegraph.cody.history.ui.HistoryTreeNodeRenderer
 import com.sourcegraph.common.CodyBundle
-import com.sourcegraph.common.ui.DumbAwareBGTAction
+import com.sourcegraph.common.ui.DumbAwareEDTAction
 import java.awt.BorderLayout
 import java.awt.event.ActionEvent
 import java.awt.event.KeyEvent
@@ -248,7 +248,7 @@ class ChatHistoryPanel(
       icon: Icon?,
       private val isEnabled: () -> Boolean,
       private val action: () -> Unit
-  ) : DumbAwareBGTAction(text, null, icon) {
+  ) : DumbAwareEDTAction(text, null, icon) {
 
     override fun update(e: AnActionEvent) {
       e.presentation.isEnabled = isEnabled()

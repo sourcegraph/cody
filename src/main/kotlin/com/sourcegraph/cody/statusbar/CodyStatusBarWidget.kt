@@ -25,7 +25,7 @@ class CodyStatusBarWidget(project: Project) : EditorBasedStatusBarPopup(project,
     return state
   }
 
-  override fun createPopup(context: DataContext?): ListPopup {
+  override fun createPopup(context: DataContext): ListPopup {
     val actionGroup =
         ActionManager.getInstance().getAction("CodyStatusBarActions") as? ActionGroup
             ?: CodyStatusBarActionGroup()
@@ -46,7 +46,7 @@ class CodyStatusBarWidget(project: Project) : EditorBasedStatusBarPopup(project,
 
     fun update(project: Project) {
       val widget: CodyStatusBarWidget? = findWidget(project)
-      widget?.update { widget.myStatusBar.updateWidget(CodyWidgetFactory.ID) }
+      widget?.update { widget.myStatusBar?.updateWidget(CodyWidgetFactory.ID) }
     }
 
     private fun findWidget(project: Project): CodyStatusBarWidget? {

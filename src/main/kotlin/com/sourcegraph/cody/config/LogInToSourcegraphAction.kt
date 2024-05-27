@@ -7,7 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.ui.JBUI
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.auth.SsoAuthMethod
-import com.sourcegraph.common.ui.DumbAwareBGTAction
+import com.sourcegraph.common.ui.DumbAwareEDTAction
 import java.awt.Component
 import javax.swing.Action
 import javax.swing.JButton
@@ -60,7 +60,7 @@ class AddCodyEnterpriseAccountAction : BaseAddAccountWithTokenAction() {
   }
 }
 
-abstract class BaseAddAccountWithTokenAction : DumbAwareBGTAction() {
+abstract class BaseAddAccountWithTokenAction : DumbAwareEDTAction() {
   abstract val defaultServer: String
 
   override fun update(e: AnActionEvent) {

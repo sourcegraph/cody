@@ -20,6 +20,7 @@ class CodyFocusChangeListener(val project: Project) : FocusChangeListener {
       EditorChangesBus.documentChanged(project, textDocument)
       CodyAgentService.withAgent(project) { agent: CodyAgent ->
         agent.server.textDocumentDidFocus(textDocument)
+        println(textDocument)
       }
       IgnoreOracle.getInstance(project).focusedFileDidChange(textDocument.uri)
     }

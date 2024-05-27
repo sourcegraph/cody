@@ -40,6 +40,8 @@ val versionsToValidate =
     }
 val skippedFailureLevels =
     EnumSet.of(
+        FailureLevel.INTERNAL_API_USAGES, // blocked by: compatibility hack for IJ 2022.1 / 2024+
+        FailureLevel.COMPATIBILITY_WARNINGS, // blocked by: compatibility hack for IJ 2022.1 / 2024+
         FailureLevel.DEPRECATED_API_USAGES,
         FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES, // blocked by: Kotlin UI DSL Cell.align
         FailureLevel.EXPERIMENTAL_API_USAGES,
@@ -72,6 +74,9 @@ intellij {
 }
 
 dependencies {
+  // ActionUpdateThread.jar contains copy of the
+  // com.intellij.openapi.actionSystem.ActionUpdateThread class
+  implementation(files("libs/ActionUpdateThread.jar"))
   implementation("org.commonmark:commonmark:0.21.0")
   implementation("org.commonmark:commonmark-ext-gfm-tables:0.21.0")
   implementation("org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.21.0")

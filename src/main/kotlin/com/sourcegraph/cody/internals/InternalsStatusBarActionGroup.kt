@@ -1,13 +1,13 @@
 package com.sourcegraph.cody.internals
 
+import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.sourcegraph.cody.ui.BGTActionSetter
 import com.sourcegraph.config.ConfigUtil
 
 class InternalsStatusBarActionGroup : DefaultActionGroup() {
-  init {
-    BGTActionSetter.runUpdateOnBackgroundThread(this)
+  fun getActionUpdateThread(): ActionUpdateThread {
+    return ActionUpdateThread.EDT
   }
 
   override fun update(e: AnActionEvent) {

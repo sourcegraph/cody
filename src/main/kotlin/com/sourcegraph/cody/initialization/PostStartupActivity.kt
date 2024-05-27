@@ -31,7 +31,7 @@ class PostStartupActivity : StartupActivity.DumbAware {
   // deserves more investigation.
   override fun runActivity(project: Project) {
     TelemetryInitializerActivity().runActivity(project)
-
+    ActionUpdateThreadClassloaderPatcher().runActivity(project)
     SettingsMigration().runActivity(project)
     SelectOneOfTheAccountsAsActive().runActivity(project)
     CodyAuthNotificationActivity().runActivity(project)

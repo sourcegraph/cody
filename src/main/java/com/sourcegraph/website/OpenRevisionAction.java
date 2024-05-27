@@ -13,7 +13,7 @@ import com.intellij.vcs.log.VcsLogDataKeys;
 import com.intellij.vcsUtil.VcsUtil;
 import com.sourcegraph.common.BrowserOpener;
 import com.sourcegraph.common.ErrorNotification;
-import com.sourcegraph.common.ui.DumbAwareBGTAction;
+import com.sourcegraph.common.ui.DumbAwareEDTAction;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.vcs.RepoUtil;
 import com.sourcegraph.vcs.RevisionContext;
@@ -22,7 +22,7 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
 /** JetBrains IDE action to open a selected revision in Sourcegraph. */
-public class OpenRevisionAction extends DumbAwareBGTAction {
+public class OpenRevisionAction extends DumbAwareEDTAction {
   private final Logger logger = Logger.getInstance(this.getClass());
 
   @Override

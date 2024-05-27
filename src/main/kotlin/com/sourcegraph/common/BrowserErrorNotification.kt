@@ -7,7 +7,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
 import com.sourcegraph.Icons
-import com.sourcegraph.common.ui.SimpleDumbAwareBGTAction
+import com.sourcegraph.common.ui.SimpleDumbAwareEDTAction
 import java.awt.datatransfer.StringSelection
 import java.net.URI
 
@@ -20,11 +20,11 @@ object BrowserErrorNotification {
             "Opening an external browser is not supported. You can still copy the URL to your clipboard and open it manually.",
             NotificationType.WARNING)
     val copyUrlAction: AnAction =
-        SimpleDumbAwareBGTAction("Copy URL") {
+        SimpleDumbAwareEDTAction("Copy URL") {
           CopyPasteManager.getInstance().setContents(StringSelection(uri.toString()))
           notification.expire()
         }
-    val dismissAction: AnAction = SimpleDumbAwareBGTAction("Dismiss") { notification.expire() }
+    val dismissAction: AnAction = SimpleDumbAwareEDTAction("Dismiss") { notification.expire() }
     notification.setIcon(Icons.CodyLogo)
     notification.addAction(copyUrlAction)
     notification.addAction(dismissAction)

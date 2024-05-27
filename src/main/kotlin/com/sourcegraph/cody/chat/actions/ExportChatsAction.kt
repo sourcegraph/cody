@@ -18,9 +18,9 @@ import com.jetbrains.rd.util.AtomicReference
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.chat.ExportChatsBackgroundable
 import com.sourcegraph.cody.vscode.CancellationToken
-import com.sourcegraph.common.ui.DumbAwareBGTAction
+import com.sourcegraph.common.ui.DumbAwareEDTAction
 
-class ExportChatsAction : DumbAwareBGTAction() {
+class ExportChatsAction : DumbAwareEDTAction() {
 
   override fun update(e: AnActionEvent) {
     super.update(e)

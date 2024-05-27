@@ -17,7 +17,7 @@ import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.components.BorderLayoutPanel;
 import com.sourcegraph.Icons;
 import com.sourcegraph.common.NotificationGroups;
-import com.sourcegraph.common.ui.DumbAwareBGTAction;
+import com.sourcegraph.common.ui.DumbAwareEDTAction;
 import com.sourcegraph.find.browser.BrowserAndLoadingPanel;
 import com.sourcegraph.find.browser.JSToJavaBridgeRequestHandler;
 import com.sourcegraph.find.browser.JavaToJSBridge;
@@ -111,7 +111,7 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
             "Your IDE doesn't support JCEF. You won't be able to use \"Find with Sourcegraph\". If you believe this is an error, please raise this at support@sourcegraph.com, specifying your OS and IDE version.",
             NotificationType.ERROR);
     AnAction copyEmailAddressAction =
-        new DumbAwareBGTAction("Copy Support Email Address") {
+        new DumbAwareEDTAction("Copy Support Email Address") {
           @Override
           public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
             CopyPasteManager.getInstance()
@@ -120,7 +120,7 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
           }
         };
     AnAction dismissAction =
-        new DumbAwareBGTAction("Dismiss") {
+        new DumbAwareEDTAction("Dismiss") {
           @Override
           public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
             notification.expire();

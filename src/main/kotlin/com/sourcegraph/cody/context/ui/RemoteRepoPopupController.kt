@@ -28,7 +28,7 @@ import com.intellij.util.ui.JBUI
 import com.sourcegraph.cody.context.RemoteRepoFileType
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.CodyBundle.fmt
-import com.sourcegraph.common.ui.DumbAwareBGTAction
+import com.sourcegraph.common.ui.DumbAwareEDTAction
 import com.sourcegraph.utils.CodyEditorUtil
 import java.awt.BorderLayout
 import java.awt.Dimension
@@ -154,7 +154,7 @@ class RemoteRepoPopupController(val project: Project) {
     (popup as? AbstractPopup)?.setOk(true)
 
     val okAction =
-        object : DumbAwareBGTAction() {
+        object : DumbAwareEDTAction() {
           override fun actionPerformed(event: AnActionEvent) {
             unregisterCustomShortcutSet(popup.content)
             popup.closeOk(event.inputEvent)

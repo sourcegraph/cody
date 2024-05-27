@@ -12,12 +12,11 @@ import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.common.UpgradeToCodyProNotification
 import com.sourcegraph.config.ConfigUtil
-import javax.annotation.concurrent.GuardedBy
 
 @Service
 class CodyStatusService : CodyStatusListener, Disposable {
 
-  @GuardedBy("this") private var status: CodyStatus = CodyStatus.CodyUninit
+  @Volatile private var status: CodyStatus = CodyStatus.CodyUninit
 
   init {
     ApplicationManager.getApplication()

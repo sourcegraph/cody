@@ -15,7 +15,7 @@ import com.sourcegraph.cody.chat.ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDT
 import com.sourcegraph.cody.chat.ChatUIConstants.TEXT_MARGIN
 import com.sourcegraph.cody.ui.AccordionSection
 import com.sourcegraph.common.BrowserOpener.openInBrowser
-import com.sourcegraph.common.ui.SimpleDumbAwareBGTAction
+import com.sourcegraph.common.ui.SimpleDumbAwareEDTAction
 import java.awt.BorderLayout
 import java.awt.Insets
 import javax.swing.JPanel
@@ -83,7 +83,7 @@ class ContextFilesPanel(
 
   @RequiresEdt
   private fun createFileWithLinkPanel(contextItemFile: ContextItemFile): JPanel {
-    val anAction = SimpleDumbAwareBGTAction {
+    val anAction = SimpleDumbAwareEDTAction {
       if (contextItemFile.isLocal()) {
         openInEditor(contextItemFile)
       } else {

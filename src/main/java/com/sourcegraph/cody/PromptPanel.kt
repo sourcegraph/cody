@@ -18,7 +18,7 @@ import com.sourcegraph.cody.chat.ui.SendButton
 import com.sourcegraph.cody.ui.AutoGrowingTextArea
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.common.CodyBundle
-import com.sourcegraph.common.ui.SimpleDumbAwareBGTAction
+import com.sourcegraph.common.ui.SimpleDumbAwareEDTAction
 import java.awt.Dimension
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
@@ -44,6 +44,7 @@ class PromptPanel(project: Project, private val chatSession: ChatSession) : JLay
   private var contextFilesListViewModel = DefaultListModel<DisplayedContextFile>()
   private val contextFilesListView = JBList(contextFilesListViewModel)
   private val contextFilesContainer = JBScrollPane(contextFilesListView)
+
   // When "history mode" is enabled, pressing Up/Down arrow keys replaces the chat input with the
   // previous/next chat message (via CodyChatMessageHistory). History mode can only be activated
   // when
@@ -120,7 +121,7 @@ class PromptPanel(project: Project, private val chatSession: ChatSession) : JLay
           }
         })
     for (shortcut in listOf(ENTER, UP, DOWN, TAB)) { // key listeners
-      SimpleDumbAwareBGTAction { didUseShortcut(shortcut) }
+      SimpleDumbAwareEDTAction { didUseShortcut(shortcut) }
           .registerCustomShortcutSet(shortcut, textArea)
     }
 

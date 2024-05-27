@@ -8,7 +8,7 @@ import com.intellij.openapi.actionSystem.ShortcutSet
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.UIUtil
-import com.sourcegraph.common.ui.SimpleDumbAwareBGTAction
+import com.sourcegraph.common.ui.SimpleDumbAwareEDTAction
 import java.awt.Dimension
 import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
@@ -84,7 +84,7 @@ class AutoGrowingTextArea(private val minRows: Int, maxRows: Int, outerPanel: JC
         KeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.META_DOWN_MASK), null)
     val insertEnterShortcut: ShortcutSet =
         CustomShortcutSet(ctrlEnter, shiftEnter, metaEnter, altOrOptionEnter)
-    val insertEnterAction: AnAction = SimpleDumbAwareBGTAction {
+    val insertEnterAction: AnAction = SimpleDumbAwareEDTAction {
       promptInput.insert("\n", promptInput.caretPosition)
     }
     insertEnterAction.registerCustomShortcutSet(insertEnterShortcut, promptInput)

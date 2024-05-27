@@ -29,14 +29,14 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import com.intellij.util.io.createFile
-import com.intellij.util.io.exists
 import com.intellij.util.withScheme
 import com.sourcegraph.cody.vscode.Range
 import com.sourcegraph.config.ConfigUtil
 import java.net.URI
 import java.net.URISyntaxException
 import java.util.Optional
+import kotlin.io.path.createFile
+import kotlin.io.path.exists
 import kotlin.io.path.toPath
 import kotlin.math.min
 
