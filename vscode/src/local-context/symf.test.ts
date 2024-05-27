@@ -39,30 +39,32 @@ describe('symf', () => {
 
         check(ps`ocean`, expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                `"circulation current ebb flow ocean ppt psu salinity salt sea stream surf tidal tide water wave waves"`
+                `"aquatic fish marine maritime nautical ocean sea sealife surf swell tide underwater water wave"`
             )
         )
 
         check(ps`How do I write a file to disk in Go`, expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                `"disk drive file files go golang storage write writefile writetofile"`
+                `"disk file files go golang io persist save storage store write"`
             )
         )
 
         check(ps`Where is authentication router defined?`, expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                '"auth authenticate authentication define defined definition route router routing"'
+                `"auth authentication authorization config configuration route router routing"`
             )
         )
 
         check(ps`parse file with tree-sitter`, expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                `"file parse parser parsing read reading reads tree tree-sitter treesitter"`
+                `"file files parse parser parsing sitter tree tree-sitter treesitter"`
             )
         )
 
         check(ps`scan tokens in C++`, expanded =>
-            expect(expanded).toMatchInlineSnapshot(`"C++ c++ cpp scan scanner scanning token tokens"`)
+            expect(expanded).toMatchInlineSnapshot(
+                `"analyze c++ cplusplus cpp cxx lex lexer lexical parse scan scanner token tokenizer"`
+            )
         )
         afterAll(async () => {
             await polly.stop()
