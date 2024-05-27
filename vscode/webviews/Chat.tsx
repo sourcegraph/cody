@@ -1,6 +1,6 @@
 import { clsx } from 'clsx'
 import type React from 'react'
-import { type ReactNode, useCallback, useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 
 import type {
     AuthStatus,
@@ -18,7 +18,6 @@ import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/cons
 import styles from './Chat.module.css'
 
 interface ChatboxProps {
-    welcomeMessage?: ReactNode
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
@@ -32,7 +31,6 @@ interface ChatboxProps {
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
-    welcomeMessage,
     messageInProgress,
     transcript,
     vscodeAPI,
@@ -178,7 +176,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             )}
             <Transcript
                 transcript={transcript}
-                welcomeMessage={welcomeMessage}
                 messageInProgress={messageInProgress}
                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                 copyButtonOnSubmit={copyButtonOnSubmit}

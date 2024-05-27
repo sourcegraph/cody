@@ -1,22 +1,17 @@
-import type React from 'react'
-import type { FunctionComponent, ReactNode } from 'react'
-
 import { type ChatMessage, type ContextItem, type Guardrails, isDefined } from '@sourcegraph/cody-shared'
+import type React from 'react'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
-import { CodyLogo } from '../icons/CodyLogo'
 import type { SerializedPromptEditorValue } from '../promptEditor/PromptEditor'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
-import styles from './Transcript.module.css'
-import { Cell } from './cells/Cell'
 import { ContextCell } from './cells/contextCell/ContextCell'
 import { AssistantMessageCell } from './cells/messageCell/assistant/AssistantMessageCell'
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
+import { WelcomeMessage } from './components/WelcomeMessage'
 
 export const Transcript: React.FunctionComponent<{
     transcript: ChatMessage[]
-    welcomeMessage?: ReactNode
     messageInProgress: ChatMessage | null
     feedbackButtonsOnSubmit: (text: string) => void
     copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
@@ -29,7 +24,6 @@ export const Transcript: React.FunctionComponent<{
     guardrails?: Guardrails
 }> = ({
     transcript,
-    welcomeMessage,
     messageInProgress,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
@@ -148,26 +142,12 @@ export const Transcript: React.FunctionComponent<{
                             addEnhancedContext,
                         })
                     }}
-                    className={styles.lastHumanMessage}
                 />
             )}
-            {transcript.length === 0 && <WelcomeMessageCell welcomeMessage={welcomeMessage} />}
+            {transcript.length === 0 && <WelcomeMessage />}
         </>
     )
 }
-
-const WelcomeMessageCell: FunctionComponent<{ welcomeMessage?: ReactNode }> = ({ welcomeMessage }) => (
-    <Cell gutterIcon={<CodyLogo size={20} />} data-testid="message">
-        <div className={styles.welcomeMessageCellContent}>
-            {welcomeMessage ?? (
-                <>
-                    See <a href="https://sourcegraph.com/docs/cody">Cody documentation</a> for help and
-                    tips.
-                </>
-            )}
-        </div>
-    </Cell>
-)
 
 function isLastAssistantMessageError(transcript: readonly ChatMessage[]): boolean {
     const lastMessage = transcript.at(-1)
