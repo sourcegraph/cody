@@ -232,7 +232,7 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
 
     await sidebarSignin(page, sidebar)
 
-    const [chatFrame, , firstChatInput] = await createEmptyChatPanel(page)
+    const [chatFrame, lastChatInput, firstChatInput] = await createEmptyChatPanel(page)
 
     const modelSelect = chatFrame.getByRole('combobox', { name: 'Select a model' }).last()
 
@@ -248,9 +248,9 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     await modelSelect.click()
     const modelChoices = chatFrame.getByRole('listbox', { name: 'Suggestions' })
     await modelChoices.getByRole('option', { name: 'GPT-4o' }).click()
-    await expect(firstChatInput).toBeFocused()
+    await expect(lastChatInput).toBeFocused()
     await expect(modelSelect).toHaveText(/^GPT-4o/)
-    await firstChatInput.fill('to model2')
-    await firstChatInput.press('Enter')
+    await lastChatInput.fill('to model2')
+    await lastChatInput.press('Enter')
     await expect(chatFrame.getByRole('row').getByTitle('GPT-4o by OpenAI')).toBeVisible()
 })
