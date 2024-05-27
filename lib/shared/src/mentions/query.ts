@@ -108,8 +108,8 @@ const PUNCTUATION = ',\\+\\*\\$\\|#{}\\(\\)\\^\\[\\]!\'"<>;'
 
 const TRIGGERS = '@'
 
-/** Chars we expect to see in a mention (non-space, non-punctuation). */
-const VALID_CHARS = '[^' + PUNCTUATION + '\\s]'
+/** Chars we expect to see in a mention (non-punctuation). */
+const VALID_CHARS = '[^' + PUNCTUATION + ']'
 
 const MAX_LENGTH = 250
 
