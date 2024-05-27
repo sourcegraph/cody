@@ -42,6 +42,7 @@ export interface PromptEditorRefAPI {
     setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }): void
     appendText(text: string, ensureWhitespaceBefore?: boolean): void
     addContextItemAsToken(items: ContextItem[]): void
+    isEmpty(): boolean
 }
 
 /**
@@ -103,7 +104,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 }
             },
             appendText(text: string, ensureWhitespaceBefore?: boolean): void {
-                editorRef?.current?.update(() => {
+                editorRef.current?.update(() => {
                     const root = $getRoot()
                     const needsWhitespaceBefore = !/(^|\s)$/.test(root.getTextContent())
                     root.selectEnd()
@@ -116,11 +117,20 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 })
             },
             addContextItemAsToken(items: ContextItem[]) {
-                editorRef?.current?.update(() => {
+                editorRef.current?.update(() => {
                     const spaceNode = $createTextNode(' ')
                     const mentionNodes = items.map($createContextItemMentionNode)
                     $insertNodes([spaceNode, ...mentionNodes, spaceNode])
                     spaceNode.select()
+                })
+            },
+            isEmpty(): boolean {
+                if (!editorRef.current) {
+                    throw new Error('PromptEditor has no Lexical editor ref')
+                }
+                return editorRef.current.getEditorState().read(() => {
+                    const root = $getRoot()
+                    return root.getChildrenSize() === 0
                 })
             },
         }),

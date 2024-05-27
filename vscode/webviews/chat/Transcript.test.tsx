@@ -1,9 +1,9 @@
 import { errorToChatError, ps } from '@sourcegraph/cody-shared'
-import { render as render_, screen } from '@testing-library/react'
+import { fireEvent, render as render_, screen } from '@testing-library/react'
 import type { ComponentProps } from 'react'
 import { type Assertion, describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
-import { TooltipProvider } from '../components/shadcn/ui/tooltip'
+import { AppWrapper } from '../AppWrapper'
 import { Transcript } from './Transcript'
 import { FIXTURE_USER_ACCOUNT_INFO } from './fixtures'
 
@@ -22,11 +22,11 @@ vi.mock('@vscode/webview-ui-toolkit/react', () => ({
 }))
 
 vi.mock('../utils/VSCodeApi', () => ({
-    getVSCodeAPI: vi.fn(),
+    getVSCodeAPI: vi.fn().mockReturnValue({ postMessage: () => {} }),
 }))
 
 function render(element: JSX.Element): ReturnType<typeof render_> {
-    return render_(<TooltipProvider>{element}</TooltipProvider>)
+    return render_(element, { wrapper: AppWrapper })
 }
 
 describe('Transcript', () => {
@@ -201,7 +201,75 @@ describe('Transcript', () => {
         )
         expectCells([{ message: 'Foo' }, { message: 'Request Failed: some error' }])
     })
+
+    test('does not clobber user input into followup while isPendingPriorResponse when it completes', async () => {
+        const { container, rerender } = render(
+            <Transcript
+                {...PROPS}
+                transcript={[{ speaker: 'human', text: ps`Foo`, contextFiles: [] }]}
+                messageInProgress={{ speaker: 'assistant', text: ps`Bar` }}
+            />
+        )
+        const editor = container.querySelector<EditorHTMLElement>(
+            '[role="row"]:last-child [data-lexical-editor="true"]'
+        )! as EditorHTMLElement
+        await typeInEditor(editor, 'qux')
+        expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: 'qux', canSubmit: false }])
+
+        rerender(
+            <Transcript
+                {...PROPS}
+                transcript={[
+                    { speaker: 'human', text: ps`Foo`, contextFiles: [] },
+                    { speaker: 'assistant', text: ps`Bar` },
+                ]}
+                messageInProgress={null}
+            />
+        )
+        await typeInEditor(editor, 'yap')
+        expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: 'qux', canSubmit: true }])
+    })
+
+    test('focus', async () => {
+        const { container } = render(
+            <Transcript
+                {...PROPS}
+                transcript={[
+                    { speaker: 'human', text: ps`Foo`, contextFiles: [] },
+                    { speaker: 'assistant', text: ps`Bar` },
+                ]}
+            />
+        )
+
+        // Followup initially has the focus.
+        const lastEditor = container.querySelector<EditorHTMLElement>(
+            '[role="row"]:last-child [data-lexical-editor="true"]'
+        )! as EditorHTMLElement
+        expect(lastEditor).toHaveFocus()
+        await typeInEditor(lastEditor, 'xyz')
+        expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: 'xyz', canSubmit: true }])
+
+        // If the user focuses back into the first human input and submits, the followup should
+        // regain focus.
+        const firstEditor = container.querySelector<EditorHTMLElement>(
+            '[role="row"]:first-child [data-lexical-editor="true"]'
+        )! as EditorHTMLElement
+        await typeInEditor(firstEditor, 'abc')
+        expect(lastEditor).toHaveFocus()
+        fireEvent.click(container.querySelector('[role="row"]:first-child button[type="submit"]')!)
+        expect(lastEditor).toHaveFocus()
+        expectCells([{ message: 'Fooabc' }, { message: 'Bar' }, { message: '', canSubmit: false }])
+    })
 })
+
+type EditorHTMLElement = HTMLDivElement & { dataset: { lexicalEditor: 'true' } }
+
+async function typeInEditor(editor: EditorHTMLElement, text: string): Promise<void> {
+    fireEvent.focus(editor)
+    fireEvent.click(editor)
+    fireEvent.input(editor, { data: text })
+    await new Promise(resolve => setTimeout(resolve))
+}
 
 type CellMatcher =
     | {

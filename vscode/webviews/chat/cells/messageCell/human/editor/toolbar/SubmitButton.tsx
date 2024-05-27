@@ -52,10 +52,16 @@ export const SubmitButton: FunctionComponent<{
                 disabled={disabled !== false}
                 tabIndex={-1} // press Enter to invoke, doesn't need to be tabbable
             >
-                Send
-                <kbd>
-                    <EnterKeyIcon width={7} height={7} />
-                </kbd>
+                {disabled === 'isPendingPriorResponse' ? (
+                    'Waiting...'
+                ) : (
+                    <>
+                        Send
+                        <kbd>
+                            <EnterKeyIcon width={7} height={7} />
+                        </kbd>
+                    </>
+                )}
             </ToolbarButton>
         </>
     )

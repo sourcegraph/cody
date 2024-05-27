@@ -70,7 +70,8 @@ export const HumanMessageEditor: FunctionComponent<{
     const editorRef = useRef<PromptEditorRefAPI>(null)
 
     // The only PromptEditor state we really need to track in our own state is whether it's empty.
-    const [isEmptyEditorValue, setIsEmptyEditorValue] = useState(initialEditorState === undefined)
+    const [isEmptyEditorValue_, setIsEmptyEditorValue] = useState(initialEditorState === undefined)
+    const isEmptyEditorValue = editorRef.current ? editorRef.current.isEmpty() : isEmptyEditorValue_
     const onEditorChange = useCallback(
         (value: SerializedPromptEditorValue): void => {
             onChange?.(value)

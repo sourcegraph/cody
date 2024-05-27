@@ -134,7 +134,7 @@ export const Transcript: React.FunctionComponent<{
                 )}
             {!isLastAssistantMessageError(transcript) && (
                 <HumanMessageCell
-                    key={transcript.length}
+                    key={transcript.length + (messageInProgress ? 1 : 0)}
                     message={null}
                     isFirstMessage={transcript.length === 0}
                     isSent={false}
