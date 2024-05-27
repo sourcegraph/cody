@@ -2,7 +2,6 @@ package com.sourcegraph.cody.listeners
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
-import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.editor.event.BulkAwareDocumentListener
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -42,10 +41,6 @@ class CodyDocumentListener(val project: Project) : BulkAwareDocumentListener {
   private fun handleDocumentEvent(event: DocumentEvent) {
     val editor = FileEditorManager.getInstance(project).selectedTextEditor
     if (editor?.document != event.document) {
-      return
-    }
-
-    if (CommandProcessor.getInstance().isUndoTransparentActionInProgress) {
       return
     }
 
