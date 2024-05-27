@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import './App.css'
+import styles from './App.module.css'
 
 import {
     type AuthStatus,
@@ -230,7 +230,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     if (authStatus.showNetworkError) {
         return (
-            <div className="outer-container">
+            <div className={styles.outerContainer}>
                 <ConnectionIssuesPage
                     configuredEndpoint={authStatus.endpoint}
                     telemetryService={telemetryService}
@@ -243,7 +243,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     if (view === 'login' || !authStatus.isLoggedIn || !userAccountInfo) {
         return (
-            <div className="outer-container">
+            <div className={styles.outerContainer}>
                 <LoginSimplified
                     simplifiedLoginRedirect={loginRedirect}
                     telemetryService={telemetryService}
@@ -256,7 +256,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     }
 
     return (
-        <div className="outer-container">
+        <div className={styles.outerContainer}>
             {userHistory && <Notices probablyNewInstall={isNewInstall} vscodeAPI={vscodeAPI} />}
             {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
             {view === 'chat' && userHistory && (
@@ -294,14 +294,14 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
 const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (errors: string[]) => void }> =
     ({ errors, setErrors }) => (
-        <div className="error-container">
+        <div className={styles.errorContainer}>
             {errors.map((error, i) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: error strings might not be unique, so we have no natural id
-                <div key={i} className="error">
+                <div key={i} className={styles.error}>
                     <span>{error}</span>
                     <button
                         type="button"
-                        className="close-btn"
+                        className={styles.closeBtn}
                         onClick={() => setErrors(errors.filter(e => e !== error))}
                     >
                         ×
