@@ -41,7 +41,9 @@ const NewChatIcon: FunctionComponent = (props): ReactElement => (
 export const localStorageKey = 'chat.welcome-message-dismissed'
 
 export const WelcomeMessage: FunctionComponent = () => {
-    const [showMessage, setShowMessage] = useState<boolean>(localStorage.getItem(localStorageKey) !== 'true')
+    const [showMessage, setShowMessage] = useState<boolean>(
+        localStorage.getItem(localStorageKey) !== 'true'
+    )
 
     const onDismissClicked = useCallback((): void => {
         localStorage.setItem(localStorageKey, 'true')
