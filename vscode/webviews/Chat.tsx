@@ -10,7 +10,7 @@ import type {
     TelemetryRecorder,
     TelemetryService,
 } from '@sourcegraph/cody-shared'
-import { Transcript } from './chat/Transcript'
+import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
@@ -156,12 +156,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         return () => {
             window.removeEventListener('focus', onFocus)
         }
-    }, [])
-
-    const focusLastHumanMessageEditor = useCallback(() => {
-        const elements = document.querySelectorAll<HTMLElement>('[data-lexical-editor]')
-        const lastEditor = elements.item(elements.length - 1)
-        lastEditor?.focus()
     }, [])
 
     return (

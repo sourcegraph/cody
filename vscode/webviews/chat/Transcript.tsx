@@ -76,6 +76,7 @@ export const Transcript: React.FunctionComponent<{
                             contextFiles: editorValue.contextItems,
                             addEnhancedContext,
                         })
+                        focusLastHumanMessageEditor()
                     }}
                 />,
                 (message.contextFiles && message.contextFiles.length > 0) || isLastMessage ? (
@@ -157,4 +158,11 @@ export const Transcript: React.FunctionComponent<{
 function isLastAssistantMessageError(transcript: readonly ChatMessage[]): boolean {
     const lastMessage = transcript.at(-1)
     return Boolean(lastMessage && lastMessage.speaker === 'assistant' && lastMessage.error !== undefined)
+}
+
+// TODO(sqs): Do this the React-y way.
+export function focusLastHumanMessageEditor(): void {
+    const elements = document.querySelectorAll<HTMLElement>('[data-lexical-editor]')
+    const lastEditor = elements.item(elements.length - 1)
+    lastEditor?.focus()
 }
