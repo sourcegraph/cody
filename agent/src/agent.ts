@@ -1386,7 +1386,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerRequest(method, async (params, token) => {
             await this.authenticationPromise
             return callback(params, token).catch(err => {
-                console.error(err)
+                console.error(`Uncaught error from method '${method}'`, err)
                 throw err
             })
         })
