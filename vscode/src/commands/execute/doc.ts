@@ -150,7 +150,10 @@ export async function executeDocCommand(
         const { range, insertionPoint } = await getDocumentableRange(editor)
 
         const selectionText = document?.getText(range)
-        logDebug('executeDocCommand', `selectionText: ${selectionText}`)
+        logDebug(
+            'executeDocCommand', // Don't spam the logs with the entire selected file contents.
+            `selectionText: ${selectionText.slice(0, 70)}${selectionText.length > 70 ? '...' : ''}`
+        )
 
         if (!selectionText?.trim()) {
             throw new Error('Cannot document an empty selection.')
