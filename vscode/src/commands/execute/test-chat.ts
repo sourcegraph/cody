@@ -35,6 +35,11 @@ async function unitTestCommand(
     if (document) {
         try {
             const cursorContext = await getContextFileFromCursor()
+            if (cursorContext.length === 0) {
+                throw new Error(
+                    'Selection content is empty. Please select some code to generate tests for.'
+                )
+            }
             contextFiles.push(...cursorContext)
 
             contextFiles.push(...(await getContextFilesForTestCommand(document.uri)))
