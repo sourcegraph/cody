@@ -1,10 +1,6 @@
 package com.sourcegraph.cody.context
 
-import com.intellij.codeInsight.completion.CompletionContributor
-import com.intellij.codeInsight.completion.CompletionParameters
-import com.intellij.codeInsight.completion.CompletionProvider
-import com.intellij.codeInsight.completion.CompletionResultSet
-import com.intellij.codeInsight.completion.CompletionType
+import com.intellij.codeInsight.completion.*
 import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.extapi.psi.ASTWrapperPsiElement
 import com.intellij.extapi.psi.PsiFileBase
@@ -20,8 +16,7 @@ import com.intellij.lexer.LexerPosition
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.fileTypes.LanguageFileType
-import com.intellij.openapi.progress.blockingContext
-import com.intellij.openapi.progress.runBlockingCancellable
+import com.intellij.openapi.progress.*
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
@@ -49,24 +44,48 @@ enum class RepoInclusion {
   MANUAL,
 }
 
+enum class RepoSelectionStatus {
+  /** The user manually deselected the repository. */
+  DESELECTED,
+  /** Remote repo search did not find the repo (so it is disabled.) */
+  NOT_FOUND,
+  /** The repo has been found and is selected. */
+  SELECTED,
+}
+
 data class RemoteRepo(
     val name: String,
-    var isEnabled: Boolean? = null,
-    val isIgnored: Boolean? = null,
-    val inclusion: RepoInclusion? = null
+    /**
+     * Null in the case of "not found" repos, or manually deselected repos we did not try to find.
+     */
+    val id: String?,
+    val selectionStatus: RepoSelectionStatus,
+    val isIgnored: Boolean,
+    val inclusion: RepoInclusion,
 ) {
+  val isEnabled: Boolean
+    get() = selectionStatus == RepoSelectionStatus.SELECTED && !isIgnored
+
   val displayName: String
     get() = name.substring(name.indexOf('/') + 1) // Note, works for names without / => full name.
 
-  val icon: Icon?
+  val icon: Icon
     get() =
         when {
-          isIgnored == true -> Icons.RepoIgnored
-          name.startsWith("github.com/") -> Icons.RepoHostGitHub
-          name.startsWith("gitlab.com/") -> Icons.RepoHostGitlab
-          name.startsWith("bitbucket.org/") -> Icons.RepoHostBitbucket
-          else -> Icons.RepoHostGeneric
+          isIgnored -> Icons.RepoIgnored
+          else -> iconForName(name)
         }
+
+  companion object {
+    fun iconForName(name: String): Icon {
+      return when {
+        name.startsWith("github.com/") -> Icons.RepoHostGitHub
+        name.startsWith("gitlab.com/") -> Icons.RepoHostGitlab
+        name.startsWith("bitbucket.org/") -> Icons.RepoHostBitbucket
+        else -> Icons.RepoHostGeneric
+      }
+    }
+  }
 }
 
 val RemoteRepoLanguage = object : Language("SourcegraphRemoteRepoList") {}
@@ -365,9 +384,8 @@ class RemoteRepoCompletionContributor : CompletionContributor(), DumbAware {
           ) {
             val searcher = RemoteRepoSearcher.getInstance(parameters.position.project)
             // We use original position, if present, because it does not have the "helpful" dummy
-            // text
-            // "IntellijIdeaRulezzz". Because we do a fuzzy match, we use the whole element as the
-            // query.
+            // text "IntellijIdeaRulezzz". Because we do a fuzzy match, we use the whole element
+            // as the query.
             val element = parameters.originalPosition
             val query =
                 if (element?.elementType == RemoteRepoTokenType.REPO) {
@@ -391,7 +409,7 @@ class RemoteRepoCompletionContributor : CompletionContributor(), DumbAware {
                   blockingContext { // addElement uses ProgressManager.checkCancelled
                     for (repo in repos) {
                       prefixedResult.addElement(
-                          LookupElementBuilder.create(repo).withIcon(RemoteRepo(repo).icon))
+                          LookupElementBuilder.create(repo).withIcon(RemoteRepo.iconForName(repo)))
                     }
                   }
                 }

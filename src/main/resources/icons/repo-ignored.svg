@@ -1,4 +1,4 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-    <circle r="8" cx="12" cy="12" fill="none" stroke="#CCCCCC" stroke-width="2" />
-    <line x1="12" x2="12" y1="4" y2="20" stroke="#CCCCCC" stroke-width="2" transform="rotate(45 12 12)"/>
+    <circle r="8" cx="12" cy="12" fill="none" stroke="#6C707E" stroke-width="2" />
+    <line x1="12" x2="12" y1="4" y2="20" stroke="#6C707E" stroke-width="2" transform="rotate(-45 12 12)"/>
 </svg>

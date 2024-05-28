@@ -6,7 +6,6 @@ import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.GetRepoIdsParam
 import com.sourcegraph.cody.agent.protocol.Repo
-import com.sourcegraph.cody.context.ui.MAX_REMOTE_REPOSITORY_COUNT
 import com.sourcegraph.cody.context.ui.RemoteRepoResolutionFailedNotification
 import com.sourcegraph.vcs.CodebaseName
 import java.util.concurrent.CompletableFuture
@@ -39,9 +38,8 @@ object RemoteRepoUtils {
   }
 
   /**
-   * Resolves the repositories named in `repos` and runs `callback` with the first
-   * `MAX_REMOTE_REPOSITORY_COUNT` of them. If remote repo resolution fails, displays an error
-   * message instead.
+   * Resolves the repositories named in `repos` and runs `callback` with the result. If remote repo
+   * resolution fails, displays an error message instead.
    */
   fun resolveReposWithErrorNotification(
       project: Project,
@@ -63,7 +61,7 @@ object RemoteRepoUtils {
             runInEdt { RemoteRepoResolutionFailedNotification().notify(project) }
             return@thenApply
           }
-          callback(resolvedRepos.take(MAX_REMOTE_REPOSITORY_COUNT))
+          callback(resolvedRepos)
         }
   }
 }

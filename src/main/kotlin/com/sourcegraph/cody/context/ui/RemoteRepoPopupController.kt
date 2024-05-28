@@ -41,7 +41,7 @@ class RemoteRepoPopupController(val project: Project) {
   var onAccept: (spec: String) -> Unit = {}
 
   @RequiresEdt
-  fun createPopup(width: Int, initialValue: String = ""): JBPopup {
+  fun createPopup(width: Int, endpoint: String, initialValue: String = ""): JBPopup {
     val psiFile =
         PsiFileFactory.getInstance(project)
             .createFileFromText(
@@ -111,7 +111,7 @@ class RemoteRepoPopupController(val project: Project) {
                 .apply {
                   setAdText(
                       CodyBundle.getString("context-panel.remote-repo.select-repo-advertisement")
-                          .fmt(MAX_REMOTE_REPOSITORY_COUNT.toString(), shortcut))
+                          .fmt(endpoint))
                   setCancelOnClickOutside(true) // Do dismiss if the user clicks outside the popup.
                   setCancelOnWindowDeactivation(false) // Don't dismiss on alt-tab away and back.
                   setKeyEventHandler { event ->
@@ -161,6 +161,10 @@ class RemoteRepoPopupController(val project: Project) {
           }
         }
     okAction.registerCustomShortcutSet(CommonShortcuts.CTRL_ENTER, popup.content)
+
+    // If not explicitly set, the popup's minimum size is applied after the popup is shown, which is
+    // too late to compute placement in showAbove.
+    popup.size = Dimension(width, scaledHeight)
 
     return popup
   }

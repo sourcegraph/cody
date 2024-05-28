@@ -267,7 +267,6 @@ class ChatHistoryPanel(
   private fun hasLeafSelected() = tree.selectionPath?.lastPathComponent is LeafNode
 
   private companion object {
-
     private const val ENTER_MAP_KEY = "enter"
     private const val DELETE_MAP_KEY = "delete"
   }

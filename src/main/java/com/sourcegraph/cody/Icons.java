@@ -9,6 +9,8 @@ public interface Icons {
   Icon HiImCody = IconLoader.getIcon("/icons/hiImCodyLogo.svg", Icons.class);
 
   interface Actions {
+    Icon Add = IconLoader.getIcon("/icons/actions/huge_plus.svg", Icons.class);
+    Icon Edit = IconLoader.getIcon("/icons/actions/pencil.svg", Icons.class);
     Icon Hide = IconLoader.getIcon("/icons/actions/hide.svg", Icons.class);
     Icon Send = IconLoader.getIcon("/icons/actions/send.svg", Icons.class);
     Icon DisabledSend = IconLoader.getIcon("/icons/actions/disabledSend.svg", Icons.class);

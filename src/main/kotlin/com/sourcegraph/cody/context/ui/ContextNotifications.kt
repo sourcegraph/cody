@@ -8,6 +8,7 @@ import com.intellij.notification.impl.NotificationFullContent
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.sourcegraph.Icons
 import com.sourcegraph.common.CodyBundle
+import com.sourcegraph.common.CodyBundle.fmt
 import com.sourcegraph.common.NotificationGroups
 
 class RemoteRepoResolutionFailedNotification :
@@ -35,5 +36,19 @@ class RemoteRepoResolutionFailedNotification :
 
   companion object {
     val ignore = CodyBundle.getString("context-panel.remote-repo.error-resolution-failed.ignore")
+  }
+}
+
+class RemoteRepoLimitNotification :
+    Notification(
+        NotificationGroups.SOURCEGRAPH_ERRORS,
+        CodyBundle.getString("context-panel.remote-repo.error-too-many-repositories.tooltip"),
+        CodyBundle.getString("context-panel.remote-repo.error-too-many-repositories")
+            .fmt(MAX_REMOTE_REPOSITORY_COUNT.toString()),
+        NotificationType.WARNING),
+    NotificationFullContent {
+
+  init {
+    icon = Icons.RepoHostGeneric
   }
 }
