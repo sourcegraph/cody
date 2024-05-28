@@ -5,9 +5,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.sourcegraph.cody.listeners.EditorChangesBus
 import junit.framework.TestCase
-import org.junit.Ignore
 
-@Ignore("Temporarily disabled as it is flaky on CI")
 class ProtocolTextDocumentTest : BasePlatformTestCase() {
   private val content = "Start line 1\nline 2\nline 3\nline 4\nline 5 End"
   private val filename = "test.txt"
@@ -44,6 +42,16 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
 
   fun test_selectEntireFile() {
     myFixture.editor.testing_selectSubstring(content)
+    val range = ProtocolTextDocument.fromEditor(myFixture.editor)!!.selection!!
+    assertEquals(
+        myFixture.editor.selectionModel.selectedText, myFixture.editor.testing_substring(range))
+  }
+
+  fun test_evil_emojis() {
+    WriteAction.run<RuntimeException> {
+      myFixture.editor.document.setText("This is an evil range test\nHello 🤦🏿‍ bugs")
+    }
+    myFixture.editor.testing_selectSubstring("bugs")
     val range = ProtocolTextDocument.fromEditor(myFixture.editor)!!.selection!!
     assertEquals(
         myFixture.editor.selectionModel.selectedText, myFixture.editor.testing_substring(range))

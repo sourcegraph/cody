@@ -1,8 +1,8 @@
 package com.sourcegraph.cody.autocomplete;
 
 import com.google.common.collect.Iterables;
-import com.sourcegraph.cody.vscode.Position;
-import com.sourcegraph.cody.vscode.Range;
+import com.sourcegraph.cody.agent.protocol.Position;
+import com.sourcegraph.cody.agent.protocol.Range;
 import com.sourcegraph.cody.vscode.TextDocument;
 import java.net.URI;
 import java.util.Optional;

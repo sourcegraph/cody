@@ -57,19 +57,12 @@ private constructor(
     @RequiresEdt
     private fun getSelection(editor: Editor): Range {
       val selectionModel = editor.selectionModel
-      val selectionStartPosition =
-          selectionModel.selectionStartPosition?.let { editor.visualToLogicalPosition(it) }
-      val selectionEndPosition =
-          selectionModel.selectionEndPosition?.let { editor.visualToLogicalPosition(it) }
-      if (selectionStartPosition != null && selectionEndPosition != null) {
-        return Range(
-            Position(selectionStartPosition.line, selectionStartPosition.column),
-            Position(selectionEndPosition.line, selectionEndPosition.column))
-      }
-      val caret = editor.caretModel.primaryCaret
-      val position = Position(caret.logicalPosition.line, caret.logicalPosition.column)
-      // A single-offset caret is a selection where end == start.
-      return Range(position, position)
+      val beforeStartLines =
+          editor.document.text.substring(0, selectionModel.selectionStart).lines()
+      val beforeEndLines = editor.document.text.substring(0, selectionModel.selectionEnd).lines()
+      return Range(
+          Position(max(0, beforeStartLines.size - 1), beforeStartLines.last().length),
+          Position(max(0, beforeEndLines.size - 1), beforeEndLines.last().length))
     }
 
     @RequiresEdt
@@ -149,7 +142,8 @@ private constructor(
       val endCharacter =
           if (oldFragmentLines.size > 1) oldFragmentLines.last().length
           else startPosition.character + oldFragment.length
-      val endPosition = Position(startPosition.line + oldFragmentLines.size - 1, endCharacter)
+      val endPosition =
+          Position(startPosition.line + oldFragmentLines.size - 1, endCharacter.toLong())
       val uri = uriFor(file)
       val selection = getSelection(editor)
 

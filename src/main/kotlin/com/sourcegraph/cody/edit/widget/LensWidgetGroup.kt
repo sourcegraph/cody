@@ -7,7 +7,6 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorCustomElementRenderer
 import com.intellij.openapi.editor.Inlay
-import com.intellij.openapi.editor.LogicalPosition
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.editor.colors.EditorColorsListener
 import com.intellij.openapi.editor.colors.EditorColorsManager
@@ -136,7 +135,7 @@ class LensWidgetGroup(val session: FixupSession, parentComponent: Editor) :
       inlay = editor.inlayModel.addBlockElement(offset, false, true, 0, this)
       Disposer.register(this, inlay!!)
       // Make sure the lens is visible.
-      val logicalPosition = LogicalPosition(range.start.line, range.start.character)
+      val logicalPosition = range.start.toLogicalPosition(editor.document)
       editor.scrollingModel.scrollTo(logicalPosition, ScrollType.CENTER)
       true
     }

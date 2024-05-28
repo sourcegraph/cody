@@ -30,7 +30,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.withScheme
-import com.sourcegraph.cody.vscode.Range
+import com.sourcegraph.cody.agent.protocol.Range
 import com.sourcegraph.config.ConfigUtil
 import java.net.URI
 import java.net.URISyntaxException
@@ -39,7 +39,6 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.createFile
 import kotlin.io.path.exists
 import kotlin.io.path.toPath
-import kotlin.math.min
 
 object CodyEditorUtil {
   private val logger = Logger.getInstance(CodyEditorUtil::class.java)
@@ -76,14 +75,8 @@ object CodyEditorUtil {
 
   @JvmStatic
   fun getTextRange(document: Document, range: Range): TextRange {
-    val start =
-        min(
-            document.getLineEndOffset(range.start.line),
-            document.getLineStartOffset(range.start.line) + range.start.character)
-    val end =
-        min(
-            document.getLineEndOffset(range.end.line),
-            document.getLineStartOffset(range.end.line) + range.end.character)
+    val start = range.start.toOffset(document)
+    val end = range.end.toOffset(document)
     return TextRange.create(start, end)
   }
 
@@ -190,30 +183,15 @@ object CodyEditorUtil {
         OpenFileDescriptor(project, vf).navigate(/* requestFocus= */ preserveFocus != true)
       } else {
         OpenFileDescriptor(
-                project, vf, selection.start.line, /* logicalColumn= */ selection.start.character)
+                project,
+                vf,
+                selection.start.line.toInt(),
+                /* logicalColumn= */ selection.start.character.toInt())
             .navigate(/* requestFocus= */ preserveFocus != true)
       }
       return true
     } catch (e: Exception) {
       logger.error("Cannot switch view to file ${vf.path}", e)
-      return false
-    }
-  }
-
-  @JvmStatic
-  @RequiresEdt
-  fun showDocument(
-      project: Project,
-      uri: URI,
-      selection: Range? = null,
-      preserveFocus: Boolean? = false
-  ): Boolean {
-    try {
-      val vf =
-          LocalFileSystem.getInstance().refreshAndFindFileByNioFile(uri.toPath()) ?: return false
-      return showDocument(project, vf, selection, preserveFocus)
-    } catch (e: Exception) {
-      logger.error("Cannot switch view to file $uri", e)
       return false
     }
   }

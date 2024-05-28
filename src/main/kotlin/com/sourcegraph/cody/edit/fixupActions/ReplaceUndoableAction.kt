@@ -68,9 +68,11 @@ class ReplaceUndoableAction : FixupUndoableAction {
 
   private fun createBeforeMarker(): RangeMarker? {
     val range = edit.range ?: return null
-    if (range.start.line == -1 || range.end.line == -1) return null
-    val startOffset = document.getLineStartOffset(range.start.line) + range.start.character
-    val endOffset = document.getLineStartOffset(range.end.line) + range.end.character
+    if (range.start.isStartOrEndOfDocumentMarker(document) ||
+        range.end.isStartOrEndOfDocumentMarker(document))
+        return null
+    val startOffset = range.start.toOffset(document)
+    val endOffset = range.end.toOffset(document)
     return document.createRangeMarker(startOffset, endOffset)
   }
 

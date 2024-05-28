@@ -8,6 +8,8 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.sourcegraph.cody.agent.protocol.Position;
+import com.sourcegraph.cody.agent.protocol.Range;
 import com.sourcegraph.cody.autocomplete.AutocompleteDocumentContext;
 import java.net.URI;
 import java.util.Optional;
@@ -39,7 +41,7 @@ public class IntelliJTextDocument implements TextDocument {
 
   @Override
   public int offsetAt(Position position) {
-    return this.editor.getDocument().getLineStartOffset(position.line) + position.character;
+    return position.toOffset(this.editor.getDocument());
   }
 
   @Override

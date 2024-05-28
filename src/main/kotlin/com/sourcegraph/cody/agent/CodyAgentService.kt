@@ -104,7 +104,7 @@ class CodyAgentService(private val project: Project) : Disposable {
       }
 
       agent.client.onTextDocumentShow = Function { params ->
-        val selection = params.options?.selection?.toVSCodeRange()
+        val selection = params.options?.selection
         val preserveFocus = params.options?.preserveFocus
         val vf = CodyEditorUtil.findFileOrScratch(project, params.uri) ?: return@Function false
         CodyEditorUtil.showDocument(project, vf, selection, preserveFocus)

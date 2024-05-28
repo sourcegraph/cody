@@ -58,7 +58,7 @@ class ContextFilesPanel(
     val (excludedFiles, includedFiles) =
         contextItemFiles.partition { it.isTooLarge == true || it.isIgnored == true }
 
-    val lineCount = includedFiles.sumOf { it.range?.length() ?: 0 }
+    val lineCount = includedFiles.sumOf { it.range?.length()?.toInt() ?: 0 }
     val lines = "$lineCount ${"line".pluralize(lineCount)}"
 
     val excludedFileCount = excludedFiles.distinctBy { it.uri }.size
@@ -106,7 +106,8 @@ class ContextFilesPanel(
       val findFileByNioFile = LocalFileSystem.getInstance().findFileByNioFile(contextFilePath)
       if (findFileByNioFile != null) {
         ApplicationManager.getApplication().invokeLater {
-          OpenFileDescriptor(project, findFileByNioFile, logicalLine, /* logicalColumn= */ 0)
+          OpenFileDescriptor(
+                  project, findFileByNioFile, logicalLine.toInt(), /* logicalColumn= */ 0)
               .navigate(/* requestFocus= */ true)
         }
       }

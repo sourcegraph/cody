@@ -25,7 +25,7 @@ class InsertUndoableAction(project: Project, edit: TextEdit, document: Document)
   private fun createBeforeMarker(): RangeMarker? {
     val position = edit.position ?: return null
     if (position.line < 0 || position.character < 0) return null
-    val startOffset = document.getLineStartOffset(position.line) + position.character
+    val startOffset = position.toOffset(document)
     return document.createRangeMarker(startOffset, startOffset)
   }
 
