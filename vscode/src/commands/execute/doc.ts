@@ -11,18 +11,19 @@ import type { CodyCommandArgs } from '../types'
 import {
     getEditAdjustedUserSelection,
     getEditDefaultProvidedRange,
+    getEditLineSelection,
+    getEditSmartSelection,
 } from '../../edit/utils/edit-selection'
 import { execQueryWrapper } from '../../tree-sitter/query-sdk'
 
 /**
  * Gets the default range and insertion point for documenting the code around the current cursor position.
  */
-function getDefaultDocumentableRanges(editor: vscode.TextEditor): {
+async function getDefaultDocumentableRanges(editor: vscode.TextEditor): Promise<{
     range?: vscode.Range
     insertionPoint?: vscode.Position
-} {
+}> {
     const defaultRange = getEditDefaultProvidedRange(editor.document, editor.selection)
-
     if (defaultRange) {
         return {
             range: defaultRange,
@@ -30,9 +31,19 @@ function getDefaultDocumentableRanges(editor: vscode.TextEditor): {
         }
     }
 
-    // No usable selection, fallback to expanding the range to the nearest block,
-    // as is the default behavior for all "Edit" commands
-    return {}
+    const smartSelection = await getEditSmartSelection(editor.document, editor.selection, {}, 'doc')
+    if (!smartSelection.isEmpty) {
+        return {
+            range: smartSelection,
+            insertionPoint: smartSelection.start,
+        }
+    }
+
+    const lineSelection = getEditLineSelection(editor.document, editor.selection, { forceExpand: true })
+    return {
+        range: lineSelection,
+        insertionPoint: lineSelection.start,
+    }
 }
 
 /**
@@ -47,10 +58,10 @@ function getDefaultDocumentableRanges(editor: vscode.TextEditor): {
  * Handles some special cases like adjusting the insertion point for Python
  * functions/classes to comply with PEP 257.
  */
-function getDocumentableRange(editor: vscode.TextEditor): {
+async function getDocumentableRange(editor: vscode.TextEditor): Promise<{
     range?: vscode.Range
     insertionPoint?: vscode.Position
-} {
+}> {
     const { document } = editor
     const adjustedSelection = getEditAdjustedUserSelection(document, editor.selection)
 
@@ -136,7 +147,7 @@ export async function executeDocCommand(
             editor.selection = new vscode.Selection(args.range.start, args.range.end)
         }
 
-        const { range, insertionPoint } = getDocumentableRange(editor)
+        const { range, insertionPoint } = await getDocumentableRange(editor)
 
         const selectionText = document?.getText(range)
         logDebug('executeDocCommand', `selectionText: ${selectionText}`)
