@@ -42,7 +42,7 @@ export async function getSmartSelection(
         // Regardless of the columns provided, we want to ensure the edit spans the full range of characters
         // on the start and end lines. This helps improve the reliability of the output.
         const adjustedStartColumn = document.lineAt(startPosition.row).firstNonWhitespaceCharacterIndex
-        const adjustedEndColumn = Number.MAX_SAFE_INTEGER
+        const adjustedEndColumn = document.lineAt(startPosition.row).range.end.character
         return new vscode.Selection(
             startPosition.row,
             adjustedStartColumn,
