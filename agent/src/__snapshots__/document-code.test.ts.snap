@@ -64,6 +64,33 @@ const startTime = performance.now(/* CURSOR */)
 "
 `;
 
+exports[`Document Code > commands/document (no smart selection) 1`] = `
+"import { expect } from 'vitest'
+import { it } from 'vitest'
+import { describe } from 'vitest'
+
+describe('test block', () => {
+    it('does 1', () => {
+        expect(true).toBe(true)
+    })
+
+    it('does 2', () => {
+        expect(true).toBe(true)
+    })
+
+    it('does something else', () => {
+        // This line will error due to incorrect usage of \`performance.now\`
+                /**
+         * Returns the current high-resolution timestamp in milliseconds.
+         * This value can be used to measure elapsed time with high precision.
+         * The timestamp is relative to an arbitrary time in the past, and is not related to the current date and time.
+         */
+const startTime = performance.now(/* CURSOR */)
+    })
+})
+"
+`;
+
 exports[`Document Code > editCommands/document (basic function) 1`] = `
 "/**
  * Adds two numbers together and returns the result.
