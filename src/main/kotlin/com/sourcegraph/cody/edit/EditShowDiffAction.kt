@@ -9,13 +9,11 @@ import com.intellij.diff.contents.FileContent
 import com.intellij.diff.util.DiffUserDataKeys
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataKey
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 
 class EditShowDiffAction : CompareFileWithEditorAction() {
   override fun isAvailable(e: AnActionEvent): Boolean {
-    e.dataContext.getData(DIFF_SESSION_DATA_KEY) ?: return false
     e.dataContext.getData(EDITOR_DATA_KEY) ?: return false
     return true
   }
@@ -54,6 +52,5 @@ class EditShowDiffAction : CompareFileWithEditorAction() {
 
   companion object {
     val EDITOR_DATA_KEY = DataKey.create<Editor>("editor")
-    val DIFF_SESSION_DATA_KEY = DataKey.create<Document>("diff_session")
   }
 }

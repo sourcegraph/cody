@@ -207,18 +207,16 @@
         <action id="cody.command.Explain"
                 icon="/icons/chat/chat_command.svg"
                 class="com.sourcegraph.cody.chat.actions.ExplainCommand">
-            <keyboard-shortcut first-keystroke="control shift E"
-                               keymap="Mac OS X 10.5+"/>
-            <keyboard-shortcut first-keystroke="alt shift 1" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="control shift E" keymap="Mac OS X 10.5+"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="alt shift 1" keymap="$default"/>
             <add-to-group group-id="CodyEditorActions" anchor="last"/>
         </action>
 
         <action id="cody.command.Smell"
                 icon="/icons/chat/chat_command.svg"
                 class="com.sourcegraph.cody.chat.actions.SmellCommand">
-            <keyboard-shortcut first-keystroke="control shift S"
-                               keymap="Mac OS X 10.5+"/>
-            <keyboard-shortcut first-keystroke="alt shift 2" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="control shift S" keymap="Mac OS X 10.5+"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="alt shift 2" keymap="$default"/>
             <add-to-group group-id="CodyEditorActions" anchor="last"/>
         </action>
 
@@ -260,8 +258,8 @@
                 text="Accept Edit"
                 description="Accept the fixup">
             <!-- Intended as ctrl shift PLUS but that is not recognized by IntelliJ. -->
-            <keyboard-shortcut first-keystroke="ctrl shift EQUALS" keymap="$default"/>
-            <keyboard-shortcut first-keystroke="ctrl shift EQUALS" keymap="Mac OS X 10.5+"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift EQUALS" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift EQUALS" keymap="Mac OS X 10.5+"/>
         </action>
 
         <action id="cody.inlineEditCancelAction"
@@ -286,8 +284,8 @@
                 class="com.sourcegraph.cody.edit.EditShowDiffAction"
                 text="Show Diff"
                 description="Show a diff view of the fixup">
-            <keyboard-shortcut first-keystroke="ctrl shift QUOTE" keymap="$default"/>
-            <keyboard-shortcut first-keystroke="ctrl shift QUOTE" keymap="Mac OS X 10.5+"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift QUOTE" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift QUOTE" keymap="Mac OS X 10.5+"/>
         </action>
 
         <action id="cody.inlineEditDismissAction"
@@ -300,16 +298,16 @@
                 class="com.sourcegraph.cody.statusbar.OpenLogAction"
                 text="Open Log"
                 description="Opens Cody log">
-            <keyboard-shortcut first-keystroke="ctrl shift L" keymap="$default"/>
-            <keyboard-shortcut first-keystroke="ctrl shift L" keymap="Mac OS X 10.5+"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift L" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift L" keymap="Mac OS X 10.5+"/>
         </action>
 
         <action id="cody.editCancelOrUndoAction"
                 class="com.sourcegraph.cody.edit.actions.EditCancelOrUndoAction"
                 text="Cancel or Undo Current Edit"
                 description="Activates the cancel or undo lens, whichever is showing.">
-            <keyboard-shortcut first-keystroke="ctrl shift BACK_SPACE" keymap="$default"/>
-            <keyboard-shortcut first-keystroke="ctrl shift BACK_SPACE" keymap="Mac OS X 10.5+"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift BACK_SPACE" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift BACK_SPACE" keymap="Mac OS X 10.5+"/>
         </action>
 
         <group id="SourcegraphEditor" popup="true" searchable="false">
