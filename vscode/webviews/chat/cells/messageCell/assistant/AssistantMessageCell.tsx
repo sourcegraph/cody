@@ -7,17 +7,16 @@ import {
 import { type FunctionComponent, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
 import { chatModelIconComponent } from '../../../../components/ChatModelIcon'
-
 import { ChatMessageContent, type CodeBlockActionsProps } from '../../../ChatMessageContent'
 import { ErrorItem, RequestErrorItem } from '../../../ErrorItem'
 import { FeedbackButtons } from '../../../components/FeedbackButtons'
 import { LoadingDots } from '../../../components/LoadingDots'
 import { useChatModelByID } from '../../../models/chatModelContext'
 import { BaseMessageCell } from '../BaseMessageCell'
+
 /**
  * A component that displays a chat message from the assistant.
  */
-
 export const AssistantMessageCell: FunctionComponent<{
     message: ChatMessage
     userInfo: UserAccountInfo
@@ -51,6 +50,7 @@ export const AssistantMessageCell: FunctionComponent<{
 
     const chatModel = useChatModelByID(message.model)
     const ModelIcon = chatModel ? chatModelIconComponent(chatModel.model) : null
+
     return (
         <BaseMessageCell
             speaker={message.speaker}
