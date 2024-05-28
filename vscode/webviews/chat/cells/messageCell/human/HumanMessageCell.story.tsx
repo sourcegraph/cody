@@ -11,6 +11,7 @@ const meta: Meta<typeof HumanMessageCell> = {
 
     args: {
         userInfo: FIXTURE_USER_ACCOUNT_INFO,
+        chatEnabled: true,
         onSubmit: () => {},
     },
 
@@ -29,15 +30,6 @@ export const NonEmptyFirstMessage: StoryObj<typeof meta> = {
 export const EmptyFollowup: StoryObj<typeof meta> = {
     args: {
         message: null,
-        __storybook__focus: true,
-    },
-}
-
-export const SentPending: StoryObj<typeof meta> = {
-    args: {
-        message: FIXTURE_TRANSCRIPT.explainCode2[0],
-        isSent: true,
-        isPendingResponse: true,
         __storybook__focus: true,
     },
 }

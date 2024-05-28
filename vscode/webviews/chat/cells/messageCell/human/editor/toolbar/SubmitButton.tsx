@@ -7,12 +7,8 @@ export type SubmitButtonDisabled = false | 'emptyEditorValue' | 'isPendingPriorR
 export const SubmitButton: FunctionComponent<{
     onClick: (withEnhancedContext: boolean) => void
     isEditorFocused?: boolean
-
-    /** Whether this editor is for a message whose assistant response is in progress. */
-    isPendingResponse: boolean
-
     disabled?: SubmitButtonDisabled
-}> = ({ onClick: parentOnClick, isEditorFocused, isPendingResponse, disabled = false }) => {
+}> = ({ onClick, disabled = false }) => {
     if (disabled === 'isPendingPriorResponse') {
         return (
             <button
@@ -29,7 +25,7 @@ export const SubmitButton: FunctionComponent<{
         <button
             type="submit"
             className={cn('tw-relative tw-w-[20px] tw-h-[20px]', styles.button)}
-            onClick={() => parentOnClick(true)}
+            onClick={() => onClick(true)}
             aria-label="Send"
             disabled={disabled ? true : undefined}
         >

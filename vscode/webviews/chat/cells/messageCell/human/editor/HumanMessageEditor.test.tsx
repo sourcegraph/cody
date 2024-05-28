@@ -67,7 +67,6 @@ describe('HumanMessageEditor', () => {
                 const rendered = renderWithMocks({
                     initialEditorState: serializedPromptEditorStateFromText('abc'),
                     isSent: true,
-                    isPendingResponse: true,
                 })
                 return rendered
             }
@@ -86,7 +85,6 @@ describe('HumanMessageEditor', () => {
             const rendered = renderWithMocks({
                 initialEditorState: undefined,
                 isSent: true,
-                isPendingResponse: false,
             })
             expectState(rendered, { toolbarVisible: false })
             fireEvent.focus(rendered.editor)
@@ -176,7 +174,6 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
         initialEditorState: FILE_MENTION_EDITOR_STATE_FIXTURE,
         placeholder: 'my-placeholder',
         isFirstMessage: true,
-        isPendingResponse: false,
         isPendingPriorResponse: false,
         isSent: false,
         onChange,
