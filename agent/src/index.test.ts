@@ -14,7 +14,6 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { URI } from 'vscode-uri'
-import type { RequestMethodName } from '../../vscode/src/jsonrpc/jsonrpc'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient, asTranscriptMessage } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
@@ -663,44 +662,6 @@ describe('Agent', () => {
         }, 20_000)
     })
 
-    function checkEditCommand(
-        documentClient: TestClient,
-        command: RequestMethodName,
-        name: string,
-        filename: string,
-        param: any,
-        assertion: (obtained: string) => void
-    ): void {
-        it(
-            name,
-            async () => {
-                await documentClient.request('command/execute', {
-                    command: 'cody.search.index-update',
-                })
-                const uri = workspace.file('src', filename)
-                await documentClient.openFile(uri, { removeCursor: false })
-                const task = await documentClient.request(command, param)
-                await documentClient.taskHasReachedAppliedPhase(task)
-                const lenses = documentClient.codeLenses.get(uri.toString()) ?? []
-                expect(lenses).toHaveLength(0) // Code lenses are now handled client side
-
-                await documentClient.request('editTask/accept', { id: task.id })
-                const newContent = documentClient.workspace.getDocument(uri)?.content
-                assertion(trimEndOfLine(newContent))
-            },
-            20_000
-        )
-    }
-
-    function checkDocumentCommand(
-        documentClient: TestClient,
-        name: string,
-        filename: string,
-        assertion: (obtained: string) => void
-    ): void {
-        checkEditCommand(documentClient, 'editCommands/document', name, filename, null, assertion)
-    }
-
     describe('Commands', () => {
         it('commands/explain', async () => {
             await client.request('command/execute', {
@@ -916,114 +877,6 @@ describe('Agent', () => {
 
             expect(client.textDocumentEditParams).toHaveLength(1)
         }, 30_000)
-
-        describe('Document code', () => {
-            checkDocumentCommand(client, 'editCommands/document (basic function)', 'sum.ts', obtained =>
-                expect(obtained).toMatchInlineSnapshot(
-                    `
-                  "/**
-                   * Adds two numbers together and returns the result.
-                   *
-                   * @param a - The first number to add.
-                   * @param b - The second number to add.
-                   * @returns The sum of the two input numbers.
-                   */
-                  export function sum(a: number, b: number): number {
-                      /* CURSOR */
-                  }
-                  "
-                `,
-                    explainPollyError
-                )
-            )
-
-            checkDocumentCommand(
-                client,
-                'commands/document (Method as part of a class)',
-                'TestClass.ts',
-                obtained =>
-                    expect(obtained).toMatchInlineSnapshot(
-                        `
-                      "const foo = 42
-
-                      export class TestClass {
-                          constructor(private shouldGreet: boolean) {}
-
-                              /**
-                           * Logs a 'Hello World!' message to the console if \`shouldGreet\` is true.
-                           */
-                      public functionName() {
-                              if (this.shouldGreet) {
-                                  console.log(/* CURSOR */ 'Hello World!')
-                              }
-                          }
-                      }
-                      "
-                    `,
-                        explainPollyError
-                    )
-            )
-
-            checkDocumentCommand(
-                client,
-                'commands/document (Function within a property)',
-                'TestLogger.ts',
-                obtained =>
-                    expect(obtained).toMatchInlineSnapshot(`
-                      "const foo = 42
-                      export const TestLogger = {
-                          startLogging: () => {
-                              // Do some stuff
-
-                                      /**
-                               * Records a log message.
-                               */
-                      function recordLog() {
-                                  console.log(/* CURSOR */ 'Recording the log')
-                              }
-
-                              recordLog()
-                          },
-                      }
-                      "
-                    `)
-            )
-
-            checkDocumentCommand(
-                client,
-                'commands/document (nested test case)',
-                'example.test.ts',
-                obtained =>
-                    expect(obtained).toMatchInlineSnapshot(
-                        `
-                      "import { expect } from 'vitest'
-                      import { it } from 'vitest'
-                      import { describe } from 'vitest'
-
-                      describe('test block', () => {
-                          it('does 1', () => {
-                              expect(true).toBe(true)
-                          })
-
-                          it('does 2', () => {
-                              expect(true).toBe(true)
-                          })
-
-                          it('does something else', () => {
-                              // This line will error due to incorrect usage of \`performance.now\`
-                                      /**
-                               * Retrieves the current time in milliseconds since the script started running.
-                               * This can be used to measure the duration of operations or other performance metrics.
-                               */
-                      const startTime = performance.now(/* CURSOR */)
-                          })
-                      })
-                      "
-                    `,
-                        explainPollyError
-                    )
-            )
-        })
     })
 
     describe('Custom Commands', () => {
@@ -1325,44 +1178,41 @@ describe('Agent', () => {
             expect(lastMessage?.text?.trim()).toStrictEqual('Yes')
         }, 20_000)
 
-        checkDocumentCommand(
-            demoEnterpriseClient,
-            'commands/document (enterprise client)',
-            'example.test.ts',
-            obtained =>
-                expect(obtained).toMatchInlineSnapshot(
-                    `
-              "import { expect } from 'vitest'
-              import { it } from 'vitest'
-              import { describe } from 'vitest'
+        it('commands/document (enterprise client)', async () => {
+            const uri = workspace.file('src', 'example.test.ts')
+            const obtained = await demoEnterpriseClient.documentCode(uri)
+            expect(obtained).toMatchInlineSnapshot(
+                `
+                  "import { expect } from 'vitest'
+                  import { it } from 'vitest'
+                  import { describe } from 'vitest'
 
-              /**
-               * Test block for example functionality
-               *
-               * This test block contains three test cases:
-               * - "does 1": Verifies that true is equal to true
-               * - "does 2": Verifies that true is equal to true
-               * - "does something else": Currently incomplete test case that will error due to incorrect usage of \`performance.now\`
-               */
-              describe('test block', () => {
-                  it('does 1', () => {
-                      expect(true).toBe(true)
-                  })
+                  /**
+                   * Test block for example functionality
+                   *
+                   * This test block contains three test cases:
+                   * - "does 1": Verifies that true is equal to true
+                   * - "does 2": Verifies that true is equal to true
+                   * - "does something else": Currently incomplete test case that will error due to incorrect usage of \`performance.now\`
+                   */
+                  describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
 
-                  it('does 2', () => {
-                      expect(true).toBe(true)
-                  })
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
 
-                  it('does something else', () => {
-                      // This line will error due to incorrect usage of \`performance.now\`
-                      const startTime = performance.now(/* CURSOR */)
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of \`performance.now\`
+                          const startTime = performance.now(/* CURSOR */)
+                      })
                   })
-              })
-              "
-            `,
-                    explainPollyError
-                )
-        )
+                  "
+                `
+            )
+        })
 
         it('remoteRepo/list', async () => {
             // List a repo without a query
