@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
+import type { ReplaceTextEdit } from '../../vscode/src/jsonrpc/agent-protocol'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
@@ -38,5 +39,12 @@ describe('Generate Unit Test', () => {
         const testDocument = client.workspace.getDocument(vscode.Uri.parse(untitledDocument ?? ''))
         expect(trimEndOfLine(testDocument?.getText())).toMatchSnapshot()
         expect(client.textDocumentEditParams).toHaveLength(1)
+        for (const editParam of client.textDocumentEditParams) {
+            for (const edit of editParam.edits) {
+                const range = (edit as ReplaceTextEdit).range
+                expect(range.start.line).toBeGreaterThanOrEqual(0)
+                expect(range.end.line).toBeGreaterThanOrEqual(0)
+            }
+        }
     }, 30_000)
 })
