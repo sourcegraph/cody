@@ -32,6 +32,8 @@ import styles from './MentionMenuItem.module.css'
 
 function getDescription(item: ContextItem, query: MentionQuery): string {
     const range = query.range ?? item.range
+    const defaultDescription = `${displayPath(item.uri)}:${range ? displayLineRange(range) : ''}`
+
     switch (item.type) {
         case 'github_issue':
         case 'github_pull_request':
@@ -40,8 +42,10 @@ function getDescription(item: ContextItem, query: MentionQuery): string {
             const dir = decodeURIComponent(displayPathDirname(item.uri))
             return `${range ? `Lines ${displayLineRange(range)} · ` : ''}${dir === '.' ? '' : dir}`
         }
+        case 'openctx':
+            return item.mention?.description || defaultDescription
         default:
-            return `${displayPath(item.uri)}:${range ? displayLineRange(range) : ''}`
+            return defaultDescription
     }
 }
 

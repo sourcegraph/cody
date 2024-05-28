@@ -76,6 +76,7 @@ export async function getChatContextItemsForMention(
                     mention: {
                         uri: item.uri,
                         data: item.data,
+                        description: item.description,
                     },
                 })
             )

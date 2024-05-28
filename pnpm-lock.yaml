@@ -18,8 +18,8 @@ importers:
   .:
     dependencies:
       '@openctx/client':
-        specifier: ^0.0.12
-        version: 0.0.12
+        specifier: ^0.0.15
+        version: 0.0.15
       ignore:
         specifier: ^5.3.1
         version: 5.3.1
@@ -3298,8 +3298,25 @@ packages:
       rxjs: 7.8.1
     dev: false
 
+  /@openctx/client@0.0.15:
+    resolution: {integrity: sha512-cm/LngolOPf1udFEAvxIq5AdRanloH8pKW+UeYzH4Nu2pvDfkl9oQ4w9OEAXHxf24vVEKWqoffn54/0e4T3ABA==}
+    dependencies:
+      '@openctx/protocol': 0.0.12
+      '@openctx/provider': 0.0.12
+      '@openctx/schema': 0.0.10
+      lru-cache: 10.2.2
+      picomatch: 3.0.1
+      rxjs: 7.8.1
+    dev: false
+
   /@openctx/protocol@0.0.11:
     resolution: {integrity: sha512-Uc3cxMAfbdO2lamvFOQCCgctjYblAvUl4icxF7OsHg5c81tZdsFsKXURuiU1KMctpCuujMwpKZDrN97ml5QNxw==}
+    dependencies:
+      '@openctx/schema': 0.0.10
+    dev: false
+
+  /@openctx/protocol@0.0.12:
+    resolution: {integrity: sha512-Yz1I2lVx8jW2BXkg5vApYxVbyqiDNRRwPsRp1Z9wX6q4yrjxOf7hFxjjca/5EvLNLuGmsi9hDt1ANw+xQE5V+g==}
     dependencies:
       '@openctx/schema': 0.0.10
     dev: false
@@ -3308,6 +3325,14 @@ packages:
     resolution: {integrity: sha512-2KsVqMIB0Ra0Eebtc+qs4XpROQi9uAD5Ev0360pE6vEhb6W2Ywr6o/0rgX6dtqMgESFolu96HeBYgjDCq5cqmQ==}
     dependencies:
       '@openctx/protocol': 0.0.11
+      '@openctx/schema': 0.0.10
+      picomatch: 3.0.1
+    dev: false
+
+  /@openctx/provider@0.0.12:
+    resolution: {integrity: sha512-lSgkv1mRk7rQRBBAW+hHcklLj8ulhZkuBI7RkydDJn1Dx4mi9jdmg+al/lt3me2wDMLDBAJe3ZJLz+2mqE7n0A==}
+    dependencies:
+      '@openctx/protocol': 0.0.12
       '@openctx/schema': 0.0.10
       picomatch: 3.0.1
     dev: false
