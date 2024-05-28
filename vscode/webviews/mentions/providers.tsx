@@ -41,15 +41,16 @@ const getAllMentionProvidersMetadata = async (): Promise<ContextMentionProviderM
 }
 
 export const WithContextProviders = (props: { children: React.ReactElement }): React.ReactElement => {
-    const [providersPromise, setProvidersPromise] = useState(getAllMentionProvidersMetadata())
     const [providers, setProviders] = useState<ContextMentionProviderMetadata[]>([])
 
+    const loadProviders = async () => {
+        const providersData = await getAllMentionProvidersMetadata()
+        setProviders(providersData)
+    }
+
     useEffect(() => {
-        void (async () => {
-            const providers = await providersPromise
-            setProviders(providers)
-        })()
-    }, [providersPromise])
+        loadProviders()
+    }, [])
 
     return (
         <context.Provider
