@@ -479,6 +479,12 @@ export class TestClient extends MessageHandler {
         return this.workspace.getDocument(uri)?.content ?? ''
     }
 
+    public async generateUnitTest(uri: vscode.Uri): Promise<void> {
+        await this.openFile(uri)
+        const id = await this.request('editCommands/test', null)
+        await this.taskHasReachedAppliedPhase(id)
+    }
+
     public async autocompleteText(params?: Partial<AutocompleteParams>): Promise<string[]> {
         const result = await this.autocomplete(params)
         return result.items.map(item => item.insertText)
@@ -519,7 +525,13 @@ export class TestClient extends MessageHandler {
             case CodyTaskState.Finished:
             case CodyTaskState.Error:
                 return Promise.reject(
-                    new Error(`Task reached terminal state before being applied ${params}`)
+                    new Error(
+                        `Task reached terminal state before being applied ${JSON.stringify(
+                            params,
+                            null,
+                            2
+                        )}`
+                    )
                 )
         }
 

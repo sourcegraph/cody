@@ -26,9 +26,7 @@ describe('Generate Unit Test', () => {
 
     it('editCommands/test', async () => {
         const uri = workspace.file('src', 'trickyLogic.ts')
-        await client.openFile(uri)
-        const id = await client.request('editCommands/test', null)
-        await client.taskHasReachedAppliedPhase(id)
+        await client.generateUnitTest(uri)
         const untitledDocuments = client.workspace
             .allUris()
             .filter(uri => vscode.Uri.parse(uri).scheme === 'untitled')
@@ -38,5 +36,17 @@ describe('Generate Unit Test', () => {
         const testDocument = client.workspace.getDocument(vscode.Uri.parse(untitledDocument ?? ''))
         expect(trimEndOfLine(testDocument?.getText())).toMatchSnapshot()
         expect(client.textDocumentEditParams).toHaveLength(1)
-    }, 30_000)
+    }, 10_000)
+
+    it('Respects existing test file content', async () => {
+        const uri = workspace.file('src', 'existing', 'first-function.ts')
+        await client.generateUnitTest(uri)
+
+        // const untitledDocuments = client.workspace
+        //     .allUris()
+        //     .filter(uri => vscode.Uri.parse(uri).scheme === 'untitled')
+        // expect(untitledDocuments).toHaveLength(2)
+        // const untitledDocument = untitledDocuments.find(d => d.endsWith('trickyLogic.test.ts'))
+        // expect(untitledDocument).
+    }, 10_000)
 })

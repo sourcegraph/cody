@@ -5,11 +5,11 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: 0a0ea5b9885d884585549ca608a1d6cf
+    - _id: d97f77c3d52fcc841fe7e42873f46225
       _order: 0
       cache: {}
       request:
-        bodySize: 2223
+        bodySize: 2383
         cookies: []
         headers:
           - name: content-type
@@ -22,7 +22,7 @@ log:
           - name: user-agent
             value: generate-unit-test / v1
           - name: traceparent
-            value: 00-321eb9c2be547b11da7456ac59c5d67b-92fb69ee14cdbafb-01
+            value: 00-8dd2136c1d18ad6c30a219400cd30842-54738a8112df52ab-01
           - name: connection
             value: keep-alive
           - name: host
@@ -38,6 +38,12 @@ log:
             messages:
               - speaker: system
                 text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  Codebase context from file path
+                  src/existing/first-function.test.ts: //###CONTENT_MARKER###
+              - speaker: assistant
+                text: Ok.
               - speaker: human
                 text: >-
                   Here is my selected code from my codebase file
@@ -86,14 +92,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=generate-unit-test&client-version=v1
       response:
-        bodySize: 111746
+        bodySize: 88239
         content:
           mimeType: text/event-stream
-          size: 111746
+          size: 88239
           text: >+
             event: completion
 
-            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { trickyLogic } from './trickyLogic'\n\ndescribe('trickyLogic', () =\u003e {\n  test('returns 1 when a is 0', () =\u003e {\n    expect(trickyLogic(0, 5)).toBe(1)\n  })\n\n  test('returns 1 when b is 2', () =\u003e {\n    expect(trickyLogic(10, 2)).toBe(1)\n  })\n\n  test('returns a - b when a is not 0 and b is not 2', () =\u003e {\n    expect(trickyLogic(5, 3)).toBe(2)\n    expect(trickyLogic(10, 7)).toBe(3)\n    expect(trickyLogic(3, 5)).toBe(-2)\n  })\n\n  test('handles negative values', () =\u003e {\n    expect(trickyLogic(-5, 3)).toBe(-8)\n    expect(trickyLogic(5, -3)).toBe(8)\n    expect(trickyLogic(-5, -3)).toBe(-2)\n  })\n})\n","stopReason":"stop_sequence"}
+            data: {"completion":"src/trickyLogic.test.ts\u003c/TESTFILE7041\u003e\nimport { trickyLogic } from \"./trickyLogic\";\n\ndescribe(\"trickyLogic\", () =\u003e {\n  it(\"should return 1 when a is 0\", () =\u003e {\n    const result = trickyLogic(0, 3);\n    expect(result).toBe(1);\n  });\n\n  it(\"should return 1 when b is 2\", () =\u003e {\n    const result = trickyLogic(5, 2);\n    expect(result).toBe(1);\n  });\n\n  it(\"should return a - b when a is not 0 and b is not 2\", () =\u003e {\n    const result = trickyLogic(5, 3);\n    expect(result).toBe(2);\n  });\n\n  it(\"should handle negative numbers\", () =\u003e {\n    const result = trickyLogic(-3, -1);\n    expect(result).toBe(-2);\n  });\n});\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -103,7 +109,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 28 May 2024 12:47:07 GMT
+            value: Tue, 28 May 2024 13:10:57 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -132,7 +138,151 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-28T12:47:05.417Z
+      startedDateTime: 2024-05-28T13:10:55.416Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 77355cb5b70e3f3cb5f5126811c98cfe
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2171
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: user-agent
+            value: generate-unit-test / v1
+          - name: traceparent
+            value: 00-c20ef39322a9e006473be74f0b273cdd-467d368ae8632d94-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 425
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  Codebase context from file path
+                  src/existing/first-function.test.ts: //###CONTENT_MARKER###
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Here is my selected code from my codebase file
+                  src/existing/first-function.ts, enclosed in <SELECTEDCODE7662>
+                  tags:
+
+                  <SELECTEDCODE7662>export function trickyLogic(a: number, b: number): number {
+                      if (a === 0) {
+                          return 1
+                      }
+                      if (b === 2) {
+                          return 1
+                      }
+
+                      return a - b
+                  }
+
+
+
+                  </SELECTEDCODE7662>
+
+
+                  As my programming assistant and an expert in testing code, follow instructions below to generate code for my selected code: Review the shared code context to identify the testing framework and libraries in use. Then, create a new test suite with multiple new unit tests for my selected code following the same patterns, testing framework, conventions, and libraries as shown in the shared context. Pay attention to the shared context to ensure that your response code does not contain cases that have already been covered. Focus on generating new unit tests for uncovered cases. Respond only with the fully completed code for the new tests without any added comments, fragments, or TODO. The new tests should validate the expected functionality and cover edge cases for the selected code. The goal is to provide me with a new test suite that I can add to the end of the existing test file. Enclose only the new test suite without any import statements or modules in your response. Do not repeat tests from the shared context.
+
+
+                  RULES:
+
+                  - Do not enclose response with any markdown formatting or triple backticks.
+
+                  - Enclose only the unit tests between <CODE5711> XML tags.
+
+                  - Your response must start with the suggested file path between <TESTFILE7041> XML tags, ensuring it aligns with the directory structure and conventions from the shared context
+              - speaker: assistant
+                text: <CODE5711><TESTFILE7041>
+            model: anthropic/claude-3-sonnet-20240229
+            stopSequences:
+              - </CODE5711>
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+          - name: client-name
+            value: generate-unit-test
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=generate-unit-test&client-version=v1
+      response:
+        bodySize: 154110
+        content:
+          mimeType: text/event-stream
+          size: 154110
+          text: >+
+            event: completion
+
+            data: {"completion":"src/existing/first-function.test.ts\u003c/TESTFILE7041\u003e\n\ndescribe('trickyLogic', () =\u003e {\n    it('should return 1 when a is 0 and b is any value', () =\u003e {\n        expect(trickyLogic(0, 5)).toBe(1);\n        expect(trickyLogic(0, -2)).toBe(1);\n    });\n\n    it('should return 1 when b is 2 and a is any non-zero value', () =\u003e {\n        expect(trickyLogic(1, 2)).toBe(1);\n        expect(trickyLogic(-5, 2)).toBe(1);\n    });\n\n    it('should return a - b when a is non-zero and b is not 2', () =\u003e {\n        expect(trickyLogic(5, 3)).toBe(2);\n        expect(trickyLogic(-2, 4)).toBe(-6);\n    });\n\n    it('should handle edge cases for valid inputs', () =\u003e {\n        expect(trickyLogic(0, 2)).toBe(1);\n        expect(trickyLogic(Number.MAX_SAFE_INTEGER, 0)).toBe(1);\n        expect(trickyLogic(-Number.MAX_SAFE_INTEGER, 2)).toBe(1);\n    });\n});\n","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 28 May 2024 13:11:02 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-05-28T13:11:00.373Z
       time: 0
       timings:
         blocked: -1
