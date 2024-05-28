@@ -100,7 +100,7 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:Auth:connected',
         'CodyVSCodeExtension:chat-question:submitted',
         'CodyVSCodeExtension:chat-question:executed',
-    'CodyVSCodeExtension:abuseUsageLimitCTA:shown',
+        'CodyVSCodeExtension:abuseUsageLimitCTA:shown',
     ],
     expectedV2Events: [
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
