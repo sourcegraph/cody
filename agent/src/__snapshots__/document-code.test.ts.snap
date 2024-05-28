@@ -19,6 +19,18 @@ function recordLog() {
 "
 `;
 
+exports[`Document Code > commands/document (Kotlin class) 1`] = `
+"class He/**
+ * Prints "Hello, World!" to the console.
+ */
+/* CURSOR */llo {
+    fun greeting(): String {
+        return "Hello, world!"
+    }
+}
+"
+`;
+
 exports[`Document Code > commands/document (Method as part of a class) 1`] = `
 "const foo = 42
 

@@ -39,4 +39,18 @@ describe('Document Code', () => {
     it('commands/document (nested test case)', async () => {
         expect(await client.documentCode(workspace.file('src', 'example.test.ts'))).toMatchSnapshot()
     })
+
+    it.only('commands/document (Kotlin class name)', async () => {
+        expect(await client.documentCode(workspace.file('src', 'Hello.kt'))).toMatchInlineSnapshot(`
+          "class He/**
+           * Prints "Hello, World!" to the console.
+           */
+          /* CURSOR */llo {
+              fun greeting(): String {
+                  return "Hello, world!"
+              }
+          }
+          "
+        `)
+    })
 })
