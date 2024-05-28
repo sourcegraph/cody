@@ -3,6 +3,7 @@ import { type FunctionComponent, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../Chat'
 import { UserAvatar } from '../../../../components/UserAvatar'
 import {
+    type PromptEditorRefAPI,
     type SerializedPromptEditorValue,
     serializedPromptEditorStateFromChatMessage,
 } from '../../../../promptEditor/PromptEditor'
@@ -36,6 +37,7 @@ export const HumanMessageCell: FunctionComponent<{
     isEditorInitiallyFocused?: boolean
 
     className?: string
+    editorRef?: React.RefObject<PromptEditorRefAPI | null>
 
     /** For use in storybooks only. */
     __storybook__focus?: boolean
@@ -52,6 +54,7 @@ export const HumanMessageCell: FunctionComponent<{
     onSubmit,
     isEditorInitiallyFocused,
     className,
+    editorRef,
     __storybook__focus,
 }) => {
     const initialEditorState = useMemo(
@@ -77,6 +80,7 @@ export const HumanMessageCell: FunctionComponent<{
                     onSubmit={onSubmit}
                     disabled={!chatEnabled}
                     isEditorInitiallyFocused={isEditorInitiallyFocused}
+                    editorRef={editorRef}
                     __storybook__focus={__storybook__focus}
                 />
             }

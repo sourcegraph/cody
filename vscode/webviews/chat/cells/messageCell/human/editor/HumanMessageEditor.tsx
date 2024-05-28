@@ -5,6 +5,7 @@ import {
     type FunctionComponent,
     useCallback,
     useEffect,
+    useImperativeHandle,
     useRef,
     useState,
 } from 'react'
@@ -49,6 +50,8 @@ export const HumanMessageEditor: FunctionComponent<{
     isEditorInitiallyFocused?: boolean
     className?: string
 
+    editorRef?: React.RefObject<PromptEditorRefAPI | null>
+
     /** For use in storybooks only. */
     __storybook__focus?: boolean
 }> = ({
@@ -65,9 +68,11 @@ export const HumanMessageEditor: FunctionComponent<{
     onSubmit,
     isEditorInitiallyFocused,
     className,
+    editorRef: parentEditorRef,
     __storybook__focus,
 }) => {
     const editorRef = useRef<PromptEditorRefAPI>(null)
+    useImperativeHandle(parentEditorRef, (): PromptEditorRefAPI | null => editorRef.current, [])
 
     // The only PromptEditor state we really need to track in our own state is whether it's empty.
     const [isEmptyEditorValue_, setIsEmptyEditorValue] = useState(initialEditorState === undefined)
