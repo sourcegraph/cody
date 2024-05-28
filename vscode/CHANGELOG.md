@@ -14,6 +14,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Telemetry: Adds a new telemetry event when users uninstall the extension. [pull/4246](https://github.com/sourcegraph/cody/pull/4246)
 - Chat: Added @-mention remote repositories search provider for enterprise. [pull/4311](https://github.com/sourcegraph/cody/pull/4311)
 - Chat: Editor selection is now included in all chats by default. []()
+- Chat: Assistant responses now have a "Try again with different context" line at the bottom with ways you can improve the context used to generate the response. [pull/4317](https://github.com/sourcegraph/cody/pull/4317)
 
 ### Fixed
 

@@ -464,6 +464,17 @@ export class TestClient extends MessageHandler {
         this.notify(method, protocolDocument)
     }
 
+    public async documentCode(uri: vscode.Uri): Promise<string> {
+        await this.openFile(uri, { removeCursor: false })
+        const task = await this.request('editCommands/document', null)
+        await this.taskHasReachedAppliedPhase(task)
+        const lenses = this.codeLenses.get(uri.toString()) ?? []
+        expect(lenses).toHaveLength(0) // Code lenses are now handled client side
+
+        await this.request('editTask/accept', { id: task.id })
+        return this.workspace.getDocument(uri)?.content ?? ''
+    }
+
     public async autocompleteText(params?: Partial<AutocompleteParams>): Promise<string[]> {
         const result = await this.autocomplete(params)
         return result.items.map(item => item.insertText)

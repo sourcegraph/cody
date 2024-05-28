@@ -1,6 +1,6 @@
 import { URI } from 'vscode-uri'
 
-import { type ChatMessage, ps } from '@sourcegraph/cody-shared'
+import { type ChatMessage, ContextItemSource, ps } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from '../Chat'
 import { FILE_MENTION_EDITOR_STATE_FIXTURE } from '../promptEditor/fixtures'
 
@@ -92,7 +92,7 @@ export const FIXTURE_TRANSCRIPT: Record<
                     kind: 'function',
                     range: { start: { line: 1, character: 0 }, end: { line: 8, character: 0 } },
                 },
-                { type: 'file', uri: URI.file('dir/dir/file-a-1.py') },
+                { type: 'file', uri: URI.file('dir/dir/file-a-2.py'), source: ContextItemSource.Search },
                 {
                     type: 'file',
                     uri: URI.file('README.md'),
