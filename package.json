@@ -27,7 +27,9 @@
     "test:e2e": "pnpm -C vscode test:e2e",
     "generate-agent-kotlin-bindings": "./agent/scripts/generate-agent-kotlin-bindings.sh",
     "update-agent-recordings": "pnpm build && CODY_KEEP_UNUSED_RECORDINGS=false CODY_RECORD_IF_MISSING=true vitest agent/src",
-    "update-symf-recordings": "rm -rf recordings && CODY_RECORD_IF_MISSING=true vitest vscode/src/local-context/symf.test.ts"
+    "update-symf-recordings": "rm -rf recordings && CODY_RECORD_IF_MISSING=true vitest vscode/src/local-context/symf.test.ts",
+    "openctx:link": "cd ../openctx pnpm -C lib/client link --global && pnpm -C lib/schema link --global && pnpm -C lib/protocol link --global && pnpm -C client/vscode-lib link --global && cd ../cody && pnpm link --global @openctx/client && pnpm link --global @openctx/schema &&  pnpm link --global @openctx/protocol && cd vscode && pnpm link --global @openctx/vscode-lib",
+    "openctx:unlink": "pnpm unlink --global @openctx/client && pnpm unlink --global @openctx/schema &&  pnpm unlink --global @openctx/protocol && cd vscode && pnpm unlink --global @openctx/vscode-lib"
   },
   "devDependencies": {
     "@biomejs/biome": "1.7.2",
