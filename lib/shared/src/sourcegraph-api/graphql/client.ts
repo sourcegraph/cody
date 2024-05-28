@@ -34,6 +34,7 @@ import {
     REPOSITORY_IDS_QUERY,
     REPOSITORY_ID_QUERY,
     REPOSITORY_LIST_QUERY,
+    REPOSITORY_SEARCH_QUERY,
     REPO_NAME_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
 } from './queries'
@@ -146,6 +147,15 @@ export interface PackageListResponse {
 }
 
 export interface RepoListResponse {
+    repositories: {
+        nodes: { name: string; id: string }[]
+        pageInfo: {
+            endCursor: string | null
+        }
+    }
+}
+
+export interface RepoSearchResponse {
     repositories: {
         nodes: { name: string; id: string; url: string }[]
         pageInfo: {
@@ -570,12 +580,26 @@ export class SourcegraphGraphQLAPIClient {
      * @param after the last repository retrieved, if any, to continue enumerating the list.
      * @returns the list of repositories. If `endCursor` is null, this is the end of the list.
      */
-    public async getRepoList(
+    public async getRepoList(first: number, after?: string): Promise<RepoListResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<RepoListResponse>>(REPOSITORY_LIST_QUERY, {
+            first,
+            after: after || null,
+        }).then(response => extractDataOrError(response, data => data))
+    }
+
+    /**
+     * Searches for repositories from the Sourcegraph instance.
+     * @param first the number of repositories to retrieve.
+     * @param after the last repository retrieved, if any, to continue enumerating the list.
+     * @param query the query to search the repositories.
+     * @returns the list of repositories. If `endCursor` is null, this is the end of the list.
+     */
+    public async searchRepos(
         first: number,
         after?: string,
         query?: string
-    ): Promise<RepoListResponse | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<RepoListResponse>>(REPOSITORY_LIST_QUERY, {
+    ): Promise<RepoSearchResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<RepoSearchResponse>>(REPOSITORY_SEARCH_QUERY, {
             first,
             after: after || null,
             query,

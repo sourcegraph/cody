@@ -17,7 +17,7 @@ const RemoteRepositorySearch: Provider & {
         }
 
         try {
-            const dataOrError = await graphqlClient.getRepoList(10, undefined, query)
+            const dataOrError = await graphqlClient.searchRepos(10, undefined, query)
 
             if (isError(dataOrError) || dataOrError === null) {
                 return []

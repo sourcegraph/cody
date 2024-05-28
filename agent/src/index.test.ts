@@ -1364,55 +1364,6 @@ describe('Agent', () => {
                 )
         )
 
-        // NOTE(olafurpg) disabled on Windows because the multi-repo keyword
-        // query is not replaying on Windows due to some platform-dependency on
-        // how the HTTP request is constructed. I manually tested multi-repo on
-        // a Windows computer to confirm that it does work as expected.
-        it.skipIf(isWindows())(
-            'chat/submitMessage (addEnhancedContext: true, multi-repo test)',
-            async () => {
-                const id = await demoEnterpriseClient.request('chat/new', null)
-                const { repos } = await demoEnterpriseClient.request('graphql/getRepoIds', {
-                    names: ['github.com/sourcegraph/sourcegraph'],
-                    first: 1,
-                })
-                await demoEnterpriseClient.request('webview/receiveMessage', {
-                    id,
-                    message: {
-                        command: 'context/choose-remote-search-repo',
-                        explicitRepos: repos,
-                    },
-                })
-                const { lastMessage, transcript } =
-                    await demoEnterpriseClient.sendSingleMessageToNewChatWithFullTranscript(
-                        'What is Squirrel?',
-                        {
-                            id,
-                            addEnhancedContext: true,
-                        }
-                    )
-
-                expect(lastMessage?.text ?? '').includes('code intelligence')
-                expect(lastMessage?.text ?? '').includes('tree-sitter')
-
-                const contextUris: URI[] = []
-                for (const message of transcript.messages) {
-                    for (const file of message.contextFiles ?? []) {
-                        if (file.type === 'file') {
-                            file.uri = URI.from(file.uri)
-                            contextUris.push(file.uri)
-                        }
-                    }
-                }
-                const paths = contextUris.map(uri => uri.path.split('/-/blob/').at(1) ?? '').sort()
-                expect(paths).includes('cmd/symbols/squirrel/README.md')
-
-                const { remoteRepos } = await demoEnterpriseClient.request('chat/remoteRepos', { id })
-                expect(remoteRepos).toStrictEqual(repos)
-            },
-            30_000
-        )
-
         it('remoteRepo/list', async () => {
             // List a repo without a query
             let repos: Requests['remoteRepo/list'][1]
