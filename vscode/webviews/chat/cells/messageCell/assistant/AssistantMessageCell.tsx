@@ -13,12 +13,25 @@ import { FeedbackButtons } from '../../../components/FeedbackButtons'
 import { LoadingDots } from '../../../components/LoadingDots'
 import { useChatModelByID } from '../../../models/chatModelContext'
 import { BaseMessageCell, MESSAGE_CELL_AVATAR_SIZE } from '../BaseMessageCell'
+import { ContextFocusActions } from './ContextFocusActions'
+
+export interface PriorHumanMessageInfo {
+    hasExplicitMentions: boolean
+    addEnhancedContext: boolean
+
+    rerunWithEnhancedContext: (withEnhancedContext: boolean) => void
+    appendAtMention: () => void
+}
 
 /**
  * A component that displays a chat message from the assistant.
  */
 export const AssistantMessageCell: FunctionComponent<{
     message: ChatMessage
+
+    /** Information about the human message that led to this assistant response. */
+    humanMessage: PriorHumanMessageInfo | null
+
     userInfo: UserAccountInfo
     isLoading: boolean
 
@@ -32,6 +45,7 @@ export const AssistantMessageCell: FunctionComponent<{
     guardrails?: Guardrails
 }> = ({
     message,
+    humanMessage,
     userInfo,
     isLoading,
     showFeedbackButtons,
@@ -81,6 +95,12 @@ export const AssistantMessageCell: FunctionComponent<{
                         />
                     ) : (
                         isLoading && <LoadingDots />
+                    )}
+                    {humanMessage && (
+                        <ContextFocusActions
+                            humanMessage={humanMessage}
+                            className="tw-mt-3 tw-text-muted-foreground tw-text-sm"
+                        />
                     )}
                 </>
             }

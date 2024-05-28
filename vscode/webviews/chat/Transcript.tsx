@@ -1,8 +1,14 @@
-import { type ChatMessage, type ContextItem, type Guardrails, isDefined } from '@sourcegraph/cody-shared'
-import { useCallback } from 'react'
+import {
+    type ChatMessage,
+    type ContextItem,
+    ContextItemSource,
+    type Guardrails,
+    isDefined,
+} from '@sourcegraph/cody-shared'
+import { type MutableRefObject, useCallback, useRef } from 'react'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
-import type { SerializedPromptEditorValue } from '../promptEditor/PromptEditor'
+import type { PromptEditorRefAPI, SerializedPromptEditorValue } from '../promptEditor/PromptEditor'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 import styles from './Transcript.module.css'
@@ -36,6 +42,8 @@ export const Transcript: React.FunctionComponent<{
     postMessage,
     guardrails,
 }) => {
+    const editorRefs = useRef<MutableRefObject<PromptEditorRefAPI | null>[]>([])
+
     const messageToTranscriptItem = (
         message: ChatMessage,
         messageIndexInTranscript: number
@@ -53,6 +61,12 @@ export const Transcript: React.FunctionComponent<{
             (messageIndexInTranscript === transcript.length - 1 ||
                 messageIndexInTranscript === transcript.length - 2)
 
+        const priorHumanMessageIndex = messageIndexInTranscript - 1
+        const priorHumanMessage =
+            message.speaker === 'assistant' ? transcript.at(priorHumanMessageIndex) : undefined
+        const nextAssistantMessage =
+            message.speaker === 'human' ? transcript.at(messageIndexInTranscript + 1) : undefined
+
         return message.speaker === 'human' ? (
             [
                 <HumanMessageCell
@@ -68,21 +82,15 @@ export const Transcript: React.FunctionComponent<{
                         editorValue: SerializedPromptEditorValue,
                         addEnhancedContext: boolean
                     ): void => {
-                        getVSCodeAPI().postMessage({
-                            command: 'edit',
-                            index: messageIndexInTranscript,
-                            text: editorValue.text,
-                            editorState: editorValue.editorState,
-                            contextFiles: editorValue.contextItems,
-                            addEnhancedContext,
-                        })
-                        focusLastHumanMessageEditor()
+                        editHumanMessage(messageIndexInTranscript, editorValue, addEnhancedContext)
                     }}
+                    editorRef={editorRefAtIndex(editorRefs.current, messageIndexInTranscript)}
                 />,
                 (message.contextFiles && message.contextFiles.length > 0) || isLastMessage ? (
                     <ContextCell
                         key={`${messageIndexInTranscript}-context`}
                         contextFiles={message.contextFiles}
+                        model={nextAssistantMessage?.model}
                     />
                 ) : null,
             ].filter(isDefined)
@@ -90,6 +98,36 @@ export const Transcript: React.FunctionComponent<{
             <AssistantMessageCell
                 key={messageIndexInTranscript}
                 message={message}
+                humanMessage={{
+                    hasExplicitMentions: Boolean(
+                        priorHumanMessage!.contextFiles?.some(
+                            item => item.source === ContextItemSource.User
+                        )
+                    ),
+                    addEnhancedContext: Boolean(
+                        priorHumanMessage!.contextFiles?.some(
+                            item =>
+                                item.source === ContextItemSource.Unified ||
+                                item.source === ContextItemSource.Embeddings ||
+                                item.source === ContextItemSource.Search
+                        )
+                    ),
+                    rerunWithEnhancedContext: (withEnhancedContext: boolean) => {
+                        const editorValue = editorRefs.current
+                            .at(priorHumanMessageIndex)
+                            ?.current?.getSerializedValue()
+                        if (editorValue) {
+                            editHumanMessage(
+                                messageIndexInTranscript - 1,
+                                editorValue,
+                                withEnhancedContext
+                            )
+                        }
+                    },
+                    appendAtMention: () => {
+                        editorRefs.current.at(priorHumanMessageIndex)?.current?.appendText('@', true)
+                    },
+                }}
                 userInfo={userInfo}
                 isLoading={false}
                 showFeedbackButtons={
@@ -126,6 +164,7 @@ export const Transcript: React.FunctionComponent<{
                 transcript.at(-1)?.contextFiles && (
                     <AssistantMessageCell
                         message={messageInProgress}
+                        humanMessage={null}
                         isLoading={true}
                         showFeedbackButtons={false}
                         copyButtonOnSubmit={copyButtonOnSubmit}
@@ -155,6 +194,18 @@ export const Transcript: React.FunctionComponent<{
     )
 }
 
+function editorRefAtIndex(
+    editorRefs: MutableRefObject<PromptEditorRefAPI | null>[],
+    i: number
+): MutableRefObject<PromptEditorRefAPI | null> {
+    let ref = editorRefs.at(i)
+    if (ref === undefined) {
+        ref = { current: null }
+        editorRefs[i] = ref
+    }
+    return ref
+}
+
 function isLastAssistantMessageError(transcript: readonly ChatMessage[]): boolean {
     const lastMessage = transcript.at(-1)
     return Boolean(lastMessage && lastMessage.speaker === 'assistant' && lastMessage.error !== undefined)
@@ -165,4 +216,20 @@ export function focusLastHumanMessageEditor(): void {
     const elements = document.querySelectorAll<HTMLElement>('[data-lexical-editor]')
     const lastEditor = elements.item(elements.length - 1)
     lastEditor?.focus()
+}
+
+function editHumanMessage(
+    messageIndexInTranscript: number,
+    editorValue: SerializedPromptEditorValue,
+    addEnhancedContext: boolean
+): void {
+    getVSCodeAPI().postMessage({
+        command: 'edit',
+        index: messageIndexInTranscript,
+        text: editorValue.text,
+        editorState: editorValue.editorState,
+        contextFiles: editorValue.contextItems,
+        addEnhancedContext,
+    })
+    focusLastHumanMessageEditor()
 }
