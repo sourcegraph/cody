@@ -33,7 +33,7 @@ test.extend<ExpectedEvents>({
         'cody.chat-question:submitted',
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
-        // 'cody.upsellUsageLimitCTA:shown',
+        'cody.upsellUsageLimitCTA:shown',
     ],
 })('shows upgrade rate limit message for free users', async ({ page, sidebar }) => {
     await fetch(`${mockServer.SERVER_URL}/.test/completions/triggerRateLimit/free`, {
@@ -74,7 +74,7 @@ test.extend<ExpectedEvents>({
         'cody.chat-question:submitted',
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
-        // 'cody.abuseUsageLimitCTA:shown',
+        'cody.abuseUsageLimitCTA:shown',
     ],
 })('shows standard rate limit message for pro users', async ({ page, sidebar }) => {
     await fetch(`${mockServer.SERVER_URL}/.test/completions/triggerRateLimit/pro`, {
@@ -100,7 +100,7 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:Auth:connected',
         'CodyVSCodeExtension:chat-question:submitted',
         'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:abuseUsageLimitCTA:shown',
+    'CodyVSCodeExtension:abuseUsageLimitCTA:shown',
     ],
     expectedV2Events: [
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
@@ -115,7 +115,7 @@ test.extend<ExpectedEvents>({
         'cody.chat-question:submitted',
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
-        // 'cody.abuseUsageLimitCTA:shown',
+        'cody.abuseUsageLimitCTA:shown',
     ],
 })('shows standard rate limit message for non-dotCom users', async ({ page, sidebar }) => {
     await fetch(`${mockServer.SERVER_URL}/.test/completions/triggerRateLimit`, {

@@ -1,11 +1,12 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 
-import { type ChatError, RateLimitError, type TelemetryRecorder } from '@sourcegraph/cody-shared'
+import { type ChatError, RateLimitError } from '@sourcegraph/cody-shared'
 
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
+import { createWebviewTelemetryRecorder } from '../utils/telemetry'
 import styles from './ErrorItem.module.css'
 
 /**
@@ -15,15 +16,13 @@ export const ErrorItem: React.FunctionComponent<{
     error: Omit<ChatError, 'isChatErrorGuard'>
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
     postMessage?: ApiPostMessage
-    telemetryRecorder: TelemetryRecorder
-}> = ({ error, userInfo, postMessage, telemetryRecorder }) => {
+}> = ({ error, userInfo, postMessage }) => {
     if (typeof error !== 'string' && error.name === RateLimitError.errorName && postMessage) {
         return (
             <RateLimitErrorItem
                 error={error as RateLimitError}
                 userInfo={userInfo}
                 postMessage={postMessage}
-                telemetryRecorder={telemetryRecorder}
             />
         )
     }
@@ -50,14 +49,13 @@ const RateLimitErrorItem: React.FunctionComponent<{
     error: RateLimitError
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
     postMessage: ApiPostMessage
-    telemetryRecorder: TelemetryRecorder
-}> = ({ error, userInfo, postMessage, telemetryRecorder }) => {
+}> = ({ error, userInfo, postMessage }) => {
     // Only show Upgrades if both the error said an upgrade was available and we know the user
     // has not since upgraded.
     const isEnterpriseUser = userInfo.isDotComUser !== true
     const canUpgrade = error.upgradeIsAvailable && !userInfo?.isCodyProUser
     const tier = isEnterpriseUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
-
+    const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(postMessage), [postMessage])
     // Only log once on mount
     // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally only logs once on mount
     React.useEffect(() => {
@@ -89,6 +87,7 @@ const RateLimitErrorItem: React.FunctionComponent<{
                 eventName: 'CodyVSCodeExtension:upsellUsageLimitCTA:clicked',
                 properties: { limit_type: 'chat_commands', call_to_action, tier },
             })
+            telemetryRecorder.recordEvent('test', 'action')
             telemetryRecorder.recordEvent('cody.upsellUsageLimitCTA', 'clicked', {
                 privateMetadata: {
                     limit_type: 'chat_commands',
