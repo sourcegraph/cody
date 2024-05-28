@@ -23,6 +23,8 @@ class DocumentCodeSession(
     }
   }
 
+  override val commandName = "Document"
+
   companion object {
     private val logger = Logger.getInstance(DocumentCodeSession::class.java)
   }

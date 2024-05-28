@@ -32,6 +32,8 @@ class EditCodeSession(
     }
   }
 
+  override val commandName = "Edit"
+
   companion object {
     private val logger = Logger.getInstance(EditCodeSession::class.java)
   }

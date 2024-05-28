@@ -12,4 +12,6 @@ class TestCodeSession(controller: FixupService, editor: Editor, project: Project
   override fun makeEditingRequest(agent: CodyAgent): CompletableFuture<EditTask> {
     return agent.server.commandsTest()
   }
+
+  override val commandName = "Test"
 }
