@@ -56,9 +56,7 @@ export const WithContextProviders = (props: { children: React.ReactElement }): R
         <context.Provider
             value={{
                 providers,
-                reload: () => {
-                    setProvidersPromise(getAllMentionProvidersMetadata())
-                },
+                reload: loadProviders,
             }}
         >
             {props.children}
