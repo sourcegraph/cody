@@ -40,19 +40,33 @@ export function isValidTestFile(uri: URI): boolean {
  */
 export function isTestFileForOriginal(file: URI, testFile: URI): boolean {
     // Assume not a test file for the current file if they are in different directories
-    // and the testFile's file path do not include test(s)
+    // and the testFile's file path does not include a test dir
+    const pathRegex = /_*tests?_*/i
     if (Utils.dirname(file)?.path !== Utils.dirname(testFile)?.path) {
-        if (!/test/i.test(Utils.dirname(testFile)?.path)) {
+        if (!pathRegex.test(Utils.dirname(testFile)?.path)) {
             return false
         }
     }
 
-    const regex = /[^a-zA-Z0-9]/g
-    const fileName = Utils.basename(file).toLowerCase().replace(regex, '')
-    const testFileName = Utils.basename(testFile).toLowerCase().replace(regex, '')
+    // The file extension should match as it's rare to write a test in another language.
+    // We only copare the last part of the extension to deal with things like `file.spec.ts`
+    const fileExtension = Utils.extname(file).split('.').pop()
+    const testFileExtension = Utils.extname(testFile).split('.').pop()
+    if (fileExtension !== testFileExtension) {
+        return false
+    }
 
-    const strippedFile = fileName.replace('spec', '').replace('test', '')
-    const strippedTestFile = testFileName.replace('spec', '').replace('test', '')
+    // Finally we check if the filename without typical test keywords matches. This is pretty naiive
+    // but seems to cover quite a few test cases.
+    const filenameExcludedCharRegex = /[^a-zA-Z0-9]/g
+
+    const fileName = Utils.basename(file).toLowerCase().replace(filenameExcludedCharRegex, '')
+    const testFileName = Utils.basename(testFile).toLowerCase().replace(filenameExcludedCharRegex, '')
+
+    const filenameExcludedPatternsRegex = /spec|tests?/g
+
+    const strippedFile = fileName.replaceAll(filenameExcludedPatternsRegex, '')
+    const strippedTestFile = testFileName.replaceAll(filenameExcludedPatternsRegex, '')
 
     return strippedFile === strippedTestFile
 }
