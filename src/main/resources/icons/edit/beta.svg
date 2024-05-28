@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="34" height="15" opacity="0.5">
-    <rect x="2" y="2" width="30" height="12" rx="3" ry="3" fill="white" stroke="black" stroke-width="1.5"
-          stroke-opacity="1"/>
-    <text x="17" y="11" fill="black" text-anchor="middle" font-size="9" font-weight="bold">BETA
-    </text>
-</svg>

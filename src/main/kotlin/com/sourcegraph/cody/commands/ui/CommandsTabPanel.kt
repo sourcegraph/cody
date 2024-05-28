@@ -13,7 +13,6 @@ import com.intellij.openapi.keymap.KeymapUtil
 import com.intellij.openapi.project.Project
 import com.intellij.ui.TitledSeparator
 import com.intellij.ui.components.JBPanelWithEmptyText
-import com.sourcegraph.cody.Icons
 import com.sourcegraph.cody.commands.CommandId
 import com.sourcegraph.cody.edit.FixupService
 import com.sourcegraph.cody.edit.actions.DocumentCodeAction
@@ -70,22 +69,14 @@ class CommandsTabPanel(
 
   private fun addInlineEditActionButton(actionId: String) {
     val action = ActionManagerEx.getInstanceEx().getAction(actionId)
-    val button =
-        addButton(
-            actionId, action.templatePresentation.text, action.templatePresentation.mnemonic) {
-              val editor =
-                  FileEditorManager.getInstance(project).selectedTextEditor ?: return@addButton
-              val dataContext = (editor as? EditorEx)?.dataContext ?: return@addButton
-              val managerEx = ActionManagerEx.getInstanceEx()
-              val event =
-                  AnActionEvent(
-                      null, dataContext, ActionPlaces.UNKNOWN, Presentation(), managerEx, 0)
-              ActionUtil.performActionDumbAwareWithCallbacks(action, event)
-            }
-
-    val betaIcon = JLabel(Icons.Edit.Beta)
-    betaIcon.border = BorderFactory.createEmptyBorder(0, 5, 0, 0)
-    button.add(betaIcon, BorderLayout.LINE_START)
+    addButton(actionId, action.templatePresentation.text, action.templatePresentation.mnemonic) {
+      val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return@addButton
+      val dataContext = (editor as? EditorEx)?.dataContext ?: return@addButton
+      val managerEx = ActionManagerEx.getInstanceEx()
+      val event =
+          AnActionEvent(null, dataContext, ActionPlaces.UNKNOWN, Presentation(), managerEx, 0)
+      ActionUtil.performActionDumbAwareWithCallbacks(action, event)
+    }
   }
 
   private fun addCommandButton(commandId: CommandId) {
