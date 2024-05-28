@@ -151,8 +151,12 @@ export async function executeDocCommand(
 
         const selectionText = document?.getText(range)
         logDebug(
-            'executeDocCommand', // Don't spam the logs with the entire selected file contents.
-            `selectionText: ${selectionText.slice(0, 70)}${selectionText.length > 70 ? '...' : ''}`
+            'executeDocCommand',
+            `selectionText: ${
+                selectionText
+                    ? selectionText.slice(0, 70) + (selectionText.length > 70 ? '...' : '')
+                    : 'null'
+            }`
         )
 
         if (!selectionText?.trim()) {
