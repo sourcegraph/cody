@@ -15,9 +15,9 @@ import {
 import { clsx } from 'clsx'
 import {
     ArrowRightIcon,
-    BookOpenTextIcon,
     DatabaseIcon,
     FileTextIcon,
+    LibraryBigIcon,
     LinkIcon,
     PackageIcon,
     SmileIcon,
@@ -28,6 +28,7 @@ import {
     IGNORED_FILE_WARNING_LABEL,
     LARGE_FILE_WARNING_LABEL,
 } from '../../../src/chat/context/constants'
+import RemoteRepositorySearch from '../../../src/context/openctx/remoteRepositorySearch'
 import GithubLogo from '../../icons/providers/github.svg?react'
 import GoogleLogo from '../../icons/providers/google.svg?react'
 import JiraLogo from '../../icons/providers/jira.svg?react'
@@ -35,7 +36,7 @@ import LinearLogo from '../../icons/providers/linear.svg?react'
 import NotionLogo from '../../icons/providers/notion.svg?react'
 import SentryLogo from '../../icons/providers/sentry.svg?react'
 import SlackLogo from '../../icons/providers/slack.svg?react'
-import SourcegraphLogo from '../../icons/providers/slack.svg?react'
+import SourcegraphLogo from '../../icons/providers/sourcegraph.svg?react'
 import styles from './MentionMenuItem.module.css'
 
 function getDescription(item: ContextItem, query: MentionQuery): string {
@@ -98,7 +99,7 @@ export const MentionMenuProviderItemContent: FunctionComponent<{
     const Icon = iconForProvider[provider.id] ?? DatabaseIcon
     return (
         <div className={styles.row} title={provider.id}>
-            <Icon size={16} strokeWidth={1.5} />
+            <Icon size={16} strokeWidth={1.75} />
             {provider.title ?? provider.id}
             <ArrowRightIcon size={16} strokeWidth={1.25} style={{ opacity: '0.5' }} />
         </div>
@@ -127,6 +128,7 @@ const iconForProvider: Record<
     'https://openctx.org/npm/@openctx/provider-sentry': SentryLogo,
     'https://openctx.org/npm/@openctx/provider-notion': NotionLogo,
     'https://openctx.org/npm/@openctx/provider-hello-world': SmileIcon,
-    'https://openctx.org/npm/@openctx/provider-devdocs': BookOpenTextIcon,
+    'https://openctx.org/npm/@openctx/provider-devdocs': LibraryBigIcon,
     'https://openctx.org/npm/@openctx/provider-sourcegraph-search': SourcegraphLogo,
+    [RemoteRepositorySearch.providerUri]: SourcegraphLogo,
 }
