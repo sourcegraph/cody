@@ -4,7 +4,7 @@ import { EditorRefPlugin } from '@lexical/react/LexicalEditorRefPlugin'
 import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary'
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
-import { PlainTextPlugin } from '@lexical/react/LexicalPlainTextPlugin'
+import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { clsx } from 'clsx'
 import { $getRoot, type EditorState, type LexicalEditor, type SerializedEditorState } from 'lexical'
 import { type FunctionComponent, type RefObject, useMemo } from 'react'
@@ -15,6 +15,7 @@ import MentionsPlugin from './plugins/atMentions/atMentions'
 import CodeHighlightPlugin from './plugins/codeHighlight'
 import { DisableEscapeKeyBlursPlugin } from './plugins/disableEscapeKeyBlurs'
 import { KeyboardEventPlugin, type KeyboardEventPluginProps } from './plugins/keyboardEvent'
+import { NoRichTextFormatShortcutsPlugin } from './plugins/noRichTextShortcuts'
 import { OnFocusChangePlugin } from './plugins/onFocus'
 
 interface Props extends KeyboardEventPluginProps {
@@ -63,7 +64,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
         <div className={clsx(styles.editorShell, className)}>
             <div className={styles.editorContainer}>
                 <LexicalComposer initialConfig={initialConfig}>
-                    <PlainTextPlugin
+                    <RichTextPlugin
                         contentEditable={
                             <div className={styles.editorScroller}>
                                 <div className={styles.editor}>
@@ -80,6 +81,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
                         placeholder={<div className={styles.placeholder}>{placeholder}</div>}
                         ErrorBoundary={LexicalErrorBoundary}
                     />
+                    <NoRichTextFormatShortcutsPlugin />
                     <HistoryPlugin />
                     <OnChangePlugin onChange={onChange} ignoreSelectionChange={true} />
                     <MentionsPlugin userInfo={userInfo} />

@@ -66,9 +66,10 @@ export async function getEditSmartSelection(
  */
 export function getEditLineSelection(
     document: vscode.TextDocument,
-    selection: vscode.Range
+    selection: vscode.Range,
+    { forceExpand }: SmartSelectionOptions = {}
 ): vscode.Range {
-    if (selection.isEmpty) {
+    if (selection.isEmpty && !forceExpand) {
         // No selection to expand, do nothing
         return selection
     }

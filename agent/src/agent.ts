@@ -42,12 +42,12 @@ import {
     type MessageWriter,
 } from 'vscode-jsonrpc'
 import { ModelUsage } from '../../lib/shared/src/models/types'
+import type { CommandResult } from '../../vscode/src/CommandResult'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
 import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/execute'
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
 import type { ExtensionClient, ExtensionObjects } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
-import type { CommandResult } from '../../vscode/src/main'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
@@ -1385,7 +1385,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
     ): void {
         this.registerRequest(method, async (params, token) => {
             await this.authenticationPromise
-            return callback(params, token)
+            return callback(params, token).catch(err => {
+                console.error(`Uncaught error from method '${method}'`, err)
+                throw err
+            })
         })
     }
 

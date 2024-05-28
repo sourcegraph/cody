@@ -10,7 +10,7 @@ import {
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { defaultCommands } from '.'
-import type { ChatCommandResult } from '../../main'
+import type { ChatCommandResult } from '../../CommandResult'
 // biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
 import { getContextFileFromCurrentFile } from '../context/current-file'
