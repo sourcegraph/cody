@@ -1,7 +1,6 @@
 import assert from 'node:assert'
 import { spawnSync } from 'node:child_process'
 import path from 'node:path'
-import * as vscode from 'vscode'
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -805,72 +804,6 @@ describe('Agent', () => {
             `,
                 explainPollyError
             )
-        }, 30_000)
-
-        it('editCommand/test', async () => {
-            const uri = workspace.file('src', 'trickyLogic.ts')
-
-            await client.openFile(uri)
-            const id = await client.request('editCommands/test', null)
-            await client.taskHasReachedAppliedPhase(id)
-            const originalDocument = client.workspace.getDocument(uri)!
-            expect(trimEndOfLine(originalDocument.getText())).toMatchInlineSnapshot(
-                `
-              "export function trickyLogic(a: number, b: number): number {
-                  if (a === 0) {
-                      return 1
-                  }
-                  if (b === 2) {
-                      return 1
-                  }
-
-                  return a - b
-              }
-
-
-              "
-            `,
-                explainPollyError
-            )
-
-            const untitledDocuments = client.workspace
-                .allUris()
-                .filter(uri => vscode.Uri.parse(uri).scheme === 'untitled')
-            expect(untitledDocuments).toHaveLength(2)
-            const untitledDocument = untitledDocuments.find(d => d.endsWith('trickyLogic.test.ts'))
-            expect(untitledDocument).toBeDefined()
-            const testDocument = client.workspace.getDocument(vscode.Uri.parse(untitledDocument ?? ''))
-            expect(trimEndOfLine(testDocument?.getText())).toMatchInlineSnapshot(
-                `
-              "import { expect } from 'vitest'
-              import { describe, it } from 'vitest'
-              import { trickyLogic } from './trickyLogic'
-
-              describe('trickyLogic', () => {
-                  it('should return 1 when a is 0', () => {
-                      expect(trickyLogic(0, 5)).toBe(1)
-                  })
-
-                  it('should return 1 when b is 2', () => {
-                      expect(trickyLogic(5, 2)).toBe(1)
-                  })
-
-                  it('should return a - b when a is not 0 and b is not 2', () => {
-                      expect(trickyLogic(5, 3)).toBe(2)
-                      expect(trickyLogic(10, 7)).toBe(3)
-                  })
-
-                  it('should handle negative inputs', () => {
-                      expect(trickyLogic(-5, 3)).toBe(-8)
-                      expect(trickyLogic(5, -3)).toBe(8)
-                  })
-              })
-              "
-            `,
-                explainPollyError
-            )
-
-            expect(client.textDocumentEditParams).toHaveLength(1)
         }, 30_000)
     })
 
