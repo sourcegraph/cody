@@ -6,7 +6,7 @@ import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 
 describe('Document Code', () => {
-    const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
+    const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'document-code'))
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
         name: 'document-code',
