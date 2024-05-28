@@ -990,7 +990,7 @@ export class FixupController
 
         // append response to new file
         const doc = await vscode.workspace.openTextDocument(newFileUri)
-        const pos = new vscode.Position(doc.lineCount - 1, 0)
+        const pos = new vscode.Position(Math.max(doc.lineCount - 1, 0), 0)
         const range = new vscode.Range(pos, pos)
         task.selectionRange = range
         task.fixupFile = this.files.replaceFile(task.fixupFile.uri, newFileUri)
