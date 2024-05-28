@@ -1,5 +1,5 @@
 import type { ContextMentionProviderMetadata } from '@sourcegraph/cody-shared'
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 /** React context data for the available context providers. */
@@ -43,14 +43,14 @@ const getAllMentionProvidersMetadata = async (): Promise<ContextMentionProviderM
 export const WithContextProviders = (props: { children: React.ReactElement }): React.ReactElement => {
     const [providers, setProviders] = useState<ContextMentionProviderMetadata[]>([])
 
-    const loadProviders = async () => {
+    const loadProviders = useCallback(async () => {
         const providersData = await getAllMentionProvidersMetadata()
         setProviders(providersData)
-    }
+    }, [])
 
     useEffect(() => {
         loadProviders()
-    }, [])
+    }, [loadProviders])
 
     return (
         <context.Provider
