@@ -91,7 +91,7 @@ abstract class FixupSession(
       }
 
   init {
-    editor.document.addDocumentListener(documentListener, /* parentDisposable= */ this)
+    document.addDocumentListener(documentListener, /* parentDisposable= */ this)
     Disposer.register(controller, this)
     triggerFixupAsync()
   }
@@ -342,6 +342,7 @@ abstract class FixupSession(
     val documentForFile = FileDocumentManager.getInstance().getDocument(vf)
 
     if (document != documentForFile) {
+      document.removeDocumentListener(documentListener)
       CodyEditorUtil.getAllOpenEditors()
           .firstOrNull { it.document == documentForFile }
           ?.let { newEditor -> editor = newEditor }
@@ -349,6 +350,7 @@ abstract class FixupSession(
       val textFile = ProtocolTextDocument.fromVirtualFile(editor, vf)
       CodyAgentService.withAgent(project) { agent ->
         ensureSelectionRange(agent, textFile)
+        document.addDocumentListener(documentListener, /* parentDisposable= */ this)
         runInEdt { showWorkingGroup() }
       }
     }
