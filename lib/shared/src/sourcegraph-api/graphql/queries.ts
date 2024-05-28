@@ -120,6 +120,21 @@ query Repositories($first: Int!, $after: String) {
 }
 `
 
+export const REPOSITORY_SEARCH_QUERY = `
+query RepositoriesSearch($first: Int!, $after: String, $query: String) {
+    repositories(first: $first, after: $after, query: $query) {
+        nodes {
+            id
+            name
+            url
+        }
+        pageInfo {
+            endCursor
+        }
+    }
+}
+`
+
 export const REPOSITORY_ID_QUERY = `
 query Repository($name: String!) {
 	repository(name: $name) {
