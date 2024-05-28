@@ -101,7 +101,7 @@ export const CURRENT_SITE_CODY_LLM_CONFIGURATION_SMART_CONTEXT = `
 query CurrentSiteCodyLlmConfiguration {
     site {
         codyLLMConfiguration {
-            smartContext
+            smartContextWindow
         }
     }
 }`
