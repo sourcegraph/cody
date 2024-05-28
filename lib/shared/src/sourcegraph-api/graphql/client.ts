@@ -778,6 +778,9 @@ export class SourcegraphGraphQLAPIClient {
         if (process.env.CODY_TESTING === 'true') {
             return this.sendEventLogRequestToTestingAPI(event)
         }
+        if (isAgentTesting) {
+            return {}
+        }
         if (this.config?.telemetryLevel === 'off') {
             return {}
         }

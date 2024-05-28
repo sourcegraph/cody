@@ -29,6 +29,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Fixed a bug where list bullets or numbers were not shown in chat responses. [pull/4294](https://github.com/sourcegraph/cody/pull/4294)
 - Chat: Fixed a bug where long messages could not be scrolled vertically in the input. [pull/4313](https://github.com/sourcegraph/cody/pull/4313)
 - Chat: Copying and pasting @-mentions in the chat input now works. [pull/4319](https://github.com/sourcegraph/cody/pull/4319)
+- Document Code: Fixed an issue where documentation would be incorrectly inserted in the middle of a line. [pull/4325](https://github.com/sourcegraph/cody/pull/4325)
 
 ### Changed
 
@@ -40,6 +41,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: The chat UI has been updated to make messages editable in-place and stream down from the top. [pull/4209](https://github.com/sourcegraph/cody/pull/4209)
 - Chat: Improved chat model selector UI with GPT-4o now as a recommended model, improved usability for Cody Free users, and a chat models documentation link. [pull/4254](https://github.com/sourcegraph/cody/pull/4254)
 - Chat: New welcome screen. [pull/4303](https://github.com/sourcegraph/cody/pull/4303)
+- Chat: Added @-mention provider icons. [pull/4336](https://github.com/sourcegraph/cody/pull/4336)
 
 ## [1.18.2]
 

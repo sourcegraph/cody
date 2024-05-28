@@ -39,4 +39,8 @@ describe('Document Code', () => {
     it('commands/document (nested test case)', async () => {
         expect(await client.documentCode(workspace.file('src', 'example.test.ts'))).toMatchSnapshot()
     })
+
+    it('commands/document (Kotlin class name)', async () => {
+        expect(await client.documentCode(workspace.file('src', 'Hello.kt'))).toMatchSnapshot()
+    })
 })
