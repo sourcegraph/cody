@@ -8476,885 +8476,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 4891dc3f2ce61b11d1079d7eba4156e5
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 731
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_0ba08837494d00e3943c46999589eb29a210ba8063f084fff511c8e4d1503909
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "731"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 334
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: >-
-              
-              mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
-                  logEvent(
-              		event: $event
-              		userCookieID: $userCookieID
-              		url: $url
-              		source: $source
-              		argument: $argument
-              		publicArgument: $publicArgument
-              		client: $client
-              		connectedSiteID: $connectedSiteID
-              		hashedLicenseKey: $hashedLicenseKey
-                  ) {
-              		alwaysNil
-              	}
-              }
-            variables:
-              client: VSCODE_CODY_EXTENSION
-              connectedSiteID: SourcegraphWeb
-              event: CodyVSCodeExtension:Auth:failed
-              source: IDEEXTENSION
-              url: ""
-              userCookieID: ANONYMOUS_USER_COOKIE_ID
-        queryString:
-          - name: LogEventMutation
-            value: null
-        url: https://sourcegraph.com/.api/graphql?LogEventMutation
-      response:
-        bodySize: 22
-        content:
-          mimeType: text/plain; charset=utf-8
-          size: 22
-          text: |
-            Invalid access token.
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 17 Apr 2024 15:21:59 GMT
-          - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "22"
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1263
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 401
-        statusText: Unauthorized
-      startedDateTime: 2024-04-17T15:21:59.764Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 88402ce0bed2155ee631894b10f5f9b6
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 560
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_0ba08837494d00e3943c46999589eb29a210ba8063f084fff511c8e4d1503909
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "560"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 334
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: >-
-              
-              mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String) {
-                  logEvent(
-              		event: $event
-              		userCookieID: $userCookieID
-              		url: $url
-              		source: $source
-              		argument: $argument
-              		publicArgument: $publicArgument
-                  ) {
-              		alwaysNil
-              	}
-              }
-            variables:
-              client: VSCODE_CODY_EXTENSION
-              connectedSiteID: SourcegraphWeb
-              event: CodyVSCodeExtension:Auth:failed
-              source: IDEEXTENSION
-              url: ""
-              userCookieID: ANONYMOUS_USER_COOKIE_ID
-        queryString:
-          - name: LogEventMutation
-            value: null
-        url: https://sourcegraph.com/.api/graphql?LogEventMutation
-      response:
-        bodySize: 22
-        content:
-          mimeType: text/plain; charset=utf-8
-          size: 22
-          text: |
-            Invalid access token.
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 17 Apr 2024 15:30:18 GMT
-          - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "22"
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1263
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 401
-        statusText: Unauthorized
-      startedDateTime: 2024-04-17T15:30:18.096Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 425d722418791ddc5d1b6bf69864489d
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 734
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "734"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 322
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: >-
-              
-              mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
-                  logEvent(
-              		event: $event
-              		userCookieID: $userCookieID
-              		url: $url
-              		source: $source
-              		argument: $argument
-              		publicArgument: $publicArgument
-              		client: $client
-              		connectedSiteID: $connectedSiteID
-              		hashedLicenseKey: $hashedLicenseKey
-                  ) {
-              		alwaysNil
-              	}
-              }
-            variables:
-              client: VSCODE_CODY_EXTENSION
-              connectedSiteID: SourcegraphWeb
-              event: CodyVSCodeExtension:Auth:connected
-              source: IDEEXTENSION
-              url: ""
-              userCookieID: ANONYMOUS_USER_COOKIE_ID
-        queryString:
-          - name: LogEventMutation
-            value: null
-        url: https://sourcegraph.com/.api/graphql?LogEventMutation
-      response:
-        bodySize: 26
-        content:
-          mimeType: application/json
-          size: 26
-          text: "{\"data\":{\"logEvent\":null}}"
-        cookies: []
-        headers:
-          - name: date
-            value: Mon, 27 May 2024 11:54:05 GMT
-          - name: content-type
-            value: application/json
-          - name: content-length
-            value: "26"
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1301
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-27T11:54:05.504Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: e84638239d56aea3e192db311e8edce0
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 753
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "753"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 322
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: >-
-              
-              mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
-                  logEvent(
-              		event: $event
-              		userCookieID: $userCookieID
-              		url: $url
-              		source: $source
-              		argument: $argument
-              		publicArgument: $publicArgument
-              		client: $client
-              		connectedSiteID: $connectedSiteID
-              		hashedLicenseKey: $hashedLicenseKey
-                  ) {
-              		alwaysNil
-              	}
-              }
-            variables:
-              client: VSCODE_CODY_EXTENSION
-              connectedSiteID: SourcegraphWeb
-              event: CodyVSCodeExtension:completion:unexpectedNotSuggested
-              source: IDEEXTENSION
-              url: ""
-              userCookieID: ANONYMOUS_USER_COOKIE_ID
-        queryString:
-          - name: LogEventMutation
-            value: null
-        url: https://sourcegraph.com/.api/graphql?LogEventMutation
-      response:
-        bodySize: 26
-        content:
-          mimeType: application/json
-          size: 26
-          text: "{\"data\":{\"logEvent\":null}}"
-        cookies: []
-        headers:
-          - name: date
-            value: Mon, 27 May 2024 11:54:07 GMT
-          - name: content-type
-            value: application/json
-          - name: content-length
-            value: "26"
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1301
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-27T11:54:07.344Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 0c5c6ac03c63d1dd245e2584dfd14190
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 739
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "739"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 322
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: >-
-              
-              mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
-                  logEvent(
-              		event: $event
-              		userCookieID: $userCookieID
-              		url: $url
-              		source: $source
-              		argument: $argument
-              		publicArgument: $publicArgument
-              		client: $client
-              		connectedSiteID: $connectedSiteID
-              		hashedLicenseKey: $hashedLicenseKey
-                  ) {
-              		alwaysNil
-              	}
-              }
-            variables:
-              client: VSCODE_CODY_EXTENSION
-              connectedSiteID: SourcegraphWeb
-              event: CodyVSCodeExtension:completion:accepted
-              source: IDEEXTENSION
-              url: ""
-              userCookieID: ANONYMOUS_USER_COOKIE_ID
-        queryString:
-          - name: LogEventMutation
-            value: null
-        url: https://sourcegraph.com/.api/graphql?LogEventMutation
-      response:
-        bodySize: 26
-        content:
-          mimeType: application/json
-          size: 26
-          text: "{\"data\":{\"logEvent\":null}}"
-        cookies: []
-        headers:
-          - name: date
-            value: Mon, 27 May 2024 11:54:07 GMT
-          - name: content-type
-            value: application/json
-          - name: content-length
-            value: "26"
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1301
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-27T11:54:07.345Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 4c3f0d17838e7662b90930e80d63f7fd
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 696
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_4a92106dd3be39a589d6e2d0a6e32b705744d4007d74518fdfd1dbf953176dc6
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "696"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 322
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: >-
-              
-              mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
-                  logEvent(
-              		event: $event
-              		userCookieID: $userCookieID
-              		url: $url
-              		source: $source
-              		argument: $argument
-              		publicArgument: $publicArgument
-              		client: $client
-              		connectedSiteID: $connectedSiteID
-              		hashedLicenseKey: $hashedLicenseKey
-                  ) {
-              		alwaysNil
-              	}
-              }
-            variables:
-              client: VSCODE_CODY_EXTENSION
-              event: CodyVSCodeExtension:Auth:failed
-              source: IDEEXTENSION
-              url: ""
-              userCookieID: ANONYMOUS_USER_COOKIE_ID
-        queryString:
-          - name: LogEventMutation
-            value: null
-        url: https://sourcegraph.com/.api/graphql?LogEventMutation
-      response:
-        bodySize: 22
-        content:
-          mimeType: text/plain; charset=utf-8
-          size: 22
-          text: |
-            Invalid access token.
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 28 May 2024 11:40:24 GMT
-          - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "22"
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1263
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 401
-        statusText: Unauthorized
-      startedDateTime: 2024-05-28T11:40:24.257Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 6a383ad3c349e65e487502611fc5098f
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 699
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "699"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 322
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: >-
-              
-              mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
-                  logEvent(
-              		event: $event
-              		userCookieID: $userCookieID
-              		url: $url
-              		source: $source
-              		argument: $argument
-              		publicArgument: $publicArgument
-              		client: $client
-              		connectedSiteID: $connectedSiteID
-              		hashedLicenseKey: $hashedLicenseKey
-                  ) {
-              		alwaysNil
-              	}
-              }
-            variables:
-              client: VSCODE_CODY_EXTENSION
-              event: CodyVSCodeExtension:Auth:connected
-              source: IDEEXTENSION
-              url: ""
-              userCookieID: ANONYMOUS_USER_COOKIE_ID
-        queryString:
-          - name: LogEventMutation
-            value: null
-        url: https://sourcegraph.com/.api/graphql?LogEventMutation
-      response:
-        bodySize: 26
-        content:
-          mimeType: application/json
-          size: 26
-          text: "{\"data\":{\"logEvent\":null}}"
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 28 May 2024 11:40:24 GMT
-          - name: content-type
-            value: application/json
-          - name: content-length
-            value: "26"
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1301
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-28T11:40:24.303Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 154b79bffc48b68ddd99324fcedcdcf9
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 525
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "525"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 322
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: >-
-              
-              mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String) {
-                  logEvent(
-              		event: $event
-              		userCookieID: $userCookieID
-              		url: $url
-              		source: $source
-              		argument: $argument
-              		publicArgument: $publicArgument
-                  ) {
-              		alwaysNil
-              	}
-              }
-            variables:
-              client: VSCODE_CODY_EXTENSION
-              event: CodyVSCodeExtension:Auth:failed
-              source: IDEEXTENSION
-              url: ""
-              userCookieID: ANONYMOUS_USER_COOKIE_ID
-        queryString:
-          - name: LogEventMutation
-            value: null
-        url: https://sourcegraph.com/.api/graphql?LogEventMutation
-      response:
-        bodySize: 26
-        content:
-          mimeType: application/json
-          size: 26
-          text: "{\"data\":{\"logEvent\":null}}"
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 28 May 2024 11:40:24 GMT
-          - name: content-type
-            value: application/json
-          - name: content-length
-            value: "26"
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1301
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-28T11:40:24.497Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: ea3ddfc16f0b52a2180a9bd21c87dc08
       _order: 0
       cache: {}
@@ -9446,106 +8567,6 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-03-15T03:41:08.198Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 0fbaf282549d7435d468a4f5a25fb73a
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 164
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_4a92106dd3be39a589d6e2d0a6e32b705744d4007d74518fdfd1dbf953176dc6
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: defaultClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "164"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 324
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |-
-              
-              query SiteIdentification {
-              	site {
-              		siteID
-              		productSubscription {
-              			license {
-              				hashedKey
-              			}
-              		}
-              	}
-              }
-            variables: {}
-        queryString:
-          - name: SiteIdentification
-            value: null
-        url: https://sourcegraph.com/.api/graphql?SiteIdentification
-      response:
-        bodySize: 22
-        content:
-          mimeType: text/plain; charset=utf-8
-          size: 22
-          text: |
-            Invalid access token.
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 15 Mar 2024 03:41:09 GMT
-          - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "22"
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1263
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 401
-        statusText: Unauthorized
-      startedDateTime: 2024-03-15T03:41:09.280Z
       time: 0
       timings:
         blocked: -1
@@ -9868,6 +8889,106 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-05-28T11:40:24.073Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 0fbaf282549d7435d468a4f5a25fb73a
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 164
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_4a92106dd3be39a589d6e2d0a6e32b705744d4007d74518fdfd1dbf953176dc6
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "164"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.com
+        headersSize: 324
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query SiteIdentification {
+              	site {
+              		siteID
+              		productSubscription {
+              			license {
+              				hashedKey
+              			}
+              		}
+              	}
+              }
+            variables: {}
+        queryString:
+          - name: SiteIdentification
+            value: null
+        url: https://sourcegraph.com/.api/graphql?SiteIdentification
+      response:
+        bodySize: 22
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 22
+          text: |
+            Invalid access token.
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 28 May 2024 11:52:28 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "22"
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1263
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 401
+        statusText: Unauthorized
+      startedDateTime: 2024-05-28T11:52:27.755Z
       time: 0
       timings:
         blocked: -1

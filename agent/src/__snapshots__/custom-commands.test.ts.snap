@@ -1,0 +1,28 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Custom Commands > commands/custom, chat command, open tabs context 1`] = `
+"Here are the filenames you have shared so far as a bulleted list:
+
+- example3.ts
+- example2.ts
+- example1.ts"
+`;
+
+exports[`Custom Commands > commands/custom, edit command, edit mode 1`] = `
+"export interface Animal {
+    name: string
+    makeAnimalSound(): string
+    isMammal: boolean
+    logName(): void
+}
+
+"
+`;
+
+exports[`Custom Commands > commands/custom, edit command, insert mode 1`] = `
+"// hello
+export function sum(a: number, b: number): number {
+    /* CURSOR */
+}
+"
+`;
