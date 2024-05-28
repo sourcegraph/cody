@@ -119,6 +119,9 @@ const iconForProvider: Record<
     [URL_CONTEXT_MENTION_PROVIDER.id]: LinkIcon,
     [PACKAGE_CONTEXT_MENTION_PROVIDER.id]: PackageIcon,
     [GITHUB_CONTEXT_MENTION_PROVIDER.id]: GithubLogo,
+    // todo(tim): OpenCtx providers should be able to specify an icon string, so
+    // we don't have to hardcode these URLs and other people can have their own
+    // GitHub provider etc.
     'https://openctx.org/npm/@openctx/provider-github': GithubLogo,
     'https://openctx.org/npm/@openctx/provider-jira': JiraLogo,
     'https://openctx.org/npm/@openctx/provider-slack': SlackLogo,
