@@ -18,9 +18,6 @@ export const Toolbar: FunctionComponent<{
 
     isEditorFocused: boolean
 
-    /** Whether this editor is for a message whose assistant response is in progress. */
-    isPendingResponse: boolean
-
     onMentionClick?: () => void
 
     onSubmitClick: (addEnhancedContextEnabled: boolean) => void
@@ -36,7 +33,6 @@ export const Toolbar: FunctionComponent<{
 }> = ({
     userInfo,
     isEditorFocused,
-    isPendingResponse,
     onMentionClick,
     onSubmitClick,
     submitDisabled,
@@ -90,7 +86,6 @@ export const Toolbar: FunctionComponent<{
             <SubmitButton
                 onClick={onSubmitClick}
                 isEditorFocused={isEditorFocused}
-                isPendingResponse={isPendingResponse}
                 disabled={submitDisabled}
             />
         </menu>

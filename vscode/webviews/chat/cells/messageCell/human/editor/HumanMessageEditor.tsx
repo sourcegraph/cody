@@ -36,9 +36,6 @@ export const HumanMessageEditor: FunctionComponent<{
     /** Whether this editor is for a message that has been sent already. */
     isSent: boolean
 
-    /** Whether this editor is for a message whose assistant response is in progress. */
-    isPendingResponse: boolean
-
     /** Whether this editor is for a followup message to a still-in-progress assistant response. */
     isPendingPriorResponse: boolean
 
@@ -61,7 +58,6 @@ export const HumanMessageEditor: FunctionComponent<{
     placeholder,
     isFirstMessage,
     isSent,
-    isPendingResponse,
     isPendingPriorResponse,
     disabled = false,
     onChange,
@@ -231,13 +227,12 @@ export const HumanMessageEditor: FunctionComponent<{
                 <Toolbar
                     userInfo={userInfo}
                     isEditorFocused={focused}
-                    isPendingResponse={isPendingResponse}
                     onMentionClick={onMentionClick}
                     onSubmitClick={onSubmitClick}
                     submitDisabled={submitDisabled}
                     onGapClick={onGapClick}
                     focusEditor={focusEditor}
-                    hidden={!focused && isSent && !isPendingResponse}
+                    hidden={!focused && isSent}
                     className={styles.toolbar}
                 />
             )}

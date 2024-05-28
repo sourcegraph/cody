@@ -16,7 +16,7 @@ import { HumanMessageEditor } from './editor/HumanMessageEditor'
 export const HumanMessageCell: FunctionComponent<{
     message: ChatMessage | null
     userInfo: UserAccountInfo
-    chatEnabled?: boolean
+    chatEnabled: boolean
     userContextFromSelection?: ContextItem[]
 
     /** Whether this editor is for the first message (not a followup). */
@@ -24,9 +24,6 @@ export const HumanMessageCell: FunctionComponent<{
 
     /** Whether this editor is for a message that has been sent already. */
     isSent: boolean
-
-    /** Whether this editor is for a message whose assistant response is in progress. */
-    isPendingResponse: boolean
 
     /** Whether this editor is for a followup message to a still-in-progress assistant response. */
     isPendingPriorResponse: boolean
@@ -48,7 +45,6 @@ export const HumanMessageCell: FunctionComponent<{
     userContextFromSelection,
     isFirstMessage,
     isSent,
-    isPendingResponse,
     isPendingPriorResponse,
     onChange,
     onSubmit,
@@ -74,7 +70,6 @@ export const HumanMessageCell: FunctionComponent<{
                     placeholder={isFirstMessage ? 'Message' : 'Followup message'}
                     isFirstMessage={isFirstMessage}
                     isSent={isSent}
-                    isPendingResponse={isPendingResponse}
                     isPendingPriorResponse={isPendingPriorResponse}
                     onChange={onChange}
                     onSubmit={onSubmit}
