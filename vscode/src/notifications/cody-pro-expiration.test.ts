@@ -6,8 +6,8 @@ import {
     FeatureFlag,
     FeatureFlagProvider,
     type SourcegraphGraphQLAPIClient,
+    defaultAuthStatus,
 } from '@sourcegraph/cody-shared'
-import { defaultAuthStatus } from '../chat/protocol'
 import type { AuthProvider } from '../services/AuthProvider'
 import { CodyProExpirationNotifications } from './cody-pro-expiration'
 

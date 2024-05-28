@@ -8,7 +8,7 @@ import * as vscode from 'vscode'
 
 import { fileExists } from '../../local-context/download-symf'
 import { logDebug } from '../../log'
-import { getOSArch } from '../../os'
+import { Arch, Platform, getOSArch } from '../../os'
 import { captureException } from '../../services/sentry/sentry'
 
 // Available releases: https://github.com/sourcegraph/bfg/releases
@@ -58,10 +58,10 @@ export async function downloadBfg(context: vscode.ExtensionContext): Promise<str
             ['x86_64', 'x64'],
         ])
         let rfc795Arch = archRenames.get(arch ?? '') ?? arch
-        if (rfc795Arch === 'arm64' && platform === 'win') {
+        if (rfc795Arch === Arch.Arm64 && platform === Platform.Windows) {
             // On Windows Arm PCs, we rely on emulation and use the x64 binary.
             // See https://learn.microsoft.com/en-us/windows/arm/apps-on-arm-x86-emulation
-            rfc795Arch = 'x64'
+            rfc795Arch = Arch.X64
         }
 
         const bfgContainingDir = path.join(context.globalStorageUri.fsPath, 'cody-engine')
@@ -91,7 +91,7 @@ export async function downloadBfg(context: vscode.ExtensionContext): Promise<str
                     logDebug('CodyEngine', bfgPath)
                     // The zip file contains a binary named `bfg` or `bfg.exe`. We unzip it with that name first and then rename into
                     // a version-specific binary so that we can delete old versions of bfg.
-                    const unzipPath = platform === 'windows' ? 'bfg.exe' : 'bfg'
+                    const unzipPath = platform === Platform.Windows ? 'bfg.exe' : 'bfg'
                     await fspromises.rename(path.join(bfgContainingDir, unzipPath), bfgPath)
                     await fspromises.chmod(bfgPath, 0o755)
                     await fspromises.rm(bfgZip)

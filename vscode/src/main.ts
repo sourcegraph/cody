@@ -142,7 +142,8 @@ const register = async (
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => Promise<void>
 }> => {
     setClientNameVersion(platform.extensionClient.clientName, platform.extensionClient.clientVersion)
-    const authProvider = new AuthProvider(initialConfig)
+    const authProvider = AuthProvider.create(initialConfig)
+    await localStorage.setConfig(initialConfig)
 
     const disposables: vscode.Disposable[] = []
     // Initialize `displayPath` first because it might be used to display paths in error messages
@@ -284,6 +285,7 @@ const register = async (
                 Promise.resolve()
         )
         promises.push(setupAutocomplete())
+        promises.push(localStorage.setConfig(newConfig))
         await Promise.all(promises)
     }
 
