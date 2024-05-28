@@ -99,7 +99,7 @@ interface CodyConfigFeaturesResponse {
 }
 
 interface CodyEnterpriseConfigSmartContextResponse {
-    site: { codyLLMConfiguration: { smartContext: string } | null } | null
+    site: { codyLLMConfiguration: { smartContextWindow: string } | null } | null
 }
 
 interface CurrentUserCodyProEnabledResponse {
@@ -274,7 +274,7 @@ export interface CodyLLMSiteConfiguration {
     completionModel?: string
     completionModelMaxTokens?: number
     provider?: string
-    smartContext?: boolean
+    smartContextWindow?: boolean
 }
 
 export interface CurrentUserCodySubscription {
@@ -507,7 +507,7 @@ export class SourcegraphGraphQLAPIClient {
 
     public async getCodyLLMConfiguration(): Promise<undefined | CodyLLMSiteConfiguration | Error> {
         // fetch Cody LLM provider separately for backward compatability
-        const [configResponse, providerResponse, smartContext] = await Promise.all([
+        const [configResponse, providerResponse, smartContextWindow] = await Promise.all([
             this.fetchSourcegraphAPI<APIResponse<CodyLLMSiteConfigurationResponse>>(
                 CURRENT_SITE_CODY_LLM_CONFIGURATION
             ),
@@ -534,7 +534,7 @@ export class SourcegraphGraphQLAPIClient {
             provider = llmProvider
         }
 
-        return { ...config, provider, smartContext }
+        return { ...config, provider, smartContextWindow }
     }
 
     private async getCodyLLMConfigurationSmartContext(): Promise<boolean> {
@@ -546,7 +546,7 @@ export class SourcegraphGraphQLAPIClient {
                 .then(response => {
                     const smartContextResponse = extractDataOrError(
                         response,
-                        data => data?.site?.codyLLMConfiguration?.smartContext ?? ''
+                        data => data?.site?.codyLLMConfiguration?.smartContextWindow ?? ''
                     )
 
                     if (isError(smartContextResponse)) {
