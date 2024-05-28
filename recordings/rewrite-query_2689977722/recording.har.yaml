@@ -1,5 +1,5 @@
 log:
-  _recordingName: symf
+  _recordingName: rewrite-query
   creator:
     comment: persister:cody-fs
     name: Polly.JS
@@ -1001,7 +1001,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 27 May 2024 13:32:34 GMT
+            value: Tue, 28 May 2024 16:10:27 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1030,7 +1030,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-27T13:32:33.377Z
+      startedDateTime: 2024-05-28T16:10:26.458Z
       time: 0
       timings:
         blocked: -1
@@ -1672,7 +1672,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 27 May 2024 13:32:36 GMT
+            value: Tue, 28 May 2024 16:10:29 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1701,7 +1701,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-27T13:32:36.025Z
+      startedDateTime: 2024-05-28T16:10:28.894Z
       time: 0
       timings:
         blocked: -1
@@ -2333,7 +2333,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 27 May 2024 13:32:38 GMT
+            value: Tue, 28 May 2024 16:10:31 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2362,7 +2362,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-27T13:32:38.012Z
+      startedDateTime: 2024-05-28T16:10:30.444Z
       time: 0
       timings:
         blocked: -1
@@ -3028,7 +3028,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 27 May 2024 13:32:40 GMT
+            value: Tue, 28 May 2024 16:10:32 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -3057,7 +3057,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-27T13:32:39.617Z
+      startedDateTime: 2024-05-28T16:10:32.013Z
       time: 0
       timings:
         blocked: -1
@@ -3753,7 +3753,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 27 May 2024 13:32:42 GMT
+            value: Tue, 28 May 2024 16:10:34 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -3782,7 +3782,1810 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-27T13:32:41.355Z
+      startedDateTime: 2024-05-28T16:10:33.485Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 6238718613e237a0677ac946f74fbed1
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 906
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 255
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            fast: true
+            maxTokensToSample: 400
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: "You are helping the user search over a codebase. List some filename
+                  fragments that would match files relevant to read to answer
+                  the user's query. Present your results in an XML list in the
+                  following format: <keywords><keyword><value>a single
+                  keyword</value><variants>a space separated list of synonyms
+                  and variants of the keyword, including acronyms,
+                  abbreviations, and expansions</variants><weight>a numerical
+                  weight between 0.0 and 1.0 that indicates the importance of
+                  the keyword</weight></keyword></keywords>. Here is the user
+                  query: <userQuery>C'est ou la logique pour recloner les
+                  dépôts?</userQuery>"
+              - speaker: assistant
+            temperature: 0
+            topK: 1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 78283
+        content:
+          mimeType: text/event-stream
+          size: 78283
+          text: >+
+            event: completion
+
+            data: {"completion":"Here","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for base","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeywor","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecl","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keywor","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeywor","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git v","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keywor","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeywor","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keywor","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeywor","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n\u003cvariants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n\u003cvariants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n\u003cvariants\u003econfiguration","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n\u003cvariants\u003econfiguration settings","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n\u003cvariants\u003econfiguration settings\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n\u003cvariants\u003econfiguration settings\u003c/variants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n\u003cvariants\u003econfiguration settings\u003c/variants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n\u003cvariants\u003econfiguration settings\u003c/variants\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n\u003cvariants\u003econfiguration settings\u003c/variants\u003e\n\u003cweight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n\u003cvariants\u003econfiguration settings\u003c/variants\u003e\n\u003cweight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n\u003cvariants\u003econfiguration settings\u003c/variants\u003e\n\u003cweight\u003e0","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n\u003cvariants\u003econfiguration settings\u003c/variants\u003e\n\u003cweight\u003e0.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n\u003cvariants\u003econfiguration settings\u003c/variants\u003e\n\u003cweight\u003e0.6","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n\u003cvariants\u003econfiguration settings\u003c/variants\u003e\n\u003cweight\u003e0.6\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n\u003cvariants\u003econfiguration settings\u003c/variants\u003e\n\u003cweight\u003e0.6\u003c/weight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n\u003cvariants\u003econfiguration settings\u003c/variants\u003e\n\u003cweight\u003e0.6\u003c/weight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n\u003cvariants\u003econfiguration settings\u003c/variants\u003e\n\u003cweight\u003e0.6\u003c/weight\u003e\n\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n\u003cvariants\u003econfiguration settings\u003c/variants\u003e\n\u003cweight\u003e0.6\u003c/weight\u003e\n\u003c/keywor","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n\u003cvariants\u003econfiguration settings\u003c/variants\u003e\n\u003cweight\u003e0.6\u003c/weight\u003e\n\u003c/keyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n\u003cvariants\u003econfiguration settings\u003c/variants\u003e\n\u003cweight\u003e0.6\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n\u003cvariants\u003econfiguration settings\u003c/variants\u003e\n\u003cweight\u003e0.6\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n\u003cvariants\u003econfiguration settings\u003c/variants\u003e\n\u003cweight\u003e0.6\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search for based on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ecloning clone repo repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git vcs version-control\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003elogic reasoning algorithm\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econfig\u003c/value\u003e\n\u003cvariants\u003econfiguration settings\u003c/variants\u003e\n\u003cweight\u003e0.6\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 28 May 2024 16:10:35 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1284
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-05-28T16:10:35.241Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: d530e8a7022d78da28fc793e2a662d14
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 969
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 255
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            fast: true
+            maxTokensToSample: 400
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: "You are helping the user search over a codebase. List some filename
+                  fragments that would match files relevant to read to answer
+                  the user's query. Present your results in an XML list in the
+                  following format: <keywords><keyword><value>a single
+                  keyword</value><variants>a space separated list of synonyms
+                  and variants of the keyword, including acronyms,
+                  abbreviations, and expansions</variants><weight>a numerical
+                  weight between 0.0 and 1.0 that indicates the importance of
+                  the keyword</weight></keyword></keywords>. Here is the user
+                  query: <userQuery>Explain how the context window limit is
+                  calculated. how much budget is given to @-mentions vs. search
+                  context?</userQuery>"
+              - speaker: assistant
+            temperature: 0
+            topK: 1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 94436
+        content:
+          mimeType: text/event-stream
+          size: 94436
+          text: >+
+            event: completion
+
+            data: {"completion":"Here","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the c","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the code","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeywor","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keywor","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeywor","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keywor","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeywor","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keywor","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeywor","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-context","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-context search","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-context search_","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-context search_context","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-context search_context\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-context search_context\u003c/variants","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-context search_context\u003c/variants\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-context search_context\u003c/variants\u003e\n","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-context search_context\u003c/variants\u003e\n\u003cweight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-context search_context\u003c/variants\u003e\n\u003cweight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-context search_context\u003c/variants\u003e\n\u003cweight\u003e0","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-context search_context\u003c/variants\u003e\n\u003cweight\u003e0.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-context search_context\u003c/variants\u003e\n\u003cweight\u003e0.8","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-context search_context\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-context search_context\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-context search_context\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-context search_context\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-context search_context\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keywor","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-context search_context\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-context search_context\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-context search_context\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-context search_context\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"Here are some relevant filename fragments to search the codebase for information on the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation budget-allocation budget_allocation\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch-context search_context\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 28 May 2024 16:10:37 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1284
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-05-28T16:10:36.997Z
       time: 0
       timings:
         blocked: -1
