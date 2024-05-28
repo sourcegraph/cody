@@ -877,11 +877,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 113ddc6c3ac32db0c28ada542aff298a
+    - _id: 7edf90ea650cb304fe26f9d57bd79477
       _order: 0
       cache: {}
       request:
-        bodySize: 159
+        bodySize: 165
         cookies: []
         headers:
           - _fromType: array
@@ -899,7 +899,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "159"
+            value: "165"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -917,7 +917,7 @@ log:
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
-                          smartContext
+                          smartContextWindow
                       }
                   }
               }
@@ -927,22 +927,26 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 124
+        bodySize: 220
         content:
           encoding: base64
           mimeType: application/json
-          size: 124
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eWD53MSiE\
-            uf8vJLUihIlK6XUvMSknNQUpdra2loAAAAA//8DAMltL0dFAAAA\"]"
+          size: 220
+          text: "[\"H4sIAAAAAAAAA1zOsQrCMBRG4Ve5/LMIIi5ZHOJYZwfTITS3JZDcq2mCltJ3F3RzP3ycF\
+            VyKlhnmviLzPPuJYWC9iFZ6Ni4LjZFTIIc5+1KtSuV3vUUJ+nIgFarLg8nBali67mpV\
+            xji14mtUcdjTJQZatFFmL3+Kwxk7JB2+8W8iRWGY0w6DppYF5nDc+q3fPgAAAP//AwD\
+            53SxSqgAAAA==\"]"
           textDecoded:
-            data:
-              site:
-                codyLLMConfiguration:
-                  smartContext: enabled
+            errors:
+              - locations:
+                  - column: 13
+                    line: 5
+                message: Cannot query field "smartContextWindow" on type "CodyLLMConfiguration".
+                  Did you mean "smartContext"?
         cookies: []
         headers:
           - name: date
-            value: Mon, 27 May 2024 11:54:05 GMT
+            value: Tue, 28 May 2024 17:32:30 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -973,7 +977,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-27T11:54:04.854Z
+      startedDateTime: 2024-05-28T17:32:29.977Z
       time: 0
       timings:
         blocked: -1
@@ -1303,117 +1307,6 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-05-27T11:54:05.127Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 425d722418791ddc5d1b6bf69864489d
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 734
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: edit / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "734"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 313
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: >-
-              
-              mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!, $argument: String, $publicArgument: String, $client: String, $connectedSiteID: String, $hashedLicenseKey: String) {
-                  logEvent(
-              		event: $event
-              		userCookieID: $userCookieID
-              		url: $url
-              		source: $source
-              		argument: $argument
-              		publicArgument: $publicArgument
-              		client: $client
-              		connectedSiteID: $connectedSiteID
-              		hashedLicenseKey: $hashedLicenseKey
-                  ) {
-              		alwaysNil
-              	}
-              }
-            variables:
-              client: VSCODE_CODY_EXTENSION
-              connectedSiteID: SourcegraphWeb
-              event: CodyVSCodeExtension:Auth:connected
-              source: IDEEXTENSION
-              url: ""
-              userCookieID: ANONYMOUS_USER_COOKIE_ID
-        queryString:
-          - name: LogEventMutation
-            value: null
-        url: https://sourcegraph.com/.api/graphql?LogEventMutation
-      response:
-        bodySize: 26
-        content:
-          mimeType: application/json
-          size: 26
-          text: "{\"data\":{\"logEvent\":null}}"
-        cookies: []
-        headers:
-          - name: date
-            value: Mon, 27 May 2024 11:54:05 GMT
-          - name: content-type
-            value: application/json
-          - name: content-length
-            value: "26"
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1301
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-27T11:54:05.508Z
       time: 0
       timings:
         blocked: -1
