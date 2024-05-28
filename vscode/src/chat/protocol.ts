@@ -279,60 +279,6 @@ export const ACCOUNT_LIMITS_INFO_URL = new URL(
     'https://sourcegraph.com/docs/cody/troubleshooting#autocomplete-rate-limits'
 )
 
-export const defaultAuthStatus = {
-    endpoint: '',
-    isDotCom: true,
-    isLoggedIn: false,
-    showInvalidAccessTokenError: false,
-    authenticated: false,
-    hasVerifiedEmail: false,
-    requiresVerifiedEmail: false,
-    siteHasCodyEnabled: false,
-    siteVersion: '',
-    userCanUpgrade: false,
-    username: '',
-    primaryEmail: '',
-    displayName: '',
-    avatarURL: '',
-    codyApiVersion: 0,
-} satisfies AuthStatus
-
-export const unauthenticatedStatus = {
-    endpoint: '',
-    isDotCom: true,
-    isLoggedIn: false,
-    showInvalidAccessTokenError: true,
-    authenticated: false,
-    hasVerifiedEmail: false,
-    requiresVerifiedEmail: false,
-    siteHasCodyEnabled: false,
-    siteVersion: '',
-    userCanUpgrade: false,
-    username: '',
-    primaryEmail: '',
-    displayName: '',
-    avatarURL: '',
-    codyApiVersion: 0,
-} satisfies AuthStatus
-
-export const networkErrorAuthStatus = {
-    isDotCom: false,
-    showInvalidAccessTokenError: false,
-    authenticated: false,
-    isLoggedIn: false,
-    hasVerifiedEmail: false,
-    showNetworkError: true,
-    requiresVerifiedEmail: false,
-    siteHasCodyEnabled: false,
-    siteVersion: '',
-    userCanUpgrade: false,
-    username: '',
-    primaryEmail: '',
-    displayName: '',
-    avatarURL: '',
-    codyApiVersion: 0,
-} satisfies Omit<AuthStatus, 'endpoint'>
-
 /** The local environment of the editor. */
 export interface LocalEnv {
     /** Whether the extension is running in VS Code Web (as opposed to VS Code Desktop). */

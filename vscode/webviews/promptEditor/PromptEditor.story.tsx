@@ -2,7 +2,11 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { type FunctionComponent, useState } from 'react'
 import { ContextProvidersDecorator, VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
 import styles from './BaseEditor.story.module.css'
-import { PromptEditor, type SerializedPromptEditorState } from './PromptEditor'
+import {
+    PromptEditor,
+    type SerializedPromptEditorState,
+    serializedPromptEditorStateFromText,
+} from './PromptEditor'
 import { FILE_MENTION_EDITOR_STATE_FIXTURE } from './fixtures'
 
 const meta: Meta<typeof PromptEditor> = {
@@ -52,4 +56,36 @@ export const Interactive: StoryObj<typeof meta> = {
 export const WithInitialValue: StoryObj<typeof meta> = {
     render: props => <PromptEditorWithStateValue {...props} />,
     args: { initialEditorState: FILE_MENTION_EDITOR_STATE_FIXTURE },
+}
+
+export const VerticalScroll: StoryObj<typeof meta> = {
+    render: props => <PromptEditorWithStateValue {...props} />,
+    args: {
+        initialEditorState: serializedPromptEditorStateFromText(
+            new Array(80)
+                .fill(0)
+                .map((_, index) => {
+                    return `Line ${index}`
+                })
+                .join('\n')
+        ),
+    },
+}
+
+export const LongLines: StoryObj<typeof meta> = {
+    render: props => <PromptEditorWithStateValue {...props} />,
+    args: {
+        initialEditorState: serializedPromptEditorStateFromText(
+            new Array(80)
+                .fill(0)
+                .map((_, index) => {
+                    return `Line ${index}${
+                        index % 5 === 0
+                            ? 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+                            : ''
+                    }`
+                })
+                .join('\n')
+        ),
+    },
 }

@@ -127,8 +127,6 @@ export async function start(
         })
     )
 
-    exposeOpenCtxClient(context.secrets)
-
     return vscode.Disposable.from(...disposables)
 }
 
@@ -142,7 +140,8 @@ const register = async (
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => Promise<void>
 }> => {
     setClientNameVersion(platform.extensionClient.clientName, platform.extensionClient.clientVersion)
-    const authProvider = new AuthProvider(initialConfig)
+    const authProvider = AuthProvider.create(initialConfig)
+    await localStorage.setConfig(initialConfig)
 
     const disposables: vscode.Disposable[] = []
     // Initialize `displayPath` first because it might be used to display paths in error messages
@@ -186,6 +185,7 @@ const register = async (
 
     await authProvider.init()
 
+    exposeOpenCtxClient(context.secrets, initialConfig)
     graphqlClient.onConfigurationChange(initialConfig)
     githubClient.onConfigurationChange({ authToken: initialConfig.experimentalGithubAccessToken })
     void featureFlagProvider.syncAuthStatus()
@@ -267,6 +267,7 @@ const register = async (
 
         promises.push(featureFlagProvider.syncAuthStatus())
         graphqlClient.onConfigurationChange(newConfig)
+        exposeOpenCtxClient(secretStorage, newConfig)
         upstreamHealthProvider.onConfigurationChange(newConfig)
         githubClient.onConfigurationChange({ authToken: initialConfig.experimentalGithubAccessToken })
         promises.push(
@@ -284,6 +285,7 @@ const register = async (
                 Promise.resolve()
         )
         promises.push(setupAutocomplete())
+        promises.push(localStorage.setConfig(newConfig))
         await Promise.all(promises)
     }
 

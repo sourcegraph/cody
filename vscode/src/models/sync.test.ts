@@ -1,6 +1,11 @@
-import { ModelProvider, ModelUsage, getDotComDefaultModels } from '@sourcegraph/cody-shared'
+import {
+    ModelProvider,
+    ModelUsage,
+    defaultAuthStatus,
+    getDotComDefaultModels,
+    unauthenticatedStatus,
+} from '@sourcegraph/cody-shared'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { defaultAuthStatus, unauthenticatedStatus } from '../chat/protocol'
 import { syncModelProviders } from './sync'
 import { getEnterpriseContextWindow } from './utils'
 

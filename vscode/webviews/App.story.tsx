@@ -1,8 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
-import { defaultAuthStatus } from '../src/chat/protocol'
-
-import { getDotComDefaultModels } from '@sourcegraph/cody-shared'
+import { defaultAuthStatus, getDotComDefaultModels } from '@sourcegraph/cody-shared'
 import { App } from './App'
 import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
 import type { VSCodeWrapper } from './utils/VSCodeApi'

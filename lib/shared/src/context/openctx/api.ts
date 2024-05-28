@@ -13,9 +13,5 @@ export const openCtx = new OpenCtx(undefined)
  * Set the handle to the OpenCtx client.
  */
 export function setOpenCtxClient(client: OpenCtxClient): void {
-    if (openCtx.client) {
-        throw new Error('OpenCtx extension API is already set')
-    }
-
     openCtx.client = client
 }

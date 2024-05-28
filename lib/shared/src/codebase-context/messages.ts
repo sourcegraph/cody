@@ -178,6 +178,7 @@ export interface ContextItemOpenCtx extends ContextItemCommon {
     mention?: {
         uri: string
         data?: any
+        description?: string
     }
 }
 
