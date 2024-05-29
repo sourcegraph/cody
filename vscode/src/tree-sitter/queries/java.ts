@@ -7,10 +7,19 @@ const DOCUMENTABLE_NODES = dedent`
     ;--------------------------------
     (method_declaration
         name: (identifier) @symbol.function) @range.function
+    (enum_body_declarations
+        (method_declaration
+            name: (identifier) @symbol.function) @range.function)
     (constructor_declaration
         name: (identifier) @symbol.function) @range.function
+    (enum_body_declarations
+        (constructor_declaration
+            name: (identifier) @symbol.function) @range.function)
     (record_declaration
         name: (identifier) @symbol.function) @range.function
+    (enum_body_declarations
+        (record_declaration
+            name: (identifier) @symbol.function) @range.function)
 
     ; Variables
     ;--------------------------------
@@ -18,6 +27,9 @@ const DOCUMENTABLE_NODES = dedent`
         name: (_) @symbol.identifier) @range.identifier
     (variable_declarator
         name: (identifier) @symbol.identifier) @range.identifier
+    (field_declaration
+        (variable_declarator
+            name: (identifier) @symbol.identifier) @range.identifier)
 
     ; Type Identifiers
     ;--------------------------------
@@ -25,6 +37,10 @@ const DOCUMENTABLE_NODES = dedent`
         name: (identifier) @symbol.identifier) @range.identifier
     (enum_declaration
         name: (identifier) @symbol.identifier) @range.identifier
+    (enum_declaration
+        (enum_body
+            (enum_constant
+                name: (identifier) @symbol.identifier) @range.identifier))
 `
 
 export const javaQueries = {
