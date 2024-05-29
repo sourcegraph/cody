@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import type { ComponentProps } from 'react'
 import { type Assertion, type Mock, describe, expect, test, vi } from 'vitest'
-import { AppWrapper } from '../../../../../AppWrapper'
+import { TestAppWrapper } from '../../../../../AppWrapper'
 import { serializedPromptEditorStateFromText } from '../../../../../promptEditor/PromptEditor'
 import { FILE_MENTION_EDITOR_STATE_FIXTURE } from '../../../../../promptEditor/fixtures'
 import { FIXTURE_USER_ACCOUNT_INFO } from '../../../../fixtures'
@@ -181,7 +181,7 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
     }
 
     const { container } = render(<HumanMessageEditor {...DEFAULT_PROPS} {...props} />, {
-        wrapper: AppWrapper,
+        wrapper: TestAppWrapper,
     })
     return {
         container,

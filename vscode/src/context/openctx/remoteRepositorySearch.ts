@@ -8,14 +8,10 @@ const RemoteRepositorySearch: Provider & {
     providerUri: 'internal-remote-repository-search',
 
     meta() {
-        return { name: 'Sourcegraph Repositories', features: { mentions: true } }
+        return { name: 'Sourcegraph Repositories', mentions: {} }
     },
 
     async mentions({ query }) {
-        if (query && query.length < 3) {
-            return []
-        }
-
         try {
             const dataOrError = await graphqlClient.searchRepos(10, undefined, query)
 

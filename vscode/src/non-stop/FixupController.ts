@@ -22,6 +22,7 @@ import { PersistenceTracker } from '../common/persistence-tracker'
 import { lines } from '../completions/text-processing'
 import { sleep } from '../completions/utils'
 import { getInput } from '../edit/input/get-input'
+import { getOverridenModelForIntent } from '../edit/utils/edit-models'
 import type { ExtensionClient } from '../extension-client'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { AuthProvider } from '../services/AuthProvider'
@@ -342,6 +343,8 @@ export class FixupController
         insertionPoint?: vscode.Position,
         telemetryMetadata?: FixupTelemetryMetadata
     ): Promise<FixupTask> {
+        const authStatus = this.authProvider.getAuthStatus()
+        const overridenModel = getOverridenModelForIntent(intent, model, authStatus)
         const fixupFile = this.files.forUri(document.uri)
         const task = new FixupTask(
             fixupFile,
@@ -350,7 +353,7 @@ export class FixupController
             intent,
             selectionRange,
             mode,
-            model,
+            overridenModel,
             source,
             destinationFile,
             insertionPoint,

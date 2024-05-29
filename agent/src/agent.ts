@@ -670,7 +670,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
                 return { items, completionEvent: result?.completionEvent }
             } catch (error) {
-                console.log('autocomplete failed', error)
                 if (isRateLimitError(error)) {
                     throw error
                 }
@@ -1385,10 +1384,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
     ): void {
         this.registerRequest(method, async (params, token) => {
             await this.authenticationPromise
-            return callback(params, token).catch(err => {
-                console.error(`Uncaught error from method '${method}'`, err)
-                throw err
-            })
+            return callback(params, token)
         })
     }
 

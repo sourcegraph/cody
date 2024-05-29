@@ -1,6 +1,8 @@
 import type { SupportedLanguage } from './grammars'
 import { goQueries } from './queries/go'
+import { javaQueries } from './queries/java'
 import { javascriptQueries } from './queries/javascript'
+import { kotlinQueries } from './queries/kotlin'
 import { pythonQueries } from './queries/python'
 
 export type QueryName =
@@ -43,4 +45,6 @@ export const languages: Partial<Record<SupportedLanguage, Record<QueryName, stri
     ...javascriptQueries,
     ...goQueries,
     ...pythonQueries,
+    ...javaQueries,
+    ...kotlinQueries,
 } as const

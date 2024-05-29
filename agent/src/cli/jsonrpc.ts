@@ -115,7 +115,9 @@ export const jsonrpcCommand = new Command('jsonrpc')
         const networkRequests: Request[] = []
         const requestErrors: PollyRequestError[] = []
         let polly: Polly | undefined
-        if (options.recordingDirectory) {
+        if (options.recordingMode === 'passthrough') {
+            // Do nothing. We don't want Polly to interfere with `fetch` at all.
+        } else if (options.recordingDirectory) {
             if (options.recordingMode === undefined) {
                 console.error('CODY_RECORDING_MODE is required when CODY_RECORDING_DIRECTORY is set.')
                 process.exit(1)
