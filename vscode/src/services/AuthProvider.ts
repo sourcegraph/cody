@@ -2,23 +2,21 @@ import * as vscode from 'vscode'
 
 import {
     type AuthStatus,
+    type AuthStatusProvider,
     type ConfigurationWithAccessToken,
     DOTCOM_URL,
     LOCAL_APP_URL,
     SourcegraphGraphQLAPIClient,
+    defaultAuthStatus,
     isDotCom,
     isError,
+    logError,
+    networkErrorAuthStatus,
+    unauthenticatedStatus,
 } from '@sourcegraph/cody-shared'
 
 import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'
-import {
-    ACCOUNT_USAGE_URL,
-    defaultAuthStatus,
-    isLoggedIn as isAuthenticated,
-    isSourcegraphToken,
-    networkErrorAuthStatus,
-    unauthenticatedStatus,
-} from '../chat/protocol'
+import { ACCOUNT_USAGE_URL, isLoggedIn as isAuthenticated, isSourcegraphToken } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
 import { getFullConfig } from '../configuration'
 import { logDebug } from '../log'
@@ -38,7 +36,8 @@ type Unsubscribe = () => void
 
 const HAS_AUTHENTICATED_BEFORE_KEY = 'has-authenticated-before'
 
-export class AuthProvider {
+type AuthConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
+export class AuthProvider implements AuthStatusProvider {
     private endpointHistory: string[] = []
 
     private client: SourcegraphGraphQLAPIClient | null = null
@@ -46,12 +45,14 @@ export class AuthProvider {
     private authStatus: AuthStatus = defaultAuthStatus
     private listeners: Set<Listener> = new Set()
 
-    constructor(
-        private config: Pick<
-            ConfigurationWithAccessToken,
-            'serverEndpoint' | 'accessToken' | 'customHeaders'
-        >
-    ) {
+    static create(config: AuthConfig) {
+        if (!authProvider) {
+            authProvider = new AuthProvider(config)
+        }
+        return authProvider
+    }
+
+    private constructor(private config: AuthConfig) {
         this.authStatus.endpoint = 'init'
         this.loadEndpointHistory()
     }
@@ -61,8 +62,9 @@ export class AuthProvider {
         let lastEndpoint = localStorage?.getEndpoint() || this.config.serverEndpoint
         let token = (await secretStorage.get(lastEndpoint || '')) || this.config.accessToken
         logDebug(
-            'AuthProvider:init',
-            token?.trim() ? 'Token recovered from secretStorage' : 'No token found in secretStorage'
+            'AuthProvider:init:lastEndpoint',
+            token?.trim() ? 'Token recovered from secretStorage' : 'No token found in secretStorage',
+            lastEndpoint
         )
         if (lastEndpoint === LOCAL_APP_URL.toString()) {
             // If the user last signed in to app, which talks to dotcom, try
@@ -71,13 +73,12 @@ export class AuthProvider {
             lastEndpoint = DOTCOM_URL.toString()
             token = (await secretStorage.get(lastEndpoint)) || null
         }
-        logDebug('AuthProvider:init:lastEndpoint', lastEndpoint)
 
         await this.auth({
             endpoint: lastEndpoint,
             token: token || null,
             isExtensionStartup: true,
-        })
+        }).catch(error => logError('AuthProvider:init:failed', lastEndpoint, { verbose: error }))
     }
 
     public addChangeListener(listener: Listener): Unsubscribe {
@@ -348,36 +349,47 @@ export class AuthProvider {
         customHeaders?: Record<string, string> | null
         isExtensionStartup?: boolean
     }): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean }> {
-        const url = formatURL(endpoint) || ''
         const config = {
-            serverEndpoint: url,
+            serverEndpoint: formatURL(endpoint) ?? '',
             accessToken: token,
             customHeaders: customHeaders || this.config.customHeaders,
         }
-        const authStatus = await this.makeAuthStatus(config)
-        const isLoggedIn = isAuthenticated(authStatus)
-        authStatus.isLoggedIn = isLoggedIn
 
-        await this.storeAuthInfo(url, token)
-        this.syncAuthStatus(authStatus)
-        await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn)
+        try {
+            const authStatus = await this.makeAuthStatus(config)
+            const isLoggedIn = isAuthenticated(authStatus)
+            authStatus.isLoggedIn = isLoggedIn
 
-        // If the extension is authenticated on startup, it can't be a user's first
-        // ever authentication. We store this to prevent logging first-ever events
-        // for already existing users.
-        if (isExtensionStartup && isLoggedIn) {
-            await this.setHasAuthenticatedBefore()
-        } else if (isLoggedIn) {
-            this.handleFirstEverAuthentication()
+            await this.storeAuthInfo(config.serverEndpoint, config.accessToken)
+            this.syncAuthStatus(authStatus)
+            await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn)
+
+            // If the extension is authenticated on startup, it can't be a user's first
+            // ever authentication. We store this to prevent logging first-ever events
+            // for already existing users.
+            if (isExtensionStartup && isLoggedIn) {
+                await this.setHasAuthenticatedBefore()
+            } else if (isLoggedIn) {
+                this.handleFirstEverAuthentication()
+            }
+
+            return { authStatus, isLoggedIn }
+        } catch (error) {
+            logDebug('AuthProvider:auth', 'failed', error)
+
+            // Try to reload auth status in case of network error, else return default auth status
+            return await this.reloadAuthStatus().catch(() => {
+                return { authStatus: unauthenticatedStatus, isLoggedIn: false }
+            })
         }
-
-        return { authStatus, isLoggedIn }
     }
 
     // Set auth status in case of reload
-    public async reloadAuthStatus(): Promise<void> {
+    public async reloadAuthStatus(): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean }> {
+        await vscode.commands.executeCommand('setContext', 'cody.activated', false)
+
         this.config = await getFullConfig()
-        await this.auth({
+        return await this.auth({
             endpoint: this.config.serverEndpoint,
             token: this.config.accessToken,
             customHeaders: this.config.customHeaders,
@@ -509,6 +521,10 @@ export class AuthProvider {
         return localStorage.set(HAS_AUTHENTICATED_BEFORE_KEY, 'true')
     }
 }
+/**
+ * Singleton instance of auth provider.
+ */
+export let authProvider: AuthProvider | null = null
 
 export function isNetworkError(error: Error): boolean {
     const message = error.message

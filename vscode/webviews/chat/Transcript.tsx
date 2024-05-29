@@ -1,256 +1,235 @@
-import type React from 'react'
-import { Fragment } from 'react'
-import { type FunctionComponent, useEffect, useRef } from 'react'
-
-import { clsx } from 'clsx'
-
-import { type ChatMessage, type Guardrails, renderCodyMarkdown } from '@sourcegraph/cody-shared'
-
+import {
+    type ChatMessage,
+    type ContextItem,
+    ContextItemSource,
+    type Guardrails,
+    isDefined,
+} from '@sourcegraph/cody-shared'
+import { type MutableRefObject, useCallback, useRef } from 'react'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
+import type { PromptEditorRefAPI, SerializedPromptEditorValue } from '../promptEditor/PromptEditor'
+import { getVSCodeAPI } from '../utils/VSCodeApi'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
-
-import { ModelSelectField } from '../components/modelSelectField/ModelSelectField'
-import { CodyLogo } from '../icons/CodyLogo'
 import styles from './Transcript.module.css'
-import { Cell } from './cells/Cell'
 import { ContextCell } from './cells/contextCell/ContextCell'
 import { AssistantMessageCell } from './cells/messageCell/assistant/AssistantMessageCell'
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
-import { useChatModelContext } from './models/chatModelContext'
+import { WelcomeMessage } from './components/WelcomeMessage'
 
 export const Transcript: React.FunctionComponent<{
     transcript: ChatMessage[]
-    welcomeMessage?: string
     messageInProgress: ChatMessage | null
-    messageBeingEdited: number | undefined
-    setMessageBeingEdited: (index?: number) => void
-    className?: string
     feedbackButtonsOnSubmit: (text: string) => void
     copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit: CodeBlockActionsProps['insertButtonOnSubmit']
     isTranscriptError?: boolean
     userInfo: UserAccountInfo
+    chatEnabled?: boolean
+    userContextFromSelection?: ContextItem[]
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
 }> = ({
     transcript,
-    welcomeMessage,
     messageInProgress,
-    messageBeingEdited,
-    setMessageBeingEdited,
-    className,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
     isTranscriptError,
     userInfo,
+    chatEnabled = true,
+    userContextFromSelection,
     postMessage,
     guardrails,
 }) => {
-    // Scroll the last human message to the top whenever a new human message is received as input.
-    const transcriptContainerRef = useRef<HTMLDivElement>(null)
-    const scrollAnchoredContainerRef = useRef<HTMLDivElement>(null)
-    const lastHumanMessageTopRef = useRef<HTMLDivElement>(null)
-    const itemBeingEditedRef = useRef<HTMLDivElement>(null)
+    const editorRefs = useRef<MutableRefObject<PromptEditorRefAPI | null>[]>([])
 
-    const humanMessageCount = transcript.filter(message => message.speaker === 'human').length
-    // biome-ignore lint/correctness/useExhaustiveDependencies: we want this to refresh
-    useEffect(() => {
-        if (!messageBeingEdited && !transcriptContainerRef?.current) {
-            lastHumanMessageTopRef?.current?.scrollIntoView({
-                behavior: 'auto',
-                block: 'start',
-                inline: 'nearest',
-            })
+    const messageToTranscriptItem = (
+        message: ChatMessage,
+        messageIndexInTranscript: number
+    ): JSX.Element | JSX.Element[] | null => {
+        if (!message.text && !message.error) {
+            return null
         }
-    }, [humanMessageCount, messageBeingEdited])
 
-    // Scroll item being edited to view if it's off-screen
-    useEffect(() => {
-        if (messageBeingEdited === undefined) {
-            return
-        }
-        if (messageBeingEdited !== undefined && itemBeingEditedRef?.current) {
-            itemBeingEditedRef.current.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start',
-                inline: 'nearest',
-            })
-            return
-        }
-    }, [messageBeingEdited])
-
-    // When the content was not scrollable, then becomes scrollable, manually
-    // scroll the anchor into view. This overrides the browser's default
-    // behavior of initially anchoring to the top until a scroll occurs.
-    useEffect(() => {
-        const root = transcriptContainerRef.current
-        const container = scrollAnchoredContainerRef.current
-        if (!(root && container)) {
-            return undefined
-        }
-        let wasIntersecting = true
-        const observer = new IntersectionObserver(
-            entries => {
-                for (const entry of entries) {
-                    if (entry.rootBounds?.width === 0 || entries[0].rootBounds?.height === 0) {
-                        // After restoring a pane the root element hasn't been sized yet, and we
-                        // trivially overflow it. Ignore this.
-                        continue
-                    }
-                    if (wasIntersecting && !entry.isIntersecting) {
-                        lastHumanMessageTopRef.current?.scrollIntoView({
-                            behavior: 'auto',
-                            block: 'start',
-                            inline: 'nearest',
-                        })
-                    }
-                    wasIntersecting = entry.isIntersecting
-                }
-            },
-            {
-                root,
-                threshold: 1,
-            }
+        const isLoading = Boolean(
+            messageInProgress && messageInProgress.speaker === 'assistant' && !messageInProgress.text
         )
-        observer.observe(container)
-        return () => {
-            observer.disconnect()
-        }
-    }, [])
+        const isLastMessage = messageIndexInTranscript === transcript.length - 1
+        const isLastHumanMessage =
+            message.speaker === 'human' &&
+            (messageIndexInTranscript === transcript.length - 1 ||
+                messageIndexInTranscript === transcript.length - 2)
 
-    const lastHumanMessageIndex = findLastIndex(
-        transcript,
-        message => message.speaker === 'human' && message.text !== undefined
-    )
-    let earlierMessages: ChatMessage[] = []
-    let lastInteractionMessages = transcript
-    if (lastHumanMessageIndex !== -1) {
-        earlierMessages = transcript.slice(0, lastHumanMessageIndex)
-        lastInteractionMessages = transcript.slice(lastHumanMessageIndex)
+        const priorHumanMessageIndex = messageIndexInTranscript - 1
+        const priorHumanMessage =
+            message.speaker === 'assistant' ? transcript.at(priorHumanMessageIndex) : undefined
+        const nextAssistantMessage =
+            message.speaker === 'human' ? transcript.at(messageIndexInTranscript + 1) : undefined
+
+        return message.speaker === 'human' ? (
+            [
+                <HumanMessageCell
+                    key={messageIndexInTranscript}
+                    message={message}
+                    userInfo={userInfo}
+                    chatEnabled={chatEnabled}
+                    isFirstMessage={messageIndexInTranscript === 0}
+                    isSent={true}
+                    isPendingResponse={isLastHumanMessage && isLoading}
+                    isPendingPriorResponse={false}
+                    onSubmit={(
+                        editorValue: SerializedPromptEditorValue,
+                        addEnhancedContext: boolean
+                    ): void => {
+                        editHumanMessage(messageIndexInTranscript, editorValue, addEnhancedContext)
+                    }}
+                    editorRef={editorRefAtIndex(editorRefs.current, messageIndexInTranscript)}
+                />,
+                (message.contextFiles && message.contextFiles.length > 0) || isLastMessage ? (
+                    <ContextCell
+                        key={`${messageIndexInTranscript}-context`}
+                        contextFiles={message.contextFiles}
+                        model={nextAssistantMessage?.model}
+                    />
+                ) : null,
+            ].filter(isDefined)
+        ) : (
+            <AssistantMessageCell
+                key={messageIndexInTranscript}
+                message={message}
+                humanMessage={{
+                    hasExplicitMentions: Boolean(
+                        priorHumanMessage!.contextFiles?.some(
+                            item => item.source === ContextItemSource.User
+                        )
+                    ),
+                    addEnhancedContext: Boolean(
+                        priorHumanMessage!.contextFiles?.some(
+                            item =>
+                                item.source === ContextItemSource.Unified ||
+                                item.source === ContextItemSource.Embeddings ||
+                                item.source === ContextItemSource.Search
+                        )
+                    ),
+                    rerunWithEnhancedContext: (withEnhancedContext: boolean) => {
+                        const editorValue = editorRefs.current
+                            .at(priorHumanMessageIndex)
+                            ?.current?.getSerializedValue()
+                        if (editorValue) {
+                            editHumanMessage(
+                                messageIndexInTranscript - 1,
+                                editorValue,
+                                withEnhancedContext
+                            )
+                        }
+                    },
+                    appendAtMention: () => {
+                        editorRefs.current.at(priorHumanMessageIndex)?.current?.appendText('@', true)
+                    },
+                }}
+                userInfo={userInfo}
+                isLoading={false}
+                showFeedbackButtons={
+                    messageIndexInTranscript !== 0 && !isTranscriptError && !message.error
+                }
+                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                copyButtonOnSubmit={copyButtonOnSubmit}
+                insertButtonOnSubmit={insertButtonOnSubmit}
+                postMessage={postMessage}
+                guardrails={guardrails}
+            />
+        )
     }
 
-    const { chatModels, onCurrentChatModelChange } = useChatModelContext()
-
-    const messageToTranscriptItem =
-        (offset: number) =>
-        (message: ChatMessage, index: number): JSX.Element | null => {
-            if (!message.text && !message.error) {
-                return null
-            }
-            const offsetIndex = index + offset === earlierMessages.length
-            const messageIndexInTranscript = index + offset
-
-            const isLoading = Boolean(
-                offsetIndex &&
-                    messageInProgress &&
-                    messageInProgress.speaker === 'assistant' &&
-                    !messageInProgress.text
-            )
-            const isLastMessage = messageIndexInTranscript === transcript.length - 1
-
-            const isItemBeingEdited = messageBeingEdited === messageIndexInTranscript
-
-            return (
-                <Fragment key={messageIndexInTranscript}>
-                    {message.speaker === 'human' ? (
-                        <>
-                            {isItemBeingEdited && <div ref={itemBeingEditedRef} />}
-                            <HumanMessageCell
-                                message={message}
-                                userInfo={userInfo}
-                                messageIndexInTranscript={messageIndexInTranscript}
-                                showEditButton={true}
-                                beingEdited={messageBeingEdited}
-                                setBeingEdited={setMessageBeingEdited}
-                            />
-                            {((message.contextFiles && message.contextFiles.length > 0) ||
-                                isLastMessage) && (
-                                <ContextCell
-                                    contextFiles={message.contextFiles}
-                                    disabled={messageBeingEdited !== undefined}
-                                />
-                            )}
-                        </>
-                    ) : (
-                        <AssistantMessageCell
-                            message={message}
-                            userInfo={userInfo}
-                            isLoading={isLoading}
-                            disabled={messageBeingEdited !== undefined}
-                            showFeedbackButtons={
-                                messageIndexInTranscript !== 0 && !isTranscriptError && !message.error
-                            }
-                            feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                            copyButtonOnSubmit={copyButtonOnSubmit}
-                            insertButtonOnSubmit={insertButtonOnSubmit}
-                            postMessage={postMessage}
-                            guardrails={guardrails}
-                        />
-                    )}
-                </Fragment>
-            )
-        }
+    const onFollowupSubmit = useCallback(
+        (editorValue: SerializedPromptEditorValue, addEnhancedContext: boolean): void => {
+            getVSCodeAPI().postMessage({
+                command: 'submit',
+                submitType: 'user',
+                text: editorValue.text,
+                editorState: editorValue.editorState,
+                contextFiles: editorValue.contextItems,
+                addEnhancedContext,
+            })
+        },
+        []
+    )
 
     return (
-        <div ref={transcriptContainerRef} className={clsx(className, styles.container)}>
-            <div ref={scrollAnchoredContainerRef} className={clsx(styles.scrollAnchoredContainer)}>
-                {!!chatModels?.length &&
-                    onCurrentChatModelChange &&
-                    userInfo &&
-                    userInfo.isDotComUser && (
-                        <div className={styles.modelSelectFieldContainer}>
-                            <ModelSelectField
-                                models={chatModels}
-                                onModelSelect={onCurrentChatModelChange}
-                                userInfo={userInfo}
-                            />
-                        </div>
-                    )}
-                {transcript.length === 0 && <WelcomeMessageCell welcomeMessage={welcomeMessage} />}
-                {earlierMessages.map(messageToTranscriptItem(0))}
-                <div ref={lastHumanMessageTopRef} />
-                {lastInteractionMessages.map(messageToTranscriptItem(earlierMessages.length))}
-                {messageInProgress &&
-                    messageInProgress.speaker === 'assistant' &&
-                    Boolean(transcript[earlierMessages.length].contextFiles) && (
-                        <AssistantMessageCell
-                            message={messageInProgress}
-                            isLoading={true}
-                            showFeedbackButtons={false}
-                            copyButtonOnSubmit={copyButtonOnSubmit}
-                            insertButtonOnSubmit={insertButtonOnSubmit}
-                            postMessage={postMessage}
-                            userInfo={userInfo}
-                        />
-                    )}
-            </div>
-            <div className={clsx(styles.scrollAnchor)}>&nbsp;</div>
-        </div>
+        <>
+            {transcript.flatMap(messageToTranscriptItem)}
+            {messageInProgress &&
+                messageInProgress.speaker === 'assistant' &&
+                transcript.at(-1)?.contextFiles && (
+                    <AssistantMessageCell
+                        message={messageInProgress}
+                        humanMessage={null}
+                        isLoading={true}
+                        showFeedbackButtons={false}
+                        copyButtonOnSubmit={copyButtonOnSubmit}
+                        insertButtonOnSubmit={insertButtonOnSubmit}
+                        postMessage={postMessage}
+                        userInfo={userInfo}
+                    />
+                )}
+            {!isLastAssistantMessageError(transcript) && (
+                <HumanMessageCell
+                    key={transcript.length + (messageInProgress ? 1 : 0)}
+                    message={null}
+                    isFirstMessage={transcript.length === 0}
+                    isSent={false}
+                    isPendingResponse={false}
+                    isPendingPriorResponse={messageInProgress !== null}
+                    userInfo={userInfo}
+                    chatEnabled={chatEnabled}
+                    isEditorInitiallyFocused={true}
+                    userContextFromSelection={userContextFromSelection}
+                    onSubmit={onFollowupSubmit}
+                    className={styles.lastHumanMessage}
+                />
+            )}
+            {transcript.length === 0 && <WelcomeMessage />}
+        </>
     )
 }
 
-function findLastIndex<T>(array: T[], predicate: (value: T) => boolean): number {
-    for (let i = array.length - 1; i >= 0; i--) {
-        if (predicate(array[i])) {
-            return i
-        }
+function editorRefAtIndex(
+    editorRefs: MutableRefObject<PromptEditorRefAPI | null>[],
+    i: number
+): MutableRefObject<PromptEditorRefAPI | null> {
+    let ref = editorRefs.at(i)
+    if (ref === undefined) {
+        ref = { current: null }
+        editorRefs[i] = ref
     }
-    return -1
+    return ref
 }
 
-const WelcomeMessageCell: FunctionComponent<{ welcomeMessage?: string }> = ({ welcomeMessage }) => (
-    <Cell gutterIcon={<CodyLogo size={20} />} data-testid="message">
-        <div
-            className={styles.welcomeMessageCellContent}
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: not from user input (and is sanitized)
-            dangerouslySetInnerHTML={{
-                __html: renderCodyMarkdown(
-                    welcomeMessage ??
-                        'See [Cody documentation](https://sourcegraph.com/docs/cody) for help and tips.'
-                ),
-            }}
-        />
-    </Cell>
-)
+function isLastAssistantMessageError(transcript: readonly ChatMessage[]): boolean {
+    const lastMessage = transcript.at(-1)
+    return Boolean(lastMessage && lastMessage.speaker === 'assistant' && lastMessage.error !== undefined)
+}
+
+// TODO(sqs): Do this the React-y way.
+export function focusLastHumanMessageEditor(): void {
+    const elements = document.querySelectorAll<HTMLElement>('[data-lexical-editor]')
+    const lastEditor = elements.item(elements.length - 1)
+    lastEditor?.focus()
+}
+
+function editHumanMessage(
+    messageIndexInTranscript: number,
+    editorValue: SerializedPromptEditorValue,
+    addEnhancedContext: boolean
+): void {
+    getVSCodeAPI().postMessage({
+        command: 'edit',
+        index: messageIndexInTranscript,
+        text: editorValue.text,
+        editorState: editorValue.editorState,
+        contextFiles: editorValue.contextItems,
+        addEnhancedContext,
+    })
+    focusLastHumanMessageEditor()
+}

@@ -18,6 +18,7 @@ import {
     isCodyIgnoredFile,
     isDefined,
     isWindows,
+    logError,
     openCtx,
     toRangeData,
 } from '@sourcegraph/cody-shared'
@@ -330,9 +331,14 @@ async function resolveContextMentionProviderContextItem(
         return []
     }
 
+    if (!item.mention) {
+        logError('OpenCtx', 'resolving context item is missing mention parameter', item)
+        return []
+    }
+
     const mention = {
-        ...item,
-        uri: item.uri.toString(),
+        ...item.mention,
+        title: item.title,
     }
 
     const items = await openCtxClient.items({ message: input.toString(), mention }, item.providerUri)

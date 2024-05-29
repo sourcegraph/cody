@@ -17,6 +17,7 @@ import {
     isDotCom,
     isFileURI,
     recordErrorToSpan,
+    telemetryRecorder,
     uriBasename,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -162,17 +163,24 @@ export class LocalEmbeddingsController
     // Hint that local embeddings should start cody-engine, if necessary.
     public async start(): Promise<void> {
         logDebug('LocalEmbeddingsController', 'start')
-        await this.getService()
-        const repoUri = vscode.workspace.workspaceFolders?.[0]?.uri
-        if (repoUri && isFileURI(repoUri)) {
-            const loadedOk = await this.eagerlyLoad(repoUri)
-            if (!loadedOk) {
-                // failed to load the index, let's see if we should start indexing
-                if (this.canAutoIndex()) {
-                    this.index()
+        wrapInActiveSpan('embeddings.start', async span => {
+            span.setAttribute('sampled', true)
+            span.setAttribute('provider', this.modelConfig.provider)
+            await this.getService()
+            const repoUri = vscode.workspace.workspaceFolders?.[0]?.uri
+            if (repoUri && isFileURI(repoUri)) {
+                span.setAttribute('hasRepo', true)
+                const loadedOk = await this.eagerlyLoad(repoUri)
+                span.setAttribute('loadedOk', loadedOk)
+                if (!loadedOk) {
+                    // failed to load the index, let's see if we should start indexing
+                    if (this.canAutoIndex()) {
+                        span.setAttribute('autoIndex', true)
+                        this.index()
+                    }
                 }
             }
-        }
+        })
     }
 
     public async setAccessToken(serverEndpoint: string, token: string | null): Promise<void> {
@@ -428,70 +436,99 @@ export class LocalEmbeddingsController
     // - To implement the final step of `load`, if we did not hit any cached
     //   results.
     private async eagerlyLoad(repoDir: FileURI): Promise<boolean> {
-        try {
-            const { repoName } = await (await this.getService()).request(
-                'embeddings/load',
-                repoDir.fsPath
-            )
-            this.repoState.set(repoDir.toString(), {
-                repoName,
-                indexable: true,
-                errorReason: undefined,
-            })
-            this.lastRepo = {
-                dir: repoDir,
-                repoName,
-            }
-            // Start a health check on the index.
-            void (async () => {
-                try {
-                    const health = await (await this.getService()).request('embeddings/index-health', {
-                        repoName,
-                    })
-                    logDebug('LocalEmbeddingsController', 'index-health', JSON.stringify(health))
-                    if (health.type !== 'found') {
-                        return
-                    }
-                    await this.onHealthReport(repoDir, health)
-                } catch (error) {
-                    logDebug(
-                        'LocalEmbeddingsController',
-                        'index-health',
-                        captureException(error),
-                        JSON.stringify(error)
-                    )
+        await wrapInActiveSpan('embeddings.load', async span => {
+            try {
+                const { repoName, indexSizeBytes } = await (await this.getService()).request(
+                    'embeddings/load',
+                    repoDir.fsPath
+                )
+                this.repoState.set(repoDir.toString(), {
+                    repoName,
+                    indexable: true,
+                    errorReason: undefined,
+                })
+                this.lastRepo = {
+                    dir: repoDir,
+                    repoName,
                 }
-            })()
-        } catch (error: any) {
-            logDebug('LocalEmbeddingsController', 'load', captureException(error), JSON.stringify(error))
+                span.setAttribute('repoLoaded', true)
+                span.setAttribute('indexSize', indexSizeBytes)
 
-            const noRemoteErrorMessage =
-                "repository does not have a default fetch URL, so can't be named for an index"
-            const noRemote = error.message === noRemoteErrorMessage
+                telemetryRecorder.recordEvent('cody.context.embeddings', 'loaded', {
+                    metadata: {
+                        indexSize: indexSizeBytes,
+                    },
+                })
 
-            const notAGitRepositoryErrorMessage = /does not appear to be a git repository/
-            const notGit = notAGitRepositoryErrorMessage.test(error.message)
+                // Start a health check on the index.
+                void (async () => {
+                    wrapInActiveSpan('embeddings.index-health', async span => {
+                        try {
+                            const health = await (await this.getService()).request(
+                                'embeddings/index-health',
+                                {
+                                    repoName,
+                                }
+                            )
+                            logDebug('LocalEmbeddingsController', 'index-health', JSON.stringify(health))
+                            span.setAttribute('repoHealthSucceeded', true)
+                            span.setAttribute('repoFound', health.type === 'found')
+                            if (health.type !== 'found') {
+                                return
+                            }
+                            span.setAttribute('numItems', health.numItems)
+                            span.setAttribute('numFiles', health.numFiles)
+                            span.setAttribute('needsEmbedding', health.numItemsNeedEmbedding > 0)
+                            await this.onHealthReport(repoDir, health)
+                        } catch (error) {
+                            logDebug(
+                                'LocalEmbeddingsController',
+                                'index-health',
+                                captureException(error),
+                                JSON.stringify(error)
+                            )
+                            span.setAttribute('repoHealthSucceeded', false)
+                        }
+                    })
+                })()
+            } catch (error: any) {
+                logDebug(
+                    'LocalEmbeddingsController',
+                    'load',
+                    captureException(error),
+                    JSON.stringify(error)
+                )
 
-            let errorReason: GetFieldType<LocalEmbeddingsProvider, 'errorReason'>
-            if (notGit) {
-                errorReason = 'not-a-git-repo'
-            } else if (noRemote) {
-                errorReason = 'git-repo-has-no-remote'
-            } else {
-                errorReason = undefined
+                const noRemoteErrorMessage =
+                    "repository does not have a default fetch URL, so can't be named for an index"
+                const noRemote = error.message === noRemoteErrorMessage
+
+                const notAGitRepositoryErrorMessage = /does not appear to be a git repository/
+                const notGit = notAGitRepositoryErrorMessage.test(error.message)
+
+                let errorReason: GetFieldType<LocalEmbeddingsProvider, 'errorReason'>
+                if (notGit) {
+                    errorReason = 'not-a-git-repo'
+                } else if (noRemote) {
+                    errorReason = 'git-repo-has-no-remote'
+                } else {
+                    errorReason = undefined
+                }
+                if (errorReason) {
+                    span.setAttribute('errorReason', errorReason)
+                }
+                this.repoState.set(repoDir.toString(), {
+                    repoName: false,
+                    indexable: !(notGit || noRemote),
+                    errorReason,
+                })
+
+                // TODO: Log telemetry error messages to prioritize supporting
+                // repos without remotes, other SCCS, etc.
+
+                this.lastRepo = { dir: repoDir, repoName: false }
             }
-
-            this.repoState.set(repoDir.toString(), {
-                repoName: false,
-                indexable: !(notGit || noRemote),
-                errorReason,
-            })
-
-            // TODO: Log telemetry error messages to prioritize supporting
-            // repos without remotes, other SCCS, etc.
-
-            this.lastRepo = { dir: repoDir, repoName: false }
-        }
+        })
         this.statusEmitter.fire(this)
         return !!this.lastRepo?.repoName
     }

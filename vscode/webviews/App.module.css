@@ -1,0 +1,35 @@
+.outer-container {
+    background-color: var(--vscode-sideBar-background);
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+.error-container {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 0.5rem;
+}
+
+.error {
+    flex-direction: row;
+    display: flex;
+    padding: 1rem;
+    color: var(--vscode-input-foreground);
+    background-color: var(--vscode-inputValidation-errorBackground);
+    align-items: center;
+    min-height: 2rem;
+    position: relative;
+    overflow: auto;
+    align-items: baseline;
+}
+
+.close-btn {
+    position: absolute;
+    top: 0.65rem;
+    right: 0.25rem;
+    background: none;
+    border: none;
+    color: var(--vscode-input-foreground);
+    cursor: pointer;
+}

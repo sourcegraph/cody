@@ -11,10 +11,10 @@ import {
     CompletionStopReason,
     type Configuration,
     type ConfigurationWithAccessToken,
+    defaultAuthStatus,
     testFileUri,
 } from '@sourcegraph/cody-shared'
 
-import { defaultAuthStatus } from '../../chat/protocol'
 import { DEFAULT_VSCODE_SETTINGS, emptyMockFeatureFlagProvider } from '../../testutils/mocks'
 import type { SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'

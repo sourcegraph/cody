@@ -105,8 +105,12 @@ test.extend<helpers.WorkspaceDirectory>({
     await sidebar?.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).hover()
     await openFile(page, 'main.c')
     await sidebarSignin(page, sidebar)
-    // The Enhanced Context settings is opened on first chat by default
     const chatFrame = await newChat(page)
+
+    const openEnhancedContextButton = chatFrame.getByRole('button', {
+        name: 'Configure automatic code context',
+    })
+    await openEnhancedContextButton.click()
 
     // Embeddings is visible at first as cody-engine starts...
     await expect(chatFrame.getByText('Embeddings')).toBeVisible()
@@ -122,6 +126,12 @@ test('git repositories without a remote should explain the issue', async ({ page
     await openFile(page, 'main.c')
     await sidebarSignin(page, sidebar)
     const chatFrame = await newChat(page)
+
+    const openEnhancedContextButton = chatFrame.getByRole('button', {
+        name: 'Configure automatic code context',
+    })
+    await openEnhancedContextButton.click()
+
     await expect(chatFrame.locator('.codicon-circle-slash')).toBeVisible({
         timeout: 60000,
     })
@@ -168,6 +178,11 @@ test
     await openFile(page, 'main.c')
     await sidebarSignin(page, sidebar)
     const chatFrame = await newChat(page)
+
+    const openEnhancedContextButton = chatFrame.getByRole('button', {
+        name: 'Configure automatic code context',
+    })
+    await openEnhancedContextButton.click()
 
     const enableEmbeddingsButton = chatFrame.getByText('Enable Embeddings')
     // This may take a while, we download and start cody-engine

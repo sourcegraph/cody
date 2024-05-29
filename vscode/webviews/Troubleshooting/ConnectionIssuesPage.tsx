@@ -1,6 +1,4 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
-
-import type { TelemetryRecorder, TelemetryService } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import { useCallback, useState } from 'react'
 import type { VSCodeWrapper } from '../utils/VSCodeApi'
@@ -8,8 +6,6 @@ import styles from './ConnectionIssuesPage.module.css'
 
 export const ConnectionIssuesPage: React.FunctionComponent<
     React.PropsWithoutRef<{
-        telemetryService: TelemetryService
-        telemetryRecorder: TelemetryRecorder
         vscodeAPI: VSCodeWrapper
         configuredEndpoint: string | undefined | null
     }>
@@ -43,10 +39,11 @@ export const ConnectionIssuesPage: React.FunctionComponent<
                 </div>
                 <div className={styles.messageContainer}>
                     <p className={styles.message}>
-                        Cody could not start due to a possible connection issue. Possible causes:
+                        Cody could not start due to a connection issue. Possible causes:
                     </p>
                     <ul className={styles.causes}>
                         <li>You don't have internet access</li>
+                        <li>Proxy settings might need to be configured</li>
                         <li>
                             The configured endpoint{' '}
                             {configuredEndpoint && (

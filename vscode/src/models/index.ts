@@ -26,7 +26,7 @@ function getModel<T extends string>(
     }
 
     // Check for the last selected model
-    const lastSelectedModelID = localStorage.get(storageKey)
+    const lastSelectedModelID = localStorage.get<string>(storageKey)
     const migratedModelID = migrateAndNotifyForOutdatedModels(lastSelectedModelID)
 
     if (migratedModelID && migratedModelID !== lastSelectedModelID) {

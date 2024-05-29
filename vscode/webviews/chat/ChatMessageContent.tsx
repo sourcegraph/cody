@@ -1,7 +1,6 @@
+import { type Guardrails, isError } from '@sourcegraph/cody-shared'
 import type React from 'react'
-import { useEffect, useRef } from 'react'
-
-import { type Guardrails, isError, renderCodyMarkdown } from '@sourcegraph/cody-shared'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 
 import {
     CheckCodeBlockIcon,
@@ -12,6 +11,7 @@ import {
 } from '../icons/CodeBlockActionIcons'
 
 import { clsx } from 'clsx'
+import { MarkdownFromCody } from '../components/MarkdownFromCody'
 import styles from './ChatMessageContent.module.css'
 
 export interface CodeBlockActionsProps {
@@ -21,7 +21,6 @@ export interface CodeBlockActionsProps {
 
 interface ChatMessageContentProps {
     displayMarkdown: string
-    wrapLinksWithCodyCommand: boolean
 
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
@@ -235,7 +234,6 @@ class GuardrailsStatusController {
  */
 export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps> = ({
     displayMarkdown,
-    wrapLinksWithCodyCommand,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
     guardrails,
@@ -294,17 +292,64 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
         }
     }, [copyButtonOnSubmit, insertButtonOnSubmit, guardrails])
 
+    usePreserveSelectionOnUpdate(rootRef, [displayMarkdown])
+
     return (
-        <div
-            ref={rootRef}
-            className={clsx(styles.content, className)}
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: the result is run through dompurify
-            dangerouslySetInnerHTML={{
-                // wrapLinksWithCodyCommand opens all links in assistant responses using the
-                // _cody.vscode.open command (but not human messages because those already
-                // have the right URIs and are trusted).
-                __html: renderCodyMarkdown(displayMarkdown, { wrapLinksWithCodyCommand }),
-            }}
-        />
+        <div ref={rootRef}>
+            <MarkdownFromCody className={clsx(styles.content, className)}>
+                {displayMarkdown}
+            </MarkdownFromCody>
+        </div>
     )
+}
+
+function usePreserveSelectionOnUpdate(
+    elementRef: React.RefObject<HTMLDivElement>,
+    deps: React.DependencyList
+) {
+    // Restore prior selection from before the `displayMarkdown` changed and we updated the DOM
+    // below.
+    type SerializedSelection = {
+        anchorNode: NonNullable<Selection['anchorNode']>
+        anchorOffset: NonNullable<Selection['anchorOffset']>
+        focusNode: NonNullable<Selection['focusNode']>
+        focusOffset: NonNullable<Selection['focusOffset']>
+    }
+    const lastSelection = useRef<SerializedSelection | null>(null)
+    const s = window.getSelection()
+    lastSelection.current =
+        s?.anchorNode && s.focusNode
+            ? {
+                  anchorNode: s.anchorNode,
+                  anchorOffset: s.anchorOffset,
+                  focusNode: s.focusNode,
+                  focusOffset: s.focusOffset,
+              }
+            : null
+    // biome-ignore lint/correctness/useExhaustiveDependencies: elementRef is a ref, and its value is stable.
+    useLayoutEffect(() => {
+        if (!lastSelection.current) {
+            return
+        }
+        if (
+            !elementRef.current?.contains(lastSelection.current.anchorNode) &&
+            !elementRef.current?.contains(lastSelection.current.focusNode)
+        ) {
+            // Don't restore selections that are outside of `elementRef`.
+            return
+        }
+        try {
+            window
+                .getSelection()
+                ?.setBaseAndExtent(
+                    lastSelection.current.anchorNode,
+                    lastSelection.current.anchorOffset,
+                    lastSelection.current.focusNode,
+                    lastSelection.current.focusOffset
+                )
+        } catch (error) {
+            console.error(error)
+            lastSelection.current = null
+        }
+    }, deps)
 }

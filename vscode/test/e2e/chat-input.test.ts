@@ -1,73 +1,7 @@
-import { expect } from '@playwright/test'
-
+import { type Locator, expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
-import { createEmptyChatPanel, sidebarExplorer, sidebarSignin } from './common'
-import {
-    type DotcomUrlOverride,
-    type ExpectedEvents,
-    executeCommandInPalette,
-    openFile,
-    test,
-} from './helpers'
-
-test.extend<ExpectedEvents>({
-    // list of events we expect this test to log, add to this list as needed
-    expectedEvents: [
-        'CodyInstalled',
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-    ],
-    expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
-        'cody.codyIgnore:hasFile',
-        'cody.auth:failed',
-        'cody.auth.login:clicked',
-        'cody.auth.signin.menu:clicked',
-        'cody.auth.login:firstEver',
-        'cody.auth.signin.token:clicked',
-        'cody.auth:connected',
-        'cody.chat-question:submitted',
-        'cody.chat-question:executed',
-        'cody.chatResponse:noCode',
-    ],
-})('editing messages in the chat input', async ({ page, sidebar }) => {
-    await sidebarSignin(page, sidebar)
-
-    const [_chatFrame, chatInput] = await createEmptyChatPanel(page)
-
-    // Test that empty chat messages cannot be submitted.
-    await chatInput.fill(' ')
-    await chatInput.press('Enter')
-    await expect(chatInput).toHaveText(' ')
-    await chatInput.press('Backspace')
-    await chatInput.clear()
-
-    // Test that Ctrl+Arrow jumps by a word.
-    await chatInput.focus()
-    await chatInput.type('One')
-    await chatInput.press('Control+ArrowLeft')
-    await chatInput.type('Two')
-    await expect(chatInput).toHaveText('TwoOne')
-
-    // Test that Ctrl+Shift+Arrow highlights a word by trying to delete it.
-    await chatInput.clear()
-    await chatInput.type('One')
-    await chatInput.press('Control+Shift+ArrowLeft')
-    await chatInput.press('Delete')
-    await expect(chatInput).toHaveText('')
-
-    // Chat input should have focused after sending a message.
-    await expect(chatInput).toBeFocused()
-    await chatInput.fill('Chat events on submit')
-    await chatInput.press('Enter')
-})
+import { createEmptyChatPanel, focusChatInputAtEnd, sidebarExplorer, sidebarSignin } from './common'
+import { type DotcomUrlOverride, type ExpectedEvents, executeCommandInPalette, test } from './helpers'
 
 test.extend<ExpectedEvents>({
     expectedEvents: [
@@ -115,21 +49,10 @@ test.extend<ExpectedEvents>({
     // when we submit a question later as the question will be streamed to this panel
     // directly instead of opening a new one.
     await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
-    const [chatPanel, chatInput] = await createEmptyChatPanel(page)
+    const [chatPanel, lastChatInput, firstChatInput, chatInputs] = await createEmptyChatPanel(page)
+    await expect(firstChatInput).toBeFocused() // Chat should be focused initially.
     await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
     await page.getByRole('tab', { name: 'buzz.ts' }).dblclick()
-
-    // Submit a new chat question from the command menu.
-    await page.getByLabel(/Commands \(/).click()
-    await page.waitForTimeout(100)
-    // HACK: The 'delay' command is used to make sure the response is streamed 400ms after
-    // the command is sent. This provides us with a small window to move the cursor
-    // from the new opened chat window back to the editor, before the chat has finished
-    // streaming its response.
-    await chatInput.fill('delay')
-    await chatInput.press('Enter')
-    await expect(chatInput).toBeFocused()
-    await chatInput.click()
 
     // Ensure equal-width columns so we can be sure the code we're about to click is in view (and is
     // not out of the editor's scroll viewport). This became required due to new (undocumented)
@@ -138,25 +61,143 @@ test.extend<ExpectedEvents>({
     // click would be only partially visible, making the click() call fail.
     await executeCommandInPalette(page, 'View: Reset Editor Group Sizes')
 
+    // Click in the file to make sure we're not focused in the chat panel. Use the Alt+L hotkey
+    // (`Cody: New Chat`) to switch back to the chat window we already opened and check that the
+    // input is focused.
+    await page.getByText("fizzbuzz.push('Buzz')").click()
+    await page.keyboard.press('Alt+L')
+    await expect(firstChatInput).toBeFocused()
+
+    // Submit a new chat question from the command menu.
+    await page.getByLabel(/Commands \(/).click()
+    await page.waitForTimeout(100)
+
+    // HACK: The 'delay' command is used to make sure the response is streamed 400ms after
+    // the command is sent. This provides us with a small window to move the cursor
+    // from the new opened chat window back to the editor, before the chat has finished
+    // streaming its response.
+    await firstChatInput.fill('delay')
+    await firstChatInput.press('Enter')
+    await expect(lastChatInput).toBeFocused()
+
     // Make sure the chat input box does not steal focus from the editor when editor
     // is focused.
+    await expect(lastChatInput).toBeFocused()
     await page.getByText("fizzbuzz.push('Buzz')").click()
-    await expect(chatInput).not.toBeFocused()
+    await expect(firstChatInput).not.toBeFocused()
+    await expect(lastChatInput).not.toBeFocused()
     // once the response is 'Done', check the input focus
-    await chatInput.hover()
+    await firstChatInput.hover()
     await expect(chatPanel.getByText('Done')).toBeVisible()
-    await expect(chatInput).not.toBeFocused()
+    await expect(firstChatInput).not.toBeFocused()
+    await expect(lastChatInput).not.toBeFocused()
 
-    // Click on the chat input box to make sure it now has the focus, before submitting
-    // a new chat question. The original focus area which is the chat input should still
-    // have the focus after the response is received.
-    await chatInput.click()
-    await expect(chatInput).toBeFocused()
-    await chatInput.type('Regular chat message', { delay: 10 })
-    await chatInput.press('Enter')
+    // Click into the last chat input and submit a new follow-up chat message. The original focus
+    // area which is the chat input should still have the focus after the response is received.
+    await lastChatInput.click()
+    await lastChatInput.type('Regular chat message', { delay: 10 })
+    await lastChatInput.press('Enter')
     await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
-    await expect(chatInput).toBeFocused()
+    await expect(chatInputs.nth(1)).not.toBeFocused()
+    await expect(lastChatInput).toBeFocused()
 })
+
+test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
+    'chat toolbar and row UI',
+    async ({ page, sidebar }) => {
+        await fetch(`${mockServer.SERVER_URL}/.test/currentUser/codyProEnabled`, { method: 'POST' })
+
+        // This test requires that the window be focused in the OS window manager because it deals with
+        // focus.
+        await page.bringToFront()
+
+        await sidebarSignin(page, sidebar)
+        const [chatPanel, lastChatInput] = await createEmptyChatPanel(page)
+
+        function nthHumanMessageRow(n: number): Locator {
+            return chatPanel
+                .locator('[role="row"][data-testid="message"]:has([data-lexical-editor="true"])')
+                .nth(n)
+        }
+        function humanMessageRowParts(row: Locator): {
+            editor: Locator
+            toolbar: {
+                mention: Locator
+                enhancedContext: Locator
+                modelSelector: Locator
+                submit: Locator
+            }
+        } {
+            const toolbar = row.locator('[role="toolbar"]')
+            return {
+                editor: row.locator('[data-lexical-editor="true"]'),
+                toolbar: {
+                    mention: toolbar.getByRole('button', { name: 'Add context' }),
+                    enhancedContext: toolbar.getByRole('button', {
+                        name: 'Configure automatic code context',
+                    }),
+                    modelSelector: toolbar.getByRole('combobox', { name: 'Select a model' }),
+                    submit: toolbar.getByRole('button', { name: 'Send with automatic code context' }),
+                },
+            }
+        }
+
+        // Ensure the chat toolbar is visible even when it's not focused because it's the last human
+        // input.
+        const humanRow0 = humanMessageRowParts(nthHumanMessageRow(0))
+        await humanRow0.editor.blur()
+        await expect(humanRow0.toolbar.mention).toBeVisible()
+        await expect(humanRow0.toolbar.enhancedContext).toBeVisible()
+        await expect(humanRow0.toolbar.modelSelector).toBeVisible()
+        await expect(humanRow0.toolbar.submit).toBeVisible()
+
+        // Ensure that clicking the toolbar mention button focuses the editor.
+        await humanRow0.toolbar.mention.click()
+        await expect(humanRow0.editor).toBeFocused()
+
+        // Now send a message.
+        await humanRow0.editor.fill('Hello')
+        await humanRow0.editor.press('Enter')
+        await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
+
+        // Ensure the toolbar hides when the first input isn't focused.
+        await expect(humanRow0.editor).not.toBeFocused()
+        await expect(humanRow0.toolbar.mention).not.toBeVisible()
+        await expect(humanRow0.toolbar.enhancedContext).not.toBeVisible()
+        await expect(humanRow0.toolbar.modelSelector).not.toBeVisible()
+        await expect(humanRow0.toolbar.submit).not.toBeVisible()
+
+        // Now check the interactions on the first human message row again. The toolbar should still
+        // work when clicking among different toolbar popovers. When the first message input loses
+        // focus, it hides the toolbar, but that should not interfere with clicking among toolbar items.
+        await humanRow0.editor.focus()
+        await expect(humanRow0.toolbar.mention).toBeVisible()
+        await expect(humanRow0.toolbar.enhancedContext).toBeVisible()
+        await expect(humanRow0.toolbar.modelSelector).toBeVisible()
+        await expect(humanRow0.toolbar.submit).toBeVisible()
+        await expect(chatPanel.getByText('Optimized for Accuracy')).not.toBeVisible()
+        await expect(chatPanel.getByText('Automatic code context')).not.toBeVisible()
+        // Open the model selector toolbar popover.
+        await humanRow0.toolbar.modelSelector.click()
+        await expect(chatPanel.getByText('Optimized for Accuracy')).toBeVisible()
+        await expect(chatPanel.getByText('Automatic code context')).not.toBeVisible()
+        // Now click to the enhanced context toolbar popover. All toolbar items should still be visible, and the new popover should be open.
+        await humanRow0.toolbar.enhancedContext.click()
+        await expect(chatPanel.getByText('Optimized for Accuracy')).not.toBeVisible()
+        await expect(chatPanel.getByText('Automatic code context')).toBeVisible()
+        await expect(humanRow0.toolbar.mention).toBeVisible()
+        await expect(humanRow0.toolbar.enhancedContext).toBeVisible()
+        await expect(humanRow0.toolbar.modelSelector).toBeVisible()
+        await expect(humanRow0.toolbar.submit).toBeVisible()
+
+        // Now focus on the last input. The first row should be minimized.
+        await lastChatInput.click()
+        await expect(humanRow0.toolbar.mention).not.toBeVisible()
+        await expect(humanRow0.toolbar.enhancedContext).not.toBeVisible()
+        await expect(humanRow0.toolbar.modelSelector).not.toBeVisible()
+        await expect(humanRow0.toolbar.submit).not.toBeVisible()
+    }
+)
 
 test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<ExpectedEvents>({
     expectedEvents: [
@@ -191,15 +232,15 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
 
     await sidebarSignin(page, sidebar)
 
-    const [chatFrame, chatInput] = await createEmptyChatPanel(page)
+    const [chatFrame, lastChatInput, firstChatInput] = await createEmptyChatPanel(page)
 
-    const modelSelect = chatFrame.getByRole('combobox', { name: 'Select a model' })
+    const modelSelect = chatFrame.getByRole('combobox', { name: 'Select a model' }).last()
 
     await expect(modelSelect).toBeEnabled()
     await expect(modelSelect).toHaveText(/^Claude 3 Sonnet/)
 
-    await chatInput.fill('to model1')
-    await chatInput.press('Enter')
+    await firstChatInput.fill('to model1')
+    await firstChatInput.press('Enter')
     await expect(chatFrame.getByRole('row').getByTitle('Claude 3 Sonnet by Anthropic')).toBeVisible()
 
     // Change model and send another message.
@@ -207,17 +248,17 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     await modelSelect.click()
     const modelChoices = chatFrame.getByRole('listbox', { name: 'Suggestions' })
     await modelChoices.getByRole('option', { name: 'GPT-4o' }).click()
+    await expect(lastChatInput).toBeFocused()
     await expect(modelSelect).toHaveText(/^GPT-4o/)
-    await chatInput.fill('to model2')
-    await chatInput.press('Enter')
+    await lastChatInput.fill('to model2')
+    await lastChatInput.press('Enter')
     await expect(chatFrame.getByRole('row').getByTitle('GPT-4o by OpenAI')).toBeVisible()
 })
 
 test.extend<ExpectedEvents>({
+    // list of events we expect this test to log, add to this list as needed
     expectedEvents: [
         'CodyInstalled',
-        'CodyVSCodeExtension:codyIgnore:hasFile',
-        'CodyVSCodeExtension:Auth:failed',
         'CodyVSCodeExtension:auth:clickOtherSignInOptions',
         'CodyVSCodeExtension:login:clicked',
         'CodyVSCodeExtension:auth:selectSigninMenu',
@@ -225,7 +266,8 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:Auth:connected',
         'CodyVSCodeExtension:chat-question:submitted',
         'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chatResponse:hasCode',
+        'CodyVSCodeExtension:chatResponse:noCode',
+        'CodyVSCodeExtension:editChatButton:clicked',
     ],
     expectedV2Events: [
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
@@ -237,59 +279,76 @@ test.extend<ExpectedEvents>({
         'cody.auth.login:firstEver',
         'cody.auth.signin.token:clicked',
         'cody.auth:connected',
+        'cody.auth:connected',
         'cody.chat-question:submitted',
         'cody.chat-question:executed',
-        'cody.chatResponse:hasCode',
+        'cody.chatResponse:noCode',
+        'cody.editChatButton:clicked',
     ],
-})('chat readability: long text are wrapped and scrollable in chat views', async ({ page, sidebar }) => {
-    // Open a file before starting a new chat to make sure chat will be opened on the side
+})('editing follow-up messages in chat view', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
-    await openFile(page, 'buzz.test.ts')
-    const [chatFrame, chatInput] = await createEmptyChatPanel(page)
 
-    // Use the width of the welcome chat to determine if the chat messages are wrapped.
-    const welcomeText = chatFrame.getByText('Welcome to Cody')
-    const welcomeTextContainer = await welcomeText.boundingBox()
-    const welcomeTextContainerWidth = welcomeTextContainer?.width || 0
-    expect(welcomeTextContainerWidth).toBeGreaterThan(0)
+    const [chatFrame, lastChatInput, firstChatInput, chatInputs] = await createEmptyChatPanel(page)
 
-    await chatInput.fill(
-        `Lorem ipsum Cody.
-        export interface Animal {
-                name: string
-                makeAnimalSound(): string
-                isMammal: boolean
-                printName(): void {
-                    console.log(this.name);
-                }
-            }
-        }
-        `
-    )
+    // Submit three new messages
+    await lastChatInput.fill('One')
+    await lastChatInput.press('Enter')
+    await expect(chatFrame.getByText('One')).toBeVisible()
+    await lastChatInput.fill('Two')
+    await lastChatInput.press('Enter')
+    await expect(chatFrame.getByText('Two')).toBeVisible()
+    await lastChatInput.fill('Three')
+    await lastChatInput.press('Enter')
+    await expect(chatFrame.getByText('Three')).toBeVisible()
 
-    await chatInput.press('Enter')
+    // Click on the first input to get into the editing mode
+    // The text area should automatically get the focuse,
+    // and contains the original message text,
+    // The submit button will also be replaced with "Update Message" button
+    await chatFrame.getByText('One').hover()
+    await focusChatInputAtEnd(firstChatInput)
+    await expect(firstChatInput).toBeFocused()
+    await expect(firstChatInput).toHaveText('One')
 
-    // Verify if whitespaces are preserved in the chat view for human messages
-    const humanText = chatFrame.getByText('Lorem ipsum Cody.')
-    await expect(humanText).toHaveText(/\s\s\s\sname: string/)
+    // click on the second edit button to get into the editing mode again
+    // edit the message from "Two" to "Four"
+    const secondChatInput = chatInputs.nth(1)
+    await chatFrame.getByText('Two').hover()
+    // the original message text should shows up in the text box
+    await expect(secondChatInput).toHaveText('Two')
+    await secondChatInput.click()
+    await secondChatInput.fill('Four')
+    await expect(chatInputs.nth(2)).toHaveText('Three')
+    await page.keyboard.press('Enter')
+    await expect(secondChatInput).not.toBeFocused()
+    await expect(chatInputs.nth(2)).toBeFocused()
+    await expect(chatInputs.nth(2)).not.toHaveText('Three')
 
-    const humanTextContainerBox = await humanText.boundingBox()
-    expect(humanTextContainerBox?.width).toBeLessThan(welcomeTextContainerWidth)
+    // Try editing again to make sure the focus behavior remains consistent.
+    await chatInputs.nth(2).click()
+    await chatInputs.nth(2).fill('Dummy')
+    await expect(chatInputs.nth(2)).toHaveText('Dummy')
+    await secondChatInput.click()
+    await secondChatInput.fill('Five')
+    await page.keyboard.press('Enter')
+    await expect(chatInputs.nth(2)).toHaveText('Dummy')
+    await expect(secondChatInput).not.toBeFocused()
+    await expect(chatInputs.nth(2)).toBeFocused()
 
-    // Code block should be scrollable
-    const codeBlock = chatFrame.locator('pre').last()
-    expect(codeBlock).toBeVisible()
-    const codeBlockElement = await codeBlock.boundingBox()
-    expect(codeBlockElement?.width).toBeLessThan(welcomeTextContainerWidth)
+    // Only two messages are left after the edit (e.g. "One", "Four"),
+    // as all the messages after the edited message have be removed
+    await expect(chatInputs).toHaveCount(3 /* 2 + the 1 for the next not-yet-sent message */)
+    await expect(chatFrame.getByText('One')).toBeVisible()
+    await expect(chatFrame.getByText('Two')).not.toBeVisible()
+    await expect(chatFrame.getByText('Three')).not.toBeVisible()
+    await expect(chatFrame.getByText('Five')).toBeVisible()
 
-    // Go to the bottom of the chat transcript view
-    await codeBlock.click()
-    await page.keyboard.press('PageDown')
+    // Chat input should still have focus.
+    await expect(chatInputs.nth(2)).toBeFocused()
 
-    const botResponseText = chatFrame.getByText('Excepteur')
-    await expect(botResponseText).toBeVisible()
-
-    // The response text element and the code block element should have the same width
-    const botResponseElement = await botResponseText.boundingBox()
-    expect(botResponseElement?.width).toBeLessThan(welcomeTextContainerWidth)
+    // Send another new message.
+    await chatInputs.nth(2).click()
+    await chatInputs.nth(2).fill('Six')
+    await page.keyboard.press('Enter')
+    await expect(chatInputs.nth(3)).toBeFocused()
 })

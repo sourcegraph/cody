@@ -2,6 +2,7 @@ import { clsx } from 'clsx'
 import type React from 'react'
 import type { FunctionComponent, PropsWithChildren } from 'react'
 import styles from './Cell.module.css'
+import { MESSAGE_CELL_AVATAR_SIZE } from './messageCell/BaseMessageCell'
 
 /**
  * A cell is a row in a chat, which can be a human message, assistant message, context, notice, etc.
@@ -41,7 +42,9 @@ export const Cell: FunctionComponent<
         aria-disabled={ariaDisabled}
         data-testid={dataTestID}
     >
-        <div className={styles.gutter}>{gutterIcon}</div>
+        <div className={styles.gutter} style={{ width: `${MESSAGE_CELL_AVATAR_SIZE}px` }}>
+            {gutterIcon}
+        </div>
         <div className={clsx(styles.content, contentClassName)}>{children}</div>
     </div>
 )

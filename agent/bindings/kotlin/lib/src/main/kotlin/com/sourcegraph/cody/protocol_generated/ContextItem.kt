@@ -32,7 +32,7 @@ data class ContextItemFile(
   val repoName: String? = null,
   val revision: String? = null,
   val title: String? = null,
-  val source: ContextItemSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal, uri, package, history, github
+  val source: ContextItemSource? = null, // Oneof: embeddings, user, editor, search, unified, selection, terminal, uri, package, history, github
   val size: Int? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
@@ -52,7 +52,7 @@ data class ContextItemSymbol(
   val repoName: String? = null,
   val revision: String? = null,
   val title: String? = null,
-  val source: ContextItemSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal, uri, package, history, github
+  val source: ContextItemSource? = null, // Oneof: embeddings, user, editor, search, unified, selection, terminal, uri, package, history, github
   val size: Int? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
@@ -74,7 +74,7 @@ data class ContextItemPackage(
   val repoName: String? = null,
   val revision: String? = null,
   val title: String? = null,
-  val source: ContextItemSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal, uri, package, history, github
+  val source: ContextItemSource? = null, // Oneof: embeddings, user, editor, search, unified, selection, terminal, uri, package, history, github
   val size: Int? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
@@ -97,7 +97,7 @@ data class ContextItemGithubPullRequest(
   val repoName: String? = null,
   val revision: String? = null,
   val title: String? = null,
-  val source: ContextItemSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal, uri, package, history, github
+  val source: ContextItemSource? = null, // Oneof: embeddings, user, editor, search, unified, selection, terminal, uri, package, history, github
   val size: Int? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
@@ -119,7 +119,7 @@ data class ContextItemGithubIssue(
   val repoName: String? = null,
   val revision: String? = null,
   val title: String? = null,
-  val source: ContextItemSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal, uri, package, history, github
+  val source: ContextItemSource? = null, // Oneof: embeddings, user, editor, search, unified, selection, terminal, uri, package, history, github
   val size: Int? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
@@ -141,15 +141,14 @@ data class ContextItemOpenCtx(
   val repoName: String? = null,
   val revision: String? = null,
   val title: String? = null,
-  val source: ContextItemSource? = null, // Oneof: embeddings, user, keyword, editor, filename, search, unified, selection, terminal, uri, package, history, github
+  val source: ContextItemSource? = null, // Oneof: embeddings, user, editor, search, unified, selection, terminal, uri, package, history, github
   val size: Int? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
   val provider: String? = null,
   val type: TypeEnum, // Oneof: openctx
   val providerUri: String,
-  val description: String? = null,
-  val data: Any? = null,
+  val mention: MentionParams? = null,
 ) : ContextItem() {
 
   enum class TypeEnum {

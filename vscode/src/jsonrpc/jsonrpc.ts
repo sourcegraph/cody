@@ -1,8 +1,10 @@
 import { appendFileSync, existsSync, mkdirSync, rmSync } from 'node:fs'
 import { dirname } from 'node:path'
 
+import { isRateLimitError } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { type MessageConnection, Trace } from 'vscode-jsonrpc'
+import { type CancellationToken, type MessageConnection, ResponseError, Trace } from 'vscode-jsonrpc'
+import { CodyJsonRpcErrorCode } from './CodyJsonRpcErrorCode'
 import type * as agent from './agent-protocol'
 import type * as bfg from './bfg-protocol'
 import type * as contextRanking from './context-ranking-protocol'
@@ -66,12 +68,36 @@ export class MessageHandler {
         }
     }
 
+    private customizeResponseError(error: Error, token: CancellationToken): ResponseError<any> {
+        const message = error instanceof Error ? error.message : `${error}`
+        const stack = error instanceof Error ? `\n${error.stack}` : ''
+        const code = token.isCancellationRequested
+            ? CodyJsonRpcErrorCode.RequestCanceled
+            : isRateLimitError(error)
+              ? CodyJsonRpcErrorCode.RateLimitError
+              : CodyJsonRpcErrorCode.InternalError
+        return new ResponseError(
+            code,
+            // Include the stack in the message because
+            // some JSON-RPC bindings like lsp4j don't
+            // expose access to the `data` property,
+            // only `message`. The stack is super
+            // helpful to track down unexpected
+            // exceptions.
+            `${message}\n${stack}`,
+            JSON.stringify({ error, stack })
+        )
+    }
+
     public registerRequest<M extends RequestMethodName>(method: M, callback: RequestCallback<M>): void {
         this.requestHandlers.set(method, callback)
         this.disposables.push(
             this.conn.onRequest(
                 method,
-                async (params, cancelToken) => await callback(params, cancelToken)
+                async (params, cancelToken: CancellationToken) =>
+                    await callback(params, cancelToken).catch<ResponseError<any>>(error =>
+                        this.customizeResponseError(error, cancelToken)
+                    )
             )
         )
     }

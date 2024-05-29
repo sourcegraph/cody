@@ -97,6 +97,15 @@ query CurrentSiteCodyLlmConfiguration {
     }
 }`
 
+export const CURRENT_SITE_CODY_LLM_CONFIGURATION_SMART_CONTEXT = `
+query CurrentSiteCodyLlmConfiguration {
+    site {
+        codyLLMConfiguration {
+            smartContextWindow
+        }
+    }
+}`
+
 export const REPOSITORY_LIST_QUERY = `
 query Repositories($first: Int!, $after: String) {
     repositories(first: $first, after: $after) {
@@ -110,6 +119,56 @@ query Repositories($first: Int!, $after: String) {
     }
 }
 `
+
+export const REPOSITORY_SEARCH_QUERY = `
+query RepositoriesSearch($first: Int!, $after: String, $query: String) {
+    repositories(first: $first, after: $after, query: $query) {
+        nodes {
+            id
+            name
+            url
+        }
+        pageInfo {
+            endCursor
+        }
+    }
+}
+`
+export const FILE_CONTENTS_QUERY = `
+query FileContentsQuery($repoName: String!, $filePath: String!, $rev: String!) {
+    repository(name: $repoName){
+        commit(rev: $rev) {
+            file(path: $filePath) {
+                path
+                url
+                content
+            }
+        }
+    }
+}`
+
+export const FILE_MATCH_SEARCH_QUERY = `
+query FileMatchSearchQuery($query: String!) {
+  search(query: $query, version: V3, patternType: literal) {
+    results {
+      results {
+        __typename
+        ... on FileMatch {
+          repository {
+            name
+          }
+          file {
+            url
+            path
+            commit {
+                oid
+            }
+          }
+        }
+      }
+    }
+  }
+}`
 
 export const REPOSITORY_ID_QUERY = `
 query Repository($name: String!) {

@@ -8,5 +8,6 @@ data class ProtocolTextDocument(
   val selection: Range? = null,
   val contentChanges: List<ProtocolTextDocumentContentChangeEvent>? = null,
   val visibleRange: Range? = null,
+  val testing: TestingParams? = null,
 )
 

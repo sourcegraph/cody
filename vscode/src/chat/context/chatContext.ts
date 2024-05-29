@@ -68,10 +68,16 @@ export async function getChatContextItemsForMention(
 
             return items.map(
                 (item): ContextItemOpenCtx => ({
-                    ...item,
                     type: 'openctx',
+                    title: item.title,
+                    providerUri: item.providerUri,
                     uri: URI.parse(item.uri),
                     provider: 'openctx',
+                    mention: {
+                        uri: item.uri,
+                        data: item.data,
+                        description: item.description,
+                    },
                 })
             )
         }

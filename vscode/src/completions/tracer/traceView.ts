@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
-import { displayPath, displayRange, isDefined, renderMarkdown } from '@sourcegraph/cody-shared'
+import { displayPath, displayRange, isDefined } from '@sourcegraph/cody-shared'
+import { marked } from 'marked'
 
 import {
     SectionHistoryRetriever,
@@ -224,7 +225,7 @@ ${codeDetailsWithSummary('JSON for dataset', jsonForDataset(data))}
         .map(s => s.trim())
         .join('\n\n---\n\n')
 
-    return renderMarkdown(markdownSource, { noDomPurify: true })
+    return marked(markdownSource)
 }
 
 function statisticSummary(): string {

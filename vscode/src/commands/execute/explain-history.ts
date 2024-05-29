@@ -9,8 +9,8 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import type { ChatCommandResult } from '../../CommandResult'
 import { getEditor } from '../../editor/active-editor'
-import type { ChatCommandResult } from '../../main'
 import type { CommandsProvider } from '../services/provider'
 import type { CodyCommandArgs } from '../types'
 import { type ExecuteChatArguments, executeChat } from './ask'

@@ -1,0 +1,17 @@
+.button {
+    kbd {
+        font-family: inherit;
+        font-size: 80%;
+        padding: 0.05rem 0.2rem 0.05rem 0;
+        display: inline-flex;
+        align-items: center;
+        line-height: 1;
+        margin-bottom: -1.5px;
+        opacity: 0.8;
+
+         /* Override VS Code's builtin styles. */
+        border: none !important;
+        color: unset !important;
+        background-color: unset !important;
+    }
+}

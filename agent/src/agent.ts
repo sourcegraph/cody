@@ -42,12 +42,12 @@ import {
     type MessageWriter,
 } from 'vscode-jsonrpc'
 import { ModelUsage } from '../../lib/shared/src/models/types'
+import type { CommandResult } from '../../vscode/src/CommandResult'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
 import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/execute'
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
 import type { ExtensionClient, ExtensionObjects } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
-import type { CommandResult } from '../../vscode/src/main'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
@@ -210,8 +210,24 @@ export function errorToCodyError(error?: Error): CodyError | undefined {
 }
 
 export class Agent extends MessageHandler implements ExtensionClient {
+    // Used to track background work of the extension, like tree-sitter parsing.
+    // In several places in the extension, we register event handler that run
+    // background work (`Promise<void>` that we don't await on). We sometimes
+    // need to await on these promises, for example when writing deterministic
+    // tests.
+    private pendingPromises = new Set<Promise<any>>()
     public codeLenses = new AgentCodeLenses()
     public workspace = new AgentWorkspaceDocuments({
+        doPanic: (message: string) => {
+            const panicMessage =
+                '!PANIC! Client document content is out of sync with server document content'
+            process.stderr.write(panicMessage)
+            process.stderr.write(message + '\n')
+            this.notify('debug/message', {
+                channel: 'Document Sync Check',
+                message: panicMessage + '\n' + message,
+            })
+        },
         edit: (uri, callback, options) => {
             if (this.clientInfo?.capabilities?.edit !== 'enabled') {
                 logDebug('CodyAgent', 'client does not support operation: textDocument/edit')
@@ -337,7 +353,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 ? vscode.Uri.parse(clientInfo.workspaceRootUri)
                 : vscode.Uri.from({
                       scheme: 'file',
-                      path: clientInfo.workspaceRootPath,
+                      path: clientInfo.workspaceRootPath ?? undefined,
                   })
             try {
                 await initializeVscodeExtension(
@@ -388,12 +404,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
             this.workspace.setActiveTextEditor(
                 this.workspace.newTextEditor(this.workspace.loadDocument(documentWithUri))
             )
+            this.pushPendingPromise(this.workspace.fireVisibleTextEditorsDidChange())
         })
 
         this.registerNotification('textDocument/didOpen', document => {
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
             const textDocument = this.workspace.loadDocument(documentWithUri)
             vscode_shim.onDidOpenTextDocument.fire(textDocument)
+            this.pushPendingPromise(this.workspace.fireVisibleTextEditorsDidChange())
             this.workspace.setActiveTextEditor(this.workspace.newTextEditor(textDocument))
         })
 
@@ -403,11 +421,16 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 this.workspace.loadDocumentWithChanges(documentWithUri)
             const textEditor = this.workspace.newTextEditor(textDocument)
             this.workspace.setActiveTextEditor(textEditor)
-            vscode_shim.onDidChangeTextDocument.fire({
-                document: textDocument,
-                contentChanges,
-                reason: undefined,
-            })
+
+            if (contentChanges.length > 0) {
+                this.pushPendingPromise(
+                    vscode_shim.onDidChangeTextDocument.cody_fireAsync({
+                        document: textDocument,
+                        contentChanges,
+                        reason: undefined,
+                    })
+                )
+            }
 
             if (document.selection) {
                 vscode_shim.onDidChangeTextEditorSelection.fire({
@@ -425,6 +448,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 this.workspace.deleteDocument(documentWithUri.uri)
                 vscode_shim.onDidCloseTextDocument.fire(oldDocument)
             }
+            this.pushPendingPromise(this.workspace.fireVisibleTextEditorsDidChange())
         })
 
         this.registerNotification('textDocument/didSave', async params => {
@@ -457,6 +481,24 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
+        this.registerAuthenticatedRequest('testing/awaitPendingPromises', async () => {
+            if (!vscode_shim.isTesting) {
+                throw new Error(
+                    'testing/awaitPendingPromises can only be called from tests. ' +
+                        'To fix this problem, set the environment variable CODY_SHIM_TESTING=true.'
+                )
+            }
+            await Promise.all(this.pendingPromises.values())
+            return null
+        })
+
+        this.registerAuthenticatedRequest('testing/memoryUsage', async () => {
+            if (!global.gc) {
+                throw new Error('testing/memoryUsage requires running node with --expose-gc')
+            }
+            global.gc()
+            return { usage: process.memoryUsage() }
+        })
         this.registerAuthenticatedRequest('testing/networkRequests', async () => {
             const requests = this.params.networkRequests ?? []
             return {
@@ -628,7 +670,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
                 return { items, completionEvent: result?.completionEvent }
             } catch (error) {
-                console.log('autocomplete failed', error)
                 if (isRateLimitError(error)) {
                     throw error
                 }
@@ -816,7 +857,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerAuthenticatedRequest('editCommands/code', params => {
             const instruction = PromptString.unsafe_fromUserQuery(params.instruction)
             const args: ExecuteEditArguments = {
-                configuration: { instruction, model: params.model },
+                configuration: {
+                    instruction,
+                    model: params.model ?? undefined,
+                    mode: params.mode ?? 'edit',
+                },
             }
             return this.createEditTask(executeEdit(args).then(task => task && { type: 'edit', task }))
         })
@@ -1001,9 +1046,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('remoteRepo/list', async ({ query, first, afterId }) => {
             const result = await this.extension.enterpriseContextFactory.repoSearcher.list(
-                query,
+                query ?? undefined,
                 first,
-                afterId
+                afterId ?? undefined
             )
             return {
                 repos: result.repos,
@@ -1028,6 +1073,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
             contextFiltersProvider.setTestingContextFilters(contextFilters)
             return null
         })
+    }
+
+    private pushPendingPromise(pendingPromise: Promise<unknown>): void {
+        if (!vscode_shim.isTesting) {
+            return
+        }
+        this.pendingPromises.add(pendingPromise)
+        pendingPromise.finally(() => this.pendingPromises.delete(pendingPromise))
     }
 
     // ExtensionClient callbacks.
@@ -1239,7 +1292,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 } else if (message.type === 'errors') {
                     panel.messageInProgressChange.fire(message)
                 } else if (message.type === 'attribution') {
-                    panel.pushAttribution(message)
+                    panel.pushAttribution({
+                        ...message,
+                        attribution: message.attribution ?? undefined,
+                        error: message.error ?? undefined,
+                    })
                 }
 
                 this.notify('webview/postMessage', {

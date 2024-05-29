@@ -1,8 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
-import { defaultAuthStatus } from '../src/chat/protocol'
-
-import { getDotComDefaultModels } from '@sourcegraph/cody-shared'
+import { defaultAuthStatus, getDotComDefaultModels } from '@sourcegraph/cody-shared'
 import { App } from './App'
 import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
@@ -10,8 +8,7 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 const meta: Meta<typeof App> = {
     title: 'cody/App',
     component: App,
-
-    decorators: [VSCodeWebview],
+    decorators: [story => <div style={{ height: '80vh' }}> {story()} </div>, VSCodeWebview],
 }
 
 export default meta
@@ -34,6 +31,8 @@ const dummyVSCodeAPI: VSCodeWrapper = {
             },
             authStatus: {
                 ...defaultAuthStatus,
+                displayName: 'Tim Lucas',
+                avatarURL: 'https://avatars.githubusercontent.com/u/153?v=4',
                 isLoggedIn: true,
                 authenticated: true,
                 hasVerifiedEmail: true,

@@ -1,13 +1,13 @@
 import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
-interface AutocompleteFileContextSnippet {
+export interface AutocompleteFileContextSnippet {
     uri: URI
     startLine: number
     endLine: number
     content: string
 }
-interface AutocompleteSymbolContextSnippet extends AutocompleteFileContextSnippet {
+export interface AutocompleteSymbolContextSnippet extends AutocompleteFileContextSnippet {
     symbol: string
 }
 export type AutocompleteContextSnippet =

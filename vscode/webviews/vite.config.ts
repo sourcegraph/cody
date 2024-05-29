@@ -1,11 +1,13 @@
 import { resolve } from 'path'
 
 import react from '@vitejs/plugin-react'
+import svgr from 'vite-plugin-svgr'
 
 import { defineProjectWithDefaults } from '../../.config/viteShared'
+import { PluginOption } from 'vite'
 
 export default defineProjectWithDefaults(__dirname, {
-    plugins: [react()],
+    plugins: [react(), svgr() as PluginOption],
     root: __dirname,
     base: './',
     build: {
