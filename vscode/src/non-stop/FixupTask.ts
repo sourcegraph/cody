@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import {
     type ContextItem,
     type EditModel,
+    type EditProvider,
     type EventSource,
     type PromptString,
     ps,
@@ -10,7 +11,6 @@ import {
 
 import type { EditIntent, EditMode } from '../edit/types'
 
-import { getOverridenModelForIntent } from '../edit/utils/edit-models'
 import type { FixupFile } from './FixupFile'
 import type { Diff } from './diff'
 import { CodyTaskState } from './utils'
@@ -74,6 +74,7 @@ export class FixupTask {
         /* The mode indicates how code should be inserted */
         public readonly mode: EditMode,
         public readonly model: EditModel,
+        public readonly provider: EditProvider,
         /* the source of the instruction, e.g. 'code-action', 'doc', etc */
         public source?: EventSource,
         /* The file to write the edit to. If not provided, the edit will be applied to the fixupFile. */
@@ -84,7 +85,6 @@ export class FixupTask {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, ps``).trim()
         this.originalRange = selectionRange
-        this.model = getOverridenModelForIntent(this.intent, this.model)
     }
 
     /**

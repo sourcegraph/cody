@@ -3,7 +3,9 @@
 export { ModelProvider } from './models'
 export {
     type ChatModel,
+    type ChatProvider,
     type EditModel,
+    type EditProvider,
     ModelUsage,
     type ModelContextWindow,
 } from './models/types'
