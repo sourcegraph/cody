@@ -132,7 +132,7 @@ export async function openCtxMentionProviders(): Promise<ContextMentionProviderM
         const providers = await client.meta({})
 
         return providers
-            .filter(provider => provider.features?.mentions)
+            .filter(provider => !!provider.mentions)
             .map(provider => ({
                 id: provider.providerUri,
                 title: provider.name,
