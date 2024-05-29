@@ -269,7 +269,7 @@ export type ServerRequests = {
     'window/showMessage': [ShowWindowMessageParams, string | null]
 
     'textDocument/edit': [TextDocumentEditParams, boolean]
-    'textDocument/openUntitledDocument': [UntitledTextDocument, boolean]
+    'textDocument/openDocument': [{ uri: string }, ProtocolTextDocument]
     'textDocument/show': [
         { uri: string; options?: TextDocumentShowOptionsParams | undefined | null },
         boolean,
@@ -457,7 +457,6 @@ export interface ClientCapabilities {
     progressBars?: 'none' | 'enabled' | undefined | null
     edit?: 'none' | 'enabled' | undefined | null
     editWorkspace?: 'none' | 'enabled' | undefined | null
-    untitledDocuments?: 'none' | 'enabled' | undefined | null
     showDocument?: 'none' | 'enabled' | undefined | null
     codeLenses?: 'none' | 'enabled' | undefined | null
     showWindowMessage?: 'notification' | 'request' | undefined | null
@@ -711,12 +710,6 @@ export interface EditFileOperation {
     type: 'edit-file'
     uri: string
     edits: TextEdit[]
-}
-
-export interface UntitledTextDocument {
-    uri: string
-    content?: string | undefined | null
-    language?: string | undefined | null
 }
 
 export interface TextDocumentEditParams {
