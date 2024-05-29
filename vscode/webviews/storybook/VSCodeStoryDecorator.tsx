@@ -15,6 +15,7 @@ import { type ChatModelContext, ChatModelContextProvider } from '../chat/models/
 import { WithContextProviders } from '../mentions/providers'
 import { WithChatContextClient } from '../promptEditor/plugins/atMentions/chatContextClient'
 import { dummyChatContextClient } from '../promptEditor/plugins/atMentions/fixtures'
+import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from '../utils/telemetry'
 import styles from './VSCodeStoryDecorator.module.css'
 
 setDisplayPathEnvInfo({
@@ -61,7 +62,9 @@ export function VSCodeDecorator(className: string | undefined, style?: CSSProper
             <AppWrapper>
                 <WithChatContextClient value={dummyChatContextClient}>
                     <ChatModelContextProvider value={useDummyChatModelContext()}>
-                        {story()}
+                        <TelemetryRecorderContext.Provider value={telemetryRecorder}>
+                            {story()}
+                        </TelemetryRecorderContext.Provider>
                     </ChatModelContextProvider>
                 </WithChatContextClient>
             </AppWrapper>
@@ -79,13 +82,16 @@ function useDummyChatModelContext(): ChatModelContext {
     return { chatModels, onCurrentChatModelChange }
 }
 
+const acquireVsCodeApi = () => ({
+    postMessage: (message: any) => {
+        console.debug('postMessage', message)
+    },
+})
 if (!(window as any).acquireVsCodeApi) {
-    ;(window as any).acquireVsCodeApi = () => ({
-        postMessage: (message: any) => {
-            console.debug('postMessage', message)
-        },
-    })
+    ;(window as any).acquireVsCodeApi = acquireVsCodeApi
 }
+
+const telemetryRecorder = createWebviewTelemetryRecorder(acquireVsCodeApi())
 
 export const ContextProvidersDecorator: Decorator = (Story, context) => {
     return (
