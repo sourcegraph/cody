@@ -23,7 +23,7 @@ export const Toolbar: FunctionComponent<{
 
     onMentionClick?: () => void
 
-    onSubmitClick: () => void
+    onSubmitClick: (addEnhancedContextEnabled: boolean) => void
     submitDisabled: SubmitButtonDisabled
 
     /** Handler for clicks that are in the "gap" (dead space), not any toolbar items. */
