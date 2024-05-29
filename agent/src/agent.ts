@@ -147,6 +147,9 @@ export async function newAgentClient(
                 reject?.(new Error(`exit: ${code}`))
             }
         })
+        if (clientInfo.inheritStderr) {
+            child.stderr.pipe(process.stderr)
+        }
 
         const conn = createMessageConnection(
             new StreamMessageReader(child.stdout),
@@ -216,7 +219,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
     // need to await on these promises, for example when writing deterministic
     // tests.
     private pendingPromises = new Set<Promise<any>>()
-    public codeLenses = new AgentCodeLenses()
+    public codeLens = new AgentProviders<vscode.CodeLensProvider>()
+    public codeAction = new AgentProviders<vscode.CodeActionProvider>()
     public workspace = new AgentWorkspaceDocuments({
         doPanic: (message: string) => {
             const panicMessage =
@@ -313,16 +317,24 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
             this.workspace.workspaceRootUri = vscode.Uri.parse(clientInfo.workspaceRootUri)
             vscode_shim.setWorkspaceDocuments(this.workspace)
+            if (clientInfo.capabilities?.codeActions === 'enabled') {
+                vscode_shim.onDidRegisterNewCodeActionProvider(codeActionProvider => {
+                    this.codeAction.addProvider(codeActionProvider, undefined)
+                })
+                vscode_shim.onDidUnregisterNewCodeActionProvider(codeActionProvider =>
+                    this.codeAction.removeProvider(codeActionProvider)
+                )
+            }
             if (clientInfo.capabilities?.codeLenses === 'enabled') {
                 vscode_shim.onDidRegisterNewCodeLensProvider(codeLensProvider => {
-                    this.codeLenses.add(
+                    this.codeLens.addProvider(
                         codeLensProvider,
                         codeLensProvider.onDidChangeCodeLenses?.(() => this.updateCodeLenses())
                     )
                     this.updateCodeLenses()
                 })
                 vscode_shim.onDidUnregisterNewCodeLensProvider(codeLensProvider =>
-                    this.codeLenses.remove(codeLensProvider)
+                    this.codeLens.removeProvider(codeLensProvider)
                 )
             }
             if (clientInfo.capabilities?.ignore === 'enabled') {
@@ -486,18 +498,77 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 throw new Error(
                     'testing/awaitPendingPromises can only be called from tests. ' +
                         'To fix this problem, set the environment variable CODY_SHIM_TESTING=true.'
-                )
+
+        // Store in-memory copy of the most recent Code action
+        const codeActionById = new Map<string, vscode.CodeAction>()
+        this.registerAuthenticatedRequest('codeActions/provide', async (params, token) => {
+            codeActionById.clear()
+            const document = this.workspace.getDocument(vscode.Uri.parse(params.location.uri))
+            if (!document) {
+                throw new Error(`codeActions/provide: document not found for ${params.location.uri}`)
             }
-            await Promise.all(this.pendingPromises.values())
-            return null
+            const codeActions: agent_protocol.ProtocolCodeAction[] = []
+            for (const providers of this.codeAction.providers()) {
+                const diagnostics = vscode.languages.getDiagnostics(document.uri)
+                const result = await providers.provideCodeActions(
+                    document,
+                    vscodeRange(params.location.range),
+                    {
+                        diagnostics,
+                        only: undefined,
+                        triggerKind:
+                            params.triggerKind === 'Automatic'
+                                ? vscode.CodeActionTriggerKind.Automatic
+                                : vscode.CodeActionTriggerKind.Invoke,
+                    },
+                    token
+                )
+                for (const vscAction of result ?? []) {
+                    if (vscAction instanceof vscode.CodeAction) {
+                        const diagnostics: agent_protocol.ProtocolDiagnostic[] = []
+                        for (const diagnostic of vscAction.diagnostics ?? []) {
+                            diagnostics.push({
+                                location: {
+                                    uri: params.location.uri,
+                                    range: diagnostic.range,
+                                },
+                                severity: 'error',
+                                source: diagnostic.source,
+                                message: diagnostic.message,
+                            })
+                        }
+                        const id = uuid.v4()
+                        const codeAction: agent_protocol.ProtocolCodeAction = {
+                            id,
+                            title: vscAction.title,
+                            commandID: vscAction.command?.command,
+                            diagnostics,
+                        }
+                        codeActionById.set(id, vscAction)
+                        codeActions.push(codeAction)
+                    }
+                }
+            }
+            return { codeActions }
         })
 
         this.registerAuthenticatedRequest('testing/memoryUsage', async () => {
             if (!global.gc) {
                 throw new Error('testing/memoryUsage requires running node with --expose-gc')
+        this.registerAuthenticatedRequest('codeActions/trigger', async ({ id }) => {
+            const codeAction = codeActionById.get(id)
+            if (!codeAction || !codeAction.command) {
+                throw new Error(`codeActions/trigger: unknown ID ${id}`)
             }
             global.gc()
             return { usage: process.memoryUsage() }
+            const args: ExecuteEditArguments = codeAction.command.arguments?.[0]
+            if (!args) {
+                throw new Error(`codeActions/trigger: no arguments for ID ${id}`)
+            }
+            return this.createEditTask(
+                executeEdit(args).then<CommandResult | undefined>(task => ({ type: 'edit', task }))
+            )
         })
         this.registerAuthenticatedRequest('testing/networkRequests', async () => {
             const requests = this.params.networkRequests ?? []

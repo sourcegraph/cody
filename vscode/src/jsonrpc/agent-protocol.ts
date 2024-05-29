@@ -109,6 +109,14 @@ export type ClientRequests = {
     // using this API in favor of high-level wrappers like 'chat/new'.
     'command/execute': [ExecuteCommandParams, any]
 
+    'codeActions/provide': [
+        { location: ProtocolLocation; triggerKind: CodeActionTriggerKind },
+        { codeActions: ProtocolCodeAction[] },
+    ]
+    // The ID parameter should match ProtocolCodeAction.id from
+    // codeActions/provide.
+    'codeActions/trigger': [{ id: string }, EditTask]
+
     'autocomplete/execute': [AutocompleteParams, AutocompleteResult]
 
     'graphql/getRepoIds': [{ names: string[]; first: number }, { repos: { name: string; id: string }[] }]
@@ -143,6 +151,11 @@ export type ClientRequests = {
     // `chat/submitMessage`.
     'webview/receiveMessage': [{ id: string; message: WebviewMessage }, null]
 
+    // Register diagnostics (aka. error/warning messages). Overwrites existing
+    // diagnostics for the provided document URIs. This request should be used
+    // alongside the `codeActions/provide` request.
+    'diagnostics/publish': [{ diagnostics: ProtocolDiagnostic[] }, null]
+
     // Only used for testing purposes. If you want to write an integration test
     // for dealing with progress bars then you can send a request to this
     // endpoint to emulate the scenario where the server creates a progress bar.
@@ -152,6 +165,9 @@ export type ClientRequests = {
     'testing/closestPostData': [{ url: string; postData: string }, { closestBody: string }]
     'testing/memoryUsage': [null, { usage: MemoryUsage }]
     'testing/awaitPendingPromises': [null, null]
+    // Returns diagnostics for the given URI. Lives under `testing/` instead of
+    // standalone `diagnostics/` because it only works for TypeScript files.
+    'testing/diagnostics': [{ uri: string }, { diagnostics: ProtocolDiagnostic[] }]
 
     // Only used for testing purposes. This operation runs indefinitely unless
     // the client sends progress/cancel.
@@ -439,6 +455,7 @@ interface ClientCapabilities {
     codeLenses?: 'none' | 'enabled' | undefined | null
     showWindowMessage?: 'notification' | 'request' | undefined | null
     ignore?: 'none' | 'enabled' | undefined | null
+    codeActions?: 'none' | 'enabled'
 }
 
 export interface ServerInfo {
@@ -826,4 +843,49 @@ export interface MemoryUsage {
     heapUsed: number
     external: number
     arrayBuffers: number
+}
+
+export interface ProtocolLocation {
+    uri: string
+    range: Range
+}
+
+export interface ProtocolDiagnostic {
+    location: ProtocolLocation
+    message: string
+    severity: DiagnosticSeverity
+    code?: string
+    source?: string
+    relatedInformation?: ProtocolRelatedInformationDiagnostic[]
+}
+
+export interface ProtocolRelatedInformationDiagnostic {
+    location: ProtocolLocation
+    message: string
+}
+
+export type DiagnosticSeverity = 'error' | 'warning' | 'info' | 'suggestion'
+export type CodeActionTriggerKind = 'Invoke' | 'Automatic'
+export interface ProtocolCodeAction {
+    // Randomly generated ID of this code action that should be referenced in
+    // the `codeActions/trigger` request. In codeActions/trigger, you can only
+    // reference IDs from the most recent response from codeActions/provide.
+    // IDs from old codeActions/provide results are invalidated as soon as you
+    // send a new codeActions/provide request.
+    id: string
+    // Stable string ID of the VS Code command that will be triggered if you
+    // send a request to codeActions/trigger. Use this ID over `title`
+    commandID?: string
+    title: string
+    diagnostics?: ProtocolDiagnostic[]
+    kind?: string
+    isPreferred?: boolean
+    disabled?: {
+        /**
+         * Human readable description of why the code action is currently disabled.
+         *
+         * This is displayed in the code actions UI.
+         */
+        readonly reason: string
+    }
 }
