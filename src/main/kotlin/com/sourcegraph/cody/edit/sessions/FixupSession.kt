@@ -339,7 +339,7 @@ abstract class FixupSession(
     }
   }
 
-  private fun updateEditorIfNeeded(path: String) {
+  internal fun updateEditorIfNeeded(path: String) {
     val vf =
         CodyEditorUtil.findFileOrScratch(project, path)
             ?: throw IllegalArgumentException("Could not find file $path")

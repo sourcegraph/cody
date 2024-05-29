@@ -94,6 +94,7 @@ class CodyAgentService(private val project: Project) : Disposable {
       agent.client.onTextDocumentEdit = Function { params ->
         val activeSession = FixupService.getInstance(project).getActiveSession()
         try {
+          activeSession?.updateEditorIfNeeded(params.uri)
           activeSession?.performInlineEdits(params.edits)
           true
         } catch (e: RuntimeException) {
