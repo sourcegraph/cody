@@ -15,11 +15,6 @@ const DOCUMENTABLE_NODES = dedent`
     (enum_body_declarations
         (constructor_declaration
             name: (identifier) @symbol.function) @range.function)
-    (record_declaration
-        name: (identifier) @symbol.function) @range.function
-    (enum_body_declarations
-        (record_declaration
-            name: (identifier) @symbol.function) @range.function)
 
     ; Variables
     ;--------------------------------
@@ -41,6 +36,11 @@ const DOCUMENTABLE_NODES = dedent`
         (enum_body
             (enum_constant
                 name: (identifier) @symbol.identifier) @range.identifier))
+    (record_declaration
+        name: (identifier) @symbol.function) @range.function
+    (enum_body_declarations
+        (record_declaration
+            name: (identifier) @symbol.function) @range.function)
 `
 
 export const javaQueries = {
