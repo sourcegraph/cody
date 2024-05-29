@@ -49,6 +49,17 @@ public functionName() {
 "
 `;
 
+exports[`Document Code > commands/document (Tree-sitter expansion) 1`] = `
+"interface Person {
+    name: string
+        /**
+     * Represents the age of a person.
+     */
+age:/* CURSOR */ number
+}
+"
+`;
+
 exports[`Document Code > commands/document (nested test case) 1`] = `
 "import { expect } from 'vitest'
 import { it } from 'vitest'
