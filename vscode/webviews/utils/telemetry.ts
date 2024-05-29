@@ -23,8 +23,11 @@ export function createWebviewTelemetryService(vscodeAPI: VSCodeWrapper): Telemet
  * Use either postMessage or VSCodeWrapper to send messages to the VS Code extension.
  */
 export function createWebviewTelemetryRecorder(
-    vscodeAPI: Pick<VSCodeWrapper, 'postMessage'>
+    postMessage: ApiPostMessage | Pick<VSCodeWrapper, 'postMessage'>
 ): TelemetryRecorder {
+    const actualPostMessage: ApiPostMessage =
+        typeof postMessage === 'function' ? postMessage : postMessage.postMessage.bind(postMessage)
+
     return {
         recordEvent(feature, action, parameters) {
             actualPostMessage({

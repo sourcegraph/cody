@@ -56,6 +56,7 @@ const RateLimitErrorItem: React.FunctionComponent<{
     const canUpgrade = error.upgradeIsAvailable && !userInfo?.isCodyProUser
     const tier = isEnterpriseUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(postMessage), [postMessage])
+
     // Only log once on mount
     // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally only logs once on mount
     React.useEffect(() => {
@@ -77,7 +78,7 @@ const RateLimitErrorItem: React.FunctionComponent<{
                 },
             }
         )
-    }, [])
+    }, [telemetryRecorder])
 
     const onButtonClick = useCallback(
         (page: 'upgrade' | 'rate-limits', call_to_action: 'upgrade' | 'learn-more'): void => {
