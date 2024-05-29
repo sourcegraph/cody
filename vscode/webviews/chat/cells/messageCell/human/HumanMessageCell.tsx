@@ -1,16 +1,14 @@
-import { type ChatMessage, type ContextItem, isMacOS } from '@sourcegraph/cody-shared'
+import type { ChatMessage, ContextItem } from '@sourcegraph/cody-shared'
 import { type FunctionComponent, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../Chat'
 import { UserAvatar } from '../../../../components/UserAvatar'
 import {
+    type PromptEditorRefAPI,
     type SerializedPromptEditorValue,
     serializedPromptEditorStateFromChatMessage,
 } from '../../../../promptEditor/PromptEditor'
-import { BaseMessageCell } from '../BaseMessageCell'
-import styles from './HumanMessageCell.module.css'
+import { BaseMessageCell, MESSAGE_CELL_AVATAR_SIZE } from '../BaseMessageCell'
 import { HumanMessageEditor } from './editor/HumanMessageEditor'
-
-const isMac = isMacOS()
 
 /**
  * A component that displays a chat message from the human.
@@ -27,12 +25,19 @@ export const HumanMessageCell: FunctionComponent<{
     /** Whether this editor is for a message that has been sent already. */
     isSent: boolean
 
+    /** Whether this editor is for a message whose assistant response is in progress. */
+    isPendingResponse: boolean
+
+    /** Whether this editor is for a followup message to a still-in-progress assistant response. */
+    isPendingPriorResponse: boolean
+
     onChange?: (editorState: SerializedPromptEditorValue) => void
     onSubmit: (editorValue: SerializedPromptEditorValue, addEnhancedContext: boolean) => void
 
     isEditorInitiallyFocused?: boolean
 
     className?: string
+    editorRef?: React.RefObject<PromptEditorRefAPI | null>
 
     /** For use in storybooks only. */
     __storybook__focus?: boolean
@@ -43,10 +48,13 @@ export const HumanMessageCell: FunctionComponent<{
     userContextFromSelection,
     isFirstMessage,
     isSent,
+    isPendingResponse,
+    isPendingPriorResponse,
     onChange,
     onSubmit,
     isEditorInitiallyFocused,
     className,
+    editorRef,
     __storybook__focus,
 }) => {
     const initialEditorState = useMemo(
@@ -57,27 +65,25 @@ export const HumanMessageCell: FunctionComponent<{
     return (
         <BaseMessageCell
             speaker="human"
-            speakerIcon={<UserAvatar user={userInfo.user} size={24} className={styles.speakerIcon} />}
+            speakerIcon={<UserAvatar user={userInfo.user} size={MESSAGE_CELL_AVATAR_SIZE} />}
             content={
                 <HumanMessageEditor
                     userInfo={userInfo}
                     userContextFromSelection={userContextFromSelection}
                     initialEditorState={initialEditorState}
-                    placeholder={
-                        isFirstMessage
-                            ? 'Ask... (type @ to add context)'
-                            : `Ask followup... (${isMac ? 'Opt' : 'Alt'}+>)`
-                    }
+                    placeholder={isFirstMessage ? 'Message' : 'Followup message'}
                     isFirstMessage={isFirstMessage}
                     isSent={isSent}
+                    isPendingResponse={isPendingResponse}
+                    isPendingPriorResponse={isPendingPriorResponse}
                     onChange={onChange}
                     onSubmit={onSubmit}
                     disabled={!chatEnabled}
                     isEditorInitiallyFocused={isEditorInitiallyFocused}
+                    editorRef={editorRef}
                     __storybook__focus={__storybook__focus}
                 />
             }
-            contentClassName={styles.editor}
             className={className}
         />
     )

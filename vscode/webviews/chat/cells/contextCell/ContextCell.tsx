@@ -1,12 +1,15 @@
-import type { ContextItem } from '@sourcegraph/cody-shared'
+import type { ContextItem, ModelProvider } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
+import { BrainIcon } from 'lucide-react'
 import type React from 'react'
 import { FileLink } from '../../../components/FileLink'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../../components/shadcn/ui/tooltip'
 import { SourcegraphLogo } from '../../../icons/SourcegraphLogo'
 import { MENTION_CLASS_NAME } from '../../../promptEditor/nodes/ContextItemMentionNode'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
 import { LoadingDots } from '../../components/LoadingDots'
 import { Cell } from '../Cell'
+import { NON_HUMAN_CELL_AVATAR_SIZE } from '../messageCell/assistant/AssistantMessageCell'
 import styles from './ContextCell.module.css'
 
 /**
@@ -14,11 +17,12 @@ import styles from './ContextCell.module.css'
  */
 export const ContextCell: React.FunctionComponent<{
     contextFiles: ContextItem[] | undefined
+    model?: ModelProvider['model']
     className?: string
 
     /** For use in storybooks only. */
     __storybook__initialOpen?: boolean
-}> = ({ contextFiles, className, __storybook__initialOpen }) => {
+}> = ({ contextFiles, model, className, __storybook__initialOpen }) => {
     const usedContext = []
     const excludedAtContext = []
     if (contextFiles) {
@@ -52,8 +56,14 @@ export const ContextCell: React.FunctionComponent<{
     return contextFiles === undefined || contextFiles.length !== 0 ? (
         <Cell
             style="context"
-            gutterIcon={<SourcegraphLogo width={20} height={20} />}
+            gutterIcon={
+                <SourcegraphLogo
+                    width={NON_HUMAN_CELL_AVATAR_SIZE}
+                    height={NON_HUMAN_CELL_AVATAR_SIZE}
+                />
+            }
             containerClassName={className}
+            contentClassName="tw-flex tw-flex-col tw-gap-4"
             data-testid="context"
         >
             {contextFiles === undefined ? (
@@ -73,7 +83,7 @@ export const ContextCell: React.FunctionComponent<{
                     <ul className={styles.list}>
                         {contextFiles?.map((item, i) => (
                             // biome-ignore lint/suspicious/noArrayIndexKey: stable order
-                            <li key={i} className={styles.listItem}>
+                            <li key={i}>
                                 <FileLink
                                     uri={item.uri}
                                     repoName={item.repoName}
@@ -87,10 +97,29 @@ export const ContextCell: React.FunctionComponent<{
                                     isIgnored={
                                         item.type === 'file' && item.isIgnored && item.source === 'user'
                                     }
-                                    className={clsx(styles.fileLink, MENTION_CLASS_NAME)}
+                                    className={clsx(styles.contextItem, MENTION_CLASS_NAME)}
+                                    linkClassName={styles.contextItemLink}
                                 />
                             </li>
                         ))}
+                        <li>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span
+                                        className={clsx(
+                                            styles.contextItem,
+                                            'tw-flex tw-items-center tw-gap-2'
+                                        )}
+                                    >
+                                        <BrainIcon size={12} className="tw-ml-1" /> Public knowledge{' '}
+                                    </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    Information and general reasoning capabilities trained into the model{' '}
+                                    {model && <code>{model}</code>}
+                                </TooltipContent>
+                            </Tooltip>
+                        </li>
                     </ul>
                 </details>
             )}

@@ -17,7 +17,7 @@ type Models = typeof ModelProvider
 /**
  * Available models for Edit.
  * This is either:
- * - one of the availble options (dotcom)
+ * - one of the available options (dotcom)
  * - an unknown `string` (enterprise)
  */
 export type EditModel =

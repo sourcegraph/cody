@@ -26,7 +26,9 @@ interface FileLinkProps {
 const LIMIT_WARNING = 'Excluded due to context window limit'
 const IGNORE_WARNING = 'File ignored by an admin setting'
 
-export const FileLink: React.FunctionComponent<FileLinkProps & { className?: string }> = ({
+export const FileLink: React.FunctionComponent<
+    FileLinkProps & { className?: string; linkClassName?: string }
+> = ({
     uri,
     range,
     source,
@@ -36,6 +38,7 @@ export const FileLink: React.FunctionComponent<FileLinkProps & { className?: str
     isTooLarge,
     isIgnored,
     className,
+    linkClassName,
 }) => {
     function logFileLinkClicked() {
         getVSCodeAPI().postMessage({
@@ -68,14 +71,14 @@ export const FileLink: React.FunctionComponent<FileLinkProps & { className?: str
     }
 
     return (
-        <div className={clsx(styles.linkContainer, className)}>
+        <div className={clsx('tw-flex tw-items-center', className)}>
             {isIgnored ? (
                 <i className="codicon codicon-warning" title={IGNORE_WARNING} />
             ) : isTooLarge ? (
                 <i className="codicon codicon-warning" title={LIMIT_WARNING} />
             ) : null}
             <a
-                className={styles.linkButton}
+                className={linkClassName}
                 title={tooltip}
                 href={href}
                 target={target}

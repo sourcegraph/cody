@@ -34,6 +34,7 @@ import {
     REPOSITORY_IDS_QUERY,
     REPOSITORY_ID_QUERY,
     REPOSITORY_LIST_QUERY,
+    REPOSITORY_SEARCH_QUERY,
     REPO_NAME_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
 } from './queries'
@@ -98,7 +99,7 @@ interface CodyConfigFeaturesResponse {
 }
 
 interface CodyEnterpriseConfigSmartContextResponse {
-    site: { codyLLMConfiguration: { smartContext: string } | null } | null
+    site: { codyLLMConfiguration: { smartContextWindow: string } | null } | null
 }
 
 interface CurrentUserCodyProEnabledResponse {
@@ -148,6 +149,15 @@ export interface PackageListResponse {
 export interface RepoListResponse {
     repositories: {
         nodes: { name: string; id: string }[]
+        pageInfo: {
+            endCursor: string | null
+        }
+    }
+}
+
+export interface RepoSearchResponse {
+    repositories: {
+        nodes: { name: string; id: string; url: string }[]
         pageInfo: {
             endCursor: string | null
         }
@@ -264,7 +274,7 @@ export interface CodyLLMSiteConfiguration {
     completionModel?: string
     completionModelMaxTokens?: number
     provider?: string
-    smartContext?: boolean
+    smartContextWindow?: boolean
 }
 
 export interface CurrentUserCodySubscription {
@@ -497,7 +507,7 @@ export class SourcegraphGraphQLAPIClient {
 
     public async getCodyLLMConfiguration(): Promise<undefined | CodyLLMSiteConfiguration | Error> {
         // fetch Cody LLM provider separately for backward compatability
-        const [configResponse, providerResponse, smartContext] = await Promise.all([
+        const [configResponse, providerResponse, smartContextWindow] = await Promise.all([
             this.fetchSourcegraphAPI<APIResponse<CodyLLMSiteConfigurationResponse>>(
                 CURRENT_SITE_CODY_LLM_CONFIGURATION
             ),
@@ -524,7 +534,7 @@ export class SourcegraphGraphQLAPIClient {
             provider = llmProvider
         }
 
-        return { ...config, provider, smartContext }
+        return { ...config, provider, smartContextWindow }
     }
 
     private async getCodyLLMConfigurationSmartContext(): Promise<boolean> {
@@ -536,7 +546,7 @@ export class SourcegraphGraphQLAPIClient {
                 .then(response => {
                     const smartContextResponse = extractDataOrError(
                         response,
-                        data => data?.site?.codyLLMConfiguration?.smartContext ?? ''
+                        data => data?.site?.codyLLMConfiguration?.smartContextWindow ?? ''
                     )
 
                     if (isError(smartContextResponse)) {
@@ -574,6 +584,25 @@ export class SourcegraphGraphQLAPIClient {
         return this.fetchSourcegraphAPI<APIResponse<RepoListResponse>>(REPOSITORY_LIST_QUERY, {
             first,
             after: after || null,
+        }).then(response => extractDataOrError(response, data => data))
+    }
+
+    /**
+     * Searches for repositories from the Sourcegraph instance.
+     * @param first the number of repositories to retrieve.
+     * @param after the last repository retrieved, if any, to continue enumerating the list.
+     * @param query the query to search the repositories.
+     * @returns the list of repositories. If `endCursor` is null, this is the end of the list.
+     */
+    public async searchRepos(
+        first: number,
+        after?: string,
+        query?: string
+    ): Promise<RepoSearchResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<RepoSearchResponse>>(REPOSITORY_SEARCH_QUERY, {
+            first,
+            after: after || null,
+            query,
         }).then(response => extractDataOrError(response, data => data))
     }
 
@@ -748,6 +777,9 @@ export class SourcegraphGraphQLAPIClient {
     public async logEvent(event: event, mode: LogEventMode): Promise<LogEventResponse | Error> {
         if (process.env.CODY_TESTING === 'true') {
             return this.sendEventLogRequestToTestingAPI(event)
+        }
+        if (isAgentTesting) {
+            return {}
         }
         if (this.config?.telemetryLevel === 'off') {
             return {}

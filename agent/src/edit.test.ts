@@ -64,8 +64,8 @@ describe('Edit', () => {
 
           interface Message {
             id: string;
-            content: string;
-            sender: string;
+            text: string;
+            sender: 'user' | 'assistant';
           }
 
           interface ChatColumnProps {
@@ -119,10 +119,11 @@ describe('Edit', () => {
               level?: number;
           }
 
-          export const Heading: React.FC<HeadingProps> = ({text, level = 1}) => {
-            const HeadingTag = \`h\${level}\` as keyof JSX.IntrinsicElements;
-            return <HeadingTag>{text}</HeadingTag>;
+          export const Heading: React.FC<HeadingProps> = ({ text, level = 1 }) => {
+              const HTag = \`h\${level}\` as keyof JSX.IntrinsicElements;
+              return <HTag>{text}</HTag>;
           };
+
           "
         `,
             explainPollyError

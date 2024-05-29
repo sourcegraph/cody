@@ -101,7 +101,7 @@ export const CURRENT_SITE_CODY_LLM_CONFIGURATION_SMART_CONTEXT = `
 query CurrentSiteCodyLlmConfiguration {
     site {
         codyLLMConfiguration {
-            smartContext
+            smartContextWindow
         }
     }
 }`
@@ -112,6 +112,21 @@ query Repositories($first: Int!, $after: String) {
         nodes {
             id
             name
+        }
+        pageInfo {
+            endCursor
+        }
+    }
+}
+`
+
+export const REPOSITORY_SEARCH_QUERY = `
+query RepositoriesSearch($first: Int!, $after: String, $query: String) {
+    repositories(first: $first, after: $after, query: $query) {
+        nodes {
+            id
+            name
+            url
         }
         pageInfo {
             endCursor

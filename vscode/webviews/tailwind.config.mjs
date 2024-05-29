@@ -13,6 +13,9 @@ export default {
                 sm: 'calc(0.9*var(--vscode-font-size))',
                 xs: 'calc(0.85*var(--vscode-font-size))',
             },
+            fontFamily: {
+                codyicons: ['cody-icons'],
+            },
             spacing: {
                 1: '2px',
                 1.5: '3px',
@@ -54,6 +57,14 @@ export default {
                 popover: {
                     DEFAULT: 'var(--vscode-quickInput-background)',
                     foreground: 'var(--vscode-dropdown-foreground)',
+                },
+                keybinding: {
+                    foreground: 'var(--vscode-keybindingLabel-foreground)',
+                    background: 'var(--vscode-keybindingLabel-background)',
+                    border: 'var(--vscode-keybindingLabel-border)',
+                },
+                link: {
+                    DEFAULT: 'var(--vscode-textLink-foreground)',
                 },
             },
             borderRadius: {

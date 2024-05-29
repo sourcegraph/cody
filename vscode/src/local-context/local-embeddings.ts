@@ -17,6 +17,7 @@ import {
     isDotCom,
     isFileURI,
     recordErrorToSpan,
+    telemetryRecorder,
     uriBasename,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -437,7 +438,7 @@ export class LocalEmbeddingsController
     private async eagerlyLoad(repoDir: FileURI): Promise<boolean> {
         wrapInActiveSpan('embeddings.load', async span => {
             try {
-                const { repoName } = await (await this.getService()).request(
+                const { repoName, indexSizeBytes } = await (await this.getService()).request(
                     'embeddings/load',
                     repoDir.fsPath
                 )
@@ -451,6 +452,14 @@ export class LocalEmbeddingsController
                     repoName,
                 }
                 span.setAttribute('repoLoaded', true)
+                span.setAttribute('indexSize', indexSizeBytes)
+
+                telemetryRecorder.recordEvent('cody.context.embeddings', 'loaded', {
+                    metadata: {
+                        indexSize: indexSizeBytes,
+                    },
+                })
+
                 // Start a health check on the index.
                 void (async () => {
                     wrapInActiveSpan('embeddings.index-health', async span => {

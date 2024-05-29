@@ -119,7 +119,7 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
                 break
             }
             case 'event':
-                telemetryService.log(message.eventName, message.properties)
+                telemetryService.log(message.eventName, message.properties ?? undefined)
                 break
             case 'links':
                 void openExternalLinks(message.value)

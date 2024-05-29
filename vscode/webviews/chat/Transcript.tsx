@@ -1,26 +1,25 @@
-import type React from 'react'
-import type { FunctionComponent, ReactNode } from 'react'
-
-import { clsx } from 'clsx'
-
-import { type ChatMessage, type ContextItem, type Guardrails, isDefined } from '@sourcegraph/cody-shared'
+import {
+    type ChatMessage,
+    type ContextItem,
+    ContextItemSource,
+    type Guardrails,
+    isDefined,
+} from '@sourcegraph/cody-shared'
+import { type MutableRefObject, useCallback, useRef } from 'react'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
-import { CodyLogo } from '../icons/CodyLogo'
-import type { SerializedPromptEditorValue } from '../promptEditor/PromptEditor'
+import type { PromptEditorRefAPI, SerializedPromptEditorValue } from '../promptEditor/PromptEditor'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 import styles from './Transcript.module.css'
-import { Cell } from './cells/Cell'
 import { ContextCell } from './cells/contextCell/ContextCell'
 import { AssistantMessageCell } from './cells/messageCell/assistant/AssistantMessageCell'
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
+import { WelcomeMessage } from './components/WelcomeMessage'
 
 export const Transcript: React.FunctionComponent<{
     transcript: ChatMessage[]
-    welcomeMessage?: ReactNode
     messageInProgress: ChatMessage | null
-    className?: string
     feedbackButtonsOnSubmit: (text: string) => void
     copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit: CodeBlockActionsProps['insertButtonOnSubmit']
@@ -32,9 +31,7 @@ export const Transcript: React.FunctionComponent<{
     guardrails?: Guardrails
 }> = ({
     transcript,
-    welcomeMessage,
     messageInProgress,
-    className,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
@@ -45,6 +42,8 @@ export const Transcript: React.FunctionComponent<{
     postMessage,
     guardrails,
 }) => {
+    const editorRefs = useRef<MutableRefObject<PromptEditorRefAPI | null>[]>([])
+
     const messageToTranscriptItem = (
         message: ChatMessage,
         messageIndexInTranscript: number
@@ -62,6 +61,12 @@ export const Transcript: React.FunctionComponent<{
             (messageIndexInTranscript === transcript.length - 1 ||
                 messageIndexInTranscript === transcript.length - 2)
 
+        const priorHumanMessageIndex = messageIndexInTranscript - 1
+        const priorHumanMessage =
+            message.speaker === 'assistant' ? transcript.at(priorHumanMessageIndex) : undefined
+        const nextAssistantMessage =
+            message.speaker === 'human' ? transcript.at(messageIndexInTranscript + 1) : undefined
+
         return message.speaker === 'human' ? (
             [
                 <HumanMessageCell
@@ -71,28 +76,21 @@ export const Transcript: React.FunctionComponent<{
                     chatEnabled={chatEnabled}
                     isFirstMessage={messageIndexInTranscript === 0}
                     isSent={true}
+                    isPendingResponse={isLastHumanMessage && isLoading}
+                    isPendingPriorResponse={false}
                     onSubmit={(
                         editorValue: SerializedPromptEditorValue,
                         addEnhancedContext: boolean
                     ): void => {
-                        getVSCodeAPI().postMessage({
-                            command: 'edit',
-                            index: messageIndexInTranscript,
-                            text: editorValue.text,
-                            editorState: editorValue.editorState,
-                            contextFiles: editorValue.contextItems,
-                            addEnhancedContext,
-                        })
+                        editHumanMessage(messageIndexInTranscript, editorValue, addEnhancedContext)
                     }}
-                    // Keep the editor focused after hitting enter on a not-yet-isSent message. This
-                    // lets the user edit and resend the message while they're waiting for the
-                    // response to finish.
-                    isEditorInitiallyFocused={isLastHumanMessage}
+                    editorRef={editorRefAtIndex(editorRefs.current, messageIndexInTranscript)}
                 />,
                 (message.contextFiles && message.contextFiles.length > 0) || isLastMessage ? (
                     <ContextCell
                         key={`${messageIndexInTranscript}-context`}
                         contextFiles={message.contextFiles}
+                        model={nextAssistantMessage?.model}
                     />
                 ) : null,
             ].filter(isDefined)
@@ -100,8 +98,38 @@ export const Transcript: React.FunctionComponent<{
             <AssistantMessageCell
                 key={messageIndexInTranscript}
                 message={message}
+                humanMessage={{
+                    hasExplicitMentions: Boolean(
+                        priorHumanMessage!.contextFiles?.some(
+                            item => item.source === ContextItemSource.User
+                        )
+                    ),
+                    addEnhancedContext: Boolean(
+                        priorHumanMessage!.contextFiles?.some(
+                            item =>
+                                item.source === ContextItemSource.Unified ||
+                                item.source === ContextItemSource.Embeddings ||
+                                item.source === ContextItemSource.Search
+                        )
+                    ),
+                    rerunWithEnhancedContext: (withEnhancedContext: boolean) => {
+                        const editorValue = editorRefs.current
+                            .at(priorHumanMessageIndex)
+                            ?.current?.getSerializedValue()
+                        if (editorValue) {
+                            editHumanMessage(
+                                messageIndexInTranscript - 1,
+                                editorValue,
+                                withEnhancedContext
+                            )
+                        }
+                    },
+                    appendAtMention: () => {
+                        editorRefs.current.at(priorHumanMessageIndex)?.current?.appendText('@', true)
+                    },
+                }}
                 userInfo={userInfo}
-                isLoading={isLoading}
+                isLoading={false}
                 showFeedbackButtons={
                     messageIndexInTranscript !== 0 && !isTranscriptError && !message.error
                 }
@@ -114,14 +142,29 @@ export const Transcript: React.FunctionComponent<{
         )
     }
 
+    const onFollowupSubmit = useCallback(
+        (editorValue: SerializedPromptEditorValue, addEnhancedContext: boolean): void => {
+            getVSCodeAPI().postMessage({
+                command: 'submit',
+                submitType: 'user',
+                text: editorValue.text,
+                editorState: editorValue.editorState,
+                contextFiles: editorValue.contextItems,
+                addEnhancedContext,
+            })
+        },
+        []
+    )
+
     return (
-        <div className={clsx(className, styles.container)}>
+        <>
             {transcript.flatMap(messageToTranscriptItem)}
             {messageInProgress &&
                 messageInProgress.speaker === 'assistant' &&
                 transcript.at(-1)?.contextFiles && (
                     <AssistantMessageCell
                         message={messageInProgress}
+                        humanMessage={null}
                         isLoading={true}
                         showFeedbackButtons={false}
                         copyButtonOnSubmit={copyButtonOnSubmit}
@@ -130,50 +173,63 @@ export const Transcript: React.FunctionComponent<{
                         userInfo={userInfo}
                     />
                 )}
-            {!messageInProgress && !isLastAssistantMessageError(transcript) && (
+            {!isLastAssistantMessageError(transcript) && (
                 <HumanMessageCell
+                    key={transcript.length + (messageInProgress ? 1 : 0)}
                     message={null}
                     isFirstMessage={transcript.length === 0}
                     isSent={false}
+                    isPendingResponse={false}
+                    isPendingPriorResponse={messageInProgress !== null}
                     userInfo={userInfo}
                     chatEnabled={chatEnabled}
-                    isEditorInitiallyFocused={transcript.length === 0}
+                    isEditorInitiallyFocused={true}
                     userContextFromSelection={userContextFromSelection}
-                    onSubmit={(
-                        editorValue: SerializedPromptEditorValue,
-                        addEnhancedContext: boolean
-                    ): void => {
-                        getVSCodeAPI().postMessage({
-                            command: 'submit',
-                            submitType: 'user',
-                            text: editorValue.text,
-                            editorState: editorValue.editorState,
-                            contextFiles: editorValue.contextItems,
-                            addEnhancedContext,
-                        })
-                    }}
+                    onSubmit={onFollowupSubmit}
                     className={styles.lastHumanMessage}
                 />
             )}
-            {transcript.length === 0 && <WelcomeMessageCell welcomeMessage={welcomeMessage} />}
-        </div>
+            {transcript.length === 0 && <WelcomeMessage />}
+        </>
     )
 }
 
-const WelcomeMessageCell: FunctionComponent<{ welcomeMessage?: ReactNode }> = ({ welcomeMessage }) => (
-    <Cell gutterIcon={<CodyLogo size={20} />} data-testid="message">
-        <div className={styles.welcomeMessageCellContent}>
-            {welcomeMessage ?? (
-                <>
-                    See <a href="https://sourcegraph.com/docs/cody">Cody documentation</a> for help and
-                    tips.
-                </>
-            )}
-        </div>
-    </Cell>
-)
+function editorRefAtIndex(
+    editorRefs: MutableRefObject<PromptEditorRefAPI | null>[],
+    i: number
+): MutableRefObject<PromptEditorRefAPI | null> {
+    let ref = editorRefs.at(i)
+    if (ref === undefined) {
+        ref = { current: null }
+        editorRefs[i] = ref
+    }
+    return ref
+}
 
 function isLastAssistantMessageError(transcript: readonly ChatMessage[]): boolean {
     const lastMessage = transcript.at(-1)
     return Boolean(lastMessage && lastMessage.speaker === 'assistant' && lastMessage.error !== undefined)
+}
+
+// TODO(sqs): Do this the React-y way.
+export function focusLastHumanMessageEditor(): void {
+    const elements = document.querySelectorAll<HTMLElement>('[data-lexical-editor]')
+    const lastEditor = elements.item(elements.length - 1)
+    lastEditor?.focus()
+}
+
+function editHumanMessage(
+    messageIndexInTranscript: number,
+    editorValue: SerializedPromptEditorValue,
+    addEnhancedContext: boolean
+): void {
+    getVSCodeAPI().postMessage({
+        command: 'edit',
+        index: messageIndexInTranscript,
+        text: editorValue.text,
+        editorState: editorValue.editorState,
+        contextFiles: editorValue.contextItems,
+        addEnhancedContext,
+    })
+    focusLastHumanMessageEditor()
 }

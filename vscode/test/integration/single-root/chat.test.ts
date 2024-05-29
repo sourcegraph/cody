@@ -38,7 +38,8 @@ suite('Chat', function () {
             'user',
             [],
             undefined,
-            false
+            false,
+            new AbortController().signal
         )
 
         assert.match((await getTranscript(0)).text?.toString() || '', /^hello from the human$/)
@@ -58,7 +59,8 @@ suite('Chat', function () {
             'user',
             [],
             undefined,
-            false
+            false,
+            new AbortController().signal
         )
 
         // Display text should include file link at the end of message

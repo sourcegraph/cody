@@ -18,10 +18,10 @@ import {
     setLogger,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
+import type { CommandResult } from './CommandResult'
 import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
-import type { ChatSession } from './chat/chat-view/SimpleChatPanelProvider'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
@@ -58,7 +58,6 @@ import { configureExternalServices } from './external-services'
 import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
 import { logDebug, logError } from './log'
 import { getChatModelsFromConfiguration, syncModelProviders } from './models/sync'
-import type { FixupTask } from './non-stop/FixupTask'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
 import { initVSCodeGitApi } from './repository/git-extension-api'
@@ -127,8 +126,6 @@ export async function start(
         })
     )
 
-    exposeOpenCtxClient(context.secrets)
-
     return vscode.Disposable.from(...disposables)
 }
 
@@ -142,7 +139,8 @@ const register = async (
     onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => Promise<void>
 }> => {
     setClientNameVersion(platform.extensionClient.clientName, platform.extensionClient.clientVersion)
-    const authProvider = new AuthProvider(initialConfig)
+    const authProvider = AuthProvider.create(initialConfig)
+    await localStorage.setConfig(initialConfig)
 
     const disposables: vscode.Disposable[] = []
     // Initialize `displayPath` first because it might be used to display paths in error messages
@@ -167,7 +165,7 @@ const register = async (
         PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
     }
 
-    parseAllVisibleDocuments()
+    void parseAllVisibleDocuments()
 
     disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
     disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
@@ -186,6 +184,7 @@ const register = async (
 
     await authProvider.init()
 
+    exposeOpenCtxClient(context.secrets, initialConfig)
     graphqlClient.onConfigurationChange(initialConfig)
     githubClient.onConfigurationChange({ authToken: initialConfig.experimentalGithubAccessToken })
     void featureFlagProvider.syncAuthStatus()
@@ -267,6 +266,7 @@ const register = async (
 
         promises.push(featureFlagProvider.syncAuthStatus())
         graphqlClient.onConfigurationChange(newConfig)
+        exposeOpenCtxClient(secretStorage, newConfig)
         upstreamHealthProvider.onConfigurationChange(newConfig)
         githubClient.onConfigurationChange({ authToken: initialConfig.experimentalGithubAccessToken })
         promises.push(
@@ -284,6 +284,7 @@ const register = async (
                 Promise.resolve()
         )
         promises.push(setupAutocomplete())
+        promises.push(localStorage.setConfig(newConfig))
         await Promise.all(promises)
     }
 
@@ -771,14 +772,4 @@ async function configureEventsInfra(
 ): Promise<void> {
     await createOrUpdateEventLogger(config, isExtensionModeDevOrTest, authProvider)
     await createOrUpdateTelemetryRecorderProvider(config, isExtensionModeDevOrTest, authProvider)
-}
-
-export type CommandResult = ChatCommandResult | EditCommandResult
-export interface ChatCommandResult {
-    type: 'chat'
-    session?: ChatSession
-}
-export interface EditCommandResult {
-    type: 'edit'
-    task?: FixupTask
 }

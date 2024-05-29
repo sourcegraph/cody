@@ -132,11 +132,11 @@ export async function openCtxMentionProviders(): Promise<ContextMentionProviderM
         const providers = await client.meta({})
 
         return providers
-            .filter(provider => provider.features?.mentions)
+            .filter(provider => !!provider.mentions)
             .map(provider => ({
                 id: provider.providerUri,
-                title: provider.name + ' (by OpenCtx)',
-                queryLabel: `Search using ${provider.name} provider`,
+                title: provider.name,
+                queryLabel: provider.name,
                 emptyLabel: 'No results found',
             }))
     } catch (error) {

@@ -54,13 +54,14 @@ import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
 // Not using CODY_TESTING because it changes the URL endpoint we send requests
 // to and we want to send requests to sourcegraph.com because we record the HTTP
 // traffic.
-const isTesting = process.env.CODY_SHIM_TESTING === 'true'
+export const isTesting = process.env.CODY_SHIM_TESTING === 'true'
 
 export { AgentEventEmitter as EventEmitter } from '../../vscode/src/testutils/AgentEventEmitter'
 
 export {
     CancellationTokenSource,
     CodeAction,
+    CodeActionTriggerKind,
     CodeActionKind,
     CodeLens,
     CommentMode,
@@ -75,6 +76,7 @@ export {
     FileType,
     InlineCompletionItem,
     InlineCompletionTriggerKind,
+    DiagnosticRelatedInformation,
     Location,
     MarkdownString,
     OverviewRulerLane,
@@ -350,7 +352,7 @@ const _workspace: typeof vscode.workspace = {
         }
         return relativePath
     },
-    // TODO: used for Cody Ignore, WorkspaceRepoMapper and custom commands
+    // TODO: used for Cody Context Filters, WorkspaceRepoMapper and custom commands
     // https://github.com/sourcegraph/cody/issues/4136
     createFileSystemWatcher: () => emptyFileWatcher,
     getConfiguration: (section, scope): vscode.WorkspaceConfiguration => {

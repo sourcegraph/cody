@@ -27,6 +27,7 @@ import {
     scanForMentionTriggerInUserTextInput,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
+import type { UserAccountInfo } from '../../../Chat'
 import { useCurrentChatModel } from '../../../chat/models/chatModelContext'
 import { MentionMenu } from '../../../mentions/mentionMenu/MentionMenu'
 import {
@@ -64,7 +65,9 @@ const FLOATING_OPTIONS: UseFloatingOptions = {
     transform: false,
 }
 
-export default function MentionsPlugin(): JSX.Element | null {
+export default function MentionsPlugin({
+    userInfo,
+}: { userInfo?: UserAccountInfo }): JSX.Element | null {
     const [editor] = useLexicalComposerContext()
 
     /**
@@ -241,6 +244,7 @@ export default function MentionsPlugin(): JSX.Element | null {
                                 className={clsx(styles.popover)}
                             >
                                 <MentionMenu
+                                    userInfo={userInfo}
                                     params={params}
                                     updateMentionMenuParams={updateMentionMenuParams}
                                     setEditorQuery={setEditorQuery}

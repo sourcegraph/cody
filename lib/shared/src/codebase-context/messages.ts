@@ -69,13 +69,8 @@ export enum ContextItemSource {
     /** Explicitly @-mentioned by the user in chat */
     User = 'user',
 
-    /** From local keyword search */
-    Keyword = 'keyword',
-
     /** From the current editor state and open tabs/documents */
     Editor = 'editor',
-
-    Filename = 'filename',
 
     /** From symf search */
     Search = 'search',
@@ -178,6 +173,7 @@ export interface ContextItemOpenCtx extends ContextItemCommon {
     mention?: {
         uri: string
         data?: any
+        description?: string
     }
 }
 

@@ -50,7 +50,7 @@ export type WebviewMessage =
            */
           command: 'event'
           eventName: string
-          properties: TelemetryEventProperties | undefined
+          properties?: TelemetryEventProperties | undefined | null
       }
     | {
           /**
@@ -82,18 +82,18 @@ export type WebviewMessage =
     | {
           command: 'openFile'
           uri: URI
-          range?: RangeData
+          range?: RangeData | undefined | null
       }
     | {
           command: 'openLocalFileWithRange'
           filePath: string
           // Note: we're not using vscode.Range objects or nesting here, as the protocol
           // tends to munge the type in a weird way (nested fields become array indices).
-          range?: RangeData
+          range?: RangeData | undefined | null
       }
     | ({ command: 'edit' } & WebviewEditMessage)
     | { command: 'context/get-remote-search-repos' }
-    | { command: 'context/choose-remote-search-repo'; explicitRepos?: Repo[] }
+    | { command: 'context/choose-remote-search-repo'; explicitRepos?: Repo[] | undefined | null }
     | { command: 'context/remove-remote-search-repo'; repoId: string }
     | { command: 'embeddings/index' }
     | { command: 'symf/index' }
@@ -107,9 +107,9 @@ export type WebviewMessage =
     | {
           command: 'auth'
           authKind: 'signin' | 'signout' | 'support' | 'callback' | 'simplified-onboarding'
-          endpoint?: string
-          value?: string
-          authMethod?: AuthMethod
+          endpoint?: string | undefined | null
+          value?: string | undefined | null
+          authMethod?: AuthMethod | undefined | null
       }
     | { command: 'abort' }
     | {
@@ -159,7 +159,7 @@ export type ExtensionMessage =
           type: 'search:config'
           workspaceFolderUris: string[]
       }
-    | { type: 'history'; localHistory: UserLocalHistory | null }
+    | { type: 'history'; localHistory?: UserLocalHistory | undefined | null }
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; view: View }
     | { type: 'errors'; errors: string }
@@ -170,7 +170,7 @@ export type ExtensionMessage =
      */
     | {
           type: 'userContextFiles'
-          userContextFiles: ContextItem[] | null
+          userContextFiles?: ContextItem[] | undefined | null
       }
     /**
      * Send Context Files to chat view as input context (@-mentions)
@@ -201,11 +201,14 @@ export type ExtensionMessage =
 
 interface ExtensionAttributionMessage {
     snippet: string
-    attribution?: {
-        repositoryNames: string[]
-        limitHit: boolean
-    }
-    error?: string
+    attribution?:
+        | {
+              repositoryNames: string[]
+              limitHit: boolean
+          }
+        | undefined
+        | null
+    error?: string | undefined | null
 }
 
 export type ChatSubmitType = 'user' | 'user-newchat'
@@ -215,20 +218,20 @@ export interface WebviewSubmitMessage extends WebviewContextMessage {
     submitType: ChatSubmitType
 
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
-    editorState?: unknown
+    editorState?: unknown | undefined | null
 }
 
 interface WebviewEditMessage extends WebviewContextMessage {
     text: string
-    index?: number
+    index?: number | undefined | null
 
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
-    editorState?: unknown
+    editorState?: unknown | undefined | null
 }
 
 interface WebviewContextMessage {
-    addEnhancedContext?: boolean
-    contextFiles?: ContextItem[]
+    addEnhancedContext?: boolean | undefined | null
+    contextFiles?: ContextItem[] | undefined | null
 }
 
 export interface ExtensionTranscriptMessage {
@@ -264,60 +267,6 @@ export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
 export const ACCOUNT_LIMITS_INFO_URL = new URL(
     'https://sourcegraph.com/docs/cody/troubleshooting#autocomplete-rate-limits'
 )
-
-export const defaultAuthStatus = {
-    endpoint: '',
-    isDotCom: true,
-    isLoggedIn: false,
-    showInvalidAccessTokenError: false,
-    authenticated: false,
-    hasVerifiedEmail: false,
-    requiresVerifiedEmail: false,
-    siteHasCodyEnabled: false,
-    siteVersion: '',
-    userCanUpgrade: false,
-    username: '',
-    primaryEmail: '',
-    displayName: '',
-    avatarURL: '',
-    codyApiVersion: 0,
-} satisfies AuthStatus
-
-export const unauthenticatedStatus = {
-    endpoint: '',
-    isDotCom: true,
-    isLoggedIn: false,
-    showInvalidAccessTokenError: true,
-    authenticated: false,
-    hasVerifiedEmail: false,
-    requiresVerifiedEmail: false,
-    siteHasCodyEnabled: false,
-    siteVersion: '',
-    userCanUpgrade: false,
-    username: '',
-    primaryEmail: '',
-    displayName: '',
-    avatarURL: '',
-    codyApiVersion: 0,
-} satisfies AuthStatus
-
-export const networkErrorAuthStatus = {
-    isDotCom: false,
-    showInvalidAccessTokenError: false,
-    authenticated: false,
-    isLoggedIn: false,
-    hasVerifiedEmail: false,
-    showNetworkError: true,
-    requiresVerifiedEmail: false,
-    siteHasCodyEnabled: false,
-    siteVersion: '',
-    userCanUpgrade: false,
-    username: '',
-    primaryEmail: '',
-    displayName: '',
-    avatarURL: '',
-    codyApiVersion: 0,
-} satisfies Omit<AuthStatus, 'endpoint'>
 
 /** The local environment of the editor. */
 export interface LocalEnv {

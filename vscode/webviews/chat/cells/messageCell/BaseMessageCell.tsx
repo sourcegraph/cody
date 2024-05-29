@@ -12,28 +12,19 @@ export const BaseMessageCell: FunctionComponent<{
     speakerIcon?: React.ReactNode
     content: React.ReactNode
     contentClassName?: string
-    focused?: boolean
-    disabled?: boolean
     footer?: React.ReactNode
     className?: string
-}> = ({ speaker, speakerIcon, content, contentClassName, focused, disabled, footer, className }) => (
+}> = ({ speaker, speakerIcon, content, contentClassName, footer, className }) => (
     <Cell
         style={speaker === 'human' ? 'human' : 'assistant'}
         gutterIcon={speakerIcon}
-        containerClassName={clsx(
-            styles.cellContainer,
-            {
-                [styles.focused]: focused,
-                [styles.disabled]: disabled,
-            },
-            className
-        )}
+        containerClassName={clsx(styles.cellContainer, className)}
         contentClassName={contentClassName}
-        aria-disabled={disabled}
-        aria-current={focused}
         data-testid="message"
     >
         {content}
         {footer && <div className={styles.footer}>{footer}</div>}
     </Cell>
 )
+
+export const MESSAGE_CELL_AVATAR_SIZE = 27.5
