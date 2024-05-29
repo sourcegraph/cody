@@ -28,6 +28,7 @@ import {
     IGNORED_FILE_WARNING_LABEL,
     LARGE_FILE_WARNING_LABEL,
 } from '../../../src/chat/context/constants'
+import RemoteFileProvider from '../../../src/context/openctx/remoteFileSearch'
 import RemoteRepositorySearch from '../../../src/context/openctx/remoteRepositorySearch'
 import GithubLogo from '../../icons/providers/github.svg?react'
 import GoogleLogo from '../../icons/providers/google.svg?react'
@@ -134,4 +135,5 @@ const iconForProvider: Record<
     'https://openctx.org/npm/@openctx/provider-devdocs': LibraryBigIcon,
     'https://openctx.org/npm/@openctx/provider-sourcegraph-search': SourcegraphLogo,
     [RemoteRepositorySearch.providerUri]: SourcegraphLogo,
+    [RemoteFileProvider.providerUri]: SourcegraphLogo,
 }
