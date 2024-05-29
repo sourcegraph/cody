@@ -26,6 +26,7 @@ import {
     Typewriter,
     allMentionProvidersMetadata,
     hydrateAfterPostMessage,
+    isAbortError,
     isDefined,
     isError,
     isFileURI,
@@ -66,7 +67,7 @@ import { captureException } from '@sentry/core'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import type { URI } from 'vscode-uri'
 import { getContextFileFromUri } from '../../commands/context/file-path'
-import { getContextFileFromCursor } from '../../commands/context/selection'
+import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
@@ -265,6 +266,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     message.contextFiles ?? [],
                     message.editorState,
                     message.addEnhancedContext ?? false,
+                    this.startNewSubmitOrEditOperation(),
                     'chat'
                 )
                 break
@@ -273,7 +275,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 await this.handleEdit(
                     uuid.v4(),
                     PromptString.unsafe_fromUserQuery(message.text),
-                    message.index,
+                    message.index ?? undefined,
                     message.contextFiles ?? [],
                     message.editorState,
                     message.addEnhancedContext || false
@@ -308,10 +310,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 void openExternalLinks(message.value)
                 break
             case 'openFile':
-                await openFile(message.uri, message.range, this.webviewPanel?.viewColumn)
+                await openFile(message.uri, message.range ?? undefined, this.webviewPanel?.viewColumn)
                 break
             case 'openLocalFileWithRange':
-                await openLocalFileWithRange(message.filePath, message.range)
+                await openLocalFileWithRange(message.filePath, message.range ?? undefined)
                 break
             case 'newFile':
                 handleCodeFromSaveToNewFile(message.text)
@@ -325,7 +327,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 break
             }
             case 'context/choose-remote-search-repo': {
-                await this.handleChooseRemoteSearchRepo(message.explicitRepos)
+                await this.handleChooseRemoteSearchRepo(message.explicitRepos ?? undefined)
                 break
             }
             case 'context/remove-remote-search-repo':
@@ -351,7 +353,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 await this.clearAndRestartSession()
                 break
             case 'event':
-                telemetryService.log(message.eventName, message.properties)
+                telemetryService.log(message.eventName, message.properties ?? undefined)
                 break
             case 'recordEvent':
                 telemetryRecorder.recordEvent(
@@ -453,6 +455,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         userContextFiles: ContextItem[],
         editorState: ChatMessage['editorState'],
         addEnhancedContext: boolean,
+        abortSignal: AbortSignal,
         source?: EventSource,
         command?: DefaultChatCommands
     ): Promise<void> {
@@ -466,6 +469,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 command,
                 traceId: span.spanContext().traceId,
                 sessionID: this.chatModel.sessionID,
+                addEnhancedContext,
             }
             telemetryService.log('CodyVSCodeExtension:chat-question:submitted', sharedProperties)
             telemetryRecorder.recordEvent('cody.chat-question', 'submitted', {
@@ -473,6 +477,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
                     // See https://github.com/sourcegraph/sourcegraph/pull/59524
                     recordsPrivateMetadataTranscript: authStatus.endpoint && authStatus.isDotCom ? 1 : 0,
+                    addEnhancedContext: addEnhancedContext ? 1 : 0,
                 },
                 privateMetadata: {
                     ...sharedProperties,
@@ -498,18 +503,25 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 if (submitType === 'user-newchat' && !this.chatModel.isEmpty()) {
                     span.addEvent('clearAndRestartSession')
                     await this.clearAndRestartSession()
+                    abortSignal.throwIfAborted()
                 }
 
                 this.chatModel.addHumanMessage({ text: inputText, editorState })
                 await this.saveSession()
+                abortSignal.throwIfAborted()
 
                 this.postEmptyMessageInProgress()
 
+                // Add user's current selection as context for chat messages.
+                const selectionContext = source === 'chat' ? await getContextFileFromSelection() : []
+                abortSignal.throwIfAborted()
+
                 const userContextItems: ContextItemWithContent[] = await resolveContextItems(
                     this.editor,
-                    userContextFiles || [],
+                    [...userContextFiles, ...selectionContext],
                     inputText
                 )
+                abortSignal.throwIfAborted()
 
                 span.setAttribute('strategy', this.config.useContext)
                 const prompter = new DefaultPrompter(
@@ -561,9 +573,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 }
 
                 try {
-                    const prompt = await this.buildPrompt(prompter, sendTelemetry)
-                    this.streamAssistantResponse(requestID, prompt, span, firstTokenSpan)
+                    const prompt = await this.buildPrompt(prompter, abortSignal, sendTelemetry)
+                    abortSignal.throwIfAborted()
+                    this.streamAssistantResponse(requestID, prompt, span, firstTokenSpan, abortSignal)
                 } catch (error) {
+                    if (isAbortErrorOrSocketHangUp(error as Error)) {
+                        return
+                    }
                     if (isRateLimitError(error)) {
                         this.postError(error, 'transcript')
                     } else {
@@ -577,6 +593,19 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 }
             })
         })
+    }
+
+    private submitOrEditOperation: AbortController | undefined
+    public startNewSubmitOrEditOperation(): AbortSignal {
+        this.submitOrEditOperation?.abort()
+        this.submitOrEditOperation = new AbortController()
+        return this.submitOrEditOperation.signal
+    }
+    private cancelSubmitOrEditOperation(): void {
+        if (this.submitOrEditOperation) {
+            this.submitOrEditOperation.abort()
+            this.submitOrEditOperation = undefined
+        }
     }
 
     /**
@@ -594,6 +623,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         editorState: ChatMessage['editorState'],
         addEnhancedContext = true
     ): Promise<void> {
+        const abortSignal = this.startNewSubmitOrEditOperation()
+
         telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, {
             hasV2Event: true,
         })
@@ -612,6 +643,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 contextFiles,
                 editorState,
                 addEnhancedContext,
+                abortSignal,
                 'chat'
             )
         } catch {
@@ -620,7 +652,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     private handleAbort(): void {
-        this.cancelInProgressCompletion()
+        this.cancelSubmitOrEditOperation()
+
         telemetryService.log('CodyVSCodeExtension:abortButton:clicked', { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
     }
@@ -676,10 +709,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     privateMetadata: { source },
                 })
             },
-            withProvider: provider => {
-                telemetryService.log(`CodyVSCodeExtension:at-mention:${provider}:executed`, { source })
+            withProvider: (provider, providerMetadata) => {
+                telemetryService.log(`CodyVSCodeExtension:at-mention:${provider}:executed`, {
+                    source,
+                    providerMetadata,
+                })
                 telemetryRecorder.recordEvent(`cody.at-mention.${provider}`, 'executed', {
-                    privateMetadata: { source },
+                    privateMetadata: { source, providerMetadata },
                 })
             },
         }
@@ -899,12 +935,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
      */
     private async buildPrompt(
         prompter: DefaultPrompter,
+        abortSignal: AbortSignal,
         sendTelemetry?: (contextSummary: any, privateContextStats?: any) => void
     ): Promise<Message[]> {
         const { prompt, context } = await prompter.makePrompt(
             this.chatModel,
             this.authProvider.getAuthStatus().codyApiVersion
         )
+        abortSignal.throwIfAborted()
 
         // Update UI based on prompt construction
         // Includes the excluded context items to display in the UI
@@ -947,7 +985,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         requestID: string,
         prompt: Message[],
         span: Span,
-        firstTokenSpan: Span
+        firstTokenSpan: Span,
+        abortSignal: AbortSignal
     ): void {
         logDebug('SimpleChatPanelProvider', 'streamAssistantResponse', {
             verbose: { requestID, prompt },
@@ -962,37 +1001,48 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             firstTokenSpan.end()
         }
 
+        abortSignal.throwIfAborted()
         this.postEmptyMessageInProgress()
-        this.sendLLMRequest(prompt, {
-            update: content => {
-                measureFirstToken()
-                span.addEvent('update')
-                this.postViewTranscript({
-                    speaker: 'assistant',
-                    text: PromptString.unsafe_fromLLMResponse(content),
-                    model: this.chatModel.modelID,
-                })
-            },
-            close: content => {
-                measureFirstToken()
-                recordExposedExperimentsToSpan(span)
-                span.end()
-                this.addBotMessage(requestID, PromptString.unsafe_fromLLMResponse(content))
-            },
-            error: (partialResponse, error) => {
-                if (!isAbortError(error)) {
+        this.sendLLMRequest(
+            prompt,
+            {
+                update: content => {
+                    abortSignal.throwIfAborted()
+                    measureFirstToken()
+                    span.addEvent('update')
+                    this.postViewTranscript({
+                        speaker: 'assistant',
+                        text: PromptString.unsafe_fromLLMResponse(content),
+                        model: this.chatModel.modelID,
+                    })
+                },
+                close: content => {
+                    abortSignal.throwIfAborted()
+                    measureFirstToken()
+                    recordExposedExperimentsToSpan(span)
+                    span.end()
+                    this.addBotMessage(requestID, PromptString.unsafe_fromLLMResponse(content))
+                },
+                error: (partialResponse, error) => {
+                    if (isAbortErrorOrSocketHangUp(error)) {
+                        throw error
+                    }
                     this.postError(error, 'transcript')
-                }
-                try {
-                    // We should still add the partial response if there was an error
-                    // This'd throw an error if one has already been added
-                    this.addBotMessage(requestID, PromptString.unsafe_fromLLMResponse(partialResponse))
-                } catch {
-                    console.error('Streaming Error', error)
-                }
-                recordErrorToSpan(span, error)
+                    try {
+                        // We should still add the partial response if there was an error
+                        // This'd throw an error if one has already been added
+                        this.addBotMessage(
+                            requestID,
+                            PromptString.unsafe_fromLLMResponse(partialResponse)
+                        )
+                    } catch {
+                        console.error('Streaming Error', error)
+                    }
+                    recordErrorToSpan(span, error)
+                },
             },
-        })
+            abortSignal
+        )
     }
 
     /**
@@ -1005,7 +1055,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             update: (response: string) => void
             close: (finalResponse: string) => void
             error: (completedResponse: string, error: Error) => void
-        }
+        },
+        abortSignal: AbortSignal
     ): Promise<void> {
         let lastContent = ''
         const typewriter = new Typewriter({
@@ -1021,9 +1072,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             },
         })
 
-        this.cancelInProgressCompletion()
-        const abortController = new AbortController()
-        this.completionCanceller = () => abortController.abort()
         try {
             const stream = this.chatClient.chat(
                 prompt,
@@ -1031,7 +1079,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     model: this.chatModel.modelID,
                     maxTokensToSample: this.chatModel.contextWindow.output,
                 },
-                abortController.signal
+                abortSignal
             )
 
             for await (const message of stream) {
@@ -1041,32 +1089,19 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                         break
                     }
                     case 'complete': {
-                        this.completionCanceller = undefined
                         typewriter.close()
                         typewriter.stop()
                         break
                     }
                     case 'error': {
-                        this.cancelInProgressCompletion()
                         typewriter.close()
                         typewriter.stop(message.error)
                     }
                 }
             }
         } catch (error: unknown) {
-            if (!isAbortError(error as Error)) {
-                this.cancelInProgressCompletion()
-                typewriter.close()
-                typewriter.stop(error as Error)
-            }
-        }
-    }
-
-    private completionCanceller?: () => void
-    private cancelInProgressCompletion(): void {
-        if (this.completionCanceller) {
-            this.completionCanceller()
-            this.completionCanceller = undefined
+            typewriter.close()
+            typewriter.stop(isAbortErrorOrSocketHangUp(error as Error) ? undefined : (error as Error))
         }
     }
 
@@ -1129,6 +1164,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             (await this.repoPicker?.getDefaultRepos()) || [],
             RepoInclusion.Manual
         )
+
+        vscode.commands.executeCommand('setContext', 'cody.hasNewChatOpened', true)
     }
 
     // Attempts to restore the chat to the given sessionID, if it exists in
@@ -1140,7 +1177,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         if (!oldTranscript) {
             return this.newSession()
         }
-        this.cancelInProgressCompletion()
+        this.cancelSubmitOrEditOperation()
         const newModel = newChatModelFromSerializedChatTranscript(oldTranscript, this.chatModel.modelID)
         this.chatModel = newModel
 
@@ -1173,11 +1210,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             return
         }
 
-        this.cancelInProgressCompletion()
+        this.cancelSubmitOrEditOperation()
         await this.saveSession()
 
         this.chatModel = new SimpleChatModel(this.chatModel.modelID)
         this.postViewTranscript()
+
+        vscode.commands.executeCommand('setContext', 'cody.hasNewChatOpened', true)
     }
 
     // #endregion
@@ -1268,18 +1307,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         // Dispose panel when the panel is closed
         panel.onDidDispose(() => {
-            this.cancelInProgressCompletion()
+            this.cancelSubmitOrEditOperation()
             this._webviewPanel = undefined
             this._webview = undefined
             panel.dispose()
-        })
-
-        // Let the webview know if it is active
-        panel.onDidChangeViewState(event => {
-            this.postMessage({
-                type: 'webview-state',
-                isActive: event.webviewPanel.active,
-            })
         })
 
         this.disposables.push(
@@ -1367,6 +1398,6 @@ function newChatModelFromSerializedChatTranscript(
     )
 }
 
-function isAbortError(error: Error): boolean {
-    return error.message === 'aborted' || error.message === 'socket hang up'
+function isAbortErrorOrSocketHangUp(error: unknown): error is Error {
+    return Boolean(isAbortError(error) || (error && (error as any).message === 'socket hang up'))
 }

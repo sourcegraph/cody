@@ -1,4 +1,5 @@
 import assert from 'node:assert'
+import stable_stringify from 'fast-json-stable-stringify'
 
 import { createPatch } from 'diff'
 
@@ -8,7 +9,6 @@ import path from 'node:path'
 import { type ContextItem, type SerializedChatMessage, logError } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { applyPatch } from 'fast-myers-diff'
-import { expect } from 'vitest'
 import * as vscode from 'vscode'
 import type { Uri } from 'vscode'
 import {
@@ -41,6 +41,7 @@ import type {
     ProgressReportParams,
     ProgressStartParams,
     ProtocolCodeLens,
+    ProtocolTextDocument,
     RenameFileOperation,
     ServerInfo,
     ShowWindowMessageParams,
@@ -49,6 +50,7 @@ import type {
     WorkspaceEditParams,
 } from './protocol-alias'
 import { trimEndOfLine } from './trimEndOfLine'
+import { protocolRange } from './vscode-type-converters'
 
 type ProgressMessage = ProgressStartMessage | ProgressReportMessage | ProgressEndMessage
 
@@ -133,7 +135,15 @@ export class TestClient extends MessageHandler {
         const recordingDirectory = path.join(agentDir, 'recordings')
         const agentScript = path.join(agentDir, 'dist', 'index.js')
 
-        const args = bin === 'node' ? ['--enable-source-maps', agentScript, 'jsonrpc'] : ['jsonrpc']
+        const args =
+            bin === 'node'
+                ? [
+                      '--enable-source-maps',
+                      // '--expose-gc', // Uncoment when running memory.test.ts
+                      agentScript,
+                      'jsonrpc',
+                  ]
+                : ['jsonrpc']
 
         const child = spawn(bin, args, {
             stdio: 'pipe',
@@ -177,7 +187,7 @@ export class TestClient extends MessageHandler {
     public progressIDs = new Map<string, number>()
     public progressStartEvents = new vscode.EventEmitter<ProgressStartParams>()
     public readonly name: string
-    public workspace = new AgentWorkspaceDocuments()
+    public workspace = new AgentWorkspaceDocuments({})
     public workspaceEditParams: WorkspaceEditParams[] = []
     public textDocumentEditParams: TextDocumentEditParams[] = []
 
@@ -429,14 +439,44 @@ export class TestClient extends MessageHandler {
                   : undefined
         const end =
             cursor >= 0 ? start : selectionEnd >= 0 ? document.positionAt(selectionEnd) : undefined
-        const protocolDocument = {
+        const protocolDocument: ProtocolTextDocument = {
             uri: uri.toString(),
             content,
             selection: start && end ? { start, end } : undefined,
         }
-        this.workspace.loadDocument(ProtocolTextDocumentWithUri.fromDocument(protocolDocument))
+        const clientDocument = this.workspace.loadDocument(
+            ProtocolTextDocumentWithUri.fromDocument(protocolDocument)
+        )
+        const clientEditor = this.workspace.newTextEditor(clientDocument)
+        const visibleRange = clientEditor.visibleRanges?.[0]
+
+        protocolDocument.testing = {
+            selectedText: clientDocument.getText(clientEditor.selection),
+            sourceOfTruthDocument: {
+                uri: clientDocument.uri.toString(),
+                content: clientDocument.getText(),
+                selection: protocolRange(clientEditor.selection),
+                visibleRange: visibleRange ? protocolRange(visibleRange) : undefined,
+            },
+        }
+
         this.workspace.activeDocumentFilePath = uri
         this.notify(method, protocolDocument)
+    }
+
+    public async documentCode(uri: vscode.Uri): Promise<string> {
+        await this.openFile(uri, { removeCursor: false })
+        const task = await this.request('editCommands/document', null)
+        await this.taskHasReachedAppliedPhase(task)
+        const lenses = this.codeLenses.get(uri.toString()) ?? []
+        if (lenses.length > 0) {
+            throw new Error(
+                `Code lenses are not supported in this mode ${JSON.stringify(lenses, null, 2)}`
+            )
+        }
+
+        await this.request('editTask/accept', { id: task.id })
+        return this.workspace.getDocument(uri)?.content ?? ''
     }
 
     public async autocompleteText(params?: Partial<AutocompleteParams>): Promise<string[]> {
@@ -621,7 +661,9 @@ export class TestClient extends MessageHandler {
     public async acceptEditTask(uri: vscode.Uri, task: EditTask): Promise<void> {
         await this.taskHasReachedAppliedPhase(task)
         const lenses = this.codeLenses.get(uri.toString()) ?? []
-        expect(lenses).toHaveLength(0) // Code lenses are now handled client side
+        if (lenses.length !== 0) {
+            throw new Error(`Expected no code lenses for ${uri}, but found ${lenses.length}`)
+        }
         await this.request('editTask/accept', { id: task.id })
     }
 
@@ -727,9 +769,17 @@ export class TestClient extends MessageHandler {
             url: json?.url ?? '',
             postData: bodyText,
         })
+
         if (closestBody) {
-            const oldChange = JSON.stringify(body, null, 2)
-            const newChange = JSON.stringify(JSON.parse(closestBody), null, 2)
+            // Need to go through stable_stringify to get meaningful diffs.
+            // Without this step, we get noisy diffs about different object
+            // property ordering.
+            const oldChange = JSON.stringify(JSON.parse(stable_stringify(body)), null, 2)
+            const newChange = JSON.stringify(
+                JSON.parse(stable_stringify(JSON.parse(closestBody))),
+                null,
+                2
+            )
             if (oldChange === newChange) {
                 console.log(
                     dedent`There exists a recording with exactly the same request body, but for some reason the recordings did not match.
@@ -765,7 +815,9 @@ ${patch}`
 
     public async beforeAll() {
         const info = await this.initialize()
-        expect(info.authStatus?.isLoggedIn).toBeTruthy()
+        if (!info.authStatus?.isLoggedIn) {
+            throw new Error('Could not log in')
+        }
     }
     public async afterAll() {
         await this.shutdownAndExit()

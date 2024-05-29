@@ -1,8 +1,7 @@
-@import './vscode-dark-theme.css';
-
 :root {
     --vscode-font-size: 13px;
     --vscode-font-family: -apple-system, BlinkMacSystemFont, 'Ubuntu', 'Droid Sans', 'Segoe WPC', 'Segoe UI', sans-serif;
+    --vscode-editor-font-family: 'Monaco', 'Consolas', monospace;
 }
 
 body {
@@ -23,13 +22,18 @@ vscode-button::part(control) {
 }
 
 .container--webview {
+    max-height: max(500px, calc(100vh - 6rem));
+    overflow: auto;
+}
+
+.container--webview, .container--cell {
     max-width: 80%;
     margin: 2rem auto;
     background-color: var(--vscode-editor-background);
     border: solid 1px var(--vscode-tab-border);
 }
 
-.container-sidebar {
+.container--sidebar {
     max-width: 400px;
     margin: 2rem auto;
     background-color: var(--vscode-sideBar-background);

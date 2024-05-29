@@ -22,7 +22,9 @@ import { PersistenceTracker } from '../common/persistence-tracker'
 import { lines } from '../completions/text-processing'
 import { sleep } from '../completions/utils'
 import { getInput } from '../edit/input/get-input'
+import { getOverridenModelForIntent } from '../edit/utils/edit-models'
 import type { ExtensionClient } from '../extension-client'
+import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { AuthProvider } from '../services/AuthProvider'
 import { isInTutorial } from '../tutorial/helpers'
 import { FixupDecorator } from './FixupDecorator'
@@ -341,6 +343,8 @@ export class FixupController
         insertionPoint?: vscode.Position,
         telemetryMetadata?: FixupTelemetryMetadata
     ): Promise<FixupTask> {
+        const authStatus = this.authProvider.getAuthStatus()
+        const overridenModel = getOverridenModelForIntent(intent, model, authStatus)
         const fixupFile = this.files.forUri(document.uri)
         const task = new FixupTask(
             fixupFile,
@@ -349,7 +353,7 @@ export class FixupController
             intent,
             selectionRange,
             mode,
-            model,
+            overridenModel,
             source,
             destinationFile,
             insertionPoint,
@@ -989,7 +993,7 @@ export class FixupController
 
         // append response to new file
         const doc = await vscode.workspace.openTextDocument(newFileUri)
-        const pos = new vscode.Position(doc.lineCount - 1, 0)
+        const pos = new vscode.Position(Math.max(doc.lineCount - 1, 0), 0)
         const range = new vscode.Range(pos, pos)
         task.selectionRange = range
         task.fixupFile = this.files.replaceFile(task.fixupFile.uri, newFileUri)
@@ -1015,13 +1019,25 @@ export class FixupController
         if (task.state === CodyTaskState.Pending) {
             return
         }
-        // User has changed an applied task, so we assume the user has accepted the change and wants to take control.
-        // This helps ensure that the codelens doesn't stay around unnecessarily and become an annoyance.
-        // Note: This will also apply if the user attempts to undo the applied change.
-        if (task.state === CodyTaskState.Applied) {
-            this.accept(task)
-            return
+
+        // Note that we would like to auto-accept at this point if task.state == Applied.
+        // But it led to race conditions and bad bugs, because the Agent doesn't get
+        // notified when the Accept lens is displayed, so it doesn't actually know when it
+        // is safe to auto-accept. Fixing it properly will require us to send some sort of
+        // notification back to the Agent after we finish applying the
+        // changes. https://github.com/sourcegraph/cody-issues/issues/315 is one example
+        // of a bug caused by auto-accepting here, but there were others as well.
+        if (!isRunningInsideAgent()) {
+            if (task.state === CodyTaskState.Applied) {
+                // User has changed an applied task, so we assume the user has accepted
+                // the change and wants to take control.  This helps ensure that the
+                // codelens doesn't stay around unnecessarily and become an annoyance.
+                // Note: This will also apply if the user attempts to undo the applied change.
+                this.accept(task)
+                return
+            }
         }
+
         if (task.state === CodyTaskState.Finished) {
             this.needsDiffUpdate_.delete(task)
         }

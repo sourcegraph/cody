@@ -5,12 +5,13 @@ import {
     $createTextNode,
     $getRoot,
     $getSelection,
-    CLEAR_HISTORY_COMMAND,
+    $insertNodes,
     type LexicalEditor,
     type SerializedEditorState,
 } from 'lexical'
 import type { EditorState, SerializedLexicalNode } from 'lexical'
 import { type FunctionComponent, useCallback, useImperativeHandle, useRef } from 'react'
+import type { UserAccountInfo } from '../Chat'
 import { BaseEditor, editorStateToText } from './BaseEditor'
 import styles from './PromptEditor.module.css'
 import {
@@ -22,7 +23,10 @@ import {
 import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
 
 interface Props extends KeyboardEventPluginProps {
+    userInfo?: UserAccountInfo
     editorClassName?: string
+    contentEditableClassName?: string
+    seamless?: boolean
 
     placeholder?: string
 
@@ -36,74 +40,106 @@ interface Props extends KeyboardEventPluginProps {
 }
 
 export interface PromptEditorRefAPI {
-    setEditorState(value: SerializedPromptEditorState | null): void
     getSerializedValue(): SerializedPromptEditorValue
-    setFocus(focus: boolean): void
+    setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }): void
+    appendText(text: string, ensureWhitespaceBefore?: boolean): void
     addContextItemAsToken(items: ContextItem[]): void
+    isEmpty(): boolean
 }
 
 /**
  * The component for composing and editing prompts.
  */
 export const PromptEditor: FunctionComponent<Props> = ({
+    userInfo,
     editorClassName,
+    contentEditableClassName,
+    seamless,
     placeholder,
     initialEditorState,
     onChange,
     onFocusChange,
     disabled,
     editorRef: ref,
-
-    // KeyboardEventPluginProps
-    onKeyDown,
     onEnterKey,
-    onEscapeKey,
 }) => {
     const editorRef = useRef<LexicalEditor>(null)
 
     useImperativeHandle(
         ref,
         (): PromptEditorRefAPI => ({
-            setEditorState(value: SerializedPromptEditorState | null): void {
-                if (value === null) {
-                    // Clearing seems to require a different code path because focusing fails if
-                    // the editor is empty.
-                    editorRef.current?.update(() => {
-                        $getRoot().clear()
-                    })
-                    return
-                }
-
-                const editor = editorRef.current
-                if (editor) {
-                    editor.setEditorState(editor.parseEditorState(value.lexicalEditorState))
-                    editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined)
-                    editor.focus()
-                }
-            },
             getSerializedValue(): SerializedPromptEditorValue {
                 if (!editorRef.current) {
                     throw new Error('PromptEditor has no Lexical editor ref')
                 }
                 return toSerializedPromptEditorValue(editorRef.current)
             },
-            setFocus(focus) {
+            setFocus(focus, { moveCursorToEnd } = {}): void {
                 const editor = editorRef.current
                 if (editor) {
                     if (focus) {
-                        editor.focus()
+                        editor.update(
+                            () => {
+                                const selection = $getSelection()
+                                const root = $getRoot()
+
+                                // Copied from LexicalEditor#focus, but we need to set the
+                                // `skip-scroll-into-view` tag so that we don't always autoscroll.
+                                if (selection !== null) {
+                                    selection.dirty = true
+                                } else if (root.getChildrenSize() !== 0) {
+                                    root.selectEnd()
+                                }
+
+                                if (moveCursorToEnd) {
+                                    root.selectEnd()
+                                }
+
+                                // Ensure element is focused in case the editor is empty. Copied
+                                // from LexicalAutoFocusPlugin.
+                                const doFocus = () =>
+                                    editor.getRootElement()?.focus({ preventScroll: true })
+                                doFocus()
+
+                                // HACK(sqs): Needed in VS Code webviews to actually get it to focus
+                                // on initial load, for some reason.
+                                setTimeout(doFocus)
+                            },
+                            { tag: 'skip-scroll-into-view' }
+                        )
                     } else {
                         editor.blur()
                     }
                 }
             },
+            appendText(text: string, ensureWhitespaceBefore?: boolean): void {
+                editorRef.current?.update(() => {
+                    const root = $getRoot()
+                    const needsWhitespaceBefore = !/(^|\s)$/.test(root.getTextContent())
+                    root.selectEnd()
+                    $insertNodes([
+                        $createTextNode(
+                            `${ensureWhitespaceBefore && needsWhitespaceBefore ? ' ' : ''}${text}`
+                        ),
+                    ])
+                    root.selectEnd()
+                })
+            },
             addContextItemAsToken(items: ContextItem[]) {
-                editorRef?.current?.update(() => {
-                    const selection = $getSelection()
+                editorRef.current?.update(() => {
                     const spaceNode = $createTextNode(' ')
                     const mentionNodes = items.map($createContextItemMentionNode)
-                    selection?.insertNodes([spaceNode, ...mentionNodes, spaceNode])
+                    $insertNodes([spaceNode, ...mentionNodes, spaceNode])
                     spaceNode.select()
+                })
+            },
+            isEmpty(): boolean {
+                if (!editorRef.current) {
+                    throw new Error('PromptEditor has no Lexical editor ref')
+                }
+                return editorRef.current.getEditorState().read(() => {
+                    const root = $getRoot()
+                    return root.getChildrenSize() === 0
                 })
             },
         }),
@@ -121,7 +157,12 @@ export const PromptEditor: FunctionComponent<Props> = ({
 
     return (
         <BaseEditor
-            className={clsx(styles.editor, editorClassName, disabled && styles.disabled)}
+            userInfo={userInfo}
+            className={clsx(styles.editor, editorClassName, {
+                [styles.disabled]: disabled,
+                [styles.seamless]: seamless,
+            })}
+            contentEditableClassName={contentEditableClassName}
             initialEditorState={initialEditorState?.lexicalEditorState ?? null}
             onChange={onBaseEditorChange}
             onFocusChange={onFocusChange}
@@ -129,11 +170,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
             placeholder={placeholder}
             disabled={disabled}
             aria-label="Chat message"
-            //
-            // KeyboardEventPluginProps
-            onKeyDown={onKeyDown}
             onEnterKey={onEnterKey}
-            onEscapeKey={onEscapeKey}
         />
     )
 }

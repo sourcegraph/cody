@@ -18,18 +18,14 @@ const meta: Meta<typeof Chat> = {
     args: {
         transcript: FIXTURE_TRANSCRIPT.simple2,
         messageInProgress: null,
-        chatIDHistory: [],
         chatEnabled: true,
         userInfo: FIXTURE_USER_ACCOUNT_INFO,
-        isWebviewActive: true,
         vscodeAPI: {
             postMessage: () => {},
             onMessage: () => () => {},
         },
         telemetryService: null as any,
-        telemetryRecorder: null as any,
         isTranscriptError: false,
-        isNewInstall: false,
         userContextFromSelection: [],
     } satisfies React.ComponentProps<typeof Chat>,
 
@@ -39,3 +35,5 @@ const meta: Meta<typeof Chat> = {
 export default meta
 
 export const Default: StoryObj<typeof meta> = {}
+
+export const Disabled: StoryObj<typeof meta> = { args: { chatEnabled: false } }

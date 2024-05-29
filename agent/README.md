@@ -161,3 +161,8 @@ update-agent-recordings` to clean unused recordings.
   connection configuration.
 - Run the command `git diff -- ':!*.har.yaml'` to review local changes without the noisy
   diff in `agent/recordings`.
+- If you get an ESBuild error about "You can mark the path "#async_hooks" as
+  external to exclude it from the bundle, which will remove this error." then the
+  fix is to remove dependencies on `vitest` from the agent bundle. Vitest depends
+  on the `p-limit` npm package, which uses `#async_hooks` that we currently don't
+  handle in the ESBuild config.

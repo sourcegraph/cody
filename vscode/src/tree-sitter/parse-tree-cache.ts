@@ -34,7 +34,7 @@ export function getCachedParseTreeForDocument(document: TextDocument): ParseTree
     return { tree, parser, cacheKey }
 }
 
-async function parseDocument(document: TextDocument): Promise<void> {
+export async function parseDocument(document: TextDocument): Promise<void> {
     const parseLanguage = getLanguageIfTreeSitterEnabled(document)
 
     if (!parseLanguage) {
@@ -114,8 +114,10 @@ export function asPoint(position: Pick<vscode.Position, 'line' | 'character'>): 
     return { row: position.line, column: position.character }
 }
 
-export function parseAllVisibleDocuments(): void {
+export function parseAllVisibleDocuments(): Promise<unknown> {
+    const promises: Promise<void>[] = []
     for (const editor of vscode.window.visibleTextEditors) {
-        void parseDocument(editor.document)
+        promises.push(parseDocument(editor.document))
     }
+    return Promise.all(promises)
 }

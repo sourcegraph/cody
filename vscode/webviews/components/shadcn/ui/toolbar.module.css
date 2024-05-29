@@ -1,0 +1,69 @@
+:root {
+    --toolbar-button-font-size: 11px;
+}
+
+.button {
+    &, & + aside {
+        /* Also style our popovers. */
+        font-size: var(--toolbar-button-font-size);
+        line-height: var(--toolbar-button-font-size);
+    }
+
+    user-select: none;
+    &:enabled {
+        cursor: pointer;
+    }
+
+    border-radius: 3px;
+    --padding-y: 2px;
+    --padding-x: 3px;
+    padding: var(--padding-y) var(--padding-x);
+
+    --icon-size: 13px;
+
+    --gap: 2px;
+    gap: var(--gap);
+
+    flex-shrink: 0;
+
+    > svg {
+        flex-shrink: 0;
+        width: var(--icon-size);
+        height: var(--icon-size);
+    }
+}
+
+.button--icon-end-chevron > svg:last-child {
+    margin-left: calc(-1*var(--gap));
+}
+
+.button--primary {
+    color: var(--vscode-button-foreground);
+    background-color: var(--vscode-button-background);
+
+    &.button--no-icon-start {
+        padding-left: calc(2*var(--padding-x));
+    }
+
+    &.button--no-icon-end {
+        padding-right: calc(2*var(--padding-x));
+    }
+}
+
+.button--secondary {
+    /* Make it look like text in an input. */
+    color: color-mix(in lch, var(--vscode-input-foreground) 60%, transparent);
+    background-color: unset;
+
+    &:enabled:is(:hover, :focus-within) {
+        color: var(--vscode-input-foreground);
+        fill: var(--vscode-input-foreground);
+    }
+}
+
+.button:disabled {
+    opacity: 0.5;
+    &.button--secondary {
+        opacity: 0.7;
+    }
+}

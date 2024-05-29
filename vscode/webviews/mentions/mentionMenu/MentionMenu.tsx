@@ -1,6 +1,7 @@
 import type { MenuRenderFn } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import {
     type ContextItem,
+    type ContextItemOpenCtx,
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionQuery,
@@ -13,6 +14,9 @@ import {
     FILE_RANGE_TOOLTIP_LABEL,
     NO_SYMBOL_MATCHES_HELP_LABEL,
 } from '../../../src/chat/context/constants'
+import RemoteFileProvider from '../../../src/context/openctx/remoteFileSearch'
+import RemoteRepositorySearch from '../../../src/context/openctx/remoteRepositorySearch'
+import type { UserAccountInfo } from '../../Chat'
 import {
     Command,
     CommandEmpty,
@@ -48,6 +52,7 @@ import type { MentionMenuData, MentionMenuParams } from './useMentionMenuData'
  */
 export const MentionMenu: FunctionComponent<
     {
+        userInfo?: UserAccountInfo
         params: MentionMenuParams
         updateMentionMenuParams: (update: Partial<Pick<MentionMenuParams, 'parentItem'>>) => void
         setEditorQuery: (query: string) => void
@@ -57,6 +62,7 @@ export const MentionMenu: FunctionComponent<
         __storybook__focus?: boolean
     } & Pick<Parameters<MenuRenderFn<MentionMenuOption>>[1], 'selectOptionAndCleanUp'>
 > = ({
+    userInfo,
     params,
     updateMentionMenuParams,
     setEditorQuery,
@@ -123,9 +129,40 @@ export const MentionMenu: FunctionComponent<
             if (!item) {
                 throw new Error(`No item found with value ${value}`)
             }
+
+            // HACK: The OpenCtx interface do not support building multi-step selection for mentions.
+            // For the remote file search provider, we first need the user to search for the repo from the list and then
+            // put in the query to search for files. Below we are doing a hack to not set the repo item as a mention
+            // but instead keep the same provider selected and put the full repo name in the query. The provider will then
+            // return files instead of repos if the repo name is in the query.
+            if (item.provider === 'openctx') {
+                const openCtxItem = item as ContextItemOpenCtx
+                if (
+                    openCtxItem.providerUri === RemoteFileProvider.providerUri &&
+                    openCtxItem.mention?.data?.repoName &&
+                    !openCtxItem.mention?.data?.filePath
+                ) {
+                    // Do not set the selected item as mention if it is repo item from the remote file search provider.
+                    // Rather keep the provider in place and update the query with repo name so that the provider can
+                    // start showing the files instead.
+
+                    updateMentionMenuParams({
+                        parentItem: {
+                            id: RemoteFileProvider.providerUri,
+                            title: 'Sourcegraph Files',
+                            queryLabel: 'Enter file path to search.',
+                            emptyLabel: `No files found in ${openCtxItem.mention.data.repoName} repository`,
+                        },
+                    })
+                    setEditorQuery(`${openCtxItem.mention?.data?.repoName}:`)
+                    setValue(null)
+                    return
+                }
+            }
+
             selectOptionAndCleanUp(createMentionMenuOption(item))
         },
-        [data.items, selectOptionAndCleanUp]
+        [data.items, selectOptionAndCleanUp, setEditorQuery, updateMentionMenuParams]
     )
 
     // We use `cmdk` Command as a controlled component, so we need to supply its `value`. We track
@@ -155,16 +192,24 @@ export const MentionMenu: FunctionComponent<
             <CommandList>
                 {data.providers.length > 0 && (
                     <CommandGroup>
-                        {data.providers.map(provider => (
-                            <CommandItem
-                                key={commandRowValue(provider)}
-                                value={commandRowValue(provider)}
-                                onSelect={onProviderSelect}
-                                className={styles.item}
-                            >
-                                <MentionMenuProviderItemContent provider={provider} />
-                            </CommandItem>
-                        ))}
+                        {data.providers
+                            .filter(
+                                provider =>
+                                    (provider.id !== RemoteRepositorySearch.providerUri &&
+                                        provider.id !== RemoteFileProvider.providerUri) ||
+                                    !userInfo?.isDotComUser
+                            )
+                            .map(provider => (
+                                // show remote repositories search provider  only if the user is connected to a non-dotcom instance.
+                                <CommandItem
+                                    key={commandRowValue(provider)}
+                                    value={commandRowValue(provider)}
+                                    onSelect={onProviderSelect}
+                                    className={styles.item}
+                                >
+                                    <MentionMenuProviderItemContent provider={provider} />
+                                </CommandItem>
+                            ))}
                     </CommandGroup>
                 )}
 

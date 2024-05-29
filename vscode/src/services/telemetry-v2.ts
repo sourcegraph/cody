@@ -1,4 +1,5 @@
 import {
+    type AuthStatusProvider,
     type ConfigurationWithAccessToken,
     type LogEventMode,
     MockServerTelemetryRecorderProvider,
@@ -12,7 +13,6 @@ import { TimestampTelemetryProcessor } from '@sourcegraph/telemetry'
 
 import { logDebug } from '../log'
 
-import type { AuthProvider } from './AuthProvider'
 import { localStorage } from './LocalStorageProvider'
 // biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { getExtensionDetails } from './telemetry'
@@ -44,7 +44,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
      * true, exports are logged to extension output instead.
      */
     isExtensionModeDevOrTest: boolean,
-    authProvider: AuthProvider
+    authStatusProvider: AuthStatusProvider
 ): Promise<void> {
     const extensionDetails = getExtensionDetails(config)
 
@@ -72,7 +72,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
             new MockServerTelemetryRecorderProvider(
                 extensionDetails,
                 config,
-                () => authProvider.getAuthStatus(),
+                authStatusProvider,
                 anonymousUserID
             )
         )
@@ -84,7 +84,7 @@ export async function createOrUpdateTelemetryRecorderProvider(
             new TelemetryRecorderProvider(
                 extensionDetails,
                 config,
-                () => authProvider.getAuthStatus(),
+                authStatusProvider,
                 anonymousUserID,
                 legacyBackcompatLogEventMode
             )

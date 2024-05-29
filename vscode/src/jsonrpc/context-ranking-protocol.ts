@@ -11,9 +11,9 @@ interface ComputeFeaturesParams {
 
 export interface RankContextItem {
     documentId: number
-    filePath?: string
+    filePath?: string | undefined | null
     content: string
-    source?: string
+    source?: string | undefined | null
 }
 
 interface RankItemsParams {

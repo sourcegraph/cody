@@ -15,6 +15,7 @@ import {
     CONTEXT_SEARCH_QUERY,
     CURRENT_SITE_CODY_CONFIG_FEATURES,
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
+    CURRENT_SITE_CODY_LLM_CONFIGURATION_SMART_CONTEXT,
     CURRENT_SITE_CODY_LLM_PROVIDER,
     CURRENT_SITE_GRAPHQL_FIELDS_QUERY,
     CURRENT_SITE_HAS_CODY_ENABLED_QUERY,
@@ -25,6 +26,8 @@ import {
     CURRENT_USER_ID_QUERY,
     CURRENT_USER_INFO_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
+    FILE_CONTENTS_QUERY,
+    FILE_MATCH_SEARCH_QUERY,
     GET_FEATURE_FLAGS_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
@@ -33,6 +36,7 @@ import {
     REPOSITORY_IDS_QUERY,
     REPOSITORY_ID_QUERY,
     REPOSITORY_LIST_QUERY,
+    REPOSITORY_SEARCH_QUERY,
     REPO_NAME_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
 } from './queries'
@@ -96,6 +100,10 @@ interface CodyConfigFeaturesResponse {
     site: { codyConfigFeatures: CodyConfigFeatures | null } | null
 }
 
+interface CodyEnterpriseConfigSmartContextResponse {
+    site: { codyLLMConfiguration: { smartContextWindow: string } | null } | null
+}
+
 interface CurrentUserCodyProEnabledResponse {
     currentUser: {
         codyProEnabled: boolean
@@ -147,6 +155,46 @@ export interface RepoListResponse {
             endCursor: string | null
         }
     }
+}
+
+export interface RepoSearchResponse {
+    repositories: {
+        nodes: { name: string; id: string; url: string }[]
+        pageInfo: {
+            endCursor: string | null
+        }
+    }
+}
+export interface FileMatchSearchResponse {
+    search: {
+        results: {
+            results: {
+                __typename: string
+                repository: {
+                    name: string
+                }
+                file: {
+                    url: string
+                    path: string
+                    commit: {
+                        oid: string
+                    }
+                }
+            }[]
+        }
+    }
+}
+
+export interface FileContentsResponse {
+    repository: {
+        commit: {
+            file: {
+                path: string
+                url: string
+                content: string
+            } | null
+        } | null
+    } | null
 }
 
 interface RepositoryIdResponse {
@@ -259,6 +307,7 @@ export interface CodyLLMSiteConfiguration {
     completionModel?: string
     completionModelMaxTokens?: number
     provider?: string
+    smartContextWindow?: boolean
 }
 
 export interface CurrentUserCodySubscription {
@@ -491,13 +540,14 @@ export class SourcegraphGraphQLAPIClient {
 
     public async getCodyLLMConfiguration(): Promise<undefined | CodyLLMSiteConfiguration | Error> {
         // fetch Cody LLM provider separately for backward compatability
-        const [configResponse, providerResponse] = await Promise.all([
+        const [configResponse, providerResponse, smartContextWindow] = await Promise.all([
             this.fetchSourcegraphAPI<APIResponse<CodyLLMSiteConfigurationResponse>>(
                 CURRENT_SITE_CODY_LLM_CONFIGURATION
             ),
             this.fetchSourcegraphAPI<APIResponse<CodyLLMSiteConfigurationProviderResponse>>(
                 CURRENT_SITE_CODY_LLM_PROVIDER
             ),
+            this.getCodyLLMConfigurationSmartContext(),
         ])
 
         const config = extractDataOrError(
@@ -517,7 +567,30 @@ export class SourcegraphGraphQLAPIClient {
             provider = llmProvider
         }
 
-        return { ...config, provider }
+        return { ...config, provider, smartContextWindow }
+    }
+
+    private async getCodyLLMConfigurationSmartContext(): Promise<boolean> {
+        return (
+            this.fetchSourcegraphAPI<APIResponse<CodyEnterpriseConfigSmartContextResponse>>(
+                CURRENT_SITE_CODY_LLM_CONFIGURATION_SMART_CONTEXT,
+                {}
+            )
+                .then(response => {
+                    const smartContextResponse = extractDataOrError(
+                        response,
+                        data => data?.site?.codyLLMConfiguration?.smartContextWindow ?? ''
+                    )
+
+                    if (isError(smartContextResponse)) {
+                        throw new Error(smartContextResponse.message)
+                    }
+
+                    return smartContextResponse !== 'disabled'
+                })
+                // For backward compatibility, return false by default when the query fails.
+                .catch(() => false)
+        )
     }
 
     public async getPackageList(
@@ -544,6 +617,43 @@ export class SourcegraphGraphQLAPIClient {
         return this.fetchSourcegraphAPI<APIResponse<RepoListResponse>>(REPOSITORY_LIST_QUERY, {
             first,
             after: after || null,
+        }).then(response => extractDataOrError(response, data => data))
+    }
+
+    /**
+     * Searches for repositories from the Sourcegraph instance.
+     * @param first the number of repositories to retrieve.
+     * @param after the last repository retrieved, if any, to continue enumerating the list.
+     * @param query the query to search the repositories.
+     * @returns the list of repositories. If `endCursor` is null, this is the end of the list.
+     */
+    public async searchRepos(
+        first: number,
+        after?: string,
+        query?: string
+    ): Promise<RepoSearchResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<RepoSearchResponse>>(REPOSITORY_SEARCH_QUERY, {
+            first,
+            after: after || null,
+            query,
+        }).then(response => extractDataOrError(response, data => data))
+    }
+
+    public async searchFileMatches(query?: string): Promise<FileMatchSearchResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<FileMatchSearchResponse>>(FILE_MATCH_SEARCH_QUERY, {
+            query,
+        }).then(response => extractDataOrError(response, data => data))
+    }
+
+    public async getFileContents(
+        repoName: string,
+        filePath: string,
+        rev?: string
+    ): Promise<FileContentsResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<FileContentsResponse>>(FILE_CONTENTS_QUERY, {
+            repoName,
+            filePath,
+            rev,
         }).then(response => extractDataOrError(response, data => data))
     }
 
@@ -719,6 +829,9 @@ export class SourcegraphGraphQLAPIClient {
         if (process.env.CODY_TESTING === 'true') {
             return this.sendEventLogRequestToTestingAPI(event)
         }
+        if (isAgentTesting) {
+            return {}
+        }
         if (this.config?.telemetryLevel === 'off') {
             return {}
         }
@@ -888,7 +1001,8 @@ export class SourcegraphGraphQLAPIClient {
 
     public fetchSourcegraphAPI<T>(
         query: string,
-        variables: Record<string, any> = {}
+        variables: Record<string, any> = {},
+        timeout = 6000 // Default timeout of 6000ms (6 seconds)
     ): Promise<T | Error> {
         const headers = new Headers(this.config.customHeaders as HeadersInit)
         headers.set('Content-Type', 'application/json; charset=utf-8')
@@ -908,20 +1022,34 @@ export class SourcegraphGraphQLAPIClient {
             request: query,
             baseUrl: this.config.serverEndpoint,
         })
+
+        // Create an AbortController instance
+        const controller = new AbortController()
+        const signal = controller.signal
+
+        // Set a timeout to trigger the abort
+        const timeoutId = setTimeout(() => controller.abort(), timeout)
+
         return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
             fetch(url, {
                 method: 'POST',
                 body: JSON.stringify({ query, variables }),
                 headers,
+                signal, // Pass the signal to the fetch request
             })
-                .then(verifyResponseCode)
+                .then(response => {
+                    clearTimeout(timeoutId) // Clear the timeout if the request completes in time
+                    return verifyResponseCode(response)
+                })
                 .then(response => response.json() as T)
                 .catch(error => {
+                    if (error.name === 'AbortError') {
+                        return new Error(`EHOSTUNREACH: Request timed out after ${timeout}ms (${url})`)
+                    }
                     return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
                 })
         )
     }
-
     // make an anonymous request to the dotcom API
     private fetchSourcegraphDotcomAPI<T>(
         query: string,

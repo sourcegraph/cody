@@ -4,6 +4,7 @@ import type { Memento } from 'vscode'
 import {
     type AuthStatus,
     type ChatHistory,
+    type ConfigurationWithAccessToken,
     type SerializedChatInteraction,
     type SerializedChatMessage,
     type UserLocalHistory,
@@ -24,6 +25,7 @@ interface PersistedUserLocalHistory {
 class LocalStorage {
     // Bump this on storage changes so we don't handle incorrectly formatted data
     protected readonly KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
+    protected readonly KEY_CONFIG = 'cody-config'
     public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
     public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     protected readonly CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
@@ -193,11 +195,19 @@ class LocalStorage {
         return { anonymousUserID: id, created }
     }
 
-    public get(key: string): string | null {
+    public async setConfig(config: ConfigurationWithAccessToken): Promise<void> {
+        return this.set(this.KEY_CONFIG, config)
+    }
+
+    public getConfig(): ConfigurationWithAccessToken | null {
+        return this.get(this.KEY_CONFIG)
+    }
+
+    public get<T>(key: string): T | null {
         return this.storage.get(key, null)
     }
 
-    public async set(key: string, value: string): Promise<void> {
+    public async set<T>(key: string, value: T): Promise<void> {
         try {
             await this.storage.update(key, value)
         } catch (error) {

@@ -1,5 +1,6 @@
 import type { TelemetryRecorder, TelemetryService } from '@sourcegraph/cody-shared'
 
+import { createContext, useContext } from 'react'
 import type { WebviewRecordEventParameters } from '../../src/chat/protocol'
 import type { ApiPostMessage } from '../Chat'
 import type { VSCodeWrapper } from './VSCodeApi'
@@ -21,14 +22,9 @@ export function createWebviewTelemetryService(vscodeAPI: VSCodeWrapper): Telemet
  * Create a new {@link TelemetryRecorder} for use in the VS Code webviews for V2 telemetry.
  * Use either postMessage or VSCodeWrapper to send messages to the VS Code extension.
  */
-
 export function createWebviewTelemetryRecorder(
-    postMessage: ApiPostMessage | VSCodeWrapper
+    vscodeAPI: Pick<VSCodeWrapper, 'postMessage'>
 ): TelemetryRecorder {
-    // determine whether we're using the postMessage API or the VSCodeWrapper API and adjust the postMessage function accordingly
-    const actualPostMessage: ApiPostMessage =
-        typeof postMessage === 'function' ? postMessage : postMessage.postMessage.bind(postMessage)
-
     return {
         recordEvent(feature, action, parameters) {
             actualPostMessage({
@@ -40,4 +36,14 @@ export function createWebviewTelemetryRecorder(
             })
         },
     }
+}
+
+export const TelemetryRecorderContext = createContext<TelemetryRecorder | null>(null)
+
+export function useTelemetryRecorder(): TelemetryRecorder {
+    const telemetryRecorder = useContext(TelemetryRecorderContext)
+    if (!telemetryRecorder) {
+        throw new Error('no telemetryRecorder')
+    }
+    return telemetryRecorder
 }

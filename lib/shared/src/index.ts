@@ -2,8 +2,10 @@
 
 export { ModelProvider } from './models'
 export {
-    type ChatModel,
     type EditModel,
+    type EditProvider,
+    type ChatModel,
+    type ChatProvider,
     ModelUsage,
     type ModelContextWindow,
 } from './models/types'
@@ -22,7 +24,6 @@ export {
     type IgnoreFileContent,
     CODY_IGNORE_URI_PATH,
 } from './cody-ignore/ignore-helper'
-export { renderCodyMarkdown } from './chat/markdown'
 export { getSimplePreamble } from './chat/preamble'
 export type {
     SerializedChatInteraction,
@@ -99,7 +100,7 @@ export {
     markdownCodeBlockLanguageIDForFilename,
     extensionForLanguage,
 } from './common/languages'
-export { renderMarkdown, escapeHTML } from './common/markdown'
+export { escapeHTML } from './common/markdown'
 export {
     posixFilePaths,
     pathFunctionsForURI,
@@ -155,7 +156,6 @@ export type {
     FilenameContextFetcher,
     IndexedKeywordContextFetcher,
     LocalEmbeddingsFetcher,
-    IRemoteSearch,
     Result,
     SearchPanelFile,
     SearchPanelSnippet,
