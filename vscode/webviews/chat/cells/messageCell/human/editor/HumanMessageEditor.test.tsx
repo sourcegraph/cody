@@ -18,13 +18,6 @@ const ENTER_KEYBOARD_EVENT_DATA: Pick<KeyboardEvent, 'key' | 'code' | 'keyCode'>
     keyCode: 13,
 }
 
-const ALT_KEYBOARD_EVENT_DATA: Pick<KeyboardEvent, 'key' | 'code' | 'keyCode' | 'altKey'> = {
-    key: 'Alt',
-    code: 'AltLeft',
-    keyCode: 18,
-    altKey: true,
-}
-
 describe('HumanMessageEditor', () => {
     test('renders textarea', async () => {
         const { editor } = renderWithMocks({})
