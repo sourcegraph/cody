@@ -75,7 +75,8 @@ export const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
             >
                 {IconStart && <IconStart />}
                 {children}
-                {IconEnd && (IconEnd === 'chevron' ? <ChevronDownIcon /> : <IconEnd />)}
+                {IconEnd &&
+                    (IconEnd === 'chevron' ? <ChevronDownIcon size={1.25} /> : <IconEnd size={1.25} />)}
             </Comp>
         )
 

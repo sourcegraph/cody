@@ -84,6 +84,7 @@ export const Toolbar: FunctionComponent<{
                 presentationMode={userInfo.isDotComUser ? 'consumer' : 'enterprise'}
                 onCloseByEscape={focusEditor}
             />
+            <div className="tw-ml-3 tw-mr-3 tw-border-l-[1px] tw-border-white tw-h-6 tw-opacity-10" />
             <ModelSelectFieldToolbarItem userInfo={userInfo} focusEditor={focusEditor} />
             <div className={styles.spacer} />
             <SubmitButton

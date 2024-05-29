@@ -19,7 +19,7 @@
     --padding-x: 3px;
     padding: var(--padding-y) var(--padding-x);
 
-    --icon-size: 13px;
+    --icon-size: 16px;
 
     --gap: 2px;
     gap: var(--gap);
