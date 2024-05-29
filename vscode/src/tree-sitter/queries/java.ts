@@ -20,11 +20,6 @@ const DOCUMENTABLE_NODES = dedent`
     ;--------------------------------
     (class_declaration
         name: (_) @symbol.identifier) @range.identifier
-    (variable_declarator
-        name: (identifier) @symbol.identifier) @range.identifier
-    (field_declaration
-        (variable_declarator
-            name: (identifier) @symbol.identifier) @range.identifier)
 
     ; Type Identifiers
     ;--------------------------------
