@@ -45,13 +45,12 @@ import {
 import { emptyDisposable } from '../../vscode/src/testutils/emptyDisposable'
 
 import { AgentDiagnostics } from './AgentDiagnostics'
-import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { AgentQuickPick } from './AgentQuickPick'
 import { AgentTabGroups } from './AgentTabGroups'
 import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import type { Agent } from './agent'
 import { matchesGlobPatterns } from './cli/cody-bench/matchesGlobPatterns'
-import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
+import type { ClientInfo, ExtensionConfiguration, ProtocolTextDocument } from './protocol-alias'
 
 // Not using CODY_TESTING because it changes the URL endpoint we send requests
 // to and we want to send requests to sourcegraph.com because we record the HTTP
@@ -159,7 +158,7 @@ export const onDidDeleteFiles = new EventEmitter<vscode.FileDeleteEvent>()
 export interface WorkspaceDocuments {
     workspaceRootUri?: vscode.Uri
     openTextDocument: (uri: vscode.Uri) => vscode.TextDocument | undefined
-    loadAndUpdateDocument: (document: ProtocolTextDocumentWithUri) => vscode.TextDocument
+    openUri(uri: vscode.Uri, document?: ProtocolTextDocument): vscode.TextDocument
     newTextEditor(document: vscode.TextDocument): vscode.TextEditor
 }
 let workspaceDocuments: WorkspaceDocuments | undefined
@@ -323,7 +322,7 @@ const _workspace: typeof vscode.workspace = {
             )
         }
 
-        return workspaceDocuments.loadAndUpdateDocument(ProtocolTextDocumentWithUri.fromDocument(result))
+        return workspaceDocuments.openUri(uri, result)
     },
     workspaceFolders,
     getWorkspaceFolder: () => {

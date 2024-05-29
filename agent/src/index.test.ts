@@ -386,6 +386,12 @@ describe('Agent', () => {
             decodeURIs(transcript)
             const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
             expect(contextFiles).not.toHaveLength(0)
+            //we also expect there to be a context file that contains the selected code range
+            const selectedCodeContextFile = contextFiles.find(file =>
+                file.content?.includes('selected code')
+            )
+            expect(selectedCodeContextFile?.uri ?? '').toContain('/src/animal.ts')
+            expect(selectedCodeContextFile?.range ?? {}).toEqual({ start: 1, end: 6 })
             expect(contextFiles.map(file => file.uri.toString())).includes(squirrelUri.toString())
         }, 30_000)
 

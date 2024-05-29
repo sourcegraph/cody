@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
 import { resetActiveEditor } from '../../vscode/src/editor/active-editor'
+import type { ProtocolTextDocument } from '../../vscode/src/jsonrpc/agent-protocol'
 import { AgentTextDocument } from './AgentTextDocument'
 import { AgentTextEditor } from './AgentTextEditor'
 import { applyContentChanges } from './applyContentChanges'
@@ -41,12 +42,14 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
 
     private doPanic = this.params?.doPanic ? { doPanic: this.params.doPanic } : undefined
 
-    public openUri(uri: vscode.Uri): AgentTextDocument {
+    public openUri(uri: vscode.Uri, document?: Partial<ProtocolTextDocument>): AgentTextDocument {
         return this.loadAndUpdateDocument(ProtocolTextDocumentWithUri.from(uri))
     }
+
     public loadAndUpdateDocument(document: ProtocolTextDocumentWithUri): AgentTextDocument {
         return this.loadDocumentWithChanges(document).document
     }
+
     public loadDocumentWithChanges(document: ProtocolTextDocumentWithUri): {
         document: AgentTextDocument
         editor: AgentTextEditor
