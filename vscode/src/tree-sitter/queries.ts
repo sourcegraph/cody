@@ -3,6 +3,7 @@ import { goQueries } from './queries/go'
 import { javaQueries } from './queries/java'
 import { javascriptQueries } from './queries/javascript'
 import { kotlinQueries } from './queries/kotlin'
+import { phpQueries } from './queries/php'
 import { pythonQueries } from './queries/python'
 
 export type QueryName =
@@ -47,4 +48,5 @@ export const languages: Partial<Record<SupportedLanguage, Record<QueryName, stri
     ...pythonQueries,
     ...javaQueries,
     ...kotlinQueries,
+    ...phpQueries,
 } as const
