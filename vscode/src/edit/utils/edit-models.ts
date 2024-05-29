@@ -5,33 +5,13 @@ export function getEditModelsForUser(authStatus: AuthStatus): ModelProvider[] {
     return ModelProvider.getProviders(ModelUsage.Edit, !authStatus.userCanUpgrade)
 }
 
-/**
- * Gets the overriden model for enterprise users.
- * The only primary change here is that we override to use `fastChatModel`
- * for the "Document" command
- */
-export function getOverridenEnterpriseModelForIntent(
-    intent: EditIntent,
-    currentModel: EditModel,
-    authStatus: AuthStatus
-): EditModel {
-    const model = authStatus.configOverwrites?.chatModel || currentModel
-    const fastModel = authStatus.configOverwrites?.fastChatModel || currentModel
-
-    if (intent === 'doc') {
-        return fastModel
-    }
-
-    return model
-}
-
 export function getOverridenModelForIntent(
     intent: EditIntent,
     currentModel: EditModel,
     authStatus: AuthStatus
 ): EditModel {
     if (!authStatus.isDotCom) {
-        return getOverridenEnterpriseModelForIntent(intent, currentModel, authStatus)
+        return authStatus.configOverwrites?.chatModel || currentModel
     }
 
     switch (intent) {
