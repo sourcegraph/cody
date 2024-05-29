@@ -78,4 +78,15 @@ describe('getDocumentableNode', () => {
             sourcesPath: 'test-data/documentable-node.go',
         })
     })
+
+    it('java', async () => {
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.java)
+
+        await annotateAndMatchSnapshot({
+            parser,
+            language,
+            captures: queryWrapper(queries.getDocumentableNode),
+            sourcesPath: 'test-data/documentable-node.java',
+        })
+    })
 })
