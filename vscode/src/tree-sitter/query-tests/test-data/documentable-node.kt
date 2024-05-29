@@ -25,7 +25,7 @@ data class User(
 // ------------------------------------
 
 interface Stringer {
-    //  |
+    //     |
     fun string(): String
 }
 
