@@ -43,6 +43,25 @@ const DOCUMENTABLE_NODES = dedent`
             name: (identifier) @symbol.function) @range.function)
 `
 
+const ENCLOSING_FUNCTION = dedent`
+    (method_declaration
+        name: (identifier) @symbol.function) @range.function
+    (enum_body_declarations
+        (method_declaration
+            name: (identifier) @symbol.function) @range.function)
+    (constructor_declaration
+        name: (identifier) @symbol.function) @range.function
+    (enum_body_declarations
+        (constructor_declaration
+            name: (identifier) @symbol.function) @range.function)
+    (record_declaration
+        name: (identifier) @symbol.function) @range.function
+    (enum_body_declarations
+        (record_declaration
+            name: (identifier) @symbol.function) @range.function)
+    (lambda_expression) @range.function
+`
+
 export const javaQueries = {
     [SupportedLanguage.java]: {
         documentableNodes: DOCUMENTABLE_NODES,
@@ -50,6 +69,6 @@ export const javaQueries = {
         intents: '',
         identifiers: '',
         graphContextIdentifiers: '',
-        enclosingFunction: '',
+        enclosingFunction: ENCLOSING_FUNCTION,
     },
 } satisfies Partial<Record<SupportedLanguage, Record<QueryName, string>>>
