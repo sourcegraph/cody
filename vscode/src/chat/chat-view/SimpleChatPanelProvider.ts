@@ -762,8 +762,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const userContextSize = context?.user ?? input
 
         void this.postMessage({
-            type: 'chat-input-context',
-            items: contextItem.map(f => ({
+            type: 'clientAction',
+            addContextItemsToLastHumanInput: contextItem.map(f => ({
                 ...f,
                 // Remove content to avoid sending large data to the webview
                 content: undefined,

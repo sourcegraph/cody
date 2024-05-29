@@ -1,9 +1,4 @@
-import {
-    type ChatMessage,
-    type ContextItem,
-    ContextItemSource,
-    type Guardrails,
-} from '@sourcegraph/cody-shared'
+import { type ChatMessage, ContextItemSource, type Guardrails } from '@sourcegraph/cody-shared'
 import { type ComponentProps, type FunctionComponent, useCallback, useMemo, useRef } from 'react'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
@@ -24,7 +19,6 @@ export const Transcript: React.FunctionComponent<{
     isTranscriptError?: boolean
     userInfo: UserAccountInfo
     chatEnabled: boolean
-    userContextFromSelection?: ContextItem[]
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
 }> = ({ transcript, messageInProgress, ...props }) => {

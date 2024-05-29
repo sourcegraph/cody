@@ -190,7 +190,6 @@ export const App: FunctionComponent = () => {
                         vscodeAPI={vscodeAPI}
                         telemetryService={telemetryService}
                         isTranscriptError={isTranscriptError}
-                        userContextFromSelection={[]}
                     />
                 </TelemetryRecorderContext.Provider>
             </ChatModelContextProvider>

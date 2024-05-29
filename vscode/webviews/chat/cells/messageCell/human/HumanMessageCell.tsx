@@ -1,4 +1,4 @@
-import type { ChatMessage, ContextItem } from '@sourcegraph/cody-shared'
+import type { ChatMessage } from '@sourcegraph/cody-shared'
 import { type FunctionComponent, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../Chat'
 import { UserAvatar } from '../../../../components/UserAvatar'
@@ -17,7 +17,6 @@ export const HumanMessageCell: FunctionComponent<{
     message: ChatMessage | null
     userInfo: UserAccountInfo
     chatEnabled: boolean
-    userContextFromSelection?: ContextItem[]
 
     /** Whether this editor is for the first message (not a followup). */
     isFirstMessage: boolean
@@ -42,7 +41,6 @@ export const HumanMessageCell: FunctionComponent<{
     message,
     userInfo,
     chatEnabled = true,
-    userContextFromSelection,
     isFirstMessage,
     isSent,
     isPendingPriorResponse,
@@ -65,7 +63,6 @@ export const HumanMessageCell: FunctionComponent<{
             content={
                 <HumanMessageEditor
                     userInfo={userInfo}
-                    userContextFromSelection={userContextFromSelection}
                     initialEditorState={initialEditorState}
                     placeholder={isFirstMessage ? 'Message' : 'Followup message'}
                     isFirstMessage={isFirstMessage}

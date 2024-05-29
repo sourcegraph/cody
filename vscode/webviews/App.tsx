@@ -5,7 +5,6 @@ import styles from './App.module.css'
 import {
     type AuthStatus,
     type ChatMessage,
-    type ContextItem,
     type EnhancedContextContextT,
     GuardrailsPost,
     type ModelProvider,
@@ -23,6 +22,7 @@ import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
 import { ConnectionIssuesPage } from './Troubleshooting'
 import { type ChatModelContext, ChatModelContextProvider } from './chat/models/chatModelContext'
+import { useClientActionDispatcher } from './client/clientState'
 import {
     EnhancedContextContext,
     EnhancedContextEventHandlers,
@@ -57,11 +57,11 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [chatEnabled, setChatEnabled] = useState<boolean>(true)
     const [attributionEnabled, setAttributionEnabled] = useState<boolean>(false)
 
+    const dispatchClientAction = useClientActionDispatcher()
+
     const [enhancedContextStatus, setEnhancedContextStatus] = useState<EnhancedContextContextT>({
         groups: [],
     })
-
-    const [userContextFromSelection, setUserContextFromSelection] = useState<ContextItem[]>([])
 
     const onChooseRemoteSearchRepo = useCallback((): void => {
         vscodeAPI.postMessage({ command: 'context/choose-remote-search-repo' })
@@ -134,8 +134,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'history':
                         setUserHistory(Object.values(message.localHistory?.chat ?? {}))
                         break
-                    case 'chat-input-context':
-                        setUserContextFromSelection(message.items)
+                    case 'clientAction':
+                        dispatchClientAction(message)
                         break
                     case 'enhanced-context':
                         setEnhancedContextStatus(message.enhancedContextStatus)
@@ -286,7 +286,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                         telemetryService={telemetryService}
                                         isTranscriptError={isTranscriptError}
                                         guardrails={attributionEnabled ? guardrails : undefined}
-                                        userContextFromSelection={userContextFromSelection}
                                     />
                                 </TelemetryRecorderContext.Provider>
                             </WithContextProviders>

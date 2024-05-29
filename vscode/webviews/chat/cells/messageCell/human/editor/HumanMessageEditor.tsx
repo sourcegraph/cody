@@ -1,4 +1,3 @@
-import type { ContextItem } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import {
     type FocusEventHandler,
@@ -10,6 +9,7 @@ import {
     useState,
 } from 'react'
 import type { UserAccountInfo } from '../../../../../Chat'
+import { type ClientActionListener, useClientActionListener } from '../../../../../client/clientState'
 import {
     PromptEditor,
     type PromptEditorRefAPI,
@@ -25,7 +25,6 @@ import { Toolbar } from './toolbar/Toolbar'
  */
 export const HumanMessageEditor: FunctionComponent<{
     userInfo: UserAccountInfo
-    userContextFromSelection?: ContextItem[]
 
     initialEditorState: SerializedPromptEditorState | undefined
     placeholder: string
@@ -53,7 +52,6 @@ export const HumanMessageEditor: FunctionComponent<{
     __storybook__focus?: boolean
 }> = ({
     userInfo,
-    userContextFromSelection,
     initialEditorState,
     placeholder,
     isFirstMessage,
@@ -174,16 +172,25 @@ export const HumanMessageEditor: FunctionComponent<{
     }, [])
 
     // Set up the message listener for adding new context from user's editor to chat from the "Cody
-    // > Add Selection to Cody Chat" command.
-    useEffect(() => {
-        if (!userContextFromSelection || userContextFromSelection.length === 0) {
-            return
-        }
-        const editor = editorRef.current
-        if (editor) {
-            editor?.addContextItemAsToken(userContextFromSelection)
-        }
-    }, [userContextFromSelection])
+    // > Add Selection to Cody Chat" command. Only add to the last human input.
+    useClientActionListener(
+        useCallback<ClientActionListener>(
+            ({ addContextItemsToLastHumanInput }) => {
+                if (isSent) {
+                    return
+                }
+                if (!addContextItemsToLastHumanInput || addContextItemsToLastHumanInput.length === 0) {
+                    return
+                }
+                const editor = editorRef.current
+                if (editor) {
+                    editor.addContextItemAsToken(addContextItemsToLastHumanInput)
+                    editor.setFocus(true)
+                }
+            },
+            [isSent]
+        )
+    )
 
     const focusEditor = useCallback(() => editorRef.current?.setFocus(true), [])
 
