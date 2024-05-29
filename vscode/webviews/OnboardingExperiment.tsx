@@ -11,11 +11,11 @@ import signInLogoGoogle from './sign-in-logo-google.svg'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './OnboardingExperiment.module.css'
+import { useTelemetryRecorder } from './utils/telemetry'
 
 interface LoginProps {
     simplifiedLoginRedirect: (method: AuthMethod) => void
     telemetryService: TelemetryService
-    telemetryRecorder: TelemetryRecorder
     uiKindIsWeb: boolean
     vscodeAPI: VSCodeWrapper
 }
@@ -26,7 +26,8 @@ const WebLogin: React.FunctionComponent<
         telemetryRecorder: TelemetryRecorder
         vscodeAPI: VSCodeWrapper
     }>
-> = ({ telemetryService, telemetryRecorder, vscodeAPI }) => {
+> = ({ telemetryService, vscodeAPI }) => {
+    const telemetryRecorder = useTelemetryRecorder()
     return (
         <ol>
             <li>
@@ -64,10 +65,10 @@ const WebLogin: React.FunctionComponent<
 export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<LoginProps>> = ({
     simplifiedLoginRedirect,
     telemetryService,
-    telemetryRecorder,
     uiKindIsWeb,
     vscodeAPI,
 }) => {
+    const telemetryRecorder = useTelemetryRecorder()
     const otherSignInClick = (): void => {
         telemetryService.log('CodyVSCodeExtension:auth:clickOtherSignInOptions')
         vscodeAPI.postMessage({ command: 'auth', authKind: 'signin' })
