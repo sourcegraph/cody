@@ -43,4 +43,8 @@ describe('Document Code', () => {
     it('commands/document (Kotlin class name)', async () => {
         expect(await client.documentCode(workspace.file('src', 'Hello.kt'))).toMatchSnapshot()
     })
+
+    it('commands/document (Tree-sitter expansion)', async () => {
+        expect(await client.documentCode(workspace.file('src', 'type.ts'))).toMatchSnapshot()
+    })
 })
