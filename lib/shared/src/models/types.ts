@@ -51,7 +51,7 @@ export type ChatModel =
     | (string & {})
 
 /**
- * Available models for Chat.
+ * Available providers for Chat.
  * This is either:
  * - one of the availble options (dotcom)
  * - an unknown `string` (enterprise)
