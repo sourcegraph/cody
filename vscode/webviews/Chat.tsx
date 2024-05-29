@@ -2,13 +2,7 @@ import { clsx } from 'clsx'
 import type React from 'react'
 import { useCallback, useEffect } from 'react'
 
-import type {
-    AuthStatus,
-    ChatMessage,
-    ContextItem,
-    Guardrails,
-    TelemetryService,
-} from '@sourcegraph/cody-shared'
+import type { AuthStatus, ChatMessage, Guardrails, TelemetryService } from '@sourcegraph/cody-shared'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
@@ -28,7 +22,6 @@ interface ChatboxProps {
     isTranscriptError: boolean
     userInfo: UserAccountInfo
     guardrails?: Guardrails
-    userContextFromSelection?: ContextItem[]
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -41,7 +34,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     chatEnabled = true,
     userInfo,
     guardrails,
-    userContextFromSelection,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -176,7 +168,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 isTranscriptError={isTranscriptError}
                 userInfo={userInfo}
                 chatEnabled={chatEnabled}
-                userContextFromSelection={userContextFromSelection}
                 postMessage={postMessage}
                 guardrails={guardrails}
             />

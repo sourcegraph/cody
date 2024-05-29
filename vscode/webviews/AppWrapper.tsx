@@ -1,12 +1,13 @@
 import type { TelemetryRecorder } from '@sourcegraph/cody-shared'
 import type { FunctionComponent, ReactNode } from 'react'
+import { ClientActionListenersContextProvider } from './client/clientState'
 import { TooltipProvider } from './components/shadcn/ui/tooltip'
 import { TelemetryRecorderContext } from './utils/telemetry'
 
 export const AppWrapper: FunctionComponent<{ children: ReactNode }> = ({ children }) => {
     return (
         <TooltipProvider disableHoverableContent={true} delayDuration={700} skipDelayDuration={1000}>
-            {children}
+            <ClientActionListenersContextProvider>{children}</ClientActionListenersContextProvider>
         </TooltipProvider>
     )
 }

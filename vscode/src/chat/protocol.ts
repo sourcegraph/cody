@@ -172,10 +172,7 @@ export type ExtensionMessage =
           type: 'userContextFiles'
           userContextFiles?: ContextItem[] | undefined | null
       }
-    /**
-     * Send Context Files to chat view as input context (@-mentions)
-     */
-    | { type: 'chat-input-context'; items: ContextItem[] }
+    | { type: 'clientAction'; addContextItemsToLastHumanInput: ContextItem[] }
     | { type: 'chatModels'; models: ModelProvider[] }
     | {
           type: 'update-search-results'

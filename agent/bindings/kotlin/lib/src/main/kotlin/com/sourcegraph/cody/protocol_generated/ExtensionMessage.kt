@@ -22,7 +22,8 @@ sealed class ExtensionMessage {
           "notice" -> context.deserialize<NoticeExtensionMessage>(element, NoticeExtensionMessage::class.java)
           "transcript-errors" -> context.deserialize<`transcript-errorsExtensionMessage`>(element, `transcript-errorsExtensionMessage`::class.java)
           "userContextFiles" -> context.deserialize<UserContextFilesExtensionMessage>(element, UserContextFilesExtensionMessage::class.java)
-          "chat-input-context" -> context.deserialize<`chat-input-contextExtensionMessage`>(element, `chat-input-contextExtensionMessage`::class.java)
+          "clientState" -> context.deserialize<ClientStateExtensionMessage>(element, ClientStateExtensionMessage::class.java)
+          "clientAction" -> context.deserialize<ClientActionExtensionMessage>(element, ClientActionExtensionMessage::class.java)
           "chatModels" -> context.deserialize<ChatModelsExtensionMessage>(element, ChatModelsExtensionMessage::class.java)
           "update-search-results" -> context.deserialize<`update-search-resultsExtensionMessage`>(element, `update-search-resultsExtensionMessage`::class.java)
           "index-updated" -> context.deserialize<`index-updatedExtensionMessage`>(element, `index-updatedExtensionMessage`::class.java)
@@ -132,13 +133,23 @@ data class UserContextFilesExtensionMessage(
   }
 }
 
-data class `chat-input-contextExtensionMessage`(
-  val type: TypeEnum, // Oneof: chat-input-context
-  val items: List<ContextItem>,
+data class ClientStateExtensionMessage(
+  val type: TypeEnum, // Oneof: clientState
+  val value: ClientStateForWebview,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {
-    @SerializedName("chat-input-context") `Chat-input-context`,
+    @SerializedName("clientState") ClientState,
+  }
+}
+
+data class ClientActionExtensionMessage(
+  val type: TypeEnum, // Oneof: clientAction
+  val addContextItemsToLastHumanInput: List<ContextItem>,
+) : ExtensionMessage() {
+
+  enum class TypeEnum {
+    @SerializedName("clientAction") ClientAction,
   }
 }
 
