@@ -87,7 +87,6 @@ const RateLimitErrorItem: React.FunctionComponent<{
                 eventName: 'CodyVSCodeExtension:upsellUsageLimitCTA:clicked',
                 properties: { limit_type: 'chat_commands', call_to_action, tier },
             })
-            telemetryRecorder.recordEvent('test', 'action')
             telemetryRecorder.recordEvent('cody.upsellUsageLimitCTA', 'clicked', {
                 privateMetadata: {
                     limit_type: 'chat_commands',
