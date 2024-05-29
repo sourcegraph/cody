@@ -12,7 +12,9 @@ import {
     isWindows,
 } from '@sourcegraph/cody-shared'
 
+import { ResponseError } from 'vscode-jsonrpc'
 import { URI } from 'vscode-uri'
+import { CodyJsonRpcErrorCode } from '../../vscode/src/jsonrpc/CodyJsonRpcErrorCode'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient, asTranscriptMessage } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
@@ -907,6 +909,25 @@ describe('Agent', () => {
             // Intentionally not a snapshot assertion because we should never
             // automatically update 'RateLimitError' to become another value.
             expect(lastMessage?.error?.name).toStrictEqual('RateLimitError')
+        }, 30_000)
+
+        // Skipped because Polly is failing to record the HTTP rate-limit error
+        // response.  Keeping the code around in case we need to debug these  in
+        // the future. Use the following command to run this test:
+        // - First, mark this test as `it.only`
+        // - Next, run `CODY_RECORDING_MODE=passthrough pnpm test agent/src/index.test.ts`
+        it.skip('autocomplete/trigger (RateLimitError)', async () => {
+            let code = 0
+            try {
+                await rateLimitedClient.openFile(sumUri)
+                const result = await rateLimitedClient.autocompleteText()
+                console.log({ result })
+            } catch (error) {
+                if (error instanceof ResponseError) {
+                    code = error.code
+                }
+            }
+            expect(code).toEqual(CodyJsonRpcErrorCode.RateLimitError)
         }, 30_000)
 
         afterAll(async () => {
