@@ -2,6 +2,10 @@
 
 export { ModelProvider } from './models'
 export {
+    type EditModel,
+    type EditProvider,
+    type ChatModel,
+    type ChatProvider,
     ModelUsage,
     type ModelContextWindow,
 } from './models/types'

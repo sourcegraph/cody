@@ -10,7 +10,7 @@ import { ModelUsage } from './types'
 import { ModelUIGroup } from './utils'
 
 // The models must first be added to the custom chat models list in https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
-export const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
+export const DEFAULT_DOT_COM_MODELS = [
     // The order listed here is the order shown to users. Put the default LLM first.
     {
         title: 'Claude 3 Sonnet',
