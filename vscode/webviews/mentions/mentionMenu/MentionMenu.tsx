@@ -124,7 +124,7 @@ export const MentionMenu: FunctionComponent<
     )
 
     const onCommandSelect = useCallback(
-        async (value: string): Promise<void> => {
+        (value: string): void => {
             const item = data.items?.find(item => commandRowValue(item) === value)
             if (!item) {
                 throw new Error(`No item found with value ${value}`)
@@ -145,12 +145,11 @@ export const MentionMenu: FunctionComponent<
                     // Do not set the selected item as mention if it is repo item from the remote file search provider.
                     // Rather keep the provider in place and update the query with repo name so that the provider can
                     // start showing the files instead.
-                    const meta = await RemoteFileProvider.meta({}, {})
 
                     updateMentionMenuParams({
                         parentItem: {
                             id: RemoteFileProvider.providerUri,
-                            title: meta.name,
+                            title: 'Sourcegraph Files',
                             queryLabel: 'Enter file path to search.',
                             emptyLabel: `No files found in ${openCtxItem.mention.data.repoName} repository`,
                         },
