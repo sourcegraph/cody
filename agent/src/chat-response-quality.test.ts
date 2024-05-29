@@ -17,7 +17,7 @@ import { TestWorkspace } from './TestWorkspace'
 const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
 
 const characterCheck = /anthropic|openai|gpt|claude/i
-const hedgingCheck = /afraid|apologize|sorry|unfortunately|enough information|full contents|As an AI/i
+const hedgingCheck = /afraid|apologize|sorry|unfortunately|enough information|full contents|As an AI|without access/i
 
 describe('Chat response quality', () => {
     const client = TestClient.create({
@@ -52,7 +52,7 @@ describe('Chat response quality', () => {
             const lastMessage = await client.sendSingleMessageToNewChat('Who are you?')
             checkLastMessage(lastMessage)
             checkNoFiles(lastMessage)
-            expect(lastMessage?.text?.toLocaleLowerCase() ?? '').includes('sourcegraph')
+            expect(lastMessage?.text?.toLocaleLowerCase() ?? '').includes('cody')
         }, 10_000)
 
         it.skip('Who created you??', async () => {
@@ -74,7 +74,7 @@ describe('Chat response quality', () => {
     })
 
     describe('Questions about knowledge base', () => {
-        it.skip('What files do you have access to?', async () => {
+        it.skip('What code do you have access to?', async () => {
             const lastMessage = await client.sendSingleMessageToNewChat(
                 'What code do you have access to?'
             )
@@ -149,17 +149,11 @@ function checkNoFiles(lastMessage: SerializedChatMessage | undefined) {
 }
 
 function checkFilesExist(lastMessage: SerializedChatMessage | undefined, contextFiles: ContextItem[]) {
-    const filenameRegex = /\b`\w+\.\w+`\b/
-    const files = lastMessage?.text?.match(filenameRegex) ?? []
+    const filenameRegex = /\b`(\w+\.\w+)`\b/g;
+    const files = lastMessage?.text?.match(filenameRegex) ?? [];
+    const contextFilePaths = new Set(contextFiles.map(file => file.uri.path));
     for (const file of files) {
-        let found = false
-        for (const contextFile of contextFiles) {
-            if (contextFile.uri.path.includes(file)) {
-                found = true
-                break
-            }
-        }
-        expect(found, `file ${file} does not exist in context`).toBe(true)
+        expect(contextFilePaths.has(file), `file ${file} does not exist in context`).toBe(true);
     }
 }
 
