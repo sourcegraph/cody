@@ -11,15 +11,19 @@ import {
 const containsNonAscii = /[^\u0000-\u007F]/
 const containsMultipleSentences = /[.!?][\s\r\n]+\w/
 
+/**
+ * Rewrite the query, using the fast completions model to pull out keywords.
+ *
+ * For some context backends, rewriting the query can make performance worse. Setting the 'restrictRewrite' param
+ * only rewrites in cases where it clearly helps: there are non-ASCII characters (meaning it's very likely in a
+ * foreign language), or there are multiple sentences (so we need to distill the question).
+ */
 export async function rewriteKeywordQuery(
     completionsClient: SourcegraphCompletionsClient,
     query: PromptString,
     restrictRewrite?: boolean
 ): Promise<string> {
     if (restrictRewrite) {
-        // For some context backends, rewriting the query can make performance worse. So we restrict the rewrite
-        // to cases where it clearly helps: there are non-ASCII characters (meaning it's very likely in a foreign
-        // language), or there are multiple sentences (so we need to distill the question).
         const queryString = query.toString()
         if (!containsNonAscii.test(queryString) && !containsMultipleSentences.test(queryString)) {
             return queryString
