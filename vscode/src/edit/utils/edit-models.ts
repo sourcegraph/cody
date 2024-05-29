@@ -1,19 +1,8 @@
-import {
-    type AuthStatus,
-    type EditModel,
-    type EditProvider,
-    ModelProvider,
-    ModelUsage,
-} from '@sourcegraph/cody-shared'
+import { type AuthStatus, type EditModel, ModelProvider, ModelUsage } from '@sourcegraph/cody-shared'
 import type { EditIntent } from '../types'
 
 export function getEditModelsForUser(authStatus: AuthStatus): ModelProvider[] {
     return ModelProvider.getProviders(ModelUsage.Edit, !authStatus.userCanUpgrade)
-}
-
-export interface EditLLMConfig {
-    model: EditModel
-    provider: EditProvider
 }
 
 /**
@@ -24,32 +13,25 @@ export interface EditLLMConfig {
 export function getOverridenEnterpriseModelForIntent(
     intent: EditIntent,
     currentModel: EditModel,
-    currentProvider: EditProvider,
     authStatus: AuthStatus
-): EditLLMConfig {
-    const provider = authStatus.configOverwrites?.provider || currentProvider
+): EditModel {
+    const model = authStatus.configOverwrites?.chatModel || currentModel
+    const fastModel = authStatus.configOverwrites?.fastChatModel || currentModel
 
     if (intent === 'doc') {
-        return {
-            model: authStatus.configOverwrites?.fastChatModel || currentModel,
-            provider,
-        }
+        return fastModel
     }
 
-    return {
-        model: authStatus.configOverwrites?.chatModel || currentModel,
-        provider,
-    }
+    return model
 }
 
-export function getOverridenLLMConfigForIntent(
+export function getOverridenModelForIntent(
     intent: EditIntent,
     currentModel: EditModel,
-    currentProvider: EditProvider,
     authStatus: AuthStatus
-): EditLLMConfig {
+): EditModel {
     if (!authStatus.isDotCom) {
-        return getOverridenEnterpriseModelForIntent(intent, currentModel, currentProvider, authStatus)
+        return getOverridenEnterpriseModelForIntent(intent, currentModel, authStatus)
     }
 
     switch (intent) {
@@ -59,23 +41,14 @@ export function getOverridenLLMConfigForIntent(
             // TODO: Make the model usage more visible to users outside of the normal edit flow. This means
             // we could let the user provide any model they want for `fix`.
             // Issue: https://github.com/sourcegraph/cody/issues/3512
-            return {
-                model: 'anthropic/claude-3-sonnet-20240229',
-                provider: 'Anthropic',
-            }
+            return 'anthropic/claude-3-sonnet-20240229'
         case 'doc':
             // Doc is a case where we can sacrifice LLM performnace for improved latency and get comparable results.
-            return {
-                model: 'anthropic/claude-3-haiku-20240307',
-                provider: 'Anthropic',
-            }
+            return 'anthropic/claude-3-haiku-20240307'
         case 'test':
         case 'add':
         case 'edit':
             // Support all model usage for add and edit intents.
-            return {
-                model: currentModel,
-                provider: currentProvider,
-            }
+            return currentModel
     }
 }

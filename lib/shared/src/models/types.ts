@@ -1,4 +1,4 @@
-import type { ModelProvider } from '.'
+import type { DEFAULT_DOT_COM_MODELS } from './dotcom'
 
 export enum ModelUsage {
     Chat = 'chat',
@@ -12,7 +12,7 @@ type HasUsage<T, I> = T extends { usage: readonly ModelUsage[] }
         : never
     : never
 
-type Models = typeof ModelProvider
+type Models = typeof DEFAULT_DOT_COM_MODELS
 
 /**
  * Available models for Edit.
@@ -51,7 +51,7 @@ export type ChatModel =
     | (string & {})
 
 /**
- * Available providers for Chat.
+ * Available models for Chat.
  * This is either:
  * - one of the availble options (dotcom)
  * - an unknown `string` (enterprise)
