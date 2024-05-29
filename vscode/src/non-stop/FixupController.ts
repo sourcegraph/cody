@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import {
     type ContextItem,
     type EditModel,
-    EditProvider,
     type EventSource,
     type PromptString,
     displayPathBasename,
@@ -23,7 +22,7 @@ import { PersistenceTracker } from '../common/persistence-tracker'
 import { lines } from '../completions/text-processing'
 import { sleep } from '../completions/utils'
 import { getInput } from '../edit/input/get-input'
-import { getOverridenLLMConfigForIntent } from '../edit/utils/edit-models'
+import { getOverridenModelForIntent } from '../edit/utils/edit-models'
 import type { ExtensionClient } from '../extension-client'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { AuthProvider } from '../services/AuthProvider'
@@ -339,14 +338,13 @@ export class FixupController
         intent: EditIntent,
         mode: EditMode,
         model: EditModel,
-        provider: EditProvider,
         source?: EventSource,
         destinationFile?: vscode.Uri,
         insertionPoint?: vscode.Position,
         telemetryMetadata?: FixupTelemetryMetadata
     ): Promise<FixupTask> {
         const authStatus = this.authProvider.getAuthStatus()
-        const llmConfig = getOverridenLLMConfigForIntent(intent, model, provider, authStatus)
+        const overridenModel = getOverridenModelForIntent(intent, model, authStatus)
         const fixupFile = this.files.forUri(document.uri)
         const task = new FixupTask(
             fixupFile,
@@ -355,8 +353,7 @@ export class FixupController
             intent,
             selectionRange,
             mode,
-            llmConfig.model,
-            llmConfig.provider,
+            overridenModel,
             source,
             destinationFile,
             insertionPoint,

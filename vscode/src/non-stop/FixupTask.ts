@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import {
     type ContextItem,
     type EditModel,
-    type EditProvider,
     type EventSource,
     type PromptString,
     ps,
@@ -74,7 +73,6 @@ export class FixupTask {
         /* The mode indicates how code should be inserted */
         public readonly mode: EditMode,
         public readonly model: EditModel,
-        public readonly provider: EditProvider,
         /* the source of the instruction, e.g. 'code-action', 'doc', etc */
         public source?: EventSource,
         /* The file to write the edit to. If not provided, the edit will be applied to the fixupFile. */
