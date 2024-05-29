@@ -1512,6 +1512,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
     ): void {
         this.registerRequest(method, async (params, token) => {
             await this.authenticationPromise
+            if (vscode_shim.isTesting) {
+                await Promise.all(this.pendingPromises.values())
+            }
             return callback(params, token)
         })
     }
