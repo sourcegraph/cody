@@ -1,5 +1,7 @@
+import { isArray, isEqual as setsAreEqual } from 'lodash'
 import isEqual from 'lodash/isEqual'
 import type { AgentTextEditor } from './AgentTextEditor'
+import type { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import type { ProtocolTextDocument } from './protocol-alias'
 import { renderUnifiedDiff } from './renderUnifiedDiff'
 import { protocolRange, vscodeRange } from './vscode-type-converters'
@@ -17,6 +19,7 @@ import { protocolRange, vscodeRange } from './vscode-type-converters'
 export function panicWhenClientIsOutOfSync(
     mostRecentlySentClientDocument: ProtocolTextDocument,
     serverEditor: AgentTextEditor,
+    workspaceDocuments: Pick<AgentWorkspaceDocuments, 'activeDocumentFilePath' | 'allUris'>,
     params: { doPanic: (message: string) => void } = exitProcessOnError
 ): void {
     const serverDocument = serverEditor.document
@@ -84,6 +87,52 @@ export function panicWhenClientIsOutOfSync(
                 )
             )
         }
+    }
+
+    // We check the workspace documents. This is because not every client has a concept of "unknown" protocol files like VSCode does. This could lead to bugs such as in Jetbrains where a "virtual" file URI is replaced with an actual saved file due to a naming conflict.
+    const testForWorkspaceDocuments = isArray(
+        mostRecentlySentClientDocument.testing?.workspaceDocumentURIs
+    )
+    const equalWorkspaceDocuments = testForWorkspaceDocuments
+        ? setsAreEqual(
+              mostRecentlySentClientDocument.testing?.workspaceDocumentURIs,
+              workspaceDocuments.allUris()
+          )
+        : true
+
+    const testForActiveDocument =
+        typeof mostRecentlySentClientDocument.testing?.activeWorkspaceDocumentURI === 'string'
+    const equalActiveDocument = testForActiveDocument
+        ? mostRecentlySentClientDocument.testing?.activeWorkspaceDocumentURI ===
+          workspaceDocuments.activeDocumentFilePath
+        : true
+
+    if (!equalWorkspaceDocuments || !equalActiveDocument) {
+        params.doPanic(
+            renderUnifiedDiff(
+                {
+                    header: 'Workspace documents (client side)',
+                    text: JSON.stringify({
+                        active:
+                            mostRecentlySentClientDocument.testing?.activeWorkspaceDocumentURI ??
+                            undefined,
+                        workspaceDocuments:
+                            mostRecentlySentClientDocument.testing?.workspaceDocumentURIs?.toSorted(),
+                    }),
+                },
+                {
+                    header: 'Workspace documents (server side)',
+                    text: JSON.stringify({
+                        active: testForActiveDocument
+                            ? workspaceDocuments.activeDocumentFilePath
+                            : undefined,
+                        workspaceDocuments: testForWorkspaceDocuments
+                            ? workspaceDocuments.allUris()?.toSorted()
+                            : [],
+                    }),
+                }
+            )
+        )
     }
 }
 

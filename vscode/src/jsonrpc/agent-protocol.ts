@@ -594,6 +594,8 @@ export interface ProtocolTextDocument {
         | {
               selectedText?: string | undefined | null
               sourceOfTruthDocument?: ProtocolTextDocument | undefined | null
+              workspaceDocumentURIs?: string[] | undefined | null
+              activeWorkspaceDocumentURI?: string | undefined | null
           }
         | undefined
         | null

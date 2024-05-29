@@ -107,7 +107,7 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
 
         fromCache.update(document)
 
-        panicWhenClientIsOutOfSync(document.underlying, cached.editor, this.doPanic)
+        panicWhenClientIsOutOfSync(document.underlying, cached.editor, this, this.doPanic)
 
         return { document: fromCache, editor: cached.editor, contentChanges }
     }
