@@ -940,34 +940,34 @@ describe('Agent', () => {
             const obtained = await demoEnterpriseClient.documentCode(uri)
             expect(obtained).toMatchInlineSnapshot(
                 `
-                  "import { expect } from 'vitest'
-                  import { it } from 'vitest'
-                  import { describe } from 'vitest'
+              "import { expect } from 'vitest'
+              import { it } from 'vitest'
+              import { describe } from 'vitest'
 
-                  /**
-                   * Test block for example functionality
-                   *
-                   * This test block contains three test cases:
-                   * - "does 1": Verifies that true is equal to true
-                   * - "does 2": Verifies that true is equal to true
-                   * - "does something else": Currently incomplete test case that will error due to incorrect usage of \`performance.now\`
-                   */
-                  describe('test block', () => {
-                      it('does 1', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does 2', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does something else', () => {
-                          // This line will error due to incorrect usage of \`performance.now\`
-                          const startTime = performance.now(/* CURSOR */)
-                      })
+              /**
+               * Test block for example tests
+               *
+               * Contains tests for:
+               * - does 1
+               * - does 2
+               * - does something else
+               */
+              describe('test block', () => {
+                  it('does 1', () => {
+                      expect(true).toBe(true)
                   })
-                  "
-                `
+
+                  it('does 2', () => {
+                      expect(true).toBe(true)
+                  })
+
+                  it('does something else', () => {
+                      // This line will error due to incorrect usage of \`performance.now\`
+                      const startTime = performance.now(/* CURSOR */)
+                  })
+              })
+              "
+            `
             )
         })
 
