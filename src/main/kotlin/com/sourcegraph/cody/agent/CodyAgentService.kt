@@ -119,7 +119,6 @@ class CodyAgentService(private val project: Project) : Disposable {
             result.complete(false)
             return@invokeAndWait
           }
-          CodyEditorUtil.showDocument(project, vf)
           result.complete(true)
         }
         result.get()
