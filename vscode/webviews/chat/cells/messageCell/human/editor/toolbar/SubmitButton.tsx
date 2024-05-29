@@ -1,4 +1,3 @@
-import { isMacOS } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import type { FunctionComponent } from 'react'
 import { ToolbarButton } from '../../../../../../components/shadcn/ui/toolbar'
@@ -17,27 +16,6 @@ export const SubmitButton: FunctionComponent<{
 }> = ({ onClick: parentOnClick, isEditorFocused, isPendingResponse, disabled = false }) => {
     return (
         <>
-            {disabled !== 'isPendingPriorResponse' && (
-                <ToolbarButton
-                    type="button"
-                    variant="secondary"
-                    tooltip="Send without automatic code context. Includes context from @-mentions. Faster and gives you more control."
-                    iconEnd={NO_ICON}
-                    onClick={() => parentOnClick(false)}
-                    aria-label="Send without automatic code context"
-                    className={clsx(styles.button, {
-                        [styles.editorFocused]: isEditorFocused,
-                    })}
-                    disabled={disabled !== false}
-                    tabIndex={-1} // press Enter to invoke, doesn't need to be tabbable
-                >
-                    w/o context
-                    <kbd>
-                        {ALT_KEY_NAME}+
-                        <EnterKeyIcon width={7} height={7} />
-                    </kbd>
-                </ToolbarButton>
-            )}
             <ToolbarButton
                 type="submit"
                 variant="primary"
@@ -68,9 +46,6 @@ export const SubmitButton: FunctionComponent<{
 }
 
 const NO_ICON = () => null
-
-// Lowercase because the button label is lowercase, and it looks weird if this is capitalized.
-const ALT_KEY_NAME = isMacOS() ? 'opt' : 'alt'
 
 const EnterKeyIcon: FunctionComponent<{ width?: number | string; height?: number | string }> = ({
     width,

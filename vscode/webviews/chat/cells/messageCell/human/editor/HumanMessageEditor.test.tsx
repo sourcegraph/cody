@@ -159,28 +159,6 @@ describe('HumanMessageEditor', () => {
             expect(onSubmit).toHaveBeenCalledTimes(2)
             expect(onSubmit.mock.lastCall[1]).toBe(true) // addEnhancedContext === true
         })
-
-        test('submit w/o context', async () => {
-            const { container, editor, onSubmit } = renderWithMocks({
-                initialEditorState: FILE_MENTION_EDITOR_STATE_FIXTURE,
-            })
-            fireEvent.focus(editor)
-
-            // Click
-            const submitWithoutContextButton = screen.getByRole('button', {
-                name: 'Send without automatic code context',
-            })
-            fireEvent.keyDown(container, ALT_KEYBOARD_EVENT_DATA)
-            fireEvent.click(submitWithoutContextButton)
-            expect(onSubmit).toHaveBeenCalledTimes(1)
-            expect(onSubmit.mock.lastCall[1]).toBe(false) // addEnhancedContext === false
-
-            // Alt+Enter
-            fireEvent.keyDown(container, ALT_KEYBOARD_EVENT_DATA)
-            fireEvent.keyDown(editor, { ...ENTER_KEYBOARD_EVENT_DATA, altKey: true })
-            expect(onSubmit).toHaveBeenCalledTimes(2)
-            expect(onSubmit.mock.lastCall[1]).toBe(false) // addEnhancedContext === false
-        })
     })
 })
 
