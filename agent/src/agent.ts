@@ -670,7 +670,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
                 return { items, completionEvent: result?.completionEvent }
             } catch (error) {
-                console.log('autocomplete failed', error)
                 if (isRateLimitError(error)) {
                     throw error
                 }
