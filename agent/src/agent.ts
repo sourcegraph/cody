@@ -586,8 +586,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     message: diagnostic.message,
                     range: vscodeRange(diagnostic.location.range),
                     severity: vscode.DiagnosticSeverity.Error,
-                    code: diagnostic.code,
-                    source: diagnostic.source,
+                    code: diagnostic.code ?? undefined,
+                    source: diagnostic.source ?? undefined,
                     relatedInformation,
                 })
             }

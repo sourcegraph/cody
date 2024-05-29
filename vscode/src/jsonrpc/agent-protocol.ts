@@ -462,7 +462,7 @@ interface ClientCapabilities {
     codeLenses?: 'none' | 'enabled' | undefined | null
     showWindowMessage?: 'notification' | 'request' | undefined | null
     ignore?: 'none' | 'enabled' | undefined | null
-    codeActions?: 'none' | 'enabled'
+    codeActions?: 'none' | 'enabled' | undefined | null
 }
 
 export interface ServerInfo {
@@ -861,9 +861,9 @@ export interface ProtocolDiagnostic {
     location: ProtocolLocation
     message: string
     severity: DiagnosticSeverity
-    code?: string
-    source?: string
-    relatedInformation?: ProtocolRelatedInformationDiagnostic[]
+    code?: string | undefined | null
+    source?: string | undefined | null
+    relatedInformation?: ProtocolRelatedInformationDiagnostic[] | undefined | null
 }
 
 export interface ProtocolRelatedInformationDiagnostic {
@@ -882,17 +882,20 @@ export interface ProtocolCodeAction {
     id: string
     // Stable string ID of the VS Code command that will be triggered if you
     // send a request to codeActions/trigger. Use this ID over `title`
-    commandID?: string
+    commandID?: string | undefined | null
     title: string
-    diagnostics?: ProtocolDiagnostic[]
-    kind?: string
-    isPreferred?: boolean
-    disabled?: {
-        /**
-         * Human readable description of why the code action is currently disabled.
-         *
-         * This is displayed in the code actions UI.
-         */
-        readonly reason: string
-    }
+    diagnostics?: ProtocolDiagnostic[] | undefined | null
+    kind?: string | undefined | null
+    isPreferred?: boolean | undefined | null
+    disabled?:
+        | {
+              /**
+               * Human readable description of why the code action is currently disabled.
+               *
+               * This is displayed in the code actions UI.
+               */
+              readonly reason: string
+          }
+        | undefined
+        | null
 }
