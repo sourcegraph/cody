@@ -17,7 +17,8 @@ import { TestWorkspace } from './TestWorkspace'
 const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
 
 const characterCheck = /anthropic|openai|gpt|claude/i
-const hedgingCheck = /afraid|apologize|sorry|unfortunately|enough information|full contents|As an AI|without access/i
+const hedgingCheck =
+    /afraid|apologize|sorry|unfortunately|enough information|full contents|As an AI|without access/i
 
 describe('Chat response quality', () => {
     const client = TestClient.create({
@@ -149,11 +150,11 @@ function checkNoFiles(lastMessage: SerializedChatMessage | undefined) {
 }
 
 function checkFilesExist(lastMessage: SerializedChatMessage | undefined, contextFiles: ContextItem[]) {
-    const filenameRegex = /\b`(\w+\.\w+)`\b/g;
-    const files = lastMessage?.text?.match(filenameRegex) ?? [];
-    const contextFilePaths = new Set(contextFiles.map(file => file.uri.path));
+    const filenameRegex = /\b`(\w+\.\w+)`\b/g
+    const files = lastMessage?.text?.match(filenameRegex) ?? []
+    const contextFilePaths = new Set(contextFiles.map(file => file.uri.path))
     for (const file of files) {
-        expect(contextFilePaths.has(file), `file ${file} does not exist in context`).toBe(true);
+        expect(contextFilePaths.has(file), `file ${file} does not exist in context`).toBe(true)
     }
 }
 
