@@ -436,7 +436,7 @@ export class LocalEmbeddingsController
     // - To implement the final step of `load`, if we did not hit any cached
     //   results.
     private async eagerlyLoad(repoDir: FileURI): Promise<boolean> {
-        wrapInActiveSpan('embeddings.load', async span => {
+        await wrapInActiveSpan('embeddings.load', async span => {
             try {
                 const { repoName, indexSizeBytes } = await (await this.getService()).request(
                     'embeddings/load',
