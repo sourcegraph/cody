@@ -1,6 +1,5 @@
-import { LoaderCircleIcon, PlayIcon } from 'lucide-react'
+import { LoaderCircleIcon } from 'lucide-react'
 import type { FunctionComponent } from 'react'
-import { Button } from '../../../../../../components/shadcn/ui/button'
 
 export type SubmitButtonDisabled = false | 'emptyEditorValue' | 'isPendingPriorResponse'
 
