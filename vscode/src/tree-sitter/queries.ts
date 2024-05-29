@@ -5,6 +5,7 @@ import { javascriptQueries } from './queries/javascript'
 import { kotlinQueries } from './queries/kotlin'
 import { phpQueries } from './queries/php'
 import { pythonQueries } from './queries/python'
+import { rustQueries } from './queries/rust'
 
 export type QueryName =
     | 'singlelineTriggers'
@@ -49,4 +50,5 @@ export const languages: Partial<Record<SupportedLanguage, Record<QueryName, stri
     ...javaQueries,
     ...kotlinQueries,
     ...phpQueries,
+    ...rustQueries,
 } as const

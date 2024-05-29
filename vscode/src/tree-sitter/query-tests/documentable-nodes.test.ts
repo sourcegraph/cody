@@ -101,6 +101,17 @@ describe('getDocumentableNode', () => {
         })
     })
 
+    it('rust', async () => {
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.rust)
+
+        await annotateAndMatchSnapshot({
+            parser,
+            language,
+            captures: queryWrapper(queries.getDocumentableNode),
+            sourcesPath: 'test-data/documentable-node.rs',
+        })
+    })
+
     it('php', async () => {
         const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.php)
 
