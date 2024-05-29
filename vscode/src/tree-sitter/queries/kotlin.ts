@@ -10,7 +10,6 @@ const SINGLE_LINE_TRIGGERS = dedent`
 const DOCUMENTABLE_NODES = dedent`
     ; Function definitions
     ;--------------------------------
-    (function_declaration (simple_identifier) @symbol.function) @range.function
     ((function_declaration (simple_identifier) @symbol.function)
        (parameter (simple_identifier) @symbol.function)
        (class_parameter (simple_identifier) @symbol.function)
@@ -26,9 +25,7 @@ const DOCUMENTABLE_NODES = dedent`
     ; Types
     ;--------------------------------
     (class_declaration
-        name: (simple_identifier) @symbol.identifier) @range.identifier
-    (enum_class_declaration
-        name: (simple_identifier) @symbol.identifier) @range.identifier
+    	(type_identifier) @symbol.identifier) @range.identifier
 
     ; Comments
     ;--------------------------------
