@@ -529,6 +529,10 @@ type ExecQueryWrapperParams<T> = {
 export function execQueryWrapper<T extends keyof QueryWrappers>(
     params: ExecQueryWrapperParams<T>
 ): ReturnType<QueryWrappers[T]> | never[] {
+    const skip = true
+    if (skip) {
+        return []
+    }
     const { queryWrapper } = params
 
     const treeToQuery =

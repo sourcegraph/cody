@@ -2,14 +2,16 @@
 
 exports[`Document Code > commands/document (Function within a property) 1`] = `
 "const foo = 42
+/**
+ * Starts the logging process.
+ *
+ * This function does some initial setup and then calls the \`recordLog()\` function to log a message to the console.
+ */
 export const TestLogger = {
     startLogging: () => {
         // Do some stuff
 
-                /**
-         * Records a log message.
-         */
-function recordLog() {
+        function recordLog() {
             console.log(/* CURSOR */ 'Recording the log')
         }
 
@@ -37,10 +39,10 @@ exports[`Document Code > commands/document (Method as part of a class) 1`] = `
 export class TestClass {
     constructor(private shouldGreet: boolean) {}
 
-        /**
-     * Logs a greeting message to the console if the shouldGreet property is true.
+    /**
+     * Logs a greeting message to the console if the \`shouldGreet\` flag is true.
      */
-public functionName() {
+    public functionName() {
         if (this.shouldGreet) {
             console.log(/* CURSOR */ 'Hello World!')
         }
@@ -50,12 +52,12 @@ public functionName() {
 `;
 
 exports[`Document Code > commands/document (Tree-sitter expansion) 1`] = `
-"interface Person {
+"/**
+ * Represents a person with a name and an age.
+ */
+interface Person {
     name: string
-        /**
-     * Represents the age of a person.
-     */
-age:/* CURSOR */ number
+    age:/* CURSOR */ number
 }
 "
 `;
@@ -65,6 +67,9 @@ exports[`Document Code > commands/document (nested test case) 1`] = `
 import { it } from 'vitest'
 import { describe } from 'vitest'
 
+/**
+ * Describes a test block for the example.
+ */
 describe('test block', () => {
     it('does 1', () => {
         expect(true).toBe(true)
@@ -76,11 +81,7 @@ describe('test block', () => {
 
     it('does something else', () => {
         // This line will error due to incorrect usage of \`performance.now\`
-                /**
-         * Gets the current time in milliseconds since the DOM was loaded.
-         * @returns {number} The time in milliseconds since the DOM was loaded.
-         */
-const startTime = performance.now(/* CURSOR */)
+        const startTime = performance.now(/* CURSOR */)
     })
 })
 "
