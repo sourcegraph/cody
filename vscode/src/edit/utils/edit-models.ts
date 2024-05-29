@@ -11,7 +11,9 @@ export function getOverridenModelForIntent(
     authStatus: AuthStatus
 ): EditModel {
     if (!authStatus.isDotCom) {
-        return authStatus.configOverwrites?.chatModel || currentModel
+        // We do not want to override the model if the user is connected to an enterprise instance.
+        // We cannot assume what models will be available here.
+        return currentModel
     }
 
     switch (intent) {
