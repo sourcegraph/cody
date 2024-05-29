@@ -612,7 +612,13 @@ function formatMessageText(messageText: string | ts.DiagnosticMessageChain): str
         return messageText
     }
     const messages: string[] = []
+    const visited = new Set<ts.DiagnosticMessageChain>()
     const loop = (chain: ts.DiagnosticMessageChain): void => {
+        if (visited.has(chain)) {
+            return
+        }
+        visited.add(chain)
+
         messages.push(chain.messageText)
         if (chain.next) {
             for (const next of chain.next) {
