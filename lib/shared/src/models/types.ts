@@ -27,6 +27,18 @@ export type EditModel =
     | (string & {})
 
 /**
+ * Available providers for Edit.
+ * This is either:
+ * - one of the availble options (dotcom)
+ * - an unknown `string` (enterprise)
+ */
+export type EditProvider =
+    | {
+          [K in keyof Models]: HasUsage<Models[K], ModelUsage.Edit>
+      }[keyof Models]['provider']
+    | (string & {})
+
+/**
  * Available models for Chat.
  * This is either:
  * - one of the availble options (dotcom)
@@ -36,6 +48,18 @@ export type ChatModel =
     | {
           [K in keyof Models]: HasUsage<Models[K], ModelUsage.Chat>
       }[keyof Models]['model']
+    | (string & {})
+
+/**
+ * Available providers for Chat.
+ * This is either:
+ * - one of the availble options (dotcom)
+ * - an unknown `string` (enterprise)
+ */
+export type ChatProvider =
+    | {
+          [K in keyof Models]: HasUsage<Models[K], ModelUsage.Chat>
+      }[keyof Models]['provider']
     | (string & {})
 
 export interface ModelContextWindow {
