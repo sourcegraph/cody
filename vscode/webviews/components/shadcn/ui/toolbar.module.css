@@ -30,7 +30,7 @@
         flex-shrink: 0;
         width: var(--icon-size);
         height: var(--icon-size);
-        stroke-width: 1.25px;
+        stroke-width: 1.5px;
     }
 }
 
