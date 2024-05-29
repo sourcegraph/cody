@@ -5,10 +5,12 @@ import {
     type ChatMessage,
     type CompletionParameters,
     type EditModel,
+    type EditProvider,
     type Message,
     ModelProvider,
     PromptString,
     TokenCounter,
+    getModelInfo,
     getSimplePreamble,
     ps,
 } from '@sourcegraph/cody-shared'
@@ -23,16 +25,9 @@ import { claude } from './models/claude'
 import { openai } from './models/openai'
 import type { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } from './type'
 
-const INTERACTION_MODELS: Record<EditModel, EditLLMInteraction> = {
-    'anthropic/claude-2.0': claude,
-    'anthropic/claude-2.1': claude,
-    'anthropic/claude-instant-1.2': claude,
-    'anthropic/claude-3-opus-20240229': claude,
-    'anthropic/claude-3-sonnet-20240229': claude,
-    'anthropic/claude-3-haiku-20240307': claude,
-    'openai/gpt-3.5-turbo': openai,
-    'openai/gpt-4-turbo': openai,
-    'openai/gpt-4o': openai,
+const INTERACTION_PROVIDERS: Record<EditProvider, EditLLMInteraction> = {
+    Anthropic: claude,
+    OpenAI: openai,
 } as const
 
 const getInteractionArgsFromIntent = (
@@ -40,8 +35,9 @@ const getInteractionArgsFromIntent = (
     model: EditModel,
     options: GetLLMInteractionOptions
 ): LLMInteraction => {
-    // Default to the generic Claude prompt if the model is unknown
-    const interaction = INTERACTION_MODELS[model] || claude
+    const { provider } = getModelInfo(model)
+    // Default to the generic Claude prompt if the provider is unknown
+    const interaction = INTERACTION_PROVIDERS[provider] || claude
     switch (intent) {
         case 'add':
             return interaction.getAdd(options)
