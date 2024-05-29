@@ -26,6 +26,8 @@ import {
     CURRENT_USER_ID_QUERY,
     CURRENT_USER_INFO_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
+    FILE_CONTENTS_QUERY,
+    FILE_MATCH_SEARCH_QUERY,
     GET_FEATURE_FLAGS_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
@@ -162,6 +164,37 @@ export interface RepoSearchResponse {
             endCursor: string | null
         }
     }
+}
+export interface FileMatchSearchResponse {
+    search: {
+        results: {
+            results: {
+                __typename: string
+                repository: {
+                    name: string
+                }
+                file: {
+                    url: string
+                    path: string
+                    commit: {
+                        oid: string
+                    }
+                }
+            }[]
+        }
+    }
+}
+
+export interface FileContentsResponse {
+    repository: {
+        commit: {
+            file: {
+                path: string
+                url: string
+                content: string
+            } | null
+        } | null
+    } | null
 }
 
 interface RepositoryIdResponse {
@@ -603,6 +636,24 @@ export class SourcegraphGraphQLAPIClient {
             first,
             after: after || null,
             query,
+        }).then(response => extractDataOrError(response, data => data))
+    }
+
+    public async searchFileMatches(query?: string): Promise<FileMatchSearchResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<FileMatchSearchResponse>>(FILE_MATCH_SEARCH_QUERY, {
+            query,
+        }).then(response => extractDataOrError(response, data => data))
+    }
+
+    public async getFileContents(
+        repoName: string,
+        filePath: string,
+        rev?: string
+    ): Promise<FileContentsResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<FileContentsResponse>>(FILE_CONTENTS_QUERY, {
+            repoName,
+            filePath,
+            rev,
         }).then(response => extractDataOrError(response, data => data))
     }
 
