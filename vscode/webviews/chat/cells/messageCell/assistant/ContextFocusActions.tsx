@@ -1,18 +1,32 @@
-import { isDefined, telemetryRecorder } from '@sourcegraph/cody-shared'
+import { isDefined } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import { ScanEyeIcon } from 'lucide-react'
-import { type FunctionComponent, useContext, useMemo } from 'react'
+import { type FunctionComponent, useCallback, useContext, useMemo } from 'react'
 import { EnhancedContextContext } from '../../../../components/EnhancedContextSettings'
 import { Button } from '../../../../components/shadcn/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../components/shadcn/ui/tooltip'
+import { useTelemetryRecorder } from '../../../../utils/telemetry'
 import type { PriorHumanMessageInfo } from './AssistantMessageCell'
 
 export const ContextFocusActions: FunctionComponent<{
     humanMessage: PriorHumanMessageInfo
     className?: string
 }> = ({ humanMessage, className }) => {
+    const telemetryRecorder = useTelemetryRecorder()
+
     const isEnhancedContextAvailable = useContext(EnhancedContextContext).groups.some(g =>
         g.providers.some(p => p.state === 'ready')
+    )
+
+    const logRerunWithEnhancedContext = useCallback(
+        (withEnhancedContext: boolean): void => {
+            telemetryRecorder.recordEvent('cody.contextSelection', 'rerunWithRepositoryContext', {
+                metadata: {
+                    withEnhancedContext: withEnhancedContext ? 1 : 0,
+                },
+            })
+        },
+        [telemetryRecorder]
     )
 
     const actions = useMemo(
@@ -52,7 +66,7 @@ export const ContextFocusActions: FunctionComponent<{
                     },
                 ] as { label: string; tooltip: string; onClick: () => void }[]
             ).filter(isDefined),
-        [humanMessage, isEnhancedContextAvailable]
+        [humanMessage, isEnhancedContextAvailable, telemetryRecorder, logRerunWithEnhancedContext]
     )
     return actions.length > 0 ? (
         <menu className={clsx('tw-flex tw-gap-2', className)}>
@@ -84,12 +98,4 @@ export const ContextFocusActions: FunctionComponent<{
             </div>
         </menu>
     ) : null
-}
-
-function logRerunWithEnhancedContext(withEnhancedContext: boolean): void {
-    telemetryRecorder.recordEvent('cody.contextSelection', 'rerunWithRepositoryContext', {
-        metadata: {
-            withEnhancedContext: withEnhancedContext ? 1 : 0,
-        },
-    })
 }

@@ -7,7 +7,6 @@ import type {
     ChatMessage,
     ContextItem,
     Guardrails,
-    TelemetryRecorder,
     TelemetryService,
 } from '@sourcegraph/cody-shared'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
@@ -18,6 +17,7 @@ import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/cons
 import styles from './Chat.module.css'
 import { TokenIndicators } from './components/RemainingTokens'
 import { ScrollDown } from './components/ScrollDown'
+import { useTelemetryRecorder } from './utils/telemetry'
 
 interface ChatboxProps {
     chatEnabled: boolean
@@ -25,7 +25,6 @@ interface ChatboxProps {
     transcript: ChatMessage[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     telemetryService: TelemetryService
-    telemetryRecorder: TelemetryRecorder
     isTranscriptError: boolean
     userInfo: UserAccountInfo
     guardrails?: Guardrails
@@ -37,13 +36,15 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     transcript,
     vscodeAPI,
     telemetryService,
-    telemetryRecorder,
+
     isTranscriptError,
     chatEnabled = true,
     userInfo,
     guardrails,
     userContextFromSelection,
 }) => {
+    const telemetryRecorder = useTelemetryRecorder()
+
     const feedbackButtonsOnSubmit = useCallback(
         (text: string) => {
             const eventData = {
