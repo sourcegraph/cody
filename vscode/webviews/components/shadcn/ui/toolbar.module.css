@@ -52,13 +52,12 @@
 }
 
 .button--secondary {
-    /* Make it look like text in an input. */
-    color: color-mix(in lch, var(--vscode-input-foreground) 60%, transparent);
+    opacity: 0.6;
+    color: var(--vscode-input-foreground);
     background-color: unset;
 
     &:enabled:is(:hover, :focus-within) {
-        color: var(--vscode-input-foreground);
-        fill: var(--vscode-input-foreground);
+        opacity: 1;
     }
 }
 
