@@ -19,14 +19,14 @@
 // ------------------------------------
 
   class Test {
+//^ start range.identifier[1]
       public int age;
-//               ^^^ symbol.identifier[1], range.identifier[1]
 //                █
   }
+//^ end range.identifier[1]
 
 // Nodes types:
-// symbol.identifier[1]: identifier
-// range.identifier[1]: variable_declarator
+// range.identifier[1]: class_declaration
 
 // ------------------------------------
 
@@ -184,16 +184,16 @@
 // ------------------------------------
 
   public enum Planet {
+//^ start range.identifier[1]
       EARTH(5.976e+24, 6.37814e6);
       private final double mass;
-//                         ^^^^ symbol.identifier[1], range.identifier[1]
 //                          █
       private final double radius;
   }
+//^ end range.identifier[1]
 
 // Nodes types:
-// symbol.identifier[1]: identifier
-// range.identifier[1]: variable_declarator
+// range.identifier[1]: enum_declaration
 
 // ------------------------------------
 
