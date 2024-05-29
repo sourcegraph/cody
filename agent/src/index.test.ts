@@ -385,13 +385,13 @@ describe('Agent', () => {
             expect(lastMessage?.text?.toLocaleLowerCase() ?? '').includes('sourcegraph')
             decodeURIs(transcript)
             const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
-            expect(contextFiles).not.toHaveLength(0)
-            //we also expect there to be a context file that contains the selected code range
-            const selectedCodeContextFile = contextFiles.find(file =>
-                file.content?.includes('selected code')
-            )
-            expect(selectedCodeContextFile?.uri ?? '').toContain('/src/animal.ts')
-            expect(selectedCodeContextFile?.range ?? {}).toEqual({ start: 1, end: 6 })
+            expect(contextFiles).toHaveLength(2)
+            const symfBasedContextFile = contextFiles.find(file => file.uri.path.includes('animal.ts'))
+            expect(symfBasedContextFile?.uri.path ?? '').toContain('/src/animal.ts')
+            expect(symfBasedContextFile?.range ?? {}).toEqual({
+                start: { character: 0, line: 0 },
+                end: { character: 0, line: 7 },
+            })
             expect(contextFiles.map(file => file.uri.toString())).includes(squirrelUri.toString())
         }, 30_000)
 
