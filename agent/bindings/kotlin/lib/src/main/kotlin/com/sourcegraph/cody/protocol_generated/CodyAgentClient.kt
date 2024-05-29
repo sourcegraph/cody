@@ -14,8 +14,8 @@ interface CodyAgentClient {
   fun window_showMessage(params: ShowWindowMessageParams): CompletableFuture<String?>
   @JsonRequest("textDocument/edit")
   fun textDocument_edit(params: TextDocumentEditParams): CompletableFuture<Boolean>
-  @JsonRequest("textDocument/openUntitledDocument")
-  fun textDocument_openUntitledDocument(params: UntitledTextDocument): CompletableFuture<Boolean>
+  @JsonRequest("textDocument/openDocument")
+  fun textDocument_openDocument(params: TextDocument_OpenDocumentParams): CompletableFuture<ProtocolTextDocument>
   @JsonRequest("textDocument/show")
   fun textDocument_show(params: TextDocument_ShowParams): CompletableFuture<Boolean>
   @JsonRequest("workspace/edit")
