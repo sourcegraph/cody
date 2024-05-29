@@ -10,6 +10,7 @@ const SINGLE_LINE_TRIGGERS = dedent`
 const DOCUMENTABLE_NODES = dedent`
     ; Function definitions
     ;--------------------------------
+    (function_declaration (function_body) @symbol.function) @range.function
     ((function_declaration (simple_identifier) @symbol.function)
        (parameter (simple_identifier) @symbol.function)
        (class_parameter (simple_identifier) @symbol.function)
@@ -17,8 +18,7 @@ const DOCUMENTABLE_NODES = dedent`
 
     ; Variables
     ;--------------------------------
-    (property_declaration
-        (simple_identifier) @symbol.identifier) @range.identifier
+    ((property_declaration) @symbol.identifier) @range.identifier
     (variable_declaration
         (simple_identifier) @symbol.identifier) @range.identifier
 
@@ -26,11 +26,12 @@ const DOCUMENTABLE_NODES = dedent`
     ;--------------------------------
     (class_declaration
     	(type_identifier) @symbol.identifier) @range.identifier
+    ((type_alias) @symbol.function) @range.function
 
     ; Comments
     ;--------------------------------
     (line_comment) @comment
-    (block_comment) @comment
+    (multiline_comment) @comment
 `
 
 const ENCLOSING_FUNCTION_QUERY = dedent`

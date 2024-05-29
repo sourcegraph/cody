@@ -89,4 +89,15 @@ describe('getDocumentableNode', () => {
             sourcesPath: 'test-data/documentable-node.java',
         })
     })
+
+    it('kotlin', async () => {
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.kotlin)
+
+        await annotateAndMatchSnapshot({
+            parser,
+            language,
+            captures: queryWrapper(queries.getDocumentableNode),
+            sourcesPath: 'test-data/documentable-node.kt',
+        })
+    })
 })
