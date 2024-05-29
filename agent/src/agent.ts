@@ -636,20 +636,21 @@ export class Agent extends MessageHandler implements ExtensionClient {
             const polly = this.params.polly
             let closestDistance = Number.MAX_VALUE
             let closest = ''
-            if (polly) {
-                // @ts-ignore
-                const persister = polly.persister._cache as Map<string, Har>
-                for (const [, har] of persister) {
-                    for (const entry of har?.log?.entries ?? []) {
-                        if (entry.request.url !== url) {
-                            continue
-                        }
-                        const entryPostData = entry.request.postData?.text ?? ''
-                        const distance = levenshtein(postData, entryPostData)
-                        if (distance < closestDistance) {
-                            closest = entryPostData
-                            closestDistance = distance
-                        }
+            if (!polly) {
+                throw new Error('testing/closestPostData: Polly is not enabled')
+            }
+            // @ts-ignore
+            const persister = polly.persister._cache as Map<string, Promise<Har>>
+            for (const [, har] of persister) {
+                for (const entry of (await har)?.log?.entries ?? []) {
+                    if (entry.request.url !== url) {
+                        continue
+                    }
+                    const entryPostData = entry.request.postData?.text ?? ''
+                    const distance = levenshtein(postData, entryPostData)
+                    if (distance < closestDistance) {
+                        closest = entryPostData
+                        closestDistance = distance
                     }
                 }
             }
