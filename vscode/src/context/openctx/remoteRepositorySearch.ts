@@ -8,7 +8,7 @@ const RemoteRepositorySearch: Provider & {
     providerUri: 'internal-remote-repository-search',
 
     meta() {
-        return { name: 'Sourcegraph Repositories', features: { mentions: true } }
+        return { name: 'Sourcegraph Repositories', mentions: {} }
     },
 
     async mentions({ query }) {
