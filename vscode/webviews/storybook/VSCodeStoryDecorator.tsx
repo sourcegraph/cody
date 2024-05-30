@@ -12,6 +12,7 @@ import { URI } from 'vscode-uri'
 import '../../node_modules/@vscode/codicons/dist/codicon.css'
 import { AppWrapper } from '../AppWrapper'
 import { type ChatModelContext, ChatModelContextProvider } from '../chat/models/chatModelContext'
+import { ClientStateContextProvider } from '../client/clientState'
 import { WithContextProviders } from '../mentions/providers'
 import { WithChatContextClient } from '../promptEditor/plugins/atMentions/chatContextClient'
 import { dummyChatContextClient } from '../promptEditor/plugins/atMentions/fixtures'
@@ -90,7 +91,9 @@ export function VSCodeDecorator(className: string | undefined, style?: CSSProper
                     <WithChatContextClient value={dummyChatContextClient}>
                         <ChatModelContextProvider value={useDummyChatModelContext()}>
                             <TelemetryRecorderContext.Provider value={telemetryRecorder}>
-                                {story()}
+                                <ClientStateContextProvider value={{ initialContext: [] }}>
+                                    {story()}
+                                </ClientStateContextProvider>
                             </TelemetryRecorderContext.Provider>
                         </ChatModelContextProvider>
                     </WithChatContextClient>

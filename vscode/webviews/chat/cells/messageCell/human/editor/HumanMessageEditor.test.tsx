@@ -21,7 +21,7 @@ const ENTER_KEYBOARD_EVENT_DATA: Pick<KeyboardEvent, 'key' | 'code' | 'keyCode'>
 describe('HumanMessageEditor', () => {
     test('renders textarea', async () => {
         const { editor } = renderWithMocks({})
-        expect(editor).toHaveTextContent('What does @#Symbol1')
+        expect(editor).toHaveTextContent('What does @Symbol1')
     })
 
     describe('states', () => {
@@ -60,25 +60,6 @@ describe('HumanMessageEditor', () => {
                 }),
                 { toolbarVisible: true, submitButtonEnabled: true, submitButtonText: 'Send' }
             )
-        })
-
-        describe('isSent && isPendingResponse', () => {
-            function renderSentPending(): ReturnType<typeof renderWithMocks> {
-                const rendered = renderWithMocks({
-                    initialEditorState: serializedPromptEditorStateFromText('abc'),
-                    isSent: true,
-                })
-                return rendered
-            }
-
-            test('initial', () => {
-                const rendered = renderSentPending()
-                expectState(rendered, {
-                    toolbarVisible: true,
-                    submitButtonEnabled: true,
-                    submitButtonText: 'Send',
-                })
-            })
         })
 
         test('isSent && !isPendingResponse', () => {
@@ -145,13 +126,11 @@ describe('HumanMessageEditor', () => {
             // Click
             fireEvent.click(submitButton!)
             expect(onSubmit).toHaveBeenCalledTimes(1)
-            expect(onSubmit.mock.lastCall[1]).toBe(true) // addEnhancedContext === true
 
             // Enter
             const editor = container.querySelector<HTMLElement>('[data-lexical-editor="true"]')!
             fireEvent.keyDown(editor, ENTER_KEYBOARD_EVENT_DATA)
             expect(onSubmit).toHaveBeenCalledTimes(2)
-            expect(onSubmit.mock.lastCall[1]).toBe(true) // addEnhancedContext === true
         })
     })
 })

@@ -49,6 +49,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Improved chat model selector UI with GPT-4o now as a recommended model, improved usability for Cody Free users, and a chat models documentation link. [pull/4254](https://github.com/sourcegraph/cody/pull/4254)
 - Chat: New welcome screen. [pull/4303](https://github.com/sourcegraph/cody/pull/4303)
 - Chat: Added @-mention provider icons. [pull/4336](https://github.com/sourcegraph/cody/pull/4336)
+- Chat: New chats now start with @-mentions of your current repository and file. Use @-mentions to include other context. Enterprise users can @-mention remote repositories to chat across multiple repositories. [pull/4364](https://github.com/sourcegraph/cody/pull/4364)
 
 ## [1.18.2]
 

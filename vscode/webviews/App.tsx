@@ -5,7 +5,7 @@ import styles from './App.module.css'
 import {
     type AuthStatus,
     type ChatMessage,
-    type EnhancedContextContextT,
+    type ClientStateForWebview,
     GuardrailsPost,
     type ModelProvider,
     PromptString,
@@ -22,11 +22,7 @@ import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
 import { ConnectionIssuesPage } from './Troubleshooting'
 import { type ChatModelContext, ChatModelContextProvider } from './chat/models/chatModelContext'
-import { useClientActionDispatcher } from './client/clientState'
-import {
-    EnhancedContextContext,
-    EnhancedContextEventHandlers,
-} from './components/EnhancedContextSettings'
+import { ClientStateContextProvider, useClientActionDispatcher } from './client/clientState'
 import { WithContextProviders } from './mentions/providers'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
@@ -57,27 +53,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [chatEnabled, setChatEnabled] = useState<boolean>(true)
     const [attributionEnabled, setAttributionEnabled] = useState<boolean>(false)
 
+    const [clientState, setClientState] = useState<ClientStateForWebview>({ initialContext: [] })
     const dispatchClientAction = useClientActionDispatcher()
-
-    const [enhancedContextStatus, setEnhancedContextStatus] = useState<EnhancedContextContextT>({
-        groups: [],
-    })
-
-    const onChooseRemoteSearchRepo = useCallback((): void => {
-        vscodeAPI.postMessage({ command: 'context/choose-remote-search-repo' })
-    }, [vscodeAPI])
-    const onRemoveRemoteSearchRepo = useCallback(
-        (id: string): void => {
-            vscodeAPI.postMessage({ command: 'context/remove-remote-search-repo', repoId: id })
-        },
-        [vscodeAPI]
-    )
-    const onConsentToEmbeddings = useCallback((): void => {
-        vscodeAPI.postMessage({ command: 'embeddings/index' })
-    }, [vscodeAPI])
-    const onShouldBuildSymfIndex = useCallback((): void => {
-        vscodeAPI.postMessage({ command: 'symf/index' })
-    }, [vscodeAPI])
 
     const guardrails = useMemo(() => {
         return new GuardrailsPost((snippet: string) => {
@@ -137,8 +114,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'clientAction':
                         dispatchClientAction(message)
                         break
-                    case 'enhanced-context':
-                        setEnhancedContextStatus(message.enhancedContextStatus)
+                    case 'clientState':
+                        setClientState(message.value)
                         break
                     case 'errors':
                         setErrorMessages([...errorMessages, message.errors].slice(-5))
@@ -170,7 +147,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                 }
             }),
-        [errorMessages, view, vscodeAPI, guardrails]
+        [errorMessages, view, vscodeAPI, guardrails, dispatchClientAction]
     )
 
     useEffect(() => {
@@ -265,33 +242,24 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             {userHistory && <Notices probablyNewInstall={isNewInstall} vscodeAPI={vscodeAPI} />}
             {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
             {view === 'chat' && userHistory && (
-                <EnhancedContextEventHandlers.Provider
-                    value={{
-                        onChooseRemoteSearchRepo,
-                        onConsentToEmbeddings,
-                        onRemoveRemoteSearchRepo,
-                        onShouldBuildSymfIndex,
-                    }}
-                >
-                    <EnhancedContextContext.Provider value={enhancedContextStatus}>
-                        <ChatModelContextProvider value={chatModelContext}>
-                            <WithContextProviders>
-                                <TelemetryRecorderContext.Provider value={telemetryRecorder}>
-                                    <Chat
-                                        chatEnabled={chatEnabled}
-                                        userInfo={userAccountInfo}
-                                        messageInProgress={messageInProgress}
-                                        transcript={transcript}
-                                        vscodeAPI={vscodeAPI}
-                                        telemetryService={telemetryService}
-                                        isTranscriptError={isTranscriptError}
-                                        guardrails={attributionEnabled ? guardrails : undefined}
-                                    />
-                                </TelemetryRecorderContext.Provider>
-                            </WithContextProviders>
-                        </ChatModelContextProvider>
-                    </EnhancedContextContext.Provider>
-                </EnhancedContextEventHandlers.Provider>
+                <ChatModelContextProvider value={chatModelContext}>
+                    <WithContextProviders>
+                        <TelemetryRecorderContext.Provider value={telemetryRecorder}>
+                            <ClientStateContextProvider value={clientState}>
+                                <Chat
+                                    chatEnabled={chatEnabled}
+                                    userInfo={userAccountInfo}
+                                    messageInProgress={messageInProgress}
+                                    transcript={transcript}
+                                    vscodeAPI={vscodeAPI}
+                                    telemetryService={telemetryService}
+                                    isTranscriptError={isTranscriptError}
+                                    guardrails={attributionEnabled ? guardrails : undefined}
+                                />
+                            </ClientStateContextProvider>
+                        </TelemetryRecorderContext.Provider>
+                    </WithContextProviders>
+                </ChatModelContextProvider>
             )}
         </div>
     )

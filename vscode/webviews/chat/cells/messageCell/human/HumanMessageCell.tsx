@@ -14,7 +14,7 @@ import { HumanMessageEditor } from './editor/HumanMessageEditor'
  * A component that displays a chat message from the human.
  */
 export const HumanMessageCell: FunctionComponent<{
-    message: ChatMessage | null
+    message: ChatMessage
     userInfo: UserAccountInfo
     chatEnabled: boolean
 
@@ -28,7 +28,7 @@ export const HumanMessageCell: FunctionComponent<{
     isPendingPriorResponse: boolean
 
     onChange?: (editorState: SerializedPromptEditorValue) => void
-    onSubmit: (editorValue: SerializedPromptEditorValue, addEnhancedContext: boolean) => void
+    onSubmit: (editorValue: SerializedPromptEditorValue) => void
 
     isEditorInitiallyFocused?: boolean
 
@@ -51,9 +51,10 @@ export const HumanMessageCell: FunctionComponent<{
     editorRef,
     __storybook__focus,
 }) => {
+    const messageJSON = JSON.stringify(message)
     const initialEditorState = useMemo(
-        () => (message ? serializedPromptEditorStateFromChatMessage(message) : undefined),
-        [message]
+        () => serializedPromptEditorStateFromChatMessage(JSON.parse(messageJSON)),
+        [messageJSON]
     )
 
     return (
@@ -64,7 +65,7 @@ export const HumanMessageCell: FunctionComponent<{
                 <HumanMessageEditor
                     userInfo={userInfo}
                     initialEditorState={initialEditorState}
-                    placeholder={isFirstMessage ? 'Message' : 'Followup message'}
+                    placeholder={isFirstMessage ? 'Ask...' : 'Ask a followup...'}
                     isFirstMessage={isFirstMessage}
                     isSent={isSent}
                     isPendingPriorResponse={isPendingPriorResponse}

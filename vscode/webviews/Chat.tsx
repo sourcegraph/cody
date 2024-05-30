@@ -139,7 +139,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         const onFocus = (): void => {
             // This works because for some reason Electron maintains the Selection but not the
             // focus.
-            const focusNode = window.getSelection()?.focusNode
+            const sel = window.getSelection()
+            const focusNode = sel?.focusNode
             const focusElement = focusNode instanceof Element ? focusNode : focusNode?.parentElement
             const focusEditor = focusElement?.closest<HTMLElement>('[data-lexical-editor="true"]')
             if (focusEditor) {

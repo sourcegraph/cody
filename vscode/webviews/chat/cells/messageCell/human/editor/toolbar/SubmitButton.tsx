@@ -5,7 +5,7 @@ import styles from './SubmitButton.module.css'
 export type SubmitButtonDisabled = false | 'emptyEditorValue' | 'isPendingPriorResponse'
 
 export const SubmitButton: FunctionComponent<{
-    onClick: (withEnhancedContext: boolean) => void
+    onClick: () => void
     isEditorFocused?: boolean
     disabled?: SubmitButtonDisabled
 }> = ({ onClick, disabled = false }) => {
@@ -25,11 +25,11 @@ export const SubmitButton: FunctionComponent<{
         <button
             type="submit"
             className={cn('tw-relative tw-w-[20px] tw-h-[20px]', styles.button)}
-            onClick={() => onClick(true)}
+            onClick={onClick}
             aria-label="Send"
             disabled={disabled ? true : undefined}
         >
-            {/* biome-ignore lint/a11y/noSvgWithoutTitle: <explanation> */}
+            {/* biome-ignore lint/a11y/noSvgWithoutTitle: */}
             <svg width="20" height="20" viewBox="0 0 20 20">
                 <circle cx="10" cy="10" r="9.5" />
                 <path d="M8.25 6L14.25 10L8.25 14V6Z" strokeLinecap="round" strokeLinejoin="round" />
