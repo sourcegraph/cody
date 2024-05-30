@@ -60,30 +60,29 @@ export function isTestFileForOriginal(file: URI, testFile: URI): boolean {
     // Assume not a test file for the current file if they are in different directories
     // and the testFile's file path does not include a test dir
     const pathRegex = /(?:^|\/)_{0,2}tests?_{0,2}(?:\/|$)/i
-    if (fileDir !== testDir) {
-        if (!pathRegex.test(testDir)) {
-            return false
-        }
+    if (fileDir !== testDir && !pathRegex.test(testDir)) {
+        return false
     }
 
     // The file extension should match as it's rare to write a test in another language.
-    const ext = uriExtname(file)
-    const testExt = uriExtname(testFile)
-    if (ext !== testExt) {
+    if (uriExtname(file) !== uriExtname(testFile)) {
         return false
     }
 
     // Finally we check if the filename without typical test keywords matches. This is pretty naiive
     // but seems to cover quite a few test cases.
-    const filenameExcludedCharRegex = /[^a-zA-Z0-9]/g
+    const sanitizeFileName = (name: string) =>
+        name
+            .replace(/[^a-zA-Z0-9]/g, '')
+            .toLowerCase()
+            .replace(/spec|tests?/g, '')
 
-    const fileName = Utils.basename(file).toLowerCase().replace(filenameExcludedCharRegex, '')
-    const testFileName = Utils.basename(testFile).toLowerCase().replace(filenameExcludedCharRegex, '')
+    const fileName = Utils.basename(file)
+    const testFileName = Utils.basename(testFile)
 
-    const filenameExcludedPatternsRegex = /spec|tests?/g
+    if (fileName.toLowerCase() === testFileName.toLowerCase() && fileName !== testFileName) {
+        return false
+    }
 
-    const strippedFile = fileName.replaceAll(filenameExcludedPatternsRegex, '')
-    const strippedTestFile = testFileName.replaceAll(filenameExcludedPatternsRegex, '')
-
-    return strippedFile === strippedTestFile
+    return sanitizeFileName(fileName) === sanitizeFileName(testFileName)
 }

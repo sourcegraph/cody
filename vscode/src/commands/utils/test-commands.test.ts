@@ -106,6 +106,9 @@ describe('isTestFileForOriginal', () => {
         ['/src/project/main.go', '/src/project/main_test.go', true], // The Go testing package expects test files to be in the same directory with a `_test.go` suffix.
         ['/src/project/main.go', '/test/project/main_test.go', true], // Some projects prefer placing tests in a separate `test` directory.
         ['/test_logic.ts', 'test_logic.ts', false],
+        ['a/b/Client.py', 'test/Client.py', true], // Test file located in a `test` directory adjacent to the file being tested.
+        ['a/b/test_logic.ts', 'c/d/test_logic.ts', false], // Test file located in a different directory.
+        ['a/b/Client.py', 'test/client.py', false], // Test file located in a `test` directory adjacent to the file being tested.
     ])('for file %j and test file %j it returns %j', (file, testFile, condition) => {
         expect(isTestFileForOriginal(URI.file(file), URI.file(testFile))).toBe(condition)
     })
