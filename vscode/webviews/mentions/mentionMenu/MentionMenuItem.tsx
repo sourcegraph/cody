@@ -30,6 +30,7 @@ import {
 } from '../../../src/chat/context/constants'
 import RemoteFileProvider from '../../../src/context/openctx/remoteFileSearch'
 import RemoteRepositorySearch from '../../../src/context/openctx/remoteRepositorySearch'
+import WebProvider from '../../../src/context/openctx/web'
 import GithubLogo from '../../icons/providers/github.svg?react'
 import GoogleLogo from '../../icons/providers/google.svg?react'
 import JiraLogo from '../../icons/providers/jira.svg?react'
@@ -63,13 +64,14 @@ export const MentionMenuContextItemContent: FunctionComponent<{
     query: MentionQuery
     item: ContextItem
 }> = ({ query, item }) => {
+    const isOpenCtx = item.type === 'openctx'
     const isFileType = item.type === 'file'
     const isSymbol = item.type === 'symbol'
     const icon = isSymbol ? (item.kind === 'class' ? 'symbol-structure' : 'symbol-method') : null
     const title = item.title ?? (isSymbol ? item.symbolName : displayPathBasename(item.uri))
     const description = getDescription(item, query)
 
-    const isIgnored = isFileType && item.isIgnored
+    const isIgnored = (isFileType || isOpenCtx) && item.isIgnored
     const isLargeFile = isFileType && item.isTooLarge
     let warning: string
     if (isIgnored) {
@@ -136,4 +138,5 @@ const iconForProvider: Record<
     'https://openctx.org/npm/@openctx/provider-sourcegraph-search': SourcegraphLogo,
     [RemoteRepositorySearch.providerUri]: SourcegraphLogo,
     [RemoteFileProvider.providerUri]: SourcegraphLogo,
+    [WebProvider.providerUri]: LinkIcon,
 }

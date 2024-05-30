@@ -519,7 +519,13 @@ export class TestClient extends MessageHandler {
             case CodyTaskState.Finished:
             case CodyTaskState.Error:
                 return Promise.reject(
-                    new Error(`Task reached terminal state before being applied ${params}`)
+                    new Error(
+                        `Task reached terminal state before being applied ${JSON.stringify(
+                            params,
+                            null,
+                            2
+                        )}`
+                    )
                 )
         }
 
@@ -904,6 +910,7 @@ ${patch}`
                 codeLenses: 'enabled',
                 showWindowMessage: 'request',
                 ignore: 'enabled',
+                codeActions: 'enabled',
             },
             extensionConfiguration: {
                 anonymousUserID: `${this.name}abcde1234`,

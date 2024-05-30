@@ -70,6 +70,11 @@ export async function getChatContextItemsForMention(
                 (item): ContextItemOpenCtx => ({
                     type: 'openctx',
                     title: item.title,
+                    // HACK: The OpenCtx protocol does not support returning isIgnored
+                    // and it does not make sense to expect providers to return disabled
+                    // items. That is why we are using `item.data?.ignored`. We only need
+                    // this for our internal Sourcegraph Repositories provider.
+                    isIgnored: item.data?.isIgnored as boolean | undefined,
                     providerUri: item.providerUri,
                     uri: URI.parse(item.uri),
                     provider: 'openctx',

@@ -965,14 +965,6 @@ describe('Agent', () => {
               import { it } from 'vitest'
               import { describe } from 'vitest'
 
-              /**
-               * Test block for example tests
-               *
-               * Contains tests for:
-               * - does 1
-               * - does 2
-               * - does something else
-               */
               describe('test block', () => {
                   it('does 1', () => {
                       expect(true).toBe(true)
@@ -984,7 +976,10 @@ describe('Agent', () => {
 
                   it('does something else', () => {
                       // This line will error due to incorrect usage of \`performance.now\`
-                      const startTime = performance.now(/* CURSOR */)
+                              /**
+                       * The timestamp, in milliseconds, at which this perf tracing started.
+                       */
+              const startTime = performance.now(/* CURSOR */)
                   })
               })
               "

@@ -1305,9 +1305,7 @@
         "openctx.providers": {
           "type": "object",
           "markdownDescription": "OpenCtx providers configuration.",
-          "default": {
-            "https://openctx.org/npm/@openctx/provider-web": true
-          }
+          "default": {}
         },
         "cody.internal.unstable": {
           "order": 999,

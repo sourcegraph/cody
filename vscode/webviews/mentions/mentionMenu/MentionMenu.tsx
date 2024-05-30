@@ -179,6 +179,25 @@ export const MentionMenu: FunctionComponent<
 
     const heading = getItemsHeading(params.parentItem, mentionQuery)
 
+    const providers = data.providers
+        .filter(
+            provider =>
+                (provider.id !== RemoteRepositorySearch.providerUri &&
+                    provider.id !== RemoteFileProvider.providerUri) ||
+                !userInfo?.isDotComUser
+        )
+        .map(provider => (
+            // show remote repositories search provider only if the user is connected to a non-dotcom instance.
+            <CommandItem
+                key={commandRowValue(provider)}
+                value={commandRowValue(provider)}
+                onSelect={onProviderSelect}
+                className={styles.item}
+            >
+                <MentionMenuProviderItemContent provider={provider} />
+            </CommandItem>
+        ))
+
     return (
         <Command
             loop={true}
@@ -190,51 +209,27 @@ export const MentionMenu: FunctionComponent<
             ref={ref}
         >
             <CommandList>
-                {data.providers.length > 0 && (
-                    <CommandGroup>
-                        {data.providers
-                            .filter(
-                                provider =>
-                                    (provider.id !== RemoteRepositorySearch.providerUri &&
-                                        provider.id !== RemoteFileProvider.providerUri) ||
-                                    !userInfo?.isDotComUser
-                            )
-                            .map(provider => (
-                                // show remote repositories search provider  only if the user is connected to a non-dotcom instance.
-                                <CommandItem
-                                    key={commandRowValue(provider)}
-                                    value={commandRowValue(provider)}
-                                    onSelect={onProviderSelect}
-                                    className={styles.item}
-                                >
-                                    <MentionMenuProviderItemContent provider={provider} />
-                                </CommandItem>
-                            ))}
+                {providers.length > 0 && <CommandGroup>{providers}</CommandGroup>}
+
+                {(heading || (data.items && data.items.length > 0)) && (
+                    <CommandGroup heading={heading}>
+                        {heading && <CommandSeparator />}
+                        {data.items?.map(item => (
+                            <CommandItem
+                                key={commandRowValue(item)}
+                                value={commandRowValue(item)}
+                                disabled={item.isIgnored}
+                                onSelect={onCommandSelect}
+                                className={clsx(styles.item, styles.contextItem)}
+                            >
+                                <MentionMenuContextItemContent query={mentionQuery} item={item} />
+                            </CommandItem>
+                        ))}
                     </CommandGroup>
                 )}
 
-                <CommandGroup heading={heading}>
-                    {heading && params.parentItem && <CommandSeparator />}
-                    {data.items ? (
-                        data.items.length > 0 ? (
-                            data.items.map(item => (
-                                <CommandItem
-                                    key={commandRowValue(item)}
-                                    value={commandRowValue(item)}
-                                    disabled={item.isIgnored}
-                                    onSelect={onCommandSelect}
-                                    className={clsx(styles.item, styles.contextItem)}
-                                >
-                                    <MentionMenuContextItemContent query={mentionQuery} item={item} />
-                                </CommandItem>
-                            ))
-                        ) : (
-                            <CommandEmpty>{getEmptyLabel(params.parentItem, mentionQuery)}</CommandEmpty>
-                        )
-                    ) : (
-                        <CommandLoading>Loading...</CommandLoading>
-                    )}
-                </CommandGroup>
+                {data.items === undefined && <CommandLoading>Loading...</CommandLoading>}
+                <CommandEmpty>{getEmptyLabel(params.parentItem, mentionQuery)}</CommandEmpty>
             </CommandList>
         </Command>
     )
