@@ -21,7 +21,7 @@ function recordLog() {
 
 exports[`Document Code > commands/document (Kotlin class name) 1`] = `
 "/**
- * Represents a greeting object.
+ * Represents a greeting that can be used to say "Hello, world!".
  */
 class He/* CURSOR */llo {
     fun greeting(): String {
