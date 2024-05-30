@@ -1396,6 +1396,7 @@
     "@lexical/code": "^0.15.0",
     "@lexical/html": "^0.15.0",
     "@lexical/react": "^0.15.0",
+    "@lexical/text": "^0.15.0",
     "@mdi/js": "^7.2.96",
     "@openctx/vscode-lib": "^0.0.8",
     "@opentelemetry/api": "^1.7.0",
