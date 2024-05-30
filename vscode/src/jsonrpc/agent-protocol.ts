@@ -445,7 +445,7 @@ export interface ClientInfo {
 }
 
 // The capability should match the name of the JSON-RPC methods.
-interface ClientCapabilities {
+export interface ClientCapabilities {
     completions?: 'none' | undefined | null
     //  When 'streaming', handles 'chat/updateMessageInProgress' streaming notifications.
     chat?: 'none' | 'streaming' | undefined | null
