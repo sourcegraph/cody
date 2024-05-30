@@ -323,7 +323,10 @@ export const getInput = async (
                     return
                 }
 
-                const mentionTrigger = scanForMentionTriggerInUserTextInput(value)
+                const mentionTrigger = scanForMentionTriggerInUserTextInput({
+                    textBeforeCursor: value,
+                    includeWhitespace: false,
+                })
                 const mentionQuery = mentionTrigger
                     ? parseMentionQuery(mentionTrigger.matchingString, null)
                     : undefined

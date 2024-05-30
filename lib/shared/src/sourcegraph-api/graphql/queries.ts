@@ -101,7 +101,7 @@ export const CURRENT_SITE_CODY_LLM_CONFIGURATION_SMART_CONTEXT = `
 query CurrentSiteCodyLlmConfiguration {
     site {
         codyLLMConfiguration {
-            smartContext
+            smartContextWindow
         }
     }
 }`
@@ -134,6 +134,41 @@ query RepositoriesSearch($first: Int!, $after: String, $query: String) {
     }
 }
 `
+export const FILE_CONTENTS_QUERY = `
+query FileContentsQuery($repoName: String!, $filePath: String!, $rev: String!) {
+    repository(name: $repoName){
+        commit(rev: $rev) {
+            file(path: $filePath) {
+                path
+                url
+                content
+            }
+        }
+    }
+}`
+
+export const FILE_MATCH_SEARCH_QUERY = `
+query FileMatchSearchQuery($query: String!) {
+  search(query: $query, version: V3, patternType: literal) {
+    results {
+      results {
+        __typename
+        ... on FileMatch {
+          repository {
+            name
+          }
+          file {
+            url
+            path
+            commit {
+                oid
+            }
+          }
+        }
+      }
+    }
+  }
+}`
 
 export const REPOSITORY_ID_QUERY = `
 query Repository($name: String!) {

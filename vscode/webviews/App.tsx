@@ -30,7 +30,11 @@ import {
 import { WithContextProviders } from './mentions/providers'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
-import { createWebviewTelemetryRecorder, createWebviewTelemetryService } from './utils/telemetry'
+import {
+    TelemetryRecorderContext,
+    createWebviewTelemetryRecorder,
+    createWebviewTelemetryService,
+} from './utils/telemetry'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<(LocalEnv & ConfigurationSubsetForWebview) | null>(null)
@@ -231,12 +235,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     if (authStatus.showNetworkError) {
         return (
             <div className={styles.outerContainer}>
-                <ConnectionIssuesPage
-                    configuredEndpoint={authStatus.endpoint}
-                    telemetryService={telemetryService}
-                    telemetryRecorder={telemetryRecorder}
-                    vscodeAPI={vscodeAPI}
-                />
+                <TelemetryRecorderContext.Provider value={telemetryRecorder}>
+                    <ConnectionIssuesPage
+                        configuredEndpoint={authStatus.endpoint}
+                        vscodeAPI={vscodeAPI}
+                    />
+                </TelemetryRecorderContext.Provider>
             </div>
         )
     }
@@ -244,13 +248,14 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     if (view === 'login' || !authStatus.isLoggedIn || !userAccountInfo) {
         return (
             <div className={styles.outerContainer}>
-                <LoginSimplified
-                    simplifiedLoginRedirect={loginRedirect}
-                    telemetryService={telemetryService}
-                    telemetryRecorder={telemetryRecorder}
-                    uiKindIsWeb={config?.uiKindIsWeb}
-                    vscodeAPI={vscodeAPI}
-                />
+                <TelemetryRecorderContext.Provider value={telemetryRecorder}>
+                    <LoginSimplified
+                        simplifiedLoginRedirect={loginRedirect}
+                        telemetryService={telemetryService}
+                        uiKindIsWeb={config?.uiKindIsWeb}
+                        vscodeAPI={vscodeAPI}
+                    />
+                </TelemetryRecorderContext.Provider>
             </div>
         )
     }
@@ -271,18 +276,19 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     <EnhancedContextContext.Provider value={enhancedContextStatus}>
                         <ChatModelContextProvider value={chatModelContext}>
                             <WithContextProviders>
-                                <Chat
-                                    chatEnabled={chatEnabled}
-                                    userInfo={userAccountInfo}
-                                    messageInProgress={messageInProgress}
-                                    transcript={transcript}
-                                    vscodeAPI={vscodeAPI}
-                                    telemetryService={telemetryService}
-                                    telemetryRecorder={telemetryRecorder}
-                                    isTranscriptError={isTranscriptError}
-                                    guardrails={attributionEnabled ? guardrails : undefined}
-                                    userContextFromSelection={userContextFromSelection}
-                                />
+                                <TelemetryRecorderContext.Provider value={telemetryRecorder}>
+                                    <Chat
+                                        chatEnabled={chatEnabled}
+                                        userInfo={userAccountInfo}
+                                        messageInProgress={messageInProgress}
+                                        transcript={transcript}
+                                        vscodeAPI={vscodeAPI}
+                                        telemetryService={telemetryService}
+                                        isTranscriptError={isTranscriptError}
+                                        guardrails={attributionEnabled ? guardrails : undefined}
+                                        userContextFromSelection={userContextFromSelection}
+                                    />
+                                </TelemetryRecorderContext.Provider>
                             </WithContextProviders>
                         </ChatModelContextProvider>
                     </EnhancedContextContext.Provider>

@@ -17,6 +17,7 @@ describe('getDocumentQuerySDK', () => {
         { languageId: SupportedLanguage.typescriptreact },
         { languageId: SupportedLanguage.go },
         { languageId: SupportedLanguage.python },
+        { languageId: SupportedLanguage.php },
     ])('returns valid SDK for $languageId', async ({ languageId }) => {
         const nonInitializedSDK = getDocumentQuerySDK(languageId)
         expect(nonInitializedSDK).toBeNull()
@@ -32,7 +33,6 @@ describe('getDocumentQuerySDK', () => {
         { languageId: SupportedLanguage.csharp },
         { languageId: SupportedLanguage.cpp },
         { languageId: SupportedLanguage.csharp },
-        { languageId: SupportedLanguage.php },
     ])('returns null for $languageId because queries are not defined', async ({ languageId }) => {
         const nonInitializedSDK = getDocumentQuerySDK(languageId)
         expect(nonInitializedSDK).toBeNull()

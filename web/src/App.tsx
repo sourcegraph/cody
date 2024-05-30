@@ -16,6 +16,7 @@ import {
 } from '../../vscode/webviews/chat/models/chatModelContext'
 import { type VSCodeWrapper, setVSCodeWrapper } from '../../vscode/webviews/utils/VSCodeApi'
 import {
+    TelemetryRecorderContext,
     createWebviewTelemetryRecorder,
     createWebviewTelemetryService,
 } from '../../vscode/webviews/utils/telemetry'
@@ -180,17 +181,18 @@ export const App: FunctionComponent = () => {
             <p>Error: {client.message}</p>
         ) : (
             <ChatModelContextProvider value={chatModelContext}>
-                <Chat
-                    chatEnabled={true}
-                    userInfo={userAccountInfo}
-                    messageInProgress={messageInProgress}
-                    transcript={transcript}
-                    vscodeAPI={vscodeAPI}
-                    telemetryService={telemetryService}
-                    telemetryRecorder={telemetryRecorder}
-                    isTranscriptError={isTranscriptError}
-                    userContextFromSelection={[]}
-                />
+                <TelemetryRecorderContext.Provider value={telemetryRecorder}>
+                    <Chat
+                        chatEnabled={true}
+                        userInfo={userAccountInfo}
+                        messageInProgress={messageInProgress}
+                        transcript={transcript}
+                        vscodeAPI={vscodeAPI}
+                        telemetryService={telemetryService}
+                        isTranscriptError={isTranscriptError}
+                        userContextFromSelection={[]}
+                    />
+                </TelemetryRecorderContext.Provider>
             </ChatModelContextProvider>
         )
     ) : (

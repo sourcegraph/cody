@@ -15,12 +15,33 @@ import { type ChatModelContext, ChatModelContextProvider } from '../chat/models/
 import { WithContextProviders } from '../mentions/providers'
 import { WithChatContextClient } from '../promptEditor/plugins/atMentions/chatContextClient'
 import { dummyChatContextClient } from '../promptEditor/plugins/atMentions/fixtures'
+import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from '../utils/telemetry'
 import styles from './VSCodeStoryDecorator.module.css'
 
 setDisplayPathEnvInfo({
     isWindows: isWindows(),
     workspaceFolders: [isWindows() ? URI.file('C:\\') : URI.file('/')],
 })
+
+export enum Theme {
+    DarkPlus = 'dark-plus',
+    DarkModern = 'dark-modern',
+    DarkHighContrast = 'dark-high-contrast',
+    LightPlus = 'light-plus',
+    LightModern = 'light-modern',
+    LightHighContrast = 'light-high-contrast',
+    Red = 'red',
+}
+
+export const themeClassnames = {
+    [Theme.DarkPlus]: 'vscode-dark',
+    [Theme.DarkModern]: 'vscode-dark',
+    [Theme.DarkHighContrast]: 'vscode-high-contrast-dark',
+    [Theme.LightPlus]: 'vscode-light',
+    [Theme.LightModern]: 'vscode-light',
+    [Theme.LightHighContrast]: 'vscode-high-contrast-light',
+    [Theme.Red]: 'vscode-dark',
+} satisfies Record<Theme, string>
 
 /**
  * A decorator that displays a story as though it's in a VS Code webview panel, with VS Code theme
@@ -55,18 +76,28 @@ export const VSCodeViewport: (style?: CSSProperties | undefined) => Decorator = 
  * A customizable decorator for components with VS Code theme colors applied.
  */
 export function VSCodeDecorator(className: string | undefined, style?: CSSProperties): Decorator {
-    document.body.dataset.vscodeThemeKind = 'vscode-dark'
-    return story => (
-        <div className={clsx(styles.container, className)} style={style}>
-            <AppWrapper>
-                <WithChatContextClient value={dummyChatContextClient}>
-                    <ChatModelContextProvider value={useDummyChatModelContext()}>
-                        {story()}
-                    </ChatModelContextProvider>
-                </WithChatContextClient>
-            </AppWrapper>
-        </div>
-    )
+    return (story, parameters) => {
+        const { theme } = parameters.globals
+        const themeClassname = themeClassnames[theme as Theme] || themeClassnames[Theme.DarkModern]
+
+        // Set [data-vscode-theme-kind] and className for the selected theme
+        document.body.dataset.vscodeThemeKind = themeClassname
+        document.body.className = themeClassname
+
+        return (
+            <div className={clsx(styles.container, className)} style={style}>
+                <AppWrapper>
+                    <WithChatContextClient value={dummyChatContextClient}>
+                        <ChatModelContextProvider value={useDummyChatModelContext()}>
+                            <TelemetryRecorderContext.Provider value={telemetryRecorder}>
+                                {story()}
+                            </TelemetryRecorderContext.Provider>
+                        </ChatModelContextProvider>
+                    </WithChatContextClient>
+                </AppWrapper>
+            </div>
+        )
+    }
 }
 
 function useDummyChatModelContext(): ChatModelContext {
@@ -79,13 +110,16 @@ function useDummyChatModelContext(): ChatModelContext {
     return { chatModels, onCurrentChatModelChange }
 }
 
+const acquireVsCodeApi = () => ({
+    postMessage: (message: any) => {
+        console.debug('postMessage', message)
+    },
+})
 if (!(window as any).acquireVsCodeApi) {
-    ;(window as any).acquireVsCodeApi = () => ({
-        postMessage: (message: any) => {
-            console.debug('postMessage', message)
-        },
-    })
+    ;(window as any).acquireVsCodeApi = acquireVsCodeApi
 }
+
+const telemetryRecorder = createWebviewTelemetryRecorder(acquireVsCodeApi())
 
 export const ContextProvidersDecorator: Decorator = (Story, context) => {
     return (

@@ -10,14 +10,14 @@ import { getLanguageForFileName } from '../../language'
 
 import { EvaluationDocument } from './EvaluationDocument'
 import { SnapshotWriter } from './SnapshotWriter'
-import type { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
+import type { CodyBenchOptions } from './cody-bench'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { testCleanup, testInstall } from './testTypecheck'
 import { triggerAutocomplete } from './triggerAutocomplete'
 
 export async function evaluateGitLogStrategy(
     client: MessageHandler,
-    options: EvaluateAutocompleteOptions
+    options: CodyBenchOptions
 ): Promise<void> {
     const { workspace } = options
     try {

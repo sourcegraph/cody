@@ -14,7 +14,7 @@ describe('getEnterpriseContextWindow', () => {
         const chatModel = 'openai/gpt-3.5-turbo'
         const configOverwrites: CodyLLMSiteConfiguration = {
             chatModelMaxTokens: undefined,
-            smartContext: false,
+            smartContextWindow: false,
         }
 
         expect(getEnterpriseContextWindow(chatModel, configOverwrites)).toEqual({
@@ -28,7 +28,7 @@ describe('getEnterpriseContextWindow', () => {
         const configOverwritesWithSmartContext: CodyLLMSiteConfiguration = {
             chatModel,
             chatModelMaxTokens: 10,
-            smartContext: true,
+            smartContextWindow: true,
         }
         expect(getEnterpriseContextWindow(chatModel, configOverwritesWithSmartContext)).toEqual({
             input: EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
@@ -66,7 +66,7 @@ describe('getEnterpriseContextWindow', () => {
             ['anthropic/claude-2.0', nonExtendedContextWindow],
             ['claude-2.0', nonExtendedContextWindow],
         ])('context window for model named %j', (chatModel, test) => {
-            const contextWindow = getEnterpriseContextWindow(chatModel, { smartContext: true })
+            const contextWindow = getEnterpriseContextWindow(chatModel, { smartContextWindow: true })
             expect(contextWindow).toEqual(test)
         })
     })

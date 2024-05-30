@@ -26,6 +26,8 @@ import {
     CURRENT_USER_ID_QUERY,
     CURRENT_USER_INFO_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
+    FILE_CONTENTS_QUERY,
+    FILE_MATCH_SEARCH_QUERY,
     GET_FEATURE_FLAGS_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
@@ -99,7 +101,7 @@ interface CodyConfigFeaturesResponse {
 }
 
 interface CodyEnterpriseConfigSmartContextResponse {
-    site: { codyLLMConfiguration: { smartContext: string } | null } | null
+    site: { codyLLMConfiguration: { smartContextWindow: string } | null } | null
 }
 
 interface CurrentUserCodyProEnabledResponse {
@@ -162,6 +164,37 @@ export interface RepoSearchResponse {
             endCursor: string | null
         }
     }
+}
+export interface FileMatchSearchResponse {
+    search: {
+        results: {
+            results: {
+                __typename: string
+                repository: {
+                    name: string
+                }
+                file: {
+                    url: string
+                    path: string
+                    commit: {
+                        oid: string
+                    }
+                }
+            }[]
+        }
+    }
+}
+
+export interface FileContentsResponse {
+    repository: {
+        commit: {
+            file: {
+                path: string
+                url: string
+                content: string
+            } | null
+        } | null
+    } | null
 }
 
 interface RepositoryIdResponse {
@@ -274,7 +307,7 @@ export interface CodyLLMSiteConfiguration {
     completionModel?: string
     completionModelMaxTokens?: number
     provider?: string
-    smartContext?: boolean
+    smartContextWindow?: boolean
 }
 
 export interface CurrentUserCodySubscription {
@@ -507,7 +540,7 @@ export class SourcegraphGraphQLAPIClient {
 
     public async getCodyLLMConfiguration(): Promise<undefined | CodyLLMSiteConfiguration | Error> {
         // fetch Cody LLM provider separately for backward compatability
-        const [configResponse, providerResponse, smartContext] = await Promise.all([
+        const [configResponse, providerResponse, smartContextWindow] = await Promise.all([
             this.fetchSourcegraphAPI<APIResponse<CodyLLMSiteConfigurationResponse>>(
                 CURRENT_SITE_CODY_LLM_CONFIGURATION
             ),
@@ -534,7 +567,7 @@ export class SourcegraphGraphQLAPIClient {
             provider = llmProvider
         }
 
-        return { ...config, provider, smartContext }
+        return { ...config, provider, smartContextWindow }
     }
 
     private async getCodyLLMConfigurationSmartContext(): Promise<boolean> {
@@ -546,7 +579,7 @@ export class SourcegraphGraphQLAPIClient {
                 .then(response => {
                     const smartContextResponse = extractDataOrError(
                         response,
-                        data => data?.site?.codyLLMConfiguration?.smartContext ?? ''
+                        data => data?.site?.codyLLMConfiguration?.smartContextWindow ?? ''
                     )
 
                     if (isError(smartContextResponse)) {
@@ -603,6 +636,24 @@ export class SourcegraphGraphQLAPIClient {
             first,
             after: after || null,
             query,
+        }).then(response => extractDataOrError(response, data => data))
+    }
+
+    public async searchFileMatches(query?: string): Promise<FileMatchSearchResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<FileMatchSearchResponse>>(FILE_MATCH_SEARCH_QUERY, {
+            query,
+        }).then(response => extractDataOrError(response, data => data))
+    }
+
+    public async getFileContents(
+        repoName: string,
+        filePath: string,
+        rev?: string
+    ): Promise<FileContentsResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<FileContentsResponse>>(FILE_CONTENTS_QUERY, {
+            repoName,
+            filePath,
+            rev,
         }).then(response => extractDataOrError(response, data => data))
     }
 
