@@ -14,9 +14,13 @@ export const SubmitButton: FunctionComponent<{
 }> = ({ onClick: parentOnClick, isEditorFocused, isPendingResponse, disabled = false }) => {
     if (disabled === 'isPendingPriorResponse') {
         return (
-            <div className="tw-w-[20px] tw-h-[20px] tw-flex tw-items-center tw-justify-center tw-opacity-60">
+            <button
+                type="submit"
+                disabled
+                className="tw-w-[20px] tw-h-[20px] tw-flex tw-items-center tw-justify-center tw-opacity-60"
+            >
                 <div className="tw-inline-block tw-h-[13px] tw-w-[13px] tw-animate-spin tw-rounded-full tw-border-[1px] tw-border-solid tw-border-current tw-border-e-transparent" />
-            </div>
+            </button>
         )
     }
 
