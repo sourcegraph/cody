@@ -3,6 +3,7 @@ package com.sourcegraph.cody.agent.protocol
 import com.intellij.codeInsight.codeVision.ui.popup.layouter.bottom
 import com.intellij.codeInsight.codeVision.ui.popup.layouter.right
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.LogicalPosition
 import com.intellij.openapi.editor.event.DocumentEvent
@@ -102,60 +103,63 @@ private constructor(
     fun fromEditorWithRangeSelection(editor: Editor, event: SelectionEvent): ProtocolTextDocument? {
       val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return null
       val uri = uriFor(file)
-      val document = editor.document
-
-      val startOffset = event.newRange.startOffset
-      val startLine = document.getLineNumber(startOffset)
-      val lineStartOffset1 = document.getLineStartOffset(startLine)
-      val startCharacter = startOffset - lineStartOffset1
-
-      val endOffset = event.newRange.endOffset
-      val endLine = document.getLineNumber(endOffset)
-      val lineStartOffset2 =
-          if (startLine == endLine) {
-            lineStartOffset1
-          } else {
-            document.getLineStartOffset(endLine)
-          }
-      val endCharacter = endOffset - lineStartOffset2
-
-      val selection = Range(Position(startLine, startCharacter), Position(endLine, endCharacter))
+      val selection =
+          editor.document.codyRange(event.newRange.startOffset, event.newRange.endOffset)
       return ProtocolTextDocument(
           uri = uri,
           selection = selection,
           testing =
               getTestingParams(
                   uri = uri,
-                  content = document.text,
+                  content = editor.document.text,
                   selection = selection,
                   selectedText = editor.selectionModel.selectedText))
     }
 
+    private val isFullDocumentSyncEnabled =
+        System.getProperty("cody-agent.fullDocumentSyncEnabled") == "true"
+
     @JvmStatic
     @RequiresEdt
     fun fromEditorForDocumentEvent(editor: Editor, event: DocumentEvent): ProtocolTextDocument? {
-      val oldFragment = event.oldFragment.toString()
-      val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return null
-      val startPosition = editor.offsetToLogicalPosition(event.offset).codyPosition()
-      // allocate List once to avoid three unnecessary duplicate allocations
-      val oldFragmentLines = oldFragment.lines()
-      val endCharacter =
-          if (oldFragmentLines.size > 1) oldFragmentLines.last().length
-          else startPosition.character + oldFragment.length
-      val endPosition =
-          Position(startPosition.line + oldFragmentLines.size - 1, endCharacter.toLong())
+      val file = FileDocumentManager.getInstance().getFile(event.document) ?: return null
       val uri = uriFor(file)
-      val selection = getSelection(editor)
+      val selection = event.document.codyRange(editor.caretModel.offset, editor.caretModel.offset)
 
+      val content =
+          if (isFullDocumentSyncEnabled) {
+            event.document.text
+          } else {
+            null
+          }
       return ProtocolTextDocument(
           uri = uri,
-          content = null,
+          content = content,
           selection = selection,
           contentChanges =
-              listOf(
-                  ProtocolTextDocumentContentChangeEvent(
-                      Range(startPosition, endPosition), event.newFragment.toString())),
-          testing = getTestingParams(uri, selection = selection, content = editor.document.text))
+              if (isFullDocumentSyncEnabled) {
+                null
+              } else {
+                // IMPORTANT: note that we can't use `event.document` helpers to compute the end
+                // position because `event.document.text` includes the latest change
+                // (`event.newFragment`). Instead, we manually compute the end position based on
+                // `event.oldFragment`.
+                val start = event.document.codyPosition(event.offset)
+                val endLine = start.line + event.oldFragment.count { it == '\n' }
+                val endCharacter: Int =
+                    if (endLine == start.line) {
+                      start.character.toInt() + event.oldFragment.length
+                    } else {
+                      event.oldFragment.length - event.oldFragment.lastIndexOf('\n') - 1
+                    }
+                val end = Position(endLine.toInt(), endCharacter)
+                listOf(
+                    ProtocolTextDocumentContentChangeEvent(
+                        Range(start, end), event.newFragment.toString()))
+              },
+          testing =
+              getTestingParams(
+                  uri, selection = selection, content = content ?: event.document.text))
     }
 
     @JvmStatic
@@ -192,6 +196,30 @@ private constructor(
       }
     }
   }
+}
+
+private fun Document.codyPosition(offset: Int): Position {
+  val line = this.getLineNumber(offset)
+  val lineStartOffset = this.getLineStartOffset(line)
+  val character = offset - lineStartOffset
+  return Position(line, character)
+}
+
+private fun Document.codyRange(startOffset: Int, endOffset: Int): Range {
+  val startLine = this.getLineNumber(startOffset)
+  val lineStartOffset1 = this.getLineStartOffset(startLine)
+  val startCharacter = startOffset - lineStartOffset1
+
+  val endLine = this.getLineNumber(endOffset)
+  val lineStartOffset2 =
+      if (startLine == endLine) {
+        lineStartOffset1
+      } else {
+        this.getLineStartOffset(endLine)
+      }
+  val endCharacter = endOffset - lineStartOffset2
+
+  return Range(Position(startLine, startCharacter), Position(endLine, endCharacter))
 }
 
 // Logical positions are 0-based (!), just like in VS Code.

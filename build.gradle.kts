@@ -305,6 +305,8 @@ tasks {
           "sourcegraph.verbose-logging" to "true",
           "cody-agent.panic-when-out-of-sync" to
               (System.getProperty("cody-agent.panic-when-out-of-sync") ?: "true"),
+          "cody-agent.fullDocumentSyncEnabled" to
+              (System.getProperty("cody-agent.fullDocumentSyncEnabled") ?: "false"),
           "cody.autocomplete.enableFormatting" to
               (project.property("cody.autocomplete.enableFormatting") ?: "true"))
 
