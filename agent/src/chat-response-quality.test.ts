@@ -14,7 +14,7 @@ import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credenti
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 
-const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
+const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'chat-response-quality'))
 
 const characterCheck = /anthropic|openai|gpt|claude/i
 const hedgingCheck =
