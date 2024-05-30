@@ -38,7 +38,7 @@ export function lexicalNodesForContextItems(
     return [
         ...mentionNodes,
         withSpaces || isFromInitialContext ? trailingSpaceNode : null,
-        isFromInitialContext ? $createInitialContextEndAnchor() : null,
+        // isFromInitialContext ? $createInitialContextEndAnchor() : null,
     ].filter(isDefined)
 }
 

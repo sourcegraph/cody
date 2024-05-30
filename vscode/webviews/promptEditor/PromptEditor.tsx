@@ -199,6 +199,9 @@ export const PromptEditor: FunctionComponent<Props> = ({
         if (!editor) {
             return undefined
         }
+        if (editor) {
+            return undefined
+        }
         return editor.registerUpdateListener(() => {
             editor.update(() => {
                 if (hasSetInitialContext.current) {
@@ -224,6 +227,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
         if (initialEditorState) {
             const editor = editorRef.current
             if (editor) {
+                console.log('NEW EDITOR STATE')
                 const newEditorState = editor.parseEditorState(initialEditorState.lexicalEditorState)
                 editor.setEditorState(newEditorState)
             }

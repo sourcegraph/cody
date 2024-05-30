@@ -21,11 +21,7 @@ import {
     type SerializedTextNode,
     TextNode,
 } from 'lexical'
-import { Database, File, FolderGit, Link, SquareFunction, createElement } from 'lucide'
 import { URI } from 'vscode-uri'
-import RemoteFileProvider from '../../../src/context/openctx/remoteFileSearch'
-import RemoteRepositorySearch from '../../../src/context/openctx/remoteRepositorySearch'
-import WebProvider from '../../../src/context/openctx/web'
 import styles from './ContextItemMentionNode.module.css'
 
 export const MENTION_CLASS_NAME = styles.contextItemMentionNode
@@ -138,17 +134,8 @@ export class ContextItemMentionNode extends TextNode {
     private static CLASS_NAMES = `context-item-mention-node ${styles.contextItemMentionNode}`
 
     createDOM(config: EditorConfig): HTMLElement {
-        const dom = document.createElement('span')
-        const inner = super.createDOM(config)
-        inner.innerText = ' ' + inner.innerText
-        dom.appendChild(inner)
+        const dom = super.createDOM(config)
         dom.className = ContextItemMentionNode.CLASS_NAMES
-
-        const icon = mentionIconForContextItem(this.contextItem)
-        if (icon) {
-            dom.insertBefore(icon, inner)
-        }
-
         return dom
     }
 
@@ -210,19 +197,19 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
                 return contextItem.title
             }
 
-            return `${decodeURIComponent(displayPathBasename(URI.parse(contextItem.uri)))}${rangeText}`
+            return `@${decodeURIComponent(displayPathBasename(URI.parse(contextItem.uri)))}${rangeText}`
 
         case 'repository':
-            return `@repo:${contextItem.title}`
+            return `@${contextItem.title ?? 'unknown repository'}`
 
         case 'tree':
-            return `@tree:${contextItem.title}`
+            return `@${contextItem.title ?? 'unknown folder'}`
 
         case 'symbol':
-            return contextItem.symbolName
+            return `@${contextItem.symbolName}`
 
         case 'openctx':
-            return `${contextItem.mention?.data?.mentionLabel || contextItem.title}`
+            return `@${contextItem.mention?.data?.mentionLabel || contextItem.title}`
     }
     // @ts-ignore
     throw new Error(`unrecognized context item type ${contextItem.type}`)
@@ -234,9 +221,12 @@ export function $createContextItemMentionNode(
 ): ContextItemMentionNode {
     const node = new ContextItemMentionNode(contextItem, undefined, undefined, isFromInitialContext)
     node.setMode('token').toggleDirectionless()
-    contextItem.type === 'file' &&
-        (contextItem.isTooLarge || contextItem.isIgnored) &&
+    if (contextItem.type === 'file' && (contextItem.isTooLarge || contextItem.isIgnored)) {
         node.setStyle('color: var(--vscode-list-errorForeground)')
+    }
+    if (contextItem.type === 'repository' || contextItem.type === 'tree') {
+        node.setStyle('font-weight: bold')
+    }
     return $applyNodeReplacement(node)
 }
 
@@ -256,34 +246,4 @@ export function $createContextItemTextNode(contextItem: ContextItem | Serialized
     const atNode = new ContextItemMentionNode(contextItem)
     const textNode = new TextNode(atNode.__text)
     return $applyNodeReplacement(textNode)
-}
-
-type Icon = Parameters<typeof createElement>[0]
-const CONTEXT_ITEM_ICONS: Partial<Record<string, Icon>> = {
-    file: File,
-    tree: FolderGit,
-    repository: FolderGit,
-    symbol: SquareFunction,
-    [RemoteRepositorySearch.providerUri]: FolderGit,
-    [RemoteFileProvider.providerUri]: File,
-    [WebProvider.providerUri]: Link,
-}
-function mentionIconForContextItem(contextItem: SerializedContextItem): SVGElement | null {
-    let icon: Icon | null | undefined = null
-
-    icon =
-        (contextItem.type === 'openctx'
-            ? CONTEXT_ITEM_ICONS[contextItem.providerUri || '']
-            : CONTEXT_ITEM_ICONS[contextItem.type]) || Database
-
-    if (!icon) {
-        return null
-    }
-
-    const svgEl = createElement(icon)
-    svgEl.classList.add(styles.icon)
-    svgEl.setAttribute('stroke', 'currentColor')
-    svgEl.setAttribute('width', '13px')
-    svgEl.setAttribute('height', '13px')
-    return svgEl
 }

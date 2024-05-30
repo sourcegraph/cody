@@ -22,7 +22,7 @@ export const FILE_MENTION_EDITOR_STATE_FIXTURE: SerializedPromptEditorState = {
                             format: 0,
                             mode: 'token',
                             style: '',
-                            text: '@#Symbol1',
+                            text: '@Symbol1',
                             type: 'contextItemMention',
                             version: 1,
                             contextItem: {
