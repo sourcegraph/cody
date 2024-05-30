@@ -89,7 +89,7 @@ export const Transcript: React.FunctionComponent<{
                 (message.contextFiles && message.contextFiles.length > 0) || isLastMessage ? (
                     <ContextCell
                         key={`${messageIndexInTranscript}-context`}
-                        contextFiles={message.contextFiles}
+                        contextItems={message.contextFiles}
                         model={nextAssistantMessage?.model}
                     />
                 ) : null,
