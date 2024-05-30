@@ -23,7 +23,7 @@ export async function rewriteKeywordQuery(
     query: PromptString,
     options?: {
         restrictRewrite: boolean
-    },
+    }
 ): Promise<string> {
     if (options?.restrictRewrite) {
         const queryString = query.toString()
