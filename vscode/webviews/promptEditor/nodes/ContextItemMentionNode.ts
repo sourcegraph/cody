@@ -207,7 +207,7 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
             return `${decodeURIComponent(displayPathBasename(URI.parse(contextItem.uri)))}${rangeText}`
 
         case 'symbol':
-            return `${contextItem.symbolName}`
+            return contextItem.symbolName
 
         case 'package':
             return `@${contextItem.ecosystem}:${contextItem.name}`
