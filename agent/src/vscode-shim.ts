@@ -44,6 +44,8 @@ import {
 
 import { emptyDisposable } from '../../vscode/src/testutils/emptyDisposable'
 
+import fspromises from 'node:fs/promises'
+import { doesFileExist } from '../../vscode/src/commands/utils/workspace-files'
 import { AgentDiagnostics } from './AgentDiagnostics'
 import { AgentQuickPick } from './AgentQuickPick'
 import { AgentTabGroups } from './AgentTabGroups'
@@ -159,6 +161,7 @@ export const onDidDeleteFiles = new EventEmitter<vscode.FileDeleteEvent>()
 export interface WorkspaceDocuments {
     workspaceRootUri?: vscode.Uri
     openTextDocument: (uri: vscode.Uri) => AgentTextDocument | undefined
+    createTextDocument: (uri: vscode.Uri, content: string) => AgentTextDocument
     newTextEditor(document: vscode.TextDocument): vscode.TextEditor
 }
 let workspaceDocuments: WorkspaceDocuments | undefined
@@ -308,11 +311,27 @@ const _workspace: typeof vscode.workspace = {
         const textDocument = workspaceDocuments.openTextDocument(uri)
         if (textDocument) return textDocument
 
-        if (!agent)
-            return Promise.reject(new Error('workspace.openTextDocument: no agent instance found'))
-        await agent.request('textDocument/openDocument', {
-            uri: uri.toString(),
-        })
+        if (clientInfo?.capabilities?.openDocument !== 'enabled') {
+            if (uri.scheme === 'untitled') {
+                const errorMessage =
+                    'Client does not support opening documents. To fix this problem, set `openDocument: "enabled"` in client capabilities'
+                logError('vscode.workspace.openTextDocument', 'unsupported operation', errorMessage)
+            } else if (!(await doesFileExist(uri))) {
+                logError('vscode.workspace.openTextDocument', 'File does not exist', uri.toString())
+            } else if (uri.scheme === 'file') {
+                // Read the file content from disk if the user hasn't opened this file before.
+                const buffer = await fspromises.readFile(uri.fsPath, 'utf8')
+                workspaceDocuments.createTextDocument(uri, buffer.toString())
+            } else {
+                logError('vscode.workspace.openTextDocument', `unable to read non-file URI: ${uri}`)
+            }
+        } else {
+            if (!agent)
+                return Promise.reject(new Error('workspace.openTextDocument: no agent instance found'))
+            await agent.request('textDocument/openDocument', {
+                uri: uri.toString(),
+            })
+        }
 
         const loadedDocument = workspaceDocuments.openTextDocument(uri)
         if (!loadedDocument) {

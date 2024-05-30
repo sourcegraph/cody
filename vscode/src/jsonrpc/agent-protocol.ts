@@ -457,6 +457,7 @@ export interface ClientCapabilities {
     progressBars?: 'none' | 'enabled' | undefined | null
     edit?: 'none' | 'enabled' | undefined | null
     editWorkspace?: 'none' | 'enabled' | undefined | null
+    openDocument?: 'none' | 'enabled' | undefined | null
     showDocument?: 'none' | 'enabled' | undefined | null
     codeLenses?: 'none' | 'enabled' | undefined | null
     showWindowMessage?: 'notification' | 'request' | undefined | null

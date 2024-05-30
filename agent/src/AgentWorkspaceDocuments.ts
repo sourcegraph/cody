@@ -193,6 +193,11 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         return this.loadAndUpdateDocument(document)
     }
 
+    public createTextDocument(uri: vscode.Uri, content: string): AgentTextDocument {
+        const document = AgentTextDocument.from(uri, content)
+        return this.loadAndUpdateDocument(document.protocolDocument)
+    }
+
     public async reset(): Promise<void> {
         for (const uri of this.agentDocuments.keys()) {
             const document = this.openTextDocument(vscode.Uri.parse(uri))
