@@ -537,6 +537,9 @@ importers:
       remark-gfm:
         specifier: ^4.0.0
         version: 4.0.0
+      rxjs:
+        specifier: ^7.8.1
+        version: 7.8.1
       semver:
         specifier: ^7.5.4
         version: 7.5.4
