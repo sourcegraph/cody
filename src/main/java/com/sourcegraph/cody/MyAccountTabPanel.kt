@@ -98,6 +98,10 @@ class MyAccountTabPanel(val project: Project) : JPanel() {
 
   @RequiresEdt
   fun update() {
+    if (project.isDisposed) {
+      return
+    }
+
     this.removeAll()
     chatLimitError = UpgradeToCodyProNotification.chatRateLimitError.get()
     autocompleteLimitError = UpgradeToCodyProNotification.autocompleteRateLimitError.get()
