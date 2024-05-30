@@ -197,7 +197,8 @@ export const HumanMessageEditor: FunctionComponent<{
         }
     }, [__storybook__focus, focusEditor])
 
-    const focused = Boolean(isEditorFocused || isFocusWithin || __storybook__focus)
+    const focused = true
+    // Boolean(isEditorFocused || isFocusWithin || __storybook__focus)
 
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas

@@ -1,0 +1,32 @@
+.button circle {
+    stroke: transparent;
+    fill: var(--vscode-button-background);
+}
+
+.button[disabled] circle {
+    fill: color-mix(in srgb, var(--vscode-button-foreground) 15%, transparent);
+}
+
+.button path {
+    stroke: transparent;
+    fill: var(--vscode-button-foreground);
+}
+
+.button[disabled] path {
+    fill: color-mix(in srgb, var(--vscode-button-foreground) 30%, transparent);
+}
+
+/* todo(tim): We need a tailwind high-contrast: modifier, then we don't need this */
+body[data-vscode-theme-kind='vscode-high-contrast'] .button circle {
+    stroke: var(--vscode-button-border);
+    fill: transparent;
+}
+
+body[data-vscode-theme-kind='vscode-high-contrast'] .button path {
+    stroke: transparent;
+    fill: currentColor;
+}
+
+body[data-vscode-theme-kind='vscode-high-contrast'] .button[disabled] path {
+    fill: var(--vscode-button-border);
+}
