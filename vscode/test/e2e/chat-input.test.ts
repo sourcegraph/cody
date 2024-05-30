@@ -137,7 +137,7 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
                         name: 'Configure automatic code context',
                     }),
                     modelSelector: toolbar.getByRole('combobox', { name: 'Select a model' }),
-                    submit: toolbar.getByRole('button', { name: 'Send with automatic code context' }),
+                    submit: toolbar.getByRole('button', { name: 'Send' }),
                 },
             }
         }

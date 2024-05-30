@@ -141,6 +141,9 @@ importers:
       fast-myers-diff:
         specifier: ^3.2.0
         version: 3.2.0
+      glob:
+        specifier: ^7.2.3
+        version: 7.2.3
       js-levenshtein:
         specifier: ^1.1.6
         version: 1.1.6
@@ -178,6 +181,9 @@ importers:
       '@types/fast-json-stable-stringify':
         specifier: ^2.1.0
         version: 2.1.0
+      '@types/glob':
+        specifier: ^8.0.0
+        version: 8.0.0
       '@types/google-protobuf':
         specifier: 3.15.12
         version: 3.15.12
@@ -366,6 +372,9 @@ importers:
       '@lexical/react':
         specifier: ^0.15.0
         version: 0.15.0(react-dom@18.2.0)(react@18.2.0)(yjs@13.6.15)
+      '@lexical/text':
+        specifier: ^0.15.0
+        version: 0.15.0
       '@mdi/js':
         specifier: ^7.2.96
         version: 7.2.96
@@ -9184,6 +9193,7 @@ packages:
 
   /glob@7.2.0:
     resolution: {integrity: sha512-lmLf6gtyrPq8tTjSmrO94wBeQbFR3HbLHbuyD69wuyQkImp2hWqMGB47OX65FBkPffO641IP9jWa1z4ivqG26Q==}
+    deprecated: Glob versions prior to v9 are no longer supported
     dependencies:
       fs.realpath: 1.0.0
       inflight: 1.0.6
@@ -9195,6 +9205,7 @@ packages:
 
   /glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
+    deprecated: Glob versions prior to v9 are no longer supported
     dependencies:
       fs.realpath: 1.0.0
       inflight: 1.0.6
@@ -9206,6 +9217,7 @@ packages:
   /glob@8.1.0:
     resolution: {integrity: sha512-r8hpEjiQEYlF2QU0df3dS+nxxSIreXQS1qRhMJM0Q5NDdR386C7jb7Hwwod8Fgiuex+k0GFjgft18yvxm5XoCQ==}
     engines: {node: '>=12'}
+    deprecated: Glob versions prior to v9 are no longer supported
     dependencies:
       fs.realpath: 1.0.0
       inflight: 1.0.6
@@ -9764,6 +9776,7 @@ packages:
 
   /inflight@1.0.6:
     resolution: {integrity: sha512-k92I/b08q4wvFscXCLvqfsHCrjrF7yiXsQuIVvVE7N82W3+aqpzuUdBbfhWcy/FZR3/4IgflMgKLOsvPDrGCJA==}
+    deprecated: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
     dependencies:
       once: 1.4.0
       wrappy: 1.0.2

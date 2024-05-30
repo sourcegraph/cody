@@ -1305,9 +1305,7 @@
         "openctx.providers": {
           "type": "object",
           "markdownDescription": "OpenCtx providers configuration.",
-          "default": {
-            "https://openctx.org/npm/@openctx/provider-web": true
-          }
+          "default": {}
         },
         "cody.internal.unstable": {
           "order": 999,
@@ -1396,6 +1394,7 @@
     "@lexical/code": "^0.15.0",
     "@lexical/html": "^0.15.0",
     "@lexical/react": "^0.15.0",
+    "@lexical/text": "^0.15.0",
     "@mdi/js": "^7.2.96",
     "@openctx/vscode-lib": "^0.0.8",
     "@opentelemetry/api": "^1.7.0",

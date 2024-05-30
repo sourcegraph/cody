@@ -52,8 +52,16 @@ export function useMentionMenuData(
                     ? []
                     : providers.filter(
                           provider =>
-                              provider.id.toLowerCase().includes(queryLower) ||
-                              provider.title?.toLowerCase().includes(queryLower)
+                              provider.id.toLowerCase().includes(queryLower.trim()) ||
+                              provider.title?.toLowerCase().includes(queryLower.trim()) ||
+                              provider.id
+                                  .toLowerCase()
+                                  .replaceAll(' ', '')
+                                  .includes(queryLower.trim()) ||
+                              provider.title
+                                  ?.toLowerCase()
+                                  .replaceAll(' ', '')
+                                  .includes(queryLower.trim())
                       ),
             items: results
                 ?.slice(0, limit)

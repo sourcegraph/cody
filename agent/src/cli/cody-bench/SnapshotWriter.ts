@@ -5,13 +5,11 @@ import type { CsvWriter } from 'csv-writer/src/lib/csv-writer'
 import { rimraf } from 'rimraf'
 
 import { type EvaluationDocument, autocompleteItemHeaders } from './EvaluationDocument'
-import type { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
+import type { CodyBenchOptions } from './cody-bench'
 
 export class SnapshotWriter {
     public csvWriter: CsvWriter<any> | undefined
-    constructor(
-        public readonly options: Pick<EvaluateAutocompleteOptions, 'snapshotDirectory' | 'csvPath'>
-    ) {}
+    constructor(public readonly options: Pick<CodyBenchOptions, 'snapshotDirectory' | 'csvPath'>) {}
     public async writeHeader(): Promise<void> {
         if (this.options.snapshotDirectory) {
             await rimraf(this.options.snapshotDirectory)

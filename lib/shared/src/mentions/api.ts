@@ -139,6 +139,7 @@ export async function openCtxMentionProviders(): Promise<ContextMentionProviderM
                 queryLabel: provider.name,
                 emptyLabel: 'No results found',
             }))
+            .sort((a, b) => (a.title > b.title ? 1 : -1))
     } catch (error) {
         logDebug('openctx', `Failed to fetch OpenCtx providers: ${error}`)
         return []
