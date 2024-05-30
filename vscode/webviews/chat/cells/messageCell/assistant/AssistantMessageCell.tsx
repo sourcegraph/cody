@@ -100,15 +100,15 @@ export const AssistantMessageCell: FunctionComponent<{
             }
             footer={
                 ((showFeedbackButtons && feedbackButtonsOnSubmit) || humanMessage) && (
-                    <div className="tw-flex tw-items-center tw-gap-3">
+                    <div className="tw-flex tw-items-center tw-py-3 tw-divide-x tw-transition tw-divide-muted tw-opacity-50 hover:tw-opacity-100">
                         {showFeedbackButtons && feedbackButtonsOnSubmit && (
-                            <FeedbackButtons feedbackButtonsOnSubmit={feedbackButtonsOnSubmit} />
+                            <FeedbackButtons
+                                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                                className="tw-pr-4"
+                            />
                         )}
                         {humanMessage && (
-                            <>
-                                <div className="tw-border-l tw-border-l-current tw-inline-block tw-h-[1rem] tw-opacity-20 tw-mr-2" />
-                                <ContextFocusActions humanMessage={humanMessage} />
-                            </>
+                            <ContextFocusActions humanMessage={humanMessage} className="tw-pl-5" />
                         )}
                     </div>
                 )

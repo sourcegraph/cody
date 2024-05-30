@@ -53,7 +53,7 @@ export const ContextFocusActions: FunctionComponent<{
                           : null,
                     {
                         label: 'Add context...',
-                        tooltip: '@-mention specific files and other content with relevant information',
+                        tooltip: '@-mention relevant content to improve chat context',
                         onClick: () => {
                             telemetryRecorder.recordEvent('cody.contextSelection', 'addFile', {
                                 metadata: {
@@ -69,8 +69,8 @@ export const ContextFocusActions: FunctionComponent<{
     )
     return actions.length > 0 ? (
         <menu className={clsx('tw-flex tw-gap-2 tw-text-sm tw-text-muted-foreground', className)}>
-            <div className="tw-flex tw-items-center tw-gap-2 tw-flex-wrap">
-                <h3 className="tw-flex tw-items-center tw-gap-3">Try again with different context:</h3>
+            <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-x-4 tw-gap-y-2">
+                <h3 className="tw-flex tw-items-center tw-gap-3">Try again with different context</h3>
                 <ul className="tw-whitespace-nowrap tw-flex tw-gap-2">
                     {actions.map(({ label, tooltip, onClick }) => (
                         <li key={label}>

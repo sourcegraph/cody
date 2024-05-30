@@ -10,7 +10,7 @@ const buttonVariants = cva(
             variant: {
                 default: 'tw-bg-primary tw-text-primary-foreground hover:tw-bg-primary/90',
                 outline:
-                    'tw-border tw-border-border tw-bg-background hover:tw-bg-muted hover:tw-text-accent-foreground',
+                    'tw-border tw-border-border tw-bg-background hover:tw-bg-muted-transparent hover:tw-text-foreground',
                 toolbarItem:
                     'tw-border tw-border-border tw-bg-none hover:tw-text-accent-foreground disabled:tw-border-transparent',
                 secondary: 'tw-bg-secondary tw-text-secondary-foreground hover:tw-bg-secondary/80',
