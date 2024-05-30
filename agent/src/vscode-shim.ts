@@ -44,11 +44,12 @@ import {
 
 import { emptyDisposable } from '../../vscode/src/testutils/emptyDisposable'
 
+import { AgentDiagnostics } from './AgentDiagnostics'
 import { AgentQuickPick } from './AgentQuickPick'
 import { AgentTabGroups } from './AgentTabGroups'
 import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import type { Agent } from './agent'
-import { matchesGlobPatterns } from './cli/evaluate-autocomplete/matchesGlobPatterns'
+import { matchesGlobPatterns } from './cli/cody-bench/matchesGlobPatterns'
 import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
 
 // Not using CODY_TESTING because it changes the URL endpoint we send requests
@@ -972,6 +973,11 @@ const _env: Partial<typeof vscode.env> = {
 }
 export const env = _env as typeof vscode.env
 
+const newCodeActionProvider = new EventEmitter<vscode.CodeActionProvider>()
+const removeCodeActionProvider = new EventEmitter<vscode.CodeActionProvider>()
+export const onDidRegisterNewCodeActionProvider = newCodeActionProvider.event
+export const onDidUnregisterNewCodeActionProvider = removeCodeActionProvider.event
+
 const newCodeLensProvider = new EventEmitter<vscode.CodeLensProvider>()
 const removeCodeLensProvider = new EventEmitter<vscode.CodeLensProvider>()
 export const onDidRegisterNewCodeLensProvider = newCodeLensProvider.event
@@ -988,14 +994,20 @@ export function completionProvider(): Promise<InlineCompletionItemProvider> {
     return firstCompletionProvider
 }
 
+const diagnosticsChange = new EventEmitter<vscode.DiagnosticChangeEvent>()
+const onDidChangeDiagnostics = diagnosticsChange.event
 const foldingRangeProviders = new Set<vscode.FoldingRangeProvider>()
+export const diagnostics = new AgentDiagnostics()
 const _languages: Partial<typeof vscode.languages> = {
     getLanguages: () => Promise.resolve([]),
     registerFoldingRangeProvider: (_scope, provider) => {
         foldingRangeProviders.add(provider)
         return { dispose: () => foldingRangeProviders.delete(provider) }
     },
-    registerCodeActionsProvider: () => emptyDisposable,
+    registerCodeActionsProvider: (_selector, provider) => {
+        newCodeActionProvider.fire(provider)
+        return { dispose: () => removeCodeActionProvider.fire(provider) }
+    },
     registerCodeLensProvider: (_selector, provider) => {
         newCodeLensProvider.fire(provider)
         return { dispose: () => removeCodeLensProvider.fire(provider) }
@@ -1005,9 +1017,10 @@ const _languages: Partial<typeof vscode.languages> = {
         resolveFirstCompletionProvider(provider as any)
         return emptyDisposable
     },
+    onDidChangeDiagnostics,
     getDiagnostics: ((resource: vscode.Uri) => {
         if (resource) {
-            return [] as vscode.Diagnostic[] // return diagnostics for the specific resource
+            return diagnostics.forUri(resource)
         }
         return [[resource, []]] // return diagnostics for all resources
     }) as {

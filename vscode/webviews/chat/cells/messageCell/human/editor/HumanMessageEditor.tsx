@@ -184,10 +184,10 @@ export const HumanMessageEditor: FunctionComponent<{
             return
         }
         const editor = editorRef.current
-        if (editor && isFirstMessage) {
-            editorRef.current?.addContextItemAsToken(userContextFromSelection)
+        if (editor) {
+            editor?.addContextItemAsToken(userContextFromSelection)
         }
-    }, [userContextFromSelection, isFirstMessage])
+    }, [userContextFromSelection])
 
     const focusEditor = useCallback(() => editorRef.current?.setFocus(true), [])
 

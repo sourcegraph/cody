@@ -12,7 +12,9 @@ import {
     isWindows,
 } from '@sourcegraph/cody-shared'
 
+import { ResponseError } from 'vscode-jsonrpc'
 import { URI } from 'vscode-uri'
+import { CodyJsonRpcErrorCode } from '../../vscode/src/jsonrpc/CodyJsonRpcErrorCode'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient, asTranscriptMessage } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
@@ -909,6 +911,25 @@ describe('Agent', () => {
             expect(lastMessage?.error?.name).toStrictEqual('RateLimitError')
         }, 30_000)
 
+        // Skipped because Polly is failing to record the HTTP rate-limit error
+        // response.  Keeping the code around in case we need to debug these  in
+        // the future. Use the following command to run this test:
+        // - First, mark this test as `it.only`
+        // - Next, run `CODY_RECORDING_MODE=passthrough pnpm test agent/src/index.test.ts`
+        it.skip('autocomplete/trigger (RateLimitError)', async () => {
+            let code = 0
+            try {
+                await rateLimitedClient.openFile(sumUri)
+                const result = await rateLimitedClient.autocompleteText()
+                console.log({ result })
+            } catch (error) {
+                if (error instanceof ResponseError) {
+                    code = error.code
+                }
+            }
+            expect(code).toEqual(CodyJsonRpcErrorCode.RateLimitError)
+        }, 30_000)
+
         afterAll(async () => {
             await rateLimitedClient.shutdownAndExit()
             // Long timeout because to allow Polly.js to persist HTTP recordings
@@ -940,34 +961,29 @@ describe('Agent', () => {
             const obtained = await demoEnterpriseClient.documentCode(uri)
             expect(obtained).toMatchInlineSnapshot(
                 `
-                  "import { expect } from 'vitest'
-                  import { it } from 'vitest'
-                  import { describe } from 'vitest'
+              "import { expect } from 'vitest'
+              import { it } from 'vitest'
+              import { describe } from 'vitest'
 
-                  /**
-                   * Test block for example functionality
-                   *
-                   * This test block contains three test cases:
-                   * - "does 1": Verifies that true is equal to true
-                   * - "does 2": Verifies that true is equal to true
-                   * - "does something else": Currently incomplete test case that will error due to incorrect usage of \`performance.now\`
-                   */
-                  describe('test block', () => {
-                      it('does 1', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does 2', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does something else', () => {
-                          // This line will error due to incorrect usage of \`performance.now\`
-                          const startTime = performance.now(/* CURSOR */)
-                      })
+              describe('test block', () => {
+                  it('does 1', () => {
+                      expect(true).toBe(true)
                   })
-                  "
-                `
+
+                  it('does 2', () => {
+                      expect(true).toBe(true)
+                  })
+
+                  it('does something else', () => {
+                      // This line will error due to incorrect usage of \`performance.now\`
+                      /**
+                       * The timestamp, in milliseconds, at which this perf tracing started.
+                       */
+                      const startTime = performance.now(/* CURSOR */)
+                  })
+              })
+              "
+            `
             )
         })
 

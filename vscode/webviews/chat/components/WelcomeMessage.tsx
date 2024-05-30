@@ -93,8 +93,12 @@ export const WelcomeMessage: FunctionComponent = () => {
                     <MenuExample>Add to Cody Chat</MenuExample>
                 </FeatureRow>
                 <FeatureRow icon={NewChatIcon}>
-                    Start a new chat using <Kbd>{isMacOS() ? '⌥' : 'Alt'}+/</Kbd> or the{' '}
-                    <CodyIcon character="H" /> button in the top right of any file
+                    Start a new chat using{' '}
+                    <Kbd>
+                        {isMacOS() ? '⌥' : 'Alt'}
+                        <span className="tw-ml-1">/</span>
+                    </Kbd>{' '}
+                    or the <CodyIcon character="H" /> button in the top right of any file
                 </FeatureRow>
                 <FeatureRow icon={SettingsIcon}>
                     Customize chat settings with the{' '}

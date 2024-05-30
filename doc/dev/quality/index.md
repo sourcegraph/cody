@@ -34,7 +34,7 @@ This feature is intended solely for internal QA testing and development purposes
 ### cody.dev.models
 
 - provider: string
-  - The name of the LLM provider. E.g., "google" for Google, "groq" for Groq, etc.
+  - The name of the LLM provider. E.g., "google" for Google, "groq" for Groq, "openaicompatible" for an OpenAI-compatible API, etc.
 - model: string
   - The ID of the model. E.g., "gemini-1.5-pro-latest"
 - tokens?: number

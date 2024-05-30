@@ -41,7 +41,6 @@ import {
     executeTestEditCommand,
 } from './commands/execute'
 import { executeExplainHistoryCommand } from './commands/execute/explain-history'
-import { executeUsageExamplesCommand } from './commands/execute/usage-examples'
 import { CodySourceControl } from './commands/scm/source-control'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
@@ -191,6 +190,7 @@ const register = async (
 
     const {
         chatClient,
+        completionsClient,
         codeCompletionsClient,
         guardrails,
         localEmbeddings,
@@ -203,7 +203,7 @@ const register = async (
         disposables.push(symfRunner)
     }
 
-    const enterpriseContextFactory = new EnterpriseContextFactory()
+    const enterpriseContextFactory = new EnterpriseContextFactory(completionsClient)
     disposables.push(enterpriseContextFactory)
 
     const contextProvider = new ContextProvider(
@@ -402,9 +402,6 @@ const register = async (
         vscode.commands.registerCommand('cody.command.unit-tests', a => executeTestEditCommand(a)),
         vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a)),
         vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a)),
-        vscode.commands.registerCommand('cody.command.usageExamples', a =>
-            executeUsageExamplesCommand(a)
-        ),
         sourceControl // Generate Commit Message command
     )
 

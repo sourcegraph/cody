@@ -1,4 +1,5 @@
 import type { ContextItem, ModelProvider } from '@sourcegraph/cody-shared'
+import { pluralize } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import { BrainIcon } from 'lucide-react'
 import type React from 'react'
@@ -16,30 +17,30 @@ import styles from './ContextCell.module.css'
  * A component displaying the context for a human message.
  */
 export const ContextCell: React.FunctionComponent<{
-    contextFiles: ContextItem[] | undefined
+    contextItems: ContextItem[] | undefined
     model?: ModelProvider['model']
     className?: string
 
     /** For use in storybooks only. */
     __storybook__initialOpen?: boolean
-}> = ({ contextFiles, model, className, __storybook__initialOpen }) => {
-    const usedContext = []
-    const excludedAtContext = []
-    if (contextFiles) {
-        for (const f of contextFiles) {
-            if (f.isTooLarge || f.isIgnored) {
-                excludedAtContext.push(f)
+}> = ({ contextItems, model, className, __storybook__initialOpen }) => {
+    const usedContext: ContextItem[] = []
+    const excludedAtContext: ContextItem[] = []
+    if (contextItems) {
+        for (const item of contextItems) {
+            if (item.isTooLarge || item.isIgnored) {
+                excludedAtContext.push(item)
             } else {
-                usedContext.push(f)
+                usedContext.push(item)
             }
         }
     }
 
-    const fileCount = new Set(usedContext.map(file => file.uri.toString())).size
-    let fileCountLabel = `${fileCount} file${fileCount > 1 ? 's' : ''}`
+    const itemCount = usedContext.length
+    let contextItemCountLabel = `${itemCount} ${pluralize('item', itemCount)}`
     if (excludedAtContext.length) {
         const excludedAtUnit = excludedAtContext.length === 1 ? 'mention' : 'mentions'
-        fileCountLabel = `${fileCountLabel} — ${excludedAtContext.length} ${excludedAtUnit} excluded`
+        contextItemCountLabel = `${contextItemCountLabel} — ${excludedAtContext.length} ${excludedAtUnit} excluded`
     }
 
     function logContextOpening() {
@@ -47,13 +48,13 @@ export const ContextCell: React.FunctionComponent<{
             command: 'event',
             eventName: 'CodyVSCodeExtension:chat:context:opened',
             properties: {
-                fileCount,
+                fileCount: new Set(usedContext.map(file => file.uri.toString())).size,
                 excludedAtContext: excludedAtContext.length,
             },
         })
     }
 
-    return contextFiles === undefined || contextFiles.length !== 0 ? (
+    return contextItems === undefined || contextItems.length !== 0 ? (
         <Cell
             style="context"
             gutterIcon={
@@ -66,7 +67,7 @@ export const ContextCell: React.FunctionComponent<{
             contentClassName="tw-flex tw-flex-col tw-gap-4"
             data-testid="context"
         >
-            {contextFiles === undefined ? (
+            {contextItems === undefined ? (
                 <LoadingDots />
             ) : (
                 <details className={styles.details} open={__storybook__initialOpen}>
@@ -74,14 +75,14 @@ export const ContextCell: React.FunctionComponent<{
                         className={styles.summary}
                         onClick={logContextOpening}
                         onKeyUp={logContextOpening}
-                        title={fileCountLabel}
+                        title={contextItemCountLabel}
                     >
                         <h4 className={styles.heading}>
-                            Context <span className={styles.stats}>&mdash; {fileCountLabel}</span>
+                            Context <span className={styles.stats}>&mdash; {contextItemCountLabel}</span>
                         </h4>
                     </summary>
                     <ul className={styles.list}>
-                        {contextFiles?.map((item, i) => (
+                        {contextItems?.map((item, i) => (
                             // biome-ignore lint/suspicious/noArrayIndexKey: stable order
                             <li key={i}>
                                 <FileLink

@@ -27,6 +27,7 @@ import {
 } from '../../vscode/src/testutils/testing-credentials'
 import { AgentTextDocument } from './AgentTextDocument'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
+import { allClientCapabilitiesEnabled } from './allClientCapabilitiesEnabled'
 import { MessageHandler, type NotificationMethodName } from './jsonrpc-alias'
 import type {
     AutocompleteParams,
@@ -201,7 +202,7 @@ export class TestClient extends MessageHandler {
         return this.params?.extraConfiguration?.['cody.autocomplete.advanced.model'] ?? ''
     }
 
-    private constructor(
+    constructor(
         conn: MessageConnection,
         public readonly params: TestClientParams
     ) {
@@ -343,13 +344,32 @@ export class TestClient extends MessageHandler {
         })
         this.registerRequest('textDocument/edit', params => {
             this.textDocumentEditParams.push(params)
-            return Promise.resolve(this.editDocument(params).success)
+            const { success, protocolDocument } = this.editDocument(params)
+            if (protocolDocument) {
+                this.notify('textDocument/didChange', protocolDocument.underlying)
+            }
+            return Promise.resolve(success)
         })
         this.registerRequest('textDocument/show', () => {
             return Promise.resolve(true)
         })
         this.registerNotification('debug/message', message => {
             this.logMessage(message)
+        })
+
+        this.registerNotification('editTask/didUpdate', params => {
+            this.taskUpdate.fire(params)
+        })
+        this.registerNotification('editTask/didDelete', params => {
+            this.taskDelete.fire(params)
+        })
+
+        this.registerNotification('webview/postMessage', params => {
+            this.webviewMessages.push(params)
+            this.webviewMessagesEmitter.fire(params)
+        })
+        this.registerNotification('remoteRepo/didChange', () => {
+            // Do nothing
         })
     }
 
@@ -392,24 +412,18 @@ export class TestClient extends MessageHandler {
         // console.log(`${params.channel}: ${params.message}`)
     }
 
-    public openFile(
-        uri: Uri,
-        params?: { selectionName?: string; removeCursor?: boolean }
-    ): Promise<void> {
+    public openFile(uri: Uri, params?: TextDocumentEventParams): Promise<void> {
         return this.textDocumentEvent(uri, 'textDocument/didOpen', params)
     }
 
-    public changeFile(
-        uri: Uri,
-        params?: { text?: string; selectionName?: string; removeCursor?: boolean }
-    ): Promise<void> {
+    public changeFile(uri: Uri, params?: TextDocumentEventParams): Promise<void> {
         return this.textDocumentEvent(uri, 'textDocument/didChange', params)
     }
 
     public async textDocumentEvent(
         uri: Uri,
         method: NotificationMethodName,
-        params?: { text?: string; selectionName?: string; removeCursor?: boolean }
+        params?: TextDocumentEventParams
     ): Promise<void> {
         const selectionName = params?.selectionName ?? 'SELECTION'
         let content: string = params?.text
@@ -519,7 +533,13 @@ export class TestClient extends MessageHandler {
             case CodyTaskState.Finished:
             case CodyTaskState.Error:
                 return Promise.reject(
-                    new Error(`Task reached terminal state before being applied ${params}`)
+                    new Error(
+                        `Task reached terminal state before being applied ${JSON.stringify(
+                            params,
+                            null,
+                            2
+                        )}`
+                    )
                 )
         }
 
@@ -610,21 +630,6 @@ export class TestClient extends MessageHandler {
     }
 
     public async initialize(additionalConfig?: Partial<ExtensionConfiguration>): Promise<ServerInfo> {
-        this.registerNotification('editTask/didUpdate', params => {
-            this.taskUpdate.fire(params)
-        })
-        this.registerNotification('editTask/didDelete', params => {
-            this.taskDelete.fire(params)
-        })
-
-        this.registerNotification('webview/postMessage', params => {
-            this.webviewMessages.push(params)
-            this.webviewMessagesEmitter.fire(params)
-        })
-        this.registerNotification('remoteRepo/didChange', () => {
-            // Do nothing
-        })
-
         this.conn.listen()
 
         try {
@@ -895,16 +900,7 @@ ${patch}`
             version: 'v1',
             workspaceRootUri: this.params.workspaceRootUri.toString(),
             workspaceRootPath: this.params.workspaceRootUri.fsPath,
-            capabilities: {
-                progressBars: 'enabled',
-                edit: 'enabled',
-                editWorkspace: 'enabled',
-                untitledDocuments: 'enabled',
-                showDocument: 'enabled',
-                codeLenses: 'enabled',
-                showWindowMessage: 'request',
-                ignore: 'enabled',
-            },
+            capabilities: allClientCapabilitiesEnabled,
             extensionConfiguration: {
                 anonymousUserID: `${this.name}abcde1234`,
                 accessToken: this.params.credentials.token ?? this.params.credentials.redactedToken,
@@ -928,4 +924,10 @@ export function asTranscriptMessage(reply: ExtensionMessage): ExtensionTranscrip
         return reply
     }
     throw new Error(`expected transcript, got: ${JSON.stringify(reply)}`)
+}
+
+interface TextDocumentEventParams {
+    text?: string
+    selectionName?: string
+    removeCursor?: boolean
 }

@@ -86,7 +86,7 @@ export async function expectContextCellCounts(
     const summary = contextCell.locator('summary', { hasText: 'Context' })
     await expect(summary).toHaveAttribute(
         'title',
-        `${counts.files} file${counts.files === 1 ? '' : 's'}`,
+        `${counts.files} item${counts.files === 1 ? '' : 's'}`,
         { timeout: counts.timeout }
     )
 }

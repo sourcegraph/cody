@@ -10,7 +10,7 @@ const buttonVariants = cva(
             variant: {
                 default: 'tw-bg-primary tw-text-primary-foreground hover:tw-bg-primary/90',
                 outline:
-                    'tw-border tw-border-border tw-bg-background hover:tw-bg-accent hover:tw-text-accent-foreground',
+                    'tw-border tw-border-border tw-bg-background hover:tw-bg-muted-transparent hover:tw-text-foreground',
                 toolbarItem:
                     'tw-border tw-border-border tw-bg-none hover:tw-text-accent-foreground disabled:tw-border-transparent',
                 secondary: 'tw-bg-secondary tw-text-secondary-foreground hover:tw-bg-secondary/80',
@@ -20,7 +20,7 @@ const buttonVariants = cva(
 
             size: {
                 default: 'tw-px-4 tw-py-2',
-                sm: 'tw-rounded-md tw-px-3 tw-text-sm',
+                sm: 'tw-rounded-md tw-px-2 tw-py-[.1rem] tw-text-sm',
                 lg: 'tw-rounded-md tw-px-8 tw-text-lg',
                 icon: 'tw-rounded-lg tw-w-[1.375rem] tw-h-[1.375rem]', // Match VS Code’s 22px icon buttons
             },

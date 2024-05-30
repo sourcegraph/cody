@@ -84,7 +84,6 @@ export function getChatModelsFromConfiguration(): ModelProvider[] {
             { input: m.inputTokens ?? CHAT_INPUT_TOKEN_BUDGET, output: m.outputTokens ?? ANSWER_TOKENS },
             { apiKey: m.apiKey, apiEndpoint: m.apiEndpoint }
         )
-        provider.codyProOnly = true
         providers.push(provider)
     }
 
