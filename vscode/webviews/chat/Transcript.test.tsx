@@ -301,7 +301,7 @@ function expectCells(expectedCells: CellMatcher[]): void {
             expect(cell).toHaveAttribute('data-testid', 'context')
             if (expectedCell.context.files !== undefined) {
                 expect(cell.querySelector('summary')).toHaveAccessibleDescription(
-                    `${expectedCell.context.files} file`
+                    `${expectedCell.context.files} item`
                 )
             } else if (expectedCell.context.loading) {
                 expect(cell.querySelector('[role="status"]')).toHaveAttribute('aria-busy')
