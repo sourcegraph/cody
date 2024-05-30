@@ -6,6 +6,8 @@ import * as vscode from 'vscode'
 
 import { newAgentClient } from '../../agent'
 
+import { ModelProvider, getDotComDefaultModels } from '@sourcegraph/cody-shared'
+import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
 import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled'
 import { arrayOption, booleanOption, intOption } from './cli-parsers'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
@@ -279,10 +281,25 @@ export const codyBenchCommand = new commander.Command('cody-bench')
                     testOptions.fixture.name
                 )
         )
-        await Promise.all(workspacesToRun.map(workspace => evaluateWorkspace(workspace)))
+        const recordingDirectory = path.join(path.dirname(options.evaluationConfig), 'recordings')
+        const polly = startPollyRecording({
+            recordingName: 'cody-bench',
+            recordingMode: 'replay',
+            recordIfMissing: true,
+            recordingDirectory,
+            keepUnusedRecordings: true,
+        })
+        ModelProvider.setProviders(getDotComDefaultModels())
+        try {
+            await Promise.all(
+                workspacesToRun.map(workspace => evaluateWorkspace(workspace, recordingDirectory))
+            )
+        } finally {
+            await polly.stop()
+        }
     })
 
-async function evaluateWorkspace(options: CodyBenchOptions): Promise<void> {
+async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: string): Promise<void> {
     console.log(`starting evaluation: fixture=${options.fixture.name} workspace=${options.workspace}`)
 
     if (!options.srcAccessToken) {
@@ -296,7 +313,14 @@ async function evaluateWorkspace(options: CodyBenchOptions): Promise<void> {
 
     const workspaceRootUri = vscode.Uri.from({ scheme: 'file', path: options.workspace })
 
-    const recordingDirectory = path.join(path.dirname(options.evaluationConfig), 'recordings')
+    const baseGlobalState: Record<string, any> = {}
+    try {
+        const provider = ModelProvider.getProviderByModelSubstringOrError(options.fixture.name)
+        baseGlobalState.editModel = provider.model
+    } catch (error) {
+        console.log(options.fixture.name, error)
+    }
+
     const client = await newAgentClient({
         name: 'cody-bench',
         version: '0.1.0',
@@ -306,6 +330,7 @@ async function evaluateWorkspace(options: CodyBenchOptions): Promise<void> {
             serverEndpoint: options.srcEndpoint,
             customHeaders: {},
             customConfiguration: options.fixture.customConfiguration,
+            baseGlobalState,
         },
         codyAgentPath: options.codyAgentBinary,
         capabilities: allClientCapabilitiesEnabled,

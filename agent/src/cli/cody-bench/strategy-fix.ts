@@ -8,6 +8,8 @@ import type { MessageHandler } from '../../jsonrpc-alias'
 import { renderUnifiedDiff } from '../../renderUnifiedDiff'
 import type { CodyBenchOptions } from './cody-bench'
 import { evaluateEachFile } from './evaluateEachFile'
+import { Llm, type LlmScore } from './llm-judge'
+import { llmJudgeFixTemplate } from './llm-judge-fix-template'
 import { prettyDiagnostic } from './prettyDiagnostic'
 import { runVoidCommand } from './testTypecheck'
 
@@ -28,14 +30,21 @@ export async function evaluateFixStrategy(
         // Run pnpm install only when `node_modules` doesn't exist.
         await runVoidCommand(options.installCommand, options.workspace)
     }
+
+    const llm = new Llm(options)
     let totalErrors = 0
     let fixedErrors = 0
     const absoluteFiles = glob.sync(`${options.workspace}/**`, {
         ignore: ['node_modules/**'],
         nodir: true,
     })
+    const scores: LlmScore[] = []
     const files = absoluteFiles.map(file => path.relative(options.workspace, file))
+    let testCount = options.testCount
     await evaluateEachFile(files, options, async params => {
+        if (testCount <= 0) {
+            return undefined
+        }
         client.openFile(params.uri, { text: params.content })
         const { diagnostics } = await client.request('testing/diagnostics', {
             uri: params.uri.toString(),
@@ -59,10 +68,22 @@ export async function evaluateFixStrategy(
             })
             const newText = client.workspace.getDocument(params.uri)?.getText() ?? ''
             const isFixed = newDiagnostics.length === 0
+            const score = await llm.judge(
+                llmJudgeFixTemplate({
+                    codeBeforeFix: params.content,
+                    codeAfterFix: newText,
+                    diagnosticBeforeFix: prettyDiagnostic(diagnostic),
+                    diagnosticsAfterFix: newDiagnostics.map(d => prettyDiagnostic(d)).join('\n'),
+                })
+            )
             console.log(`${params.file}: ${isFixed ? 'Fixed!' : 'Still errors!'}`)
             for (const newDiagnostic of newDiagnostics) {
                 console.log(prettyDiagnostic(newDiagnostic))
             }
+            console.log({
+                name: options.fixture.name,
+                ...score,
+            })
             console.log(
                 renderUnifiedDiff(
                     { header: `${params.uri.fsPath} (before)`, text: params.content },
@@ -73,8 +94,15 @@ export async function evaluateFixStrategy(
             if (isFixed) {
                 fixedErrors += 1
             }
+            testCount -= 1
+            scores.push(score)
         }
         return undefined
     })
-    console.log({ totalErrors, fixedErrors })
+    console.log({
+        fixture: options.fixture.name,
+        totalErrors,
+        fixedErrors,
+        totalScore: scores.reduce((a, b) => a + (b.scoreNumeric ?? 0), 0),
+    })
 }
