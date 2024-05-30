@@ -2,7 +2,6 @@
     display: flex;
     flex-direction: row;
     gap: 0.15rem;
-    opacity: 0.5;
 }
 
 .feedback-button[disabled] {
