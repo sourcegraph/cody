@@ -50,7 +50,7 @@ class InstructionsInputTextArea(parentDisposable: Disposable) :
 
     lineWrap = true
     wrapStyleWord = true
-    border = JBUI.Borders.empty(JBUI.insets(10, 15, 10, 15))
+    border = JBUI.Borders.empty(JBUI.insets(10, 15))
   }
 
   override fun paintComponent(g: Graphics) {

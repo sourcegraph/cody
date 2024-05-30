@@ -79,7 +79,7 @@ class LensGroupFactory(val session: FixupSession) {
   private fun addAction(group: LensWidgetGroup, label: String, actionId: String) {
     group.addWidget(LensAction(group, label, actionId))
 
-    val hotkey = EditCommandPrompt.getShortcutText(actionId)
+    val hotkey = EditCommandPrompt.getShortcutDisplayString(actionId)
     if (!hotkey.isNullOrEmpty()) {
       group.addWidget(LensHotkey(group, hotkey))
     }

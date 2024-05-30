@@ -2,7 +2,6 @@ package com.sourcegraph.cody.edit
 
 import com.intellij.ide.ui.UISettingsListener
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.KeyboardShortcut
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
@@ -34,6 +33,7 @@ import com.sourcegraph.cody.edit.EditUtil.namedButton
 import com.sourcegraph.cody.edit.EditUtil.namedLabel
 import com.sourcegraph.cody.edit.EditUtil.namedPanel
 import com.sourcegraph.cody.edit.sessions.EditCodeSession
+import com.sourcegraph.cody.edit.widget.LensAction
 import com.sourcegraph.cody.ui.FrameMover
 import java.awt.BorderLayout
 import java.awt.Color
@@ -128,13 +128,11 @@ class EditCommandPrompt(
 
   private val instructionsField =
       InstructionsInputTextArea(this).apply {
-        if (instruction != null) {
-          text = instruction
-        } else {
-          text = lastPrompt
-        }
-        if (text.isNullOrBlank() && promptHistory.isNotEmpty()) {
-          text = promptHistory.getPrevious()
+        text = instruction ?: lastPrompt
+        if (text.isNullOrBlank() &&
+            promptHistory.isNotEmpty() &&
+            !LensAction.wasLastLensActionAnAccept()) {
+          text = promptHistory.getCurrent()
         }
       }
 
@@ -632,6 +630,10 @@ class EditCommandPrompt(
     // The last text the user typed in without saving it, for continuity.
     var lastPrompt: String = ""
 
+    fun clearLastPrompt() {
+      lastPrompt = ""
+    }
+
     // Caching these caused problems with theme switches, even when we
     // updated the cached values on theme-switch notifications.
 
@@ -643,63 +645,27 @@ class EditCommandPrompt(
 
     /** Returns a compact symbol representation of the action's keyboard shortcut, if any. */
     @JvmStatic
-    fun getShortcutText(actionId: String): String? {
-      // If the keystroke has a registered shortcut, use that text.
-      val action = ActionManager.getInstance().getAction(actionId)
-      action?.shortcutSet?.shortcuts?.forEach { shortcut ->
-        if (shortcut is KeyboardShortcut) {
-          // This will return the shortcut in a format suitable for display,
-          // including the correct symbols for the current OS.
-          return KeymapUtil.getShortcutText(shortcut)
-        }
-      }
-      // We have a few actions that share the same keystroke, because
-      // they are similar operations in different contexts. They cannot be
-      // registered in plugin.xml directly, because of collisions; instead,
-      // we create intermediate actions to dispatch based on the mode.
-      // Here, we just have to hardwire what we know the original sequence is.
-      // TODO: There must be a way to convert a KeyStroke to these programmatically.
-      // IntelliJ's Settings keymap viewer/editor shows them.
+    fun getShortcutDisplayString(actionId: String): String? {
       return when (actionId) {
         "cody.editCodeAction",
-        "cody.inlineEditRetryAction" ->
-            getKeyStrokeDisplayString(
-                KeyStroke.getKeyStroke(
-                    KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK or InputEvent.SHIFT_DOWN_MASK))
+        "cody.inlineEditRetryAction" -> {
+          val keyStroke =
+              KeyStroke.getKeyStroke(
+                  KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK or InputEvent.SHIFT_DOWN_MASK)
+          val shortcut = KeyboardShortcut(keyStroke, null)
+          KeymapUtil.getShortcutText(shortcut)
+        }
         "cody.inlineEditCancelAction",
         "cody.inlineEditUndoAction",
-        "cody.inlineEditDismissAction" ->
-            getKeyStrokeDisplayString(
-                KeyStroke.getKeyStroke(
-                    KeyEvent.VK_BACK_SPACE,
-                    InputEvent.CTRL_DOWN_MASK or InputEvent.SHIFT_DOWN_MASK))
+        "cody.inlineEditDismissAction" -> {
+          val keyStroke =
+              KeyStroke.getKeyStroke(
+                  KeyEvent.VK_BACK_SPACE, InputEvent.CTRL_DOWN_MASK or InputEvent.SHIFT_DOWN_MASK)
+          val shortcut = KeyboardShortcut(keyStroke, null)
+          KeymapUtil.getShortcutText(shortcut)
+        }
         else -> null
       }
-    }
-
-    private fun getKeyStrokeDisplayString(keyStroke: KeyStroke): String {
-      val sb = StringBuilder()
-
-      if (keyStroke.modifiers and InputEvent.CTRL_DOWN_MASK != 0) {
-        sb.append("⌃")
-      }
-      if (keyStroke.modifiers and InputEvent.META_DOWN_MASK != 0) {
-        sb.append("⌘")
-      }
-      if (keyStroke.modifiers and InputEvent.ALT_DOWN_MASK != 0) {
-        sb.append("⌥")
-      }
-      if (keyStroke.modifiers and InputEvent.SHIFT_DOWN_MASK != 0) {
-        sb.append("⇧")
-      }
-
-      when (keyStroke.keyCode) {
-        KeyEvent.VK_ENTER -> sb.append("⏎")
-        KeyEvent.VK_BACK_SPACE -> sb.append("⌫")
-        else -> sb.append(KeyEvent.getKeyText(keyStroke.keyCode))
-      }
-
-      return sb.toString()
     }
   }
 

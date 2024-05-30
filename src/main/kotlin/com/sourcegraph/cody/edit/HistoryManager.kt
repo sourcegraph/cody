@@ -1,6 +1,6 @@
 package com.sourcegraph.cody.edit
 
-/** Manages user prompt history in memory for a session (project lifetime). */
+/** Manages user prompt history in memory for a session. */
 class HistoryManager<T>(private val capacity: Int) {
   private val history = mutableListOf<T>()
   private var currentIndex = -1
@@ -22,7 +22,7 @@ class HistoryManager<T>(private val capacity: Int) {
       currentIndex--
       return history[currentIndex]
     }
-    return null
+    return if (history.size == 1) history[0] else null
   }
 
   fun getNext(): T? {
@@ -30,8 +30,20 @@ class HistoryManager<T>(private val capacity: Int) {
       currentIndex++
       return history[currentIndex]
     }
-    return null
+    return if (history.size == 1) history[0] else null
+  }
+
+  fun getCurrent(): T? {
+    return if (history.size > 0 && currentIndex < history.size) {
+      history[currentIndex]
+    } else {
+      null
+    }
   }
 
   fun isNotEmpty() = history.isNotEmpty()
+
+  override fun toString(): String {
+    return "HistoryManager(capacity=$capacity, currentIndex=$currentIndex)"
+  }
 }

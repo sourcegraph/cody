@@ -15,6 +15,7 @@ import java.awt.FontMetrics
 import java.awt.Graphics2D
 import java.awt.event.MouseEvent
 import java.awt.geom.Rectangle2D
+import java.util.concurrent.atomic.AtomicReference
 
 class LensAction(
     val group: LensWidgetGroup,
@@ -72,6 +73,7 @@ class LensAction(
   }
 
   private fun triggerAction(actionId: String, editor: Editor, mouseEvent: MouseEvent) {
+    lastLensActionPerformed.set(actionId)
     val action = ActionManager.getInstance().getAction(actionId)
     if (action != null) {
       val dataContext = createDataContext(editor, mouseEvent)
@@ -108,5 +110,11 @@ class LensAction(
     val actionColor = JBColor(0x4C4D54, 0x393B40)
     private val acceptColor = JBColor(0x369650, 0x388119)
     private val undoColor = JBColor(0xCC3645, 0x7B282C)
+
+    private val lastLensActionPerformed: AtomicReference<String?> = AtomicReference(null)
+
+    fun wasLastLensActionAnAccept(): Boolean {
+      return lastLensActionPerformed.get() == FixupSession.ACTION_ACCEPT
+    }
   }
 }

@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 class FixupSessionDocumentListener(private val session: FixupSession) : BulkAwareDocumentListener {
   private val logger = Logger.getInstance(FixupSessionDocumentListener::class.java)
 
-  private val isAcceptLensGroupShown = AtomicBoolean(false)
+  val isAcceptLensGroupShown = AtomicBoolean(false)
 
   override fun documentChangedNonBulk(event: DocumentEvent) {
     if (isAcceptLensGroupShown.get()) {
