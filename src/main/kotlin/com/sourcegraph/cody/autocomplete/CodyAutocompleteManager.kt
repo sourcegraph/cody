@@ -240,7 +240,7 @@ class CodyAutocompleteManager {
                     lookupString,
                     if (startPosition < 0) Range(position, position)
                     else Range(Position(lineNumber.toLong(), startPosition.toLong()), position)))
-    notifyApplication(CodyStatus.AutocompleteInProgress)
+    notifyApplication(project, CodyStatus.AutocompleteInProgress)
 
     val resultOuter = CompletableFuture<Void?>()
     CodyAgentService.withAgent(project) { agent ->

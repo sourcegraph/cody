@@ -94,7 +94,7 @@ private constructor(
     // context synchronization.
     // That can lead to a deadlocks if we try to do a `withAgent` call inside a `withAgent` call, so
     // we need to be careful.
-    @JvmField val executorService: ExecutorService = Executors.newSingleThreadExecutor()
+    @JvmField val executorService: ExecutorService = Executors.newCachedThreadPool()
 
     private fun shouldSpawnDebuggableAgent() = System.getenv("CODY_AGENT_DEBUG_INSPECT") == "true"
 

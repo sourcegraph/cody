@@ -70,7 +70,7 @@ class FixupService(val project: Project) : Disposable {
       logger.warn("Edit code invoked when Cody not enabled")
       return false
     }
-    if (CodyStatusService.getCurrentStatus() == CodyStatus.CodyAgentNotRunning) {
+    if (CodyStatusService.getCurrentStatus(project) == CodyStatus.CodyAgentNotRunning) {
       runInEdt { CodyStartingNotification().notify(project) }
       logger.warn("The agent is not connected")
       return false

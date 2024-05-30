@@ -3,6 +3,7 @@ package com.sourcegraph.cody.statusbar
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.util.ui.UIUtil
@@ -13,19 +14,12 @@ import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.common.UpgradeToCodyProNotification
 import com.sourcegraph.config.ConfigUtil
 
-@Service
-class CodyStatusService : CodyStatusListener, Disposable {
+@Service(Service.Level.PROJECT)
+class CodyStatusService(val project: Project) : Disposable {
 
   @Volatile private var status: CodyStatus = CodyStatus.CodyUninit
 
-  init {
-    ApplicationManager.getApplication()
-        .messageBus
-        .connect(this)
-        .subscribe(CodyStatusListener.TOPIC, this)
-  }
-
-  override fun onCodyAutocompleteStatus(codyStatus: CodyStatus) {
+  fun onCodyAutocompleteStatus(codyStatus: CodyStatus) {
     val notify =
         synchronized(this) {
           val oldStatus = status
@@ -37,7 +31,7 @@ class CodyStatusService : CodyStatusListener, Disposable {
     }
   }
 
-  override fun onCodyAutocompleteStatusReset(project: Project) {
+  fun onCodyAutocompleteStatusReset() {
     ApplicationManager.getApplication().executeOnPooledThread {
       if (!project.isDisposed) {
         val notify = didStatusChange(project)
@@ -98,26 +92,22 @@ class CodyStatusService : CodyStatusListener, Disposable {
 
   companion object {
 
-    fun getCurrentStatus(): CodyStatus {
-      return ApplicationManager.getApplication()
-          .getService(CodyStatusService::class.java)
-          .getStatus()
+    fun getInstance(project: Project): CodyStatusService {
+      return project.service<CodyStatusService>()
+    }
+
+    fun getCurrentStatus(project: Project): CodyStatus {
+      return getInstance(project).getStatus()
     }
 
     @JvmStatic
-    fun notifyApplication(status: CodyStatus) {
-      ApplicationManager.getApplication()
-          .messageBus
-          .syncPublisher(CodyStatusListener.TOPIC)
-          .onCodyAutocompleteStatus(status)
+    fun notifyApplication(project: Project, status: CodyStatus) {
+      getInstance(project).onCodyAutocompleteStatus(status)
     }
 
     @JvmStatic
     fun resetApplication(project: Project) {
-      ApplicationManager.getApplication()
-          .messageBus
-          .syncPublisher(CodyStatusListener.TOPIC)
-          .onCodyAutocompleteStatusReset(project)
+      getInstance(project).onCodyAutocompleteStatusReset()
     }
   }
 }
