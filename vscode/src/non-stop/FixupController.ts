@@ -785,14 +785,17 @@ export class FixupController
             return false
         }
 
-        // add correct indentation based on first non empty character index
+        // Get the index of the first non-whitespace character on the line where the insertion point is.
         const nonEmptyStartIndex = document.lineAt(insertionPoint.line).firstNonWhitespaceCharacterIndex
-        // add indentation to each line
+        // Split the text into lines and prepend each line with spaces to match the indentation level
+        // of the line where the insertion point is.
         const textLines = text.split('\n').map(line => ' '.repeat(nonEmptyStartIndex) + line)
-        // join text with new lines, and then remove everything after the last new line if it only contains white spaces
-        const replacementText = textLines.join('\n').replace(/[\t ]+$/, '')
+        // Join the lines back into a single string with newline characters
+        // Remove any leading whitespace from the first line, as we are inserting at the insertionPoint
+        // Keep any trailing whitespace on the last line to preserve the original indentation.
+        const replacementText = textLines.join('\n').trimStart()
 
-        // Insert updated text at selection range
+        // Insert the updated text at the specified insertionPoint.
         if (edit instanceof vscode.WorkspaceEdit) {
             edit.insert(document.uri, insertionPoint, replacementText)
             return vscode.workspace.applyEdit(edit)
