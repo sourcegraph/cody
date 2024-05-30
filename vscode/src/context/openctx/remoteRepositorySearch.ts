@@ -1,6 +1,6 @@
-import { graphqlClient, isError } from '@sourcegraph/cody-shared'
+import { contextFiltersProvider, graphqlClient, isError } from '@sourcegraph/cody-shared'
 
-import type { Item, Mention, Provider } from '@openctx/client'
+import type { Item, Provider } from '@openctx/client'
 
 const RemoteRepositorySearch: Provider & {
     providerUri: string
@@ -13,7 +13,7 @@ const RemoteRepositorySearch: Provider & {
 
     async mentions({ query }) {
         try {
-            const dataOrError = await graphqlClient.searchRepos(10, undefined, query)
+            const dataOrError = await graphqlClient.searchRepos(30, undefined, query)
 
             if (isError(dataOrError) || dataOrError === null) {
                 return []
@@ -21,16 +21,14 @@ const RemoteRepositorySearch: Provider & {
 
             const repositories = dataOrError.repositories.nodes
 
-            return repositories.map(
-                repo =>
-                    ({
-                        uri: repo.url,
-                        title: repo.name,
-                        data: {
-                            repoId: repo.id,
-                        },
-                    }) as Mention
-            )
+            return repositories.map(repo => ({
+                uri: repo.url,
+                title: repo.name,
+                data: {
+                    repoId: repo.id,
+                    isIgnored: contextFiltersProvider.isRepoNameIgnored(repo.name),
+                },
+            }))
         } catch (error) {
             return []
         }
