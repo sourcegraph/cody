@@ -43,9 +43,7 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
             messageText = content
             break
         default:
-            if (contextItem.type === 'openctx') messageText = content
-            else messageText = populateCodeContextTemplate(content, uri, repoName)
-
+            messageText = populateCodeContextTemplate(content, uri, repoName)
             break
     }
 
