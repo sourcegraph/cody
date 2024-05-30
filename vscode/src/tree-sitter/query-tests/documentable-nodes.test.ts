@@ -133,4 +133,15 @@ describe('getDocumentableNode', () => {
             sourcesPath: 'test-data/documentable-node.c',
         })
     })
+
+    it('cpp', async () => {
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.cpp)
+
+        await annotateAndMatchSnapshot({
+            parser,
+            language,
+            captures: queryWrapper(queries.getDocumentableNode),
+            sourcesPath: 'test-data/documentable-node.cpp',
+        })
+    })
 })
