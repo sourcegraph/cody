@@ -28,62 +28,66 @@ describe('rewrite-query', () => {
 
     function check(
         query: PromptString,
-        restrictRewrite: boolean,
-        expectedHandler: (expandedTerm: string) => void
+        expectedHandler: (expandedTerm: string) => void,
+        options?: {
+            restrictRewrite: boolean
+        },
     ): void {
         it(query.toString(), async () => {
-            expectedHandler(await rewriteKeywordQuery(client, query, restrictRewrite))
+            expectedHandler(await rewriteKeywordQuery(client, query, options))
         })
     }
 
-    check(ps`ocean`, false, expanded =>
+    check(ps`ocean`, expanded =>
         expect(expanded).toMatchInlineSnapshot(
             `"aquatic fish marine maritime nautical ocean sea sealife surf swell tide underwater water wave"`
         )
     )
 
-    check(ps`How do I write a file to disk in Go`, false, expanded =>
+    check(ps`How do I write a file to disk in Go`,  expanded =>
         expect(expanded).toMatchInlineSnapshot(
             `"disk file files go golang io persist save storage store write"`
         )
     )
 
-    check(ps`Where is authentication router defined?`, false, expanded =>
+    check(ps`Where is authentication router defined?`,  expanded =>
         expect(expanded).toMatchInlineSnapshot(
             `"auth authentication authorization config configuration route router routing"`
         )
     )
 
-    check(ps`parse file with tree-sitter`, false, expanded =>
+    check(ps`parse file with tree-sitter`,  expanded =>
         expect(expanded).toMatchInlineSnapshot(
             `"file files parse parser parsing sitter tree tree-sitter treesitter"`
         )
     )
 
-    check(ps`scan tokens in C++`, false, expanded =>
+    check(ps`scan tokens in C++`,  expanded =>
         expect(expanded).toMatchInlineSnapshot(
             `"analyze c++ cplusplus cpp cxx lex lexer lexical parse scan scanner token tokenizer"`
         )
     )
 
     // Test that when the 'restricted' parameter is enabled,  we only rewrite non-ASCII and multi-sentence queries
-    check(ps`scan tokens in C++! `, true, expanded =>
-        expect(expanded).toMatchInlineSnapshot(`"scan tokens in C++! "`)
+    check(ps`scan tokens in C++! `,  expanded =>
+        expect(expanded).toMatchInlineSnapshot(`"scan tokens in C++! "`),
+        {restrictRewrite: true}
     )
 
-    check(ps`C'est ou la logique pour recloner les dépôts?`, true, expanded =>
+    check(ps`C'est ou la logique pour recloner les dépôts?`,  expanded =>
         expect(expanded).toMatchInlineSnapshot(
             `"algorithm clone cloning config configuration git logic reasoning repo repository settings vcs version-control"`
-        )
+        ),
+        {restrictRewrite: true}
     )
 
     check(
         ps`Explain how the context window limit is calculated. how much budget is given to @-mentions vs. search context?`,
-        true,
         expanded =>
             expect(expanded).toMatchInlineSnapshot(
                 `"@-mentions allocation budget budget-allocation budget_allocation context context window context-window context_window limit mentions search context search-context search_context window"`
-            )
+            ),
+        {restrictRewrite: true}
     )
 
     afterAll(async () => {

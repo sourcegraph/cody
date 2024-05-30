@@ -21,9 +21,11 @@ const containsMultipleSentences = /[.!?][\s\r\n]+\w/
 export async function rewriteKeywordQuery(
     completionsClient: SourcegraphCompletionsClient,
     query: PromptString,
-    restrictRewrite?: boolean
+    options?: {
+        restrictRewrite: boolean
+    },
 ): Promise<string> {
-    if (restrictRewrite) {
+    if (options?.restrictRewrite) {
         const queryString = query.toString()
         if (!containsNonAscii.test(queryString) && !containsMultipleSentences.test(queryString)) {
             return queryString
