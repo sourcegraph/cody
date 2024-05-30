@@ -42,7 +42,7 @@ describe('HumanMessageEditor', () => {
                 notUnless(expect.soft(submitButton), expected.submitButtonEnabled).toBeEnabled()
             }
             if (expected.submitButtonText !== undefined) {
-                expect.soft(submitButton).toHaveTextContent(expected.submitButtonText)
+                expect.soft(submitButton).toHaveAccessibleName(expected.submitButtonText)
             }
 
             function notUnless<T>(assertion: Assertion<T>, value: boolean): Assertion<T> {
@@ -188,7 +188,7 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
         editor: container.querySelector<EditorHTMLElement>('[data-lexical-editor="true"]')!,
         mentionButton: screen.queryByRole('button', { name: 'Add context', hidden: true }),
         submitButton: screen.queryByRole('button', {
-            name: 'Send with automatic code context',
+            name: 'Send',
             hidden: true,
         }),
         onChange,
