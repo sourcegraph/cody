@@ -67,9 +67,6 @@ export {
     type ContextItemWithContent,
     type ContextItemSymbol,
     type ContextFileType,
-    type ContextItemPackage,
-    type ContextItemGithubIssue,
-    type ContextItemGithubPullRequest,
     type ContextMessage,
     type SymbolKind,
 } from './codebase-context/messages'
@@ -293,12 +290,9 @@ export * from './sourcegraph-api/utils'
 export * from './token'
 export * from './token/constants'
 export * from './configuration'
-export * from './mentions/providers/packageMentions'
-export * from './mentions/providers/sourcegraphSearch'
-export { GITHUB_CONTEXT_MENTION_PROVIDER } from './mentions/providers/githubMentions'
-export { URL_CONTEXT_MENTION_PROVIDER } from './mentions/providers/urlMentions'
 export * from './githubClient'
 export {
     setOpenCtxClient,
     openCtx,
 } from './context/openctx/api'
+export { URL_CONTEXT_MENTION_PROVIDER } from './mentions/providers/urlMentions'

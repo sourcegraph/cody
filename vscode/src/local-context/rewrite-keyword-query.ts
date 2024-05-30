@@ -7,10 +7,31 @@ import {
     ps,
 } from '@sourcegraph/cody-shared'
 
-export async function symfExpandQuery(
+// biome-ignore lint: this regex intentionally contains control characters
+const containsNonAscii = /[^\u0000-\u007F]/
+const containsMultipleSentences = /[.!?][\s\r\n]+\w/
+
+/**
+ * Rewrite the query, using the fast completions model to pull out keywords.
+ *
+ * For some context backends, rewriting the query can make performance worse. Setting the 'restrictRewrite' param
+ * only rewrites in cases where it clearly helps: there are non-ASCII characters (meaning it's very likely in a
+ * foreign language), or there are multiple sentences (so we need to distill the question).
+ */
+export async function rewriteKeywordQuery(
     completionsClient: SourcegraphCompletionsClient,
-    query: PromptString
+    query: PromptString,
+    options?: {
+        restrictRewrite: boolean
+    }
 ): Promise<string> {
+    if (options?.restrictRewrite) {
+        const queryString = query.toString()
+        if (!containsNonAscii.test(queryString) && !containsMultipleSentences.test(queryString)) {
+            return queryString
+        }
+    }
+
     const preamble = getSimplePreamble(undefined, 0)
     const stream = completionsClient.stream(
         {
