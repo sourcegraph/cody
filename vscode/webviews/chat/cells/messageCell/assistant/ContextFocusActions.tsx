@@ -35,7 +35,7 @@ export const ContextFocusActions: FunctionComponent<{
                     humanMessage.addEnhancedContext
                         ? {
                               label: 'Public knowledge only',
-                              tooltip: 'Try again with automatic code context',
+                              tooltip: 'Try again without automatic code context',
                               onClick: () => {
                                   logRerunWithEnhancedContext(false)
                                   humanMessage.rerunWithEnhancedContext(false)
@@ -44,7 +44,7 @@ export const ContextFocusActions: FunctionComponent<{
                         : isEnhancedContextAvailable
                           ? {
                                 label: 'Automatic code context',
-                                tooltip: 'Try again without automatic code context',
+                                tooltip: 'Try again with automatic code context',
                                 onClick: () => {
                                     logRerunWithEnhancedContext(true)
                                     humanMessage.rerunWithEnhancedContext(true)
