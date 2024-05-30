@@ -30,7 +30,7 @@ const DOCUMENTABLE_NODES = dedent`
     ; Types
     ;--------------------------------
     (type_definition
-        type: (type_identifier) @symbol.identifier) @range.identifier
+        type: (struct_specifier) @symbol.identifier) @range.identifier
     (enum_specifier
         name: (type_identifier) @symbol.identifier) @range.identifier
 `

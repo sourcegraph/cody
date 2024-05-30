@@ -98,18 +98,28 @@
 
 // ------------------------------------
 
-typedef struct
-{
-    //   |
-} Agent;
+  typedef struct
+//^ start range.identifier[1]
+  {
+//         █
+  } Agent;
+//       ^ end range.identifier[1]
+
+// Nodes types:
+// range.identifier[1]: type_definition
 
 // ------------------------------------
 
-typedef struct
-{
-    //   |
-    void (*__init__)(struct AgentMultiLine *self, char *name);
-} AgentMultiLine;
+  typedef struct
+//^ start range.identifier[1]
+  {
+//         █
+      void (*__init__)(struct AgentMultiLine *self, char *name);
+  } AgentMultiLine;
+//                ^ end range.identifier[1]
+
+// Nodes types:
+// range.identifier[1]: type_definition
 
 // ------------------------------------
 
@@ -128,11 +138,16 @@ typedef struct
 
 // ------------------------------------
 
-typedef struct
-{
-    char *name;
-    //      |
-} Agent;
+  typedef struct
+//^ start range.identifier[1]
+  {
+      char *name;
+//            █
+  } Agent;
+//       ^ end range.identifier[1]
+
+// Nodes types:
+// range.identifier[1]: type_definition
 
 // ------------------------------------
 
