@@ -191,6 +191,7 @@ const register = async (
 
     const {
         chatClient,
+        completionsClient,
         codeCompletionsClient,
         guardrails,
         localEmbeddings,
@@ -203,7 +204,7 @@ const register = async (
         disposables.push(symfRunner)
     }
 
-    const enterpriseContextFactory = new EnterpriseContextFactory()
+    const enterpriseContextFactory = new EnterpriseContextFactory(completionsClient)
     disposables.push(enterpriseContextFactory)
 
     const contextProvider = new ContextProvider(
