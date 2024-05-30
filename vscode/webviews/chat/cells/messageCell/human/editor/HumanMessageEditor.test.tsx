@@ -145,13 +145,11 @@ describe('HumanMessageEditor', () => {
             // Click
             fireEvent.click(submitButton!)
             expect(onSubmit).toHaveBeenCalledTimes(1)
-            expect(onSubmit.mock.lastCall[1]).toBe(true) // addEnhancedContext === true
 
             // Enter
             const editor = container.querySelector<HTMLElement>('[data-lexical-editor="true"]')!
             fireEvent.keyDown(editor, ENTER_KEYBOARD_EVENT_DATA)
             expect(onSubmit).toHaveBeenCalledTimes(2)
-            expect(onSubmit.mock.lastCall[1]).toBe(true) // addEnhancedContext === true
         })
     })
 })

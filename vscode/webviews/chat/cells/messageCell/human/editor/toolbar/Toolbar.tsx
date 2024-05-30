@@ -3,7 +3,6 @@ import clsx from 'clsx'
 import { AtSignIcon } from 'lucide-react'
 import { type FunctionComponent, useCallback } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
-import { EnhancedContextSettings } from '../../../../../../components/EnhancedContextSettings'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { ToolbarButton } from '../../../../../../components/shadcn/ui/toolbar'
 import { useChatModelContext } from '../../../../../models/chatModelContext'
@@ -20,7 +19,7 @@ export const Toolbar: FunctionComponent<{
 
     onMentionClick?: () => void
 
-    onSubmitClick: (addEnhancedContextEnabled: boolean) => void
+    onSubmitClick: () => void
     submitDisabled: SubmitButtonDisabled
 
     /** Handler for clicks that are in the "gap" (dead space), not any toolbar items. */
@@ -76,11 +75,6 @@ export const Toolbar: FunctionComponent<{
                     aria-label="Add context"
                 />
             )}
-            <EnhancedContextSettings
-                presentationMode={userInfo.isDotComUser ? 'consumer' : 'enterprise'}
-                onCloseByEscape={focusEditor}
-            />
-            <div className="tw-ml-[5px] tw-mr-[5px] tw-border-l-[1px] tw-border-white tw-h-6 tw-opacity-10" />
             <ModelSelectFieldToolbarItem userInfo={userInfo} focusEditor={focusEditor} />
             <div className={styles.spacer} />
             <SubmitButton
@@ -112,13 +106,16 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
         onCurrentChatModelChange &&
         userInfo &&
         userInfo.isDotComUser && (
-            <ModelSelectField
-                models={chatModels}
-                onModelSelect={onModelSelect}
-                userInfo={userInfo}
-                onCloseByEscape={focusEditor}
-                className={className}
-            />
+            <>
+                <div className="tw-ml-[5px] tw-mr-[5px] tw-border-l-[1px] tw-border-white tw-h-6 tw-opacity-10" />
+                <ModelSelectField
+                    models={chatModels}
+                    onModelSelect={onModelSelect}
+                    userInfo={userInfo}
+                    onCloseByEscape={focusEditor}
+                    className={className}
+                />
+            </>
         )
     )
 }

@@ -28,7 +28,7 @@ export const HumanMessageCell: FunctionComponent<{
     isPendingPriorResponse: boolean
 
     onChange?: (editorState: SerializedPromptEditorValue) => void
-    onSubmit: (editorValue: SerializedPromptEditorValue, addEnhancedContext: boolean) => void
+    onSubmit: (editorValue: SerializedPromptEditorValue) => void
 
     isEditorInitiallyFocused?: boolean
 

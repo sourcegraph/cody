@@ -9,7 +9,11 @@ import {
     useState,
 } from 'react'
 import type { UserAccountInfo } from '../../../../../Chat'
-import { type ClientActionListener, useClientActionListener } from '../../../../../client/clientState'
+import {
+    type ClientActionListener,
+    useClientActionListener,
+    useClientState,
+} from '../../../../../client/clientState'
 import {
     PromptEditor,
     type PromptEditorRefAPI,
@@ -41,7 +45,7 @@ export const HumanMessageEditor: FunctionComponent<{
     disabled?: boolean
 
     onChange?: (editorState: SerializedPromptEditorValue) => void
-    onSubmit: (editorValue: SerializedPromptEditorValue, addEnhancedContext: boolean) => void
+    onSubmit: (editorValue: SerializedPromptEditorValue) => void
 
     isEditorInitiallyFocused?: boolean
     className?: string
@@ -85,27 +89,23 @@ export const HumanMessageEditor: FunctionComponent<{
           ? 'emptyEditorValue'
           : false
 
-    const onSubmitClick = useCallback(
-        (addEnhancedContext: boolean) => {
-            if (submitDisabled) {
-                return
-            }
+    const onSubmitClick = useCallback(() => {
+        if (submitDisabled) {
+            return
+        }
 
-            if (!editorRef.current) {
-                throw new Error('No editorRef')
-            }
-            onSubmit(editorRef.current.getSerializedValue(), addEnhancedContext)
-        },
-        [submitDisabled, onSubmit]
-    )
+        if (!editorRef.current) {
+            throw new Error('No editorRef')
+        }
+        onSubmit(editorRef.current.getSerializedValue())
+    }, [submitDisabled, onSubmit])
 
     const onEditorEnterKey = useCallback(
         (event: KeyboardEvent | null): void => {
             // Submit input on Enter press (without shift) when input is not empty.
             if (event && !event.shiftKey && !event.isComposing && !isEmptyEditorValue) {
                 event.preventDefault()
-                const addEnhancedContext = !event.altKey
-                onSubmitClick(addEnhancedContext)
+                onSubmitClick()
                 return
             }
         },
@@ -184,13 +184,23 @@ export const HumanMessageEditor: FunctionComponent<{
                 }
                 const editor = editorRef.current
                 if (editor) {
-                    editor.addContextItemAsToken(addContextItemsToLastHumanInput)
+                    editor.addMentions(addContextItemsToLastHumanInput)
                     editor.setFocus(true)
                 }
             },
             [isSent]
         )
     )
+
+    const initialContext = useClientState().initialContext
+    useEffect(() => {
+        if (initialContext && !isSent && isFirstMessage) {
+            const editor = editorRef.current
+            if (editor) {
+                editor.setInitialContextMentions(initialContext)
+            }
+        }
+    }, [initialContext, isSent, isFirstMessage])
 
     const focusEditor = useCallback(() => editorRef.current?.setFocus(true), [])
 

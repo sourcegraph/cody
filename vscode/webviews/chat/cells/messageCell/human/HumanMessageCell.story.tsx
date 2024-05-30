@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
-import { PromptString } from '@sourcegraph/cody-shared'
+import { PromptString, ps } from '@sourcegraph/cody-shared'
+import { URI } from 'vscode-uri'
+import { ClientStateContextProvider } from '../../../../client/clientState'
 import { VSCodeCell } from '../../../../storybook/VSCodeStoryDecorator'
 import { FIXTURE_TRANSCRIPT, FIXTURE_USER_ACCOUNT_INFO } from '../../../fixtures'
 import { HumanMessageCell } from './HumanMessageCell'
@@ -59,5 +61,31 @@ export const Scrolling: StoryObj<typeof meta> = {
                     .join('\n')
             ),
         },
+    },
+}
+
+export const WithInitialContext: StoryObj<typeof meta> = {
+    render: props => (
+        <ClientStateContextProvider
+            value={{
+                initialContext: [
+                    {
+                        type: 'repository',
+                        uri: URI.parse('https://example.com/foo/myrepo'),
+                        title: 'foo/myrepo',
+                        repoName: 'foo/myrepo',
+                        repoID: 'abcd',
+                        content: null,
+                    },
+                    { type: 'file', uri: URI.file('/foo.js') },
+                ],
+            }}
+        >
+            <HumanMessageCell {...props} />
+        </ClientStateContextProvider>
+    ),
+    args: {
+        message: { speaker: 'human', text: ps`` },
+        isFirstMessage: true,
     },
 }

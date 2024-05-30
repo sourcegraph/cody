@@ -11,15 +11,21 @@ import {
     type SerializedEditorState,
 } from 'lexical'
 import type { EditorState, SerializedLexicalNode } from 'lexical'
-import { type FunctionComponent, useCallback, useImperativeHandle, useRef } from 'react'
+import { type FunctionComponent, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
 import type { UserAccountInfo } from '../Chat'
+import {
+    $createInitialContextEndAnchor,
+    InitialContextAnchorNode,
+    isEditorContentOnlyInitialContext,
+    lexicalNodesForContextItems,
+} from '../chat/cells/messageCell/human/editor/initialContext'
 import { BaseEditor, editorStateToText } from './BaseEditor'
 import styles from './PromptEditor.module.css'
 import {
-    $createContextItemMentionNode,
     type SerializedContextItem,
     deserializeContextItem,
     isSerializedContextItemMentionNode,
+    serializeContextItem,
 } from './nodes/ContextItemMentionNode'
 import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
 
@@ -44,7 +50,8 @@ export interface PromptEditorRefAPI {
     getSerializedValue(): SerializedPromptEditorValue
     setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }): void
     appendText(text: string, ensureWhitespaceBefore?: boolean): void
-    addContextItemAsToken(items: ContextItem[]): void
+    addMentions(items: ContextItem[]): void
+    setInitialContextMentions(items: ContextItem[]): void
     isEmpty(): boolean
 }
 
@@ -66,6 +73,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
 }) => {
     const editorRef = useRef<LexicalEditor>(null)
 
+    const hasSetInitialContext = useRef(false)
     useImperativeHandle(
         ref,
         (): PromptEditorRefAPI => ({
@@ -126,12 +134,38 @@ export const PromptEditor: FunctionComponent<Props> = ({
                     root.selectEnd()
                 })
             },
-            addContextItemAsToken(items: ContextItem[]) {
+            addMentions(items: ContextItem[]) {
                 editorRef.current?.update(() => {
-                    const spaceNode = $createTextNode(' ')
-                    const mentionNodes = items.map($createContextItemMentionNode)
-                    $insertNodes([spaceNode, ...mentionNodes, spaceNode])
-                    spaceNode.select()
+                    const nodesToInsert = lexicalNodesForContextItems(items, {
+                        withSpaces: true,
+                        isFromInitialContext: false,
+                    })
+                    $insertNodes(nodesToInsert)
+                    nodesToInsert.at(-1)?.select()
+                })
+            },
+            setInitialContextMentions(items: ContextItem[]) {
+                const editor = editorRef.current
+                if (!editor) {
+                    return
+                }
+
+                editor.update(() => {
+                    if (!hasSetInitialContext.current || isEditorContentOnlyInitialContext(editor)) {
+                        $getRoot().clear()
+                        const nodesToInsert = lexicalNodesForContextItems(items, {
+                            withSpaces: false,
+                            isFromInitialContext: true,
+                        })
+                        $insertNodes(nodesToInsert)
+
+                        // Can't select the InitialContextAnchorNode or else it selects at the start
+                        // of the input, so use `.at(-2)`.
+                        const nodeToSelect = nodesToInsert.at(-2)
+                        nodeToSelect?.select()
+
+                        hasSetInitialContext.current = true
+                    }
                 })
             },
             isEmpty(): boolean {
@@ -158,6 +192,43 @@ export const PromptEditor: FunctionComponent<Props> = ({
         },
         [onChange]
     )
+
+    // Show placeholder.
+    useEffect(() => {
+        const editor = editorRef.current
+        if (!editor) {
+            return undefined
+        }
+        return editor.registerUpdateListener(() => {
+            editor.update(() => {
+                if (hasSetInitialContext.current) {
+                    const root = $getRoot()
+                    const lastDescendant = root.getLastDescendant()
+                    if (isEditorContentOnlyInitialContext(editor)) {
+                        if (!(lastDescendant instanceof InitialContextAnchorNode)) {
+                            // Add placeholder (back).
+                            $insertNodes([$createInitialContextEndAnchor()])
+                        }
+                    } else {
+                        if (lastDescendant instanceof InitialContextAnchorNode) {
+                            // Remove placeholder.
+                            lastDescendant.remove()
+                        }
+                    }
+                }
+            })
+        })
+    }, [])
+
+    useEffect(() => {
+        if (initialEditorState) {
+            const editor = editorRef.current
+            if (editor) {
+                const newEditorState = editor.parseEditorState(initialEditorState.lexicalEditorState)
+                editor.setEditorState(newEditorState)
+            }
+        }
+    }, [initialEditorState])
 
     return (
         <BaseEditor
@@ -326,4 +397,34 @@ export function contextItemsFromPromptEditorValue(
     }
 
     return contextItems
+}
+
+export function filterContextItemsFromPromptEditorValue(
+    value: SerializedPromptEditorValue,
+    keep: (item: SerializedContextItem) => boolean
+): SerializedPromptEditorValue {
+    const editorState: typeof value.editorState.lexicalEditorState = JSON.parse(
+        JSON.stringify(value.editorState.lexicalEditorState)
+    )
+    const queue: SerializedLexicalNode[] = [editorState.root]
+    while (queue.length > 0) {
+        const node = queue.shift()
+        if (node && 'children' in node && Array.isArray(node.children)) {
+            node.children = node.children.filter(child =>
+                isSerializedContextItemMentionNode(child) ? keep(child.contextItem) : true
+            )
+            for (const child of node.children as SerializedLexicalNode[]) {
+                queue.push(child)
+            }
+        }
+    }
+
+    return {
+        ...value,
+        editorState: {
+            ...value.editorState,
+            lexicalEditorState: editorState,
+        },
+        contextItems: value.contextItems.filter(item => keep(serializeContextItem(item))),
+    }
 }

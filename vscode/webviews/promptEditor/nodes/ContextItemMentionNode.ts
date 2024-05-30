@@ -2,7 +2,9 @@ import {
     type ContextItem,
     type ContextItemFile,
     type ContextItemOpenCtx,
+    type ContextItemRepository,
     type ContextItemSymbol,
+    type ContextItemTree,
     displayLineRange,
     displayPathBasename,
     webviewOpenURIForContextItem,
@@ -34,6 +36,8 @@ export const MENTION_CLASS_NAME = styles.contextItemMentionNode
  */
 export type SerializedContextItem = { uri: string; title?: string; content?: undefined } & (
     | Omit<ContextItemFile, 'uri' | 'content'>
+    | Omit<ContextItemRepository, 'uri' | 'content'>
+    | Omit<ContextItemTree, 'uri' | 'content'>
     | Omit<ContextItemSymbol, 'uri' | 'content'>
     | Omit<ContextItemOpenCtx, 'uri' | 'content'>
 )
@@ -54,11 +58,11 @@ export function serializeContextItem(
 }
 
 export function deserializeContextItem(contextItem: SerializedContextItem): ContextItem {
-    return { ...contextItem, uri: URI.parse(contextItem.uri) }
+    return { ...contextItem, uri: URI.parse(contextItem.uri) } as ContextItem
 }
 
 export type SerializedContextItemMentionNode = Spread<
-    { contextItem: SerializedContextItem },
+    { contextItem: SerializedContextItem; isFromInitialContext: boolean },
     SerializedTextNode
 >
 
@@ -86,7 +90,12 @@ export class ContextItemMentionNode extends TextNode {
     }
 
     static clone(node: ContextItemMentionNode): ContextItemMentionNode {
-        return new ContextItemMentionNode(node.contextItem, node.__text, node.__key)
+        return new ContextItemMentionNode(
+            node.contextItem,
+            node.__text,
+            node.__key,
+            node.isFromInitialContext
+        )
     }
     static importJSON(serializedNode: SerializedContextItemMentionNode): ContextItemMentionNode {
         const node = $createContextItemMentionNode(serializedNode.contextItem)
@@ -95,6 +104,7 @@ export class ContextItemMentionNode extends TextNode {
         node.setDetail(serializedNode.detail)
         node.setMode(serializedNode.mode)
         node.setStyle(serializedNode.style)
+        node.isFromInitialContext = serializedNode.isFromInitialContext
         return node
     }
 
@@ -103,7 +113,8 @@ export class ContextItemMentionNode extends TextNode {
     constructor(
         contextItemWithAllFields: ContextItem | SerializedContextItem,
         text?: string,
-        key?: NodeKey
+        key?: NodeKey,
+        public isFromInitialContext = false
     ) {
         // Make sure we only bring over the fields on the context item that we need, or else we
         // could accidentally include tons of data (including the entire contents of files).
@@ -118,6 +129,7 @@ export class ContextItemMentionNode extends TextNode {
         return {
             ...super.exportJSON(),
             contextItem: this.contextItem,
+            isFromInitialContext: this.isFromInitialContext,
             type: ContextItemMentionNode.getType(),
             version: 1,
         }
@@ -200,6 +212,12 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
 
             return `${decodeURIComponent(displayPathBasename(URI.parse(contextItem.uri)))}${rangeText}`
 
+        case 'repository':
+            return `@repo:${contextItem.title}`
+
+        case 'tree':
+            return `@tree:${contextItem.title}`
+
         case 'symbol':
             return contextItem.symbolName
 
@@ -211,9 +229,10 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
 }
 
 export function $createContextItemMentionNode(
-    contextItem: ContextItem | SerializedContextItem
+    contextItem: ContextItem | SerializedContextItem,
+    { isFromInitialContext }: { isFromInitialContext: boolean } = { isFromInitialContext: false }
 ): ContextItemMentionNode {
-    const node = new ContextItemMentionNode(contextItem)
+    const node = new ContextItemMentionNode(contextItem, undefined, undefined, isFromInitialContext)
     node.setMode('token').toggleDirectionless()
     contextItem.type === 'file' &&
         (contextItem.isTooLarge || contextItem.isIgnored) &&

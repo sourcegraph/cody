@@ -1,4 +1,4 @@
-import { type ChatMessage, ContextItemSource, type Guardrails } from '@sourcegraph/cody-shared'
+import type { ChatMessage, Guardrails } from '@sourcegraph/cody-shared'
 import { type ComponentProps, type FunctionComponent, useCallback, useMemo, useRef } from 'react'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
@@ -7,7 +7,10 @@ import { getVSCodeAPI } from '../utils/VSCodeApi'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 import styles from './Transcript.module.css'
 import { ContextCell } from './cells/contextCell/ContextCell'
-import { AssistantMessageCell } from './cells/messageCell/assistant/AssistantMessageCell'
+import {
+    AssistantMessageCell,
+    makeHumanMessageInfo,
+} from './cells/messageCell/assistant/AssistantMessageCell'
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
 export const Transcript: React.FunctionComponent<{
@@ -113,8 +116,8 @@ const TranscriptInteraction: FunctionComponent<
 }) => {
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
     const onEditSubmit = useCallback(
-        (editorValue: SerializedPromptEditorValue, addEnhancedContext: boolean): void => {
-            editHumanMessage(humanMessage.index, editorValue, addEnhancedContext)
+        (editorValue: SerializedPromptEditorValue): void => {
+            editHumanMessage(humanMessage.index, editorValue)
         },
         [humanMessage]
     )
@@ -152,34 +155,10 @@ const TranscriptInteraction: FunctionComponent<
                     key={assistantMessage.index}
                     {...props}
                     message={assistantMessage}
-                    humanMessage={{
-                        hasExplicitMentions: Boolean(
-                            humanMessage.contextFiles?.some(
-                                item => item.source === ContextItemSource.User
-                            )
-                        ),
-                        addEnhancedContext: Boolean(
-                            humanMessage.contextFiles?.some(
-                                item =>
-                                    item.source === ContextItemSource.Unified ||
-                                    item.source === ContextItemSource.Embeddings ||
-                                    item.source === ContextItemSource.Search
-                            )
-                        ),
-                        rerunWithEnhancedContext: (withEnhancedContext: boolean) => {
-                            const editorValue = humanEditorRef.current?.getSerializedValue()
-                            if (editorValue) {
-                                editHumanMessage(
-                                    assistantMessage.index - 1,
-                                    editorValue,
-                                    withEnhancedContext
-                                )
-                            }
-                        },
-                        appendAtMention: () => {
-                            humanEditorRef.current?.appendText('@', true)
-                        },
-                    }}
+                    humanMessage={makeHumanMessageInfo(
+                        { humanMessage, assistantMessage },
+                        humanEditorRef
+                    )}
                     isLoading={assistantMessage.isLoading}
                     showFeedbackButtons={
                         !assistantMessage.isLoading && !isTranscriptError && !assistantMessage.error
@@ -197,10 +176,9 @@ export function focusLastHumanMessageEditor(): void {
     lastEditor?.focus()
 }
 
-function editHumanMessage(
+export function editHumanMessage(
     messageIndexInTranscript: number,
-    editorValue: SerializedPromptEditorValue,
-    addEnhancedContext: boolean
+    editorValue: SerializedPromptEditorValue
 ): void {
     getVSCodeAPI().postMessage({
         command: 'edit',
@@ -208,18 +186,16 @@ function editHumanMessage(
         text: editorValue.text,
         editorState: editorValue.editorState,
         contextFiles: editorValue.contextItems,
-        addEnhancedContext,
     })
     focusLastHumanMessageEditor()
 }
 
-function onFollowupSubmit(editorValue: SerializedPromptEditorValue, addEnhancedContext: boolean): void {
+function onFollowupSubmit(editorValue: SerializedPromptEditorValue): void {
     getVSCodeAPI().postMessage({
         command: 'submit',
         submitType: 'user',
         text: editorValue.text,
         editorState: editorValue.editorState,
         contextFiles: editorValue.contextItems,
-        addEnhancedContext,
     })
 }

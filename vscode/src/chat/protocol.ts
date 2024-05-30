@@ -2,6 +2,7 @@ import type { URI } from 'vscode-uri'
 
 import type {
     AuthStatus,
+    ClientStateForWebview,
     ConfigurationWithAccessToken,
     ContextItem,
     ContextMentionProviderMetadata,
@@ -172,6 +173,7 @@ export type ExtensionMessage =
           type: 'userContextFiles'
           userContextFiles?: ContextItem[] | undefined | null
       }
+    | { type: 'clientState'; value: ClientStateForWebview }
     | { type: 'clientAction'; addContextItemsToLastHumanInput: ContextItem[] }
     | { type: 'chatModels'; models: ModelProvider[] }
     | {

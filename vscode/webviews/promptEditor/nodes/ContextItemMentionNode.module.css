@@ -14,6 +14,11 @@
         transform: translateY(-1px);
         opacity: 0.8;
     }
+
+    margin-right: 2px;
+    & + .context-item-mention-node {
+        margin-left: 2px;
+    }
 }
 
 body[data-vscode-theme-kind='vscode-high-contrast-light'] .context-item-mention-node {

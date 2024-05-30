@@ -103,10 +103,16 @@ export class RemoteSearch implements ContextStatusProvider {
         this.statusChangedEmitter.fire(this)
     }
 
-    public getRepos(inclusion: RepoInclusion): repofetcher.Repo[] {
-        return [
-            ...(inclusion === RepoInclusion.Automatic ? this.reposAuto : this.reposManual).entries(),
-        ].map(([id, repo]) => ({ id, name: repo.displayName }))
+    public getRepos(inclusion: RepoInclusion | 'all'): repofetcher.Repo[] {
+        return uniqueRepos(
+            [
+                ...(inclusion === RepoInclusion.Automatic
+                    ? this.reposAuto.entries()
+                    : inclusion === RepoInclusion.Manual
+                      ? this.reposManual.entries()
+                      : [...this.reposAuto.entries(), ...this.reposManual.entries()]),
+            ].map(([id, repo]) => ({ id, name: repo.displayName }))
+        )
     }
 
     // Gets the set of all repositories to search.
@@ -114,12 +120,26 @@ export class RemoteSearch implements ContextStatusProvider {
         return new Set([...this.reposAuto.keys(), ...this.reposManual.keys()])
     }
 
-    public async query(query: PromptString): Promise<ContextSearchResult[]> {
+    public async query(query: PromptString, repoIDs: string[]): Promise<ContextSearchResult[]> {
+        if (repoIDs.length === 0) {
+            return []
+        }
         const rewritten = await rewriteKeywordQuery(this.completions, query, { restrictRewrite: true })
-        const result = await graphqlClient.contextSearch(this.getRepoIdSet(), rewritten)
+        const result = await graphqlClient.contextSearch(repoIDs, rewritten)
         if (result instanceof Error) {
             throw result
         }
         return result || []
     }
+}
+
+function uniqueRepos(repos: repofetcher.Repo[]): repofetcher.Repo[] {
+    const seen = new Set<string>()
+    return repos.filter(repo => {
+        if (seen.has(repo.id)) {
+            return false
+        }
+        seen.add(repo.id)
+        return true
+    })
 }
