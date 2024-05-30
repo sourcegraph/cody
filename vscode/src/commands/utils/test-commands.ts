@@ -54,11 +54,14 @@ export function isTestFileForOriginal(file: URI, testFile: URI): boolean {
         return false
     }
 
+    const fileDir = Utils.dirname(file)?.path
+    const testDir = Utils.dirname(testFile)?.path
+
     // Assume not a test file for the current file if they are in different directories
     // and the testFile's file path does not include a test dir
-    const pathRegex = /_{0,2}tests?_{0,2}/i
-    if (Utils.dirname(file)?.path !== Utils.dirname(testFile)?.path) {
-        if (!pathRegex.test(Utils.dirname(testFile)?.path)) {
+    const pathRegex = /(?:^|\/)_{0,2}tests?_{0,2}(?:\/|$)/i
+    if (fileDir !== testDir) {
+        if (!pathRegex.test(testDir)) {
             return false
         }
     }
