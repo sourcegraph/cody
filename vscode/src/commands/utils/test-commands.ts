@@ -23,11 +23,20 @@ export function extractTestType(text: string): string {
  * Also returns false for any files in node_modules directory.
  */
 export function isValidTestFile(uri: URI): boolean {
-    const fileNameWithoutExt = uriBasename(uri, uriExtname(uri))
+    const ext = uriExtname(uri)
+    const fileNameWithoutExt = uriBasename(uri, ext)
 
+    // For some languages we check for a prefix
+    const prefixTest = /\.(?:py|rb)$/
+    if (prefixTest.test(ext)) {
+        if (fileNameWithoutExt.startsWith('test_')) {
+            return true
+        }
+    }
+
+    // All other cases we check the suffix
     const suffixTest = /([._-](test|spec))|Test|Spec$/
-
-    return fileNameWithoutExt.startsWith('test_') || suffixTest.test(fileNameWithoutExt)
+    return suffixTest.test(fileNameWithoutExt)
 }
 
 /**
@@ -39,9 +48,15 @@ export function isValidTestFile(uri: URI): boolean {
  * @returns True if the test file matches the file
  */
 export function isTestFileForOriginal(file: URI, testFile: URI): boolean {
+    // We assume that a file can never be its own testFile for the original file.
+    // Instead make sure to test if the file IS a validTestFile.
+    if (file.path === testFile.path) {
+        return false
+    }
+
     // Assume not a test file for the current file if they are in different directories
     // and the testFile's file path does not include a test dir
-    const pathRegex = /_*tests?_*/i
+    const pathRegex = /_{0,2}tests?_{0,2}/i
     if (Utils.dirname(file)?.path !== Utils.dirname(testFile)?.path) {
         if (!pathRegex.test(Utils.dirname(testFile)?.path)) {
             return false
@@ -49,10 +64,9 @@ export function isTestFileForOriginal(file: URI, testFile: URI): boolean {
     }
 
     // The file extension should match as it's rare to write a test in another language.
-    // We only copare the last part of the extension to deal with things like `file.spec.ts`
-    const fileExtension = Utils.extname(file).split('.').pop()
-    const testFileExtension = Utils.extname(testFile).split('.').pop()
-    if (fileExtension !== testFileExtension) {
+    const ext = uriExtname(file)
+    const testExt = uriExtname(testFile)
+    if (ext !== testExt) {
         return false
     }
 

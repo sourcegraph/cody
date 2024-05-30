@@ -69,6 +69,8 @@ describe('isValidTestFile', () => {
         ['example_test.cpp', true],
         ['example_test.js', true],
         ['test_example.rb', true],
+        ['test_logic.ts', false],
+        ['test_logic.spec.ts', true],
 
         // Should not cache false positives
         ['contest.ts', false],
@@ -103,6 +105,7 @@ describe('isTestFileForOriginal', () => {
         ['/project/module.py', '/tests/module_tests.py', true], // Some projects using nose place tests in a separate `tests` directory with a `_tests` suffix.
         ['/src/project/main.go', '/src/project/main_test.go', true], // The Go testing package expects test files to be in the same directory with a `_test.go` suffix.
         ['/src/project/main.go', '/test/project/main_test.go', true], // Some projects prefer placing tests in a separate `test` directory.
+        ['/test_logic.ts', 'test_logic.ts', false],
     ])('for file %j and test file %j it returns %j', (file, testFile, condition) => {
         expect(isTestFileForOriginal(URI.file(file), URI.file(testFile))).toBe(condition)
     })
