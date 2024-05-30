@@ -1,15 +1,15 @@
 log:
-  _recordingName: document-code
+  _recordingName: fix
   creator:
-    comment: persister:cody-fs
+    comment: persister:fs
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: dc8be216269fcd82f7dcc12b2be5a112
+    - _id: f3711129982c6945bf991f3cef29c687
       _order: 0
       cache: {}
       request:
-        bodySize: 2598
+        bodySize: 2259
         cookies: []
         headers:
           - name: content-type
@@ -20,14 +20,14 @@ log:
             value: token
               REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
           - name: user-agent
-            value: document-code / v1
+            value: fix / v1
           - name: traceparent
-            value: 00-06d29a9b5e68440d4a870c24604148e9-20a14d1cec3d13e0-01
+            value: 00-db364d610c9787854a21dd3b0f7db093-d7028d24de7ba40c-01
           - name: connection
             value: keep-alive
           - name: host
             value: sourcegraph.com
-        headersSize: 415
+        headersSize: 395
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -39,496 +39,59 @@ log:
               - speaker: system
                 text: >-
                   You are Cody, an AI coding assistant from Sourcegraph. - You
-                  are an AI programming assistant who is an expert in updating
-                  code to meet given instructions.
+                  are an AI programming assistant who is an expert in fixing
+                  errors within code.
 
-                  - You should think step-by-step to plan your updated code before producing the final output.
+                  - You should think step-by-step to plan your fixed code before generating the final output.
 
                   - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
 
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
                   - Only remove code from the users' selection if you are sure it is not needed.
 
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
 
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your fixed code.
+
+                  - You will be provided with errors from the users' selection, enclosed in <DIAGNOSTICS5668></DIAGNOSTICS5668> XML tags. You must attempt to fix all of these errors.
+
+                  - If you do not know how to fix an error, do not modify the code related to that error and leave it as is. Only modify code related to errors you know how to fix.
 
                   - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
 
                   - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
               - speaker: human
                 text: >-
-                  This is part of the file: src/TestClass.ts
+                  This is part of the file: src/example-error.ts
 
 
                   The user has the following code in their selection:
 
-                  <SELECTEDCODE7662>public functionName() {
-                          if (this.shouldGreet) {
-                              console.log(/* CURSOR */ 'Hello World!')
-                          }
-                      }</SELECTEDCODE7662>
-
-                  The user wants you to generate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: <CODE5711>
-            model: anthropic/claude-3-haiku-20240307
-            stopSequences:
-              - </CODE5711>
-              - public functionName() {
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-          - name: client-name
-            value: document-code
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
-      response:
-        bodySize: 2414
-        content:
-          mimeType: text/event-stream
-          size: 2414
-          text: >+
-            event: completion
-
-            data: {"completion":"/**\n * Logs a greeting message to the console if the shouldGreet property is true.\n */","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 28 May 2024 10:20:17 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: retry-after
-            value: "22"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1405
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-28T10:20:16.053Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 347b9435ce7582d47cbf5068362b6051
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2562
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - name: user-agent
-            value: document-code / v1
-          - name: traceparent
-            value: 00-c607d32944847d507871dbf51255125d-e6c6e78d576d62d1-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 415
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph. - You
-                  are an AI programming assistant who is an expert in updating
-                  code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-              - speaker: human
-                text: >-
-                  This is part of the file: src/TestLogger.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>function recordLog() {
-                              console.log(/* CURSOR */ 'Recording the log')
-                          }</SELECTEDCODE7662>
-
-                  The user wants you to generate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: <CODE5711>
-            model: anthropic/claude-3-haiku-20240307
-            stopSequences:
-              - </CODE5711>
-              - function recordLog() {
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-          - name: client-name
-            value: document-code
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
-      response:
-        bodySize: 1037
-        content:
-          mimeType: text/event-stream
-          size: 1037
-          text: >+
-            event: completion
-
-            data: {"completion":"\n/**\n * Records a log message.\n */\n","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 28 May 2024 10:20:18 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: retry-after
-            value: "21"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1405
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-28T10:20:17.212Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 0c796620434faa4c24ed821525bd033c
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2544
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - name: user-agent
-            value: document-code / v1
-          - name: traceparent
-            value: 00-38ae6c5f8d7e89fc02a15fc532f0a468-f1c32657ddb67604-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 415
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph. - You
-                  are an AI programming assistant who is an expert in updating
-                  code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-              - speaker: human
-                text: >-
-                  This is part of the file: src/example.test.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>const startTime = performance.now(/* CURSOR */)</SELECTEDCODE7662>
-
-
-                  The user wants you to generate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: <CODE5711>
-            model: anthropic/claude-3-haiku-20240307
-            stopSequences:
-              - </CODE5711>
-              - const startTime = performance.now(/* CURSOR */)
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-          - name: client-name
-            value: document-code
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
-      response:
-        bodySize: 5165
-        content:
-          mimeType: text/event-stream
-          size: 5165
-          text: >+
-            event: completion
-
-            data: {"completion":"/**\n * Gets the current time in milliseconds since the DOM was loaded.\n * @returns {number} The time in milliseconds since the DOM was loaded.\n */","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 28 May 2024 10:20:19 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: retry-after
-            value: "19"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1405
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-28T10:20:18.349Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 281086a3fa49ce7164441b752dad6975
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2564
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - name: user-agent
-            value: document-code / v1
-          - name: traceparent
-            value: 00-c885e5776fe0c9f99640ae62bc531c8b-c739a4296988258a-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 415
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph. - You
-                  are an AI programming assistant who is an expert in updating
-                  code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-              - speaker: human
-                text: >-
-                  This is part of the file: src/sum.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>export function sum(a: number, b: number): number {
-                      /* CURSOR */
+                  <SELECTEDCODE7662>export function fixCommandExample(): number {
+                      return '42';
                   }</SELECTEDCODE7662>
 
 
-                  The user wants you to generate documentation for the selected code by following their instructions.
+                  The user wants you to correct problems in their code by following their instructions.
 
-                  Provide your generated documentation using the following instructions:
+                  Provide your fixed code using the following instructions:
 
-                  <INSTRUCTIONS7390>
+                  <DIAGNOSTICS5668>
 
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
+                  <PROBLEMCODE4179>export function fixCommandExample(): number {
+                      return '42';
+                  }
 
-                  </INSTRUCTIONS7390>
+                  </PROBLEMCODE4179>
+
+
+                  Fix the following error from within <PROBLEMCODE4179></PROBLEMCODE4179>: Type 'string' is not assignable to type 'number'.
+
+                  </DIAGNOSTICS5668>
               - speaker: assistant
                 text: <CODE5711>
-            model: anthropic/claude-3-haiku-20240307
+            model: anthropic/claude-3-sonnet-20240229
             stopSequences:
               - </CODE5711>
-              - "export function sum(a: number, b: number): number {"
             temperature: 0
             topK: -1
             topP: -1
@@ -536,19 +99,19 @@ log:
           - name: api-version
             value: "1"
           - name: client-name
-            value: document-code
+            value: fix
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=fix&client-version=v1
       response:
-        bodySize: 7732
+        bodySize: 1557
         content:
           mimeType: text/event-stream
-          size: 7732
+          size: 1557
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Adds two numbers and returns the result.\n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum of the two input numbers.\n */","stopReason":"stop_sequence"}
+            data: {"completion":"export function fixCommandExample(): number {\n    return 42;\n}","stopReason":"stop_sequence"}
 
 
             event: done
@@ -558,7 +121,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 30 May 2024 07:28:12 GMT
+            value: Wed, 29 May 2024 13:43:04 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -587,156 +150,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-30T07:28:10.913Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 6bff6fcdac8bc5c3f75d93df20de8557
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2567
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - name: user-agent
-            value: document-code / v1
-          - name: traceparent
-            value: 00-8de6c45baa237c3db6f7e522bd880542-c9f7d925b57cf870-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 415
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph. - You
-                  are an AI programming assistant who is an expert in updating
-                  code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-              - speaker: human
-                text: >-
-                  This is part of the file: src/Hello.kt
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>class He/* CURSOR */llo {
-                      fun greeting(): String {
-                          return "Hello, world!"
-                      }
-                  }</SELECTEDCODE7662>
-
-
-                  The user wants you to generate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: <CODE5711>
-            model: anthropic/claude-3-haiku-20240307
-            stopSequences:
-              - </CODE5711>
-              - class He/* CURSOR */llo {
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-          - name: client-name
-            value: document-code
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
-      response:
-        bodySize: 2233
-        content:
-          mimeType: text/event-stream
-          size: 2233
-          text: >+
-            event: completion
-
-            data: {"completion":"/**\n * Represents a greeting that can be used to say \"Hello, world!\".\n */","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Thu, 30 May 2024 07:28:13 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-30T07:28:12.765Z
+      startedDateTime: 2024-05-29T13:43:02.599Z
       time: 0
       timings:
         blocked: -1
@@ -762,7 +176,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: document-code / v1
+            value: fix / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -774,7 +188,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 332
+        headersSize: 322
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -799,18 +213,18 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CodyConfigFeaturesResponse
       response:
-        bodySize: 155
+        bodySize: 162
         content:
           encoding: base64
           mimeType: application/json
-          size: 155
+          size: 162
           text: "[\"H4sIAAAAAAAAAzyLwQqA\",\"IBAF/2XPfYFXof/YdC0h3dDnIcR/Dws6DQwznTyDyXSq\
             ETLp1N9Wc4j7KoxWpL72YJBBabIQN6jVdJ0yj885TYmzr38DlLg1RM1kAp9VxhjjAQA\
-            A//8DAIfOLkJuAAAA\"]"
+            A//8=\",\"AwCHzi5CbgAAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Tue, 28 May 2024 08:39:07 GMT
+            value: Wed, 29 May 2024 13:43:02 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -841,7 +255,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-28T08:39:07.798Z
+      startedDateTime: 2024-05-29T13:43:01.834Z
       time: 0
       timings:
         blocked: -1
@@ -863,7 +277,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: document-code / v1
+            value: fix / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -875,7 +289,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 236
+        headersSize: 226
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -897,22 +311,17 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?ContextFilters
       response:
-        bodySize: 104
+        bodySize: 114
         content:
           encoding: base64
           mimeType: application/json
-          size: 104
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVzvl5JakVJW6ZOSWpRcUg0aLEciWrv\
-            NKcnNra2loAAAAA//8DADYuyGU1AAAA\"]"
-          textDecoded:
-            data:
-              site:
-                codyContextFilters:
-                  raw: null
+          size: 114
+          text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdHJ+SmVzvl5JakVJW6ZOSWpRcUg0aLE\
+            ciWrvNKcnNra2loAAAAA//8=\",\"AwA2LshlNQAAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Tue, 28 May 2024 08:39:07 GMT
+            value: Wed, 29 May 2024 13:43:01 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -943,7 +352,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-28T08:39:06.935Z
+      startedDateTime: 2024-05-29T13:43:00.875Z
       time: 0
       timings:
         blocked: -1
@@ -969,7 +378,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: document-code / v1
+            value: fix / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -981,7 +390,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 320
+        headersSize: 310
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -1018,7 +427,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 28 May 2024 08:39:08 GMT
+            value: Wed, 29 May 2024 13:43:02 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1049,7 +458,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-28T08:39:07.990Z
+      startedDateTime: 2024-05-29T13:43:02.057Z
       time: 0
       timings:
         blocked: -1
@@ -1075,7 +484,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: document-code / v1
+            value: fix / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -1087,7 +496,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 337
+        headersSize: 327
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -1114,29 +523,19 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 248
+        bodySize: 251
         content:
           encoding: base64
           mimeType: application/json
-          size: 248
-          text: "[\"H4sIAAAAAAAAA3zOwQqCQBAG4HeZs+K0BqFXr3rrBYbdMRdtJ3ZXKmTfPSyiSOg08PP/H\
-            7OAoUhQLxBs5PVqMfe27RpxvT3NnqIV98wHip0YnqAGcnHwcrG60BPNhvMyD+Icx1yh\
-            2qNSFWSfQUe3o4zsAtQ7hYgZ9BRi898byI7ziyvxAD+bLanlfJl4ffaN9tbzVfwYihD\
-            JazHsYdP7gipETCmlBwAAAP//AwBQeP+1EwEAAA==\"]"
-          textDecoded:
-            data:
-              site:
-                codyLLMConfiguration:
-                  chatModel: anthropic/claude-3-sonnet-20240229
-                  chatModelMaxTokens: 12000
-                  completionModel: fireworks/starcoder
-                  completionModelMaxTokens: 9000
-                  fastChatModel: anthropic/claude-3-haiku-20240307
-                  fastChatModelMaxTokens: 12000
+          size: 251
+          text: "[\"H4sIAAAAAAAAA3zOwQqC\",\"QBAG4HeZs+K0BqFXr3rrBYbdMRdtJ3ZXKmTfPSyiSOg0\
+            8PP/H7OAoUhQLxBs5PVqMfe27RpxvT3NnqIV98wHip0YnqAGcnHwcrG60BPNhvMyD+I\
+            cx1yh2qNSFWSfQUe3o4zsAtQ7hYgZ9BRi898byI7ziyvxAD+bLanlfJl4ffaN9tbzVf\
+            wYihDJazHsYdP7gipETCmlBwAAAP//AwBQeP+1EwEAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Tue, 28 May 2024 08:39:07 GMT
+            value: Wed, 29 May 2024 13:43:01 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1167,7 +566,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-28T08:39:07.161Z
+      startedDateTime: 2024-05-29T13:43:01.074Z
       time: 0
       timings:
         blocked: -1
@@ -1193,7 +592,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: document-code / v1
+            value: fix / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -1205,7 +604,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 337
+        headersSize: 327
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -1227,26 +626,22 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 220
+        bodySize: 132
         content:
           encoding: base64
           mimeType: application/json
-          size: 220
-          text: "[\"H4sIAAAAAAAAA1zOsQrCMBRG4Ve5/LMIIi5ZHOJYZwfTITS3JZDcq2mCltJ3F3RzP3ycF\
-            VyKlhnmviLzPPuJYWC9iFZ6Ni4LjZFTIIc5+1KtSuV3vUUJ+nIgFarLg8nBali67mpV\
-            xji14mtUcdjTJQZatFFmL3+Kwxk7JB2+8W8iRWGY0w6DppYF5nDc+q3fPgAAAP//AwD\
-            53SxSqgAAAA==\"]"
+          size: 132
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eWD53MSiE\
+            uf8vJLUipLwzLyU/HIlK6XUvMSknNQUpdra2loAAAAA//8DAOgINKVLAAAA\"]"
           textDecoded:
-            errors:
-              - locations:
-                  - column: 13
-                    line: 5
-                message: Cannot query field "smartContextWindow" on type "CodyLLMConfiguration".
-                  Did you mean "smartContext"?
+            data:
+              site:
+                codyLLMConfiguration:
+                  smartContextWindow: enabled
         cookies: []
         headers:
           - name: date
-            value: Tue, 28 May 2024 17:32:34 GMT
+            value: Wed, 29 May 2024 13:43:01 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1277,7 +672,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-28T17:32:33.989Z
+      startedDateTime: 2024-05-29T13:43:01.100Z
       time: 0
       timings:
         blocked: -1
@@ -1303,7 +698,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: document-code / v1
+            value: fix / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -1315,7 +710,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 332
+        headersSize: 322
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -1347,7 +742,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 28 May 2024 08:39:07 GMT
+            value: Wed, 29 May 2024 13:43:01 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1378,7 +773,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-28T08:39:07.162Z
+      startedDateTime: 2024-05-29T13:43:01.077Z
       time: 0
       timings:
         blocked: -1
@@ -1404,7 +799,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: document-code / v1
+            value: fix / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -1416,7 +811,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 317
+        headersSize: 307
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -1443,31 +838,21 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentUser
       response:
-        bodySize: 348
+        bodySize: 358
         content:
           encoding: base64
           mimeType: application/json
-          size: 348
-          text: "[\"H4sIAAAAAAAAA2RPy06DQBT9l7uGgmm0MEkTbW1dVImPlNTlZbiFAYbBeVQp4d8bUhMX7\
-            s7JOTmPAXK0CGwA7rSm1u4N6YmKHBikh6ThlTonj283LxVfggclmpS0OArKNxJFA8xq\
-            Rx7kwnQN9glKAgYfymlOhcauXCnrx2EYggfOkG6vBvNnyJSNa//YfksHHuAJLer9+zM\
-            wKK3tDAuCppzPCqWKhqYErlpLrZ1xJQMMHtZFpPhui1/ZJ7lVnVW3+XZz/omyQxrhQs\
-            xNmu3WyWu6eApdf6qXJr7zOXjQaSFR978nBqAr+LfsvpiEqQ3GcRwvAAAA//8DALThL\
-            hwxAQAA\"]"
-          textDecoded:
-            data:
-              currentUser:
-                avatarURL: https://lh3.googleusercontent.com/a/ACg8ocKFaqbYeuBkbj5dFEzx8bXV8a7i3sVbKCNPV7G0uyvk=s96-c
-                displayName: SourcegraphBot-9000
-                hasVerifiedEmail: true
-                id: VXNlcjozNDQ1Mjc=
-                primaryEmail:
-                  email: sourcegraphbot9k@gmail.com
-                username: sourcegraphbot9k-fnwmu
+          size: 358
+          text: "[\"H4sIAAAAAAAAA2RPy06D\",\"QBT9l7uGgmm0MEkTbW1dVImPlNTlZbiFAYbBeVQp4d8b\
+            UhMX7s7JOTmPAXK0CGwA7rSm1u4N6YmKHBikh6ThlTonj283LxVfggclmpS0OArKNxJ\
+            FA8xqRx7kwnQN9glKAgYfymlOhcauXCnrx2EYggfOkG6vBvNnyJSNa//YfksHHuAJLe\
+            r9+zMwKK3tDAuCppzPCqWKhqYErlpLrZ1xJQMMHtZFpPhui1/ZJ7lVnVW3+XZz/omyQ\
+            xrhQsxNmu3WyWu6eApdf6qXJr7zOXjQaSFR978nBqAr+LfsvpiEqQ3GcRwvAAAA//8=\
+            \",\"AwC04S4cMQEAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Tue, 28 May 2024 08:39:07 GMT
+            value: Wed, 29 May 2024 13:43:01 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1498,7 +883,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-28T08:39:07.211Z
+      startedDateTime: 2024-05-29T13:43:01.123Z
       time: 0
       timings:
         blocked: -1
@@ -1524,7 +909,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: document-code / v1
+            value: fix / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -1536,7 +921,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 333
+        headersSize: 323
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -1562,28 +947,19 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentUserCodySubscription
       response:
-        bodySize: 228
+        bodySize: 231
         content:
           encoding: base64
           mimeType: application/json
-          size: 228
-          text: "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5c4U2VodsRToIgqWtDm6xyRCoSbi5GUrJu4uCoI7n5\
-            +Os0IoV5IopERnHl2joPb1ehnSPE9nA1rtXi6w4RUg0h/F4bVEgzMpBouvPKKBCmJeO\
-            fK/YnOzDcoRkSqb4fHeGrNcDK+KGISFKUW/K3aaqRyFkVcmtuOFPt05/2f2vzTnnJwA\
-            AAP//AwBSFe7+wgAAAA==\"]"
-          textDecoded:
-            data:
-              currentUser:
-                codySubscription:
-                  applyProRateLimits: true
-                  currentPeriodEndAt: 2024-06-14T22:11:32Z
-                  currentPeriodStartAt: 2024-05-14T22:11:32Z
-                  plan: PRO
-                  status: ACTIVE
+          size: 231
+          text: "[\"H4sIAAAAAAAAA1zMsQrC\",\"MBSF4Xc5c4U2VodsRToIgqWtDm6xyRCoSbi5GUrJu4uC\
+            oI7n5+Os0IoV5IopERnHl2joPb1ehnSPE9nA1rtXi6w4RUg0h/F4bVEgzMpBouvPKKB\
+            CmJeOfK/YnOzDcoRkSqb4fHeGrNcDK+KGISFKUW/K3aaqRyFkVcmtuOFPt05/2f2vzT\
+            nnJwAAAP//AwBSFe7+wgAAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Tue, 28 May 2024 08:39:07 GMT
+            value: Wed, 29 May 2024 13:43:01 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1614,7 +990,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-28T08:39:07.458Z
+      startedDateTime: 2024-05-29T13:43:01.505Z
       time: 0
       timings:
         blocked: -1
@@ -1636,7 +1012,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: document-code / v1
+            value: fix / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -1648,7 +1024,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 232
+        headersSize: 222
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -1669,17 +1045,17 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?Repository
       response:
-        bodySize: 123
+        bodySize: 126
         content:
           encoding: base64
           mimeType: application/json
-          size: 123
+          size: 126
           text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqSi3IL84syS+qBPEyU5SslEJzw8qTjP0KUtwt\
-            K1ND8o18Q3wr/UJ8K/0dbW2VamtrAQAAAP//AwDHAhygPQAAAA==\"]"
+            K1ND8o18Q3wr/UJ8K/0dbW2VamtrAQAAAP//\",\"AwDHAhygPQAAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Tue, 28 May 2024 08:39:06 GMT
+            value: Wed, 29 May 2024 13:43:00 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1710,7 +1086,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-28T08:39:06.512Z
+      startedDateTime: 2024-05-29T13:43:00.437Z
       time: 0
       timings:
         blocked: -1
@@ -1732,7 +1108,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: document-code / v1
+            value: fix / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -1744,7 +1120,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 240
+        headersSize: 230
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -1769,26 +1145,19 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?SiteIdentification
       response:
-        bodySize: 212
+        bodySize: 215
         content:
           encoding: base64
           mimeType: application/json
-          size: 212
-          text: "[\"H4sIAAAAAAAAAzTLsQ6CMBCA4Xe52YX2rgVmF+PI4HztXaWJAdKWwRDf3WDiv/zTd4BwY\
-            xgPqLnp/7crjDCte4n6LLzNDw1wga2sssc27aHGkreW1+UErxx1qT87c51V7vqGEYbo\
-            u9AZm/okmgxi70QZlZzzqNEaJOMNReocCdkgiCk4j4btwJwIPmdfAAAA//8DABj2u36\
-            gAAAA\"]"
-          textDecoded:
-            data:
-              site:
-                productSubscription:
-                  license:
-                    hashedKey: 9c71b123f8fdef24486dea4e56674ec32452725c5165d53bd44fb6742a39aaf5
-                siteID: SourcegraphWeb
+          size: 215
+          text: "[\"H4sIAAAAAAAAAzTLsQ6C\",\"MBCA4Xe52YX2rgVmF+PI4HztXaWJAdKWwRDf3WDiv/zT\
+            d4BwYxgPqLnp/7crjDCte4n6LLzNDw1wga2sssc27aHGkreW1+UErxx1qT87c51V7vq\
+            GEYbou9AZm/okmgxi70QZlZzzqNEaJOMNReocCdkgiCk4j4btwJwIPmdfAAAA//8DAB\
+            j2u36gAAAA\"]"
         cookies: []
         headers:
           - name: date
-            value: Tue, 28 May 2024 08:39:06 GMT
+            value: Wed, 29 May 2024 13:43:00 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1819,7 +1188,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-28T08:39:06.474Z
+      startedDateTime: 2024-05-29T13:43:00.397Z
       time: 0
       timings:
         blocked: -1
@@ -1845,7 +1214,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: document-code / v1
+            value: fix / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -1857,7 +1226,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 324
+        headersSize: 314
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -1901,7 +1270,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 28 May 2024 08:39:08 GMT
+            value: Wed, 29 May 2024 13:43:02 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1932,7 +1301,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-28T08:39:07.797Z
+      startedDateTime: 2024-05-29T13:43:01.833Z
       time: 0
       timings:
         blocked: -1
@@ -1954,7 +1323,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: document-code / v1
+            value: fix / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -1966,7 +1335,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 240
+        headersSize: 230
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -1986,18 +1355,21 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?SiteProductVersion
       response:
-        bodySize: 139
+        bodySize: 136
         content:
           encoding: base64
           mimeType: application/json
-          size: 139
-          text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkbmphZG\
-            FvFGBkYmugamukbm8aZ6JrrmBiZJxmaJhibGJpZKtbW1AAAAAP//AwDUmF0HSQAAAA==\
-            \"]"
+          size: 136
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkbmZgaGlvFGB\
+            kYmugamukaW8aZ6JrqWxoYmaRZGyQZJJqlKtbW1AAAAAP//AwCH2y8hSQAAAA==\"]"
+          textDecoded:
+            data:
+              site:
+                productVersion: 276019_2024-05-29_5.4-9314f82c0b4e
         cookies: []
         headers:
           - name: date
-            value: Tue, 28 May 2024 08:39:06 GMT
+            value: Wed, 29 May 2024 13:43:00 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2028,7 +1400,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-28T08:39:06.751Z
+      startedDateTime: 2024-05-29T13:43:00.681Z
       time: 0
       timings:
         blocked: -1
@@ -2054,7 +1426,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: document-code / v1
+            value: fix / v1
           - _fromType: array
             name: accept
             value: "*/*"
@@ -2066,7 +1438,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 324
+        headersSize: 314
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -2091,16 +1463,16 @@ log:
           encoding: base64
           mimeType: application/json
           size: 136
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkbmphZGFvFGB\
-            kYmugamukbm8aZ6JrrmBiZJxmaJhibGJpZKtbW1AAAAAP//AwDUmF0HSQAAAA==\"]"
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkbmZgaGlvFGB\
+            kYmugamukaW8aZ6JrqWxoYmaRZGyQZJJqlKtbW1AAAAAP//AwCH2y8hSQAAAA==\"]"
           textDecoded:
             data:
               site:
-                productVersion: 275828_2024-05-27_5.4-704b36a14349
+                productVersion: 276019_2024-05-29_5.4-9314f82c0b4e
         cookies: []
         headers:
           - name: date
-            value: Tue, 28 May 2024 08:39:07 GMT
+            value: Wed, 29 May 2024 13:43:01 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2131,7 +1503,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-28T08:39:07.159Z
+      startedDateTime: 2024-05-29T13:43:01.073Z
       time: 0
       timings:
         blocked: -1
