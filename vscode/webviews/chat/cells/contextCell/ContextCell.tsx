@@ -24,8 +24,8 @@ export const ContextCell: React.FunctionComponent<{
     /** For use in storybooks only. */
     __storybook__initialOpen?: boolean
 }> = ({ contextItems, model, className, __storybook__initialOpen }) => {
-    const usedContext = []
-    const excludedAtContext = []
+    const usedContext: ContextItem[] = []
+    const excludedAtContext: ContextItem[] = []
     if (contextItems) {
         for (const item of contextItems) {
             if (item.isTooLarge || item.isIgnored) {
@@ -36,7 +36,7 @@ export const ContextCell: React.FunctionComponent<{
         }
     }
 
-    const itemCount = new Set(usedContext.map(file => file.uri.toString())).size
+    const itemCount = usedContext.length
     let contextItemCountLabel = `${itemCount} ${pluralize('item', itemCount)}`
     if (excludedAtContext.length) {
         const excludedAtUnit = excludedAtContext.length === 1 ? 'mention' : 'mentions'
@@ -48,7 +48,7 @@ export const ContextCell: React.FunctionComponent<{
             command: 'event',
             eventName: 'CodyVSCodeExtension:chat:context:opened',
             properties: {
-                fileCount: itemCount,
+                fileCount: new Set(usedContext.map(file => file.uri.toString())).size,
                 excludedAtContext: excludedAtContext.length,
             },
         })
