@@ -19,10 +19,10 @@ export function getCompletionsModelConfig(modelID: string): CompletionsModelConf
         }
     }
 
-    if (provider?.model.startsWith('groq/') && provider?.config?.apiKey) {
+    if (provider?.model.startsWith('groq/') || provider?.model.startsWith('openaicompatible/')) {
         return {
-            model: provider.model.replace('groq/', ''),
-            key: provider.config.apiKey,
+            model: provider.model.replace('groq/', '').replace('openaicompatible/', ''),
+            key: provider.config?.apiKey || '',
             endpoint: provider.config?.apiEndpoint,
         }
     }
