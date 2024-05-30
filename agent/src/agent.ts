@@ -509,8 +509,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 throw new Error(`codeActions/provide: document not found for ${params.location.uri}`)
             }
             const codeActions: agent_protocol.ProtocolCodeAction[] = []
+            const diagnostics = vscode.languages.getDiagnostics(document.uri)
             for (const providers of this.codeAction.providers()) {
-                const diagnostics = vscode.languages.getDiagnostics(document.uri)
                 const result = await providers.provideCodeActions(
                     document,
                     vscodeRange(params.location.range),
