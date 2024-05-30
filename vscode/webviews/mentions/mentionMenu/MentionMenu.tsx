@@ -30,6 +30,7 @@ import {
     type MentionMenuOption,
     createMentionMenuOption,
 } from '../../promptEditor/plugins/atMentions/atMentions'
+import type { setEditorQuery } from '../../promptEditor/plugins/atMentions/atMentions'
 import { contextItemID } from '../../promptEditor/plugins/atMentions/util'
 import styles from './MentionMenu.module.css'
 import { MentionMenuContextItemContent, MentionMenuProviderItemContent } from './MentionMenuItem'
@@ -55,7 +56,7 @@ export const MentionMenu: FunctionComponent<
         userInfo?: UserAccountInfo
         params: MentionMenuParams
         updateMentionMenuParams: (update: Partial<Pick<MentionMenuParams, 'parentItem'>>) => void
-        setEditorQuery: (query: string) => void
+        setEditorQuery: setEditorQuery
         data: MentionMenuData
 
         /** For use in storybooks only. */
@@ -115,19 +116,31 @@ export const MentionMenu: FunctionComponent<
             }
 
             if (params.query !== '') {
-                setEditorQuery('')
+                // Remove provider search input only and keep the rest of the query.
+                setEditorQuery(currentText => {
+                    const mentionStartIndex = currentText.indexOf(mentionQuery.text)
+
+                    if (mentionStartIndex !== -1) {
+                        const mentionEndIndex = mentionStartIndex + mentionQuery.text.length
+                        return (
+                            currentText.slice(0, mentionStartIndex) + currentText.slice(mentionEndIndex)
+                        )
+                    }
+
+                    return ''
+                })
             }
             updateMentionMenuParams({ parentItem: provider })
             setValue(null)
         },
-        [data.providers, params.query, setEditorQuery, updateMentionMenuParams]
+        [data.providers, params.query, setEditorQuery, updateMentionMenuParams, mentionQuery]
     )
 
     const onCommandSelect = useCallback(
-        (value: string): void => {
-            const item = data.items?.find(item => commandRowValue(item) === value)
+        (commandSelected: string): void => {
+            const item = data.items?.find(item => commandRowValue(item) === commandSelected)
             if (!item) {
-                throw new Error(`No item found with value ${value}`)
+                throw new Error(`No item found with value ${commandSelected}`)
             }
 
             // HACK: The OpenCtx interface do not support building multi-step selection for mentions.
@@ -154,7 +167,7 @@ export const MentionMenu: FunctionComponent<
                             emptyLabel: `No files found in ${openCtxItem.mention.data.repoName} repository`,
                         },
                     })
-                    setEditorQuery(`${openCtxItem.mention?.data?.repoName}:`)
+                    setEditorQuery(() => `@${openCtxItem.mention?.data?.repoName}:`)
                     setValue(null)
                     return
                 }
