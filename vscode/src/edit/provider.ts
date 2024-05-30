@@ -215,7 +215,7 @@ export class EditProvider {
             })
         }
 
-        const streamingEnabled = true
+        const streamingEnabled = false
         if (streamingEnabled) {
             this.queueEdit(response, isMessageInProgress)
         } else {
@@ -233,15 +233,18 @@ export class EditProvider {
     private async processQueue(): Promise<void> {
         const intentsForInsert = ['add', 'test']
         this.editInProgress = true
-        while (this.editQueue.length > 0) {
-            const { response, isMessageInProgress } = this.editQueue.shift()!
-            if (intentsForInsert.includes(this.config.task.intent)) {
-                await this.handleFixupInsert(response, isMessageInProgress)
-            } else {
-                await this.handleFixupStreamedEdit(response, isMessageInProgress)
+        try {
+            while (this.editQueue.length > 0) {
+                const { response, isMessageInProgress } = this.editQueue.shift()!
+                if (intentsForInsert.includes(this.config.task.intent)) {
+                    await this.handleFixupInsert(response, isMessageInProgress)
+                } else {
+                    await this.handleFixupStreamedEdit(response, isMessageInProgress)
+                }
             }
+        } finally {
+            this.editInProgress = false
         }
-        this.editInProgress = false
     }
 
     /**

@@ -59,7 +59,7 @@ function isEmptyOrIncompleteSelection(
  * @param symbolRange - The range of the symbol in the original location
  * @returns The number of spaces to pad the decoration by on insertion line
  */
-function getSymbolDecorationPadding(
+export function getSymbolDecorationPadding(
     document: vscode.TextDocument,
     insertionLine: vscode.TextLine,
     symbolRange: vscode.Range
@@ -113,7 +113,7 @@ export async function getGhostHintEnablement(): Promise<EnabledFeatures> {
 }
 
 const GHOST_TEXT_COLOR = new vscode.ThemeColor('editorGhostText.foreground')
-const UNICODE_SPACE = '\u00a0'
+export const UNICODE_SPACE = '\u00a0'
 
 /**
  * Decorations for showing a "ghost" hint to the user.
