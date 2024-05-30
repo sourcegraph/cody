@@ -16,7 +16,8 @@ import { clsx } from 'clsx'
 import {
     ArrowRightIcon,
     DatabaseIcon,
-    FileTextIcon,
+    FileIcon,
+    FolderGitIcon,
     LibraryBigIcon,
     LinkIcon,
     PackageIcon,
@@ -109,14 +110,14 @@ export const MentionMenuProviderItemContent: FunctionComponent<{
     )
 }
 
-const iconForProvider: Record<
+export const iconForProvider: Record<
     string,
     React.ComponentType<{
         size?: string | number
         strokeWidth?: string | number
     }>
 > = {
-    [FILE_CONTEXT_MENTION_PROVIDER.id]: FileTextIcon,
+    [FILE_CONTEXT_MENTION_PROVIDER.id]: FileIcon,
     [SYMBOL_CONTEXT_MENTION_PROVIDER.id]: SquareFunctionIcon,
     'src-search': SourcegraphLogo,
     [URL_CONTEXT_MENTION_PROVIDER.id]: LinkIcon,
@@ -136,7 +137,7 @@ const iconForProvider: Record<
     'https://openctx.org/npm/@openctx/provider-hello-world': SmileIcon,
     'https://openctx.org/npm/@openctx/provider-devdocs': LibraryBigIcon,
     'https://openctx.org/npm/@openctx/provider-sourcegraph-search': SourcegraphLogo,
-    [RemoteRepositorySearch.providerUri]: SourcegraphLogo,
-    [RemoteFileProvider.providerUri]: SourcegraphLogo,
+    [RemoteRepositorySearch.providerUri]: FolderGitIcon,
+    [RemoteFileProvider.providerUri]: FileIcon,
     [WebProvider.providerUri]: LinkIcon,
 }

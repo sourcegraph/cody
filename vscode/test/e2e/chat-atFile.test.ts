@@ -78,14 +78,14 @@ test.extend<ExpectedEvents>({
     // Forward slashes
     await chatInput.fill('@lib/batches/env')
     await expect(
-        chatPanelFrame.getByRole('option', { name: withPlatformSlashes('var.go lib/batches/env') })
+        chatPanelFrame.getByRole('option', { name: withPlatformSlashes('var.go') })
     ).toBeVisible()
 
     // Backslashes
     if (isWindows()) {
         await chatInput.fill('@lib\\batches\\env')
         await expect(
-            chatPanelFrame.getByRole('option', { name: withPlatformSlashes('var.go lib/batches/env') })
+            chatPanelFrame.getByRole('option', { name: withPlatformSlashes('var.go') })
         ).toBeVisible()
     }
 
@@ -99,14 +99,13 @@ test.extend<ExpectedEvents>({
     // Searching and clicking
     await chatInput.fill('Explain @mj')
     await chatPanelFrame.getByRole('option', { name: 'Main.java' }).click()
-    await expect(chatInput).toHaveText('Explain @Main.java ')
-    await expect(chatInput.getByText('@Main.java')).toHaveClass(/context-item-mention-node/)
+    await expect(chatInput).toHaveText('Explain Main.java ')
     await chatInput.press('Enter')
     await expect(chatInput).toBeEmpty()
-    await expect(chatPanelFrame.getByText('Explain @Main.java')).toBeVisible()
+    await expect(chatPanelFrame.getByText('Explain Main.java')).toBeVisible()
     const contextCell = getContextCell(chatPanelFrame)
     await expect(contextCell).toHaveCount(1)
-    await expect(chatInput).not.toHaveText('Explain @Main.java ')
+    await expect(chatInput).not.toHaveText('Explain Main.java ')
     await expect(chatPanelFrame.getByRole('option', { name: 'Main.java' })).not.toBeVisible()
 
     // Keyboard nav through context files
@@ -116,7 +115,7 @@ test.extend<ExpectedEvents>({
     ).toBeVisible()
     await chatInput.press('Tab')
     await chatInput.press('Tab')
-    await expect(chatInput).toHaveText(withPlatformSlashes('Explain @lib/batches/env/var.go '))
+    await expect(chatInput).toHaveText(withPlatformSlashes('Explain var.go '))
     await chatInput.focus()
     await chatInput.pressSequentially('and ')
     await chatInput.pressSequentially('@vgo', { delay: 10 })
@@ -129,21 +128,13 @@ test.extend<ExpectedEvents>({
     await chatInput.press('ArrowDown') // second item again
     await expect(chatPanelFrame.getByRole('option', { selected: true })).toHaveText(/visualize\.go/)
     await chatInput.press('Tab')
-    await expect(chatInput).toHaveText(
-        withPlatformSlashes(
-            'Explain @lib/batches/env/var.go and @lib/codeintel/tools/lsif-visualize/visualize.go '
-        )
-    )
+    await expect(chatInput).toHaveText(withPlatformSlashes('Explain var.go and visualize.go '))
 
     // Send the message and check it was included
     await chatInput.press('Enter')
     await expect(chatInput).toBeEmpty()
     await expect(
-        chatPanelFrame.getByText(
-            withPlatformSlashes(
-                'Explain @lib/batches/env/var.go and @lib/codeintel/tools/lsif-visualize/visualize.go'
-            )
-        )
+        chatPanelFrame.getByText(withPlatformSlashes('Explain var.go and visualize.go'))
     ).toBeVisible()
 
     // Ensure explicitly @-included context shows up as enhanced context
@@ -156,14 +147,14 @@ test.extend<ExpectedEvents>({
     await chatInput.pressSequentially('@Main.java', { delay: 10 })
     await expect(chatPanelFrame.getByRole('option', { name: 'Main.java' })).toBeVisible()
     await chatInput.press('Tab')
-    await expect(chatInput).toHaveText('@Main.java ')
+    await expect(chatInput).toHaveText('Main.java ')
 
     // Check pressing tab after typing a partial filename but where that complete
     // filename already exists earlier in the input.
     // https://github.com/sourcegraph/cody/issues/2243
     await chatInput.pressSequentially('and @Main.ja', { delay: 10 })
     await chatInput.press('Tab')
-    await expect(chatInput).toHaveText('@Main.java and @Main.java ')
+    await expect(chatInput).toHaveText('Main.java and Main.java ')
 
     // Support @-file in mid-sentence
     await chatInput.focus()
@@ -178,16 +169,16 @@ test.extend<ExpectedEvents>({
     await chatInput.pressSequentially('@Main', { delay: 10 })
     await expect(chatPanelFrame.getByRole('option', { name: 'Main.java' })).toBeVisible()
     await chatInput.press('Tab')
-    await expect(chatInput).toHaveText('Explain the @Main.java file')
+    await expect(chatInput).toHaveText('Explain the Main.java file')
     // Confirm the cursor is at the end of the newly added file name with space
     await page.keyboard.press('!')
     await page.keyboard.press('Delete')
-    await expect(chatInput).toHaveText('Explain the @Main.java !file')
+    await expect(chatInput).toHaveText('Explain the Main.java !file')
 
     //  "ArrowLeft" / "ArrowRight" keys alter the query input for @-mentions.
     const noMatches = atMentionMenuItem(chatPanelFrame, 'No files found')
     await chatInput.pressSequentially(' @abcdefg')
-    await expect(chatInput).toHaveText('Explain the @Main.java ! @abcdefgfile')
+    await expect(chatInput).toHaveText('Explain the Main.java ! @abcdefgfile')
     await noMatches.hover()
     await expect(noMatches).toBeVisible()
     await chatInput.press('ArrowLeft')
@@ -195,7 +186,7 @@ test.extend<ExpectedEvents>({
     await chatInput.press('ArrowRight')
     await expect(noMatches).toBeVisible()
     await chatInput.press('$')
-    await expect(chatInput).toHaveText('Explain the @Main.java ! @abcdefg$file')
+    await expect(chatInput).toHaveText('Explain the Main.java ! @abcdefg$file')
     await expect(noMatches).not.toBeVisible()
     // Selection close on submit
     await chatInput.press('Enter')
@@ -255,26 +246,24 @@ test.extend<ExpectedEvents>({
     // Send a message with an @-mention.
     await firstChatInput.fill('Explain @mj')
     await chatPanelFrame.getByRole('option', { name: 'Main.java' }).click()
-    await expect(firstChatInput).toHaveText('Explain @Main.java ')
-    await expect(firstChatInput.getByText('@Main.java')).toHaveClass(/context-item-mention-node/)
+    await expect(firstChatInput).toHaveText('Explain Main.java ')
     await firstChatInput.press('Enter')
     const contextCell = getContextCell(chatPanelFrame)
     await expectContextCellCounts(contextCell, { files: 1 })
 
     // Edit the just-sent message and resend it. Confirm it is sent with the right context items.
-    await expect(firstChatInput).toHaveText('Explain @Main.java ')
+    await expect(firstChatInput).toHaveText('Explain Main.java ')
     await firstChatInput.press('Meta+Enter')
     await expectContextCellCounts(contextCell, { files: 1 })
 
     // Edit it again, add a new @-mention, and resend.
-    await expect(firstChatInput).toHaveText('Explain @Main.java ')
+    await expect(firstChatInput).toHaveText('Explain Main.java ')
     await focusChatInputAtEnd(firstChatInput)
     await firstChatInput.pressSequentially('and @index.ht')
     await chatPanelFrame.getByRole('option', { name: 'index.html' }).click()
-    await expect(firstChatInput).toHaveText('Explain @Main.java and @index.html')
-    await expect(firstChatInput.getByText('@index.html')).toHaveClass(/context-item-mention-node/)
+    await expect(firstChatInput).toHaveText('Explain Main.java and index.html')
     await firstChatInput.press('Enter')
-    await expect(firstChatInput).toHaveText('Explain @Main.java and @index.html')
+    await expect(firstChatInput).toHaveText('Explain Main.java and index.html')
     await expectContextCellCounts(contextCell, { files: 2 })
 })
 
@@ -312,7 +301,7 @@ test.extend<ExpectedEvents>({
     await chatInput.fill('@buzz.ts:2-4')
     await expect(chatPanelFrame.getByRole('option', { name: 'buzz.ts Lines 2-4' })).toBeVisible()
     await chatPanelFrame.getByRole('option', { name: 'buzz.ts Lines 2-4' }).click()
-    await expect(chatInput).toHaveText('@buzz.ts:2-4 ')
+    await expect(chatInput).toHaveText('buzz.ts:2-4 ')
     // Submit the message
     await chatInput.press('Enter')
 
@@ -388,7 +377,7 @@ test.extend<ExpectedEvents>({
     await chatInput.pressSequentially('fizzb', { delay: 10 })
     await expect(chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' })).toBeVisible()
     await chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' }).click()
-    await expect(chatInput).toHaveText('@buzz.ts:1-15#fizzbuzz() ')
+    await expect(chatInput).toHaveText('fizzbuzz()')
 
     // Submit the message
     await chatInput.press('Enter')
@@ -436,7 +425,7 @@ test.extend<ExpectedEvents>({
     // Verify the chat input has the selected code as an @-mention item
     const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
     const chatInput = chatFrame.getByRole('textbox', { name: 'Chat message' })
-    await expect(chatInput).toHaveText('@buzz.ts:2-13 ')
+    await expect(chatInput).toHaveText('buzz.ts:2-13 ')
 
     // Repeat the above steps to add another code selection as an @-mention item.
     // The chat input should have the new code selections appended as @-mention items
@@ -448,7 +437,7 @@ test.extend<ExpectedEvents>({
     await expect(commandPaletteInputBox).toBeVisible()
     await commandPaletteInputBox.fill('>Add Selection to Cody Chat')
     await page.locator('a').filter({ hasText: 'Add Selection to Cody Chat' }).click()
-    await expect(chatInput).toHaveText('@buzz.ts:2-13 @buzz.ts:4-6 ')
+    await expect(chatInput).toHaveText('buzz.ts:2-13 buzz.ts:4-6 ')
 })
 
 async function openMentionsForProvider(

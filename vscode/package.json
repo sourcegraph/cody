@@ -1440,6 +1440,7 @@
     "lodash": "^4.17.21",
     "lowlight": "^3.1.0",
     "lru-cache": "^10.0.0",
+    "lucide": "^0.381.0",
     "lucide-react": "^0.378.0",
     "mac-ca": "^2.0.3",
     "marked": "^4.0.16",

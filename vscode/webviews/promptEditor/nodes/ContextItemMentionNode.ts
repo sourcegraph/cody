@@ -1,6 +1,3 @@
-import type { SerializedLexicalNode, Spread } from 'lexical'
-import styles from './ContextItemMentionNode.module.css'
-
 import {
     type ContextItem,
     type ContextItemFile,
@@ -10,9 +7,10 @@ import {
     type ContextItemPackage,
     type ContextItemSymbol,
     displayLineRange,
-    displayPath,
+    displayPathBasename,
     webviewOpenURIForContextItem,
 } from '@sourcegraph/cody-shared'
+import type { SerializedLexicalNode, Spread } from 'lexical'
 import {
     $applyNodeReplacement,
     type DOMConversionMap,
@@ -24,7 +22,12 @@ import {
     type SerializedTextNode,
     TextNode,
 } from 'lexical'
+import { Database, File, FolderGit, Link, SquareFunction, createElement } from 'lucide'
 import { URI } from 'vscode-uri'
+import RemoteFileProvider from '../../../src/context/openctx/remoteFileSearch'
+import RemoteRepositorySearch from '../../../src/context/openctx/remoteRepositorySearch'
+import WebProvider from '../../../src/context/openctx/web'
+import styles from './ContextItemMentionNode.module.css'
 
 export const MENTION_CLASS_NAME = styles.contextItemMentionNode
 
@@ -129,9 +132,18 @@ export class ContextItemMentionNode extends TextNode {
     private static CLASS_NAMES = `context-item-mention-node ${styles.contextItemMentionNode}`
 
     createDOM(config: EditorConfig): HTMLElement {
-        const element = super.createDOM(config)
-        element.className = ContextItemMentionNode.CLASS_NAMES
-        return element
+        const dom = document.createElement('span')
+        const inner = super.createDOM(config)
+        inner.innerText = ' ' + inner.innerText
+        dom.appendChild(inner)
+        dom.className = ContextItemMentionNode.CLASS_NAMES
+
+        const icon = mentionIconForContextItem(this.contextItem)
+        if (icon) {
+            dom.insertBefore(icon, inner)
+        }
+
+        return dom
     }
 
     exportDOM(): DOMExportOutput {
@@ -189,12 +201,13 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
     switch (contextItem.type) {
         case 'file':
             if (contextItem.provider && contextItem.title) {
-                return `@${contextItem.title}`
+                return contextItem.title
             }
-            return `@${decodeURIComponent(displayPath(URI.parse(contextItem.uri)))}${rangeText}`
+
+            return `${decodeURIComponent(displayPathBasename(URI.parse(contextItem.uri)))}${rangeText}`
 
         case 'symbol':
-            return `@${displayPath(URI.parse(contextItem.uri))}${rangeText}#${contextItem.symbolName}`
+            return contextItem.symbolName
 
         case 'package':
             return `@${contextItem.ecosystem}:${contextItem.name}`
@@ -205,7 +218,7 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
         case 'github_issue':
             return `@github:issue:${contextItem.owner}/${contextItem.repoName}/${contextItem.issueNumber}`
         case 'openctx':
-            return `@${contextItem.mention?.data?.mentionLabel || contextItem.title}`
+            return `${contextItem.mention?.data?.mentionLabel || contextItem.title}`
     }
     // @ts-ignore
     throw new Error(`unrecognized context item type ${contextItem.type}`)
@@ -238,4 +251,34 @@ export function $createContextItemTextNode(contextItem: ContextItem | Serialized
     const atNode = new ContextItemMentionNode(contextItem)
     const textNode = new TextNode(atNode.__text)
     return $applyNodeReplacement(textNode)
+}
+
+type Icon = Parameters<typeof createElement>[0]
+const CONTEXT_ITEM_ICONS: Partial<Record<string, Icon>> = {
+    file: File,
+    tree: FolderGit,
+    repository: FolderGit,
+    symbol: SquareFunction,
+    [RemoteRepositorySearch.providerUri]: FolderGit,
+    [RemoteFileProvider.providerUri]: File,
+    [WebProvider.providerUri]: Link,
+}
+function mentionIconForContextItem(contextItem: SerializedContextItem): SVGElement | null {
+    let icon: Icon | null | undefined = null
+
+    icon =
+        (contextItem.type === 'openctx'
+            ? CONTEXT_ITEM_ICONS[contextItem.providerUri || '']
+            : CONTEXT_ITEM_ICONS[contextItem.type]) || Database
+
+    if (!icon) {
+        return null
+    }
+
+    const svgEl = createElement(icon)
+    svgEl.classList.add(styles.icon)
+    svgEl.setAttribute('stroke', 'currentColor')
+    svgEl.setAttribute('width', '13px')
+    svgEl.setAttribute('height', '13px')
+    return svgEl
 }
