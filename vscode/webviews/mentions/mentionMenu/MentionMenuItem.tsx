@@ -2,9 +2,7 @@ import {
     type ContextItem,
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
-    GITHUB_CONTEXT_MENTION_PROVIDER,
     type MentionQuery,
-    PACKAGE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     URL_CONTEXT_MENTION_PROVIDER,
     displayLineRange,
@@ -20,7 +18,6 @@ import {
     FolderGitIcon,
     LibraryBigIcon,
     LinkIcon,
-    PackageIcon,
     SmileIcon,
     SquareFunctionIcon,
 } from 'lucide-react'
@@ -47,9 +44,6 @@ function getDescription(item: ContextItem, query: MentionQuery): string {
     const defaultDescription = `${displayPath(item.uri)}:${range ? displayLineRange(range) : ''}`
 
     switch (item.type) {
-        case 'github_issue':
-        case 'github_pull_request':
-            return `${item.owner}/${item.repoName}`
         case 'file': {
             const dir = decodeURIComponent(displayPathDirname(item.uri))
             return `${range ? `Lines ${displayLineRange(range)} · ` : ''}${dir === '.' ? '' : dir}`
@@ -119,10 +113,7 @@ export const iconForProvider: Record<
 > = {
     [FILE_CONTEXT_MENTION_PROVIDER.id]: FileIcon,
     [SYMBOL_CONTEXT_MENTION_PROVIDER.id]: SquareFunctionIcon,
-    'src-search': SourcegraphLogo,
     [URL_CONTEXT_MENTION_PROVIDER.id]: LinkIcon,
-    [PACKAGE_CONTEXT_MENTION_PROVIDER.id]: PackageIcon,
-    [GITHUB_CONTEXT_MENTION_PROVIDER.id]: GithubLogo,
     // todo(tim): OpenCtx providers should be able to specify an icon string, so
     // we don't have to hardcode these URLs and other people can have their own
     // GitHub provider etc.

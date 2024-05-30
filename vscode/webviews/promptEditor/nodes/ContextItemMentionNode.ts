@@ -1,10 +1,7 @@
 import {
     type ContextItem,
     type ContextItemFile,
-    type ContextItemGithubIssue,
-    type ContextItemGithubPullRequest,
     type ContextItemOpenCtx,
-    type ContextItemPackage,
     type ContextItemSymbol,
     displayLineRange,
     displayPathBasename,
@@ -38,9 +35,6 @@ export const MENTION_CLASS_NAME = styles.contextItemMentionNode
 export type SerializedContextItem = { uri: string; title?: string; content?: undefined } & (
     | Omit<ContextItemFile, 'uri' | 'content'>
     | Omit<ContextItemSymbol, 'uri' | 'content'>
-    | Omit<ContextItemPackage, 'uri' | 'content'>
-    | Omit<ContextItemGithubIssue, 'uri' | 'content'>
-    | Omit<ContextItemGithubPullRequest, 'uri' | 'content'>
     | Omit<ContextItemOpenCtx, 'uri' | 'content'>
 )
 
@@ -209,14 +203,6 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
         case 'symbol':
             return contextItem.symbolName
 
-        case 'package':
-            return `@${contextItem.ecosystem}:${contextItem.name}`
-
-        case 'github_pull_request':
-            return `@github:pull:${contextItem.owner}/${contextItem.repoName}/${contextItem.pullNumber}`
-
-        case 'github_issue':
-            return `@github:issue:${contextItem.owner}/${contextItem.repoName}/${contextItem.issueNumber}`
         case 'openctx':
             return `${contextItem.mention?.data?.mentionLabel || contextItem.title}`
     }
