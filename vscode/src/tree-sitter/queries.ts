@@ -1,4 +1,5 @@
 import type { SupportedLanguage } from './grammars'
+import { cppQueries } from './queries/cpp'
 import { goQueries } from './queries/go'
 import { javaQueries } from './queries/java'
 import { javascriptQueries } from './queries/javascript'
@@ -51,4 +52,5 @@ export const languages: Partial<Record<SupportedLanguage, Record<QueryName, stri
     ...kotlinQueries,
     ...phpQueries,
     ...rustQueries,
+    ...cppQueries,
 } as const
