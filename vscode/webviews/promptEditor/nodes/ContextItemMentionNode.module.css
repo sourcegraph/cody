@@ -3,18 +3,16 @@
     background-color: color-mix(in lch, var(--vscode-textLink-foreground) 10%, transparent);
     border-radius: 2px;
     white-space: normal;
-    margin-right: 3px;
-
+    padding: 0 1px;
+    display: inline-block;
 
     .icon {
         display: inline-block;
-        xvertical-align: -1px;
-        xmargin: 0 2px;
         width: 13px;
         height: 13px;
-        xuser-select2: none;
-        filter: invert(23%) sepia(34%) saturate(4949%) hue-rotate(195deg) brightness(98%) contrast(101%);;
-        margin-right: 0.25rem;
+        margin-right: -2px;
+        transform: translateY(-1px);
+        opacity: 0.8;
     }
 }
 

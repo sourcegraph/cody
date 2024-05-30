@@ -134,6 +134,7 @@ export class ContextItemMentionNode extends TextNode {
     createDOM(config: EditorConfig): HTMLElement {
         const dom = document.createElement('span')
         const inner = super.createDOM(config)
+        inner.innerText = ' ' + inner.innerText
         dom.appendChild(inner)
         dom.className = ContextItemMentionNode.CLASS_NAMES
 
@@ -262,7 +263,7 @@ const CONTEXT_ITEM_ICONS: Partial<Record<string, Icon>> = {
     [RemoteFileProvider.providerUri]: File,
     [WebProvider.providerUri]: Link,
 }
-function mentionIconForContextItem(contextItem: SerializedContextItem): HTMLImageElement | null {
+function mentionIconForContextItem(contextItem: SerializedContextItem): SVGElement | null {
     let icon: Icon | null | undefined = null
 
     icon =
@@ -274,11 +275,10 @@ function mentionIconForContextItem(contextItem: SerializedContextItem): HTMLImag
         return null
     }
 
-    const iconEl = createElement(icon)
-
-    const imgEl = document.createElement('img')
-    imgEl.classList.add(styles.icon)
-    imgEl.setAttribute('src', `data:image/svg+xml,${iconEl.outerHTML}`)
-
-    return imgEl
+    const svgEl = createElement(icon)
+    svgEl.classList.add(styles.icon)
+    svgEl.setAttribute('stroke', 'currentColor')
+    svgEl.setAttribute('width', '13px')
+    svgEl.setAttribute('height', '13px')
+    return svgEl
 }
