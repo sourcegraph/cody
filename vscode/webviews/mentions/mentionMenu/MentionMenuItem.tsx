@@ -109,7 +109,7 @@ export const MentionMenuProviderItemContent: FunctionComponent<{
     )
 }
 
-const iconForProvider: Record<
+export const iconForProvider: Record<
     string,
     React.ComponentType<{
         size?: string | number

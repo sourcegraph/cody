@@ -24,6 +24,7 @@ import {
 } from 'lexical'
 import { BookMarked, File, SquareCode, createElement } from 'lucide'
 import { URI } from 'vscode-uri'
+import { iconForProvider } from '../../mentions/mentionMenu/MentionMenuItem'
 import styles from './ContextItemMentionNode.module.css'
 
 export const MENTION_CLASS_NAME = styles.contextItemMentionNode
@@ -205,12 +206,6 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
             }
             return `${decodeURIComponent(displayPath(URI.parse(contextItem.uri)))}${rangeText}`
 
-        case 'repository':
-            return contextItem.title ?? 'unknown repository'
-
-        case 'tree':
-            return contextItem.title ?? 'unknown tree'
-
         case 'symbol':
             return `@${displayPath(URI.parse(contextItem.uri))}${rangeText}#${contextItem.symbolName}`
 
@@ -266,8 +261,12 @@ const CONTEXT_ITEM_ICONS: Partial<
     file: File,
     symbol: SquareCode,
 }
-function mentionIconForContextItem(contextItem: SerializedContextItem): SVGElement | null {
-    const icon = CONTEXT_ITEM_ICONS[contextItem.type]
+function mentionIconForContextItem(contextItem: SerializedContextItem): HTMLImageElement | null {
+    const icon =
+        iconForProvider[
+            contextItem.provider || (contextItem as { providerUri: string }).providerUri || ''
+        ]
+
     if (!icon) {
         return null
     }
@@ -276,5 +275,6 @@ function mentionIconForContextItem(contextItem: SerializedContextItem): SVGEleme
     const imgEl = document.createElement('img')
     imgEl.classList.add(styles.icon)
     imgEl.setAttribute('src', `data:image/svg+xml,${iconEl.outerHTML}`)
+
     return imgEl
 }
