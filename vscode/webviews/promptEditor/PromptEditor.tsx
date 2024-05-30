@@ -1,4 +1,5 @@
 import { $generateHtmlFromNodes } from '@lexical/html'
+import { $isRootTextContentEmpty } from '@lexical/text'
 import { type ChatMessage, type ContextItem, escapeHTML } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import {
@@ -139,7 +140,10 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 }
                 return editorRef.current.getEditorState().read(() => {
                     const root = $getRoot()
-                    return root.getChildrenSize() === 0
+                    if (root.getChildrenSize() === 0) {
+                        return true
+                    }
+                    return $isRootTextContentEmpty(false, true)
                 })
             },
         }),

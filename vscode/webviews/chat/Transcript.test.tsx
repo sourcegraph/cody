@@ -231,7 +231,7 @@ describe('Transcript', () => {
     })
 
     test('focus', async () => {
-        const { container } = render(
+        const { container, rerender } = render(
             <Transcript
                 {...PROPS}
                 transcript={[
@@ -247,6 +247,15 @@ describe('Transcript', () => {
         )! as EditorHTMLElement
         expect(lastEditor).toHaveFocus()
         await typeInEditor(lastEditor, 'xyz')
+        rerender(
+            <Transcript
+                {...PROPS}
+                transcript={[
+                    { speaker: 'human', text: ps`Foo`, contextFiles: [] },
+                    { speaker: 'assistant', text: ps`Bar` },
+                ]}
+            />
+        )
         expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: 'xyz', canSubmit: true }])
     })
 })
