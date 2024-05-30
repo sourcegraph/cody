@@ -3,6 +3,7 @@ import type * as vscode from 'vscode'
 import { logDebug, outputChannel } from '../log'
 import RemoteFileProvider from './openctx/remoteFileSearch'
 import RemoteRepositorySearch from './openctx/remoteRepositorySearch'
+import WebProvider from './openctx/web'
 
 export function exposeOpenCtxClient(
     secrets: vscode.SecretStorage,
@@ -12,6 +13,11 @@ export function exposeOpenCtxClient(
     import('@openctx/vscode-lib')
         .then(({ createController }) => {
             const providers = [
+                {
+                    providerUri: WebProvider.providerUri,
+                    settings: true,
+                    provider: WebProvider,
+                },
                 {
                     providerUri: RemoteRepositorySearch.providerUri,
                     settings: true,
