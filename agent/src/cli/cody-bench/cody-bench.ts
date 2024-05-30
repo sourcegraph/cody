@@ -6,9 +6,11 @@ import * as vscode from 'vscode'
 
 import { newAgentClient } from '../../agent'
 
+import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled'
 import { arrayOption, booleanOption, intOption } from './cli-parsers'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { evaluateBfgStrategy } from './strategy-bfg'
+import { evaluateFixStrategy } from './strategy-fix'
 import { evaluateGitLogStrategy } from './strategy-git-log'
 
 export interface CodyBenchOptions {
@@ -48,6 +50,8 @@ export interface CodyBenchOptions {
     testCommand?: string
     gitLogFilter?: string
     fixture: EvaluationFixture
+
+    verbose: boolean
 }
 
 interface EvaluationConfig extends Partial<CodyBenchOptions> {
@@ -58,6 +62,7 @@ interface EvaluationConfig extends Partial<CodyBenchOptions> {
 enum EvaluationStrategy {
     BFG = 'bfg',
     GitLog = 'git-log',
+    Fix = 'fix',
 }
 
 interface EvaluationFixture {
@@ -177,6 +182,7 @@ export const codyBenchCommand = new commander.Command('cody-bench')
         intOption,
         1.4
     )
+    .option('--verbose', 'Verbose output', false)
     .addOption(
         new commander.Option(
             '--src-access-token <token>',
@@ -279,10 +285,6 @@ export const codyBenchCommand = new commander.Command('cody-bench')
 async function evaluateWorkspace(options: CodyBenchOptions): Promise<void> {
     console.log(`starting evaluation: fixture=${options.fixture.name} workspace=${options.workspace}`)
 
-    if (!options.queriesDirectory) {
-        console.error('missing required options: --queries-directory')
-        process.exit(1)
-    }
     if (!options.srcAccessToken) {
         console.error('environment variable SRC_ACCESS_TOKEN must be non-empty')
         process.exit(1)
@@ -294,6 +296,7 @@ async function evaluateWorkspace(options: CodyBenchOptions): Promise<void> {
 
     const workspaceRootUri = vscode.Uri.from({ scheme: 'file', path: options.workspace })
 
+    const recordingDirectory = path.join(path.dirname(options.evaluationConfig), 'recordings')
     const client = await newAgentClient({
         name: 'cody-bench',
         version: '0.1.0',
@@ -305,12 +308,34 @@ async function evaluateWorkspace(options: CodyBenchOptions): Promise<void> {
             customConfiguration: options.fixture.customConfiguration,
         },
         codyAgentPath: options.codyAgentBinary,
+        capabilities: allClientCapabilitiesEnabled,
+        inheritStderr: true,
+        extraEnvVariables: {
+            CODY_RECORDING_NAME: `${options.fixture.name}-${path.basename(options.workspace)}`,
+            CODY_RECORDING_DIRECTORY: recordingDirectory,
+            CODY_RECORDING_MODE: 'replay',
+            CODY_RECORD_IF_MISSING: 'true',
+            CODY_KEEP_UNUSED_RECORDINGS: 'true',
+        },
     })
     try {
         if (options.fixture.strategy === EvaluationStrategy.BFG) {
             await evaluateBfgStrategy(client, options)
         } else if (options.fixture.strategy === EvaluationStrategy.GitLog) {
             await evaluateGitLogStrategy(client, options)
+        }
+        switch (options.fixture.strategy) {
+            case EvaluationStrategy.BFG:
+                await evaluateBfgStrategy(client, options)
+                break
+            case EvaluationStrategy.GitLog:
+                await evaluateGitLogStrategy(client, options)
+                break
+            case EvaluationStrategy.Fix:
+                await evaluateFixStrategy(client, options)
+                break
+            default:
+                throw new Error(`unknown strategy ${options.fixture.strategy}`)
         }
     } catch (error) {
         console.error('unexpected error running cody-bench', error)

@@ -138,15 +138,21 @@ export async function initializeVscodeExtension(
 }
 
 export async function newAgentClient(
-    clientInfo: ClientInfo & { codyAgentPath?: string; inheritStderr?: boolean }
+    clientInfo: ClientInfo & {
+        codyAgentPath?: string
+        inheritStderr?: boolean
+        extraEnvVariables?: Record<string, string>
+    }
 ): Promise<MessageHandler> {
     const asyncHandler = async (reject: (reason?: any) => void): Promise<MessageHandler> => {
-        const nodeArguments = process.argv0.endsWith('node') ? process.argv.slice(1, 2) : []
+        const nodeArguments = process.argv0.endsWith('node')
+            ? ['--enable-source-maps', ...process.argv.slice(1, 2)]
+            : []
         nodeArguments.push('jsonrpc')
         const arg0 = clientInfo.codyAgentPath ?? process.argv[0]
         const args = clientInfo.codyAgentPath ? [] : nodeArguments
         const child = spawn(arg0, args, {
-            env: { ENABLE_SENTRY: 'false', ...process.env },
+            env: { ...clientInfo.extraEnvVariables, ENABLE_SENTRY: 'false', ...process.env },
         })
         child.on('error', error => reject?.(error))
         child.on('exit', code => {
@@ -154,6 +160,7 @@ export async function newAgentClient(
                 reject?.(new Error(`exit: ${code}`))
             }
         })
+
         if (clientInfo.inheritStderr) {
             child.stderr.pipe(process.stderr)
         }
@@ -165,6 +172,10 @@ export async function newAgentClient(
         const serverHandler = new MessageHandler(conn)
         serverHandler.registerNotification('debug/message', params => {
             console.error(`${params.channel}: ${params.message}`)
+        })
+        serverHandler.registerRequest('window/showMessage', async (params): Promise<null> => {
+            console.log(`window/showMessage: ${JSON.stringify(params, null, 2)}`)
+            return null
         })
         conn.listen()
         serverHandler.conn.onClose(() => reject())
@@ -602,9 +613,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
             if (!isFileURI(uri) || !supportedTscLanguages.has(language) || !retriever) {
                 throw new Error(`testing/diagnostics: unsupported file type ${language} for URI ${uri}`)
             }
-            return {
-                diagnostics: retriever.diagnostics(uri),
-            }
+            const diagnostics = retriever.diagnostics(uri)
+            return { diagnostics }
         })
 
         this.registerAuthenticatedRequest('testing/awaitPendingPromises', async () => {
