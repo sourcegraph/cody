@@ -416,7 +416,7 @@ export interface ChatExportResult {
 export interface AutocompleteResult {
     items: AutocompleteItem[]
 
-    /** completionEvent is not deprecated because it's used by non-editor clients like evaluate-autocomplete that need access to book-keeping data to evaluate results. */
+    /** completionEvent is not deprecated because it's used by non-editor clients like cody-bench that need access to book-keeping data to evaluate results. */
     completionEvent?: CompletionBookkeepingEvent | undefined | null
 }
 
