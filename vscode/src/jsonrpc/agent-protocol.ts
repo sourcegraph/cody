@@ -184,6 +184,9 @@ export type ClientRequests = {
     // if the agent server. For example, closes all open documents.
     'testing/reset': [null, null]
 
+    // Request counterpart of the `textDocument/open` notification
+    'textDocument/open': [ProtocolTextDocument, null]
+
     // Updates the extension configuration and returns the new
     // authentication status, which indicates whether the provided credentials are
     // valid or not. The agent can't support autocomplete or chat if the credentials

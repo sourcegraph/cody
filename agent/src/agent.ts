@@ -437,6 +437,16 @@ export class Agent extends MessageHandler implements ExtensionClient {
             this.pushPendingPromise(this.workspace.fireVisibleTextEditorsDidChange())
         })
 
+        this.registerRequest('textDocument/open', document => {
+            const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
+            const textDocument = this.workspace.loadDocument(documentWithUri)
+            vscode_shim.onDidOpenTextDocument.fire(textDocument)
+            const editorDidChangePromise = this.workspace.fireVisibleTextEditorsDidChange()
+            this.pushPendingPromise(editorDidChangePromise)
+            this.workspace.setActiveTextEditor(this.workspace.newTextEditor(textDocument))
+            return editorDidChangePromise.then(null)
+        })
+
         this.registerNotification('textDocument/didOpen', document => {
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
             const textDocument = this.workspace.loadDocument(documentWithUri)

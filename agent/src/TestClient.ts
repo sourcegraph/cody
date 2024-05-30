@@ -358,7 +358,7 @@ export class TestClient extends MessageHandler {
             }
 
             this.workspace.loadDocument(textDocument)
-            await this.notify('textDocument/didOpen', textDocument.underlying)
+            await this.request('textDocument/open', textDocument.underlying)
 
             return true
         })
