@@ -36,7 +36,7 @@ export const ContextFocusActions: FunctionComponent<{
                     humanMessage.addEnhancedContext
                         ? {
                               label: 'Public knowledge only',
-                              tooltip: 'Run query again without automatic code context',
+                              tooltip: 'Try again with with automatic code context',
                               onClick: () => {
                                   logRerunWithEnhancedContext(false)
                                   humanMessage.rerunWithEnhancedContext(false)
@@ -45,7 +45,7 @@ export const ContextFocusActions: FunctionComponent<{
                         : isEnhancedContextAvailable
                           ? {
                                 label: 'Automatic code context',
-                                tooltip: 'Run query again with automatic code context',
+                                tooltip: 'Try again without automatic code context',
                                 onClick: () => {
                                     logRerunWithEnhancedContext(true)
                                     humanMessage.rerunWithEnhancedContext(true)
@@ -53,8 +53,8 @@ export const ContextFocusActions: FunctionComponent<{
                             }
                           : null,
                     {
-                        label: 'Choose files...',
-                        tooltip: 'Manually @-mention specific files that contain relevant information',
+                        label: 'Add context...',
+                        tooltip: '@-mention specific files and other content with relevant information',
                         onClick: () => {
                             telemetryRecorder.recordEvent('cody.contextSelection', 'addFile', {
                                 metadata: {
