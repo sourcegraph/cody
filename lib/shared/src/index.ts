@@ -97,7 +97,6 @@ export {
     markdownCodeBlockLanguageIDForFilename,
     extensionForLanguage,
 } from './common/languages'
-export { escapeHTML } from './common/markdown'
 export {
     posixFilePaths,
     pathFunctionsForURI,
