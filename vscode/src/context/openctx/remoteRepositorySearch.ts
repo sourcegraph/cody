@@ -24,6 +24,9 @@ const RemoteRepositorySearch: Provider & {
             return repositories.map(repo => ({
                 uri: repo.url,
                 title: repo.name,
+                // By default we show <title> <uri> in the mentions menu.
+                // As repo.url and repo.name are almost same, we do not want to show the uri.
+                // So that is why we are setting the description to " " string.
                 description: ' ',
                 data: {
                     repoId: repo.id,
