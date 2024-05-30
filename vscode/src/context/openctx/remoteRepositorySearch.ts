@@ -8,7 +8,7 @@ const RemoteRepositorySearch: Provider & {
     providerUri: 'internal-remote-repository-search',
 
     meta() {
-        return { name: 'Sourcegraph Repositories', mentions: {} }
+        return { name: 'Remote Repositories', mentions: {} }
     },
 
     async mentions({ query }) {
@@ -24,6 +24,7 @@ const RemoteRepositorySearch: Provider & {
             return repositories.map(repo => ({
                 uri: repo.url,
                 title: repo.name,
+                description: ' ',
                 data: {
                     repoId: repo.id,
                     isIgnored: contextFiltersProvider.isRepoNameIgnored(repo.name),

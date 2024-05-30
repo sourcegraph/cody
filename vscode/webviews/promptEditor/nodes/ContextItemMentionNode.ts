@@ -7,7 +7,7 @@ import {
     type ContextItemPackage,
     type ContextItemSymbol,
     displayLineRange,
-    displayPath,
+    displayPathBasename,
     webviewOpenURIForContextItem,
 } from '@sourcegraph/cody-shared'
 import type { SerializedLexicalNode, Spread } from 'lexical'
@@ -22,9 +22,11 @@ import {
     type SerializedTextNode,
     TextNode,
 } from 'lexical'
-import { BookMarked, File, SquareCode, createElement } from 'lucide'
+import { Database, File, FolderGit, Link, SquareFunction, createElement } from 'lucide'
 import { URI } from 'vscode-uri'
-import { iconForProvider } from '../../mentions/mentionMenu/MentionMenuItem'
+import RemoteFileProvider from '../../../src/context/openctx/remoteFileSearch'
+import RemoteRepositorySearch from '../../../src/context/openctx/remoteRepositorySearch'
+import WebProvider from '../../../src/context/openctx/web'
 import styles from './ContextItemMentionNode.module.css'
 
 export const MENTION_CLASS_NAME = styles.contextItemMentionNode
@@ -204,10 +206,11 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
             if (contextItem.provider && contextItem.title) {
                 return contextItem.title
             }
-            return `${decodeURIComponent(displayPath(URI.parse(contextItem.uri)))}${rangeText}`
+
+            return `${decodeURIComponent(displayPathBasename(URI.parse(contextItem.uri)))}${rangeText}`
 
         case 'symbol':
-            return `@${displayPath(URI.parse(contextItem.uri))}${rangeText}#${contextItem.symbolName}`
+            return `${contextItem.symbolName}`
 
         case 'package':
             return `@${contextItem.ecosystem}:${contextItem.name}`
@@ -218,7 +221,7 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
         case 'github_issue':
             return `@github:issue:${contextItem.owner}/${contextItem.repoName}/${contextItem.issueNumber}`
         case 'openctx':
-            return `@${contextItem.mention?.data?.mentionLabel || contextItem.title}`
+            return `${contextItem.mention?.data?.mentionLabel || contextItem.title}`
     }
     // @ts-ignore
     throw new Error(`unrecognized context item type ${contextItem.type}`)
@@ -253,23 +256,28 @@ export function $createContextItemTextNode(contextItem: ContextItem | Serialized
     return $applyNodeReplacement(textNode)
 }
 
-const CONTEXT_ITEM_ICONS: Partial<
-    Record<SerializedContextItem['type'], Parameters<typeof createElement>[0]>
-> = {
-    repository: BookMarked,
-    tree: BookMarked,
+type Icon = Parameters<typeof createElement>[0]
+const CONTEXT_ITEM_ICONS: Partial<Record<string, Icon>> = {
     file: File,
-    symbol: SquareCode,
+    tree: FolderGit,
+    repository: FolderGit,
+    symbol: SquareFunction,
+    [RemoteRepositorySearch.providerUri]: FolderGit,
+    [RemoteFileProvider.providerUri]: File,
+    [WebProvider.providerUri]: Link,
 }
 function mentionIconForContextItem(contextItem: SerializedContextItem): HTMLImageElement | null {
-    const icon =
-        iconForProvider[
-            contextItem.provider || (contextItem as { providerUri: string }).providerUri || ''
-        ]
+    let icon: Icon | null | undefined = null
+
+    icon =
+        (contextItem.type === 'openctx'
+            ? CONTEXT_ITEM_ICONS[contextItem.providerUri || '']
+            : CONTEXT_ITEM_ICONS[contextItem.type]) || Database
 
     if (!icon) {
         return null
     }
+
     const iconEl = createElement(icon)
 
     const imgEl = document.createElement('img')

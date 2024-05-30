@@ -10,9 +10,11 @@
         display: inline-block;
         xvertical-align: -1px;
         xmargin: 0 2px;
-        width: 11px;
-        height: 11px;
+        width: 13px;
+        height: 13px;
         xuser-select2: none;
+        filter: invert(23%) sepia(34%) saturate(4949%) hue-rotate(195deg) brightness(98%) contrast(101%);;
+        margin-right: 0.25rem;
     }
 }
 
