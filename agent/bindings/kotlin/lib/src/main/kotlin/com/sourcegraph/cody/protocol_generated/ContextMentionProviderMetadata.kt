@@ -4,26 +4,22 @@ package com.sourcegraph.cody.protocol_generated
 import com.google.gson.annotations.SerializedName
 
 data class ContextMentionProviderMetadata(
-  val id: IdEnum, // Oneof: file
-  val title: TitleEnum, // Oneof: Files
-  val queryLabel: QueryLabelEnum, // Oneof: Search for a file to include...
-  val emptyLabel: EmptyLabelEnum, // Oneof: No files found
+  val id: IdEnum, // Oneof: symbol
+  val title: TitleEnum, // Oneof: Symbols
+  val queryLabel: QueryLabelEnum, // Oneof: Search for a symbol to include...
+  val emptyLabel: String? = null,
 ) {
 
   enum class IdEnum {
-    @SerializedName("file") File,
+    @SerializedName("symbol") Symbol,
   }
 
   enum class TitleEnum {
-    @SerializedName("Files") Files,
+    @SerializedName("Symbols") Symbols,
   }
 
   enum class QueryLabelEnum {
-    @SerializedName("Search for a file to include...") `Search for a file to include...`,
-  }
-
-  enum class EmptyLabelEnum {
-    @SerializedName("No files found") `No files found`,
+    @SerializedName("Search for a symbol to include...") `Search for a symbol to include...`,
   }
 }
 

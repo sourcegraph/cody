@@ -334,12 +334,6 @@
         "enablement": "cody.activated"
       },
       {
-        "command": "cody.command.usageExamples",
-        "category": "Cody Command",
-        "title": "Usage Examples",
-        "enablement": "cody.activated && config.cody.experimental.noodle && (editorLangId === typescript || editorLangId === typescriptreact)"
-      },
-      {
         "command": "cody.command.explain-history",
         "category": "Cody Command",
         "title": "Explain Code History",
@@ -744,10 +738,6 @@
           "when": "cody.activated && editorIsOpen"
         },
         {
-          "command": "cody.command.usageExamples",
-          "when": "cody.activated && editorIsOpen && config.cody.experimental.noodle && (editorLangId === typescript || editorLangId === typescriptreact)"
-        },
-        {
           "command": "cody.command.explain-history",
           "when": "cody.activated && editorIsOpen && config.cody.experimental.noodle"
         },
@@ -820,11 +810,6 @@
           "command": "cody.chat.panel.new",
           "when": "cody.activated",
           "group": "ask"
-        },
-        {
-          "command": "cody.command.usageExamples",
-          "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle && (editorLangId === typescript || editorLangId === typescriptreact)",
-          "group": "command"
         },
         {
           "command": "cody.command.explain-code",
