@@ -65,6 +65,10 @@ const FLOATING_OPTIONS: UseFloatingOptions = {
     transform: false,
 }
 
+function scanForMentionTriggerInLexicalInput(text: string) {
+    return scanForMentionTriggerInUserTextInput({ textBeforeCursor: text, includeWhitespace: true })
+}
+
 export default function MentionsPlugin({
     userInfo,
 }: { userInfo?: UserAccountInfo }): JSX.Element | null {
@@ -207,7 +211,7 @@ export default function MentionsPlugin({
             onQueryChange={updateQuery}
             onSelectOption={onSelectOption}
             onClose={onClose}
-            triggerFn={scanForMentionTriggerInUserTextInput}
+            triggerFn={scanForMentionTriggerInLexicalInput}
             options={DUMMY_OPTIONS}
             anchorClassName={styles.resetAnchor}
             commandPriority={
