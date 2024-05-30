@@ -3,6 +3,17 @@
     background-color: color-mix(in lch, var(--vscode-textLink-foreground) 10%, transparent);
     border-radius: 2px;
     white-space: normal;
+    margin-right: 3px;
+
+
+    .icon {
+        display: inline-block;
+        xvertical-align: -1px;
+        xmargin: 0 2px;
+        width: 11px;
+        height: 11px;
+        xuser-select2: none;
+    }
 }
 
 body[data-vscode-theme-kind='vscode-high-contrast-light'] .context-item-mention-node {

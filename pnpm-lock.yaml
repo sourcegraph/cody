@@ -510,6 +510,9 @@ importers:
       lru-cache:
         specifier: ^10.0.0
         version: 10.0.0
+      lucide:
+        specifier: ^0.381.0
+        version: 0.381.0
       lucide-react:
         specifier: ^0.378.0
         version: 0.378.0(react@18.2.0)
@@ -10839,6 +10842,10 @@ packages:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0
     dependencies:
       react: 18.2.0
+    dev: false
+
+  /lucide@0.381.0:
+    resolution: {integrity: sha512-+RPg88RMmB+7EcusALa0EcedUY9xuw/6bGNeuf5t02dSx5DiJVl39Sc7XuOOU+zcZDvFKTRUaZv+ijRIjlb0PQ==}
     dev: false
 
   /lz-string@1.5.0:

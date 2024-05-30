@@ -1,6 +1,3 @@
-import type { SerializedLexicalNode, Spread } from 'lexical'
-import styles from './ContextItemMentionNode.module.css'
-
 import {
     type ContextItem,
     type ContextItemFile,
@@ -13,6 +10,7 @@ import {
     displayPath,
     webviewOpenURIForContextItem,
 } from '@sourcegraph/cody-shared'
+import type { SerializedLexicalNode, Spread } from 'lexical'
 import {
     $applyNodeReplacement,
     type DOMConversionMap,
@@ -24,7 +22,9 @@ import {
     type SerializedTextNode,
     TextNode,
 } from 'lexical'
+import { BookMarked, File, SquareCode, createElement } from 'lucide'
 import { URI } from 'vscode-uri'
+import styles from './ContextItemMentionNode.module.css'
 
 export const MENTION_CLASS_NAME = styles.contextItemMentionNode
 
@@ -129,9 +129,21 @@ export class ContextItemMentionNode extends TextNode {
     private static CLASS_NAMES = `context-item-mention-node ${styles.contextItemMentionNode}`
 
     createDOM(config: EditorConfig): HTMLElement {
-        const element = super.createDOM(config)
-        element.className = ContextItemMentionNode.CLASS_NAMES
-        return element
+        const dom = document.createElement('span')
+        const inner = super.createDOM(config)
+        // dom.innerText = '\u200B' // zero-width space
+        // dom.innerHTML = `<img src="https://slack.org/media/sqs.jpg" width=11 height=11 style="display:inline"/>`
+        dom.appendChild(inner)
+        dom.className = ContextItemMentionNode.CLASS_NAMES
+
+        //inner.innerHTML = '\u200B' + inner.innerHTML
+
+        const icon = mentionIconForContextItem(this.contextItem)
+        if (icon) {
+            dom.insertBefore(icon, inner)
+        }
+
+        return dom
     }
 
     exportDOM(): DOMExportOutput {
@@ -189,9 +201,15 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
     switch (contextItem.type) {
         case 'file':
             if (contextItem.provider && contextItem.title) {
-                return `@${contextItem.title}`
+                return contextItem.title
             }
-            return `@${decodeURIComponent(displayPath(URI.parse(contextItem.uri)))}${rangeText}`
+            return `${decodeURIComponent(displayPath(URI.parse(contextItem.uri)))}${rangeText}`
+
+        case 'repository':
+            return contextItem.title ?? 'unknown repository'
+
+        case 'tree':
+            return contextItem.title ?? 'unknown tree'
 
         case 'symbol':
             return `@${displayPath(URI.parse(contextItem.uri))}${rangeText}#${contextItem.symbolName}`
@@ -238,4 +256,25 @@ export function $createContextItemTextNode(contextItem: ContextItem | Serialized
     const atNode = new ContextItemMentionNode(contextItem)
     const textNode = new TextNode(atNode.__text)
     return $applyNodeReplacement(textNode)
+}
+
+const CONTEXT_ITEM_ICONS: Partial<
+    Record<SerializedContextItem['type'], Parameters<typeof createElement>[0]>
+> = {
+    repository: BookMarked,
+    tree: BookMarked,
+    file: File,
+    symbol: SquareCode,
+}
+function mentionIconForContextItem(contextItem: SerializedContextItem): SVGElement | null {
+    const icon = CONTEXT_ITEM_ICONS[contextItem.type]
+    if (!icon) {
+        return null
+    }
+    const iconEl = createElement(icon)
+
+    const imgEl = document.createElement('img')
+    imgEl.classList.add(styles.icon)
+    imgEl.setAttribute('src', `data:image/svg+xml,${iconEl.outerHTML}`)
+    return imgEl
 }
