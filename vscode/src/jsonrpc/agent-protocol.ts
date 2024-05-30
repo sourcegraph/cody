@@ -269,7 +269,7 @@ export type ServerRequests = {
     'window/showMessage': [ShowWindowMessageParams, string | null]
 
     'textDocument/edit': [TextDocumentEditParams, boolean]
-    'textDocument/openDocument': [{ uri: string }, ProtocolTextDocument]
+    'textDocument/openDocument': [{ uri: string }, boolean]
     'textDocument/show': [
         { uri: string; options?: TextDocumentShowOptionsParams | undefined | null },
         boolean,

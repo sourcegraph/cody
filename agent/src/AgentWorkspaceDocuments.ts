@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
 import { resetActiveEditor } from '../../vscode/src/editor/active-editor'
-import type { ProtocolTextDocument } from '../../vscode/src/jsonrpc/agent-protocol'
 import { AgentTextDocument } from './AgentTextDocument'
 import { AgentTextEditor } from './AgentTextEditor'
 import { applyContentChanges } from './applyContentChanges'
@@ -41,10 +40,6 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     public activeDocumentFilePath: vscode.Uri | null = null
 
     private doPanic = this.params?.doPanic ? { doPanic: this.params.doPanic } : undefined
-
-    public openUri(uri: vscode.Uri, document?: Partial<ProtocolTextDocument>): AgentTextDocument {
-        return this.loadAndUpdateDocument(ProtocolTextDocumentWithUri.from(uri))
-    }
 
     public loadAndUpdateDocument(document: ProtocolTextDocumentWithUri): AgentTextDocument {
         return this.loadDocumentWithChanges(document).document
@@ -200,8 +195,10 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
 
     public async reset(): Promise<void> {
         for (const uri of this.agentDocuments.keys()) {
-            const document = this.openUri(vscode.Uri.parse(uri))
-            await vscode_shim.onDidCloseTextDocument.cody_fireAsync(document)
+            const document = this.openTextDocument(vscode.Uri.parse(uri))
+            if (document) {
+                await vscode_shim.onDidCloseTextDocument.cody_fireAsync(document)
+            }
         }
         vscode_shim.window.activeTextEditor = undefined
         while (vscode_shim.visibleTextEditors.length > 0) {

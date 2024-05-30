@@ -358,9 +358,9 @@ export class TestClient extends MessageHandler {
             }
 
             this.workspace.loadDocument(textDocument)
-            this.notify('textDocument/didOpen', textDocument.underlying)
+            await this.notify('textDocument/didOpen', textDocument.underlying)
 
-            return Promise.resolve(textDocument.underlying)
+            return true
         })
         this.registerRequest('textDocument/edit', params => {
             this.textDocumentEditParams.push(params)

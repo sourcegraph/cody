@@ -47,10 +47,11 @@ import { emptyDisposable } from '../../vscode/src/testutils/emptyDisposable'
 import { AgentDiagnostics } from './AgentDiagnostics'
 import { AgentQuickPick } from './AgentQuickPick'
 import { AgentTabGroups } from './AgentTabGroups'
+import type { AgentTextDocument } from './AgentTextDocument'
 import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import type { Agent } from './agent'
 import { matchesGlobPatterns } from './cli/cody-bench/matchesGlobPatterns'
-import type { ClientInfo, ExtensionConfiguration, ProtocolTextDocument } from './protocol-alias'
+import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
 
 // Not using CODY_TESTING because it changes the URL endpoint we send requests
 // to and we want to send requests to sourcegraph.com because we record the HTTP
@@ -157,8 +158,7 @@ export const onDidDeleteFiles = new EventEmitter<vscode.FileDeleteEvent>()
 
 export interface WorkspaceDocuments {
     workspaceRootUri?: vscode.Uri
-    openTextDocument: (uri: vscode.Uri) => vscode.TextDocument | undefined
-    openUri(uri: vscode.Uri, document?: ProtocolTextDocument): vscode.TextDocument
+    openTextDocument: (uri: vscode.Uri) => AgentTextDocument | undefined
     newTextEditor(document: vscode.TextDocument): vscode.TextEditor
 }
 let workspaceDocuments: WorkspaceDocuments | undefined
@@ -304,25 +304,26 @@ const _workspace: typeof vscode.workspace = {
                 )
             )
         }
+
         const textDocument = workspaceDocuments.openTextDocument(uri)
         if (textDocument) return textDocument
 
         if (!agent)
             return Promise.reject(new Error('workspace.openTextDocument: no agent instance found'))
-
-        const textDocumentFromClient = await agent.request('textDocument/openDocument', {
+        await agent.request('textDocument/openDocument', {
             uri: uri.toString(),
         })
 
-        if (!textDocumentFromClient) {
+        const loadedDocument = workspaceDocuments.openTextDocument(uri)
+        if (!loadedDocument) {
             return Promise.reject(
                 new Error(
-                    `workspace.openTextDocument: unsuccessful client cal to textDocument/openDocument: ${uri.toString()}`
+                    `workspace.openTextDocument: document ${uri.toString()} has not been loaded properly}`
                 )
             )
         }
 
-        return workspaceDocuments.openUri(uri, textDocumentFromClient)
+        return loadedDocument
     },
     workspaceFolders,
     getWorkspaceFolder: () => {
@@ -708,7 +709,7 @@ const _window: typeof vscode.window = {
 
             const textDocument = await _workspace.openTextDocument(uri)
             if (!textDocument) {
-                throw new TypeError(`vscode.window.showTextDocument: cannot open ${uri}`)
+                throw new Error(`vscode.window.showTextDocument: cannot open ${uri}`)
             }
 
             return workspaceDocuments.newTextEditor(textDocument)
