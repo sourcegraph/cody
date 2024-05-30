@@ -96,20 +96,22 @@ export const AssistantMessageCell: FunctionComponent<{
                     ) : (
                         isLoading && <LoadingDots />
                     )}
-                    {humanMessage && (
-                        <ContextFocusActions
-                            humanMessage={humanMessage}
-                            className="tw-mt-3 tw-text-muted-foreground tw-text-sm"
-                        />
-                    )}
                 </>
             }
             footer={
-                <>
-                    {showFeedbackButtons && feedbackButtonsOnSubmit && (
-                        <FeedbackButtons feedbackButtonsOnSubmit={feedbackButtonsOnSubmit} />
-                    )}
-                </>
+                ((showFeedbackButtons && feedbackButtonsOnSubmit) || humanMessage) && (
+                    <div className="tw-flex tw-items-center tw-gap-3">
+                        {showFeedbackButtons && feedbackButtonsOnSubmit && (
+                            <FeedbackButtons feedbackButtonsOnSubmit={feedbackButtonsOnSubmit} />
+                        )}
+                        {humanMessage && (
+                            <>
+                                <div className="tw-border-l tw-border-l-current tw-inline-block tw-h-[1rem] tw-opacity-20 tw-mr-2" />
+                                <ContextFocusActions humanMessage={humanMessage} />
+                            </>
+                        )}
+                    </div>
+                )
             }
         />
     )

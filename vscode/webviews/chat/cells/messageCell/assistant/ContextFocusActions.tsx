@@ -1,6 +1,5 @@
 import { isDefined } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
-import { ScanEyeIcon } from 'lucide-react'
 import { type FunctionComponent, useCallback, useContext, useMemo } from 'react'
 import { EnhancedContextContext } from '../../../../components/EnhancedContextSettings'
 import { Button } from '../../../../components/shadcn/ui/button'
@@ -69,24 +68,15 @@ export const ContextFocusActions: FunctionComponent<{
         [humanMessage, isEnhancedContextAvailable, telemetryRecorder, logRerunWithEnhancedContext]
     )
     return actions.length > 0 ? (
-        <menu className={clsx('tw-flex tw-gap-2', className)}>
-            <ScanEyeIcon size={14} className="tw-flex-shrink-0 tw-mt-1" />
-            <div className="tw-flex tw-items-center tw-gap-3 tw-flex-wrap">
-                <h3 className="tw-whitespace-nowrap tw-flex tw-items-center tw-gap-3 tw-mr-1">
-                    Try again with different context:
-                </h3>
+        <menu className={clsx('tw-flex tw-gap-2 tw-text-sm tw-text-muted-foreground', className)}>
+            <div className="tw-flex tw-items-center tw-gap-2 tw-flex-wrap">
+                <h3 className="tw-flex tw-items-center tw-gap-3">Try again with different context:</h3>
                 <ul className="tw-whitespace-nowrap tw-flex tw-gap-2">
                     {actions.map(({ label, tooltip, onClick }) => (
                         <li key={label}>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button
-                                        key={label}
-                                        variant="secondary"
-                                        size="sm"
-                                        className="tw-text-xs"
-                                        onClick={onClick}
-                                    >
+                                    <Button key={label} variant="outline" size="sm" onClick={onClick}>
                                         {label}
                                     </Button>
                                 </TooltipTrigger>
