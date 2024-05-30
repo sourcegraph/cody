@@ -65,6 +65,15 @@ const FLOATING_OPTIONS: UseFloatingOptions = {
     transform: false,
 }
 
+/**
+ * We allow whitespace for @-mentions in the Lexical editor because
+ * it has an explicit switch between modes and can render @-mentions
+ * as special nodes that can be detected in later edits.
+ *
+ * The Edit quick-pick menu uses a raw text input and lacks this functionality,
+ * so we rely on spaces to detect @-mentions and switch between @-item selection
+ * and regular text input.
+ */
 function scanForMentionTriggerInLexicalInput(text: string) {
     return scanForMentionTriggerInUserTextInput({ textBeforeCursor: text, includeWhitespace: true })
 }
