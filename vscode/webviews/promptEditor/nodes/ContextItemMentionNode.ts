@@ -134,12 +134,8 @@ export class ContextItemMentionNode extends TextNode {
     createDOM(config: EditorConfig): HTMLElement {
         const dom = document.createElement('span')
         const inner = super.createDOM(config)
-        // dom.innerText = '\u200B' // zero-width space
-        // dom.innerHTML = `<img src="https://slack.org/media/sqs.jpg" width=11 height=11 style="display:inline"/>`
         dom.appendChild(inner)
         dom.className = ContextItemMentionNode.CLASS_NAMES
-
-        //inner.innerHTML = '\u200B' + inner.innerHTML
 
         const icon = mentionIconForContextItem(this.contextItem)
         if (icon) {
