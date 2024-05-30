@@ -37,7 +37,7 @@ class CodyErrorSubmitter : ErrorReportSubmitter() {
   public fun getEncodedUrl(throwableText: String, additionalInfo: String? = null): String {
     return "https://github.com/sourcegraph/jetbrains/issues/new" +
         "?template=bug_report.yml" +
-        "&labels=bug,team/jetbrains" +
+        "&labels=bug,clients/jetbrains" +
         "&projects=sourcegraph/381" +
         "&title=${encode(getTitle(throwableText))}" +
         "&version=${encode(getVersion())}" +
