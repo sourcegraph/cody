@@ -5,7 +5,7 @@ import { contextItemMentionNodeDisplayText } from './ContextItemMentionNode'
 describe('contextItemMentionNodeDisplayText', () => {
     test('file', () =>
         expect(contextItemMentionNodeDisplayText({ type: 'file', uri: 'file:///foo/bar.ts' })).toBe(
-            isWindows() ? 'bar.ts' : 'bar.ts'
+            'bar.ts'
         ))
 
     test('file range of full end line', () =>
