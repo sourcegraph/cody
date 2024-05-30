@@ -1,5 +1,5 @@
-import { LoaderCircleIcon } from 'lucide-react'
 import type { FunctionComponent } from 'react'
+import { cn } from '../../../../../../components/shadcn/utils'
 
 export type SubmitButtonDisabled = false | 'emptyEditorValue' | 'isPendingPriorResponse'
 
@@ -12,36 +12,45 @@ export const SubmitButton: FunctionComponent<{
 
     disabled?: SubmitButtonDisabled
 }> = ({ onClick: parentOnClick, isEditorFocused, isPendingResponse, disabled = false }) => {
+    if (disabled === 'isPendingPriorResponse') {
+        return (
+            <div className="tw-w-[20px] tw-h-[20px] tw-flex tw-items-center tw-justify-center tw-opacity-60">
+                <div className="tw-inline-block tw-h-[13px] tw-w-[13px] tw-animate-spin tw-rounded-full tw-border-[1px] tw-border-solid tw-border-current tw-border-e-transparent" />
+            </div>
+        )
+    }
+
     return (
-        <>
-            <button
-                type="submit"
-                className="tw-rounded-full tw-flex tw-items-center tw-justify-center tw-bg-primary tw-w-10 tw-h-10"
-                // tooltip="Send"
-                onClick={() => parentOnClick(true)}
-                aria-label="Send"
-                disabled={disabled !== false}
-                tabIndex={-1} // press Enter to invoke, doesn't need to be tabbable
+        <button
+            type="submit"
+            className="tw-relative tw-w-[20px] tw-h-[20px]"
+            onClick={() => parentOnClick(true)}
+            aria-label="Send"
+            disabled={disabled ? true : undefined}
+        >
+            {/* biome-ignore lint/a11y/noSvgWithoutTitle: <explanation> */}
+            <svg
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className={cn('tw-absolute tw-left-0 tw-top-0', {
+                    'tw-opacity-20': disabled,
+                    'tw-text-primary': !disabled,
+                })}
             >
-                {disabled === 'isPendingPriorResponse' ? (
-                    <LoaderCircleIcon size={16} />
-                ) : (
-                    <svg
-                        width="7"
-                        height="8"
-                        viewBox="0 0 7 8"
-                        fill="currentColor"
-                        className="tw-translate-x-[.04rem]"
-                    >
-                        <title>Send</title>
-                        <path
-                            fillRule="evenodd"
-                            clipRule="evenodd"
-                            d="M6.72789 3.54579L1.4092 0V0.250867L1.23764 0.136491C1.10978 0.0512528 0.945385 0.043306 0.809903 0.115814C0.674421 0.188322 0.589844 0.329514 0.589844 0.483178V7.57476C0.589844 7.72842 0.674421 7.86961 0.809903 7.94212C0.945385 8.01463 1.10978 8.00668 1.23764 7.92145L6.55632 4.37566C6.67224 4.29838 6.74186 4.16828 6.74186 4.02897C6.74186 3.88965 6.67224 3.75956 6.55632 3.68228L6.53973 3.67122L6.72789 3.54579Z"
-                        />
-                    </svg>
-                )}
-            </button>
-        </>
+                <circle cx="10" cy="10" r="10" />
+            </svg>
+            {/* biome-ignore lint/a11y/noSvgWithoutTitle: <explanation> */}
+            <svg
+                width="7"
+                height="8"
+                viewBox="0 0 7 8"
+                className="tw-absolute tw-left-[7.75px] tw-top-[6px]"
+                fill="currentColor"
+            >
+                <path d="M6.13965 3.54579L0.820964 0V0.251915L0.647792 0.136467C0.519935 0.0512288 0.355541 0.0432819 0.220059 0.11579C0.0845769 0.188298 0 0.32949 0 0.483154V7.57473C0 7.7284 0.0845769 7.86959 0.220059 7.9421C0.355541 8.01461 0.519935 8.00666 0.647792 7.92142L5.96648 4.37563C6.08239 4.29835 6.15202 4.16826 6.15202 4.02894C6.15202 3.88963 6.08239 3.75953 5.96648 3.68226L5.95071 3.67175L6.13965 3.54579Z" />
+            </svg>
+        </button>
     )
 }
