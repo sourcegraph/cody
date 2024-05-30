@@ -122,4 +122,15 @@ describe('getDocumentableNode', () => {
             sourcesPath: 'test-data/documentable-node.php',
         })
     })
+
+    it('c', async () => {
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.c)
+
+        await annotateAndMatchSnapshot({
+            parser,
+            language,
+            captures: queryWrapper(queries.getDocumentableNode),
+            sourcesPath: 'test-data/documentable-node.c',
+        })
+    })
 })
