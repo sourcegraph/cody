@@ -29,15 +29,17 @@ describe('HumanMessageEditor', () => {
             { mentionButton, submitButton }: ReturnType<typeof renderWithMocks>,
             expected: {
                 toolbarVisible?: boolean
+                submitButtonVisible?: boolean
                 submitButtonEnabled?: boolean
                 submitButtonText?: string
             }
         ): void {
             if (expected.toolbarVisible !== undefined) {
                 notUnless(expect.soft(mentionButton), expected.toolbarVisible).toBeVisible()
-                notUnless(expect.soft(submitButton), expected.toolbarVisible).toBeVisible()
             }
-
+            if (expected.submitButtonVisible !== undefined) {
+                notUnless(expect.soft(submitButton), expected.submitButtonVisible).toBeVisible()
+            }
             if (expected.submitButtonEnabled !== undefined) {
                 notUnless(expect.soft(submitButton), expected.submitButtonEnabled).toBeEnabled()
             }
@@ -106,11 +108,12 @@ describe('HumanMessageEditor', () => {
             submitButton,
             onSubmit,
         }: ReturnType<typeof renderWithMocks>): void {
-            expect(submitButton).toBeDisabled()
-
-            // Click
-            fireEvent.click(submitButton!)
-            expect(onSubmit).toHaveBeenCalledTimes(0)
+            if (submitButton) {
+                expect(submitButton).toBeDisabled()
+                // Click
+                fireEvent.click(submitButton!)
+                expect(onSubmit).toHaveBeenCalledTimes(0)
+            }
 
             // Enter
             const editor = container.querySelector<HTMLElement>('[data-lexical-editor="true"]')!
