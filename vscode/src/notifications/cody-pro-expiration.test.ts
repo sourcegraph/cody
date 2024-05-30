@@ -24,7 +24,7 @@ describe('Cody Pro expiration notifications', () => {
     const openExternal = vitest.fn()
     const enabledFeatureFlags = new Set<FeatureFlag>()
 
-    const localStorageKey = CodyProExpirationNotifications.localStorageSuppressionKey
+    const localStorageKey = localStorage.CODY_PRO_SUPPRESSION_KEY
 
     // Set up local storage backed by an object.
     let localStorageData: { [key: string]: unknown } = {}

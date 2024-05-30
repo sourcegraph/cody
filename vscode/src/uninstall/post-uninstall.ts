@@ -4,6 +4,8 @@ import {
     TelemetryRecorderProvider,
     defaultAuthStatus,
 } from '@sourcegraph/cody-shared'
+import { localStorage } from '../services/LocalStorageProvider'
+import { clearAccessToken } from '../services/SecretStorageProvider'
 import { deleteUninstallerDirectory, readConfig } from './serializeConfig'
 
 class StaticAuthStatusProvider implements AuthStatusProvider {
@@ -30,6 +32,10 @@ async function main() {
 
             // cleanup the uninstaller config
             deleteUninstallerDirectory()
+
+            // Clear storages.
+            await clearAccessToken()
+            await localStorage.clear()
         }
     }
 }
