@@ -9,12 +9,18 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Integerated OpenCtx providers with @-mention context menu. [pull/4201](https://github.com/sourcegraph/cody/pull/4201)
 - Enterprise: Adds support for the `completions.smartContextWindow` (available in Sourcegraph v5.5.0+) site configuration. [pull/4236](https://github.com/sourcegraph/cody/pull/4236)
 - Chat: Integerated OpenCtx providers with @-mention context menu. [pull/4201](https://github.com/sourcegraph/cody/pull/4201/files)
-- Keybinding: Assign the same keyboard shortcut for starting a new chat to the "New Chat with Selection" command.
+- Keybinding: Assign the same keyboard shortcut for starting a new chat to the "New Chat with Selection" command. [pull/4255](https://github.com/sourcegraph/cody/pull/4255)
 - Telemetry: Adds a new telemetry event when users uninstall the extension. [pull/4246](https://github.com/sourcegraph/cody/pull/4246)
 - Chat: Added @-mention remote repositories search provider for enterprise. [pull/4311](https://github.com/sourcegraph/cody/pull/4311)
-- Chat: Editor selection is now included in all chats by default. []()
+- Chat: Editor selection is now included in all chats by default. [pull/4292](https://github.com/sourcegraph/cody/pull/4292)
 - Chat: Assistant responses now have a "Try again with different context" line at the bottom with ways you can improve the context used to generate the response. [pull/4317](https://github.com/sourcegraph/cody/pull/4317)
-- Document Code: Added additional Java support for range expansion. [pull/4353](https://github.com/sourcegraph/cody/pull/4353)
+- Document Code: Adds additional languages support for range expansion:
+  - Java: [pull/4353](https://github.com/sourcegraph/cody/pull/4353)
+  - Kotlin: [pull/4355](https://github.com/sourcegraph/cody/pull/4355)
+  - Rust: [pull/4358](https://github.com/sourcegraph/cody/pull/4358)
+  - PHP: [pull/4359](https://github.com/sourcegraph/cody/pull/4359)
+  - C: [pull/4391](https://github.com/sourcegraph/cody/pull/4391)
+  - C++: [pull/4392](https://github.com/sourcegraph/cody/pull/4392)
 
 ### Fixed
 
