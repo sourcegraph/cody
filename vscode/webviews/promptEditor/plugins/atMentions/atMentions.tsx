@@ -143,7 +143,6 @@ export default function MentionsPlugin({
 
     const onSelectOption = useCallback(
         (selectedOption: MentionMenuOption, nodeToReplace: TextNode | null, closeMenu: () => void) => {
-            // console.log({ selectedOption, nodeToReplace })
             editor.update(() => {
                 const currentInputText = nodeToReplace?.__text
                 if (!currentInputText) {
