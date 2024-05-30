@@ -1,4 +1,4 @@
-import { contextFiltersProvider, graphqlClient, isDefined, isError } from '@sourcegraph/cody-shared'
+import { contextFiltersProvider, graphqlClient, isError } from '@sourcegraph/cody-shared'
 
 import type { Item, Provider } from '@openctx/client'
 
@@ -21,19 +21,14 @@ const RemoteRepositorySearch: Provider & {
 
             const repositories = dataOrError.repositories.nodes
 
-            return repositories
-                .map(repo =>
-                    contextFiltersProvider.isRepoNameIgnored(repo.name)
-                        ? null
-                        : {
-                              uri: repo.url,
-                              title: repo.name,
-                              data: {
-                                  repoId: repo.id,
-                              },
-                          }
-                )
-                .filter(isDefined)
+            return repositories.map(repo => ({
+                uri: repo.url,
+                title: repo.name,
+                data: {
+                    repoId: repo.id,
+                    isIgnored: contextFiltersProvider.isRepoNameIgnored(repo.name),
+                },
+            }))
         } catch (error) {
             return []
         }

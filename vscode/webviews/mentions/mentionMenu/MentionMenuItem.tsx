@@ -63,13 +63,14 @@ export const MentionMenuContextItemContent: FunctionComponent<{
     query: MentionQuery
     item: ContextItem
 }> = ({ query, item }) => {
+    const isOpenCtx = item.type === 'openctx'
     const isFileType = item.type === 'file'
     const isSymbol = item.type === 'symbol'
     const icon = isSymbol ? (item.kind === 'class' ? 'symbol-structure' : 'symbol-method') : null
     const title = item.title ?? (isSymbol ? item.symbolName : displayPathBasename(item.uri))
     const description = getDescription(item, query)
 
-    const isIgnored = isFileType && item.isIgnored
+    const isIgnored = (isFileType || isOpenCtx) && item.isIgnored
     const isLargeFile = isFileType && item.isTooLarge
     let warning: string
     if (isIgnored) {
