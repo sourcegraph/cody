@@ -108,27 +108,42 @@ const PUNCTUATION = ',\\+\\*\\$\\|#{}\\(\\)\\^\\[\\]!\'"<>;'
 
 const TRIGGERS = '@'
 
-/** Chars we expect to see in a mention (non-punctuation). */
-const VALID_CHARS = '[^' + PUNCTUATION + ']'
-
 const MAX_LENGTH = 250
 
 const RANGE_REGEXP = '(?::\\d+(?:-\\d*)?)?'
 
-const AT_MENTIONS_REGEXP = new RegExp(
-    '(?<maybeLeadingWhitespace>^|\\s|\\()(?<replaceableString>' +
-        '[' +
-        TRIGGERS +
-        ']' +
-        '(?<matchingString>#?(?:' +
-        VALID_CHARS +
-        '){0,' +
-        MAX_LENGTH +
-        '}' +
-        RANGE_REGEXP +
-        ')' +
-        ')$'
-)
+function generateAtMentionsRegExp(params: {
+    includeWhitespace: boolean
+}): RegExp {
+    const { includeWhitespace } = params
+    /** Chars we expect to see in a mention. */
+    const validChars = '[^' + PUNCTUATION + (includeWhitespace ? '' : '\\s') + ']'
+
+    return new RegExp(
+        '(?<maybeLeadingWhitespace>^|\\s|\\()(?<replaceableString>' +
+            '[' +
+            TRIGGERS +
+            ']' +
+            '(?<matchingString>#?(?:' +
+            validChars +
+            '){0,' +
+            MAX_LENGTH +
+            '}' +
+            RANGE_REGEXP +
+            ')' +
+            ')$'
+    )
+}
+
+/**
+ * Used to scan for mentions in the quick pick menu.
+ */
+const AT_MENTIONS_REGEXP_NO_SPACES = generateAtMentionsRegExp({ includeWhitespace: false })
+
+/**
+ * Used to scan for mentions in the Lexical input.
+ */
+const AT_MENTIONS_REGEXP_ALLOW_SPACES = generateAtMentionsRegExp({ includeWhitespace: true })
 
 /**
  * The location and content of a mention in free-form user text input.
@@ -150,6 +165,11 @@ export interface MentionTrigger {
     replaceableString: string
 }
 
+interface ScanForMentionsParams {
+    textBeforeCursor: string
+    includeWhitespace: boolean
+}
+
 /**
  * Scans free-form user text input (in a chat message editor, for example) for possible mentions
  * with the `@` trigger character.
@@ -158,8 +178,16 @@ export interface MentionTrigger {
  * point cursor. For example, if the input field looks like `hello
  * @foo█bar`, then {@link textBeforeCursor} should be `hello @foo`.
  */
-export function scanForMentionTriggerInUserTextInput(textBeforeCursor: string): MentionTrigger | null {
-    const match = AT_MENTIONS_REGEXP.exec(textBeforeCursor)
+export function scanForMentionTriggerInUserTextInput(
+    params: ScanForMentionsParams
+): MentionTrigger | null {
+    const { textBeforeCursor, includeWhitespace } = params
+    const atMentionRegex = includeWhitespace
+        ? AT_MENTIONS_REGEXP_ALLOW_SPACES
+        : AT_MENTIONS_REGEXP_NO_SPACES
+
+    const match = atMentionRegex.exec(textBeforeCursor)
+
     if (match?.groups) {
         return {
             leadOffset: match.index + match.groups.maybeLeadingWhitespace.length,
