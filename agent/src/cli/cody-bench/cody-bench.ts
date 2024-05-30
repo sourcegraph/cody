@@ -11,7 +11,7 @@ import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { evaluateBfgStrategy } from './strategy-bfg'
 import { evaluateGitLogStrategy } from './strategy-git-log'
 
-export interface EvaluateAutocompleteOptions {
+export interface CodyBenchOptions {
     workspace: string
     worktree?: string
     treeSitterGrammars: string
@@ -50,8 +50,8 @@ export interface EvaluateAutocompleteOptions {
     fixture: EvaluationFixture
 }
 
-interface EvaluationConfig extends Partial<EvaluateAutocompleteOptions> {
-    workspaces: EvaluateAutocompleteOptions[]
+interface EvaluationConfig extends Partial<CodyBenchOptions> {
+    workspaces: CodyBenchOptions[]
     fixtures?: EvaluationFixture[]
 }
 
@@ -67,15 +67,13 @@ interface EvaluationFixture {
     codyAgentBinary?: string
 }
 
-async function loadEvaluationConfig(
-    options: EvaluateAutocompleteOptions
-): Promise<EvaluateAutocompleteOptions[]> {
+async function loadEvaluationConfig(options: CodyBenchOptions): Promise<CodyBenchOptions[]> {
     if (!options?.evaluationConfig) {
         return [options]
     }
     const configBuffer = await fspromises.readFile(options.evaluationConfig)
     const config = JSON.parse(configBuffer.toString()) as EvaluationConfig
-    const result: EvaluateAutocompleteOptions[] = []
+    const result: CodyBenchOptions[] = []
     for (const test of config?.workspaces ?? []) {
         if (!test.workspace) {
             console.error(
@@ -118,7 +116,7 @@ async function loadEvaluationConfig(
     return result
 }
 
-export const evaluateAutocompleteCommand = new commander.Command('evaluate-autocomplete')
+export const codyBenchCommand = new commander.Command('cody-bench')
     .description('Evaluate Cody autocomplete by running the Agent in headless mode')
     .option(
         '--workspace <path>',
@@ -260,7 +258,7 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
         booleanOption,
         true
     )
-    .action(async (options: EvaluateAutocompleteOptions) => {
+    .action(async (options: CodyBenchOptions) => {
         const testOptions = await loadEvaluationConfig(options)
         const workspacesToRun = testOptions.filter(
             testOptions =>
@@ -278,7 +276,7 @@ export const evaluateAutocompleteCommand = new commander.Command('evaluate-autoc
         await Promise.all(workspacesToRun.map(workspace => evaluateWorkspace(workspace)))
     })
 
-async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<void> {
+async function evaluateWorkspace(options: CodyBenchOptions): Promise<void> {
     console.log(`starting evaluation: fixture=${options.fixture.name} workspace=${options.workspace}`)
 
     if (!options.queriesDirectory) {
@@ -297,7 +295,7 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
     const workspaceRootUri = vscode.Uri.from({ scheme: 'file', path: options.workspace })
 
     const client = await newAgentClient({
-        name: 'evaluate-autocomplete',
+        name: 'cody-bench',
         version: '0.1.0',
         workspaceRootUri: workspaceRootUri.toString(),
         extensionConfiguration: {
@@ -315,7 +313,7 @@ async function evaluateWorkspace(options: EvaluateAutocompleteOptions): Promise<
             await evaluateGitLogStrategy(client, options)
         }
     } catch (error) {
-        console.error('unexpected error running evaluate-autocomplete', error)
+        console.error('unexpected error running cody-bench', error)
     }
     await client.request('shutdown', null)
     client.notify('exit', null)

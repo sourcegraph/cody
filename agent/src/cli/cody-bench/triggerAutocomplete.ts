@@ -11,7 +11,7 @@ import type { WrappedParser } from '../../../../vscode/src/tree-sitter/parser'
 import type { AutocompleteMatchKind } from './AutocompleteMatcher'
 import type { EvaluationDocument } from './EvaluationDocument'
 import type { TestParameters } from './TestParameters'
-import type { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
+import type { CodyBenchOptions } from './cody-bench'
 import { testParses } from './testParse'
 import { testTypecheck } from './testTypecheck'
 
@@ -22,7 +22,7 @@ export interface AutocompleteParameters {
     client: MessageHandler
     document: EvaluationDocument
 
-    options: EvaluateAutocompleteOptions
+    options: CodyBenchOptions
 
     range: vscode.Range
     autocompleteKind?: AutocompleteMatchKind

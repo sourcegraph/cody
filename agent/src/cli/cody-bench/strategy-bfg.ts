@@ -12,7 +12,7 @@ import { type AutocompleteMatchKind, AutocompleteMatcher } from './AutocompleteM
 import { EvaluationDocument } from './EvaluationDocument'
 import { Queries } from './Queries'
 import { SnapshotWriter } from './SnapshotWriter'
-import type { EvaluateAutocompleteOptions } from './evaluate-autocomplete'
+import type { CodyBenchOptions } from './cody-bench'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { testCleanup, testInstall } from './testTypecheck'
 import { triggerAutocomplete } from './triggerAutocomplete'
@@ -25,7 +25,7 @@ import { triggerAutocomplete } from './triggerAutocomplete'
  */
 export async function evaluateBfgStrategy(
     client: MessageHandler,
-    options: EvaluateAutocompleteOptions
+    options: CodyBenchOptions
 ): Promise<void> {
     const { workspace } = options
     const queries = new Queries(options.queriesDirectory)
