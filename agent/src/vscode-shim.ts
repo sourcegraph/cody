@@ -304,17 +304,17 @@ const _workspace: typeof vscode.workspace = {
                 )
             )
         }
-
         const textDocument = workspaceDocuments.openTextDocument(uri)
         if (textDocument) return textDocument
 
         if (!agent)
             return Promise.reject(new Error('workspace.openTextDocument: no agent instance found'))
 
-        const result = await agent.request('textDocument/openDocument', {
+        const textDocumentFromClient = await agent.request('textDocument/openDocument', {
             uri: uri.toString(),
         })
-        if (!result) {
+
+        if (!textDocumentFromClient) {
             return Promise.reject(
                 new Error(
                     `workspace.openTextDocument: unsuccessful client cal to textDocument/openDocument: ${uri.toString()}`
@@ -322,7 +322,7 @@ const _workspace: typeof vscode.workspace = {
             )
         }
 
-        return workspaceDocuments.openUri(uri, result)
+        return workspaceDocuments.openUri(uri, textDocumentFromClient)
     },
     workspaceFolders,
     getWorkspaceFolder: () => {
@@ -483,7 +483,7 @@ function toUri(
     uriOrString: string | vscode.Uri | { language?: string; content?: string } | undefined
 ): Uri | undefined {
     if (typeof uriOrString === 'string') {
-        return Uri.file(uriOrString)
+        return Uri.parse(uriOrString)
     }
     if (uriOrString instanceof Uri) {
         return uriOrString

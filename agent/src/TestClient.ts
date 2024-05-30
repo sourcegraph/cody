@@ -359,6 +359,7 @@ export class TestClient extends MessageHandler {
 
             this.workspace.loadDocument(textDocument)
             this.notify('textDocument/didOpen', textDocument.underlying)
+
             return Promise.resolve(textDocument.underlying)
         })
         this.registerRequest('textDocument/edit', params => {
@@ -369,8 +370,14 @@ export class TestClient extends MessageHandler {
             }
             return Promise.resolve(success)
         })
-        this.registerRequest('textDocument/show', () => {
-            return Promise.resolve(true)
+        this.registerRequest('textDocument/show', params => {
+            const uri = vscode.Uri.parse(params.uri)
+            const document = this.workspace.getDocument(uri)
+            if (document) {
+                this.notify('textDocument/didOpen', document.protocolDocument.underlying)
+                return Promise.resolve(true)
+            }
+            return Promise.resolve(false)
         })
         this.registerNotification('debug/message', message => {
             this.logMessage(message)
