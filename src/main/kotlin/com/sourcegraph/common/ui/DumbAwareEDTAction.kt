@@ -21,7 +21,7 @@ abstract class DumbAwareEDTAction : DumbAwareAction {
       icon: Icon?
   ) : super(text, description, icon)
 
-  override fun getActionUpdateThread(): ActionUpdateThread {
+  fun getActionUpdateThread(): ActionUpdateThread {
     return ActionUpdateThread.EDT
   }
 }

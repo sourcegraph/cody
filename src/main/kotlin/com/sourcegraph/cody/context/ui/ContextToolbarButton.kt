@@ -11,7 +11,7 @@ open class ContextToolbarButton(
     private val buttonAction: () -> Unit = {}
 ) : DumbAwareActionButton(name, icon) {
 
-  override fun getActionUpdateThread(): ActionUpdateThread {
+  fun getActionUpdateThread(): ActionUpdateThread {
     return ActionUpdateThread.EDT
   }
 

@@ -6,7 +6,7 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.sourcegraph.config.ConfigUtil
 
 class InternalsStatusBarActionGroup : DefaultActionGroup() {
-  override fun getActionUpdateThread(): ActionUpdateThread {
+  fun getActionUpdateThread(): ActionUpdateThread {
     return ActionUpdateThread.EDT
   }
 

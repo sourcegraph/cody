@@ -8,8 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class CodyActionGroup extends DefaultActionGroup {
 
-  @Override
-  public ActionUpdateThread getActionUpdateThread() {
+  ActionUpdateThread getActionUpdateThread() {
     return ActionUpdateThread.EDT;
   }
 

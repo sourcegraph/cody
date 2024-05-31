@@ -93,7 +93,7 @@ private fun <A : Account, Cred, R> create(
             addCustomUpdater { isEnabled && model.activeAccount != accountsList.selectedValue }
           }
 
-          override fun getActionUpdateThread(): ActionUpdateThread {
+          fun getActionUpdateThread(): ActionUpdateThread {
             return ActionUpdateThread.BGT
           }
 
