@@ -1,6 +1,6 @@
-import type { GetFieldType } from 'lodash'
+import type {GetFieldType} from 'lodash'
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
+import {URI} from 'vscode-uri'
 
 import {
     type ConfigurationWithAccessToken,
@@ -9,24 +9,24 @@ import {
     type EmbeddingsModelConfig,
     type EmbeddingsSearchResult,
     FeatureFlag,
+    featureFlagProvider,
     type FileURI,
+    isDotCom,
+    isFileURI,
     type LocalEmbeddingsFetcher,
     type LocalEmbeddingsProvider,
     type PromptString,
-    featureFlagProvider,
-    isDotCom,
-    isFileURI,
     recordErrorToSpan,
     telemetryRecorder,
     uriBasename,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
-import type { IndexHealthResultFound, IndexRequest } from '../jsonrpc/embeddings-protocol'
-import type { MessageHandler } from '../jsonrpc/jsonrpc'
-import { logDebug } from '../log'
-import { captureException } from '../services/sentry/sentry'
-import { CodyEngineService } from './cody-engine'
+import type {IndexHealthResultFound, IndexRequest} from '../jsonrpc/embeddings-protocol'
+import type {MessageHandler} from '../jsonrpc/jsonrpc'
+import {logDebug} from '../log'
+import {captureException} from '../services/sentry/sentry'
+import {CodyEngineService} from './cody-engine'
 
 export async function createLocalEmbeddingsController(
     context: vscode.ExtensionContext,
@@ -396,9 +396,10 @@ export class LocalEmbeddingsController
         }
         const repoPath = this.lastRepo.dir
         logDebug('LocalEmbeddingsController', 'index', 'starting repository', repoPath)
+        const generateMetadata = featureFlagProvider.getFromCache(FeatureFlag.CodyEmbeddingsGenerateMetadata) || false
         await this.indexRequest({
             repoPath: repoPath.fsPath,
-            mode: { type: 'new', model: this.modelConfig.model, dimension: this.modelConfig.dimension },
+            mode: { type: 'new', model: this.modelConfig.model, dimension: this.modelConfig.dimension, generateMetadata},
         })
     }
 
