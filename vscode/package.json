@@ -467,7 +467,7 @@
         "title": "Rename Chat",
         "group": "Cody",
         "icon": "$(edit)",
-        "enablement": "cody.activated && cody.hasChatHistory"
+        "enablement": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats"
       },
       {
         "command": "cody.chat.history.clear",
