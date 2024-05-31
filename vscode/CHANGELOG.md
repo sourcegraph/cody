@@ -52,6 +52,10 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Added @-mention provider icons. [pull/4336](https://github.com/sourcegraph/cody/pull/4336)
 - Chat: New chats now start with @-mentions of your current repository and file. Use @-mentions to include other context. Enterprise users can @-mention remote repositories to chat across multiple repositories. [pull/4364](https://github.com/sourcegraph/cody/pull/4364)
 
+### Removed
+
+- Chat: The `Rename Chat` functionality.
+
 ## [1.18.2]
 
 ### Added
