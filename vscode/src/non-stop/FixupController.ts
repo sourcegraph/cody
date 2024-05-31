@@ -768,67 +768,58 @@ export class FixupController
 
         const deleted: vscode.DecorationOptions[] = []
         const added: vscode.Range[] = []
+        const linesToDeleteOnSave: vscode.Range[] = []
 
-        const editOk = await edit(editBuilder => {
-            let startLine = task.selectionRange.start.line
-            console.log('Start line text', editor.document.lineAt(startLine).text)
-            for (const change of changes) {
-                const count = change.count || 0
-                // biome-ignore lint/suspicious/noDebugger: <explanation>
-                debugger
-                if (change.removed) {
-                    // We have removals, for each line removed, we need to
-                    // remove the contents of the line, but not delete the line,
-                    // and then insert a decoration into the now-empty line.
-                    // This lets us preserve the deleted code without breaking the existing code.
-                    for (let i = 0; i < count; i++) {
-                        const startLineItem = editor.document.lineAt(startLine)
-                        const lineRange = new vscode.Range(
-                            new vscode.Position(
-                                startLine,
-                                startLineItem.firstNonWhitespaceCharacterIndex
-                            ),
-                            new vscode.Position(startLine, startLineItem.range.end.character)
-                        )
-                        // Clear the line
-                        editBuilder.replace(lineRange, '')
+        let startLine = task.selectionRange.start.line
+        for (const change of changes) {
+            const count = change.count || 0
+            if (change.removed) {
+                // We have removals, for each line removed, we need to
+                // remove the contents of the line, but not delete the line,
+                // and then insert a decoration into the now-empty line.
+                // This lets us preserve the deleted code without breaking the existing code.
+                for (let i = 0; i < count; i++) {
+                    const startLineItem = editor.document.lineAt(startLine)
+                    // Clear the line
+                    await edit(editBuilder => {
+                        editBuilder.replace(startLineItem.range, '')
+                    }, options)
 
-                        // Inject fake code via a decoration
-                        const padding = startLineItem.firstNonWhitespaceCharacterIndex
-                        deleted.push({
-                            ...removedDecoration,
-                            range: lineRange,
-                            renderOptions: {
-                                after: {
-                                    contentText:
-                                        UNICODE_SPACE.repeat(padding) + startLineItem.text.trim(),
-                                },
+                    linesToDeleteOnSave.push(startLineItem.rangeIncludingLineBreak)
+                    // Inject fake code via a decoration
+                    const padding = startLineItem.firstNonWhitespaceCharacterIndex
+                    deleted.push({
+                        ...removedDecoration,
+                        range: startLineItem.range,
+                        renderOptions: {
+                            after: {
+                                contentText: UNICODE_SPACE.repeat(padding) + startLineItem.text.trim(),
                             },
-                        })
+                        },
+                    })
 
-                        // Increment and move to the next line
-                        startLine++
-                    }
-                    continue
+                    // Increment and move to the next line
+                    startLine++
                 }
-
-                if (change.added) {
-                    // Insert on line below
-                    const insertionPosition = new vscode.Position(startLine, 0)
-                    editBuilder.insert(new vscode.Position(startLine, 0), `${change.value.trim()}\n`)
-                    added.push(new vscode.Range(insertionPosition, insertionPosition))
-                    startLine = startLine + count
-                    continue
-                }
-
-                startLine = startLine + count
+                continue
             }
-        }, options)
+
+            if (change.added) {
+                // Insert on line below
+                const insertionPosition = new vscode.Position(startLine, 0)
+                await edit(editBuilder => {
+                    editBuilder.insert(new vscode.Position(startLine, 0), change.value)
+                }, options)
+                added.push(new vscode.Range(insertionPosition, insertionPosition))
+                startLine = startLine + count
+                continue
+            }
+
+            startLine = startLine + count
+        }
 
         const decorate = () => {
-            console.log('Add decorations to ranges:', added)
             editor.setDecorations(addedDecoration, added)
-            console.log('Delete decorations to ranges:', deleted)
             editor.setDecorations(removedDecoration, deleted)
         }
         decorate()
@@ -843,7 +834,22 @@ export class FixupController
             }
         })
 
-        return editOk
+        // Temporary, need to do this elsewhere to clean up
+        vscode.workspace.onDidSaveTextDocument(async document => {
+            if (document.uri !== editor.document.uri) {
+                // Not the current doc, noop
+                return
+            }
+            editor.setDecorations(addedDecoration, [])
+            editor.setDecorations(removedDecoration, [])
+            await edit(editBuilder => {
+                for (const lineToDelete of linesToDeleteOnSave) {
+                    editBuilder.delete(lineToDelete)
+                }
+            })
+        })
+
+        return true
     }
 
     // Insert edit returned by Cody at task selection range
