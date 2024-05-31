@@ -11,7 +11,7 @@ import com.sourcegraph.config.ConfigUtil
 
 class CodyStatusBarActionGroup : DefaultActionGroup() {
 
-  fun getActionUpdateThread(): ActionUpdateThread {
+  override fun getActionUpdateThread(): ActionUpdateThread {
     return ActionUpdateThread.EDT
   }
 
