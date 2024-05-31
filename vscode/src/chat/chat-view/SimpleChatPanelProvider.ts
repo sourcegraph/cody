@@ -1419,16 +1419,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     // #region other public accessors and mutators
     // =======================================================================
 
-    public setChatTitle(title: string): void {
-        const isDefaultChatTitle = title === 'New Chat'
-        // Skip storing default chat title
-        if (!isDefaultChatTitle) {
-            this.chatModel.setCustomChatTitle(title)
-        }
-
-        this.postChatTitle()
-    }
-
     // Convenience function for tests
     public getViewTranscript(): readonly ChatMessage[] {
         return this.chatModel.getMessages().map(prepareChatMessage)
