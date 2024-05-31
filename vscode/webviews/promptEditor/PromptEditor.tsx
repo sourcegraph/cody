@@ -379,30 +379,32 @@ export function filterContextItemsFromPromptEditorValue(
         }
     }
 
-    function getTextContent(root: SerializedRootNode): string {
-        const text: string[] = []
-        const queue: SerializedLexicalNode[] = [root]
-        while (queue.length > 0) {
-            const node = queue.shift()!
-            if ('text' in node && typeof node.text === 'string') {
-                text.push(node.text)
-            }
-            if (node && 'children' in node && Array.isArray(node.children)) {
-                for (const child of node.children as SerializedLexicalNode[]) {
-                    queue.push(child)
-                }
-            }
-        }
-        return text.join('')
-    }
-
     return {
         ...value,
         editorState: {
             ...value.editorState,
             lexicalEditorState: editorState,
         },
-        text: getTextContent(editorState.root),
+        text: textContentFromSerializedLexicalNode(editorState.root),
         contextItems: value.contextItems.filter(item => keep(serializeContextItem(item))),
     }
+}
+
+export function textContentFromSerializedLexicalNode(
+    root: Pick<SerializedRootNode, 'type' | 'children'>
+): string {
+    const text: string[] = []
+    const queue: Omit<SerializedLexicalNode, 'version'>[] = [root]
+    while (queue.length > 0) {
+        const node = queue.shift()!
+        if ('text' in node && typeof node.text === 'string') {
+            text.push(node.text)
+        }
+        if (node && 'children' in node && Array.isArray(node.children)) {
+            for (const child of node.children as SerializedLexicalNode[]) {
+                queue.push(child)
+            }
+        }
+    }
+    return text.join('')
 }

@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'vitest'
-import { contextItemsFromPromptEditorValue, serializedPromptEditorStateFromText } from './PromptEditor'
+import {
+    contextItemsFromPromptEditorValue,
+    serializedPromptEditorStateFromText,
+    textContentFromSerializedLexicalNode,
+} from './PromptEditor'
 import { FILE_MENTION_EDITOR_STATE_FIXTURE } from './fixtures'
 import type { SerializedContextItem } from './nodes/ContextItemMentionNode'
 
@@ -48,4 +52,22 @@ describe('serializedPromptEditorStateFromText', () => {
                 },
             },
         ]))
+})
+describe('textContentFromSerializedLexicalNode', () => {
+    test('empty root', () => {
+        expect(
+            textContentFromSerializedLexicalNode({
+                type: 'root',
+                children: [],
+            })
+        ).toEqual('')
+    })
+
+    test('fixture', () => {
+        expect(
+            textContentFromSerializedLexicalNode(
+                FILE_MENTION_EDITOR_STATE_FIXTURE.lexicalEditorState.root
+            )
+        ).toBe('What does @Symbol1 in @dir/dir/file-a-1.py do? Also use @README.md:2-8.')
+    })
 })
