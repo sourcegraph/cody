@@ -7,6 +7,7 @@ import {
     RateLimitError,
     contextFiltersProvider,
     isCodyIgnoredFile,
+    telemetryRecorder,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
@@ -672,6 +673,11 @@ export class InlineCompletionItemProvider
                         telemetryService.log('CodyVSCodeExtension:upsellUsageLimitCTA:clicked', {
                             limit_type: 'suggestions',
                         })
+                        telemetryRecorder.recordEvent('cody.upsellUsageLimitCTA', 'clicked', {
+                            privateMetadata: {
+                                limit_type: 'suggestions',
+                            },
+                        })
                     }
                     void vscode.commands.executeCommand('cody.show-page', pageName)
                 },
@@ -689,6 +695,13 @@ export class InlineCompletionItemProvider
                             tier,
                         }
                     )
+                    telemetryRecorder.recordEvent(
+                        canUpgrade ? 'cody.upsellUsageLimitCTA' : 'cody.abuseUsageLimitCTA',
+                        'shown',
+                        {
+                            privateMetadata: { limit_type: 'suggestions', tier },
+                        }
+                    )
                 },
             })
 
@@ -699,6 +712,13 @@ export class InlineCompletionItemProvider
                 {
                     limit_type: 'suggestions',
                     tier,
+                }
+            )
+            telemetryRecorder.recordEvent(
+                canUpgrade ? 'cody.upsellUsageLimitStatusBar' : 'cody.abuseUsageLimitStatusBar',
+                'shown',
+                {
+                    privateMetadata: { limit_type: 'suggestions', tier },
                 }
             )
             return
