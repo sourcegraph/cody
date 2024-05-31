@@ -10,11 +10,15 @@ import type {
 import type { GenericVSCodeWrapper } from '../utils/VSCodeApi'
 
 import './MinionApp.css'
-import { type RangeData, markdownCodeBlockLanguageIDForFilename } from '@sourcegraph/cody-shared'
+import {
+    type RangeData,
+    type SerializedPromptEditorValue,
+    markdownCodeBlockLanguageIDForFilename,
+} from '@sourcegraph/cody-shared'
 import type { URI } from 'vscode-uri'
 import { FileLink } from '../components/FileLink'
 import { MarkdownFromCody } from '../components/MarkdownFromCody'
-import { PromptEditor, type SerializedPromptEditorValue } from '../promptEditor/PromptEditor'
+import { PromptEditor } from '../promptEditor/PromptEditor'
 import { updateDisplayPathEnvInfoForWebview } from '../utils/displayPathEnvInfo'
 import type { MinionExtensionMessage, MinionWebviewMessage } from './webview_protocol'
 

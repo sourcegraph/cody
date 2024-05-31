@@ -2,18 +2,16 @@ import {
     type ChatMessage,
     ContextItemSource,
     type Guardrails,
+    contextItemsFromPromptEditorValue,
+    filterContextItemsFromPromptEditorValue,
     ps,
     reformatBotMessageForChat,
+    serializedPromptEditorStateFromChatMessage,
 } from '@sourcegraph/cody-shared'
 import { type FunctionComponent, type RefObject, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
 import { chatModelIconComponent } from '../../../../components/ChatModelIcon'
-import {
-    type PromptEditorRefAPI,
-    contextItemsFromPromptEditorValue,
-    filterContextItemsFromPromptEditorValue,
-    serializedPromptEditorStateFromChatMessage,
-} from '../../../../promptEditor/PromptEditor'
+import type { PromptEditorRefAPI } from '../../../../promptEditor/PromptEditor'
 import { ChatMessageContent, type CodeBlockActionsProps } from '../../../ChatMessageContent'
 import { ErrorItem, RequestErrorItem } from '../../../ErrorItem'
 import { type Interaction, editHumanMessage } from '../../../Transcript'

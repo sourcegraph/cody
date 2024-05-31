@@ -24,6 +24,7 @@ import {
     PromptString,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
+    type SerializedPromptEditorState,
     Typewriter,
     allMentionProvidersMetadata,
     hydrateAfterPostMessage,
@@ -273,7 +274,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     PromptString.unsafe_fromUserQuery(message.text),
                     message.submitType,
                     message.contextFiles ?? [],
-                    message.editorState,
+                    message.editorState as SerializedPromptEditorState,
                     message.addEnhancedContext ?? false,
                     this.startNewSubmitOrEditOperation(),
                     'chat'
@@ -286,7 +287,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     PromptString.unsafe_fromUserQuery(message.text),
                     message.index ?? undefined,
                     message.contextFiles ?? [],
-                    message.editorState,
+                    message.editorState as SerializedPromptEditorState,
                     message.addEnhancedContext || false
                 )
                 break
@@ -462,7 +463,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         inputText: PromptString,
         submitType: ChatSubmitType,
         mentions: ContextItem[],
-        editorState: ChatMessage['editorState'],
+        editorState: SerializedPromptEditorState | null,
         addEnhancedContext: boolean,
         abortSignal: AbortSignal,
         source?: EventSource,
@@ -677,7 +678,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         text: PromptString,
         index: number | undefined,
         contextFiles: ContextItem[],
-        editorState: ChatMessage['editorState'],
+        editorState: SerializedPromptEditorState | null,
         addEnhancedContext = true
     ): Promise<void> {
         const abortSignal = this.startNewSubmitOrEditOperation()
@@ -820,15 +821,19 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         void this.postMessage({
             type: 'clientAction',
-            addContextItemsToLastHumanInput: contextItem.map(f => ({
-                ...f,
-                type: 'file',
-                // Remove content to avoid sending large data to the webview
-                content: undefined,
-                isTooLarge: f.size ? f.size > userContextSize : undefined,
-                source: ContextItemSource.User,
-                range: f.range,
-            })),
+            addContextItemsToLastHumanInput: contextItem
+                ? [
+                      {
+                          ...contextItem,
+                          type: 'file',
+                          // Remove content to avoid sending large data to the webview
+                          content: undefined,
+                          isTooLarge: contextItem.size ? contextItem.size > userContextSize : undefined,
+                          source: ContextItemSource.User,
+                          range: contextItem.range,
+                      } satisfies ContextItem,
+                  ]
+                : [],
         })
 
         // Reveal the webview panel if it is hidden

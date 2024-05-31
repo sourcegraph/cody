@@ -302,6 +302,9 @@ importers:
       js-tiktoken:
         specifier: ^1.0.10
         version: 1.0.10
+      lexical:
+        specifier: ^0.15.0
+        version: 0.15.0
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
