@@ -132,6 +132,7 @@ describe('getConfiguration', () => {
             commandCodeLenses: true,
             experimentalSimpleChatContext: true,
             experimentalSupercompletions: false,
+            experimentalMinionAnthropicKey: undefined,
             experimentalSymfContext: true,
             experimentalTracing: true,
             experimentalGuardrails: true,

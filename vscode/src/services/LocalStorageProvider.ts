@@ -26,6 +26,7 @@ class LocalStorage {
     // Bump this on storage changes so we don't handle incorrectly formatted data
     protected readonly KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
     protected readonly KEY_CONFIG = 'cody-config'
+    protected readonly KEY_LOCAL_MINION_HISTORY = 'cody-local-minionHistory-v0'
     public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
     public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     protected readonly CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
@@ -146,6 +147,16 @@ class LocalStorage {
                 console.error(error)
             }
         }
+    }
+
+    public async setMinionHistory(authStatus: AuthStatus, serializedHistory: string): Promise<void> {
+        // TODO(beyang): SECURITY - use authStatus
+        await this.storage.update(this.KEY_LOCAL_MINION_HISTORY, serializedHistory)
+    }
+
+    public getMinionHistory(authStatus: AuthStatus): string | null {
+        // TODO(beyang): SECURITY - use authStatus
+        return this.storage.get<string | null>(this.KEY_LOCAL_MINION_HISTORY, null)
     }
 
     public async removeChatHistory(authStatus: AuthStatus): Promise<void> {

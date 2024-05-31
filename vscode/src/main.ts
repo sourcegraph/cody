@@ -56,6 +56,8 @@ import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
 import { logDebug, logError } from './log'
+import { MinionOrchestrator } from './minion/MinionOrchestrator'
+import { PoorMansBash } from './minion/environment'
 import { getChatModelsFromConfiguration, syncModelProviders } from './models/sync'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
@@ -201,6 +203,24 @@ const register = async (
 
     if (symfRunner) {
         disposables.push(symfRunner)
+    }
+
+    //
+    // Minion stuff
+    //
+    if (config.experimentalMinionAnthropicKey) {
+        const minionOrchestrator = new MinionOrchestrator(context.extensionUri, authProvider, symfRunner)
+        disposables.push(minionOrchestrator)
+        disposables.push(
+            // Minion
+            vscode.commands.registerCommand('cody.minion.panel.new', () =>
+                minionOrchestrator.createNewMinionPanel()
+            ),
+            vscode.commands.registerCommand('cody.minion.new-terminal', async () => {
+                const t = new PoorMansBash()
+                await t.run('hello world')
+            })
+        )
     }
 
     const enterpriseContextFactory = new EnterpriseContextFactory(completionsClient)
