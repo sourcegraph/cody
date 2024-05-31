@@ -27,6 +27,8 @@ val isForceCodeSearchBuild = isForceBuild || properties("forceCodeSearchBuild") 
 // As https://www.jetbrains.com/updates/updates.xml adds a new "IntelliJ IDEA" YYYY.N version, add
 // it to this list.
 // Remove unsupported old versions from this list.
+// Update gradle.properties pluginSinceBuild, pluginUntilBuild to match the min, max versions in
+// this list.
 val versionsOfInterest =
     listOf("2022.1", "2022.2", "2022.3", "2023.1", "2023.2", "2023.3", "2024.1").sorted()
 val versionsToValidate =
