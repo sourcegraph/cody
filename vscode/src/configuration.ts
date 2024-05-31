@@ -136,7 +136,6 @@ export function getConfiguration(
         internalUnstable: getHiddenSetting('internal.unstable', isTesting),
 
         autocompleteExperimentalGraphContext,
-        experimentalSimpleChatContext: getHiddenSetting('experimental.simpleChatContext', true),
         experimentalCommitMessage: getHiddenSetting('experimental.commitMessage', true),
         experimentalNoodle: getHiddenSetting('experimental.noodle', false),
 

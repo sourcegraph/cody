@@ -57,7 +57,6 @@ export interface Configuration {
      */
     experimentalGuardrails: boolean
     experimentalTracing: boolean
-    experimentalSimpleChatContext: boolean
     experimentalChatContextRanker: boolean | undefined
     experimentalSupercompletions: boolean
     experimentalGithubAccessToken: string

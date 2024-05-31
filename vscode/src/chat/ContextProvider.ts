@@ -32,7 +32,6 @@ export type Config = Pick<
     | 'codeActions'
     | 'experimentalGuardrails'
     | 'commandCodeLenses'
-    | 'experimentalSimpleChatContext'
     | 'internalUnstable'
     | 'experimentalChatContextRanker'
     | 'experimentalNoodle'

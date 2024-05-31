@@ -43,8 +43,6 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.localSymbols':
                         return true
-                    case 'cody.experimental.simpleChatContext':
-                        return true
                     case 'cody.experimental.tracing':
                         return true
                     case 'cody.experimental.commitMessage':
@@ -122,7 +120,6 @@ describe('getConfiguration', () => {
                 '*': true,
             },
             commandCodeLenses: true,
-            experimentalSimpleChatContext: true,
             experimentalSupercompletions: false,
             experimentalMinionAnthropicKey: undefined,
             experimentalTracing: true,
