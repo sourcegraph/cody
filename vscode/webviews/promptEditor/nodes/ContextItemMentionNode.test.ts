@@ -15,7 +15,7 @@ describe('contextItemMentionNodeDisplayText', () => {
                 uri: 'file:///a.go',
                 range: { start: { line: 1, character: 0 }, end: { line: 4, character: 0 } },
             })
-        ).toBe(`${isWindows() ? 'a.go' : 'a.go'}:2-4`))
+        ).toBe('a.go:2-4'))
 
     test('file range', () =>
         expect(
@@ -24,7 +24,7 @@ describe('contextItemMentionNodeDisplayText', () => {
                 uri: 'file:///a.go',
                 range: { start: { line: 1, character: 2 }, end: { line: 4, character: 4 } },
             })
-        ).toBe(`${isWindows() ? 'a.go' : 'a.go'}:2-5`))
+        ).toBe('a.go:2-5'))
 
     test('symbol', () =>
         expect(
