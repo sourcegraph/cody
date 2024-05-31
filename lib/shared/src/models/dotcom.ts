@@ -17,7 +17,6 @@ export const DEFAULT_DOT_COM_MODELS = [
         model: 'anthropic/claude-3-sonnet-20240229',
         provider: 'Anthropic',
         default: true,
-        initialDefault: true,
         codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         // Has a higher context window with a separate limit for user-context.

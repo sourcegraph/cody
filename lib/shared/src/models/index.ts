@@ -15,11 +15,6 @@ export class ModelProvider {
      */
     public default = false
 
-    /**
-     * Whether the model is the server-set initial default for new users.
-     */
-    public initialDefault? = false
-
     // Whether the model is only available to Pro users
     public codyProOnly = false
     // The name of the provider of the model, e.g. "Anthropic"
