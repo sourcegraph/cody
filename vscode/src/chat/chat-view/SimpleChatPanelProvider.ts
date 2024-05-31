@@ -397,7 +397,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             serverEndpoint: config.serverEndpoint,
             experimentalGuardrails: config.experimentalGuardrails,
             experimentalNoodle: config.experimentalNoodle,
-            experimentalURLContext: config.experimentalURLContext,
         }
     }
 
@@ -728,11 +727,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.allMentionProvidersMetadataQueryCancellation = cancellation
 
         try {
-            const config = await this.getConfigForWebview()
-            if (cancellation.token.isCancellationRequested) {
-                return
-            }
-            const providers = await allMentionProvidersMetadata(config)
+            const providers = await allMentionProvidersMetadata()
             if (cancellation.token.isCancellationRequested) {
                 return
             }

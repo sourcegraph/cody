@@ -64,7 +64,6 @@ export interface Configuration {
     experimentalGithubAccessToken: string
     experimentalCommitMessage: boolean
     experimentalNoodle: boolean
-    experimentalURLContext: boolean
     experimentalMinionAnthropicKey: string | undefined
 
     /**
