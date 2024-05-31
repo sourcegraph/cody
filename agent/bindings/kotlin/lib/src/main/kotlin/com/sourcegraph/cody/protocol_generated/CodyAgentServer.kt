@@ -102,6 +102,8 @@ interface CodyAgentServer {
   fun testing_progressCancelation(params: Testing_ProgressCancelationParams): CompletableFuture<Testing_ProgressCancelationResult>
   @JsonRequest("testing/reset")
   fun testing_reset(params: Null?): CompletableFuture<Null?>
+  @JsonRequest("textDocument/open")
+  fun textDocument_open(params: ProtocolTextDocument): CompletableFuture<Null?>
   @JsonRequest("extensionConfiguration/change")
   fun extensionConfiguration_change(params: ExtensionConfiguration): CompletableFuture<AuthStatus?>
   @JsonRequest("extensionConfiguration/status")
