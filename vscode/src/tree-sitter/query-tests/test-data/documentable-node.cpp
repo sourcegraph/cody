@@ -106,7 +106,7 @@ void return_statement()
 
 // ------------------------------------
 
-return_statement('value');
+int nums[] = {2, 7, 11, 15};
 //       |
 
 // ------------------------------------
@@ -123,3 +123,39 @@ enum Level
     MEDIUM,
     HIGH
 };
+
+// ------------------------------------
+
+#define TEST(name) void test_##name()
+
+TEST(twoSum)
+{
+    int target = 9;
+    int returnSize[2];
+    int expected[] = {0, 1};
+    // |
+};
+
+// ------------------------------------
+
+template <typename T> struct SampleStruct {
+  template <typename ParseContext>
+    auto parse(ParseContext &ctx) {
+        // |
+        return ctx.begin();
+    }
+};
+
+// ------------------------------------
+
+template <typename T> struct SampleStruct {
+  template <typename ParseContext>
+    auto parse(ParseContext &ctx) {
+        // |
+        return ctx.begin();
+    }
+
+      void foo() {
+    }
+};
+

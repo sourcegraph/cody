@@ -99,27 +99,27 @@
 // ------------------------------------
 
   typedef struct
-//^ start range.identifier[1]
+//        ^ start range.function[1]
   {
 //         █
   } Agent;
-//       ^ end range.identifier[1]
+//^ end range.function[1]
 
 // Nodes types:
-// range.identifier[1]: type_definition
+// range.function[1]: struct_specifier
 
 // ------------------------------------
 
   typedef struct
-//^ start range.identifier[1]
+//        ^ start range.function[1]
   {
 //         █
       void (*__init__)(struct AgentMultiLine *self, char *name);
   } AgentMultiLine;
-//                ^ end range.identifier[1]
+//^ end range.function[1]
 
 // Nodes types:
-// range.identifier[1]: type_definition
+// range.function[1]: struct_specifier
 
 // ------------------------------------
 
@@ -139,15 +139,15 @@
 // ------------------------------------
 
   typedef struct
-//^ start range.identifier[1]
+//        ^ start range.function[1]
   {
       char *name;
 //            █
   } Agent;
-//       ^ end range.identifier[1]
+//^ end range.function[1]
 
 // Nodes types:
-// range.identifier[1]: type_definition
+// range.function[1]: struct_specifier
 
 // ------------------------------------
 
@@ -178,18 +178,13 @@
 
 // ------------------------------------
 
-return_statement('value');
+int nums[] = {2, 7, 11, 15};
 //       |
 
 // ------------------------------------
 
-  char *user_name = "Tom";
-//^^^^^^^^^^^^^^^^^^^^^^^^ symbol.identifier[1], range.identifier[1]
-//    █
-
-// Nodes types:
-// symbol.identifier[1]: declaration
-// range.identifier[1]: declaration
+char *user_name = "Tom";
+//  |
 
 // ------------------------------------
 
@@ -205,4 +200,49 @@ return_statement('value');
 
 // Nodes types:
 // range.identifier[1]: enum_specifier
+
+// ------------------------------------
+
+#define TEST(name) void test_##name()
+
+TEST(twoSum)
+{
+    int target = 9;
+    int returnSize[2];
+    int expected[] = {0, 1};
+    // |
+};
+
+// ------------------------------------
+
+  template <typename T> struct SampleStruct {
+//                      ^ start range.function[1]
+    template <typename ParseContext>
+      auto parse(ParseContext &ctx) {
+//           █
+          return ctx.begin();
+      }
+  };
+//^ end range.function[1]
+
+// Nodes types:
+// range.function[1]: struct_specifier
+
+// ------------------------------------
+
+  template <typename T> struct SampleStruct {
+//                      ^ start range.function[1]
+    template <typename ParseContext>
+      auto parse(ParseContext &ctx) {
+//           █
+          return ctx.begin();
+      }
+
+        void foo() {
+      }
+  };
+//^ end range.function[1]
+
+// Nodes types:
+// range.function[1]: struct_specifier
 
