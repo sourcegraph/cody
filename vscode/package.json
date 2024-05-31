@@ -388,7 +388,7 @@
         "icon": "$(gear)"
       },
       {
-        "command": "cody.focus",
+        "command": "cody.chat.focus",
         "category": "Cody",
         "title": "Sign In"
       },
@@ -737,7 +737,7 @@
           "when": "false"
         },
         {
-          "command": "cody.focus",
+          "command": "cody.chat.focus",
           "title": "Cody: Sign In",
           "when": "!cody.activated"
         },
@@ -817,7 +817,7 @@
           "group": "custom-commands"
         },
         {
-          "command": "cody.focus",
+          "command": "cody.chat.focus",
           "when": "!cody.activated",
           "group": "other"
         }

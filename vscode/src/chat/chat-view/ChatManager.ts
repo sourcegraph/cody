@@ -110,7 +110,7 @@ export class ChatManager implements vscode.Disposable {
         // Chat panel is only used for chat view
         // Request to open chat panel for login view/unAuth users, will be sent to sidebar view
         if (!this.options.authProvider.getAuthStatus()?.isLoggedIn || view !== 'chat') {
-            return vscode.commands.executeCommand('cody.focus')
+            return vscode.commands.executeCommand('cody.chat.focus')
         }
 
         const chatProvider = await this.chatPanelsManager.getNewChatPanel()
