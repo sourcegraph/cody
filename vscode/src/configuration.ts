@@ -143,7 +143,6 @@ export function getConfiguration(
         experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
-        experimentalOllamaChat: getHiddenSetting('experimental.ollamaChat', true),
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
         experimentalMinionAnthropicKey: getHiddenSetting('experimental.minion.anthropicKey', undefined),
 

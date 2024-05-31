@@ -142,10 +142,6 @@ class ConfigurationMetadataProcessor implements TelemetryProcessor {
                 value: this.config.experimentalGuardrails ? 1 : 0,
             },
             {
-                key: 'ollama',
-                value: this.config.experimentalOllamaChat ? 1 : 0,
-            },
-            {
                 key: 'tier',
                 value: getTier(this.authStatusProvider.getAuthStatus()),
             }

@@ -231,21 +231,6 @@ export function createStatusBar(): CodyStatusBar {
                     return enablement.Document || enablement.EditOrChat || enablement.Generate
                 }
             ),
-            await createFeatureToggle(
-                'Ollama for Chat',
-                'Experimental',
-                'Use local Ollama models for chat and commands when available',
-                'cody.experimental.ollamaChat',
-                c => c.experimentalOllamaChat,
-                false,
-                [
-                    {
-                        iconPath: new vscode.ThemeIcon('book'),
-                        tooltip: 'Learn more about using local models',
-                        onClick: () => vscode.commands.executeCommand('cody.statusBar.ollamaDocs'),
-                    } as vscode.QuickInputButton,
-                ]
-            ),
             { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
             {
                 label: '$(gear) Cody Extension Settings',

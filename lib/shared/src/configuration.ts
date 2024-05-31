@@ -59,7 +59,6 @@ export interface Configuration {
     experimentalTracing: boolean
     experimentalSimpleChatContext: boolean
     experimentalChatContextRanker: boolean | undefined
-    experimentalOllamaChat: boolean
     experimentalSupercompletions: boolean
     experimentalGithubAccessToken: string
     experimentalCommitMessage: boolean

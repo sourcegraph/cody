@@ -840,7 +840,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
     experimentalSimpleChatContext: true,
     experimentalSupercompletions: false,
     experimentalMinionAnthropicKey: undefined,
-    experimentalOllamaChat: true,
     experimentalTracing: false,
     experimentalGithubAccessToken: '',
     experimentalCommitMessage: true,
