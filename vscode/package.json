@@ -121,7 +121,7 @@
           {
             "id": "chat",
             "title": "Cody Chat",
-            "description": "Answer questions about general programming topics, or specific to your codebase, with Cody chat.\n[Open Chat](command:cody.walkthrough.showChat)",
+            "description": "Answer questions about general programming topics, or specific to your codebase, with Cody chat.\n[Open Chat](command:cody.chat.panel.new)",
             "media": {
               "markdown": "walkthroughs/chat.md"
             }
