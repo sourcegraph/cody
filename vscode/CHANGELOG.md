@@ -25,6 +25,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+- Autocomplete: Fixed an issue where formatting on save could cause completions to show duplicated characters. [pull/4404](https://github.com/sourcegraph/cody/pull/4404)
 - Edit: Fixed an issue where streamed insertions used invalid document ranges. [pull/4172](https://github.com/sourcegraph/cody/pull/4172)
 - Chat: Fixed issues with chat commands where selection context is removed from context items. [pull/4229](https://github.com/sourcegraph/cody/pull/4229)
 - Auth: Fixes an issue where Login page is not reloaded when proxy settings have changed. [pull/4233](https://github.com/sourcegraph/cody/pull/4233)
@@ -50,6 +51,11 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Improved chat model selector UI with GPT-4o now as a recommended model, improved usability for Cody Free users, and a chat models documentation link. [pull/4254](https://github.com/sourcegraph/cody/pull/4254)
 - Chat: New welcome screen. [pull/4303](https://github.com/sourcegraph/cody/pull/4303)
 - Chat: Added @-mention provider icons. [pull/4336](https://github.com/sourcegraph/cody/pull/4336)
+- Chat: New chats now start with @-mentions of your current repository and file. Use @-mentions to include other context. Enterprise users can @-mention remote repositories to chat across multiple repositories. [pull/4364](https://github.com/sourcegraph/cody/pull/4364)
+
+### Removed
+
+- Chat: The `Rename Chat` functionality.
 
 ## [1.18.2]
 

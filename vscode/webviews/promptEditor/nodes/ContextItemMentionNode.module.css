@@ -3,16 +3,19 @@
     background-color: color-mix(in lch, var(--vscode-textLink-foreground) 10%, transparent);
     border-radius: 2px;
     white-space: normal;
-    padding: 0 1px;
+    padding: 0 3px;
     display: inline-block;
 
     .icon {
-        display: inline-block;
+        display: inline;
         width: 13px;
         height: 13px;
-        margin-right: -2px;
         transform: translateY(-1px);
         opacity: 0.8;
+    }
+
+    & + .context-item-mention-node {
+        margin-left: 2px;
     }
 }
 

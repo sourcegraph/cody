@@ -462,14 +462,6 @@
         "icon": "$(layout-sidebar-left)"
       },
       {
-        "command": "cody.chat.history.edit",
-        "category": "Cody",
-        "title": "Rename Chat",
-        "group": "Cody",
-        "icon": "$(edit)",
-        "enablement": "cody.activated && cody.hasChatHistory"
-      },
-      {
         "command": "cody.chat.history.clear",
         "category": "Cody",
         "title": "Delete All Chats",
@@ -518,28 +510,12 @@
         "enablement": "cody.activated && editorHasSelection && cody.hasChatPanelsOpened"
       },
       {
-        "command": "cody.mention.selection.new",
-        "category": "Cody",
-        "group": "Chat",
-        "title": "New Chat with Selection",
-        "icon": "$(mention)",
-        "enablement": "cody.activated && editorHasSelection && !cody.hasNewChatOpened"
-      },
-      {
         "command": "cody.mention.file",
         "category": "Cody",
         "group": "Chat",
         "title": "Add File to Cody Chat",
         "icon": "$(mention)",
         "enablement": "cody.activated && resourceScheme == file && cody.hasChatPanelsOpened"
-      },
-      {
-        "command": "cody.mention.file.new",
-        "category": "Cody",
-        "group": "Chat",
-        "title": "New Chat with File",
-        "icon": "$(mention)",
-        "enablement": "cody.activated && resourceScheme == file && !cody.hasNewChatOpened"
       },
       {
         "command": "cody.chat.panel.reset",
@@ -623,11 +599,6 @@
       },
       {
         "command": "cody.mention.selection",
-        "key": "alt+l",
-        "when": "cody.activated && !editorReadonly && editorTextFocus && editorHasSelection"
-      },
-      {
-        "command": "cody.mention.selection.new",
         "key": "alt+l",
         "when": "cody.activated && !editorReadonly && editorTextFocus && editorHasSelection"
       },
@@ -792,19 +763,9 @@
           "when": "cody.activated && !editorReadonly && editorHasSelection && cody.hasChatPanelsOpened"
         },
         {
-          "command": "cody.mention.selection.new",
-          "group": "0_cody",
-          "when": "cody.activated && !editorReadonly && editorHasSelection && !cody.hasNewChatOpened"
-        },
-        {
           "command": "cody.mention.file",
           "group": "0_cody",
           "when": "cody.activated && !editorReadonly && !editorHasSelection && cody.hasChatPanelsOpened"
-        },
-        {
-          "command": "cody.mention.file.new",
-          "group": "0_cody",
-          "when": "cody.activated && !editorReadonly && !editorHasSelection && !cody.hasNewChatOpened"
         },
         {
           "command": "cody.chat.panel.new",
@@ -935,11 +896,6 @@
       ],
       "view/item/context": [
         {
-          "command": "cody.chat.history.edit",
-          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
-          "group": "inline@1"
-        },
-        {
           "command": "cody.chat.history.delete",
           "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
           "group": "inline@2"
@@ -967,11 +923,6 @@
           "command": "cody.mention.file",
           "group": "0_cody",
           "when": "cody.activated && resourceScheme == file && cody.hasChatPanelsOpened"
-        },
-        {
-          "command": "cody.mention.file.new",
-          "group": "0_cody",
-          "when": "cody.activated && resourceScheme == file && !cody.hasNewChatOpened"
         }
       ],
       "scm/title": [
@@ -1455,7 +1406,6 @@
     "@pollyjs/persister": "^6.0.6",
     "@pollyjs/persister-fs": "^6.0.6",
     "@storybook/preview-api": "^8.0.5",
-    "@types/axios": "^0.14.0",
     "@types/crypto-js": "^4.2.2",
     "@types/dedent": "^0.7.0",
     "@types/diff": "^5.0.9",
@@ -1474,7 +1424,6 @@
     "@types/unzipper": "^0.10.7",
     "@types/uuid": "^9.0.2",
     "@types/vscode": "^1.79.0",
-    "@types/yaml": "^1.9.7",
     "@vscode/test-electron": "^2.3.8",
     "@vscode/test-web": "^0.0.47",
     "@vscode/vsce": "^2.22.0",

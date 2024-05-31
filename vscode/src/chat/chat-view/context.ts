@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import {
     type ConfigurationUseContext,
     type ContextItem,
+    type ContextItemRepository,
     ContextItemSource,
     MAX_BYTES_PER_FILE,
     NUM_CODE_RESULTS,
@@ -21,32 +22,50 @@ import type { LocalEmbeddingsController } from '../../local-context/local-embedd
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 
+interface HumanInput {
+    text: PromptString
+    mentions: ContextItem[]
+}
+
+function remoteRepositoryIDsFromHumanInput(input: HumanInput): string[] {
+    return input.mentions
+        .filter((item): item is ContextItemRepository => item.type === 'repository')
+        .map(item => item.repoID)
+}
+
+function shouldSearchInLocalWorkspace(input: HumanInput): boolean {
+    return input.mentions.some(item => item.type === 'tree')
+}
+
 interface GetEnhancedContextOptions {
     strategy: ConfigurationUseContext
     editor: VSCodeEditor
-    text: PromptString
+    input: HumanInput
     providers: {
         localEmbeddings: LocalEmbeddingsController | null
         symf: SymfRunner | null
         remoteSearch: RemoteSearch | null
     }
     contextRanking: ContextRankingController | null
+    addEnhancedContext: boolean
     // TODO(@philipp-spiess): Add abort controller to be able to cancel expensive retrievers
 }
 export async function getEnhancedContext({
     strategy,
     editor,
-    text,
+    input,
     providers,
     contextRanking,
+    addEnhancedContext,
 }: GetEnhancedContextOptions): Promise<ContextItem[]> {
     if (contextRanking) {
         return getEnhancedContextFromRanker({
             strategy,
             editor,
-            text,
+            input,
             providers,
             contextRanking,
+            addEnhancedContext,
         })
     }
 
@@ -57,11 +76,10 @@ export async function getEnhancedContext({
             return getVisibleEditorContext(editor)
         }
 
-        // Get embeddings context if useContext Config is not set to 'keyword' only
         const embeddingsContextItemsPromise =
-            strategy !== 'keyword'
+            strategy !== 'keyword' && (addEnhancedContext || shouldSearchInLocalWorkspace(input))
                 ? retrieveContextGracefully(
-                      searchEmbeddingsLocal(providers.localEmbeddings, text),
+                      searchEmbeddingsLocal(providers.localEmbeddings, input.text),
                       'local-embeddings'
                   )
                 : []
@@ -69,11 +87,16 @@ export async function getEnhancedContext({
         //  Get search (symf or remote search) context if config is not set to 'embeddings' only
         const remoteSearchContextItemsPromise =
             providers.remoteSearch && strategy !== 'embeddings'
-                ? retrieveContextGracefully(searchRemote(providers.remoteSearch, text), 'remote-search')
+                ? retrieveContextGracefully(
+                      searchRemote(providers.remoteSearch, input, addEnhancedContext),
+                      'remote-search'
+                  )
                 : []
         const localSearchContextItemsPromise =
-            providers.symf && strategy !== 'embeddings'
-                ? retrieveContextGracefully(searchSymf(providers.symf, editor, text), 'symf')
+            providers.symf &&
+            strategy !== 'embeddings' &&
+            (addEnhancedContext || shouldSearchInLocalWorkspace(input))
+                ? retrieveContextGracefully(searchSymf(providers.symf, editor, input.text), 'symf')
                 : []
 
         // Combine all context sources
@@ -83,42 +106,52 @@ export async function getEnhancedContext({
             ...(await localSearchContextItemsPromise),
         ]
 
-        const priorityContext = await getPriorityContext(text, editor, searchContext)
+        const priorityContext = await getPriorityContext(input.text, editor, searchContext)
         return priorityContext.concat(searchContext)
     })
 }
 
 async function getEnhancedContextFromRanker({
     editor,
-    text,
+    input,
     providers,
     contextRanking,
+    addEnhancedContext,
 }: GetEnhancedContextOptions): Promise<ContextItem[]> {
     return wrapInActiveSpan('chat.enhancedContextRanker', async span => {
         // Get all possible context items to rank
         let searchContext = getVisibleEditorContext(editor)
 
         const numResults = 50
-        const embeddingsContextItemsPromise = retrieveContextGracefully(
-            searchEmbeddingsLocal(providers.localEmbeddings, text, numResults),
-            'local-embeddings'
-        )
+        const embeddingsContextItemsPromise =
+            addEnhancedContext || shouldSearchInLocalWorkspace(input)
+                ? retrieveContextGracefully(
+                      searchEmbeddingsLocal(providers.localEmbeddings, input.text, numResults),
+                      'local-embeddings'
+                  )
+                : []
 
         const modelSpecificEmbeddingsContextItemsPromise = contextRanking
             ? retrieveContextGracefully(
-                  contextRanking.searchModelSpecificEmbeddings(text, numResults),
+                  contextRanking.searchModelSpecificEmbeddings(input.text, numResults),
                   'model-specific-embeddings'
               )
             : []
 
-        const precomputeQueryEmbeddingPromise = contextRanking?.precomputeContextRankingFeatures(text)
+        const precomputeQueryEmbeddingPromise = contextRanking?.precomputeContextRankingFeatures(
+            input.text
+        )
 
-        const localSearchContextItemsPromise = providers.symf
-            ? retrieveContextGracefully(searchSymf(providers.symf, editor, text), 'symf')
-            : []
+        const localSearchContextItemsPromise =
+            providers.symf && (addEnhancedContext || shouldSearchInLocalWorkspace(input))
+                ? retrieveContextGracefully(searchSymf(providers.symf, editor, input.text), 'symf')
+                : []
 
         const remoteSearchContextItemsPromise = providers.remoteSearch
-            ? retrieveContextGracefully(searchRemote(providers.remoteSearch, text), 'remote-search')
+            ? retrieveContextGracefully(
+                  searchRemote(providers.remoteSearch, input, addEnhancedContext),
+                  'remote-search'
+              )
             : []
 
         const keywordContextItemsPromise = (async () => [
@@ -138,13 +171,13 @@ async function getEnhancedContextFromRanker({
             .concat(keywordContextItems)
             .concat(embeddingsContextItems)
             .concat(modelEmbeddingContextItems)
-        const editorContext = await getPriorityContext(text, editor, searchContext)
+        const editorContext = await getPriorityContext(input.text, editor, searchContext)
         const allContext = editorContext.concat(searchContext)
         if (!contextRanking) {
             return allContext
         }
         const rankedContext = wrapInActiveSpan('chat.enhancedContextRanker.reranking', () =>
-            contextRanking.rankContextItems(text, allContext)
+            contextRanking.rankContextItems(input.text, allContext)
         )
         return rankedContext
     })
@@ -152,13 +185,17 @@ async function getEnhancedContextFromRanker({
 
 async function searchRemote(
     remoteSearch: RemoteSearch | null,
-    userText: PromptString
+    input: HumanInput,
+    allReposForEnhancedContext: boolean
 ): Promise<ContextItem[]> {
     return wrapInActiveSpan('chat.context.search.remote', async () => {
         if (!remoteSearch) {
             return []
         }
-        return (await remoteSearch.query(userText)).map(result => {
+        const repoIDs = allReposForEnhancedContext
+            ? remoteSearch.getRepoIdSet()
+            : remoteRepositoryIDsFromHumanInput(input)
+        return (await remoteSearch.query(input.text, repoIDs)).map(result => {
             return {
                 type: 'file',
                 content: result.content,

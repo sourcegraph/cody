@@ -301,11 +301,10 @@ const ModelTitleWithIcon: FunctionComponent<{
         {modelAvailability === 'needs-cody-pro' && (
             <span className={clsx(styles.badge, styles.badgePro)}>Cody Pro</span>
         )}
-        {model.initialDefault && <span className={clsx(styles.badge)}>Default</span>}
         {model.provider === 'Ollama' && <span className={clsx(styles.badge)}>Experimental</span>}
-        {(model.title === 'Claude 3 Opus' || model.title === 'GPT-4o') &&
-        !model.initialDefault &&
-        modelAvailability !== 'needs-cody-pro' ? (
+        {model.title === 'Claude 3 Sonnet' ||
+        ((model.title === 'Claude 3 Opus' || model.title === 'GPT-4o') &&
+            modelAvailability !== 'needs-cody-pro') ? (
             <span className={clsx(styles.badge, styles.otherBadge, styles.recommendedBadge)}>
                 Recommended
             </span>

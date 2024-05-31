@@ -79,9 +79,6 @@ export class ChatManager implements vscode.Disposable {
             vscode.commands.registerCommand('cody.chat.history.export', () => this.exportHistory()),
             vscode.commands.registerCommand('cody.chat.history.clear', () => this.clearHistory()),
             vscode.commands.registerCommand('cody.chat.history.delete', item => this.clearHistory(item)),
-            vscode.commands.registerCommand('cody.chat.history.edit', item =>
-                this.editChatHistory(item)
-            ),
             vscode.commands.registerCommand('cody.chat.panel.new', () => this.createNewWebviewPanel()),
             vscode.commands.registerCommand('cody.chat.panel.restore', (id, chat) =>
                 this.restorePanel(id, chat)
@@ -95,16 +92,10 @@ export class ChatManager implements vscode.Disposable {
 
             // Mention selection/file commands
             vscode.commands.registerCommand('cody.mention.selection', uri =>
-                this.sendEditorContextToChat('chat', uri)
-            ),
-            vscode.commands.registerCommand('cody.mention.selection.new', uri =>
-                this.sendEditorContextToChat('new-chat', uri)
+                this.sendEditorContextToChat(uri)
             ),
             vscode.commands.registerCommand('cody.mention.file', uri =>
-                this.sendEditorContextToChat('chat', uri)
-            ),
-            vscode.commands.registerCommand('cody.mention.file.new', uri =>
-                this.sendEditorContextToChat('new-chat', uri)
+                this.sendEditorContextToChat(uri)
             )
         )
     }
@@ -152,25 +143,14 @@ export class ChatManager implements vscode.Disposable {
         return provider
     }
 
-    private async sendEditorContextToChat(mode: 'chat' | 'new-chat', uri?: URI): Promise<void> {
+    private async sendEditorContextToChat(uri?: URI): Promise<void> {
         telemetryService.log('CodyVSCodeExtension:addChatContext:clicked', undefined, {
             hasV2Event: true,
         })
         telemetryRecorder.recordEvent('cody.addChatContext', 'clicked')
 
-        const provider =
-            mode === 'new-chat'
-                ? await this.chatPanelsManager.getNewChatPanel()
-                : await this.chatPanelsManager.getActiveChatPanel()
+        const provider = await this.chatPanelsManager.getActiveChatPanel()
         await provider.handleGetUserEditorContext(uri)
-    }
-
-    private async editChatHistory(treeItem?: vscode.TreeItem): Promise<void> {
-        const chatID = treeItem?.id
-        const chatLabel = treeItem?.label as vscode.TreeItemLabel
-        if (chatID) {
-            await this.chatPanelsManager.editChatHistory(chatID, chatLabel.label)
-        }
     }
 
     private async clearHistory(treeItem?: vscode.TreeItem): Promise<void> {

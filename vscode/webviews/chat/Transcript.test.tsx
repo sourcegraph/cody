@@ -4,7 +4,7 @@ import type { ComponentProps } from 'react'
 import { type Assertion, describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 import { TestAppWrapper } from '../AppWrapper'
-import { Transcript } from './Transcript'
+import { type Interaction, Transcript, transcriptToInteractionPairs } from './Transcript'
 import { FIXTURE_USER_ACCOUNT_INFO } from './fixtures'
 
 const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
@@ -13,6 +13,7 @@ const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
     copyButtonOnSubmit: () => {},
     insertButtonOnSubmit: () => {},
     userInfo: FIXTURE_USER_ACCOUNT_INFO,
+    chatEnabled: true,
     postMessage: () => {},
 }
 
@@ -315,3 +316,79 @@ function expectCells(expectedCells: CellMatcher[]): void {
         return value ? assertion : assertion.not
     }
 }
+
+describe('transcriptToInteractionPairs', () => {
+    test('empty transcript', () => {
+        expect(transcriptToInteractionPairs([], null)).toEqual<Interaction[]>([
+            {
+                humanMessage: { index: 0, speaker: 'human', isUnsentFollowup: true },
+                assistantMessage: null,
+            },
+        ])
+    })
+
+    test('finished response pairs', () => {
+        expect(
+            transcriptToInteractionPairs(
+                [
+                    { speaker: 'human', text: ps`a` },
+                    { speaker: 'assistant', text: ps`b` },
+                    { speaker: 'human', text: ps`c` },
+                    { speaker: 'assistant', text: ps`d` },
+                ],
+                null
+            )
+        ).toEqual<Interaction[]>([
+            {
+                humanMessage: { index: 0, speaker: 'human', text: ps`a`, isUnsentFollowup: false },
+                assistantMessage: { index: 1, speaker: 'assistant', text: ps`b`, isLoading: false },
+            },
+            {
+                humanMessage: { index: 2, speaker: 'human', text: ps`c`, isUnsentFollowup: false },
+                assistantMessage: { index: 3, speaker: 'assistant', text: ps`d`, isLoading: false },
+            },
+            {
+                humanMessage: { index: 4, speaker: 'human', isUnsentFollowup: true },
+                assistantMessage: null,
+            },
+        ])
+    })
+
+    test('assistant message is loading', () => {
+        expect(
+            transcriptToInteractionPairs([{ speaker: 'human', text: ps`a` }], {
+                speaker: 'assistant',
+                text: ps`b`,
+            })
+        ).toEqual<Interaction[]>([
+            {
+                humanMessage: { index: 0, speaker: 'human', text: ps`a`, isUnsentFollowup: false },
+                assistantMessage: { index: 1, speaker: 'assistant', text: ps`b`, isLoading: true },
+            },
+            {
+                humanMessage: { index: 2, speaker: 'human', isUnsentFollowup: true },
+                assistantMessage: null,
+            },
+        ])
+    })
+
+    test('last assistant message is error', () => {
+        const error = errorToChatError(new Error('x'))
+        expect(
+            transcriptToInteractionPairs([{ speaker: 'human', text: ps`a` }], {
+                speaker: 'assistant',
+                error,
+            })
+        ).toEqual<Interaction[]>([
+            {
+                humanMessage: { index: 0, speaker: 'human', text: ps`a`, isUnsentFollowup: false },
+                assistantMessage: {
+                    index: 1,
+                    speaker: 'assistant',
+                    error,
+                    isLoading: false,
+                },
+            },
+        ])
+    })
+})
