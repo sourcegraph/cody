@@ -11,28 +11,24 @@ const DOCUMENTABLE_NODES = dedent`
         declarator: (function_declarator)
         body: (compound_statement) @symbol.function) @range.function
 
-    ; Class definitions
-    ;--------------------------------
-    (class_specifier
-        name: (type_identifier)
-        body: (_)) @range.class
-    (struct_specifier
-        name: (type_identifier)
-        body: (_)) @range.struct
-    (declaration
-        type: (union_specifier
-            name: (type_identifier) @symbol.union)) @range.union
-
-    ; Variables
-    ;--------------------------------
-    (declaration) @symbol.identifier @range.identifier
-
     ; Types
     ;--------------------------------
+    (template_declaration
+        (struct_specifier
+            name: (template_type) @symbol.identifier)) @range.identifier
     (type_definition
         type: (struct_specifier) @symbol.identifier) @range.identifier
     (enum_specifier
         name: (type_identifier) @symbol.identifier) @range.identifier
+
+    ; Class definitions
+    ;--------------------------------
+    (class_specifier
+        name: (type_identifier) @symbol.identifier
+        body: (_)) @range.identifier
+    (struct_specifier
+        name: (type_identifier) @symbol.identifier
+        body: (_)) @range.identifier
 `
 
 const ENCLOSING_FUNCTION_QUERY = dedent`

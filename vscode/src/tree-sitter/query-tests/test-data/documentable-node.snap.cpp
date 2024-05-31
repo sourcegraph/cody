@@ -178,21 +178,6 @@
 
 // ------------------------------------
 
-return_statement('value');
-//       |
-
-// ------------------------------------
-
-  char *user_name = "Tom";
-//^^^^^^^^^^^^^^^^^^^^^^^^ symbol.identifier[1], range.identifier[1]
-//    █
-
-// Nodes types:
-// symbol.identifier[1]: declaration
-// range.identifier[1]: declaration
-
-// ------------------------------------
-
   enum Level
 //^ start range.identifier[1]
   {
@@ -206,3 +191,44 @@ return_statement('value');
 // Nodes types:
 // range.identifier[1]: enum_specifier
 
+// ------------------------------------
+
+  template <typename T> struct SampleStruct {
+//                      ^ start range.identifier[1]
+    template <typename ParseContext>
+      auto parse(ParseContext &ctx) {
+//           █
+          return ctx.begin();
+      }
+
+        void foo() {
+      }
+  };
+//^ end range.identifier[1]
+
+// Nodes types:
+// range.identifier[1]: struct_specifier
+
+// ------------------------------------
+
+#define TEST(name) void test_##name()
+
+TEST(twoSum)
+{
+    int target = 9;
+    int returnSize[2];
+    int expected[] = {0, 1};
+    // |
+};
+
+// ------------------------------------
+
+// Variable should not be detected as documentable.
+int nums[] = {2, 7, 11, 15};
+//       |
+
+// ------------------------------------
+
+// Variable should not be detected as documentable.
+char *user_name = "Tom";
+//  |
