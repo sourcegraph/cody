@@ -226,23 +226,27 @@ export const test = base
             }
             await use(page)
 
-            // Critical test to prevent event logging regressions.
-            // Do not remove without consulting data analytics team.
-            try {
-                await assertEvents(loggedEvents, expectedEvents)
-            } catch (error) {
-                console.error('Expected events do not match actual events!')
-                console.log('Expected:', expectedEvents)
-                console.log('Logged:', loggedEvents)
-                throw error
-            }
-            try {
-                await assertEvents(loggedV2Events, expectedV2Events)
-            } catch (error) {
-                console.error('Expected v2 events do not match actual events!')
-                console.log('Expected:', expectedV2Events)
-                console.log('Logged:', loggedV2Events)
-                throw error
+            // Only run event logging assertions if the test passed. If it failed, it probably
+            // wouldn't have triggered all the right event logging calls anyway.
+            if (testInfo.status === 'passed') {
+                // Critical test to prevent event logging regressions.
+                // Do not remove without consulting data analytics team.
+                try {
+                    await assertEvents(loggedEvents, expectedEvents)
+                } catch (error) {
+                    console.error('Expected events do not match actual events!')
+                    console.log('Expected:', expectedEvents)
+                    console.log('Logged:', loggedEvents)
+                    throw error
+                }
+                try {
+                    await assertEvents(loggedV2Events, expectedV2Events)
+                } catch (error) {
+                    console.error('Expected v2 events do not match actual events!')
+                    console.log('Expected:', expectedV2Events)
+                    console.log('Logged:', loggedV2Events)
+                    throw error
+                }
             }
 
             resetLoggedEvents()
@@ -375,7 +379,9 @@ export async function executeCommandInPalette(page: Page, commandName: string): 
  * Verifies that loggedEvents contain all of expectedEvents (in any order).
  */
 export async function assertEvents(loggedEvents: string[], expectedEvents: string[]): Promise<void> {
-    await expect.poll(() => loggedEvents).toEqual(expect.arrayContaining(expectedEvents))
+    await expect
+        .poll(() => loggedEvents, { timeout: 3000 })
+        .toEqual(expect.arrayContaining(expectedEvents))
 }
 
 // Creates a temporary directory, calls `f`, and then deletes the temporary
