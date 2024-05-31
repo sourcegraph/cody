@@ -359,7 +359,6 @@ test.extend<ExpectedEvents>({
     // Wait for the tsserver to become ready: when sync icon disappears
     const langServerLoadingState = 'Editor Language Status: Loading'
     await expect(page.getByRole('button', { name: langServerLoadingState })).toBeVisible()
-    await page.waitForSelector(`span[class*="codicon codicon-sync"]`, { state: 'detached' })
     await expect(page.getByRole('button', { name: langServerLoadingState })).not.toBeVisible()
 
     // Go back to the Cody chat tab
