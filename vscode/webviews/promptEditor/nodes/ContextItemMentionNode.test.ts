@@ -1,4 +1,3 @@
-import { isWindows } from '@sourcegraph/cody-shared'
 import { describe, expect, test } from 'vitest'
 import { contextItemMentionNodeDisplayText } from './ContextItemMentionNode'
 
