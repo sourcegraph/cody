@@ -11,7 +11,7 @@ import {
 import * as os from 'node:os'
 import * as path from 'node:path'
 
-import { type Frame, type FrameLocator, type Page, test as base, expect } from '@playwright/test'
+import { type Frame, type Page, test as base, expect } from '@playwright/test'
 import { _electron as electron } from 'playwright'
 import * as uuid from 'uuid'
 
@@ -25,6 +25,7 @@ import {
     sendTestInfo,
 } from '../fixtures/mock-server'
 
+import type { RepoListResponse } from '@sourcegraph/cody-shared'
 import { expectAuthenticated } from './common'
 import { installVsCode } from './install-deps'
 import { buildCustomCommandConfigFile } from './utils/buildCustomCommands'
@@ -427,12 +428,6 @@ export async function openFile(page: Page, filename: string): Promise<void> {
     await expect(page.getByRole('tab', { name: filename })).toBeVisible()
 }
 
-// Starts a new panel chat and returns a FrameLocator for the chat.
-export async function newChat(page: Page): Promise<FrameLocator> {
-    await page.getByRole('button', { name: 'New Chat', exact: true }).click()
-    return page.frameLocator('iframe.webview').last().frameLocator('iframe')
-}
-
 export function withPlatformSlashes(input: string) {
     return input.replaceAll(path.posix.sep, path.sep)
 }
@@ -449,4 +444,60 @@ export const openCustomCommandMenu = async (page: Page): Promise<void> => {
         // The second item is the setting icon attached to the "Custom Commands" item.
         .first()
     await customCommandSidebarItem.click()
+}
+
+export const testWithGitRemote = test.extend<WorkspaceDirectory>({
+    // biome-ignore lint/correctness/noEmptyPattern: Playwright needs empty pattern to specify "no dependencies".
+    workspaceDirectory: async ({}, use) => {
+        await withTempDir(async tempDir => {
+            const dir = path.join(tempDir, 'myrepo')
+            await fs.mkdir(dir)
+
+            // Initialize a git repository there
+            await spawn('git', ['init'], { cwd: dir })
+            await spawn('git', ['config', 'user.name', 'Test User'], {
+                cwd: dir,
+            })
+            await spawn('git', ['config', 'user.email', 'test@example.host'], { cwd: dir })
+
+            // Commit some content to the git repository.
+            await Promise.all([
+                fs.writeFile(path.join(dir, 'README.md'), 'Prints a classic greeting'),
+                fs.writeFile(
+                    path.join(dir, 'main.c'),
+                    '#include <stdio.h>\n\nmain() {\n\tprintf("Hello, world.\\n");\n}\n'
+                ),
+            ])
+            await spawn('git', ['add', 'README.md', 'main.c'], { cwd: dir })
+            await spawn('git', ['commit', '-m', 'Initial commit'], {
+                cwd: dir,
+            })
+
+            // Add a remote to the git repo.
+            await spawn('git', ['remote', 'add', 'origin', 'git@host.example:user/myrepo.git'], {
+                cwd: dir,
+            })
+
+            await use(dir)
+        })
+    },
+})
+
+export function mockEnterpriseRepoMapping(server: MockServer, repoName: string): void {
+    server.onGraphQl('Repositories').replyJson({
+        data: {
+            repositories: {
+                nodes: [
+                    {
+                        id: 'WOOZL',
+                        name: repoName,
+                    },
+                ],
+                pageInfo: {
+                    endCursor: 'WOOZL',
+                },
+            },
+        } satisfies RepoListResponse,
+    })
+    server.onGraphQl('ResolveRepoName').replyJson({ data: { repository: { name: repoName } } })
 }

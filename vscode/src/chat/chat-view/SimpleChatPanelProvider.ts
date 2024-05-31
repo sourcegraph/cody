@@ -77,6 +77,7 @@ import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { gitCommitIdFromGitExtension } from '../../repository/git-extension-api'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import type { MessageErrorType } from '../MessageProvider'
+import { startClientStateBroadcaster } from '../clientStateBroadcaster'
 import { getChatContextItemsForMention } from '../context/chatContext'
 import type {
     ChatSubmitType,
@@ -244,6 +245,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 })
             )
         }
+
+        this.disposables.push(
+            startClientStateBroadcaster({
+                remoteSearch: this.remoteSearch,
+                postMessage: (message: ExtensionMessage) => this.postMessage(message),
+            })
+        )
     }
 
     /**
@@ -452,7 +460,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         requestID: string,
         inputText: PromptString,
         submitType: ChatSubmitType,
-        userContextFiles: ContextItem[],
+        mentions: ContextItem[],
         editorState: ChatMessage['editorState'],
         addEnhancedContext: boolean,
         abortSignal: AbortSignal,
@@ -472,12 +480,50 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 addEnhancedContext,
             }
             telemetryService.log('CodyVSCodeExtension:chat-question:submitted', sharedProperties)
+            const mentionsInInitialContext = mentions.filter(
+                item => item.source !== ContextItemSource.User
+            )
+            const mentionsByUser = mentions.filter(item => item.source === ContextItemSource.User)
             telemetryRecorder.recordEvent('cody.chat-question', 'submitted', {
                 metadata: {
                     // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
                     // See https://github.com/sourcegraph/sourcegraph/pull/59524
                     recordsPrivateMetadataTranscript: authStatus.endpoint && authStatus.isDotCom ? 1 : 0,
                     addEnhancedContext: addEnhancedContext ? 1 : 0,
+
+                    // All mentions
+                    mentionsTotal: mentions.length,
+                    mentionsOfRepository: mentions.filter(item => item.type === 'repository').length,
+                    mentionsOfTree: mentions.filter(item => item.type === 'tree').length,
+                    mentionsOfWorkspaceRootTree: mentions.filter(
+                        item => item.type === 'tree' && item.isWorkspaceRoot
+                    ).length,
+                    mentionsOfFile: mentions.filter(item => item.type === 'file').length,
+
+                    // Initial context mentions
+                    mentionsInInitialContext: mentionsInInitialContext.length,
+                    mentionsInInitialContextOfRepository: mentionsInInitialContext.filter(
+                        item => item.type === 'repository'
+                    ).length,
+                    mentionsInInitialContextOfTree: mentionsInInitialContext.filter(
+                        item => item.type === 'tree'
+                    ).length,
+                    mentionsInInitialContextOfWorkspaceRootTree: mentionsInInitialContext.filter(
+                        item => item.type === 'tree' && item.isWorkspaceRoot
+                    ).length,
+                    mentionsInInitialContextOfFile: mentionsInInitialContext.filter(
+                        item => item.type === 'file'
+                    ).length,
+
+                    // Explicit mentions by user
+                    mentionsByUser: mentionsByUser.length,
+                    mentionsByUserOfRepository: mentionsByUser.filter(item => item.type === 'repository')
+                        .length,
+                    mentionsByUserOfTree: mentionsByUser.filter(item => item.type === 'tree').length,
+                    mentionsByUserOfWorkspaceRootTree: mentionsByUser.filter(
+                        item => item.type === 'tree' && item.isWorkspaceRoot
+                    ).length,
+                    mentionsByUserOfFile: mentionsByUser.filter(item => item.type === 'file').length,
                 },
                 privateMetadata: {
                     ...sharedProperties,
@@ -518,20 +564,30 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
                 const userContextItems: ContextItemWithContent[] = await resolveContextItems(
                     this.editor,
-                    [...userContextFiles, ...selectionContext],
+                    [...mentions, ...selectionContext],
                     inputText
                 )
                 abortSignal.throwIfAborted()
 
+                /**
+                 * Whether the input has repository or tree mentions that need large-corpus
+                 * context-fetching (embeddings, symf, and/or context search).
+                 */
+                const corpusMentions = mentions.filter(
+                    item => item.type === 'repository' || item.type === 'tree'
+                )
+                const hasCorpusMentions = corpusMentions.length > 0
+
                 span.setAttribute('strategy', this.config.useContext)
                 const prompter = new DefaultPrompter(
                     userContextItems,
-                    addEnhancedContext
+                    addEnhancedContext || hasCorpusMentions
                         ? async text =>
                               getEnhancedContext({
                                   strategy: this.config.useContext,
                                   editor: this.editor,
-                                  text,
+                                  input: { text, mentions },
+                                  addEnhancedContext,
                                   providers: {
                                       localEmbeddings: this.localEmbeddings,
                                       symf: this.config.experimentalSymfContext ? this.symf : null,
@@ -762,9 +818,10 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const userContextSize = context?.user ?? input
 
         void this.postMessage({
-            type: 'chat-input-context',
-            items: contextItem.map(f => ({
+            type: 'clientAction',
+            addContextItemsToLastHumanInput: contextItem.map(f => ({
                 ...f,
+                type: 'file',
                 // Remove content to avoid sending large data to the webview
                 content: undefined,
                 isTooLarge: f.size ? f.size > userContextSize : undefined,

@@ -69,6 +69,8 @@ export {
     type ContextFileType,
     type ContextMessage,
     type SymbolKind,
+    type ContextItemTree,
+    type ContextItemRepository,
 } from './codebase-context/messages'
 export type {
     CodyCommand,
@@ -89,6 +91,7 @@ export {
     toRangeData,
     displayLineRange,
     displayRange,
+    isMultiLineRange,
 } from './common/range'
 export * from './common/abortController'
 export {
@@ -226,6 +229,7 @@ export {
     type ContextFilters,
     type CodyContextFilterItem,
     type RepoListResponse,
+    type RepoSearchResponse,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
@@ -295,3 +299,4 @@ export {
     openCtx,
 } from './context/openctx/api'
 export { URL_CONTEXT_MENTION_PROVIDER } from './mentions/providers/urlMentions'
+export { type ClientStateForWebview } from './clientState'

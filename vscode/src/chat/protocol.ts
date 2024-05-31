@@ -2,6 +2,7 @@ import type { URI } from 'vscode-uri'
 
 import type {
     AuthStatus,
+    ClientStateForWebview,
     ConfigurationWithAccessToken,
     ContextItem,
     ContextMentionProviderMetadata,
@@ -172,10 +173,8 @@ export type ExtensionMessage =
           type: 'userContextFiles'
           userContextFiles?: ContextItem[] | undefined | null
       }
-    /**
-     * Send Context Files to chat view as input context (@-mentions)
-     */
-    | { type: 'chat-input-context'; items: ContextItem[] }
+    | { type: 'clientState'; value: ClientStateForWebview }
+    | { type: 'clientAction'; addContextItemsToLastHumanInput: ContextItem[] }
     | { type: 'chatModels'; models: ModelProvider[] }
     | {
           type: 'update-search-results'

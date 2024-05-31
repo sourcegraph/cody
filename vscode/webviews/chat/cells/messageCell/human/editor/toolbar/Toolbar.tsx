@@ -3,7 +3,6 @@ import clsx from 'clsx'
 import { AtSignIcon } from 'lucide-react'
 import { type FunctionComponent, useCallback } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
-import { EnhancedContextSettings } from '../../../../../../components/EnhancedContextSettings'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { ToolbarButton } from '../../../../../../components/shadcn/ui/toolbar'
 import { useChatModelContext } from '../../../../../models/chatModelContext'
@@ -18,12 +17,9 @@ export const Toolbar: FunctionComponent<{
 
     isEditorFocused: boolean
 
-    /** Whether this editor is for a message whose assistant response is in progress. */
-    isPendingResponse: boolean
-
     onMentionClick?: () => void
 
-    onSubmitClick: (addEnhancedContextEnabled: boolean) => void
+    onSubmitClick: () => void
     submitDisabled: SubmitButtonDisabled
 
     /** Handler for clicks that are in the "gap" (dead space), not any toolbar items. */
@@ -36,7 +32,6 @@ export const Toolbar: FunctionComponent<{
 }> = ({
     userInfo,
     isEditorFocused,
-    isPendingResponse,
     onMentionClick,
     onSubmitClick,
     submitDisabled,
@@ -80,17 +75,11 @@ export const Toolbar: FunctionComponent<{
                     aria-label="Add context"
                 />
             )}
-            <EnhancedContextSettings
-                presentationMode={userInfo.isDotComUser ? 'consumer' : 'enterprise'}
-                onCloseByEscape={focusEditor}
-            />
-            <div className="tw-ml-[5px] tw-mr-[5px] tw-border-l-[1px] tw-border-white tw-h-6 tw-opacity-10" />
             <ModelSelectFieldToolbarItem userInfo={userInfo} focusEditor={focusEditor} />
             <div className={styles.spacer} />
             <SubmitButton
                 onClick={onSubmitClick}
                 isEditorFocused={isEditorFocused}
-                isPendingResponse={isPendingResponse}
                 disabled={submitDisabled}
             />
         </menu>
@@ -117,13 +106,16 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
         onCurrentChatModelChange &&
         userInfo &&
         userInfo.isDotComUser && (
-            <ModelSelectField
-                models={chatModels}
-                onModelSelect={onModelSelect}
-                userInfo={userInfo}
-                onCloseByEscape={focusEditor}
-                className={className}
-            />
+            <>
+                <div className="tw-ml-[5px] tw-mr-[5px] tw-border-l-[1px] tw-border-white tw-h-6 tw-opacity-10" />
+                <ModelSelectField
+                    models={chatModels}
+                    onModelSelect={onModelSelect}
+                    userInfo={userInfo}
+                    onCloseByEscape={focusEditor}
+                    className={className}
+                />
+            </>
         )
     )
 }

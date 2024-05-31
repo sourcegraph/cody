@@ -688,11 +688,11 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async contextSearch(
-        repos: Set<string>,
+        repoIDs: string[],
         query: string
     ): Promise<ContextSearchResult[] | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<ContextSearchResponse>>(CONTEXT_SEARCH_QUERY, {
-            repos: [...repos],
+            repos: repoIDs,
             query,
             codeResultsCount: 15,
             textResultsCount: 5,

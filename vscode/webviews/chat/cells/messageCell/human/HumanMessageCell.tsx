@@ -1,4 +1,4 @@
-import type { ChatMessage, ContextItem } from '@sourcegraph/cody-shared'
+import type { ChatMessage } from '@sourcegraph/cody-shared'
 import { type FunctionComponent, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../Chat'
 import { UserAvatar } from '../../../../components/UserAvatar'
@@ -14,10 +14,9 @@ import { HumanMessageEditor } from './editor/HumanMessageEditor'
  * A component that displays a chat message from the human.
  */
 export const HumanMessageCell: FunctionComponent<{
-    message: ChatMessage | null
+    message: ChatMessage
     userInfo: UserAccountInfo
-    chatEnabled?: boolean
-    userContextFromSelection?: ContextItem[]
+    chatEnabled: boolean
 
     /** Whether this editor is for the first message (not a followup). */
     isFirstMessage: boolean
@@ -25,14 +24,11 @@ export const HumanMessageCell: FunctionComponent<{
     /** Whether this editor is for a message that has been sent already. */
     isSent: boolean
 
-    /** Whether this editor is for a message whose assistant response is in progress. */
-    isPendingResponse: boolean
-
     /** Whether this editor is for a followup message to a still-in-progress assistant response. */
     isPendingPriorResponse: boolean
 
     onChange?: (editorState: SerializedPromptEditorValue) => void
-    onSubmit: (editorValue: SerializedPromptEditorValue, addEnhancedContext: boolean) => void
+    onSubmit: (editorValue: SerializedPromptEditorValue) => void
 
     isEditorInitiallyFocused?: boolean
 
@@ -45,10 +41,8 @@ export const HumanMessageCell: FunctionComponent<{
     message,
     userInfo,
     chatEnabled = true,
-    userContextFromSelection,
     isFirstMessage,
     isSent,
-    isPendingResponse,
     isPendingPriorResponse,
     onChange,
     onSubmit,
@@ -57,9 +51,10 @@ export const HumanMessageCell: FunctionComponent<{
     editorRef,
     __storybook__focus,
 }) => {
+    const messageJSON = JSON.stringify(message)
     const initialEditorState = useMemo(
-        () => (message ? serializedPromptEditorStateFromChatMessage(message) : undefined),
-        [message]
+        () => serializedPromptEditorStateFromChatMessage(JSON.parse(messageJSON)),
+        [messageJSON]
     )
 
     return (
@@ -69,12 +64,10 @@ export const HumanMessageCell: FunctionComponent<{
             content={
                 <HumanMessageEditor
                     userInfo={userInfo}
-                    userContextFromSelection={userContextFromSelection}
                     initialEditorState={initialEditorState}
-                    placeholder={isFirstMessage ? 'Message' : 'Followup message'}
+                    placeholder={isFirstMessage ? 'Ask...' : 'Ask a followup...'}
                     isFirstMessage={isFirstMessage}
                     isSent={isSent}
-                    isPendingResponse={isPendingResponse}
                     isPendingPriorResponse={isPendingPriorResponse}
                     onChange={onChange}
                     onSubmit={onSubmit}

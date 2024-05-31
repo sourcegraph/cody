@@ -130,6 +130,10 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
                     .join()}`
             )
             this.repos = await this.findRepos(folders)
+            logDebug(
+                'WorkspaceRepoMapper',
+                `Mapped workspace folders to repos: ${JSON.stringify(this.repos.map(repo => repo.name))}`
+            )
         } catch (error) {
             logDebug('WorkspaceRepoMapper', `Error mapping workspace folders to repo IDs: ${error}`)
             throw error

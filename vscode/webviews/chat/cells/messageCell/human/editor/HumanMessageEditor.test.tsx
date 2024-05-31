@@ -21,7 +21,7 @@ const ENTER_KEYBOARD_EVENT_DATA: Pick<KeyboardEvent, 'key' | 'code' | 'keyCode'>
 describe('HumanMessageEditor', () => {
     test('renders textarea', async () => {
         const { editor } = renderWithMocks({})
-        expect(editor).toHaveTextContent('What does @#Symbol1')
+        expect(editor).toHaveTextContent('What does @Symbol1')
     })
 
     describe('states', () => {
@@ -62,31 +62,10 @@ describe('HumanMessageEditor', () => {
             )
         })
 
-        describe('isSent && isPendingResponse', () => {
-            function renderSentPending(): ReturnType<typeof renderWithMocks> {
-                const rendered = renderWithMocks({
-                    initialEditorState: serializedPromptEditorStateFromText('abc'),
-                    isSent: true,
-                    isPendingResponse: true,
-                })
-                return rendered
-            }
-
-            test('initial', () => {
-                const rendered = renderSentPending()
-                expectState(rendered, {
-                    toolbarVisible: true,
-                    submitButtonEnabled: true,
-                    submitButtonText: 'Send',
-                })
-            })
-        })
-
         test('isSent && !isPendingResponse', () => {
             const rendered = renderWithMocks({
                 initialEditorState: undefined,
                 isSent: true,
-                isPendingResponse: false,
             })
             expectState(rendered, { toolbarVisible: false })
             fireEvent.focus(rendered.editor)
@@ -147,13 +126,11 @@ describe('HumanMessageEditor', () => {
             // Click
             fireEvent.click(submitButton!)
             expect(onSubmit).toHaveBeenCalledTimes(1)
-            expect(onSubmit.mock.lastCall[1]).toBe(true) // addEnhancedContext === true
 
             // Enter
             const editor = container.querySelector<HTMLElement>('[data-lexical-editor="true"]')!
             fireEvent.keyDown(editor, ENTER_KEYBOARD_EVENT_DATA)
             expect(onSubmit).toHaveBeenCalledTimes(2)
-            expect(onSubmit.mock.lastCall[1]).toBe(true) // addEnhancedContext === true
         })
     })
 })
@@ -176,7 +153,6 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
         initialEditorState: FILE_MENTION_EDITOR_STATE_FIXTURE,
         placeholder: 'my-placeholder',
         isFirstMessage: true,
-        isPendingResponse: false,
         isPendingPriorResponse: false,
         isSent: false,
         onChange,

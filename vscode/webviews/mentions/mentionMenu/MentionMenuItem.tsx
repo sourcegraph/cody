@@ -48,6 +48,9 @@ function getDescription(item: ContextItem, query: MentionQuery): string {
             const dir = decodeURIComponent(displayPathDirname(item.uri))
             return `${range ? `Lines ${displayLineRange(range)} · ` : ''}${dir === '.' ? '' : dir}`
         }
+        case 'repository':
+        case 'tree':
+            return '' // no description since it's duplicative
         case 'openctx':
             return item.mention?.description || defaultDescription
         default:

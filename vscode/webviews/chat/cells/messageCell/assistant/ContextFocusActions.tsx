@@ -1,11 +1,13 @@
 import { isDefined } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
-import { type FunctionComponent, useCallback, useContext, useMemo } from 'react'
-import { EnhancedContextContext } from '../../../../components/EnhancedContextSettings'
+import { type FunctionComponent, useCallback, useMemo } from 'react'
 import { Button } from '../../../../components/shadcn/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../components/shadcn/ui/tooltip'
 import { useTelemetryRecorder } from '../../../../utils/telemetry'
-import type { PriorHumanMessageInfo } from './AssistantMessageCell'
+import type {
+    HumanMessageInitialContextInfo as InitialContextInfo,
+    PriorHumanMessageInfo,
+} from './AssistantMessageCell'
 
 export const ContextFocusActions: FunctionComponent<{
     humanMessage: PriorHumanMessageInfo
@@ -13,70 +15,88 @@ export const ContextFocusActions: FunctionComponent<{
 }> = ({ humanMessage, className }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
-    const isEnhancedContextAvailable = useContext(EnhancedContextContext).groups.some(g =>
-        g.providers.some(p => p.state === 'ready')
-    )
+    const initialContextEventMetadata: Record<string, number> = {
+        hasInitialContextRepositories: humanMessage.hasInitialContext.repositories ? 1 : 0,
+        hasInitialContextFiles: humanMessage.hasInitialContext.files ? 1 : 0,
+    }
 
-    const logRerunWithEnhancedContext = useCallback(
-        (withEnhancedContext: boolean): void => {
-            telemetryRecorder.recordEvent('cody.contextSelection', 'rerunWithRepositoryContext', {
+    const logRerunWithDifferentContext = useCallback(
+        (rerunWith: InitialContextInfo): void => {
+            telemetryRecorder.recordEvent('cody.contextSelection', 'rerunWithDifferentContext', {
                 metadata: {
-                    withEnhancedContext: withEnhancedContext ? 1 : 0,
+                    ...initialContextEventMetadata,
+                    rerunWithInitialContextRepositories: rerunWith.repositories ? 1 : 0,
+                    rerunWithInitialContextFiles: rerunWith.files ? 1 : 0,
                 },
             })
         },
-        [telemetryRecorder]
+        [telemetryRecorder, initialContextEventMetadata]
     )
 
     const actions = useMemo(
         () =>
             (
                 [
-                    humanMessage.addEnhancedContext
+                    humanMessage.hasInitialContext.repositories || humanMessage.hasInitialContext.files
                         ? {
                               label: 'Public knowledge only',
-                              tooltip: 'Try again without automatic code context',
+                              tooltip: 'Try again without context about your code',
                               onClick: () => {
-                                  logRerunWithEnhancedContext(false)
-                                  humanMessage.rerunWithEnhancedContext(false)
+                                  const options: InitialContextInfo = {
+                                      repositories: false,
+                                      files: false,
+                                  }
+                                  logRerunWithDifferentContext(options)
+                                  humanMessage.rerunWithDifferentContext(options)
                               },
                           }
-                        : isEnhancedContextAvailable
-                          ? {
-                                label: 'Automatic code context',
-                                tooltip: 'Try again with automatic code context',
-                                onClick: () => {
-                                    logRerunWithEnhancedContext(true)
-                                    humanMessage.rerunWithEnhancedContext(true)
-                                },
-                            }
-                          : null,
+                        : null,
+                    humanMessage.hasInitialContext.repositories && humanMessage.hasInitialContext.files
+                        ? {
+                              label: 'Current file only',
+                              tooltip: 'Try again, focused on the current file',
+                              onClick: () => {
+                                  const options: InitialContextInfo = {
+                                      repositories: false,
+                                      files: true,
+                                  }
+                                  logRerunWithDifferentContext(options)
+                                  humanMessage.rerunWithDifferentContext(options)
+                              },
+                          }
+                        : null,
                     {
                         label: 'Add context...',
-                        tooltip: '@-mention relevant content to improve chat context',
+                        tooltip: '@-mention relevant content to improve the response',
                         onClick: () => {
                             telemetryRecorder.recordEvent('cody.contextSelection', 'addFile', {
-                                metadata: {
-                                    enhancedContext: humanMessage.addEnhancedContext ? 1 : 0,
-                                },
+                                metadata: initialContextEventMetadata,
                             })
                             humanMessage.appendAtMention()
                         },
                     },
                 ] as { label: string; tooltip: string; onClick: () => void }[]
-            ).filter(isDefined),
-        [humanMessage, isEnhancedContextAvailable, telemetryRecorder, logRerunWithEnhancedContext]
+            )
+                .flat()
+                .filter(isDefined),
+        [humanMessage, telemetryRecorder, logRerunWithDifferentContext, initialContextEventMetadata]
     )
     return actions.length > 0 ? (
         <menu className={clsx('tw-flex tw-gap-2 tw-text-sm tw-text-muted-foreground', className)}>
             <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-x-4 tw-gap-y-2">
                 <h3 className="tw-flex tw-items-center tw-gap-3">Try again with different context</h3>
-                <ul className="tw-whitespace-nowrap tw-flex tw-gap-2">
+                <ul className="tw-whitespace-nowrap tw-flex tw-gap-2 tw-flex-wrap">
                     {actions.map(({ label, tooltip, onClick }) => (
                         <li key={label}>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button key={label} variant="outline" size="sm" onClick={onClick}>
+                                    <Button
+                                        key={label}
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={onClick}
+                                        tabIndex={-1}
+                                    >
                                         {label}
                                     </Button>
                                 </TooltipTrigger>
