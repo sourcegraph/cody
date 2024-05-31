@@ -199,8 +199,6 @@ class EnterpriseEnhancedContextPanel(project: Project, chatSession: ChatSession)
     private const val ENTER_MAP_KEY = "enter"
   }
 
-  // TODO: We need to kick off setting the agent state with
-  // controller.loadFrom...(getContextState()) etc.
   private var controller =
       EnterpriseEnhancedContextStateController(
           project,
@@ -256,28 +254,18 @@ class EnterpriseEnhancedContextPanel(project: Project, chatSession: ChatSession)
           fun targetForEvent(e: MouseEvent): Any? =
               tree.getClosestPathForLocation(e.x, e.y)?.lastPathComponent
 
-          // We cache the target of the mouse press, so that if the tree expands before the click
-          // event is generated, we can detect the mouse click event is on a different node and
-          // suppress the popup.
-          private var pressedTarget: Any? = null
-
           override fun mousePressed(e: MouseEvent) {
             super.mousePressed(e)
-            pressedTarget = targetForEvent(e)
-          }
-
-          override fun mouseClicked(e: MouseEvent) {
-            var clickTarget = targetForEvent(e)
-            if (e.clickCount == 1 &&
-                e.button == MouseEvent.BUTTON1 &&
-                pressedTarget === clickTarget &&
-                clickTarget is ContextTreeEditReposNode) {
+            if (targetForEvent(e) is ContextTreeEditReposNode &&
+                (e.button == MouseEvent.BUTTON1 || e.isPopupTrigger)) {
               repoPopupController
                   .createPopup(tree.width, endpointName, controller.rawSpec)
                   .showAbove(tree)
             }
           }
         })
+
+    controller.requestUIUpdate()
   }
 
   @RequiresEdt

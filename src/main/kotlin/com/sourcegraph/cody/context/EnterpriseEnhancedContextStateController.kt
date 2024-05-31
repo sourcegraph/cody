@@ -338,4 +338,8 @@ class EnterpriseEnhancedContextStateController(
       state.remoteRepositories.addAll(reposToWriteToState)
     }
   }
+
+  fun requestUIUpdate() {
+    ApplicationManager.getApplication().executeOnPooledThread(this::updateUI)
+  }
 }

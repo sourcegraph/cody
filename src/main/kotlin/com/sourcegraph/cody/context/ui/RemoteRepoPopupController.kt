@@ -11,7 +11,6 @@ import com.intellij.openapi.editor.LogicalPosition
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.ex.FocusChangeListener
 import com.intellij.openapi.editor.highlighter.EditorHighlighterFactory
-import com.intellij.openapi.keymap.KeymapUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
@@ -34,8 +33,10 @@ import java.awt.BorderLayout
 import java.awt.Dimension
 import javax.swing.JPanel
 import javax.swing.border.CompoundBorder
+import kotlin.math.max
 
 const val MAX_REMOTE_REPOSITORY_COUNT = 10
+const val MIN_POPUP_WIDTH = 400
 
 class RemoteRepoPopupController(val project: Project) {
   var onAccept: (spec: String) -> Unit = {}
@@ -101,8 +102,9 @@ class RemoteRepoPopupController(val project: Project) {
     editor.contentComponent.apply { border = CompoundBorder(JBUI.Borders.empty(2), border) }
 
     val panel = JPanel(BorderLayout()).apply { add(editor.component, BorderLayout.CENTER) }
-    val shortcut = KeymapUtil.getShortcutsText(CommonShortcuts.CTRL_ENTER.shortcuts)
+    val scaledWidth = max(width, JBDimension(MIN_POPUP_WIDTH, 0).width)
     val scaledHeight = JBDimension(0, 160).height
+    val size = Dimension(scaledWidth, scaledHeight)
 
     var popup: JBPopup? = null
     popup =
@@ -132,7 +134,7 @@ class RemoteRepoPopupController(val project: Project) {
                     false
                   }
                   setMayBeParent(true)
-                  setMinSize(Dimension(width, scaledHeight))
+                  setMinSize(size)
                   setRequestFocus(true)
                   setResizable(true)
                   addListener(
@@ -164,7 +166,7 @@ class RemoteRepoPopupController(val project: Project) {
 
     // If not explicitly set, the popup's minimum size is applied after the popup is shown, which is
     // too late to compute placement in showAbove.
-    popup.size = Dimension(width, scaledHeight)
+    popup.size = size
 
     return popup
   }
