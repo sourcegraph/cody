@@ -51,6 +51,8 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         contentChanges: vscode.TextDocumentContentChangeEvent[]
     } {
         const cached = this.agentDocuments.get(document.underlying.uri)
+
+        // TODO: We can only use a cached value if we have actualy been receiving document updates, which only happens if the document hasn't been closed
         if (!cached) {
             const result = new AgentTextDocument(document)
             const editor = new AgentTextEditor(result, this.params)

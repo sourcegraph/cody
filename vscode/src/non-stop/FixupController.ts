@@ -996,9 +996,30 @@ export class FixupController
 
         // append response to new file
         const doc = await vscode.workspace.openTextDocument(newFileUri)
-        const pos = new vscode.Position(Math.max(doc.lineCount - 1, 0), 0)
-        const range = new vscode.Range(pos, pos)
+        const lastLine = doc.lineAt(Math.max(doc.lineCount - 1, 0))
+
+        const EOF = lastLine.rangeIncludingLineBreak.end
+
+        const range = new vscode.Range(EOF, EOF)
         task.selectionRange = range
+
+        //check if we need to insert a blank line
+        const beforeLastLine =
+            lastLine.lineNumber > 0 ? doc.lineAt(Math.max(doc.lineCount - 2, 0)) : undefined
+
+        const isBlankInsertionPoint =
+            lastLine.text.endsWith('\n') ||
+            (lastLine.text.trim().length === 0 && beforeLastLine?.text.endsWith('\n'))
+
+        if (!isBlankInsertionPoint) {
+            const edit = new vscode.WorkspaceEdit()
+            edit.insert(newFileUri, EOF, '\n' /* check if it needs to be doc.eol */)
+            const inserted = await vscode.workspace.applyEdit(edit)
+            if (inserted) {
+                const blankEOF = EOF.with(undefined, 0).translate(1)
+                task.selectionRange = new vscode.Range(blankEOF, blankEOF)
+            }
+        }
         task.fixupFile = this.files.replaceFile(task.fixupFile.uri, newFileUri)
 
         // Set original text to empty as we are not replacing original text but appending to file
