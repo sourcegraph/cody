@@ -1,8 +1,9 @@
 import * as vscode from 'vscode'
 
 import { logDebug, logError } from '../log'
+import { localStorage } from './LocalStorageProvider'
 
-const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
+const CODY_ACCESS_TOKEN_SECRET = localStorage.ACCESS_TOKEN_SECRET_KEY
 
 export async function getAccessToken(): Promise<string | null> {
     try {

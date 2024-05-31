@@ -35,6 +35,7 @@ const keys = {
     ENDPOINT_HISTORY: 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY',
     ENROLLMENT_HISTORY: 'SOURCEGRAPH_CODY_ENROLLMENTS',
     CODY_PRO_SUPPRESSION: 'extension.codyPro.suppressExpirationNotices',
+    ACCESS_TOKEN_SECRET: 'cody.access-token',
 }
 
 class LocalStorage {
@@ -42,6 +43,7 @@ class LocalStorage {
     public readonly ANONYMOUS_USER_ID_KEY = keys.ANONYMOUS_USER_ID
     public readonly LAST_USED_ENDPOINT = keys.LAST_USED_ENDPOINT
     public readonly CODY_PRO_SUPPRESSION_KEY = keys.CODY_PRO_SUPPRESSION
+    public readonly ACCESS_TOKEN_SECRET_KEY = keys.CODY_PRO_SUPPRESSION
 
     /**
      * Clears the local storage, excluding the anonymous user ID.

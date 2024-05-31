@@ -596,8 +596,15 @@
       },
       {
         "command": "cody.test.set-context-filters",
+        "category": "Cody Dev",
         "title": "[Internal] Set Context Filters Overwrite",
         "enablement": "cody.activated && cody.devOrTest"
+      },
+      {
+        "command": "cody.dev.clear",
+        "category": "Cody Dev",
+        "title": "Clear Cody Storage & Restart",
+        "enablement": "cody.devOrTest"
       }
     ],
     "keybindings": [
@@ -777,6 +784,10 @@
         {
           "command": "cody.test.set-context-filters",
           "when": "cody.activated && cody.devOrTest"
+        },
+        {
+          "command": "cody.dev.clear",
+          "when": "cody.devOrTest"
         }
       ],
       "editor/context": [
