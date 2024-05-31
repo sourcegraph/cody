@@ -6,9 +6,17 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
-- Chat: Integerated OpenCtx providers with @-mention context menu. [pull/4201](https://github.com/sourcegraph/cody/pull/4201)
+### Fixed
+
+### Changed
+
+## [1.20.0]
+
+### Added
+
+- Chat: Integrated OpenCtx providers with @-mention context menu. [pull/4201](https://github.com/sourcegraph/cody/pull/4201)
 - Enterprise: Adds support for the `completions.smartContextWindow` (available in Sourcegraph v5.5.0+) site configuration. [pull/4236](https://github.com/sourcegraph/cody/pull/4236)
-- Chat: Integerated OpenCtx providers with @-mention context menu. [pull/4201](https://github.com/sourcegraph/cody/pull/4201/files)
+- Chat: Integrated OpenCtx providers with @-mention context menu. [pull/4201](https://github.com/sourcegraph/cody/pull/4201/files)
 - Keybinding: Assign the same keyboard shortcut for starting a new chat to the "New Chat with Selection" command. [pull/4255](https://github.com/sourcegraph/cody/pull/4255)
 - Telemetry: Adds a new telemetry event when users uninstall the extension. [pull/4246](https://github.com/sourcegraph/cody/pull/4246)
 - Chat: Added @-mention remote repositories search provider for enterprise. [pull/4311](https://github.com/sourcegraph/cody/pull/4311)
@@ -43,7 +51,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Chat: Pressing <kbd>Space</kbd> no longer accepts an @-mention item. Press <kbd>Tab</kbd> or <kbd>Enter</kbd> instead. [pull/4154](https://github.com/sourcegraph/cody/pull/4154)
 - Chat: You can now change the model after you send a chat message. Subsequent messages will be sent using your selected model. [pull/4189](https://github.com/sourcegraph/cody/pull/4189)
-- Chat: The `@`-mention menu now shows the types of context you can include. [pull/4188](https://github.com/sourcegraph/cody/pull/4188)
+- Chat: The @-mention menu now shows the types of context you can include. [pull/4188](https://github.com/sourcegraph/cody/pull/4188)
 - Increases the context window for the new `GPT-4o` model. [pull/4180](https://github.com/sourcegraph/cody/pull/4180)
 - Commands/Chat: Increased the maximum output limit of LLM responses for recommended Enterprise models. [pull/4203](https://github.com/sourcegraph/cody/pull/4203)
 - Chat: The chat UI has been updated to make messages editable in-place and stream down from the top. [pull/4209](https://github.com/sourcegraph/cody/pull/4209)
