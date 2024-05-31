@@ -5,7 +5,6 @@ import {
     ConfigFeaturesSingleton,
     type ConfigurationWithAccessToken,
     type DefaultCodyCommands,
-    type EventSource,
     ModelsService,
     PromptMixin,
     PromptString,
@@ -562,31 +561,6 @@ const register = async (
                 false
             )
         }),
-        vscode.commands.registerCommand('cody.welcome-mock', () =>
-            vscode.commands.executeCommand(
-                'workbench.action.openWalkthrough',
-                'sourcegraph.cody-ai#welcome',
-                false
-            )
-        ),
-        vscode.commands.registerCommand('cody.walkthrough.showLogin', () =>
-            vscode.commands.executeCommand('workbench.view.extension.cody')
-        ),
-        vscode.commands.registerCommand('cody.walkthrough.showChat', () =>
-            chatManager.setWebviewView('chat')
-        ),
-        vscode.commands.registerCommand('cody.walkthrough.showFixup', () =>
-            chatManager.setWebviewView('chat')
-        ),
-        vscode.commands.registerCommand('cody.walkthrough.showExplain', async () => {
-            telemetryService.log(
-                'CodyVSCodeExtension:walkthrough:clicked',
-                { page: 'showExplain' },
-                { hasV2Event: true }
-            )
-            telemetryRecorder.recordEvent('cody.walkthrough.showExplain', 'clicked')
-            await chatManager.setWebviewView('chat')
-        }),
 
         // StatusBar Commands
         vscode.commands.registerCommand('cody.statusBar.ollamaDocs', () => {
@@ -617,17 +591,6 @@ const register = async (
             vscode.window.showInformationMessage,
             vscode.env.openExternal
         ),
-        // For register sidebar clicks
-        vscode.commands.registerCommand('cody.sidebar.click', (name: string, command: string) => {
-            const source: EventSource = 'sidebar'
-            telemetryService.log(`CodyVSCodeExtension:command:${name}:clicked`, {
-                source,
-            })
-            telemetryRecorder.recordEvent(`cody.command.${name}`, 'clicked', {
-                privateMetadata: { source },
-            })
-            void vscode.commands.executeCommand(command, [source])
-        }),
         ...setUpCodyIgnore(initialConfig),
         // For debugging
         vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri)),
