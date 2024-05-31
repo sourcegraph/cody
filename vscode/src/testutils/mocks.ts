@@ -836,7 +836,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
         '*': true,
     },
     commandCodeLenses: false,
-    experimentalGuardrails: false,
     experimentalSupercompletions: false,
     experimentalMinionAnthropicKey: undefined,
     experimentalTracing: false,

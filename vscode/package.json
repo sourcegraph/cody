@@ -415,12 +415,6 @@
         "enablement": "cody.activated"
       },
       {
-        "command": "cody.guardrails.debug",
-        "category": "Cody",
-        "title": "Guardrails Debug Attribution",
-        "enablement": "config.cody.experimental.guardrails && editorHasSelection"
-      },
-      {
         "command": "cody.menu.commands",
         "category": "Cody Menu",
         "title": "Cody Commands",
@@ -756,10 +750,6 @@
           "when": "!cody.activated"
         },
         {
-          "command": "cody.guardrails.debug",
-          "when": "config.cody.experimental.guardrails && editorHasSelection"
-        },
-        {
           "command": "cody.show-page",
           "when": "false"
         },
@@ -837,11 +827,6 @@
         {
           "command": "cody.focus",
           "when": "!cody.activated",
-          "group": "other"
-        },
-        {
-          "command": "cody.guardrails.debug",
-          "when": "cody.activated && config.cody.experimental.guardrails && editorHasSelection",
           "group": "other"
         }
       ],
@@ -1026,12 +1011,6 @@
           "order": 8,
           "type": "boolean",
           "markdownDescription": "Adds code lenses to current file for quick access to Cody commands.",
-          "default": false
-        },
-        "cody.experimental.guardrails": {
-          "order": 9,
-          "type": "boolean",
-          "markdownDescription": "Experimental feature for internal use.",
           "default": false
         },
         "cody.chat.preInstruction": {

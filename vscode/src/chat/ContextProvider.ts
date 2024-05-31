@@ -30,7 +30,6 @@ export type Config = Pick<
     | 'accessToken'
     | 'useContext'
     | 'codeActions'
-    | 'experimentalGuardrails'
     | 'commandCodeLenses'
     | 'internalUnstable'
     | 'experimentalChatContextRanker'
@@ -190,7 +189,6 @@ export class ContextProvider implements vscode.Disposable, ContextStatusProvider
             const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
                 uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
                 serverEndpoint: this.config.serverEndpoint,
-                experimentalGuardrails: this.config.experimentalGuardrails,
                 experimentalNoodle: this.config.experimentalNoodle,
             }
             const workspaceFolderUris =

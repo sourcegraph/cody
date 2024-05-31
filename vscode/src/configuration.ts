@@ -139,7 +139,6 @@ export function getConfiguration(
         experimentalCommitMessage: getHiddenSetting('experimental.commitMessage', true),
         experimentalNoodle: getHiddenSetting('experimental.noodle', false),
 
-        experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),

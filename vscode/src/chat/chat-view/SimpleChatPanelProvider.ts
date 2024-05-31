@@ -395,7 +395,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         return {
             uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
             serverEndpoint: config.serverEndpoint,
-            experimentalGuardrails: config.experimentalGuardrails,
             experimentalNoodle: config.experimentalNoodle,
         }
     }

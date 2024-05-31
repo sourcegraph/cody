@@ -66,7 +66,6 @@ import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
-import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { displayHistoryQuickPick } from './services/HistoryChat'
 import { localStorage } from './services/LocalStorageProvider'
 import { VSCodeSecretStorage, getAccessToken, secretStorage } from './services/SecretStorageProvider'
@@ -725,15 +724,6 @@ const register = async (
     }
 
     const autocompleteSetup = setupAutocomplete().catch(() => {})
-
-    if (initialConfig.experimentalGuardrails) {
-        const guardrailsProvider = new GuardrailsProvider(guardrails, editor)
-        disposables.push(
-            vscode.commands.registerCommand('cody.guardrails.debug', async () => {
-                await guardrailsProvider.debugEditorSelection()
-            })
-        )
-    }
 
     if (!isRunningInsideAgent()) {
         // TODO: The interactive tutorial is currently VS Code specific, both in terms of features and keyboard shortcuts.
