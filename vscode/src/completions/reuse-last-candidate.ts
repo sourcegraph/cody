@@ -198,10 +198,9 @@ export function reuseLastCandidate({
         const lastCurrentLineSuffixLength = lastCandidate.lastTriggerDocContext.currentLineSuffix.length
         const currentLineSuffixLength = docContext.currentLineSuffix.length
         if (lastCurrentLineSuffixLength < currentLineSuffixLength && item.range) {
-            const difference = currentLineSuffixLength - lastCurrentLineSuffixLength
             const insertedSuffix = docContext.currentLineSuffix.slice(lastCurrentLineSuffixLength)
-
             if (item.insertText.endsWith(insertedSuffix)) {
+                const difference = currentLineSuffixLength - lastCurrentLineSuffixLength
                 return {
                     ...item,
                     range: new vscode.Range(
