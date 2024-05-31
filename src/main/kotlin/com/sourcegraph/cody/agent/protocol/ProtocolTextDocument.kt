@@ -5,7 +5,7 @@ import com.intellij.codeInsight.codeVision.ui.popup.layouter.right
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.editor.LogicalPosition
+import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.SelectionEvent
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -57,19 +57,17 @@ private constructor(
 
     @RequiresEdt
     private fun getSelection(editor: Editor): Range {
-      val selectionModel = editor.selectionModel
-      val beforeStartLines =
-          editor.document.text.substring(0, selectionModel.selectionStart).lines()
-      val beforeEndLines = editor.document.text.substring(0, selectionModel.selectionEnd).lines()
-      return Range(
-          Position(max(0, beforeStartLines.size - 1), beforeStartLines.last().length),
-          Position(max(0, beforeEndLines.size - 1), beforeEndLines.last().length))
+      return editor.document.codyRange(
+          editor.selectionModel.selectionStart, editor.selectionModel.selectionEnd)
     }
 
     @RequiresEdt
     private fun getVisibleRange(editor: Editor): Range {
       val visibleArea = editor.scrollingModel.visibleArea
 
+      // As a rule of thumb, we avoid logical positions because they interpret some characters
+      // creatively (example, tab as two spaces). We use logical positions for "visible range" where
+      // 100% precision is not needed.
       val startOffset = editor.xyToLogicalPosition(visibleArea.location)
       val startOffsetLine = max(startOffset.line, 0)
       val startOffsetColumn = max(startOffset.column, 0)
@@ -84,14 +82,12 @@ private constructor(
 
     @JvmStatic
     @RequiresEdt
-    fun fromEditorWithOffsetSelection(
-        editor: Editor,
-        newPosition: LogicalPosition
-    ): ProtocolTextDocument? {
+    fun fromEditorWithOffsetSelection(editor: Editor, event: CaretEvent): ProtocolTextDocument? {
+      val caret = event.caret ?: return null
       val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return null
-      val position = newPosition.codyPosition()
+      val start = editor.document.codyPosition(caret.offset)
+      val selection = Range(start, start)
       val uri = uriFor(file)
-      val selection = Range(position, position)
       return ProtocolTextDocument(
           uri = uri,
           selection = selection,
@@ -220,9 +216,4 @@ private fun Document.codyRange(startOffset: Int, endOffset: Int): Range {
   val endCharacter = endOffset - lineStartOffset2
 
   return Range(Position(startLine, startCharacter), Position(endLine, endCharacter))
-}
-
-// Logical positions are 0-based (!), just like in VS Code.
-private fun LogicalPosition.codyPosition(): Position {
-  return Position(this.line, this.column)
 }
