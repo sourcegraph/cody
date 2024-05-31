@@ -44,7 +44,12 @@ export const ScrollDown: FunctionComponent<{ onClick?: () => void }> = ({ onClic
 
     return canScrollDown ? (
         <div className="tw-sticky tw-bottom-0 tw-w-full tw-text-center tw-py-4">
-            <Button variant="outline" size="lg" onClick={onClick} className="tw-py-3">
+            <Button
+                variant="outline"
+                size="lg"
+                onClick={onClick}
+                className="tw-py-3 hover:tw-bg-secondary"
+            >
                 <ArrowDownIcon size={24} />
             </Button>
         </div>
