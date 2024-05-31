@@ -45,11 +45,7 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.ollamaChat':
                         return true
-                    case 'cody.experimental.symf.path':
-                        return '/usr/local/bin/symf'
                     case 'cody.experimental.simpleChatContext':
-                        return true
-                    case 'cody.experimental.symfContext':
                         return true
                     case 'cody.experimental.tracing':
                         return true
@@ -133,7 +129,6 @@ describe('getConfiguration', () => {
             experimentalSimpleChatContext: true,
             experimentalSupercompletions: false,
             experimentalMinionAnthropicKey: undefined,
-            experimentalSymfContext: true,
             experimentalTracing: true,
             experimentalGuardrails: true,
             experimentalOllamaChat: true,

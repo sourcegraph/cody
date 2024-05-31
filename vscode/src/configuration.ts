@@ -137,7 +137,6 @@ export function getConfiguration(
 
         autocompleteExperimentalGraphContext,
         experimentalSimpleChatContext: getHiddenSetting('experimental.simpleChatContext', true),
-        experimentalSymfContext: getHiddenSetting('experimental.symfContext', true),
         experimentalCommitMessage: getHiddenSetting('experimental.commitMessage', true),
         experimentalNoodle: getHiddenSetting('experimental.noodle', false),
         experimentalURLContext: getHiddenSetting('experimental.urlContext', false),

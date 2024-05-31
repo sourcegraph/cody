@@ -232,14 +232,6 @@ export function createStatusBar(): CodyStatusBar {
                 }
             ),
             await createFeatureToggle(
-                'Search Context',
-                'Beta',
-                'Enable using the natural language search index as an Enhanced Context chat source',
-                'cody.experimental.symfContext',
-                c => c.experimentalSymfContext,
-                false
-            ),
-            await createFeatureToggle(
                 'Ollama for Chat',
                 'Experimental',
                 'Use local Ollama models for chat and commands when available',

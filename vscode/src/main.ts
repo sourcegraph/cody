@@ -324,10 +324,7 @@ const register = async (
     const statusBar = createStatusBar()
     const sourceControl = new CodySourceControl(chatClient)
 
-    // Important to respect `config.experimentalSymfContext`. The agent
-    // currently crashes with a cryptic error when running with symf enabled so
-    // we need a way to reliably disable symf until we fix the root problem.
-    if (symfRunner && config.experimentalSymfContext) {
+    if (symfRunner) {
         const searchViewProvider = new SearchViewProvider(symfRunner)
         disposables.push(searchViewProvider)
         searchViewProvider.initialize()

@@ -76,7 +76,6 @@ export const test = base
     // By default, do not add any extra workspace settings.
     .extend<ExtraWorkspaceSettings>({
         extraWorkspaceSettings: {
-            'cody.experimental.symfContext': false,
             // NOTE: Enable unstable features for testing.
             'cody.internal.unstable': true,
         },

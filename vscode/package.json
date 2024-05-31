@@ -1078,18 +1078,6 @@
           "markdownDescription": "Enable local Ollama models for chat and commands",
           "default": false
         },
-        "cody.experimental.symfContext": {
-          "order": 99,
-          "type": "boolean",
-          "markdownDescription": "Enable symf code search context for chat",
-          "default": true
-        },
-        "cody.experimental.symf.path": {
-          "order": 99,
-          "type": "string",
-          "markdownDescription": "Path to symf binary",
-          "default": ""
-        },
         "cody.experimental.tracing": {
           "order": 99,
           "type": "boolean",
