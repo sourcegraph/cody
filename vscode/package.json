@@ -1377,7 +1377,6 @@
     "@anthropic-ai/sdk": "^0.4.2",
     "@floating-ui/react": "^0.26.9",
     "@lexical/code": "^0.15.0",
-    "@lexical/html": "^0.15.0",
     "@lexical/react": "^0.15.0",
     "@lexical/text": "^0.15.0",
     "@mdi/js": "^7.2.96",

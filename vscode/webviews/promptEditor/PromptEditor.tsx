@@ -1,6 +1,5 @@
-import { $generateHtmlFromNodes } from '@lexical/html'
 import { $isRootTextContentEmpty } from '@lexical/text'
-import { type ChatMessage, type ContextItem, escapeHTML } from '@sourcegraph/cody-shared'
+import type { ChatMessage, ContextItem } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import {
     $createTextNode,
@@ -229,11 +228,6 @@ export interface SerializedPromptEditorState {
      * The [Lexical editor state](https://lexical.dev/docs/concepts/editor-state).
      */
     lexicalEditorState: SerializedEditorState
-
-    /**
-     * The HTML serialization of the editor state.
-     */
-    html: string
 }
 
 function toPromptEditorState(editor: LexicalEditor): SerializedPromptEditorState {
@@ -241,7 +235,6 @@ function toPromptEditorState(editor: LexicalEditor): SerializedPromptEditorState
     return {
         v: STATE_VERSION_CURRENT,
         lexicalEditorState: editorState.toJSON(),
-        html: editorState.read(() => $generateHtmlFromNodes(editor)),
     }
 }
 
@@ -281,7 +274,6 @@ export function serializedPromptEditorStateFromText(text: string): SerializedPro
     return {
         v: STATE_VERSION_CURRENT,
         lexicalEditorState: editorState,
-        html: escapeHTML(text),
     }
 }
 

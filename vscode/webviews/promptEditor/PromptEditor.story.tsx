@@ -37,14 +37,6 @@ const PromptEditorWithStateValue: FunctionComponent<React.ComponentProps<typeof 
                 onChange={value => setEditorState(value.editorState)}
             />
             <pre className={styles.stateValue}>{JSON.stringify(editorState, null, 2)}</pre>
-
-            {editorState && (
-                <div
-                    className={styles.htmlValue}
-                    // biome-ignore lint/security/noDangerouslySetInnerHtml: storybooks do not accept user input
-                    dangerouslySetInnerHTML={{ __html: editorState.html }}
-                />
-            )}
         </div>
     )
 }
