@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { expect } from '@playwright/test'
 import {
-    atMentionMenuItem,
+    atMentionMenuMessage,
     createEmptyChatPanel,
     getContextCell,
     sidebarExplorer,
@@ -82,7 +82,7 @@ test.extend<ExpectedEvents>({
     await chatInput.focus()
     await chatInput.clear()
     await chatInput.fill('@ignoredByCody')
-    await expect(atMentionMenuItem(chatPanel, 'No files found')).toBeVisible()
+    await expect(atMentionMenuMessage(chatPanel, 'No files found')).toBeVisible()
     await chatInput.clear()
     await chatInput.fill('@ignore')
     await expect(
