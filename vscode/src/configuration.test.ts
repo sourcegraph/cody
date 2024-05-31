@@ -41,8 +41,6 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.commandHints.enabled':
                         return true
-                    case 'cody.experimental.localSymbols':
-                        return true
                     case 'cody.experimental.tracing':
                         return true
                     case 'cody.experimental.commitMessage':

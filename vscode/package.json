@@ -1034,12 +1034,6 @@
           "markdownDescription": "Experimental feature for internal use.",
           "default": false
         },
-        "cody.experimental.localSymbols": {
-          "order": 9,
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Experimental feature for internal use."
-        },
         "cody.chat.preInstruction": {
           "order": 6,
           "type": "string",
