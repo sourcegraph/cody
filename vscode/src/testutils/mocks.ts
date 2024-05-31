@@ -840,7 +840,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
     experimentalSupercompletions: false,
     experimentalMinionAnthropicKey: undefined,
     experimentalTracing: false,
-    experimentalGithubAccessToken: '',
     experimentalCommitMessage: true,
     experimentalNoodle: false,
     codeActions: true,

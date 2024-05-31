@@ -293,7 +293,6 @@ export * from './sourcegraph-api/utils'
 export * from './token'
 export * from './token/constants'
 export * from './configuration'
-export * from './githubClient'
 export {
     setOpenCtxClient,
     openCtx,

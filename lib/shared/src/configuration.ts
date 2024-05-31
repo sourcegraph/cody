@@ -59,7 +59,6 @@ export interface Configuration {
     experimentalTracing: boolean
     experimentalChatContextRanker: boolean | undefined
     experimentalSupercompletions: boolean
-    experimentalGithubAccessToken: string
     experimentalCommitMessage: boolean
     experimentalNoodle: boolean
     experimentalMinionAnthropicKey: string | undefined
