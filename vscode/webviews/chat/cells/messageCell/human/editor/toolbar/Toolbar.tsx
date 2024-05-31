@@ -23,7 +23,7 @@ export const Toolbar: FunctionComponent<{
 
     onMentionClick?: () => void
 
-    onSubmitClick: (withEnhancedContext: boolean) => void
+    onSubmitClick: (addEnhancedContextEnabled: boolean) => void
     submitDisabled: SubmitButtonDisabled
 
     /** Handler for clicks that are in the "gap" (dead space), not any toolbar items. */
@@ -84,6 +84,7 @@ export const Toolbar: FunctionComponent<{
                 presentationMode={userInfo.isDotComUser ? 'consumer' : 'enterprise'}
                 onCloseByEscape={focusEditor}
             />
+            <div className="tw-ml-[5px] tw-mr-[5px] tw-border-l-[1px] tw-border-white tw-h-6 tw-opacity-10" />
             <ModelSelectFieldToolbarItem userInfo={userInfo} focusEditor={focusEditor} />
             <div className={styles.spacer} />
             <SubmitButton

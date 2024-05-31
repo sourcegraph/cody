@@ -29,7 +29,7 @@ export const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({
             {!feedbackSubmitted && (
                 <>
                     <VSCodeButton
-                        className={clsx(styles.feedbackButton)}
+                        className={clsx('tw-text-muted-foreground', styles.feedbackButton)}
                         appearance="icon"
                         type="button"
                         onClick={() => onFeedbackBtnSubmit('thumbsUp')}
@@ -38,7 +38,7 @@ export const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({
                         <i className="codicon codicon-thumbsup" />
                     </VSCodeButton>
                     <VSCodeButton
-                        className={clsx(styles.feedbackButton)}
+                        className={clsx('tw-text-muted-foreground', styles.feedbackButton)}
                         appearance="icon"
                         type="button"
                         onClick={() => onFeedbackBtnSubmit('thumbsDown')}

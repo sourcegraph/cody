@@ -334,12 +334,6 @@
         "enablement": "cody.activated"
       },
       {
-        "command": "cody.command.usageExamples",
-        "category": "Cody Command",
-        "title": "Usage Examples",
-        "enablement": "cody.activated && config.cody.experimental.noodle && (editorLangId === typescript || editorLangId === typescriptreact)"
-      },
-      {
         "command": "cody.command.explain-history",
         "category": "Cody Command",
         "title": "Explain Code History",
@@ -744,10 +738,6 @@
           "when": "cody.activated && editorIsOpen"
         },
         {
-          "command": "cody.command.usageExamples",
-          "when": "cody.activated && editorIsOpen && config.cody.experimental.noodle && (editorLangId === typescript || editorLangId === typescriptreact)"
-        },
-        {
           "command": "cody.command.explain-history",
           "when": "cody.activated && editorIsOpen && config.cody.experimental.noodle"
         },
@@ -820,11 +810,6 @@
           "command": "cody.chat.panel.new",
           "when": "cody.activated",
           "group": "ask"
-        },
-        {
-          "command": "cody.command.usageExamples",
-          "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle && (editorLangId === typescript || editorLangId === typescriptreact)",
-          "group": "command"
         },
         {
           "command": "cody.command.explain-code",
@@ -1305,9 +1290,7 @@
         "openctx.providers": {
           "type": "object",
           "markdownDescription": "OpenCtx providers configuration.",
-          "default": {
-            "https://openctx.org/npm/@openctx/provider-web": true
-          }
+          "default": {}
         },
         "cody.internal.unstable": {
           "order": 999,
@@ -1394,8 +1377,8 @@
     "@anthropic-ai/sdk": "^0.4.2",
     "@floating-ui/react": "^0.26.9",
     "@lexical/code": "^0.15.0",
-    "@lexical/html": "^0.15.0",
     "@lexical/react": "^0.15.0",
+    "@lexical/text": "^0.15.0",
     "@mdi/js": "^7.2.96",
     "@openctx/vscode-lib": "^0.0.8",
     "@opentelemetry/api": "^1.7.0",
@@ -1441,6 +1424,7 @@
     "lodash": "^4.17.21",
     "lowlight": "^3.1.0",
     "lru-cache": "^10.0.0",
+    "lucide": "^0.381.0",
     "lucide-react": "^0.378.0",
     "mac-ca": "^2.0.3",
     "marked": "^4.0.16",

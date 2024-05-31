@@ -87,80 +87,15 @@ export enum ContextItemSource {
     /** From URI */
     Uri = 'uri',
 
-    /** From a package repository */
-    Package = 'package',
-
     /** From source control history */
     History = 'history',
-
-    /** From Github API */
-    Github = 'github',
 }
 
 /**
  * An item (such as a file or symbol) that is included as context in a chat message.
  */
-export type ContextItem =
-    | ContextItemFile
-    | ContextItemSymbol
-    | ContextItemPackage
-    | ContextItemGithubPullRequest
-    | ContextItemGithubIssue
-    | ContextItemOpenCtx
+export type ContextItem = ContextItemFile | ContextItemSymbol | ContextItemOpenCtx
 
-/**
- * A Github pull request that is included as context in a chat message.
- */
-export interface ContextItemGithubPullRequest extends ContextItemCommon {
-    type: 'github_pull_request'
-
-    /**
-     * the owner of the repository.
-     */
-    owner: string
-
-    /**
-     * the name of the repository.
-     */
-    repoName: string
-
-    /**
-     *  the number for this pull request.
-     */
-    pullNumber: number
-
-    /**
-     * the title of this pull request.
-     */
-    title: string
-}
-
-/**
- * A Github issue that is included as context in a chat message.
- */
-export interface ContextItemGithubIssue extends ContextItemCommon {
-    type: 'github_issue'
-
-    /**
-     * the owner of the repository.
-     */
-    owner: string
-
-    /**
-     * the name of the repository.
-     */
-    repoName: string
-
-    /**
-     *  the number for this issue.
-     */
-    issueNumber: number
-
-    /**
-     * the title of this issue.
-     */
-    title: string
-}
 /**
  * An OpenCtx context item returned from a provider.
  */
@@ -175,31 +110,6 @@ export interface ContextItemOpenCtx extends ContextItemCommon {
         data?: any
         description?: string
     }
-}
-
-/**
- * A package repository that is included as context in a chat message.
- */
-export interface ContextItemPackage extends ContextItemCommon {
-    type: 'package'
-
-    /**
-     * the repository id for this package.
-     */
-    repoID: string
-
-    /**
-     * the title for this package.
-     */
-    title: string
-    /**
-     * the ecosystem for this package.
-     */
-    ecosystem: string
-    /**
-     * the name for this package.
-     */
-    name: string
 }
 
 /**

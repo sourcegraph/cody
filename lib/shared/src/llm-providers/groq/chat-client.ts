@@ -39,6 +39,9 @@ export async function groqChatClient(
         return
     }
 
+    // Support [Cortex](https://jan.ai/cortex) experimentally, which commonly uses this port.
+    const isCortex = config?.endpoint?.includes(':1337')
+
     const chatParams = {
         model: config?.model,
         messages: await Promise.all(
@@ -50,6 +53,16 @@ export async function groqChatClient(
             })
         ),
         stream: true,
+        ...(isCortex
+            ? {
+                  max_tokens: 1000,
+                  stop: [],
+                  frequency_penalty: 0,
+                  presence_penalty: 0,
+                  temperature: 0.1,
+                  top_p: -1,
+              }
+            : {}),
     }
 
     fetch(config?.endpoint ?? GROQ_CHAT_API_URL, {
@@ -61,6 +74,13 @@ export async function groqChatClient(
         },
         signal,
     })
+        .then(async res => {
+            if (!res.ok) {
+                log?.onError(res.statusText)
+                throw new Error(`HTTP ${res.status} ${res.statusText}: ${await res.text()}`)
+            }
+            return res
+        })
         .then(res => res.body?.getReader())
         .then(async reader => {
             if (!reader) {

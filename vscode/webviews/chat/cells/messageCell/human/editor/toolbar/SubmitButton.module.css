@@ -1,17 +1,32 @@
-.button {
-    kbd {
-        font-family: inherit;
-        font-size: 80%;
-        padding: 0.05rem 0.2rem 0.05rem 0;
-        display: inline-flex;
-        align-items: center;
-        line-height: 1;
-        margin-bottom: -1.5px;
-        opacity: 0.8;
+.button circle {
+    stroke: transparent;
+    fill: var(--vscode-button-background);
+}
 
-         /* Override VS Code's builtin styles. */
-        border: none !important;
-        color: unset !important;
-        background-color: unset !important;
-    }
+.button[disabled] circle {
+    fill: color-mix(in srgb, var(--vscode-button-foreground) 15%, transparent);
+}
+
+.button path {
+    stroke: transparent;
+    fill: var(--vscode-button-foreground);
+}
+
+.button[disabled] path {
+    fill: color-mix(in srgb, var(--vscode-button-foreground) 30%, transparent);
+}
+
+/* todo(tim): We need a tailwind high-contrast: modifier, then we don't need this */
+body[data-vscode-theme-kind='vscode-high-contrast'] .button circle {
+    stroke: var(--vscode-button-border);
+    fill: transparent;
+}
+
+body[data-vscode-theme-kind='vscode-high-contrast'] .button path {
+    stroke: transparent;
+    fill: currentColor;
+}
+
+body[data-vscode-theme-kind='vscode-high-contrast'] .button[disabled] path {
+    fill: var(--vscode-button-border);
 }

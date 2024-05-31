@@ -65,6 +65,21 @@ const FLOATING_OPTIONS: UseFloatingOptions = {
     transform: false,
 }
 
+/**
+ * We allow whitespace for @-mentions in the Lexical editor because
+ * it has an explicit switch between modes and can render @-mentions
+ * as special nodes that can be detected in later edits.
+ *
+ * The Edit quick-pick menu uses a raw text input and lacks this functionality,
+ * so we rely on spaces to detect @-mentions and switch between @-item selection
+ * and regular text input.
+ */
+function scanForMentionTriggerInLexicalInput(text: string) {
+    return scanForMentionTriggerInUserTextInput({ textBeforeCursor: text, includeWhitespace: true })
+}
+
+export type setEditorQuery = (getNewQuery: (currentText: string) => string) => void
+
 export default function MentionsPlugin({
     userInfo,
 }: { userInfo?: UserAccountInfo }): JSX.Element | null {
@@ -92,14 +107,16 @@ export default function MentionsPlugin({
     })
 
     const setEditorQuery = useCallback(
-        (query: string): void => {
+        (getNewQuery: (currentText: string) => string): void => {
             if (editor) {
                 editor.update(() => {
                     const selection = $getSelection()
+
                     if (selection) {
                         const lastNode = selection.getNodes().at(-1)
                         if (lastNode) {
-                            const textNode = $createTextNode(`@${query}`)
+                            const currentText = lastNode.getTextContent()
+                            const textNode = $createTextNode(getNewQuery(currentText))
                             lastNode.replace(textNode)
                             textNode.selectEnd()
                         }
@@ -108,7 +125,7 @@ export default function MentionsPlugin({
             }
         },
         [editor]
-    )
+    ) satisfies setEditorQuery
 
     useEffect(() => {
         // Listen for changes to ContextItemMentionNode to update the token count.
@@ -207,7 +224,7 @@ export default function MentionsPlugin({
             onQueryChange={updateQuery}
             onSelectOption={onSelectOption}
             onClose={onClose}
-            triggerFn={scanForMentionTriggerInUserTextInput}
+            triggerFn={scanForMentionTriggerInLexicalInput}
             options={DUMMY_OPTIONS}
             anchorClassName={styles.resetAnchor}
             commandPriority={
@@ -227,7 +244,8 @@ export default function MentionsPlugin({
                     },
                 })
             }}
-            menuRenderFn={(anchorElementRef, { selectOptionAndCleanUp }) => {
+            menuRenderFn={(anchorElementRef, itemProps) => {
+                const { selectOptionAndCleanUp } = itemProps
                 anchorElementRef2.current = anchorElementRef.current ?? undefined
                 return (
                     anchorElementRef.current && (

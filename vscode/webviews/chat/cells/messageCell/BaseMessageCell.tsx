@@ -1,8 +1,6 @@
 import type { ChatMessage } from '@sourcegraph/cody-shared'
-import clsx from 'clsx'
 import type { FunctionComponent } from 'react'
 import { Cell } from '../Cell'
-import styles from './BaseMessageCell.module.css'
 
 /**
  * The base component for messages.
@@ -18,12 +16,12 @@ export const BaseMessageCell: FunctionComponent<{
     <Cell
         style={speaker === 'human' ? 'human' : 'assistant'}
         gutterIcon={speakerIcon}
-        containerClassName={clsx(styles.cellContainer, className)}
+        containerClassName={className}
         contentClassName={contentClassName}
         data-testid="message"
     >
         {content}
-        {footer && <div className={styles.footer}>{footer}</div>}
+        {footer}
     </Cell>
 )
 
