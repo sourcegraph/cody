@@ -97,7 +97,7 @@ export function reuseLastCandidate({
     const isIndentationChange = currentLineSuffix === '' && (isIndentation || isDeindentation)
     let didAcceptCompletion = false
 
-    const itemsToReuse = lastCandidate.result.items
+    let itemsToReuse = lastCandidate.result.items
         .map((item): InlineCompletionItemWithAnalytics | undefined => {
             // Allow reuse if the user is (possibly) typing forward as suggested by the last
             // candidate completion. We still need to filter the candidate items to see which ones
@@ -191,6 +191,31 @@ export function reuseLastCandidate({
             return undefined
         })
         .filter(isDefined)
+
+    itemsToReuse = itemsToReuse.map(item => {
+        // Additionally to the suffix being different, the prefix might also have changed (e.g. when
+        // using something like semicolon insertion on save with some JavaScript formatters.
+        const lastCurrentLineSuffixLength = lastCandidate.lastTriggerDocContext.currentLineSuffix.length
+        const currentLineSuffixLength = docContext.currentLineSuffix.length
+        if (lastCurrentLineSuffixLength < currentLineSuffixLength && item.range) {
+            const difference = currentLineSuffixLength - lastCurrentLineSuffixLength
+            const insertedSuffix = docContext.currentLineSuffix.slice(lastCurrentLineSuffixLength)
+
+            if (item.insertText.endsWith(insertedSuffix)) {
+                return {
+                    ...item,
+                    range: new vscode.Range(
+                        item.range.start.line,
+                        item.range.start.character,
+                        item.range.end.line,
+                        item.range.end.character + difference
+                    ),
+                }
+            }
+        }
+
+        return item
+    })
 
     // Ensure that when one completion was marked as accepted, we don't reuse any others
     if (didAcceptCompletion) {
