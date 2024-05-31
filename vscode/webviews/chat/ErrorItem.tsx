@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 
 import { type ChatError, RateLimitError } from '@sourcegraph/cody-shared'
 
@@ -6,6 +6,7 @@ import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
+import { createWebviewTelemetryRecorder } from '../utils/telemetry'
 import styles from './ErrorItem.module.css'
 
 /**
@@ -54,6 +55,7 @@ const RateLimitErrorItem: React.FunctionComponent<{
     const isEnterpriseUser = userInfo.isDotComUser !== true
     const canUpgrade = error.upgradeIsAvailable && !userInfo?.isCodyProUser
     const tier = isEnterpriseUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
+    const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(postMessage), [postMessage])
 
     // Only log once on mount
     // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally only logs once on mount
@@ -66,7 +68,17 @@ const RateLimitErrorItem: React.FunctionComponent<{
                 : 'CodyVSCodeExtension:abuseUsageLimitCTA:shown',
             properties: { limit_type: 'chat_commands', tier },
         })
-    }, [])
+        telemetryRecorder.recordEvent(
+            canUpgrade ? 'cody.upsellUsageLimitCTA' : 'cody.abuseUsageLimitCTA',
+            'shown',
+            {
+                privateMetadata: {
+                    limit_type: 'chat_commands',
+                    tier,
+                },
+            }
+        )
+    }, [telemetryRecorder])
 
     const onButtonClick = useCallback(
         (page: 'upgrade' | 'rate-limits', call_to_action: 'upgrade' | 'learn-more'): void => {
@@ -76,11 +88,18 @@ const RateLimitErrorItem: React.FunctionComponent<{
                 eventName: 'CodyVSCodeExtension:upsellUsageLimitCTA:clicked',
                 properties: { limit_type: 'chat_commands', call_to_action, tier },
             })
+            telemetryRecorder.recordEvent('cody.upsellUsageLimitCTA', 'clicked', {
+                privateMetadata: {
+                    limit_type: 'chat_commands',
+                    call_to_action,
+                    tier,
+                },
+            })
 
             // open the page in browser
             postMessage({ command: 'show-page', page })
         },
-        [postMessage, tier]
+        [postMessage, tier, telemetryRecorder]
     )
 
     return (
