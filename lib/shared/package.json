@@ -10,7 +10,11 @@
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist", "src", "!**/*.test.*"],
+  "files": [
+    "dist",
+    "src",
+    "!**/*.test.*"
+  ],
   "sideEffects": false,
   "scripts": {
     "build": "tsc --build",
@@ -26,6 +30,7 @@
     "date-fns": "^2.30.0",
     "dedent": "^0.7.0",
     "diff": "^5.2.0",
+    "elasticlunr": "^0.9.5",
     "fast-xml-parser": "^4.3.2",
     "isomorphic-fetch": "^3.0.0",
     "js-tiktoken": "^1.0.10",
@@ -43,6 +48,7 @@
     "@types/crypto-js": "^4.2.2",
     "@types/dedent": "^0.7.0",
     "@types/diff": "^5.0.9",
+    "@types/elasticlunr": "^0.9.9",
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/lodash": "^4.14.195",
     "@types/node-fetch": "^2.6.4",
