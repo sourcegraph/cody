@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type {
     Event as EventItem,
     MinionTranscriptItem,
@@ -10,21 +10,11 @@ import type {
 import type { GenericVSCodeWrapper } from '../utils/VSCodeApi'
 
 import './MinionApp.css'
-import {
-    type RangeData,
-    markdownCodeBlockLanguageIDForFilename,
-    renderCodyMarkdown,
-} from '@sourcegraph/cody-shared'
+import { type RangeData, markdownCodeBlockLanguageIDForFilename } from '@sourcegraph/cody-shared'
 import type { URI } from 'vscode-uri'
-import { FileLink } from '../Components/FileLink'
-import { PopoverButton } from '../Components/platform/Button'
-import { SelectList } from '../Components/platform/SelectList'
-import {
-    PromptEditor,
-    type PromptEditorRefAPI,
-    type SerializedPromptEditorState,
-    type SerializedPromptEditorValue,
-} from '../promptEditor/PromptEditor'
+import { FileLink } from '../components/FileLink'
+import { MarkdownFromCody } from '../components/MarkdownFromCody'
+import { PromptEditor, type SerializedPromptEditorValue } from '../promptEditor/PromptEditor'
 import { updateDisplayPathEnvInfoForWebview } from '../utils/displayPathEnvInfo'
 import type { MinionExtensionMessage, MinionWebviewMessage } from './webview_protocol'
 
@@ -40,10 +30,6 @@ const UserInput: React.FunctionComponent<{
     onSubmit?: (value: string) => void
 }> = ({ mode, onSubmit }) => {
     const [description, setDescription] = useState('')
-    const editorRef = useRef<PromptEditorRefAPI>(null)
-    const setEditorState = useCallback((state: SerializedPromptEditorState | null) => {
-        editorRef.current?.setEditorState(state)
-    }, [])
 
     const onEnter = useCallback(
         (event: KeyboardEvent | null): void => {
@@ -53,10 +39,9 @@ const UserInput: React.FunctionComponent<{
                     onSubmit(description)
                 }
                 setDescription('')
-                setEditorState(null)
             }
         },
-        [description, onSubmit, setEditorState]
+        [description, onSubmit]
     )
 
     const onEditorChange = useCallback((value: SerializedPromptEditorValue): void => {
@@ -66,7 +51,6 @@ const UserInput: React.FunctionComponent<{
     return (
         <div className="input-group">
             <PromptEditor
-                editorRef={editorRef}
                 onChange={onEditorChange}
                 onEnterKey={onEnter}
                 placeholder={mode === 'start' ? "Describe what you'd like to do" : 'Make a comment'}
@@ -326,9 +310,7 @@ function renderEvent(
                         const langID = markdownCodeBlockLanguageIDForFilename(
                             annotatedContext.source.uri
                         )
-                        const html = renderCodyMarkdown(
-                            '```' + langID + '\n' + annotatedContext.text + '\n```'
-                        )
+                        const md = '```' + langID + '\n' + annotatedContext.text + '\n```'
 
                         return (
                             <div
@@ -340,15 +322,12 @@ function renderEvent(
                             >
                                 <div className="event-code-filename">
                                     <FileLink
+                                        linkClassName="event-code-filename-link"
                                         uri={annotatedContext.source.uri}
                                         range={annotatedContext.source.range}
                                     />
                                 </div>
-                                <div
-                                    className="event-code-snippet"
-                                    // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
-                                    dangerouslySetInnerHTML={{ __html: html }}
-                                />
+                                <MarkdownFromCody className="event-code-snippet">{md}</MarkdownFromCody>
                                 <div className="event-text">{annotatedContext.comment}</div>
                             </div>
                         )
@@ -494,6 +473,18 @@ export const MinionApp: React.FunctionComponent<{
         [vscodeAPI]
     )
 
+    const onSelectSession = useCallback(
+        (event: React.ChangeEvent<HTMLSelectElement>) => {
+            const sessionId = event.target.value
+            if (sessionId === undefined || sessionId.length === 0) {
+                return
+            }
+            setCurrentSessionId(sessionId)
+            vscodeAPI.postMessage({ type: 'set-session', id: sessionId })
+        },
+        [vscodeAPI]
+    )
+
     return (
         <div className="app">
             <div className="controls">
@@ -501,37 +492,21 @@ export const MinionApp: React.FunctionComponent<{
                     <i className="codicon codicon-add" />
                 </button>
 
-                <PopoverButton
-                    popoverContent={close => (
-                        <SelectList
-                            value={'Current session'}
-                            options={
-                                sessionIds.length > 0
-                                    ? sessionIds
-                                          .filter(id => id !== currentSessionId)
-                                          .map(id => ({ title: id, value: id }))
-                                    : [{ title: '(None)', value: '' }]
-                            }
-                            onChange={(value, shouldClose) => {
-                                if (value === undefined || value.length === 0) {
-                                    return
-                                }
-                                if (value) {
-                                    vscodeAPI.postMessage({ type: 'set-session', id: value })
-                                }
-                                if (shouldClose) {
-                                    close()
-                                }
-                            }}
-                        />
-                    )}
-                >
-                    <i className="codicon codicon-history" />
-                </PopoverButton>
-
                 <button type="button" onClick={clearHistory}>
                     <i className="codicon codicon-clear-all" />
                 </button>
+
+                <select
+                    className="controls-session-selector"
+                    onChange={onSelectSession}
+                    value={currentSessionId}
+                >
+                    {sessionIds.map(id => (
+                        <option key={id} value={id}>
+                            {id}
+                        </option>
+                    ))}
+                </select>
             </div>
             <div className="transcript">
                 {transcript.map((item, i) => (
@@ -551,14 +526,16 @@ export const MinionApp: React.FunctionComponent<{
                     </div>
                 ))}
             </div>
-            <div className="user-input">
-                <UserInput
-                    mode={'start'}
-                    onSubmit={text => {
-                        vscodeAPI.postMessage({ type: 'start', description: text })
-                    }}
-                />
-            </div>
+            {transcript.length === 0 && (
+                <div className="user-input">
+                    <UserInput
+                        mode={'start'}
+                        onSubmit={text => {
+                            vscodeAPI.postMessage({ type: 'start', description: text })
+                        }}
+                    />
+                </div>
+            )}
         </div>
     )
 }

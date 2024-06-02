@@ -7,8 +7,12 @@
 }
 
 .controls {
-    flex: 0 0 0;
+    flex: 0 0 1;
     display: flex;
+    gap: 0.25em;
+    padding: 0.25em;
+
+    align-items: center;
 }
 
 .transcript {
@@ -30,6 +34,15 @@
     font: inherit;
     cursor: pointer;
     outline: inherit;
+
+    display: flex;
+    align-items: center;
+}
+
+.controls-session-selector {
+    background: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    border: 1px solid var(--vscode-input-border);
 }
 
 .event {
@@ -108,6 +121,12 @@
     margin-bottom: 1em;
     border-radius: 1ch;
     overflow: auto;
+}
+
+.event-code-filename-link {
+    display: flex;
+    gap: 0.5em;
+    align-items: center;
 }
 
 .event-code-filename a {
@@ -190,7 +209,7 @@
     gap: 0.4em;
     margin: 0.5em 0;
     padding: 0.2em 0;
-    height: 1.3em;
+    height: 1.9em;
 }
 
 .step-controls-multi {
