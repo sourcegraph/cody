@@ -66,6 +66,7 @@ export interface Configuration {
     experimentalCommitMessage: boolean
     experimentalNoodle: boolean
     experimentalURLContext: boolean
+    experimentalMinionAnthropicKey: string | undefined
 
     /**
      * Unstable Features for internal testing only

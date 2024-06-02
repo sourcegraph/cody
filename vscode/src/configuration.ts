@@ -147,6 +147,7 @@ export function getConfiguration(
 
         experimentalOllamaChat: getHiddenSetting('experimental.ollamaChat', true),
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
+        experimentalMinionAnthropicKey: getHiddenSetting('experimental.minion.anthropicKey', undefined),
 
         experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
 

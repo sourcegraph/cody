@@ -447,6 +447,21 @@
         "icon": "$(new-comment-icon)"
       },
       {
+        "command": "cody.minion.panel.new",
+        "category": "Cody",
+        "title": "New Minion Panel",
+        "when": "cody.activated",
+        "group": "Cody",
+        "icon": "$(new-comment-icon)"
+      },
+      {
+        "command": "cody.minion.new-terminal",
+        "category": "Cody",
+        "title": "Minion new terminal - temporary test command",
+        "when": "cody.activated",
+        "group": "Cody"
+      },
+      {
         "command": "workbench.action.moveEditorToNewWindow",
         "category": "Cody",
         "title": "Pop out",
@@ -1075,6 +1090,11 @@
           "markdownDescription": "Enable commit message generation",
           "default": false
         },
+        "cody.experimental.minion.anthropicKey": {
+          "order": 99,
+          "type": "string",
+          "default": ""
+        },
         "cody.debug.verbose": {
           "order": 99,
           "type": "boolean",
@@ -1325,7 +1345,7 @@
     }
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.4.2",
+    "@anthropic-ai/sdk": "^0.20.8",
     "@floating-ui/react": "^0.26.9",
     "@lexical/code": "^0.15.0",
     "@lexical/react": "^0.15.0",
