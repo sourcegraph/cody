@@ -110,6 +110,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.github.accessToken':
                         return ''
+                    case 'cody.experimental.minion.anthropicKey':
+                        return undefined
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
