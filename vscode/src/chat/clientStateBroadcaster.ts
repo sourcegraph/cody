@@ -2,6 +2,7 @@ import {
     type ContextItem,
     ContextItemSource,
     type ContextItemTree,
+    contextFiltersProvider,
     isMultiLineRange,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -38,6 +39,10 @@ export function startClientStateBroadcaster({
             // would return.
             const repos = remoteSearch.getRepos('all')
             for (const repo of repos) {
+                if (contextFiltersProvider.isRepoNameIgnored(repo.name)) {
+                    continue
+                }
+
                 items.push({
                     ...contextItemMentionFromOpenCtxItem(
                         createRemoteRepositoryMention({
