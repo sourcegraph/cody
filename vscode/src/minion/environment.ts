@@ -3,6 +3,7 @@ import { PromptString, type RangeData, type Result } from '@sourcegraph/cody-sha
 import { isNumber, isString } from 'lodash'
 import * as vscode from 'vscode'
 import type { SymfRunner } from '../local-context/symf'
+import { logDebug } from '../log'
 
 export interface TextSnippet {
     uri: vscode.Uri
@@ -122,27 +123,42 @@ export class LocalVSCodeEnvironment implements Environment {
         const queryPromptString = PromptString.unsafe_fromUserQuery(query)
         const resultsAcrossRoots = await this.symf.getResults(queryPromptString, this.rootURIs)
         const results: Result[] = (await Promise.all(resultsAcrossRoots)).flatMap(r => r)
-        return await Promise.all(
-            results.map(async ({ file, range: { startPoint, endPoint } }): Promise<TextSnippet> => {
-                const range: RangeData = {
-                    start: { line: startPoint.row, character: startPoint.col },
-                    end: { line: endPoint.row, character: endPoint.col },
-                }
-                const vscodeRange = new vscode.Range(
-                    startPoint.row,
-                    startPoint.col,
-                    endPoint.row,
-                    endPoint.col
+        return (
+            await Promise.all(
+                results.map(
+                    async ({ file, range: { startPoint, endPoint } }): Promise<TextSnippet[]> => {
+                        try {
+                            const range: RangeData = {
+                                start: { line: startPoint.row, character: startPoint.col },
+                                end: { line: endPoint.row, character: endPoint.col },
+                            }
+                            const vscodeRange = new vscode.Range(
+                                startPoint.row,
+                                startPoint.col,
+                                endPoint.row,
+                                endPoint.col
+                            )
+                            const td = await vscode.workspace.openTextDocument(file)
+                            const text = td.getText(vscodeRange)
+                            return [
+                                {
+                                    uri: file,
+                                    range,
+                                    text,
+                                },
+                            ]
+                        } catch (e) {
+                            logDebug(
+                                'LocalVSCodeEnvironment',
+                                'failed to open file from symf result, index may be out-of-date',
+                                e
+                            )
+                            return []
+                        }
+                    }
                 )
-                const td = await vscode.workspace.openTextDocument(file)
-                const text = td.getText(vscodeRange)
-                return {
-                    uri: file,
-                    range,
-                    text,
-                }
-            })
-        )
+            )
+        ).flatMap(r => r)
     }
     open(uri: vscode.Uri): Promise<vscode.TextDocument> {
         throw new Error('Method not implemented.')
