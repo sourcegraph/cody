@@ -6,8 +6,18 @@ import {
     EXTENDED_USER_CONTEXT_TOKEN_BUDGET,
 } from '../token/constants'
 
-import { ModelUsage } from './types'
+import { ModelContextWindow, ModelUsage } from './types'
 import { ModelUIGroup } from './utils'
+
+const basicContextWindow: ModelContextWindow = {
+    input: CHAT_INPUT_TOKEN_BUDGET,
+    output: CHAT_OUTPUT_TOKEN_BUDGET
+}
+const expandedContextWindow: ModelContextWindow = {
+    input: EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
+    output: CHAT_OUTPUT_TOKEN_BUDGET,
+    context: { user: EXTENDED_USER_CONTEXT_TOKEN_BUDGET },
+}
 
 // The models must first be added to the custom chat models list in https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
 export const DEFAULT_DOT_COM_MODELS = [
@@ -20,11 +30,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         // Has a higher context window with a separate limit for user-context.
-        contextWindow: {
-            input: EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
-            output: CHAT_OUTPUT_TOKEN_BUDGET,
-            context: { user: EXTENDED_USER_CONTEXT_TOKEN_BUDGET },
-        },
+        contextWindow: expandedContextWindow,
         deprecated: false,
         uiGroup: ModelUIGroup.Balanced,
     },
@@ -36,11 +42,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         // Has a higher context window with a separate limit for user-context.
-        contextWindow: {
-            input: EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
-            output: CHAT_OUTPUT_TOKEN_BUDGET,
-            context: { user: EXTENDED_USER_CONTEXT_TOKEN_BUDGET },
-        },
+        contextWindow: expandedContextWindow,
         deprecated: false,
         uiGroup: ModelUIGroup.Accuracy,
     },
@@ -51,7 +53,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
+        contextWindow: basicContextWindow,
         deprecated: false,
         uiGroup: ModelUIGroup.Speed,
     },
@@ -63,11 +65,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         // Has a higher context window with a separate limit for user-context.
-        contextWindow: {
-            input: EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
-            output: CHAT_OUTPUT_TOKEN_BUDGET,
-            context: { user: EXTENDED_USER_CONTEXT_TOKEN_BUDGET },
-        },
+        contextWindow: expandedContextWindow,
         deprecated: false,
         uiGroup: ModelUIGroup.Accuracy,
     },
@@ -78,7 +76,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
+        contextWindow: basicContextWindow,
         deprecated: false,
         uiGroup: ModelUIGroup.Accuracy,
     },
@@ -89,7 +87,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
+        contextWindow: basicContextWindow,
         deprecated: false,
         uiGroup: ModelUIGroup.Speed,
     },
@@ -101,7 +99,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat],
-        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
+        contextWindow: basicContextWindow,
         deprecated: false,
         uiGroup: ModelUIGroup.Speed,
     },
@@ -112,11 +110,15 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat],
-        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
+        contextWindow: basicContextWindow,
         deprecated: false,
         uiGroup: ModelUIGroup.Accuracy,
     },
-    // NOTE: Models soon to be deprecated.
+
+
+    // --------------------------------
+    // Deprecated models
+    // --------------------------------
     {
         title: 'Claude 2.0',
         model: 'anthropic/claude-2.0',
@@ -124,7 +126,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
+        contextWindow: basicContextWindow,
         deprecated: true,
     },
     {
@@ -134,7 +136,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
+        contextWindow: basicContextWindow,
         deprecated: true,
     },
     {
@@ -144,7 +146,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: false,
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
+        contextWindow: basicContextWindow,
         deprecated: true,
     },
 ] as const satisfies Model[]
