@@ -1,3 +1,4 @@
+import * as path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { ContextItem, Message } from '@sourcegraph/cody-shared'
@@ -8,7 +9,6 @@ import {
     ps,
 } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
-import { withPlatformSlashes } from '../../test/e2e/helpers'
 import { PromptBuilder } from './index'
 
 describe('PromptBuilder', () => {
@@ -387,8 +387,17 @@ describe('PromptBuilder', () => {
     })
 })
 
+/**
+ * Converts a file name to use the appropriate platform-specific path separators.
+ *
+ * On Windows, the file name will be prefixed with a backslash (\), while on other platforms it will remain unchanged.
+ *
+ * @param fileName - The file name to convert.
+ * @returns The converted file name with the appropriate path separators.
+ */
 function convertFileNameByPlatform(fileName: string): string {
-    const newFileName = withPlatformSlashes(fileName)
-    const isWindows = process.platform === 'win32'
-    return isWindows ? '\\' + newFileName : newFileName
+    const newFileName = fileName.replaceAll(path.posix.sep, path.sep)
+    const isWindows = path.sep !== path.posix.sep
+    // Example: foo/bar.go -> \foo\bar.go in Windows
+    return isWindows ? `${path.sep}${newFileName}` : newFileName
 }
