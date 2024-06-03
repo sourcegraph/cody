@@ -124,7 +124,7 @@ export const buildInteraction = async ({
     }
     promptBuilder.tryAddMessages(transcript.reverse())
 
-    const contextItemsAndMessages = await getContext({
+    const contextItems = await getContext({
         intent: task.intent,
         uri: task.fixupFile.uri,
         selectionRange: task.selectionRange,
@@ -134,7 +134,7 @@ export const buildInteraction = async ({
         precedingText,
         selectedText,
     })
-    await promptBuilder.tryAddContext('user', contextItemsAndMessages)
+    await promptBuilder.tryAddContext('user', contextItems)
 
     return {
         messages: promptBuilder.build(),

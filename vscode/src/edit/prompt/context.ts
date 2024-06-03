@@ -18,6 +18,7 @@ import type { EditIntent } from '../types'
 import { truncatePromptString, truncatePromptStringStart } from '@sourcegraph/cody-shared'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import { PROMPT_TOPICS } from './constants'
+import { extractContextItemsFromContextMessages } from './utils'
 
 interface GetContextFromIntentOptions {
     intent: EditIntent
@@ -141,7 +142,7 @@ export const getContext = async ({
     userContextItems,
     editor,
     ...options
-}: GetContextOptions): Promise<(ContextItem | ContextMessage)[]> => {
+}: GetContextOptions): Promise<ContextItem[]> => {
     if (isAgentTesting) {
         // Need deterministic ordering of context files for the tests to pass
         // consistently across different file systems.
@@ -150,5 +151,5 @@ export const getContext = async ({
 
     const derivedContext = await getContextFromIntent({ editor, ...options })
     const userContext = await resolveContextItems(editor, userContextItems, options.selectedText)
-    return [...derivedContext, ...userContext]
+    return [...extractContextItemsFromContextMessages(derivedContext), ...userContext]
 }
