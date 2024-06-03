@@ -10,7 +10,16 @@ export const majorMinorVersion = (version: string): string =>
 export const releaseType = (version: string): ReleaseType =>
     Number(minorVersion(version)) % 2 === 1 ? 'insiders' : 'stable'
 
-export const releaseNotesURL = (version: string): string =>
-    releaseType(version) === 'stable'
-        ? `https://github.com/sourcegraph/cody/releases/tag/vscode-v${version}`
-        : 'https://github.com/sourcegraph/cody/blob/main/vscode/CHANGELOG.md'
+const RELEASE_BLOG_POSTS: Record<string, string> = {
+    '1.20': 'https://sourcegraph.com/blog/cody-vscode-1-20-0-release',
+}
+
+export const releaseNotesURL = (version: string): string => {
+    const blogPostURL = RELEASE_BLOG_POSTS[majorMinorVersion(version)]
+    return (
+        blogPostURL ??
+        (releaseType(version) === 'stable'
+            ? `https://github.com/sourcegraph/cody/releases/tag/vscode-v${version}`
+            : 'https://github.com/sourcegraph/cody/blob/main/vscode/CHANGELOG.md')
+    )
+}

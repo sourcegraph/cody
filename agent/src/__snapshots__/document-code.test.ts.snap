@@ -38,7 +38,7 @@ export class TestClass {
     constructor(private shouldGreet: boolean) {}
 
     /**
-     * Logs a greeting message to the console if the shouldGreet property is true.
+     * Logs the message 'Hello World!' to the console if the \`shouldGreet\` flag is true.
      */
     public functionName() {
         if (this.shouldGreet) {
@@ -66,8 +66,10 @@ describe('test block', () => {
     it('does something else', () => {
         // This line will error due to incorrect usage of \`performance.now\`
         /**
-         * Gets the current time in milliseconds since the DOM was loaded.
-         * @returns {number} The time in milliseconds since the DOM was loaded.
+         * Gets the current time in milliseconds.
+         * This value can be used to measure elapsed time.
+         * 
+         * @returns The current time in milliseconds.
          */
         const startTime = performance.now(/* CURSOR */)
     })

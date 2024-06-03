@@ -89,6 +89,7 @@ export const AssistantMessageCell: FunctionComponent<{
                     {displayMarkdown ? (
                         <ChatMessageContent
                             displayMarkdown={displayMarkdown}
+                            isMessageLoading={isLoading}
                             copyButtonOnSubmit={copyButtonOnSubmit}
                             insertButtonOnSubmit={insertButtonOnSubmit}
                             guardrails={guardrails}

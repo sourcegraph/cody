@@ -977,7 +977,7 @@ describe('Agent', () => {
                   it('does something else', () => {
                       // This line will error due to incorrect usage of \`performance.now\`
                       /**
-                       * The timestamp, in milliseconds, at which this perf tracing started.
+                       * The starting time of the operation, in milliseconds.
                        */
                       const startTime = performance.now(/* CURSOR */)
                   })

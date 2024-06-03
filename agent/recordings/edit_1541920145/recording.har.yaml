@@ -153,11 +153,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 51f0c8d5ac3b8449a254b5b440d28bcb
+    - _id: 1909c976e8824195d44217c44b1851d5
       _order: 0
       cache: {}
       request:
-        bodySize: 2064
+        bodySize: 2307
         cookies: []
         headers:
           - name: content-type
@@ -170,7 +170,7 @@ log:
           - name: user-agent
             value: edit / v1
           - name: traceparent
-            value: 00-9e3de3063f4d6bf1bd5aec382b2e5f52-fff948d38d3908b3-01
+            value: 00-2f9574986ae9823103630e8c6d1a5409-da06396838473f1e-01
           - name: connection
             value: keep-alive
           - name: host
@@ -205,6 +205,17 @@ log:
                   - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
 
                   - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+              - speaker: human
+                text: >+
+                  Codebase context from file path src/ChatColumn.tsx: Codebase
+                  context from file src/ChatColumn.tsx:
+
+                  import { useEffect } from "react";
+
+                  import React = require("react");
+
+              - speaker: assistant
+                text: Ok.
               - speaker: human
                 text: >-
                   This is part of the file: src/ChatColumn.tsx
@@ -245,14 +256,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=edit&client-version=v1
       response:
-        bodySize: 18673
+        bodySize: 10356
         content:
           mimeType: text/event-stream
-          size: 18673
+          size: 10356
           text: >+
             event: completion
 
-            data: {"completion":"interface Message {\n  id: string;\n  text: string;\n  sender: 'user' | 'assistant';\n}\n\ninterface ChatColumnProps {\n  messages: Message[];\n  setChatID: (chatID: string) =\u003e void;\n  isLoading: boolean;\n}\n\nexport default function ChatColumn({\n  messages,\n  setChatID,\n  isLoading,\n}: ChatColumnProps) {","stopReason":"stop_sequence"}
+            data: {"completion":"export default function ChatColumn({\n\tmessages,\n\tsetChatID,\n\tisLoading,\n}: ChatColumnProps) {\ninterface ChatColumnProps {\n  messages: Message[];\n  setChatID: (id: string) =\u003e void;\n  isLoading: boolean;\n}","stopReason":"stop_sequence"}
 
 
             event: done
@@ -262,7 +273,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 27 May 2024 11:54:10 GMT
+            value: Mon, 03 Jun 2024 06:44:18 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -291,7 +302,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-27T11:54:08.267Z
+      startedDateTime: 2024-06-03T06:44:16.693Z
       time: 0
       timings:
         blocked: -1
@@ -301,11 +312,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 64caf07ff8d919b37c5ce88b548491bc
+    - _id: 24310be04faaebe4336c6508f077d736
       _order: 0
       cache: {}
       request:
-        bodySize: 2127
+        bodySize: 2803
         cookies: []
         headers:
           - name: content-type
@@ -318,7 +329,7 @@ log:
           - name: user-agent
             value: edit / v1
           - name: traceparent
-            value: 00-04e049d9c6486ea5014eab87be8094f3-c29a42facd70bd62-01
+            value: 00-134781e7f30d249ccbd49a5775c7fe9a-1bb5a14b960461f0-01
           - name: connection
             value: keep-alive
           - name: host
@@ -353,6 +364,28 @@ log:
                   - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
 
                   - Do not provide any additional commentary about the code you added. Only respond with the generated code.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/Heading.tsx: Below is the
+                  code from file path src/Heading.tsx. Review the code outside
+                  the XML tags to detect the functionality, formats, style,
+                  patterns, and logics in use. Then, use what you detect and
+                  reuse methods/libraries to complete and enclose completed code
+                  only inside XML tags precisely without duplicating existing
+                  implementations. Here is the code:
+
+                  <PRECEDINGCODE3493>import React = require("react");
+
+
+                  interface HeadingProps {
+                      text: string;
+                      level?: number;
+                  }
+
+
+                  </PRECEDINGCODE3493><CODE5711></CODE5711><FOLLOWINGCODE2472></FOLLOWINGCODE2472>
+              - speaker: assistant
+                text: Ok.
               - speaker: human
                 text: >-
                   The user is currently in the file: src/Heading.tsx
@@ -390,14 +423,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=edit&client-version=v1
       response:
-        bodySize: 10253
+        bodySize: 9561
         content:
           mimeType: text/event-stream
-          size: 10253
+          size: 9561
           text: >+
             event: completion
 
-            data: {"completion":"export const Heading: React.FC\u003cHeadingProps\u003e = ({ text, level = 1 }) =\u003e {\n    const HTag = `h${level}` as keyof JSX.IntrinsicElements;\n    return \u003cHTag\u003e{text}\u003c/HTag\u003e;\n};\n","stopReason":"stop_sequence"}
+            data: {"completion":"export const Heading: React.FC\u003cHeadingProps\u003e = ({ text, level = 1 }) =\u003e {\n    const Tag = `h${level}` as keyof JSX.IntrinsicElements;\n    return \u003cTag\u003e{text}\u003c/Tag\u003e;\n};","stopReason":"stop_sequence"}
 
 
             event: done
@@ -407,7 +440,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 27 May 2024 11:54:15 GMT
+            value: Mon, 03 Jun 2024 06:44:24 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -436,7 +469,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-27T11:54:12.584Z
+      startedDateTime: 2024-06-03T06:44:20.473Z
       time: 0
       timings:
         blocked: -1

@@ -102,7 +102,7 @@ export const FIXTURE_TRANSCRIPT: Record<
         },
         {
             speaker: 'assistant',
-            text: ps`This code is very cool.`,
+            text: ps`This code is very cool. Here is some more code:\n\n\n\`\`\`javascript\nfunction Symbol1() {\n  console.log('Hello, world!')\n}\n\`\`\`\n`,
         },
     ]),
     long: transcriptFixture([
