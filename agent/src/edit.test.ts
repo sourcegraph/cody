@@ -62,23 +62,16 @@ describe('Edit', () => {
           "import { useEffect } from "react";
           import React = require("react");
 
-          interface Message {
-            id: string;
-            text: string;
-            sender: 'user' | 'assistant';
-          }
-
+          export default function ChatColumn({
+          	messages,
+          	setChatID,
+          	isLoading,
+          }: ChatColumnProps) {
           interface ChatColumnProps {
             messages: Message[];
-            setChatID: (chatID: string) => void;
+            setChatID: (id: string) => void;
             isLoading: boolean;
           }
-
-          export default function ChatColumn({
-            messages,
-            setChatID,
-            isLoading,
-          }: ChatColumnProps) {
           	useEffect(() => {
           		if (!isLoading) {
           			setChatID(messages[0].chatID);
@@ -120,10 +113,9 @@ describe('Edit', () => {
           }
 
           export const Heading: React.FC<HeadingProps> = ({ text, level = 1 }) => {
-              const HTag = \`h\${level}\` as keyof JSX.IntrinsicElements;
-              return <HTag>{text}</HTag>;
+              const Tag = \`h\${level}\` as keyof JSX.IntrinsicElements;
+              return <Tag>{text}</Tag>;
           };
-
           "
         `,
             explainPollyError
