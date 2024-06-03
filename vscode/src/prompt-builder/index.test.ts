@@ -373,7 +373,7 @@ describe('PromptBuilder', () => {
                 .join('\n')
 
             expect(builder.contextItems.length).toBe(1)
-            const filePath = withPlatformSlashes('foo/bar.go')
+            const filePath = convertFileNameByPlatform('foo/bar.go')
             expect(promptContent).toMatchInlineSnapshot(`
               "preamble
               Codebase context from file ${filePath}:
@@ -386,3 +386,9 @@ describe('PromptBuilder', () => {
         })
     })
 })
+
+function convertFileNameByPlatform(fileName: string): string {
+    const newFileName = withPlatformSlashes(fileName)
+    const isWindows = process.platform === 'win32'
+    return isWindows ? '\\' + newFileName : newFileName
+}
