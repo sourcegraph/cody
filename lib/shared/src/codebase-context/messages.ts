@@ -103,7 +103,16 @@ export type ContextItem =
     | ContextItemTree
     | ContextItemSymbol
     | ContextItemOpenCtx
+    | ContextItemMemory
 
+/**
+ * A context item that is fetched from the chat history.
+ */
+export interface ContextItemMemory extends ContextItemCommon {
+    type: 'memory'
+    conversationID: string
+    messageID: string
+}
 /**
  * A context item that represents a repository.
  */

@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import {
     type AuthStatus,
     type ChatClient,
+    ChatMemoryManager,
     type Configuration,
     type ConfigurationWithAccessToken,
     type FeatureFlagProvider,
@@ -24,6 +25,7 @@ import type { ExtensionMessage } from '../protocol'
 
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ContextRankingController } from '../../local-context/context-ranking'
+import { localStorage } from '../../services/LocalStorageProvider'
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType } from './ChatManager'
 import type { SidebarViewOptions } from './SidebarViewController'
@@ -277,15 +279,32 @@ export class ChatPanelsManager implements vscode.Disposable {
     public async clearHistory(chatID?: string): Promise<void> {
         const authProvider = this.options.authProvider
         const authStatus = authProvider.getAuthStatus()
+
+        // It is okay to create a separate ChatMemoryManager instance here just to
+        // delete chats from memory and not update the memory manager inside the
+        // active chat panel as the panel will be disposed via this.disposeProvider
+        // or this.disposePanels anyways.
+        const memoryManager = new ChatMemoryManager({
+            authStatus,
+            localStorage,
+        })
+
         // delete single chat
         if (chatID) {
             await chatHistory.deleteChat(authStatus, chatID)
             this.disposeProvider(chatID)
             await this.updateTreeViewHistory()
+            // delete single chat from memory
+            await memoryManager.removeChat(chatID)
             return
         }
+
+        // delete all chats from memory
+        await memoryManager.removeAllChats()
+
         // delete all chats
         await chatHistory.clear(authStatus)
+
         this.disposePanels()
         this.treeViewProvider.reset()
     }

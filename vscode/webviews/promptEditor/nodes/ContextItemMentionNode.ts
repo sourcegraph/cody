@@ -1,6 +1,7 @@
 import {
     type ContextItem,
     type ContextItemFile,
+    type ContextItemMemory,
     type ContextItemOpenCtx,
     type ContextItemRepository,
     type ContextItemSymbol,
@@ -37,6 +38,7 @@ export type SerializedContextItem = { uri: string; title?: string; content?: und
     | Omit<ContextItemTree, 'uri' | 'content'>
     | Omit<ContextItemSymbol, 'uri' | 'content'>
     | Omit<ContextItemOpenCtx, 'uri' | 'content'>
+    | Omit<ContextItemMemory, 'uri' | 'content'>
 )
 
 export function serializeContextItem(

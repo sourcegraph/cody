@@ -71,6 +71,7 @@ export {
     type SymbolKind,
     type ContextItemTree,
     type ContextItemRepository,
+    type ContextItemMemory,
 } from './codebase-context/messages'
 export type {
     CodyCommand,
@@ -300,3 +301,5 @@ export {
 } from './context/openctx/api'
 export { URL_CONTEXT_MENTION_PROVIDER } from './mentions/providers/urlMentions'
 export { type ClientStateForWebview } from './clientState'
+
+export * from './memory'
