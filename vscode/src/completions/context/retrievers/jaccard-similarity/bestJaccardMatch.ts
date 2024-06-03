@@ -1,4 +1,7 @@
+import { LRUCache } from 'lru-cache'
 import winkUtils from 'wink-nlp-utils'
+
+export const MAX_STEM_CACHE_SIZE = 30000
 
 export interface JaccardMatch {
     score: number
@@ -173,8 +176,8 @@ export function getWordOccurrences(s: string): WordOccurrences {
     const words = winkUtils.string.tokenize0(s)
 
     const filteredWords = winkUtils.tokens.removeWords(words)
-    const stems = winkUtils.tokens.stem(filteredWords)
-    for (const stem of stems) {
+    for (const word of filteredWords) {
+        const stem = stemWithCache(word)
         frequencyCounter.set(stem, (frequencyCounter.get(stem) || 0) + 1)
     }
     return frequencyCounter
@@ -224,3 +227,18 @@ function add(
     }
     return { windowIncrease, intersectionIncrease }
 }
+
+/**
+ * Stems the given word using a cache to avoid repeated stemming operations.
+ * @param word - The word to be stemmed.
+ * @returns The stemmed version of the input word.
+ */
+function stemWithCache(word: string): string {
+    let stem = stemmerCache.get(word)
+    if (!stem) {
+        stem = winkUtils.string.stem(word)
+        stemmerCache.set(word, stem)
+    }
+    return stem
+}
+const stemmerCache = new LRUCache<string, string>({ max: MAX_STEM_CACHE_SIZE })
