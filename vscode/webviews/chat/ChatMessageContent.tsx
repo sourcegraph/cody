@@ -21,6 +21,7 @@ export interface CodeBlockActionsProps {
 
 interface ChatMessageContentProps {
     displayMarkdown: string
+    isMessageLoading: boolean
 
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
@@ -237,6 +238,7 @@ class GuardrailsStatusController {
  */
 export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps> = ({
     displayMarkdown,
+    isMessageLoading,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
     guardrails,
@@ -269,27 +271,29 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                     container.classList.add(styles.attributionContainer)
                     buttons.append(container)
 
-                    const g = new GuardrailsStatusController(container)
-                    g.setPending()
+                    if (!isMessageLoading) {
+                        const g = new GuardrailsStatusController(container)
+                        g.setPending()
 
-                    guardrails
-                        .searchAttribution(preText)
-                        .then(attribution => {
-                            if (isError(attribution)) {
-                                g.setUnavailable(attribution)
-                            } else if (attribution.repositories.length === 0) {
-                                g.setSuccess()
-                            } else {
-                                g.setFailure(
-                                    attribution.repositories.map(r => r.name),
-                                    attribution.limitHit
-                                )
-                            }
-                        })
-                        .catch(error => {
-                            g.setUnavailable(error)
-                            return
-                        })
+                        guardrails
+                            .searchAttribution(preText)
+                            .then(attribution => {
+                                if (isError(attribution)) {
+                                    g.setUnavailable(attribution)
+                                } else if (attribution.repositories.length === 0) {
+                                    g.setSuccess()
+                                } else {
+                                    g.setFailure(
+                                        attribution.repositories.map(r => r.name),
+                                        attribution.limitHit
+                                    )
+                                }
+                            })
+                            .catch(error => {
+                                g.setUnavailable(error)
+                                return
+                            })
+                    }
                 }
 
                 // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
@@ -303,7 +307,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 })
             }
         }
-    }, [copyButtonOnSubmit, insertButtonOnSubmit, guardrails, displayMarkdown])
+    }, [copyButtonOnSubmit, insertButtonOnSubmit, guardrails, displayMarkdown, isMessageLoading])
 
     usePreserveSelectionOnUpdate(rootRef, [displayMarkdown])
 
