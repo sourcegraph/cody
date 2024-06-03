@@ -40,7 +40,8 @@
     "vscode:prepublish": "pnpm -s run build",
     "vscode:uninstall": "node ./dist/post-uninstall.js",
     "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts",
-    "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts"
+    "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts",
+    "version-bump:minor": "RELEASE_TYPE=minor ts-node-transpile-only ./scripts/release-pr.ts"
   },
   "categories": ["Programming Languages", "Machine Learning", "Snippets", "Education"],
   "keywords": [
