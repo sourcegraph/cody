@@ -89,7 +89,8 @@ test.extend<ExpectedEvents>({
     await page.getByText('<title>Hello Cody</title>').click()
     await expect(page.getByText('Explain Code')).toBeVisible()
     await page.getByText('Explain Code').click()
-    await expectContextCellCounts(contextCell, { files: 1 })
+    // TODO(sqs): There is flakiness where sometimes this gets `{ files: 1 }`.
+    await expectContextCellCounts(contextCell, { files: 2 })
     await contextCell.click()
 
     // The context should show the file with the correct range
