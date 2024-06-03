@@ -20,13 +20,15 @@ export async function getContextFileFromUri(file: URI, range?: vscode.Range): Pr
                 return []
             }
 
+            // empty range can happen when user initiates action from right
+            // click. Treat as wanting full document.
+            range = range?.isEmpty ? undefined : range
+
             const doc = await vscode.workspace.openTextDocument(file)
             const content = doc?.getText(range).trim()
             if (!content) {
                 throw new Error('No file content')
             }
-            const endLine = Math.max(doc.lineCount - 1, 0)
-            range = range ?? new vscode.Range(0, 0, endLine, 0)
             const size = TokenCounter.countTokens(content)
 
             return [
