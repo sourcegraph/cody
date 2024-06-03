@@ -1,4 +1,3 @@
-import * as path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { ContextItem, Message } from '@sourcegraph/cody-shared'
