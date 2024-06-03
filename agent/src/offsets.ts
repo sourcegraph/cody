@@ -24,7 +24,7 @@ export class DocumentOffsets {
         return this.lines.length - 1
     }
     public lineStartOffset(line: number): number {
-        return this.lines[line]
+        return line < this.lines.length ? this.lines[line] : this.lines.at(-1)!
     }
     public lineEndOffset(line: number): number {
         const nextLine = line + 1
@@ -48,7 +48,7 @@ export class DocumentOffsets {
     }
     public offset(position: Position): number {
         return (
-            this.lines[position.line] +
+            this.lineStartOffset(position.line) +
             Math.min(position.character, this.lineLengthIncludingNewline(position.line))
         )
     }

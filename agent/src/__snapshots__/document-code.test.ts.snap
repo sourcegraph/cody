@@ -21,7 +21,7 @@ export const TestLogger = {
 
 exports[`Document Code > commands/document (Kotlin class name) 1`] = `
 "/**
- * Represents a greeting that can be used to say "Hello, world!".
+ * Represents a greeting that can be displayed to the user.
  */
 class He/* CURSOR */llo {
     fun greeting(): String {
@@ -33,12 +33,22 @@ class He/* CURSOR */llo {
 
 exports[`Document Code > commands/document (Method as part of a class) 1`] = `
 "const foo = 42
+// Should be present in the LLM prompt
+const longPrefix = \`
+    longPrefix content
+    longPrefix content
+    longPrefix content
+    longPrefix content
+    longPrefix content
+    longPrefix content
+    longPrefix content
+\`
 
 export class TestClass {
     constructor(private shouldGreet: boolean) {}
 
     /**
-     * Logs the message 'Hello World!' to the console if the \`shouldGreet\` flag is true.
+     * Logs a 'Hello World!' message to the console if \`shouldGreet\` is true.
      */
     public functionName() {
         if (this.shouldGreet) {
@@ -46,6 +56,17 @@ export class TestClass {
         }
     }
 }
+
+// Should be present in the LLM prompt
+const longSuffix = \`
+    longSuffix content
+    longSuffix content
+    longSuffix content
+    longSuffix content
+    longSuffix content
+    longSuffix content
+    longSuffix content
+\`
 "
 `;
 
@@ -66,10 +87,8 @@ describe('test block', () => {
     it('does something else', () => {
         // This line will error due to incorrect usage of \`performance.now\`
         /**
-         * Gets the current time in milliseconds.
-         * This value can be used to measure elapsed time.
-         * 
-         * @returns The current time in milliseconds.
+         * Records the current time using the \`performance.now()\` function.
+         * This can be useful for measuring the duration of operations or code sections.
          */
         const startTime = performance.now(/* CURSOR */)
     })
@@ -79,7 +98,8 @@ describe('test block', () => {
 
 exports[`Document Code > editCommands/document (basic function) 1`] = `
 "/**
- * Adds two numbers and returns the result.
+ * Adds two numbers together and returns the result.
+ * 
  * @param a - The first number to add.
  * @param b - The second number to add.
  * @returns The sum of the two input numbers.

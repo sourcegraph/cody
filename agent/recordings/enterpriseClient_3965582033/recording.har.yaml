@@ -110,11 +110,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 6f1970fd67cf4b74be4fd8cbcfd5517e
+    - _id: 0b112db35e08ed58b2febe4db1aff986
       _order: 0
       cache: {}
       request:
-        bodySize: 3181
+        bodySize: 2810
         cookies: []
         headers:
           - name: content-type
@@ -127,7 +127,7 @@ log:
           - name: user-agent
             value: enterpriseClient / v1
           - name: traceparent
-            value: 00-56a95a6d6c23d114b59bc91ee7b8987c-73031c7b67180e76-01
+            value: 00-18e1dc0fa003f24dc1911cf2bee3e3be-11c0946e6bf7054c-01
           - name: connection
             value: keep-alive
           - name: host
@@ -165,38 +165,12 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: "Codebase context from file path src/example.test.ts: Codebase context
-                  from file src/example.test.ts:
+                text: >
+                  Codebase context from file path src/example.test.ts: Codebase
+                  context from file src/example.test.ts:
 
-                  \ expect } from 'vitest'
-
-                  import { it } from 'vitest'
-
-                  import { describe } from 'vitest'
-
-
-                  describe('test block', () => {
-
-                  \    it('does 1', () => {
-
-                  \        expect(true).toBe(true)
-
-                  \    })
-
-
-                  \    it('does 2', () => {
-
-                  \        expect(true).toBe(true)
-
-                  \    })
-
-
-                  \    it('does something else', () => {
-
-                  \        // This line will error due to
-                  incorrect usage of `performance.now`
-
-                  \        "
+                      })
+                  })
               - speaker: assistant
                 text: Ok.
               - speaker: human
@@ -234,10 +208,10 @@ log:
             value: v1
         url: https://demo.sourcegraph.com/.api/completions/stream?client-name=enterpriseclient&client-version=v1
       response:
-        bodySize: 1666
+        bodySize: 1854
         content:
           mimeType: text/event-stream
-          size: 1666
+          size: 1854
           text: >+
             event: completion
 
@@ -256,72 +230,77 @@ log:
 
             event: completion
 
-            data: {"completion":"/**\n * The","stopReason":""}
+            data: {"completion":"/**\n * Recor","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * The starting","stopReason":""}
+            data: {"completion":"/**\n * Record the","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * The starting time","stopReason":""}
+            data: {"completion":"/**\n * Record the start","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * The starting time of","stopReason":""}
+            data: {"completion":"/**\n * Record the start time","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * The starting time of the","stopReason":""}
+            data: {"completion":"/**\n * Record the start time of","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * The starting time of the operation","stopReason":""}
+            data: {"completion":"/**\n * Record the start time of an","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * The starting time of the operation,","stopReason":""}
+            data: {"completion":"/**\n * Record the start time of an operation","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * The starting time of the operation, in","stopReason":""}
+            data: {"completion":"/**\n * Record the start time of an operation using","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * The starting time of the operation, in millis","stopReason":""}
+            data: {"completion":"/**\n * Record the start time of an operation using the","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * The starting time of the operation, in milliseconds","stopReason":""}
+            data: {"completion":"/**\n * Record the start time of an operation using the Performance","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * The starting time of the operation, in milliseconds.","stopReason":""}
+            data: {"completion":"/**\n * Record the start time of an operation using the Performance API","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * The starting time of the operation, in milliseconds.\n ","stopReason":""}
+            data: {"completion":"/**\n * Record the start time of an operation using the Performance API.","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * The starting time of the operation, in milliseconds.\n */","stopReason":""}
+            data: {"completion":"/**\n * Record the start time of an operation using the Performance API.\n ","stopReason":""}
 
 
             event: completion
 
-            data: {"completion":"/**\n * The starting time of the operation, in milliseconds.\n */","stopReason":"stop_sequence"}
+            data: {"completion":"/**\n * Record the start time of an operation using the Performance API.\n */","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"/**\n * Record the start time of an operation using the Performance API.\n */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -331,7 +310,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 03 Jun 2024 06:12:15 GMT
+            value: Mon, 03 Jun 2024 07:43:40 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -360,7 +339,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-03T06:12:13.151Z
+      startedDateTime: 2024-06-03T07:43:37.101Z
       time: 0
       timings:
         blocked: -1

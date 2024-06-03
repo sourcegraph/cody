@@ -153,11 +153,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 1909c976e8824195d44217c44b1851d5
+    - _id: 5c6544452ca1c26d15ca25b163fa9752
       _order: 0
       cache: {}
       request:
-        bodySize: 2307
+        bodySize: 2515
         cookies: []
         headers:
           - name: content-type
@@ -170,7 +170,7 @@ log:
           - name: user-agent
             value: edit / v1
           - name: traceparent
-            value: 00-2f9574986ae9823103630e8c6d1a5409-da06396838473f1e-01
+            value: 00-e92beb093ba643a17030b9457af81462-31f84e76c2997d13-01
           - name: connection
             value: keep-alive
           - name: host
@@ -206,14 +206,26 @@ log:
 
                   - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
               - speaker: human
-                text: >+
+                text: >
                   Codebase context from file path src/ChatColumn.tsx: Codebase
                   context from file src/ChatColumn.tsx:
 
-                  import { useEffect } from "react";
-
-                  import React = require("react");
-
+                  	useEffect(() => {
+                  		if (!isLoading) {
+                  			setChatID(messages[0].chatID);
+                  		}
+                  	}, [messages]);
+                  	return (
+                  		<>
+                  			<h1>Messages</h1>
+                  			<ul>
+                  				{messages.map((message) => (
+                  					<li>{message.text}</li>
+                  				))}
+                  			</ul>
+                  		</>
+                  	);
+                  }
               - speaker: assistant
                 text: Ok.
               - speaker: human
@@ -256,14 +268,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=edit&client-version=v1
       response:
-        bodySize: 10356
+        bodySize: 16282
         content:
           mimeType: text/event-stream
-          size: 10356
+          size: 16282
           text: >+
             event: completion
 
-            data: {"completion":"export default function ChatColumn({\n\tmessages,\n\tsetChatID,\n\tisLoading,\n}: ChatColumnProps) {\ninterface ChatColumnProps {\n  messages: Message[];\n  setChatID: (id: string) =\u003e void;\n  isLoading: boolean;\n}","stopReason":"stop_sequence"}
+            data: {"completion":"export default function ChatColumn({\n\tmessages,\n\tsetChatID,\n\tisLoading,\n}: ChatColumnProps) {\ninterface ChatColumnProps {\n  messages: ChatMessage[];\n  setChatID: (chatID: string) =\u003e void;\n  isLoading: boolean;\n}\n\ninterface ChatMessage {\n  chatID: string;\n  text: string;\n}","stopReason":"stop_sequence"}
 
 
             event: done
@@ -273,7 +285,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 03 Jun 2024 06:44:18 GMT
+            value: Mon, 03 Jun 2024 07:43:39 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -302,7 +314,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-03T06:44:16.693Z
+      startedDateTime: 2024-06-03T07:43:36.121Z
       time: 0
       timings:
         blocked: -1
@@ -312,11 +324,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 24310be04faaebe4336c6508f077d736
+    - _id: fa263b4c0c914112a377b1c976114f9f
       _order: 0
       cache: {}
       request:
-        bodySize: 2803
+        bodySize: 2805
         cookies: []
         headers:
           - name: content-type
@@ -329,7 +341,7 @@ log:
           - name: user-agent
             value: edit / v1
           - name: traceparent
-            value: 00-134781e7f30d249ccbd49a5775c7fe9a-1bb5a14b960461f0-01
+            value: 00-ed67dbddac8a7a66bdde83f8de7d919e-b08353a6d9e7156e-01
           - name: connection
             value: keep-alive
           - name: host
@@ -383,7 +395,9 @@ log:
                   }
 
 
-                  </PRECEDINGCODE3493><CODE5711></CODE5711><FOLLOWINGCODE2472></FOLLOWINGCODE2472>
+                  </PRECEDINGCODE3493><CODE5711></CODE5711><FOLLOWINGCODE2472>
+
+                  </FOLLOWINGCODE2472>
               - speaker: assistant
                 text: Ok.
               - speaker: human
@@ -423,14 +437,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=edit&client-version=v1
       response:
-        bodySize: 9561
+        bodySize: 11806
         content:
           mimeType: text/event-stream
-          size: 9561
+          size: 11806
           text: >+
             event: completion
 
-            data: {"completion":"export const Heading: React.FC\u003cHeadingProps\u003e = ({ text, level = 1 }) =\u003e {\n    const Tag = `h${level}` as keyof JSX.IntrinsicElements;\n    return \u003cTag\u003e{text}\u003c/Tag\u003e;\n};","stopReason":"stop_sequence"}
+            data: {"completion":"export const Heading: React.FC\u003cHeadingProps\u003e = ({ text, level = 1 }) =\u003e {\n  const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;\n\n  return \u003cHeadingTag\u003e{text}\u003c/HeadingTag\u003e;\n};\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -440,7 +454,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 03 Jun 2024 06:44:24 GMT
+            value: Mon, 03 Jun 2024 07:43:44 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -469,7 +483,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-03T06:44:20.473Z
+      startedDateTime: 2024-06-03T07:43:41.643Z
       time: 0
       timings:
         blocked: -1
