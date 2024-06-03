@@ -8,6 +8,7 @@ import {
     ps,
 } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
+import { withPlatformSlashes } from '../../test/e2e/helpers'
 import { PromptBuilder } from './index'
 
 describe('PromptBuilder', () => {
@@ -372,9 +373,10 @@ describe('PromptBuilder', () => {
                 .join('\n')
 
             expect(builder.contextItems.length).toBe(1)
+            const filePath = withPlatformSlashes('foo/bar.go')
             expect(promptContent).toMatchInlineSnapshot(`
               "preamble
-              Codebase context from file foo/bar.go:
+              Codebase context from file ${filePath}:
               \`\`\`go
               foo\`\`\`
               Ok.
