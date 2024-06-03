@@ -1,15 +1,14 @@
 import type { Polly } from '@pollyjs/core'
-import { ModelProvider, getDotComDefaultModels } from '@sourcegraph/cody-shared'
-import dedent from 'dedent'
+import { ModelProvider, getDotComDefaultModels, ps } from '@sourcegraph/cody-shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
 import { TESTING_CREDENTIALS } from '../../../../vscode/src/testutils/testing-credentials'
-import { Llm } from './llm-judge'
+import { LlmJudge } from './llm-judge'
 import { llmJudgeFixTemplate } from './llm-judge-fix-template'
 
 // Skipped because the shared testing account is getting rate limited. It's OK
 // to manually run this test to begin with anyways.
-describe.skip('Llm', () => {
+describe.skip('LLM-as-judge', () => {
     ModelProvider.setProviders(getDotComDefaultModels())
     let polly: Polly | undefined
     beforeAll(() => {
@@ -23,7 +22,7 @@ describe.skip('Llm', () => {
         await polly?.stop()
     })
 
-    const llm = new Llm({
+    const llm = new LlmJudge({
         srcAccessToken: TESTING_CREDENTIALS.dotcom.token ?? TESTING_CREDENTIALS.dotcom.redactedToken,
         srcEndpoint: TESTING_CREDENTIALS.dotcom.serverEndpoint,
     })
@@ -31,16 +30,16 @@ describe.skip('Llm', () => {
     it('fix-amazing', async () => {
         const score = await llm.judge(
             llmJudgeFixTemplate({
-                codeBeforeFix: dedent`export function fixCommandExample(): number {
+                codeBeforeFix: ps`export function fixCommandExample(): number {
                 return '42';
             }
             `,
-                codeAfterFix: dedent`export function fixCommandExample(): number {
+                codeAfterFix: ps`export function fixCommandExample(): number {
                 return 42;
             }
             `,
-                diagnosticBeforeFix: dedent`Type 'string' is not assignable to type 'number'.ts(2322)`,
-                diagnosticsAfterFix: '',
+                diagnosticBeforeFix: ps`Type 'string' is not assignable to type 'number'.ts(2322)`,
+                diagnosticsAfterFix: ps``,
             })
         )
 
@@ -51,22 +50,22 @@ describe.skip('Llm', () => {
     it('fix-acceptable', async () => {
         const score = await llm.judge(
             llmJudgeFixTemplate({
-                codeBeforeFix: dedent`
+                codeBeforeFix: ps`
                     export function readContents(): string {
                         const filepath = '/path/to/file'
                         const text = 42
                         return text
                     }
             `,
-                codeAfterFix: dedent`
+                codeAfterFix: ps`
                 export function readContents(): string {
                     const filepath = '/path/to/file'
                     const text = fs.readFileSync(filepath, 'utf8')
                     return text
                 }
         `,
-                diagnosticBeforeFix: dedent`Type 'string' is not assignable to type 'number'.ts(2322)`,
-                diagnosticsAfterFix: `Cannot find name 'fs'.ts(2304) `,
+                diagnosticBeforeFix: ps`Type 'string' is not assignable to type 'number'.ts(2322)`,
+                diagnosticsAfterFix: ps`Cannot find name 'fs'.ts(2304) `,
             })
         )
         expect(score.score).toBe('acceptable')
@@ -76,18 +75,18 @@ describe.skip('Llm', () => {
     it('fix-bad', async () => {
         const score = await llm.judge(
             llmJudgeFixTemplate({
-                codeBeforeFix: dedent`import helper from 'helper'
+                codeBeforeFix: ps`import helper from 'helper'
                     export function fixCommandExample(): boolean {
                         return helper('hello');
                     }
             `,
-                diagnosticBeforeFix: dedent`Type 'string' is not assignable to type 'number'.ts(2322)`,
-                codeAfterFix: dedent`import helper from 'helper'
+                diagnosticBeforeFix: ps`Type 'string' is not assignable to type 'number'.ts(2322)`,
+                codeAfterFix: ps`import helper from 'helper'
                     export function fixCommandExample(): boolean {
                         return helper(null); // error: type string is not assignable to type number
                     }
             `,
-                diagnosticsAfterFix: '',
+                diagnosticsAfterFix: ps``,
             })
         )
         expect(score.score).toBe('bad')

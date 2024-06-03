@@ -2,13 +2,13 @@ import { ModelProvider, type PromptString } from '@sourcegraph/cody-shared'
 import { SourcegraphNodeCompletionsClient } from '../../../../vscode/src/completions/nodeClient'
 import type { CodyBenchOptions } from './cody-bench'
 
-export interface LlmScore {
+export interface LlmJudgeScore {
     score?: string // 'bad' | 'acceptable' | 'amazing'
     scoreNumeric?: number
     reasoning?: string
 }
 
-export class Llm {
+export class LlmJudge {
     client: SourcegraphNodeCompletionsClient
     constructor(options: Pick<CodyBenchOptions, 'srcAccessToken' | 'srcEndpoint'>) {
         this.client = new SourcegraphNodeCompletionsClient({
@@ -18,7 +18,7 @@ export class Llm {
         })
     }
 
-    public async judge(prompt: PromptString): Promise<LlmScore> {
+    public async judge(prompt: PromptString): Promise<LlmJudgeScore> {
         const stream = this.client.stream(
             {
                 messages: [

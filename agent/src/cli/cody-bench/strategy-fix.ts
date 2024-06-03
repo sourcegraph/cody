@@ -1,14 +1,17 @@
 import path from 'node:path'
+import { PromptString, ps } from '@sourcegraph/cody-shared'
 import { glob } from 'glob'
 import * as vscode from 'vscode'
+import { ProtocolTextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { fileExists } from '../../../../vscode/src/local-context/download-symf'
 import { redactAuthorizationHeader } from '../../../../vscode/src/testutils/CodyPersister'
+import { AgentTextDocument } from '../../AgentTextDocument'
 import { TestClient } from '../../TestClient'
 import type { MessageHandler } from '../../jsonrpc-alias'
 import { renderUnifiedDiff } from '../../renderUnifiedDiff'
 import type { CodyBenchOptions } from './cody-bench'
 import { evaluateEachFile } from './evaluateEachFile'
-import { Llm, type LlmScore } from './llm-judge'
+import { LlmJudge, type LlmJudgeScore } from './llm-judge'
 import { llmJudgeFixTemplate } from './llm-judge-fix-template'
 import { prettyDiagnostic } from './prettyDiagnostic'
 import { runVoidCommand } from './testTypecheck'
@@ -31,20 +34,23 @@ export async function evaluateFixStrategy(
         await runVoidCommand(options.installCommand, options.workspace)
     }
 
-    const llm = new Llm(options)
+    const llm = new LlmJudge(options)
     let totalErrors = 0
     let fixedErrors = 0
     const absoluteFiles = glob.sync(`${options.workspace}/**`, {
         ignore: ['node_modules/**'],
         nodir: true,
     })
-    const scores: LlmScore[] = []
+    const scores: LlmJudgeScore[] = []
     const files = absoluteFiles.map(file => path.relative(options.workspace, file))
     let testCount = options.testCount
     await evaluateEachFile(files, options, async params => {
         if (testCount <= 0) {
             return undefined
         }
+        const document = new AgentTextDocument(
+            ProtocolTextDocumentWithUri.from(params.uri, { content: params.content })
+        )
         client.openFile(params.uri, { text: params.content })
         const { diagnostics } = await client.request('testing/diagnostics', {
             uri: params.uri.toString(),
@@ -66,14 +72,31 @@ export async function evaluateFixStrategy(
             const { diagnostics: newDiagnostics } = await client.request('testing/diagnostics', {
                 uri: params.uri.toString(),
             })
-            const newText = client.workspace.getDocument(params.uri)?.getText() ?? ''
+            const newDocument = client.workspace.getDocument(params.uri)
+            const newText = newDocument?.getText() ?? ''
             const isFixed = newDiagnostics.length === 0
             const score = await llm.judge(
                 llmJudgeFixTemplate({
-                    codeBeforeFix: params.content,
-                    codeAfterFix: newText,
-                    diagnosticBeforeFix: prettyDiagnostic(diagnostic),
-                    diagnosticsAfterFix: newDiagnostics.map(d => prettyDiagnostic(d)).join('\n'),
+                    codeBeforeFix: PromptString.fromDocumentText(document),
+                    codeAfterFix: newDocument ? PromptString.fromDocumentText(newDocument) : ps``,
+                    diagnosticBeforeFix: PromptString.fromTextEditorDiagnostic(
+                        {
+                            text: prettyDiagnostic(diagnostic),
+                            message: '',
+                            range: diagnostic.location.range,
+                            type: 'error',
+                        },
+                        params.uri
+                    ).text,
+                    diagnosticsAfterFix: PromptString.fromTextEditorDiagnostic(
+                        {
+                            text: newDiagnostics.map(d => prettyDiagnostic(d)).join('\n'),
+                            message: '',
+                            range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+                            type: 'error',
+                        },
+                        params.uri
+                    ).text,
                 })
             )
             console.log(`${params.file}: ${isFixed ? 'Fixed!' : 'Still errors!'}`)

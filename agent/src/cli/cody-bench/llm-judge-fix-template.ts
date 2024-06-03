@@ -1,6 +1,6 @@
-import { PromptString } from '@sourcegraph/cody-shared'
+import { type PromptString, ps } from '@sourcegraph/cody-shared'
 
-const template = `You are an AI judge tasked with evaluating the quality of an automated code fix made by an AI coding assistant. The assistant was given a piece of code with a diagnostic (error message) and attempted to fix the code to resolve the diagnostic.
+const template = ps`You are an AI judge tasked with evaluating the quality of an automated code fix made by an AI coding assistant. The assistant was given a piece of code with a diagnostic (error message) and attempted to fix the code to resolve the diagnostic.
 
 Here is the code before the fix:
 <code_before>
@@ -35,18 +35,16 @@ Then, score the fix as "bad", "acceptable", or "amazing" in a <score> section. U
 Remember, provide your <reasoning> first, then your <score>.`
 
 export interface LlmJudgeFixParams {
-    codeBeforeFix: string
-    diagnosticBeforeFix: string
-    codeAfterFix: string
-    diagnosticsAfterFix?: string
+    codeBeforeFix: PromptString
+    diagnosticBeforeFix: PromptString
+    codeAfterFix: PromptString
+    diagnosticsAfterFix?: PromptString
 }
 
 export function llmJudgeFixTemplate(params: LlmJudgeFixParams): PromptString {
-    return PromptString.unsafe_fromUserQuery(
-        template
-            .replaceAll('{{CODE_BEFORE_FIX}}', params.codeBeforeFix)
-            .replaceAll('{{DIAGNOSTIC_BEFORE_FIX}}', params.diagnosticBeforeFix)
-            .replaceAll('{{CODE_AFTER_FIX}}', params.codeAfterFix)
-            .replaceAll('{{DIAGNOSTICS_AFTER_FIX}}', params.diagnosticsAfterFix ?? '')
-    )
+    return template
+        .replaceAll('{{CODE_BEFORE_FIX}}', params.codeBeforeFix)
+        .replaceAll('{{DIAGNOSTIC_BEFORE_FIX}}', params.diagnosticBeforeFix)
+        .replaceAll('{{CODE_AFTER_FIX}}', params.codeAfterFix)
+        .replaceAll('{{DIAGNOSTICS_AFTER_FIX}}', params.diagnosticsAfterFix ?? ps``)
 }
