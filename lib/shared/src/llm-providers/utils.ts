@@ -2,7 +2,7 @@ import type { CompletionsModelConfig } from '.'
 import { ModelsService } from '../models'
 
 export function getCompletionsModelConfig(modelID: string): CompletionsModelConfig | undefined {
-    const provider = ModelsService.getProviderByModel(modelID)
+    const provider = ModelsService.getModelByID(modelID)
     if (provider?.model.startsWith('google/') && provider.config?.apiKey) {
         return {
             model: provider.model.replace('google/', ''),

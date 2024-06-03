@@ -943,7 +943,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         if (!authStatus?.isLoggedIn) {
             return
         }
-        const models = ModelsService.getProviders(
+        const models = ModelsService.getModels(
             ModelUsage.Chat,
             authStatus.isDotCom && !authStatus.userCanUpgrade,
             this.chatModel.modelID

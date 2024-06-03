@@ -80,7 +80,7 @@ export async function createProviderConfig(
     /**
      * Look for the autocomplete provider in VSCode settings and return matching provider config.
      */
-    const providerAndModelFromVSCodeConfig = await resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
+    const providerAndModelFromVSCodeConfig = await resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
         config.autocompleteAdvancedProvider
     )
     if (providerAndModelFromVSCodeConfig) {
@@ -154,8 +154,8 @@ export async function createProviderConfig(
     return createAnthropicProviderConfig({ client })
 }
 
-async function resolveFinetunedModelProviderFromFeatureFlags(): ReturnType<
-    typeof resolveDefaultProviderFromVSCodeConfigOrFeatureFlags
+async function resolveFinetunedModelFromFeatureFlags(): ReturnType<
+    typeof resolveDefaultModelFromVSCodeConfigOrFeatureFlags
 > {
     /**
      * The traffic allocated to the fine-tuned-base feature flag is further split between multiple feature flag in function.
@@ -198,7 +198,7 @@ async function resolveFinetunedModelProviderFromFeatureFlags(): ReturnType<
     return { provider: 'fireworks', model: 'starcoder-hybrid' }
 }
 
-async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
+async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
     configuredProvider: string | null
 ): Promise<{
     provider: string
@@ -227,7 +227,7 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
 
     if (!isFinetuningExperimentDisabled && finetunedFIMModelExperiment) {
         // The traffic in this feature flag is interpreted as a traffic allocated to the fine-tuned experiment.
-        return resolveFinetunedModelProviderFromFeatureFlags()
+        return resolveFinetunedModelFromFeatureFlags()
     }
 
     if (llamaCode13B) {

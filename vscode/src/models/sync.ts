@@ -11,20 +11,20 @@ import * as vscode from 'vscode'
 import { getEnterpriseContextWindow } from './utils'
 
 /**
- * Sets the model providers based on the authentication status.
+ * Sets the available model based on the authentication status.
  *
- * If a chat model is configured to overwrite, it will add a model provider for that model.
+ * If a chat model is configured to overwrite, it will add a  provider for that model.
  * The token limit for the provider will use the configured limit,
  * or fallback to the limit from the authentication status if not configured.
  */
-export function syncModelProviders(authStatus: AuthStatus): void {
+export function syncModels(authStatus: AuthStatus): void {
     if (!authStatus.authenticated) {
         return
     }
 
     // For dotcom, we use the default models.
     if (authStatus.isDotCom) {
-        ModelsService.setProviders(getDotComDefaultModels())
+        ModelsService.setModels(getDotComDefaultModels())
         getChatModelsFromConfiguration()
         return
     }
@@ -39,7 +39,7 @@ export function syncModelProviders(authStatus: AuthStatus): void {
     // NOTE: If authStatus?.configOverwrites?.chatModel is empty,
     // automatically fallback to use the default model configured on the instance.
     if (authStatus?.configOverwrites?.chatModel) {
-        ModelsService.setProviders([
+        ModelsService.setModels([
             new Model(
                 authStatus.configOverwrites.chatModel,
                 // TODO (umpox) Add configOverwrites.editModel for separate edit support
@@ -77,7 +77,7 @@ export function getChatModelsFromConfiguration(): Model[] {
         return []
     }
 
-    const providers: Model[] = []  // TODO(chrsmith): Rename to models.
+    const models: Model[] = []
     for (const m of modelsConfig) {
         const provider = new Model(
             `${m.provider}/${m.model}`,
@@ -85,9 +85,9 @@ export function getChatModelsFromConfiguration(): Model[] {
             { input: m.inputTokens ?? CHAT_INPUT_TOKEN_BUDGET, output: m.outputTokens ?? ANSWER_TOKENS },
             { apiKey: m.apiKey, apiEndpoint: m.apiEndpoint }
         )
-        providers.push(provider)
+        models.push(provider)
     }
 
-    ModelsService.addProviders(providers)
-    return providers
+    ModelsService.addModels(models)
+    return models
 }

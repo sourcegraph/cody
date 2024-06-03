@@ -25,7 +25,7 @@ export class CodySourceControl implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private gitAPI: API | undefined
     private abortController: AbortController | undefined
-    private modelProvider: Model = getDotComDefaultModels()[0]  // TODO(chrsmith): Rename to just `model` once the build is working again...
+    private model: Model = getDotComDefaultModels()[0]
 
     private commitTemplate?: string
 
@@ -146,7 +146,7 @@ export class CodySourceControl implements vscode.Disposable {
                 this.statusUpdate()
             })
 
-            const { model, contextWindow } = this.modelProvider
+            const { model, contextWindow } = this.model
             const { prompt, ignoredContext } = await this.buildPrompt(
                 contextWindow,
                 getSimplePreamble(model, 1, COMMIT_COMMAND_PROMPTS.intro),
@@ -232,9 +232,9 @@ export class CodySourceControl implements vscode.Disposable {
     }
 
     public syncAuthStatus(authStatus: AuthStatus): void {
-        const providers = ModelsService.getProviders(ModelUsage.Chat, !authStatus.userCanUpgrade)
-        const preferredProvider = providers?.find(p => p.model.includes('claude-3-haiku'))
-        this.modelProvider = preferredProvider ?? providers[0]  // TODO(chrsmith): Find any instances of `modelProvideer` in the code...
+        const models = ModelsService.getModels(ModelUsage.Chat, !authStatus.userCanUpgrade)
+        const preferredModel = models?.find(p => p.model.includes('claude-3-haiku'))
+        this.model = preferredModel ?? models[0]
     }
 
     public dispose(): void {

@@ -1039,7 +1039,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
             const theModel = modelID
                 ? modelID
-                : ModelsService.getProviders(
+                : ModelsService.getModels(
                       ModelUsage.Chat,
                       authStatus.isDotCom && !authStatus.userCanUpgrade
                   ).at(0)?.model
@@ -1069,7 +1069,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            const providers = ModelsService.getProviders(
+            const providers = ModelsService.getModels(
                 modelUsage,
                 authStatus.isDotCom && !authStatus.userCanUpgrade
             )

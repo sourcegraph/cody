@@ -80,59 +80,59 @@ export class ModelsService {
     /**
      * Get all the providers currently available to the user
      */
-    private static get providers(): Model[] {
-        return ModelsService.primaryProviders.concat(ModelsService.localProviders)
+    private static get models(): Model[] {
+        return ModelsService.primaryModels.concat(ModelsService.localModels)
     }
     /**
-     * Providers available on the user's Sourcegraph instance
+     * Models available on the user's Sourcegraph instance.
      */
-    private static primaryProviders: Model[] = []
+    private static primaryModels: Model[] = []
     /**
-     * Providers available from user's local instances, e.g. Ollama
+     * Models available from user's local instances, e.g. Ollama.
      */
-    private static localProviders: Model[] = []
+    private static localModels: Model[] = []
 
     public static async onConfigChange(enableOllamaModels: boolean): Promise<void> {
-        // Only fetch local models if user has enabled the config
-        ModelsService.localProviders = enableOllamaModels ? await fetchLocalOllamaModels() : []
+        // Only fetch local models if user has enabled the config.
+        ModelsService.localModels = enableOllamaModels ? await fetchLocalOllamaModels() : []
     }
 
     /**
-     * Sets the primary model providers.
-     * NOTE: private instances can only support 1 provider atm
+     * Sets the primary models available to the user.
+     * NOTE: private instances can only support 1 provider ATM.
      */
-    public static setProviders(providers: Model[]): void {
-        ModelsService.primaryProviders = providers
+    public static setModels(providers: Model[]): void {
+        ModelsService.primaryModels = providers
     }
 
     /**
-     * Add new providers as primary model providers.
+     * Add new models for use.
      */
-    public static addProviders(providers: Model[]): void {
-        const set = new Set(ModelsService.primaryProviders)
+    public static addModels(providers: Model[]): void {
+        const set = new Set(ModelsService.primaryModels)
         for (const provider of providers) {
             set.add(provider)
         }
-        ModelsService.primaryProviders = Array.from(set)
+        ModelsService.primaryModels = Array.from(set)
     }
 
     /**
-     * Get the list of the primary models providers with local models.
+     * Get the list of the primary model, augmented with any local ones.
      * If currentModel is provided, sets it as the default model.
      */
-    public static getProviders(
+    public static getModels(
         type: ModelUsage,
         isCodyProUser: boolean,
         currentModel?: string
     ): Model[] {
-        const availableModels = ModelsService.providers.filter(m => m.usage.includes(type))
+        const availableModels = ModelsService.models.filter(m => m.usage.includes(type))
 
         const currentDefault = currentModel
             ? availableModels.find(m => m.model === currentModel)
             : undefined
         const canUseCurrentDefault = currentDefault?.codyProOnly ? isCodyProUser : !!currentDefault
 
-        return ModelsService.providers
+        return ModelsService.models
             .filter(m => m.usage.includes(type))
             ?.map(model => ({
                 ...model,
@@ -145,33 +145,32 @@ export class ModelsService {
      * Finds the model provider with the given model ID and returns its Context Window.
      */
     public static getContextWindowByID(modelID: string): ModelContextWindow {
-        const model = ModelsService.providers.find(m => m.model === modelID)
+        const model = ModelsService.models.find(m => m.model === modelID)
         return model
             ? model.contextWindow
             : { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET }
     }
 
-    public static getProviderByModel(modelID: string): Model | undefined {
-        return ModelsService.providers.find(m => m.model === modelID)
+    public static getModelByID(modelID: string): Model | undefined {
+        return ModelsService.models.find(m => m.model === modelID)
     }
 
-    public static getProviderByModelSubstringOrError(modelSubstring: string): Model {
-        const models = ModelsService.providers.filter(m => m.model.includes(modelSubstring))
+    public static getModelByIDSubstringOrError(modelSubstring: string): Model {
+        const models = ModelsService.models.filter(m => m.model.includes(modelSubstring))
         if (models.length === 1) {
             return models[0]
         }
+
+        const modelsList = ModelsService.models
+            .map(m => m.model)
+            .join(', ')
         if (models.length === 0) {
-            const modelsList = ModelsService.providers
-                .map(m => m.model)
-                .join(', ')
             throw new Error(
                 `No model found for substring ${modelSubstring}. Available models: ${modelsList}`
             )
         }
         throw new Error(
-            `Multiple models found for substring ${modelSubstring}: ${models
-                .map(m => m.model)
-                .join(', ')}`
+            `Multiple models found for substring ${modelSubstring}: ${modelsList}`
         )
     }
 }

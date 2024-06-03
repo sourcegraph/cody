@@ -18,7 +18,7 @@ import styles from './ContextCell.module.css'
  */
 export const ContextCell: React.FunctionComponent<{
     contextItems: ContextItem[] | undefined
-    model?: Model['model']  // TODO(chrsmith): Is this right? What does ['model'] mean?
+    model?: Model['model']
     className?: string
 
     /** For use in storybooks only. */

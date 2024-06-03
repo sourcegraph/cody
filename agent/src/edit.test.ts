@@ -16,7 +16,7 @@ describe('Edit', () => {
     })
 
     beforeAll(async () => {
-        ModelsService.setProviders(getDotComDefaultModels())
+        ModelsService.setModels(getDotComDefaultModels())
         await workspace.beforeAll()
         await client.beforeAll()
         await client.request('command/execute', { command: 'cody.search.index-update' })
@@ -54,7 +54,7 @@ describe('Edit', () => {
         await client.openFile(uri)
         const task = await client.request('editCommands/code', {
             instruction: 'Add types to these props. Introduce new interfaces as necessary',
-            model: ModelsService.getProviderByModelSubstringOrError('anthropic/claude-3-opus').model,
+            model: ModelsService.getModelByIDSubstringOrError('anthropic/claude-3-opus').model,
         })
         await client.acceptEditTask(uri, task)
         expect(client.documentText(uri)).toMatchInlineSnapshot(
@@ -105,7 +105,7 @@ describe('Edit', () => {
         const task = await client.request('editCommands/code', {
             instruction:
                 'Create and export a Heading component that uses these props. Do not use default exports',
-            model: ModelsService.getProviderByModelSubstringOrError('anthropic/claude-3-opus').model,
+            model: ModelsService.getModelByIDSubstringOrError('anthropic/claude-3-opus').model,
         })
         await client.acceptEditTask(uri, task)
         expect(client.documentText(uri)).toMatchInlineSnapshot(

@@ -29,7 +29,7 @@ describe('Chat response quality', () => {
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
-        ModelsService.setProviders(getDotComDefaultModels())
+        ModelsService.setModels(getDotComDefaultModels())
         await workspace.beforeAll()
         await client.beforeAll()
 

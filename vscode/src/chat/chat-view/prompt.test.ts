@@ -14,7 +14,7 @@ describe('DefaultPrompter', () => {
     })
 
     it('constructs a prompt with no context', async () => {
-        ModelsService.setProviders([
+        ModelsService.setModels([
             new Model('a-model-id', [ModelUsage.Chat], { input: 100000, output: 100 }),
         ])
         const chat = new SimpleChatModel('a-model-id')
@@ -52,7 +52,7 @@ describe('DefaultPrompter', () => {
             update: vi.fn(() => Promise.resolve()),
         }))
 
-        ModelsService.setProviders([
+        ModelsService.setModels([
             new Model('a-model-id', [ModelUsage.Chat], { input: 100000, output: 100 }),
         ])
         const chat = new SimpleChatModel('a-model-id')

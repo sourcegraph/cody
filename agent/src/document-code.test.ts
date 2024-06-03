@@ -14,7 +14,7 @@ describe('Document Code', () => {
     })
 
     beforeAll(async () => {
-        ModelsService.setProviders(getDotComDefaultModels())
+        ModelsService.setModels(getDotComDefaultModels())
         await workspace.beforeAll()
         await client.beforeAll()
     })
