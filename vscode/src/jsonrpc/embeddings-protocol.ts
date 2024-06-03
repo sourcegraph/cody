@@ -68,7 +68,6 @@ interface IndexRequestModeNew {
     type: 'new'
     model: string
     dimension: number
-    generateMetadata: boolean
 }
 
 interface IndexRequestModeContinue {

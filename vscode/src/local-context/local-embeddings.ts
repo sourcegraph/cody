@@ -35,7 +35,9 @@ export async function createLocalEmbeddingsController(
     const modelConfig =
         config.testingModelConfig ||
         ((await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyUseSourcegraphEmbeddings))
-            ? sourcegraphModelConfig
+            ? (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEmbeddingsGenerateMetadata))
+                ? metadataGenModelConfig
+                : sourcegraphModelConfig
             : openaiModelConfig)
     const autoIndexingEnabled = await featureFlagProvider.evaluateFeatureFlag(
         FeatureFlag.CodyEmbeddingsAutoIndexing
@@ -96,6 +98,9 @@ const openaiModelConfig: EmbeddingsModelConfig = {
     // empty prefix to keep backwards compatibility
     indexPath: getIndexLibraryPath(''),
 }
+
+const metadataGenModelConfig: EmbeddingsModelConfig = sourcegraphModelConfig
+metadataGenModelConfig.model = 'sourcegraph/st-multi-qa-mpnet-metadata'
 
 export class LocalEmbeddingsController
     implements LocalEmbeddingsFetcher, ContextStatusProvider, vscode.Disposable
@@ -396,16 +401,9 @@ export class LocalEmbeddingsController
         }
         const repoPath = this.lastRepo.dir
         logDebug('LocalEmbeddingsController', 'index', 'starting repository', repoPath)
-        const generateMetadata =
-            featureFlagProvider.getFromCache(FeatureFlag.CodyEmbeddingsGenerateMetadata) || false
         await this.indexRequest({
             repoPath: repoPath.fsPath,
-            mode: {
-                type: 'new',
-                model: this.modelConfig.model,
-                dimension: this.modelConfig.dimension,
-                generateMetadata,
-            },
+            mode: { type: 'new', model: this.modelConfig.model, dimension: this.modelConfig.dimension },
         })
     }
 
