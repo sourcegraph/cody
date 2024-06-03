@@ -162,21 +162,17 @@ test('edit (fixup) input - range selection', async ({ page, sidebar }) => {
     expect(updatedRangeItem).toBeVisible()
 })
 
-test.only('edit (fixup) input - model selection', async ({ page, sidebar }) => {
+test('edit (fixup) input - model selection', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
     // Open the Explorer view from the sidebar
     await sidebarExplorer(page).click()
     await openFileInEditorTab(page, 'buzz.ts')
-    // await page.getByRole('treeitem', { name: 'buzz.ts' }).locator('a').dblclick()
-    // await page.getByRole('tab', { name: 'buzz.ts' }).hover()
 
     // Open the Edit input
     await page.getByRole('button', { name: 'Cody Commands' }).click()
-    await page.waitForTimeout(1000)
     await page.getByRole('option', { name: 'Edit code' }).click()
-    // await page.waitForTimeout(1000)
 
     // Check the correct range item is auto-selected
     const modelItem = page.getByText('Claude 3 Sonnet')

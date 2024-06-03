@@ -4,7 +4,6 @@ const isWin = process.platform.startsWith('win')
 const isCI = !!process.env.CI
 
 export default defineConfig({
-    testMatch: 'test/e2e/**/command-edit.test.ts',
     workers: 1,
     retries: isWin ? 4 : isCI ? 1 : 0, // give flaky tests more chances, but we should fix flakiness when we see it
     forbidOnly: isCI,
