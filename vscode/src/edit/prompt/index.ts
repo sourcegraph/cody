@@ -74,25 +74,25 @@ export const buildInteraction = async ({
     editor,
 }: BuildInteractionOptions): Promise<BuiltInteraction> => {
     const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
-    const precedingText = PromptString.fromDocumentText(
-        document,
-        new vscode.Range(
-            task.selectionRange.start.translate({
-                lineDelta: -Math.min(task.selectionRange.start.line, 50),
-            }),
-            task.selectionRange.start
-        )
+    const prefixRange = new vscode.Range(
+        task.selectionRange.start.translate({
+            lineDelta: -Math.min(task.selectionRange.start.line, 50),
+        }),
+        task.selectionRange.start
     )
+    const precedingText = PromptString.fromDocumentText(document, prefixRange)
     const selectedText = PromptString.fromDocumentText(document, task.selectionRange)
     const tokenCount = TokenCounter.countPromptString(selectedText)
     if (tokenCount > contextWindow) {
         throw new Error("The amount of text selected exceeds Cody's current capacity.")
     }
     task.original = selectedText.toString()
-    const followingText = PromptString.fromDocumentText(
-        document,
-        new vscode.Range(task.selectionRange.end, task.selectionRange.end.translate({ lineDelta: 50 }))
+    const suffixRange = new vscode.Range(
+        task.selectionRange.end,
+        task.selectionRange.end.translate({ lineDelta: 50 })
     )
+    const followingText = PromptString.fromDocumentText(document, suffixRange)
+
     const { prompt, responseTopic, stopSequences, assistantText, assistantPrefix } =
         getInteractionArgsFromIntent(task.intent, model, {
             uri: task.fixupFile.uri,
@@ -130,8 +130,8 @@ export const buildInteraction = async ({
         selectionRange: task.selectionRange,
         userContextItems: task.userContextItems,
         editor,
-        followingText,
-        precedingText,
+        suffix: { text: followingText, range: suffixRange },
+        prefix: { text: precedingText, range: prefixRange },
         selectedText,
     })
     await promptBuilder.tryAddContext('user', contextItems)

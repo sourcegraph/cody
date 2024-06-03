@@ -5,6 +5,212 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
+    - _id: 63d9ee7ab3b16c922af2cc52dfdcef75
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 3493
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: user-agent
+            value: document-code / v1
+          - name: traceparent
+            value: 00-e0e1c36b435b8127953f546debd8807b-54748fe199317768-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 415
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph. - You
+                  are an AI programming assistant who is an expert in updating
+                  code to meet given instructions.
+
+                  - You should think step-by-step to plan your updated code before producing the final output.
+
+                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - Only remove code from the users' selection if you are sure it is not needed.
+
+                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+              - speaker: human
+                text: "Codebase context from file path src/TestClass.ts: Codebase context from
+                  file src/TestClass.ts:
+
+                  t foo = 42
+
+                  // Should be present in the LLM prompt
+
+                  const longPrefix = `
+
+                  \    longPrefix content
+
+                  \    longPrefix content
+
+                  \    longPrefix content
+
+                  \    longPrefix content
+
+                  \    longPrefix content
+
+                  \    longPrefix content
+
+                  \    longPrefix content
+
+                  `
+
+
+                  export class TestClass {
+
+                  \    constructor(private shouldGreet:
+                  boolean) {}
+
+
+                  \    "
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/TestClass.ts: Codebase
+                  context from file src/TestClass.ts:
+
+
+                  }
+
+
+                  // Should be present in the LLM prompt
+
+                  const longSuffix = `
+                      longSuffix content
+                      longSuffix content
+                      longSuffix content
+                      longSuffix content
+                      longSuffix content
+                      longSuffix content
+                      longSuffix content
+                  `
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  This is part of the file: src/TestClass.ts
+
+
+                  The user has the following code in their selection:
+
+                  <SELECTEDCODE7662>public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+                      }</SELECTEDCODE7662>
+
+                  The user wants you to generate documentation for the selected code by following their instructions.
+
+                  Provide your generated documentation using the following instructions:
+
+                  <INSTRUCTIONS7390>
+
+                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
+
+                  </INSTRUCTIONS7390>
+              - speaker: assistant
+                text: <CODE5711>
+            model: anthropic/claude-3-haiku-20240307
+            stopSequences:
+              - </CODE5711>
+              - public functionName() {
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+          - name: client-name
+            value: document-code
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
+      response:
+        bodySize: 2750
+        content:
+          mimeType: text/event-stream
+          size: 2750
+          text: >+
+            event: completion
+
+            data: {"completion":"/**\n * Logs 'Hello World!' to the console if the `shouldGreet` property is true.\n */","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 03 Jun 2024 08:13:38 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-06-03T08:13:36.603Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: 281086a3fa49ce7164441b752dad6975
       _order: 0
       cache: {}
@@ -22,7 +228,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-db0ef7f1173f7d4d3cd3a7e1207d1617-357519914dd8c233-01
+            value: 00-29de8950a4a48c0e0be96d0d272b7310-e1520149f9757acc-01
           - name: connection
             value: keep-alive
           - name: host
@@ -96,14 +302,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 9033
+        bodySize: 8357
         content:
           mimeType: text/event-stream
-          size: 9033
+          size: 8357
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Adds two numbers together and returns the result.\n * \n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum of the two input numbers.\n */\n","stopReason":"stop_sequence"}
+            data: {"completion":"/**\n * Adds two numbers and returns the result.\n *\n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum of the two input numbers.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -113,7 +319,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 03 Jun 2024 07:23:28 GMT
+            value: Mon, 03 Jun 2024 08:14:19 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -142,7 +348,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-03T07:23:27.244Z
+      startedDateTime: 2024-06-03T08:14:18.643Z
       time: 0
       timings:
         blocked: -1
@@ -152,11 +358,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: c1043fe8de5c169180738a73ec563586
+    - _id: ec4aab0107eed8a8a574b6a79775b6e1
       _order: 0
       cache: {}
       request:
-        bodySize: 2763
+        bodySize: 3028
         cookies: []
         headers:
           - name: content-type
@@ -169,7 +375,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-cd790fdf52c0a9078045f23f4c616b3d-d6b746221df16778-01
+            value: 00-f8961e404f35dd660223576bf311c17c-a93b9af609326741-01
           - name: connection
             value: keep-alive
           - name: host
@@ -204,6 +410,22 @@ log:
                   - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
 
                   - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+              - speaker: human
+                text: "Codebase context from file path src/TestLogger.ts: Codebase context from
+                  file src/TestLogger.ts:
+
+                  o = 42
+
+                  export const TestLogger = {
+
+                  \    startLogging: () => {
+
+                  \        // Do some stuff
+
+
+                  \        "
+              - speaker: assistant
+                text: Ok.
               - speaker: human
                 text: >
                   Codebase context from file path src/TestLogger.ts: Codebase
@@ -270,7 +492,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 03 Jun 2024 07:23:31 GMT
+            value: Mon, 03 Jun 2024 08:14:21 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -299,7 +521,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-03T07:23:30.161Z
+      startedDateTime: 2024-06-03T08:14:20.229Z
       time: 0
       timings:
         blocked: -1
@@ -309,11 +531,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 5fdc0ae3b7457cb0487c357d2986f4cb
+    - _id: fc7803a3e5566ea112584b8e407485b5
       _order: 0
       cache: {}
       request:
-        bodySize: 2727
+        bodySize: 3281
         cookies: []
         headers:
           - name: content-type
@@ -326,7 +548,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-e1d090353fc3fad02cccfde5cb7bffb0-187df7eab3d9610b-01
+            value: 00-7721ef8a8ba2d80a3b89e38e4430b5e8-a479203a4ad4b1ba-01
           - name: connection
             value: keep-alive
           - name: host
@@ -361,6 +583,41 @@ log:
                   - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
 
                   - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+              - speaker: human
+                text: "Codebase context from file path src/example.test.ts: Codebase context
+                  from file src/example.test.ts:
+
+                  \ expect } from 'vitest'
+
+                  import { it } from 'vitest'
+
+                  import { describe } from 'vitest'
+
+
+                  describe('test block', () => {
+
+                  \    it('does 1', () => {
+
+                  \        expect(true).toBe(true)
+
+                  \    })
+
+
+                  \    it('does 2', () => {
+
+                  \        expect(true).toBe(true)
+
+                  \    })
+
+
+                  \    it('does something else', () => {
+
+                  \        // This line will error due to
+                  incorrect usage of `performance.now`
+
+                  \        "
+              - speaker: assistant
+                text: Ok.
               - speaker: human
                 text: >
                   Codebase context from file path src/example.test.ts: Codebase
@@ -407,14 +664,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 5097
+        bodySize: 10553
         content:
           mimeType: text/event-stream
-          size: 5097
+          size: 10553
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Records the current time using the `performance.now()` function.\n * This can be useful for measuring the duration of operations or code sections.\n */","stopReason":"stop_sequence"}
+            data: {"completion":"\n/**\n * Retrieves the current time in milliseconds relative to an arbitrary time in the past.\n * This can be used to measure elapsed time or for performance profiling.\n *\n * @returns {number} The current time in milliseconds.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -424,7 +681,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 03 Jun 2024 07:23:32 GMT
+            value: Mon, 03 Jun 2024 08:14:22 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -453,7 +710,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-03T07:23:31.394Z
+      startedDateTime: 2024-06-03T08:14:21.343Z
       time: 0
       timings:
         blocked: -1
@@ -480,7 +737,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-6f661c6e2b17113dd70a0126820c54fc-fcc58bb1a38d197b-01
+            value: 00-18540ecc6d13142bd8bc5d5b33fe6d0c-3088a3afc127349b-01
           - name: connection
             value: keep-alive
           - name: host
@@ -556,14 +813,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 1728
+        bodySize: 1508
         content:
           mimeType: text/event-stream
-          size: 1728
+          size: 1508
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Represents a greeting that can be displayed to the user.\n */","stopReason":"stop_sequence"}
+            data: {"completion":"/**\n * Provides a simple \"Hello, world!\" greeting.\n */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -573,7 +830,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 03 Jun 2024 07:23:34 GMT
+            value: Mon, 03 Jun 2024 08:14:24 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -602,177 +859,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-03T07:23:33.094Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 475662cbd71a6f80094dc5a42a5f6d39
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 3001
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - name: user-agent
-            value: document-code / v1
-          - name: traceparent
-            value: 00-06841698e06c6e362aac7198b40254fd-f09ff2dd844817e5-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 415
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph. - You
-                  are an AI programming assistant who is an expert in updating
-                  code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/TestClass.ts: Codebase
-                  context from file src/TestClass.ts:
-
-
-                  }
-
-
-                  // Should be present in the LLM prompt
-
-                  const longSuffix = `
-                      longSuffix content
-                      longSuffix content
-                      longSuffix content
-                      longSuffix content
-                      longSuffix content
-                      longSuffix content
-                      longSuffix content
-                  `
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  This is part of the file: src/TestClass.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>public functionName() {
-                          if (this.shouldGreet) {
-                              console.log(/* CURSOR */ 'Hello World!')
-                          }
-                      }</SELECTEDCODE7662>
-
-                  The user wants you to generate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: <CODE5711>
-            model: anthropic/claude-3-haiku-20240307
-            stopSequences:
-              - </CODE5711>
-              - public functionName() {
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-          - name: client-name
-            value: document-code
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
-      response:
-        bodySize: 2742
-        content:
-          mimeType: text/event-stream
-          size: 2742
-          text: >+
-            event: completion
-
-            data: {"completion":"/**\n * Logs a 'Hello World!' message to the console if `shouldGreet` is true.\n */","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Mon, 03 Jun 2024 07:42:17 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-06-03T07:42:15.544Z
+      startedDateTime: 2024-06-03T08:14:22.851Z
       time: 0
       timings:
         blocked: -1

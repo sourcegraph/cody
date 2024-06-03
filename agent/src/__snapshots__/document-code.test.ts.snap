@@ -21,7 +21,7 @@ export const TestLogger = {
 
 exports[`Document Code > commands/document (Kotlin class name) 1`] = `
 "/**
- * Represents a greeting that can be displayed to the user.
+ * Provides a simple "Hello, world!" greeting.
  */
 class He/* CURSOR */llo {
     fun greeting(): String {
@@ -48,7 +48,7 @@ export class TestClass {
     constructor(private shouldGreet: boolean) {}
 
     /**
-     * Logs a 'Hello World!' message to the console if \`shouldGreet\` is true.
+     * Logs 'Hello World!' to the console if the \`shouldGreet\` property is true.
      */
     public functionName() {
         if (this.shouldGreet) {
@@ -87,8 +87,10 @@ describe('test block', () => {
     it('does something else', () => {
         // This line will error due to incorrect usage of \`performance.now\`
         /**
-         * Records the current time using the \`performance.now()\` function.
-         * This can be useful for measuring the duration of operations or code sections.
+         * Retrieves the current time in milliseconds relative to an arbitrary time in the past.
+         * This can be used to measure elapsed time or for performance profiling.
+         *
+         * @returns {number} The current time in milliseconds.
          */
         const startTime = performance.now(/* CURSOR */)
     })
@@ -98,8 +100,8 @@ describe('test block', () => {
 
 exports[`Document Code > editCommands/document (basic function) 1`] = `
 "/**
- * Adds two numbers together and returns the result.
- * 
+ * Adds two numbers and returns the result.
+ *
  * @param a - The first number to add.
  * @param b - The second number to add.
  * @returns The sum of the two input numbers.
