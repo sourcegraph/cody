@@ -7,7 +7,7 @@ import {
     type EditModel,
     type EditProvider,
     type Message,
-    ModelProvider,
+    ModelsService,
     PromptString,
     TokenCounter,
     getModelInfo,
@@ -102,7 +102,7 @@ export const buildInteraction = async ({
             instruction: task.instruction,
             document,
         })
-    const promptBuilder = new PromptBuilder(ModelProvider.getContextWindowByID(model))
+    const promptBuilder = new PromptBuilder(ModelsService.getContextWindowByID(model))
 
     const preamble = getSimplePreamble(model, codyApiVersion, prompt.system)
     promptBuilder.tryAddToPrefix(preamble)

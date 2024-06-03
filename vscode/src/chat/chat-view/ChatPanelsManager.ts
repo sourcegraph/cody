@@ -7,7 +7,7 @@ import {
     type ConfigurationWithAccessToken,
     type FeatureFlagProvider,
     type Guardrails,
-    ModelProvider,
+    ModelsService,
     ModelUsage,
     featureFlagProvider,
 } from '@sourcegraph/cody-shared'
@@ -230,7 +230,7 @@ export class ChatPanelsManager implements vscode.Disposable {
 
         const isConsumer = authStatus.isDotCom
         const isCodyProUser = !authStatus.userCanUpgrade
-        const models = ModelProvider.getProviders(ModelUsage.Chat, isCodyProUser)
+        const models = ModelsService.getProviders(ModelUsage.Chat, isCodyProUser)
 
         return new SimpleChatPanelProvider({
             ...this.options,

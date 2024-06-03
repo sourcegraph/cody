@@ -4,7 +4,7 @@ import type {
     BillingProduct,
     ContextFilters,
     CurrentUserCodySubscription,
-    ModelProvider,
+    Model,
     ModelUsage,
     SerializedChatMessage,
     SerializedChatTranscript,
@@ -57,7 +57,7 @@ export type ClientRequests = {
         string,
     ]
 
-    'chat/models': [{ modelUsage: ModelUsage }, { models: ModelProvider[] }]
+    'chat/models': [{ modelUsage: ModelUsage }, { models: Model[] }]
     'chat/export': [null, ChatExportResult[]]
     'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] | undefined | null }]
 

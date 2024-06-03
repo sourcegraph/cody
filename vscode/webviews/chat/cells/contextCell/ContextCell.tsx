@@ -1,4 +1,4 @@
-import type { ContextItem, ModelProvider } from '@sourcegraph/cody-shared'
+import type { ContextItem, Model } from '@sourcegraph/cody-shared'
 import { pluralize } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import { BrainIcon } from 'lucide-react'
@@ -18,7 +18,7 @@ import styles from './ContextCell.module.css'
  */
 export const ContextCell: React.FunctionComponent<{
     contextItems: ContextItem[] | undefined
-    model?: ModelProvider['model']
+    model?: Model['model']  // TODO(chrsmith): Is this right? What does ['model'] mean?
     className?: string
 
     /** For use in storybooks only. */

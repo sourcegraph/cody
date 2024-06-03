@@ -1,5 +1,6 @@
 import {
-    ModelProvider,
+    Model,
+    ModelsService,
     ModelUsage,
     defaultAuthStatus,
     getDotComDefaultModels,
@@ -9,8 +10,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { syncModelProviders } from './sync'
 import { getEnterpriseContextWindow } from './utils'
 
-describe('syncModelProviders', () => {
-    const setProvidersSpy = vi.spyOn(ModelProvider, 'setProviders')
+describe('syncModelsService', () => {
+    const setProvidersSpy = vi.spyOn(ModelsService, 'setProviders')
 
     beforeEach(() => {
         setProvidersSpy.mockClear()
@@ -43,7 +44,7 @@ describe('syncModelProviders', () => {
         expect(setProvidersSpy).not.toHaveBeenCalledWith(getDotComDefaultModels())
 
         expect(setProvidersSpy).toHaveBeenCalledWith([
-            new ModelProvider(
+            new Model(
                 authStatus.configOverwrites.chatModel,
                 [ModelUsage.Chat, ModelUsage.Edit],
                 getEnterpriseContextWindow(chatModel, authStatus.configOverwrites)

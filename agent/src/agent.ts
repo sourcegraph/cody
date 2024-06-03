@@ -11,7 +11,7 @@ import {
     type BillingCategory,
     type BillingProduct,
     FeatureFlag,
-    ModelProvider,
+    ModelsService,
     NoOpTelemetryRecorderProvider,
     PromptString,
     contextFiltersProvider,
@@ -1039,7 +1039,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
             const theModel = modelID
                 ? modelID
-                : ModelProvider.getProviders(
+                : ModelsService.getProviders(
                       ModelUsage.Chat,
                       authStatus.isDotCom && !authStatus.userCanUpgrade
                   ).at(0)?.model
@@ -1069,7 +1069,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            const providers = ModelProvider.getProviders(
+            const providers = ModelsService.getProviders(
                 modelUsage,
                 authStatus.isDotCom && !authStatus.userCanUpgrade
             )

@@ -150,9 +150,9 @@ export const DEFAULT_DOT_COM_MODELS = [
 ] as const satisfies Model[]
 
 /**
- * Returns an array of ModelProviders representing the default models for DotCom.
+ * Returns an array of Models representing the default models for DotCom.
  *
- * @returns An array of `ModelProvider` objects.
+ * @returns An array of `Models` objects.
  */
 export function getDotComDefaultModels(): Model[] {
     return DEFAULT_DOT_COM_MODELS

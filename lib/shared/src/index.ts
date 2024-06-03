@@ -1,6 +1,6 @@
 // Add anything else here that needs to be used outside of this library.
 
-export { Model as ModelProvider } from './models'
+export { Model, ModelsService } from './models'
 export {
     type EditModel,
     type EditProvider,

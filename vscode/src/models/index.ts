@@ -1,4 +1,4 @@
-import type { ChatModel, EditModel, ModelProvider } from '@sourcegraph/cody-shared'
+import type { ChatModel, EditModel, Model } from '@sourcegraph/cody-shared'
 import type { AuthProvider } from '../services/AuthProvider'
 import { localStorage } from '../services/LocalStorageProvider'
 import { migrateAndNotifyForOutdatedModels } from './modelMigrator'
@@ -10,7 +10,7 @@ async function setModel(modelID: EditModel, storageKey: string) {
 
 function getModel<T extends string>(
     authProvider: AuthProvider,
-    models: ModelProvider[],
+    models: Model[],
     storageKey: string
 ): T {
     const authStatus = authProvider.getAuthStatus()
@@ -50,7 +50,7 @@ function getModel<T extends string>(
 
 function createModelAccessor<T extends string>(storageKey: string) {
     return {
-        get: (authProvider: AuthProvider, models: ModelProvider[]) =>
+        get: (authProvider: AuthProvider, models: Model[]) =>
             getModel<T>(authProvider, models, storageKey),
         set: (modelID: T) => setModel(modelID, storageKey),
     }

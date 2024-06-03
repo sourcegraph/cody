@@ -6,7 +6,7 @@ import {
     type ConfigurationWithAccessToken,
     type DefaultCodyCommands,
     type EventSource,
-    ModelProvider,
+    ModelsService,
     PromptMixin,
     PromptString,
     contextFiltersProvider,
@@ -279,7 +279,7 @@ const register = async (
             return Promise.resolve()
         }
 
-        ModelProvider.onConfigChange(newConfig.experimentalOllamaChat)
+        ModelsService.onConfigChange(newConfig.experimentalOllamaChat)
 
         const promises: Promise<void>[] = []
         oldConfig = JSON.stringify(newConfig)
@@ -374,7 +374,7 @@ const register = async (
     syncModelProviders(initAuthStatus)
     await chatManager.syncAuthStatus(initAuthStatus)
     editorManager.syncAuthStatus(initAuthStatus)
-    ModelProvider.onConfigChange(initialConfig.experimentalOllamaChat)
+    ModelsService.onConfigChange(initialConfig.experimentalOllamaChat)
     statusBar.syncAuthStatus(initAuthStatus)
     sourceControl.syncAuthStatus(initAuthStatus)
 

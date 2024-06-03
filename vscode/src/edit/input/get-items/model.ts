@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type EditModel, type ModelProvider, isDefined } from '@sourcegraph/cody-shared'
+import { type EditModel, type Model, isDefined } from '@sourcegraph/cody-shared'
 import {
     QUICK_PICK_ITEM_CHECKED_PREFIX,
     QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX,
@@ -26,7 +26,7 @@ const getModelProviderIcon = (provider: string): string => {
 }
 
 export const getModelOptionItems = (
-    modelOptions: ModelProvider[],
+    modelOptions: Model[],
     isCodyPro: boolean
 ): EditModelItem[] => {
     const allOptions = modelOptions
@@ -58,7 +58,7 @@ export const getModelOptionItems = (
 }
 
 export const getModelInputItems = (
-    modelOptions: ModelProvider[],
+    modelOptions: Model[],
     activeModel: EditModel,
     isCodyPro: boolean
 ): GetItemsResult => {

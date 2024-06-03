@@ -18,8 +18,9 @@ import {
     type Guardrails,
     type MentionQuery,
     type Message,
-    ModelProvider,
+    Model,
     ModelUsage,
+    ModelsService,
     PromptString,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
@@ -108,7 +109,7 @@ interface SimpleChatPanelProviderOptions {
     editor: VSCodeEditor
     treeView: TreeViewProvider
     featureFlagProvider: FeatureFlagProvider
-    models: ModelProvider[]
+    models: Model[]
     guardrails: Guardrails
 }
 
@@ -942,7 +943,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         if (!authStatus?.isLoggedIn) {
             return
         }
-        const models = ModelProvider.getProviders(
+        const models = ModelsService.getProviders(
             ModelUsage.Chat,
             authStatus.isDotCom && !authStatus.userCanUpgrade,
             this.chatModel.modelID

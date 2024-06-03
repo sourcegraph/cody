@@ -6,7 +6,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 
 import {
     DOTCOM_URL,
-    ModelProvider,
+    ModelsService,
     ModelUsage,
     getDotComDefaultModels,
     isWindows,
@@ -37,7 +37,7 @@ describe('Agent', () => {
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
-        ModelProvider.setProviders(getDotComDefaultModels())
+        ModelsService.setProviders(getDotComDefaultModels())
         await workspace.beforeAll()
 
         // Init a repo in the workspace to make the parent-dirs repo-name resolver work for Cody Context Filters tests.

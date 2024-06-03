@@ -63,12 +63,25 @@ export class Model {
         this.provider = provider
         this.title = title
     }
+}
 
+/**
+ * ModelsService is the component responsible for keeping track of which models
+ * are supported on the backend, which ones are available based on the user's
+ * preferences, etc.
+ * 
+ * TODO(PRIME-228): Update this type to be able to fetch the models from the
+ *      Sourcegraph backend instead of being hard-coded.
+ * TODO(PRIME-283): Enable Cody Enterprise users to select which LLM model to
+ *      used in the UI. (By having the relevant code paths just pull the models
+ *      from this type.)
+ */
+export class ModelsService {
     /**
      * Get all the providers currently available to the user
      */
     private static get providers(): Model[] {
-        return Model.primaryProviders.concat(Model.localProviders)
+        return ModelsService.primaryProviders.concat(ModelsService.localProviders)
     }
     /**
      * Providers available on the user's Sourcegraph instance
@@ -81,7 +94,7 @@ export class Model {
 
     public static async onConfigChange(enableOllamaModels: boolean): Promise<void> {
         // Only fetch local models if user has enabled the config
-        Model.localProviders = enableOllamaModels ? await fetchLocalOllamaModels() : []
+        ModelsService.localProviders = enableOllamaModels ? await fetchLocalOllamaModels() : []
     }
 
     /**
@@ -89,18 +102,18 @@ export class Model {
      * NOTE: private instances can only support 1 provider atm
      */
     public static setProviders(providers: Model[]): void {
-        Model.primaryProviders = providers
+        ModelsService.primaryProviders = providers
     }
 
     /**
      * Add new providers as primary model providers.
      */
     public static addProviders(providers: Model[]): void {
-        const set = new Set(Model.primaryProviders)
+        const set = new Set(ModelsService.primaryProviders)
         for (const provider of providers) {
             set.add(provider)
         }
-        Model.primaryProviders = Array.from(set)
+        ModelsService.primaryProviders = Array.from(set)
     }
 
     /**
@@ -112,14 +125,14 @@ export class Model {
         isCodyProUser: boolean,
         currentModel?: string
     ): Model[] {
-        const availableModels = Model.providers.filter(m => m.usage.includes(type))
+        const availableModels = ModelsService.providers.filter(m => m.usage.includes(type))
 
         const currentDefault = currentModel
             ? availableModels.find(m => m.model === currentModel)
             : undefined
         const canUseCurrentDefault = currentDefault?.codyProOnly ? isCodyProUser : !!currentDefault
 
-        return Model.providers
+        return ModelsService.providers
             .filter(m => m.usage.includes(type))
             ?.map(model => ({
                 ...model,
@@ -132,26 +145,27 @@ export class Model {
      * Finds the model provider with the given model ID and returns its Context Window.
      */
     public static getContextWindowByID(modelID: string): ModelContextWindow {
-        const model = Model.providers.find(m => m.model === modelID)
+        const model = ModelsService.providers.find(m => m.model === modelID)
         return model
             ? model.contextWindow
             : { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET }
     }
 
     public static getProviderByModel(modelID: string): Model | undefined {
-        return Model.providers.find(m => m.model === modelID)
+        return ModelsService.providers.find(m => m.model === modelID)
     }
 
     public static getProviderByModelSubstringOrError(modelSubstring: string): Model {
-        const models = Model.providers.filter(m => m.model.includes(modelSubstring))
+        const models = ModelsService.providers.filter(m => m.model.includes(modelSubstring))
         if (models.length === 1) {
             return models[0]
         }
         if (models.length === 0) {
+            const modelsList = ModelsService.providers
+                .map(m => m.model)
+                .join(', ')
             throw new Error(
-                `No model found for substring ${modelSubstring}. Available models: ${Model.providers
-                    .map(m => m.model)
-                    .join(', ')}`
+                `No model found for substring ${modelSubstring}. Available models: ${modelsList}`
             )
         }
         throw new Error(

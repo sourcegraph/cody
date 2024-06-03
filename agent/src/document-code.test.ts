@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { ModelProvider, getDotComDefaultModels } from '@sourcegraph/cody-shared'
+import { ModelsService, getDotComDefaultModels } from '@sourcegraph/cody-shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient } from './TestClient'
@@ -14,7 +14,7 @@ describe('Document Code', () => {
     })
 
     beforeAll(async () => {
-        ModelProvider.setProviders(getDotComDefaultModels())
+        ModelsService.setProviders(getDotComDefaultModels())
         await workspace.beforeAll()
         await client.beforeAll()
     })

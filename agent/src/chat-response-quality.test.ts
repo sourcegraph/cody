@@ -4,7 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import {
     type ContextItem,
-    ModelProvider,
+    ModelsService,
     type SerializedChatMessage,
     getDotComDefaultModels,
 } from '@sourcegraph/cody-shared'
@@ -29,7 +29,7 @@ describe('Chat response quality', () => {
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
-        ModelProvider.setProviders(getDotComDefaultModels())
+        ModelsService.setProviders(getDotComDefaultModels())
         await workspace.beforeAll()
         await client.beforeAll()
 
