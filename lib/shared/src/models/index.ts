@@ -4,11 +4,9 @@ import type { ModelContextWindow, ModelUsage } from './types'
 import { getModelInfo } from './utils'
 
 /**
- * ModelProvider manages available chat and edit models.
- * It stores a set of available providers and methods to add,
- * retrieve and select between them.
+ * Model describes an LLM model and its capabilities.
  */
-export class ModelProvider {
+export class Model {
     /**
      * Whether the model is the default model for new chats and edits. The user can change their
      * default model.
@@ -29,6 +27,9 @@ export class ModelProvider {
         /**
          * The model id that includes the provider name & the model name,
          * e.g. "anthropic/claude-3-sonnet-20240229"
+         * 
+         * TODO(PRIME-282): Replace this with a `ModelRef` instance and introduce a separate
+         * "modelId" that is distinct from the "modelName". (e.g. "claude-3-sonnet" vs. "claude-3-sonnet-20240229")
          */
         public readonly model: string,
         /**
@@ -44,7 +45,7 @@ export class ModelProvider {
             output: CHAT_OUTPUT_TOKEN_BUDGET,
         },
         /**
-         * The configuration for the model.
+         * The client-specific configuration for the model.
          */
         public readonly config?: {
             /**
@@ -66,40 +67,40 @@ export class ModelProvider {
     /**
      * Get all the providers currently available to the user
      */
-    private static get providers(): ModelProvider[] {
-        return ModelProvider.primaryProviders.concat(ModelProvider.localProviders)
+    private static get providers(): Model[] {
+        return Model.primaryProviders.concat(Model.localProviders)
     }
     /**
      * Providers available on the user's Sourcegraph instance
      */
-    private static primaryProviders: ModelProvider[] = []
+    private static primaryProviders: Model[] = []
     /**
      * Providers available from user's local instances, e.g. Ollama
      */
-    private static localProviders: ModelProvider[] = []
+    private static localProviders: Model[] = []
 
     public static async onConfigChange(enableOllamaModels: boolean): Promise<void> {
         // Only fetch local models if user has enabled the config
-        ModelProvider.localProviders = enableOllamaModels ? await fetchLocalOllamaModels() : []
+        Model.localProviders = enableOllamaModels ? await fetchLocalOllamaModels() : []
     }
 
     /**
      * Sets the primary model providers.
      * NOTE: private instances can only support 1 provider atm
      */
-    public static setProviders(providers: ModelProvider[]): void {
-        ModelProvider.primaryProviders = providers
+    public static setProviders(providers: Model[]): void {
+        Model.primaryProviders = providers
     }
 
     /**
      * Add new providers as primary model providers.
      */
-    public static addProviders(providers: ModelProvider[]): void {
-        const set = new Set(ModelProvider.primaryProviders)
+    public static addProviders(providers: Model[]): void {
+        const set = new Set(Model.primaryProviders)
         for (const provider of providers) {
             set.add(provider)
         }
-        ModelProvider.primaryProviders = Array.from(set)
+        Model.primaryProviders = Array.from(set)
     }
 
     /**
@@ -110,15 +111,15 @@ export class ModelProvider {
         type: ModelUsage,
         isCodyProUser: boolean,
         currentModel?: string
-    ): ModelProvider[] {
-        const availableModels = ModelProvider.providers.filter(m => m.usage.includes(type))
+    ): Model[] {
+        const availableModels = Model.providers.filter(m => m.usage.includes(type))
 
         const currentDefault = currentModel
             ? availableModels.find(m => m.model === currentModel)
             : undefined
         const canUseCurrentDefault = currentDefault?.codyProOnly ? isCodyProUser : !!currentDefault
 
-        return ModelProvider.providers
+        return Model.providers
             .filter(m => m.usage.includes(type))
             ?.map(model => ({
                 ...model,
@@ -131,24 +132,24 @@ export class ModelProvider {
      * Finds the model provider with the given model ID and returns its Context Window.
      */
     public static getContextWindowByID(modelID: string): ModelContextWindow {
-        const model = ModelProvider.providers.find(m => m.model === modelID)
+        const model = Model.providers.find(m => m.model === modelID)
         return model
             ? model.contextWindow
             : { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET }
     }
 
-    public static getProviderByModel(modelID: string): ModelProvider | undefined {
-        return ModelProvider.providers.find(m => m.model === modelID)
+    public static getProviderByModel(modelID: string): Model | undefined {
+        return Model.providers.find(m => m.model === modelID)
     }
 
-    public static getProviderByModelSubstringOrError(modelSubstring: string): ModelProvider {
-        const models = ModelProvider.providers.filter(m => m.model.includes(modelSubstring))
+    public static getProviderByModelSubstringOrError(modelSubstring: string): Model {
+        const models = Model.providers.filter(m => m.model.includes(modelSubstring))
         if (models.length === 1) {
             return models[0]
         }
         if (models.length === 0) {
             throw new Error(
-                `No model found for substring ${modelSubstring}. Available models: ${ModelProvider.providers
+                `No model found for substring ${modelSubstring}. Available models: ${Model.providers
                     .map(m => m.model)
                     .join(', ')}`
             )

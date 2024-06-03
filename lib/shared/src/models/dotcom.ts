@@ -1,4 +1,4 @@
-import type { ModelProvider } from '.'
+import type { Model } from '.'
 import {
     CHAT_INPUT_TOKEN_BUDGET,
     CHAT_OUTPUT_TOKEN_BUDGET,
@@ -147,13 +147,13 @@ export const DEFAULT_DOT_COM_MODELS = [
         contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
         deprecated: true,
     },
-] as const satisfies ModelProvider[]
+] as const satisfies Model[]
 
 /**
  * Returns an array of ModelProviders representing the default models for DotCom.
  *
  * @returns An array of `ModelProvider` objects.
  */
-export function getDotComDefaultModels(): ModelProvider[] {
+export function getDotComDefaultModels(): Model[] {
     return DEFAULT_DOT_COM_MODELS
 }
