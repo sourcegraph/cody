@@ -37,7 +37,7 @@ export enum Theme {
 export const themeClassnames = {
     [Theme.DarkPlus]: 'vscode-dark',
     [Theme.DarkModern]: 'vscode-dark',
-    [Theme.DarkHighContrast]: 'vscode-high-contrast-dark',
+    [Theme.DarkHighContrast]: 'vscode-high-contrast',
     [Theme.LightPlus]: 'vscode-light',
     [Theme.LightModern]: 'vscode-light',
     [Theme.LightHighContrast]: 'vscode-high-contrast-light',
