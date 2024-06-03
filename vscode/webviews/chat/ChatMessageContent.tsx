@@ -35,7 +35,7 @@ function createButtons(
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 ): HTMLElement {
     const container = document.createElement('div')
-    container.className = styles.container
+    container.className = styles.buttonsContainer
     if (!copyButtonOnSubmit) {
         return container
     }
@@ -118,6 +118,9 @@ function createCodeBlockActionButton(
             setTimeout(() => {
                 button.innerHTML = iconSvg
             }, 5000)
+
+            // Log for `chat assistant response code buttons` e2e test.
+            console.log('Code: Copy to Clipboard', text)
         })
     }
 
@@ -241,10 +244,20 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
 }) => {
     const rootRef = useRef<HTMLDivElement>(null)
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: needs to run when `displayMarkdown` changes or else the buttons won't show up.
     useEffect(() => {
-        const preElements = rootRef.current?.querySelectorAll('pre')
+        if (!rootRef.current) {
+            return
+        }
+
+        const preElements = rootRef.current.querySelectorAll('pre')
         if (!preElements?.length || !copyButtonOnSubmit) {
             return
+        }
+
+        const existingButtons = rootRef.current.querySelectorAll(`.${styles.buttonsContainer}`)
+        for (const existingButton of existingButtons) {
+            existingButton.remove()
         }
 
         for (const preElement of preElements) {
@@ -290,7 +303,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 })
             }
         }
-    }, [copyButtonOnSubmit, insertButtonOnSubmit, guardrails])
+    }, [copyButtonOnSubmit, insertButtonOnSubmit, guardrails, displayMarkdown])
 
     usePreserveSelectionOnUpdate(rootRef, [displayMarkdown])
 
