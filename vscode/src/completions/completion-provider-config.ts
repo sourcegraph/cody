@@ -17,6 +17,7 @@ class CompletionProviderConfig {
         FeatureFlag.CodyAutocompleteTracing,
         FeatureFlag.CodyAutocompleteSmartThrottle,
         FeatureFlag.CodyAutocompleteReducedDebounce,
+        FeatureFlag.CodyAutocompleteContextExtendLanguagePool,
     ] as const
 
     private get config() {

@@ -1,4 +1,7 @@
+import { FeatureFlag } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { completionProviderConfig } from '../../../completion-provider-config'
+import { baseLanguageId, shouldBeUsedAsContext } from '../../utils'
 
 interface HistoryItem {
     document: Pick<vscode.TextDocument, 'uri' | 'languageId'>
@@ -60,7 +63,7 @@ export class VSCodeDocumentHistory implements DocumentHistory, vscode.Disposable
     /**
      * Returns the last n items of history in reverse chronological order (latest item at the front)
      */
-    public lastN(n: number, languageId?: string, ignoreUris?: vscode.Uri[]): HistoryItem[] {
+    public lastN(n: number, baseLanguageId: string, ignoreUris?: vscode.Uri[]): HistoryItem[] {
         const ret: HistoryItem[] = []
         const ignoreSet = new Set(ignoreUris || [])
         for (let i = this.history.length - 1; i >= 0; i--) {
@@ -71,7 +74,15 @@ export class VSCodeDocumentHistory implements DocumentHistory, vscode.Disposable
             if (ignoreSet.has(item.document.uri)) {
                 continue
             }
-            if (languageId && languageId !== item.document.languageId) {
+            if (
+                shouldBeUsedAsContext(
+                    completionProviderConfig.getPrefetchedFlag(
+                        FeatureFlag.CodyAutocompleteContextExtendLanguagePool
+                    ),
+                    baseLanguageId,
+                    item.document.languageId
+                )
+            ) {
                 continue
             }
             ret.push(item)

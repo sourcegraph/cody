@@ -44,6 +44,9 @@ export enum FeatureFlag {
     CodyAutocompleteSmartThrottle = 'cody-autocomplete-smart-throttle',
     // When activated, reduces the debounce time to 25ms (from 75ms).
     CodyAutocompleteReducedDebounce = 'cody-autocomplete-reduced-debounce',
+    // When enabled, it will extend the number of languages considered for context (e.g. React files
+    // will be able to use CSS files as context).
+    CodyAutocompleteContextExtendLanguagePool = 'cody-autocomplete-context-extend-language-pool',
 
     // use-ssc-for-cody-subscription is a feature flag that enables the use of SSC as the source of truth for Cody subscription data.
     UseSscForCodySubscription = 'use-ssc-for-cody-subscription',

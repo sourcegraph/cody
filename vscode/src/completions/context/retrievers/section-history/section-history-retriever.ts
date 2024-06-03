@@ -2,16 +2,22 @@ import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
-import { type AutocompleteContextSnippet, createSubscriber, isDefined } from '@sourcegraph/cody-shared'
+import {
+    type AutocompleteContextSnippet,
+    FeatureFlag,
+    createSubscriber,
+    isDefined,
+} from '@sourcegraph/cody-shared'
 
 import { locationKeyFn } from '../../../../graph/lsp/graph'
 import {
     type DocumentSection,
     getGraphDocumentSections as defaultGetDocumentSections,
 } from '../../../../graph/lsp/sections'
+import { completionProviderConfig } from '../../../completion-provider-config'
 import { getContextRange } from '../../../doc-context-getters'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
-import { baseLanguageId } from '../../utils'
+import { shouldBeUsedAsContext } from '../../utils'
 
 interface Section extends DocumentSection {}
 
@@ -115,10 +121,14 @@ export class SectionHistoryRetriever implements ContextRetriever {
                     .map(location => this.getActiveDocumentAndSectionForLocation(location))
                     .filter(isDefined)
                     // Remove any sections that are not in the same language as the current document
-                    .filter(
-                        ([sectionDocument]) =>
-                            baseLanguageId(sectionDocument.languageId) ===
-                            baseLanguageId(document.languageId)
+                    .filter(([sectionDocument]) =>
+                        shouldBeUsedAsContext(
+                            completionProviderConfig.getPrefetchedFlag(
+                                FeatureFlag.CodyAutocompleteContextExtendLanguagePool
+                            ),
+                            document.languageId,
+                            sectionDocument.languageId
+                        )
                     )
                     .map(([, section]) => section)
                     // Exclude the current section which should be included already as part of the

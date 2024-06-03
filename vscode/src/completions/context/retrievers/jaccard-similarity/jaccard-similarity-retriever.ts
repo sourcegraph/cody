@@ -3,10 +3,12 @@ import type { URI } from 'vscode-uri'
 
 import { getContextRange } from '../../../doc-context-getters'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
-import { baseLanguageId } from '../../utils'
 import { type DocumentHistory, VSCodeDocumentHistory } from './history'
 
+import { FeatureFlag } from '@sourcegraph/cody-shared'
+import { completionProviderConfig } from '../../../completion-provider-config'
 import { lastNLines } from '../../../text-processing'
+import { shouldBeUsedAsContext } from '../../utils'
 import { type JaccardMatch, bestJaccardMatches } from './bestJaccardMatch'
 
 /**
@@ -120,9 +122,6 @@ async function getRelevantFiles(
     const files: FileContents[] = []
 
     const curLang = currentDocument.languageId
-    if (!curLang) {
-        return []
-    }
 
     function addDocument(document: vscode.TextDocument): void {
         // Only add files and VSCode user settings.
@@ -130,7 +129,15 @@ async function getRelevantFiles(
             return
         }
 
-        if (baseLanguageId(document.languageId) !== baseLanguageId(curLang)) {
+        if (
+            !shouldBeUsedAsContext(
+                completionProviderConfig.getPrefetchedFlag(
+                    FeatureFlag.CodyAutocompleteContextExtendLanguagePool
+                ),
+                curLang,
+                document.languageId
+            )
+        ) {
             return
         }
 
