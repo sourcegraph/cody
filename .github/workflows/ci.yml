@@ -99,11 +99,11 @@ jobs:
     steps:
       - id: set-matrix
         run: |
-          # if [ "$GITHUB_EVENT_NAME" == "push" ] && [ "$GITHUB_REF" == "refs/heads/main" ]; then
+          if [ "$GITHUB_EVENT_NAME" == "push" ] && [ "$GITHUB_REF" == "refs/heads/main" ]; then
             echo 'matrix=[{"runner":"ubuntu"},{"runner":"windows"},{"runner":"macos"}]' >> $GITHUB_OUTPUT
-          # else
-          #   echo 'matrix=[{"runner":"ubuntu","shard":"1/5"},{"runner":"ubuntu","shard":"2/5"},{"runner":"ubuntu","shard":"3/5"},{"runner":"ubuntu","shard":"4/5"},{"runner":"ubuntu","shard":"5/5"}]' >> $GITHUB_OUTPUT
-          # fi
+          else
+            echo 'matrix=[{"runner":"ubuntu","shard":"1/5"},{"runner":"ubuntu","shard":"2/5"},{"runner":"ubuntu","shard":"3/5"},{"runner":"ubuntu","shard":"4/5"},{"runner":"ubuntu","shard":"5/5"}]' >> $GITHUB_OUTPUT
+          fi
 
   test-e2e:
     needs: slow_tests_matrix_prep

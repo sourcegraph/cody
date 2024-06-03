@@ -26,7 +26,7 @@ import {
 } from '../fixtures/mock-server'
 
 import type { RepoListResponse } from '@sourcegraph/cody-shared'
-import { expectAuthenticated } from './common'
+import { expectAuthenticated, focusSidebar } from './common'
 import { installVsCode } from './install-deps'
 import { buildCustomCommandConfigFile } from './utils/buildCustomCommands'
 // Playwright test extension: The workspace directory to run the test in.
@@ -210,9 +210,7 @@ export const test = base
             const page = await app.firstWindow()
 
             // Bring the cody sidebar to the foreground if not already visible
-            if (!(await page.getByRole('heading', { name: 'Cody: Chat' }).isVisible())) {
-                await page.click('[aria-label="Cody"]')
-            }
+            await focusSidebar(page)
             // Ensure that we remove the hover from the activity icon
             await page.getByRole('heading', { name: 'Cody: Chat' }).hover()
             // Wait for Cody to become activated
