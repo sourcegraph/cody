@@ -68,6 +68,10 @@ export async function focusChatInputAtEnd(chatInput: Locator): Promise<void> {
     await chatInput.press('End')
 }
 
+export function chatMessageRows(chatPanel: FrameLocator): Locator {
+    return chatPanel.locator('[role="row"]')
+}
+
 /**
  * Gets the chat context cell. If {@link counts} is specified, then validates that the context
  * exactly matches the specified file and line counts.
