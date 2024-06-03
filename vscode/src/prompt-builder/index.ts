@@ -1,7 +1,6 @@
 import {
     type ChatMessage,
     type ContextItem,
-    type ContextMessage,
     type Message,
     type ModelContextWindow,
     TokenCounter,
@@ -20,6 +19,7 @@ interface PromptBuilderContextResult {
     added: ContextItem[]
 }
 
+const ASSISTANT_MESSAGE = { speaker: 'assistant', text: ps`Ok.` } as Message
 /**
  * PromptBuilder constructs a full prompt given a charLimit constraint.
  * The final prompt is constructed by concatenating the following fields:
@@ -42,12 +42,11 @@ export class PromptBuilder {
     }
 
     public build(): Message[] {
-        // Create context messages for each context item, where
-        // assistant messages come first because the transcript is in reversed order.
-        const assistantMessage = { speaker: 'assistant', text: ps`Ok.` } as Message
         for (const item of this.contextItems) {
+            // Create context messages for each context item, where
+            // assistant messages come first because the transcript is in reversed order.
             const contextMessage = renderContextItem(item)
-            const messagePair = contextMessage && [assistantMessage, contextMessage]
+            const messagePair = contextMessage && [ASSISTANT_MESSAGE, contextMessage]
             messagePair && this.reverseMessages.push(...messagePair)
         }
 
@@ -93,7 +92,7 @@ export class PromptBuilder {
 
     public async tryAddContext(
         type: ContextTokenUsageType | 'history',
-        contextMessages: (ContextItem | ContextMessage)[]
+        contextItems: ContextItem[]
     ): Promise<PromptBuilderContextResult> {
         // Turn-based context items that are used for UI display only.
         const result = {
@@ -104,65 +103,63 @@ export class PromptBuilder {
 
         // Create a new array to avoid modifying the original array,
         // then reverse it to process the newest context items first.
-        const reversedContextItems = contextMessages.slice().reverse()
+        const reversedContextItems = contextItems.slice().reverse()
 
         // Required by agent tests to ensure the context items are sorted correctly.
         sortContextItems(reversedContextItems as ContextItem[])
 
         for (const item of reversedContextItems) {
-            const newContextItem = contextItem(item)
             // Skip context items that are in the Cody ignore list
-            if (isCodyIgnoredFile(newContextItem.uri)) {
-                result.ignored.push(newContextItem)
+            if (isCodyIgnoredFile(item.uri) || (await contextFiltersProvider.isUriIgnored(item.uri))) {
+                result.ignored.push(item)
                 continue
             }
-            if (await contextFiltersProvider.isUriIgnored(newContextItem.uri)) {
-                result.ignored.push(newContextItem)
-                continue
-            }
+
             // Special-case remote context here. We can usually rely on the remote context to honor
             // any context filters but in case of client side overwrites, we want a file that is
             // ignored on a client to always be treated as ignored.
             if (
-                newContextItem.type === 'file' &&
-                (newContextItem.uri.scheme === 'https' || newContextItem.uri.scheme === 'http') &&
-                newContextItem.repoName &&
-                contextFiltersProvider.isRepoNameIgnored(newContextItem.repoName)
+                item.type === 'file' &&
+                (item.uri.scheme === 'https' || item.uri.scheme === 'http') &&
+                item.repoName &&
+                contextFiltersProvider.isRepoNameIgnored(item.repoName)
             ) {
-                result.ignored.push(newContextItem)
+                result.ignored.push(item)
                 continue
             }
 
-            const contextMessage = isContextItem(item) ? renderContextItem(item) : item
+            const contextMessage = renderContextItem(item)
             if (!contextMessage) {
                 continue
             }
 
             // Skip duplicated or invalid items before updating the token usage.
-            if (!isUniqueContextItem(newContextItem, this.contextItems)) {
+            if (!isUniqueContextItem(item, this.contextItems)) {
                 continue
             }
 
-            const messagePair = [{ speaker: 'assistant', text: ps`Ok.` } as Message, contextMessage]
-            const tokenType = getContextItemTokenUsageType(newContextItem)
-            const isWithinLimit = this.tokenCounter.updateUsage(tokenType, messagePair)
+            const tokenType = getContextItemTokenUsageType(item)
+            const isWithinLimit = this.tokenCounter.updateUsage(tokenType, [
+                ASSISTANT_MESSAGE,
+                contextMessage,
+            ])
 
             // Don't update context items from the past (history items) unless undefined.
-            if (type !== 'history' || newContextItem.isTooLarge === undefined) {
-                newContextItem.isTooLarge = !isWithinLimit
+            if (type !== 'history' || item.isTooLarge === undefined) {
+                item.isTooLarge = !isWithinLimit
             }
 
             // Skip item that would exceed token limit & add it to the ignored list.
             if (!isWithinLimit) {
-                newContextItem.content = undefined
-                result.ignored.push(newContextItem)
+                item.content = undefined
+                result.ignored.push(item)
                 result.limitReached = true
                 continue
             }
 
             // Add the new valid context item to the context list.
-            result.added.push(newContextItem) // for UI display.
-            this.contextItems.push(newContextItem) // for building context messages.
+            result.added.push(item) // for UI display.
+            this.contextItems.push(item) // for building context messages.
             // Update context items for the next iteration, removes items that are no longer unique.
             // TODO (bee) update token usage to reflect the removed context items.
             this.contextItems = getUniqueContextItems(this.contextItems)
@@ -171,12 +168,4 @@ export class PromptBuilder {
         result.added = this.contextItems.filter(c => result.added.includes(c))
         return result
     }
-}
-
-function isContextItem(value: ContextItem | ContextMessage): value is ContextItem {
-    return 'uri' in value && 'type' in value && !('speaker' in value)
-}
-
-function contextItem(value: ContextItem | ContextMessage): ContextItem {
-    return isContextItem(value) ? value : value.file
 }

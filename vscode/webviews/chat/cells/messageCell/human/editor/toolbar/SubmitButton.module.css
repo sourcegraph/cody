@@ -1,32 +1,50 @@
-.button circle {
-    stroke: transparent;
-    fill: var(--vscode-button-background);
+.button {
+    border: 1px solid var(--vscode-button-border, transparent);
+    background-color: var(--vscode-button-background);
+    cursor: pointer;
+    border-radius: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.button[disabled] circle {
-    fill: color-mix(in srgb, var(--vscode-button-foreground) 15%, transparent);
+.button svg {
+    transform: translateX(1px);
+}
+
+.button:hover, .button:focus-visible {
+    background-color: var(--vscode-button-hoverBackground);
+}
+
+.button:focus-visible {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: 2px;
 }
 
 .button path {
-    stroke: transparent;
     fill: var(--vscode-button-foreground);
 }
 
-.button[disabled] path {
-    fill: color-mix(in srgb, var(--vscode-button-foreground) 30%, transparent);
+.button[disabled] {
+    cursor: default;
+    border-color: transparent;
+    background-color: var(--vscode-disabledForeground);
+    opacity: 0.5;
 }
 
-/* todo(tim): We need a tailwind high-contrast: modifier, then we don't need this */
-body[data-vscode-theme-kind='vscode-high-contrast'] .button circle {
-    stroke: var(--vscode-button-border);
-    fill: transparent;
+/* For high contrast dark we make a few aesthetic tweaks, such as changing the button border color instead of an outline */
+body[data-vscode-theme-kind="vscode-high-contrast"] .button:focus-visible {
+    outline: none;
+    border-color: var(--vscode-focusBorder);
 }
 
-body[data-vscode-theme-kind='vscode-high-contrast'] .button path {
-    stroke: transparent;
-    fill: currentColor;
-}
+body[data-vscode-theme-kind="vscode-high-contrast"], body[data-vscode-theme-kind="vscode-high-contrast-light"] {
+    .button[disabled] {
+        background-color: transparent;
+        border-color: var(--vscode-disabledForeground);
 
-body[data-vscode-theme-kind='vscode-high-contrast'] .button[disabled] path {
-    fill: var(--vscode-button-border);
+        path {
+            fill: var(--vscode-disabledForeground);
+        }
+    }
 }

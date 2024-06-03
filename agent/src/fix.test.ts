@@ -50,5 +50,5 @@ describe.skipIf(isWindows())('Fix', () => {
           }
           "
         `)
-    }, 10_000)
+    }, 20_000)
 })

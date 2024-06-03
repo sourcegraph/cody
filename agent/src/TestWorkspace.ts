@@ -29,9 +29,17 @@ export class TestWorkspace {
     }
 
     public async afterAll(): Promise<void> {
-        await fspromises.rm(this.rootPath, {
-            recursive: true,
-            force: true,
-        })
+        try {
+            await fspromises.rm(this.rootPath, {
+                recursive: true,
+                force: true,
+                maxRetries: 5,
+            })
+        } catch (error) {
+            console.error(
+                `Ignoring error in afterAll hook while recursively deleting the directory '${this.rootPath}'`,
+                error
+            )
+        }
     }
 }

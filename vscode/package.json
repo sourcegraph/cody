@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
-  "version": "1.18.2",
+  "version": "1.20.1",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -447,6 +447,21 @@
         "icon": "$(new-comment-icon)"
       },
       {
+        "command": "cody.minion.panel.new",
+        "category": "Cody",
+        "title": "New Minion Panel",
+        "when": "cody.activated",
+        "group": "Cody",
+        "icon": "$(new-comment-icon)"
+      },
+      {
+        "command": "cody.minion.new-terminal",
+        "category": "Cody",
+        "title": "Minion new terminal - temporary test command",
+        "when": "cody.activated",
+        "group": "Cody"
+      },
+      {
         "command": "workbench.action.moveEditorToNewWindow",
         "category": "Cody",
         "title": "Pop out",
@@ -460,14 +475,6 @@
         "title": "Open Cody Sidebar",
         "group": "Cody",
         "icon": "$(layout-sidebar-left)"
-      },
-      {
-        "command": "cody.chat.history.edit",
-        "category": "Cody",
-        "title": "Rename Chat",
-        "group": "Cody",
-        "icon": "$(edit)",
-        "enablement": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats"
       },
       {
         "command": "cody.chat.history.clear",
@@ -904,11 +911,6 @@
       ],
       "view/item/context": [
         {
-          "command": "cody.chat.history.edit",
-          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
-          "group": "inline@1"
-        },
-        {
           "command": "cody.chat.history.delete",
           "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
           "group": "inline@2"
@@ -1087,6 +1089,11 @@
           "type": "boolean",
           "markdownDescription": "Enable commit message generation",
           "default": false
+        },
+        "cody.experimental.minion.anthropicKey": {
+          "order": 99,
+          "type": "string",
+          "default": ""
         },
         "cody.debug.verbose": {
           "order": 99,
@@ -1338,7 +1345,7 @@
     }
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.4.2",
+    "@anthropic-ai/sdk": "^0.20.8",
     "@floating-ui/react": "^0.26.9",
     "@lexical/code": "^0.15.0",
     "@lexical/react": "^0.15.0",
