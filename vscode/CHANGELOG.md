@@ -8,6 +8,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 - Chat: The @-mentions for workspace repositories, which are added to the input box by default for new messages, now takes context filters into consideration and do not mention the excluded repos. [pull/4427](https://github.com/sourcegraph/cody/pull/4427)
+- Chat: Fixed the contrast and colors of send button. [pull/4436](https://github.com/sourcegraph/cody/pull/4436)
 
 ### Changed
 
