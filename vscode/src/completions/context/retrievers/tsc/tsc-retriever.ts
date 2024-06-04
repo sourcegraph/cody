@@ -7,6 +7,7 @@ import {
     isWindows,
     logDebug,
     logError,
+    nextTick,
     tracer,
 } from '@sourcegraph/cody-shared'
 import ts from 'typescript'
@@ -16,7 +17,6 @@ import type {
     ProtocolRelatedInformationDiagnostic,
 } from '../../../../jsonrpc/agent-protocol'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
-import { nextTick } from '../section-history/nextTick'
 import { SymbolFormatter, isStdLibNode } from './SymbolFormatter'
 import { getTSSymbolAtLocation } from './getTSSymbolAtLocation'
 import { type NodeMatchKind, relevantTypeIdentifiers } from './relevantTypeIdentifiers'
