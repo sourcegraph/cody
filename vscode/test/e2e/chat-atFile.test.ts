@@ -414,6 +414,7 @@ test.extend<ExpectedEvents>({
     await nap()
     await openFileInEditorTab(page, 'buzz.ts')
     await selectLineRangeInEditorTab(page, 2, 5)
+    await nap()
     await executeCommandInPalette(page, addSelectionSlug)
     await lastChatInput.press('x')
     await clickEditorTab(page, 'buzz.ts', { exact: true })
