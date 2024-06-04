@@ -124,7 +124,11 @@ async function loadEvaluationConfig(options: CodyBenchOptions): Promise<CodyBenc
 }
 
 export const codyBenchCommand = new commander.Command('cody-bench')
-    .description('Evaluate Cody autocomplete by running the Agent in headless mode')
+    .description(
+        'Evaluate Cody autocomplete by running the Agent in headless mode. ' +
+            'See the repo https://github.com/sourcegraph/cody-bench-data for ' +
+            'more details about running cody-bench and how to evaluate the data.'
+    )
     .option(
         '--workspace <path>',
         'The workspace directory where to run the autocomplete evaluation',
