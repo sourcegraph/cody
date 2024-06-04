@@ -89,11 +89,6 @@ class EndOfTrialNotificationScheduler private constructor(val project: Project) 
           return
         }
         TrialEndedNotification(disposable = this).notify(project)
-      } else {
-        if (PropertiesComponent.getInstance().getBoolean(TrialEndingSoonNotification.ignore)) {
-          return
-        }
-        TrialEndingSoonNotification().notify(project)
       }
     }
   }
