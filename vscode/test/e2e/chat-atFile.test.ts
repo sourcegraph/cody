@@ -406,11 +406,12 @@ test.extend<ExpectedEvents>({
 test.extend<ExpectedEvents>({
     expectedEvents: ['CodyVSCodeExtension:addChatContext:clicked'],
     expectedV2Events: ['cody.addChatContext:clicked'],
-})('Add Selection to Cody Chat', async ({ page, sidebar }) => {
+})('Add Selection to Cody Chat', async ({ page, nap, sidebar }) => {
     const addSelectionSlug = 'Cody: Add Selection to Cody Chat'
     await sidebarSignin(page, sidebar)
     const [, lastChatInput] = await createEmptyChatPanel(page)
 
+    await nap()
     await openFileInEditorTab(page, 'buzz.ts')
     await selectLineRangeInEditorTab(page, 2, 5)
     await executeCommandInPalette(page, addSelectionSlug)
@@ -418,9 +419,5 @@ test.extend<ExpectedEvents>({
     await clickEditorTab(page, 'buzz.ts', { exact: true })
     await selectLineRangeInEditorTab(page, 7, 10)
     await executeCommandInPalette(page, addSelectionSlug)
-    await expect(chatInputMentions(lastChatInput)).toHaveText([
-        '@buzz.ts',
-        '@buzz.ts:2-5',
-        '@buzz.ts:7-10',
-    ])
+    await expect(chatInputMentions(lastChatInput)).toHaveText(['@buzz.ts:2-5', '@buzz.ts:7-10'])
 })

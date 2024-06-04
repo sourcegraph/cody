@@ -162,7 +162,7 @@ test('edit (fixup) input - range selection', async ({ page, sidebar }) => {
     expect(updatedRangeItem).toBeVisible()
 })
 
-test('edit (fixup) input - model selection', async ({ page, sidebar }) => {
+test('edit (fixup) input - model selection', async ({ page, nap, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -175,6 +175,7 @@ test('edit (fixup) input - model selection', async ({ page, sidebar }) => {
     await page.getByRole('option', { name: 'Edit code' }).click()
 
     // Check the correct range item is auto-selected
+    await nap()
     const modelItem = page.getByText('Claude 3 Sonnet')
     expect(modelItem).toBeVisible()
 

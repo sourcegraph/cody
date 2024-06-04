@@ -274,6 +274,14 @@ export const test = base
             await use(() => getCodySidebar(page))
         },
     })
+    // Simple sleep utility with a default of 300ms
+    .extend<{ nap: (len?: number) => Promise<void> }>({
+        nap: async ({ page }, use) => {
+            await use(async (len?: number) => {
+                await page.waitForTimeout(len || 300)
+            })
+        },
+    })
 /**
  * Calls rmSync(path, options) and retries a few times if it fails before throwing.
  *
@@ -369,7 +377,6 @@ export async function signOut(page: Page): Promise<void> {
 export async function executeCommandInPalette(page: Page, commandName: string): Promise<void> {
     // TODO(sqs): could simplify this further with a cody.auth.signoutAll command
     await page.keyboard.press('F1')
-    await page.getByPlaceholder('Type the name of a command to run.').click()
     await page.getByPlaceholder('Type the name of a command to run.').fill(`>${commandName}`)
     await page.keyboard.press('Enter')
 }
