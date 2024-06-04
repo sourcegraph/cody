@@ -1,6 +1,22 @@
-import lunr from 'elasticlunr'
-import type { Index, SearchResults, SerialisedIndexData } from 'elasticlunr'
+import lunr from 'elasticlunrjs'
+import type { Index, SearchResults, SerialisedIndexData } from 'elasticlunrjs'
 import { isDefined } from '../common'
+
+/*
+const lunr = require('elasticlunrjs') as (
+    config?: (this: Index<MemoryDocument>, idx: elasticlunr.Index<MemoryDocument>) => void
+) => Index<MemoryDocument>
+*/
+if (typeof window !== 'undefined') {
+    ;(window as any).lunr = lunr || {}
+}
+
+if (typeof global !== 'undefined') {
+    ;(global as any).lunr = lunr || {}
+}
+if (typeof globalThis !== 'undefined') {
+    ;(globalThis as any).lunr = lunr || {}
+}
 
 export type MemoryDocumentType = 'humanMessage' | 'assistantMessage' | 'contextItem'
 export interface MemoryDocument {
@@ -27,7 +43,7 @@ export interface MemorySearchResult extends SearchResults {
 export type MemoryStorage = SerialisedIndexData<MemoryDocument>
 
 export class Memory {
-    // EXPERIMENTAL: The library used for search is lunr.
+    // EXPERIMENTAL: The library used for search is elasticlunr.
     // The interface exposed by the Memory class is intentionally kept async, even
     // though the underlying library is synchronous, to ensure future compatibility.
     // This way, changes won't be needed if the implementation becomes asynchronous
@@ -41,11 +57,11 @@ export class Memory {
     public async getDocuments(): Promise<MemoryDocument[]> {
         return Promise.resolve(Object.values(this.index.documentStore.toJSON().docs))
     }
-    public async getDocument(id: string): Promise<MemoryDocument> {
+    public async getDocument(id: string): Promise<MemoryDocument | null> {
         return Promise.resolve(this.index.documentStore.getDoc(id))
     }
 
-    public hasDocument(id: string): Promise<boolean> {
+    public hasDocument(id: string): Promise<boolean> | boolean {
         return Promise.resolve(this.index.documentStore.hasDoc(id))
     }
 
@@ -60,8 +76,10 @@ export class Memory {
     }
 
     public async search(query: string, options: MemorySearchOptions): Promise<MemorySearchResult[]> {
+        const index = this.index
+
         return Promise.resolve(
-            this.index
+            index
                 .search(query, {
                     fields: {
                         url: {},
@@ -71,7 +89,7 @@ export class Memory {
                     expand: true,
                 })
                 .map(result => {
-                    const document = this.index.documentStore.getDoc(result.ref)
+                    const document = index.documentStore.getDoc(result.ref)
 
                     if (options.types?.length && !options.types.includes(document.type)) {
                         return null

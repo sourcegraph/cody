@@ -97,7 +97,6 @@ import { SimpleChatModel, prepareChatMessage } from './SimpleChatModel'
 import { getChatPanelTitle, openFile } from './chat-helpers'
 import { getEnhancedContext } from './context'
 import { DefaultPrompter } from './prompt'
-
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
     extensionUri: vscode.Uri
@@ -738,7 +737,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 abortSignal,
                 'chat'
             )
-        } catch {
+        } catch (error) {
+            console.log(error)
             this.postError(new Error('Failed to edit prompt'), 'transcript')
         }
     }

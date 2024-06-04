@@ -20,27 +20,27 @@ export interface ChatMessageDocument extends ChatMessage {
 }
 
 export class ChatMemoryManager {
-    private memory: Memory
-    private config: ChatMemoryManagerConfig
+    private readonly memory: Memory
+    private readonly config: ChatMemoryManagerConfig
     constructor(config: ChatMemoryManagerConfig) {
         this.config = config
         this.memory = new Memory()
-        // this.loadMemoryFromLocalStorage()
+        this.loadMemoryFromLocalStorage()
     }
 
-    private loadMemoryFromLocalStorage() {
+    private loadMemoryFromLocalStorage = () => {
         const memoryStorage = this.config.localStorage.getChatMemory(this.config.authStatus)
         if (memoryStorage) {
             this.memory.loadJSON(memoryStorage)
         }
     }
 
-    private async saveMemoryToLocalStorage(): Promise<void> {
+    private saveMemoryToLocalStorage = async (): Promise<void> => {
         const serializedMemory = this.memory.toJSON()
         return this.config.localStorage.setChatMemory(this.config.authStatus, serializedMemory)
     }
 
-    async saveChatMessage(message: ChatMessageDocument): Promise<void> {
+    public saveChatMessage = async (message: ChatMessageDocument): Promise<void> => {
         const documents: MemoryDocument[] = []
 
         if (message.text?.toString()) {
@@ -82,7 +82,7 @@ export class ChatMemoryManager {
         ).then(this.saveMemoryToLocalStorage)
     }
 
-    async removeChatMessage(message: ChatMessageDocument): Promise<void> {
+    public removeChatMessage = async (message: ChatMessageDocument): Promise<void> => {
         const documentsToRemove = (await this.memory.getDocuments()).filter(
             document =>
                 document.conversationID === message.conversationID &&
@@ -94,7 +94,7 @@ export class ChatMemoryManager {
         ).then(this.saveMemoryToLocalStorage)
     }
 
-    async removeChat(conversationID: string): Promise<void> {
+    public removeChat = async (conversationID: string): Promise<void> => {
         const documentsToRemove = (await this.memory.getDocuments()).filter(
             document => document.conversationID === conversationID
         )
@@ -104,11 +104,14 @@ export class ChatMemoryManager {
         ).then(this.saveMemoryToLocalStorage)
     }
 
-    async removeAllChats(): Promise<void> {
+    public removeAllChats = async (): Promise<void> => {
         this.memory.resetIndex()
         return await this.config.localStorage.clearChatMemory(this.config.authStatus)
     }
-    async getContextItemsFromChatMemory(query: string, conversationID: string): Promise<ContextItem[]> {
+    public getContextItemsFromChatMemory = async (
+        query: string,
+        conversationID: string
+    ): Promise<ContextItem[]> => {
         // The results will be scoped to the context items from that conversation.
         const results = await this.memory.search(query, {
             topK: 5,
@@ -129,7 +132,7 @@ export class ChatMemoryManager {
         )
     }
 
-    async getContextItemsFromGlobalMemory(query: string): Promise<ContextItemMemory[]> {
+    public getContextItemsFromGlobalMemory = async (query: string): Promise<ContextItemMemory[]> => {
         // The results will be scoped global memory and will include context items, human messages and assistant responses.
         const results = await this.memory.search(query, {
             topK: 5,

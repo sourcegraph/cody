@@ -293,9 +293,9 @@ importers:
       diff:
         specifier: ^5.2.0
         version: 5.2.0
-      elasticlunr:
-        specifier: ^0.9.5
-        version: 0.9.5
+      elasticlunrjs:
+        specifier: ^1.0.1
+        version: 1.0.1
       fast-xml-parser:
         specifier: ^4.3.2
         version: 4.3.2
@@ -342,9 +342,9 @@ importers:
       '@types/diff':
         specifier: ^5.0.9
         version: 5.0.9
-      '@types/elasticlunr':
-        specifier: ^0.9.9
-        version: 0.9.9
+      '@types/elasticlunrjs':
+        specifier: ^1.0.4
+        version: 1.0.4
       '@types/isomorphic-fetch':
         specifier: ^0.0.39
         version: 0.0.39
@@ -5829,8 +5829,8 @@ packages:
   /@types/ejs@3.1.5:
     resolution: {integrity: sha512-nv+GSx77ZtXiJzwKdsASqi+YQ5Z7vwHsTP0JY2SiQgjGckkBRKZnk8nIM+7oUZ1VCtuTz0+By4qVR7fqzp/Dfg==}
 
-  /@types/elasticlunr@0.9.9:
-    resolution: {integrity: sha512-59TMY+u8jKLqSg0AZStCz4n8A7l/nVenmum6fFQa9bUOH26GNMEgDseiN813IxXmTQ0AivefnMlbileBggCf5g==}
+  /@types/elasticlunrjs@1.0.4:
+    resolution: {integrity: sha512-j6PIROxsjt5u7giow+YgNb9gZKTTMmzWn1CR9YDWwDrqCSaBEpyWhAsUhXB+A3ymQs3JZq8C+BAbB/UO+q9cEA==}
     dev: true
 
   /@types/emscripten@1.39.10:
@@ -8220,8 +8220,8 @@ packages:
     dependencies:
       jake: 10.8.7
 
-  /elasticlunr@0.9.5:
-    resolution: {integrity: sha512-5YM9LFQgVYfuLNEoqMqVWIBuF2UNCA+xu/jz1TyryLN/wmBcQSb+GNAwvLKvEpGESwgGN8XA1nbLAt6rKlyHYQ==}
+  /elasticlunrjs@1.0.1:
+    resolution: {integrity: sha512-Si+Y2Kef7AC6UVA0bgSOG20xtszLeUFmk4Yj2C73tP7OuIciwErU4ReQ8nZnT4NoB2JtcI7ia0Dr+HgoxcVFyw==}
     dev: false
 
   /electron-to-chromium@1.4.751:
