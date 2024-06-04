@@ -1,7 +1,7 @@
 import { FeatureFlag } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { completionProviderConfig } from '../../../completion-provider-config'
-import { baseLanguageId, shouldBeUsedAsContext } from '../../utils'
+import { shouldBeUsedAsContext } from '../../utils'
 
 interface HistoryItem {
     document: Pick<vscode.TextDocument, 'uri' | 'languageId'>
