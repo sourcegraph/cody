@@ -38,8 +38,8 @@ export async function getContextFileFromUri(file: URI, range?: vscode.Range): Pr
                 range = undefined
             }
 
-            const content = doc.getText(range).trim()
-            if (!content) {
+            const content = doc.getText(range)
+            if (!content.trim()) {
                 throw new Error('No file content')
             }
             const size = TokenCounter.countTokens(content)
