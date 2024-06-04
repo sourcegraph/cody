@@ -12,7 +12,6 @@ export const sidebarSignin = async (
     if (sidebar === null) {
         throw new Error('Sidebar is null, likely because preAuthenticate is `true`')
     }
-    await focusSidebar(page)
     await sidebar.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).click()
     await page.getByRole('option', { name: 'Sign In with URL and Access Token' }).click()
     await page.getByRole('combobox', { name: 'input' }).fill(SERVER_URL)
@@ -26,13 +25,6 @@ export const sidebarSignin = async (
     }
 
     await expectAuthenticated(page)
-}
-
-export async function focusSidebar(page: Page): Promise<void> {
-    // In case the cody sidebar isn't focused, select it.
-    if (!(await page.getByRole('heading', { name: 'Cody: Chat' }).isVisible())) {
-        await page.click('[aria-label="Cody"]')
-    }
 }
 
 export async function expectAuthenticated(page: Page) {
@@ -137,13 +129,8 @@ export async function openFileInEditorTab(page: Page, filename: string): Promise
     await page.getByRole('treeitem', { name: filename }).locator('a').dblclick()
     await clickEditorTab(page, filename)
 }
-
-export async function clickEditorTab(
-    page: Page,
-    title: string,
-    options: Partial<Parameters<Page['getByRole']>[1]> = {}
-): Promise<void> {
-    await page.getByRole('tab', { ...options, name: title }).click()
+export async function clickEditorTab(page: Page, title: string): Promise<void> {
+    await page.getByRole('tab', { name: title }).click()
 }
 
 export async function selectLineRangeInEditorTab(

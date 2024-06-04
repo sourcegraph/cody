@@ -26,7 +26,7 @@ import {
 } from '../fixtures/mock-server'
 
 import type { RepoListResponse } from '@sourcegraph/cody-shared'
-import { expectAuthenticated, focusSidebar } from './common'
+import { expectAuthenticated } from './common'
 import { installVsCode } from './install-deps'
 import { buildCustomCommandConfigFile } from './utils/buildCustomCommands'
 // Playwright test extension: The workspace directory to run the test in.
@@ -210,7 +210,9 @@ export const test = base
             const page = await app.firstWindow()
 
             // Bring the cody sidebar to the foreground if not already visible
-            await focusSidebar(page)
+            if (!(await page.getByRole('heading', { name: 'Cody: Chat' }).isVisible())) {
+                await page.click('[aria-label="Cody"]')
+            }
             // Ensure that we remove the hover from the activity icon
             await page.getByRole('heading', { name: 'Cody: Chat' }).hover()
             // Wait for Cody to become activated
@@ -272,14 +274,6 @@ export const test = base
         },
         getCodySidebar: async ({ page }, use) => {
             await use(() => getCodySidebar(page))
-        },
-    })
-    // Simple sleep utility with a default of 300ms
-    .extend<{ nap: (len?: number) => Promise<void> }>({
-        nap: async ({ page }, use) => {
-            await use(async (len?: number) => {
-                await page.waitForTimeout(len || 300)
-            })
         },
     })
 /**
@@ -377,6 +371,7 @@ export async function signOut(page: Page): Promise<void> {
 export async function executeCommandInPalette(page: Page, commandName: string): Promise<void> {
     // TODO(sqs): could simplify this further with a cody.auth.signoutAll command
     await page.keyboard.press('F1')
+    await page.getByPlaceholder('Type the name of a command to run.').click()
     await page.getByPlaceholder('Type the name of a command to run.').fill(`>${commandName}`)
     await page.keyboard.press('Enter')
 }
