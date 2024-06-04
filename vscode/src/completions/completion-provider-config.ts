@@ -43,13 +43,7 @@ class CompletionProviderConfig {
         this._config = config
     }
 
-    // Note: We add the literal value of the extended language pool flag to the argument list to
-    // avoid the callsites having to import the FeatureFlag enum from lib/shared. This is necessary
-    // because we run some integration tests that depend on them and that somehow can not import
-    // from lib/shared without failing CI.
-    public getPrefetchedFlag(
-        flag: (typeof this.flagsToResolve)[number] | 'cody-autocomplete-context-extend-language-pool'
-    ): boolean {
+    public getPrefetchedFlag(flag: (typeof this.flagsToResolve)[number]): boolean {
         if (!this.featureFlagProvider) {
             throw new Error('CompletionProviderConfig is not initialized')
         }

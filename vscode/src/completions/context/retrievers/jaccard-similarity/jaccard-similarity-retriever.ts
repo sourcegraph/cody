@@ -5,6 +5,7 @@ import { getContextRange } from '../../../doc-context-getters'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { type DocumentHistory, VSCodeDocumentHistory } from './history'
 
+import { FeatureFlag } from '@sourcegraph/cody-shared'
 import { completionProviderConfig } from '../../../completion-provider-config'
 import { lastNLines } from '../../../text-processing'
 import { shouldBeUsedAsContext } from '../../utils'
@@ -131,7 +132,7 @@ async function getRelevantFiles(
         if (
             !shouldBeUsedAsContext(
                 completionProviderConfig.getPrefetchedFlag(
-                    'cody-autocomplete-context-extend-language-pool'
+                    FeatureFlag.CodyAutocompleteContextExtendLanguagePool
                 ),
                 curLang,
                 document.languageId

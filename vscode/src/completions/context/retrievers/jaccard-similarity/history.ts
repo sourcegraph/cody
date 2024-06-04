@@ -1,3 +1,4 @@
+import { FeatureFlag } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { completionProviderConfig } from '../../../completion-provider-config'
 import { shouldBeUsedAsContext } from '../../utils'
@@ -76,7 +77,7 @@ export class VSCodeDocumentHistory implements DocumentHistory, vscode.Disposable
             if (
                 shouldBeUsedAsContext(
                     completionProviderConfig.getPrefetchedFlag(
-                        'cody-autocomplete-context-extend-language-pool'
+                        FeatureFlag.CodyAutocompleteContextExtendLanguagePool
                     ),
                     baseLanguageId,
                     item.document.languageId
