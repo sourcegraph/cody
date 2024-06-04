@@ -1,6 +1,10 @@
 package com.sourcegraph.cody.context
 
-import com.intellij.codeInsight.completion.*
+import com.intellij.codeInsight.completion.CompletionContributor
+import com.intellij.codeInsight.completion.CompletionParameters
+import com.intellij.codeInsight.completion.CompletionProvider
+import com.intellij.codeInsight.completion.CompletionResultSet
+import com.intellij.codeInsight.completion.CompletionType
 import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.extapi.psi.ASTWrapperPsiElement
 import com.intellij.extapi.psi.PsiFileBase
@@ -16,7 +20,8 @@ import com.intellij.lexer.LexerPosition
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.fileTypes.LanguageFileType
-import com.intellij.openapi.progress.*
+import com.intellij.openapi.progress.blockingContext
+import com.intellij.openapi.progress.runBlockingCancellable
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
@@ -47,8 +52,10 @@ enum class RepoInclusion {
 enum class RepoSelectionStatus {
   /** The user manually deselected the repository. */
   DESELECTED,
+
   /** Remote repo search did not find the repo (so it is disabled.) */
   NOT_FOUND,
+
   /** The repo has been found and is selected. */
   SELECTED,
 }
@@ -408,8 +415,11 @@ class RemoteRepoCompletionContributor : CompletionContributor(), DumbAware {
                 for (repos in searcher.search(query)) {
                   blockingContext { // addElement uses ProgressManager.checkCancelled
                     for (repo in repos) {
-                      prefixedResult.addElement(
-                          LookupElementBuilder.create(repo).withIcon(RemoteRepo.iconForName(repo)))
+                      prefixedResult
+                          .caseInsensitive()
+                          .addElement(
+                              LookupElementBuilder.create(repo)
+                                  .withIcon(RemoteRepo.iconForName(repo)))
                     }
                   }
                 }
