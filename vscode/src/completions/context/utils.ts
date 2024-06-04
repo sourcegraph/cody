@@ -34,7 +34,7 @@ export function shouldBeUsedAsContext(
         return true
     }
 
-    if (!enableExtendedLanguagePool) {
+    if (enableExtendedLanguagePool) {
         // Allow template languages to use css files as context (in the hope
         // that this allows filling class names more effectively)
         if (htmlFamily.has(baseLanguageId) && cssFamily.has(languageId)) {
