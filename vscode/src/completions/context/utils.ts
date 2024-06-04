@@ -1,6 +1,6 @@
 const typeScriptFamily = new Set(['typescript', 'typescriptreact'])
 const javaScriptFamily = new Set(['javascript', 'javascriptreact'])
-const cssFamily = new Set(['css', 'less', 'scss'])
+const cssFamily = new Set(['css', 'less', 'scss', 'sass'])
 const htmlFamily = new Set([
     'typescriptreact',
     'javascriptreact',
