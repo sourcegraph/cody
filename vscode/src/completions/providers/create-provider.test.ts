@@ -235,8 +235,8 @@ describe('createProviderConfig', () => {
 
                 // fireworks
                 {
-                    codyLLMConfig: { provider: 'fireworks', completionModel: 'llama-code-13b' },
-                    expected: { provider: 'fireworks', model: 'llama-code-13b' },
+                    codyLLMConfig: { provider: 'fireworks', completionModel: 'starcoder-7b' },
+                    expected: { provider: 'fireworks', model: 'starcoder-7b' },
                 },
                 {
                     codyLLMConfig: { provider: 'fireworks' },
@@ -245,13 +245,16 @@ describe('createProviderConfig', () => {
 
                 // unknown-provider
                 {
-                    codyLLMConfig: { provider: 'unknown-provider', completionModel: 'llama-code-7b' },
+                    codyLLMConfig: {
+                        provider: 'unknown-provider',
+                        completionModel: 'superdupercoder-7b',
+                    },
                     expected: null,
                 },
 
                 // provider not defined (backward compat)
                 {
-                    codyLLMConfig: { provider: undefined, completionModel: 'llama-code-7b' },
+                    codyLLMConfig: { provider: undefined, completionModel: 'superdupercoder-7b' },
                     expected: { provider: 'anthropic', model: 'claude-instant-1.2' },
                 },
             ]
