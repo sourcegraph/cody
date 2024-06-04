@@ -1,4 +1,5 @@
 {
+  "$schema": "package.schema.json",
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
@@ -17,7 +18,10 @@
     "dev:web": "pnpm run -s build:dev:web && pnpm run -s _dev:vscode-test-web --browserType none",
     "watch:dev:web": "concurrently \"pnpm run -s watch:build:dev:web\" \"pnpm run -s _dev:vscode-test-web --browserType none\"",
     "_dev:vscode-test-web": "vscode-test-web --extensionDevelopmentPath=. ${WORKSPACE-test/fixtures/workspace}",
-    "build": "tsc --build && pnpm run -s _build:esbuild:desktop && pnpm run -s _build:esbuild:web && pnpm run -s _build:webviews --mode production",
+    "build": "pnpm run -s check:build && tsc --build && pnpm run -s _build:esbuild:desktop && pnpm run -s _build:esbuild:web && pnpm run -s _build:webviews --mode production",
+    "check:build": "pnpm run -s check:typehacks && pnpm run -s check:manifest",
+    "check:typehacks": "ts-node-transpile-only ./scripts/enable-typehacks.ts && tsc -p tsconfig.typehacks.json",
+    "check:manifest": "ts-node-transpile-only ./scripts/validate-package-json.ts",
     "_build:desktop": "pnpm run -s _build:esbuild:desktop && pnpm run -s _build:webviews --mode production",
     "_build:web": "pnpm run -s _build:esbuild:web && pnpm run -s _build:webviews --mode production",
     "build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src\" \"pnpm run -s _build:webviews --mode development\"",
@@ -463,7 +467,7 @@
         "group": "Cody"
       },
       {
-        "command": "workbench.action.moveEditorToNewWindow",
+        "command": "cody.chat.view.popOut",
         "category": "Cody",
         "title": "Pop out",
         "enablement": "cody.activated",
@@ -764,6 +768,11 @@
         {
           "command": "cody.test.set-context-filters",
           "when": "cody.activated && cody.devOrTest"
+        },
+        {
+          "command": "cody.chat.view.popOut",
+          "when": "false",
+          "_comment": "Hidden because it is only a wrapper around the workspace pop out command and would place any editor tab (not just Cody chat) in a new window."
         }
       ],
       "editor/context": [
@@ -898,7 +907,7 @@
           "visibility": "visible"
         },
         {
-          "command": "workbench.action.moveEditorToNewWindow",
+          "command": "cody.chat.view.popOut",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated && !isAuxiliaryEditorPart",
           "group": "navigation@3",
           "visibility": "visible"
@@ -1448,6 +1457,9 @@
     "@vscode/test-electron": "^2.3.8",
     "@vscode/test-web": "^0.0.47",
     "@vscode/vsce": "^2.22.0",
+    "ajv": "^8.14.0",
+    "ajv-errors": "^3.0.0",
+    "ajv-formats": "^3.0.1",
     "concurrently": "^8.2.0",
     "dedent": "^0.7.0",
     "express": "^4.18.2",
