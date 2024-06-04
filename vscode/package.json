@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
-  "version": "1.18.0",
+  "version": "1.20.1",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -24,17 +24,22 @@
     "build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src\" \"pnpm run -s _build:webviews --mode development\"",
     "watch:build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
     "watch:build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
-    "_build:esbuild:desktop": "pnpm download-wasm && esbuild ./src/extension.node.ts --bundle --outfile=dist/extension.node.js --external:vscode --external:typescript --format=cjs --platform=node --sourcemap",
+    "_build:esbuild:desktop": "pnpm download-wasm && pnpm run -s _build:esbuild:node && pnpm run -s _build:esbuild:uninstall",
+    "_build:esbuild:node": "esbuild ./src/extension.node.ts --bundle --outfile=dist/extension.node.js --external:vscode --external:typescript --format=cjs --platform=node --sourcemap",
     "_build:esbuild:web": "esbuild ./src/extension.web.ts --platform=browser --bundle --outfile=dist/extension.web.js --alias:path=path-browserify --external:typescript --alias:node:path=path-browserify --alias:node:os=os-browserify --external:vscode --external:node:fs/promises --define:process='{\"env\":{}}' --define:window=self --format=cjs --sourcemap",
+    "_build:esbuild:uninstall": "esbuild ./src/uninstall/post-uninstall.ts --bundle --outfile=dist/post-uninstall.js --external:typescript --format=cjs --platform=node --sourcemap",
     "_build:webviews": "vite -c webviews/vite.config.ts build",
     "release": "ts-node-transpile-only ./scripts/release.ts",
     "download-wasm": "ts-node-transpile-only ./scripts/download-wasm-modules.ts",
     "release:dry-run": "pnpm run download-wasm && CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
     "storybook": "storybook dev -p 6007 --no-open --no-version-updates",
-    "test:e2e": "if [ -z \"${NOBUILD}\" ]; then tsc --build && node dist/tsc/test/e2e/install-deps.js && pnpm run -s build:dev:desktop; fi && playwright test",
+    "test:e2e": "tsc --build && node dist/tsc/test/e2e/install-deps.js && pnpm run -s build:dev:desktop && pnpm run -s test:e2e:run",
+    "test:e2e:run": "playwright test",
     "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
     "test:unit": "vitest",
+    "bench": "vitest bench",
     "vscode:prepublish": "pnpm -s run build",
+    "vscode:uninstall": "node ./dist/post-uninstall.js",
     "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts",
     "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts"
   },
@@ -255,7 +260,7 @@
       },
       {
         "view": "cody.commands.disabled.view",
-        "contents": "Commands are disabled for this file by an admin setting. Other Cody features are also disabled.\nMore info about [Cody Ignore](https://sourcegraph.com/docs/cody/capabilities/ignore-context#cody-ignore)",
+        "contents": "Commands are disabled for this file by an admin setting. Other Cody features are also disabled.\nMore info about [Cody Context Filters](https://sourcegraph.com/docs/cody/capabilities/ignore-context#cody-ignore)",
         "when": "cody.activated && cody.currentFileIgnored"
       }
     ],
@@ -328,12 +333,6 @@
         "title": "Custom Commands Settings",
         "icon": "$(gear)",
         "enablement": "cody.activated"
-      },
-      {
-        "command": "cody.command.usageExamples",
-        "category": "Cody Command",
-        "title": "Usage Examples",
-        "enablement": "cody.activated && config.cody.experimental.noodle && (editorLangId === typescript || editorLangId === typescriptreact)"
       },
       {
         "command": "cody.command.explain-history",
@@ -449,6 +448,21 @@
         "icon": "$(new-comment-icon)"
       },
       {
+        "command": "cody.minion.panel.new",
+        "category": "Cody",
+        "title": "New Minion Panel",
+        "when": "cody.activated",
+        "group": "Cody",
+        "icon": "$(new-comment-icon)"
+      },
+      {
+        "command": "cody.minion.new-terminal",
+        "category": "Cody",
+        "title": "Minion new terminal - temporary test command",
+        "when": "cody.activated",
+        "group": "Cody"
+      },
+      {
         "command": "workbench.action.moveEditorToNewWindow",
         "category": "Cody",
         "title": "Pop out",
@@ -462,14 +476,6 @@
         "title": "Open Cody Sidebar",
         "group": "Cody",
         "icon": "$(layout-sidebar-left)"
-      },
-      {
-        "command": "cody.chat.history.edit",
-        "category": "Cody",
-        "title": "Rename Chat",
-        "group": "Cody",
-        "icon": "$(edit)",
-        "enablement": "cody.activated && cody.hasChatHistory"
       },
       {
         "command": "cody.chat.history.clear",
@@ -520,28 +526,12 @@
         "enablement": "cody.activated && editorHasSelection && cody.hasChatPanelsOpened"
       },
       {
-        "command": "cody.mention.selection.new",
-        "category": "Cody",
-        "group": "Chat",
-        "title": "New Chat with Selection",
-        "icon": "$(mention)",
-        "enablement": "cody.activated && editorHasSelection && !cody.hasNewChatOpened"
-      },
-      {
         "command": "cody.mention.file",
         "category": "Cody",
         "group": "Chat",
         "title": "Add File to Cody Chat",
         "icon": "$(mention)",
         "enablement": "cody.activated && resourceScheme == file && cody.hasChatPanelsOpened"
-      },
-      {
-        "command": "cody.mention.file.new",
-        "category": "Cody",
-        "group": "Chat",
-        "title": "New Chat with File",
-        "icon": "$(mention)",
-        "enablement": "cody.activated && resourceScheme == file && !cody.hasNewChatOpened"
       },
       {
         "command": "cody.chat.panel.reset",
@@ -625,11 +615,6 @@
       },
       {
         "command": "cody.mention.selection",
-        "key": "alt+l",
-        "when": "cody.activated && !editorReadonly && editorTextFocus && editorHasSelection"
-      },
-      {
-        "command": "cody.mention.selection.new",
         "key": "alt+l",
         "when": "cody.activated && !editorReadonly && editorTextFocus && editorHasSelection"
       },
@@ -740,10 +725,6 @@
           "when": "cody.activated && editorIsOpen"
         },
         {
-          "command": "cody.command.usageExamples",
-          "when": "cody.activated && editorIsOpen && config.cody.experimental.noodle && (editorLangId === typescript || editorLangId === typescriptreact)"
-        },
-        {
           "command": "cody.command.explain-history",
           "when": "cody.activated && editorIsOpen && config.cody.experimental.noodle"
         },
@@ -798,29 +779,14 @@
           "when": "cody.activated && !editorReadonly && editorHasSelection && cody.hasChatPanelsOpened"
         },
         {
-          "command": "cody.mention.selection.new",
-          "group": "0_cody",
-          "when": "cody.activated && !editorReadonly && editorHasSelection && !cody.hasNewChatOpened"
-        },
-        {
           "command": "cody.mention.file",
           "group": "0_cody",
           "when": "cody.activated && !editorReadonly && !editorHasSelection && cody.hasChatPanelsOpened"
         },
         {
-          "command": "cody.mention.file.new",
-          "group": "0_cody",
-          "when": "cody.activated && !editorReadonly && !editorHasSelection && !cody.hasNewChatOpened"
-        },
-        {
           "command": "cody.chat.panel.new",
           "when": "cody.activated",
           "group": "ask"
-        },
-        {
-          "command": "cody.command.usageExamples",
-          "when": "cody.activated && editorTextFocus && config.cody.experimental.noodle && (editorLangId === typescript || editorLangId === typescriptreact)",
-          "group": "command"
         },
         {
           "command": "cody.command.explain-code",
@@ -946,11 +912,6 @@
       ],
       "view/item/context": [
         {
-          "command": "cody.chat.history.edit",
-          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
-          "group": "inline@1"
-        },
-        {
           "command": "cody.chat.history.delete",
           "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
           "group": "inline@2"
@@ -978,11 +939,6 @@
           "command": "cody.mention.file",
           "group": "0_cody",
           "when": "cody.activated && resourceScheme == file && cody.hasChatPanelsOpened"
-        },
-        {
-          "command": "cody.mention.file.new",
-          "group": "0_cody",
-          "when": "cody.activated && resourceScheme == file && !cody.hasNewChatOpened"
         }
       ],
       "scm/title": [
@@ -1134,6 +1090,11 @@
           "type": "boolean",
           "markdownDescription": "Enable commit message generation",
           "default": false
+        },
+        "cody.experimental.minion.anthropicKey": {
+          "order": 99,
+          "type": "string",
+          "default": ""
         },
         "cody.debug.verbose": {
           "order": 99,
@@ -1301,9 +1262,7 @@
         "openctx.providers": {
           "type": "object",
           "markdownDescription": "OpenCtx providers configuration.",
-          "default": {
-            "https://openctx.org/npm/@openctx/provider-web": true
-          }
+          "default": {}
         },
         "cody.internal.unstable": {
           "order": 999,
@@ -1387,13 +1346,13 @@
     }
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.4.2",
+    "@anthropic-ai/sdk": "^0.20.8",
     "@floating-ui/react": "^0.26.9",
-    "@lexical/code": "^0.13.1",
-    "@lexical/html": "^0.13.1",
-    "@lexical/react": "^0.13.1",
+    "@lexical/code": "^0.15.0",
+    "@lexical/react": "^0.15.0",
+    "@lexical/text": "^0.15.0",
     "@mdi/js": "^7.2.96",
-    "@openctx/vscode-lib": "^0.0.5",
+    "@openctx/vscode-lib": "^0.0.8",
     "@opentelemetry/api": "^1.7.0",
     "@opentelemetry/core": "^1.18.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",
@@ -1433,15 +1392,22 @@
     "ini": "^4.1.2",
     "isomorphic-fetch": "^3.0.0",
     "js-levenshtein": "^1.1.6",
-    "lexical": "^0.13.1",
+    "lexical": "^0.15.0",
     "lodash": "^4.17.21",
+    "lowlight": "^3.1.0",
     "lru-cache": "^10.0.0",
+    "lucide": "^0.381.0",
     "lucide-react": "^0.378.0",
     "mac-ca": "^2.0.3",
+    "marked": "^4.0.16",
     "mkdirp": "^3.0.1",
     "os-browserify": "^0.3.0",
     "parse-git-diff": "^0.0.14",
     "proxy-agent": "^6.4.0",
+    "react-markdown": "^9.0.1",
+    "rehype-highlight": "^7.0.0",
+    "rehype-sanitize": "^6.0.0",
+    "remark-gfm": "^4.0.0",
     "semver": "^7.5.4",
     "socks-proxy-agent": "^8.0.1",
     "tailwind-merge": "^2.3.0",
@@ -1461,7 +1427,6 @@
     "@pollyjs/persister": "^6.0.6",
     "@pollyjs/persister-fs": "^6.0.6",
     "@storybook/preview-api": "^8.0.5",
-    "@types/axios": "^0.14.0",
     "@types/crypto-js": "^4.2.2",
     "@types/dedent": "^0.7.0",
     "@types/diff": "^5.0.9",
@@ -1472,6 +1437,7 @@
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/js-levenshtein": "^1.1.1",
     "@types/lodash": "^4.14.195",
+    "@types/marked": "^5.0.0",
     "@types/mocha": "^10.0.6",
     "@types/pako": "^2.0.3",
     "@types/progress": "^2.0.5",
@@ -1479,7 +1445,6 @@
     "@types/unzipper": "^0.10.7",
     "@types/uuid": "^9.0.2",
     "@types/vscode": "^1.79.0",
-    "@types/yaml": "^1.9.7",
     "@vscode/test-electron": "^2.3.8",
     "@vscode/test-web": "^0.0.47",
     "@vscode/vsce": "^2.22.0",
@@ -1497,6 +1462,10 @@
     "postcss": "^8.4.38",
     "progress": "^2.0.3",
     "react-head": "^3.4.2",
+    "typescript-language-server": "^4.3.3",
+    "vite-plugin-svgr": "^4.2.0",
+    "vscode-jsonrpc": "^8.2.0",
+    "vscode-languageserver-protocol": "^3.17.5",
     "yaml": "^2.3.4"
   }
 }

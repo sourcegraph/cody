@@ -2,11 +2,6 @@
     overflow: hidden;
 }
 
-.summary {
-    cursor: pointer;
-    user-select: none;
-}
-
 /* Custom open/close icons for <details> */
 .details > .summary::marker {
     font-family: "codicon";
@@ -31,6 +26,9 @@
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
+
+    cursor: pointer;
+    user-select: none;
 }
 .stats {
     font-weight: normal;
@@ -50,6 +48,27 @@
     max-width: 100%;
 }
 
-.file-link {
+.context-item {
     padding: 2px 4px 2px 2px;
+}
+
+.context-item-link {
+    background: none;
+    border: none;
+    color: var(--vscode-textLink-foreground);
+    font-size: inherit;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+    font-weight: normal;
+    display: flex;
+    align-items: center;
+    gap: 0.125rem;
+    overflow: hidden;
+}
+
+/* In light high contrast, --vscode-textLink-foreground provides little
+   contrast; instead inherit the --code-foreground color from the container. */
+body[data-vscode-theme-kind='vscode-high-contrast-light'] .context-item-link {
+    color: inherit;
 }

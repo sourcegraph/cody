@@ -17,6 +17,7 @@ class CompletionProviderConfig {
         FeatureFlag.CodyAutocompleteTracing,
         FeatureFlag.CodyAutocompleteSmartThrottle,
         FeatureFlag.CodyAutocompleteReducedDebounce,
+        FeatureFlag.CodyAutocompleteContextExtendLanguagePool,
     ] as const
 
     private get config() {
@@ -59,6 +60,8 @@ class CompletionProviderConfig {
 
     public get contextStrategy(): ContextStrategy {
         switch (this.config.autocompleteExperimentalGraphContext as string) {
+            case 'lsp-light':
+                return 'lsp-light'
             case 'tsc-mixed':
                 return 'tsc-mixed'
             case 'tsc':
@@ -67,8 +70,6 @@ class CompletionProviderConfig {
                 return 'bfg'
             case 'bfg-mixed':
                 return 'bfg-mixed'
-            case 'local-mixed':
-                return 'local-mixed'
             case 'jaccard-similarity':
                 return 'jaccard-similarity'
             case 'new-jaccard-similarity':

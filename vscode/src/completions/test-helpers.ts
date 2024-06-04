@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import dedent from 'dedent'
 import type { Position as VSCodePosition, TextDocument as VSCodeTextDocument } from 'vscode'
 import { TextDocument } from 'vscode-languageserver-textdocument'
@@ -5,6 +6,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument'
 import { type CompletionResponse, testFileUri } from '@sourcegraph/cody-shared'
 
 import { wrapVSCodeTextDocument } from '../testutils/textDocument'
+import { Uri } from '../testutils/uri'
 
 export * from '../tree-sitter/test-helpers'
 
@@ -41,6 +43,17 @@ export function document(
     return wrapVSCodeTextDocument(TextDocument.create(uriString, languageId, 0, text))
 }
 
+export function documentFromFilePath(filePath: string, languageId = 'typescript'): VSCodeTextDocument {
+    return wrapVSCodeTextDocument(
+        TextDocument.create(
+            Uri.file(filePath).toString(),
+            languageId,
+            0,
+            fs.readFileSync(filePath, 'utf8')
+        )
+    )
+}
+
 export function documentAndPosition(
     textWithCursor: string,
     languageId?: string,
@@ -55,8 +68,4 @@ export function documentAndPosition(
     const doc = document(prefix + suffix, languageId, uriString)
     const position = doc.positionAt(cursorIndex)
     return { document: doc, position }
-}
-
-export function nextTick(): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, 0))
 }

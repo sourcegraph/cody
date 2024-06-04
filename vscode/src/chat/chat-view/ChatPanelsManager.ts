@@ -274,30 +274,6 @@ export class ChatPanelsManager implements vscode.Disposable {
         await this.treeViewProvider.updateTree(this.options.authProvider.getAuthStatus())
     }
 
-    public async editChatHistory(chatID: string, label: string): Promise<void> {
-        await vscode.window
-            .showInputBox({
-                prompt: 'Enter new chat name',
-                value: label,
-            })
-            .then(async title => {
-                const authProvider = this.options.authProvider
-                const authStatus = authProvider.getAuthStatus()
-
-                const history = chatHistory.getChat(authStatus, chatID)
-                if (title && history) {
-                    history.chatTitle = title
-                    await chatHistory.saveChat(authStatus, history)
-                    await this.updateTreeViewHistory()
-                    const chatIDUTC = new Date(chatID).toUTCString()
-                    const provider =
-                        this.panelProviders.find(p => p.sessionID === chatID) ||
-                        this.panelProviders.find(p => p.sessionID === chatIDUTC)
-                    provider?.setChatTitle(title)
-                }
-            })
-    }
-
     public async clearHistory(chatID?: string): Promise<void> {
         const authProvider = this.options.authProvider
         const authStatus = authProvider.getAuthStatus()

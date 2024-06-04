@@ -19,7 +19,7 @@
     --padding-x: 3px;
     padding: var(--padding-y) var(--padding-x);
 
-    --icon-size: 13px;
+    --icon-size: 16px;
 
     --gap: 2px;
     gap: var(--gap);
@@ -30,6 +30,7 @@
         flex-shrink: 0;
         width: var(--icon-size);
         height: var(--icon-size);
+        stroke-width: 1.5px;
     }
 }
 
@@ -38,14 +39,8 @@
 }
 
 .button--primary {
-    color: color-mix(in lch, var(--vscode-button-secondaryForeground) 50%, var(--vscode-button-foreground));
-    background-color: var(--tint-color);
-    &:disabled {
-        --tint-color: color-mix(in srgb, var(--vscode-button-secondaryBackground) 70%, var(--vscode-button-secondaryForeground));
-    }
-    &:enabled {
-        --tint-color: var(--vscode-button-background);
-    }
+    color: var(--vscode-button-foreground);
+    background-color: var(--vscode-button-background);
 
     &.button--no-icon-start {
         padding-left: calc(2*var(--padding-x));
@@ -56,17 +51,19 @@
     }
 }
 
-.button-secondary {
-    color: color-mix(in lch, var(--vscode-button-secondaryForeground) 60%, transparent);
-    background: transparent;
+.button--secondary {
+    opacity: 0.6;
+    color: var(--vscode-input-foreground);
+    background-color: unset;
+
+    &:enabled:is(:hover, :focus-within) {
+        opacity: 1;
+    }
 }
 
-/* Hover state */
-.button:enabled:is(:hover, :focus-within) {
-    background-color: unset;
-    color: var(--vscode-button-foreground);
-    fill: var(--vscode-button-foreground);
-    &.button--primary {
-        background-color: var(--vscode-button-background);
+.button:disabled {
+    opacity: 0.5;
+    &.button--secondary {
+        opacity: 0.7;
     }
 }

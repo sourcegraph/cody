@@ -3,9 +3,6 @@ import type { Configuration } from '../configuration'
 import { openCtx } from '../context/openctx/api'
 import { logDebug } from '../logger'
 import type { PromptString } from '../prompt/prompt-string'
-import { GITHUB_CONTEXT_MENTION_PROVIDER } from './providers/githubMentions'
-import { PACKAGE_CONTEXT_MENTION_PROVIDER } from './providers/packageMentions'
-import { SOURCEGRAPH_SEARCH_CONTEXT_MENTION_PROVIDER } from './providers/sourcegraphSearch'
 import { URL_CONTEXT_MENTION_PROVIDER } from './providers/urlMentions'
 
 /**
@@ -19,12 +16,7 @@ export type ContextMentionProviderID = string
  * This API is *experimental* and subject to rapid, unannounced change.
  *
  */
-export const CONTEXT_MENTION_PROVIDERS: ContextMentionProvider[] = [
-    URL_CONTEXT_MENTION_PROVIDER,
-    PACKAGE_CONTEXT_MENTION_PROVIDER,
-    SOURCEGRAPH_SEARCH_CONTEXT_MENTION_PROVIDER,
-    GITHUB_CONTEXT_MENTION_PROVIDER,
-]
+export const CONTEXT_MENTION_PROVIDERS: ContextMentionProvider[] = [URL_CONTEXT_MENTION_PROVIDER]
 
 /**
  * A provider that can supply context for users to @-mention in chat.
@@ -132,13 +124,14 @@ export async function openCtxMentionProviders(): Promise<ContextMentionProviderM
         const providers = await client.meta({})
 
         return providers
-            .filter(provider => provider.features?.mentions)
+            .filter(provider => !!provider.mentions)
             .map(provider => ({
                 id: provider.providerUri,
-                title: provider.name + ' (by OpenCtx)',
-                queryLabel: `Search using ${provider.name} provider`,
+                title: provider.name,
+                queryLabel: provider.name,
                 emptyLabel: 'No results found',
             }))
+            .sort((a, b) => (a.title > b.title ? 1 : -1))
     } catch (error) {
         logDebug('openctx', `Failed to fetch OpenCtx providers: ${error}`)
         return []

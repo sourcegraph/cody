@@ -10,14 +10,13 @@ import { ModelUsage } from './types'
 import { ModelUIGroup } from './utils'
 
 // The models must first be added to the custom chat models list in https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
-const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
+export const DEFAULT_DOT_COM_MODELS = [
     // The order listed here is the order shown to users. Put the default LLM first.
     {
         title: 'Claude 3 Sonnet',
         model: 'anthropic/claude-3-sonnet-20240229',
         provider: 'Anthropic',
         default: true,
-        initialDefault: true,
         codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         // Has a higher context window with a separate limit for user-context.
@@ -148,7 +147,7 @@ const DEFAULT_DOT_COM_MODELS: ModelProvider[] = [
         contextWindow: { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET },
         deprecated: true,
     },
-]
+] as const satisfies ModelProvider[]
 
 /**
  * Returns an array of ModelProviders representing the default models for DotCom.

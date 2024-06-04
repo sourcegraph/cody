@@ -9,7 +9,7 @@ import * as vscode from 'vscode'
 
 import { Mutex } from 'async-mutex'
 import { logDebug } from '../log'
-import { getOSArch } from '../os'
+import { Platform, getOSArch } from '../os'
 import { captureException } from '../services/sentry/sentry'
 
 const symfVersion = 'v0.0.10'
@@ -52,7 +52,11 @@ export async function _getSymfPath(
     // Releases (eg at https://github.com/sourcegraph/symf/releases) are named with the Zig platform
     // identifier (linux-musl, windows-gnu, macos).
     const zigPlatform =
-        platform === 'linux' ? 'linux-musl' : platform === 'windows' ? 'windows-gnu' : platform
+        platform === Platform.Linux
+            ? 'linux-musl'
+            : platform === Platform.Windows
+              ? 'windows-gnu'
+              : platform
 
     const symfFilename = `symf-${symfVersion}-${arch}-${platform}`
     const symfUnzippedFilename = `symf-${arch}-${zigPlatform}` // the filename inside the zip

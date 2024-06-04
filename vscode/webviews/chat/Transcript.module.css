@@ -1,15 +1,5 @@
-.container {
-    overflow-x: hidden;
-}
-
-.welcome-message-cell-content p:first-child {
-    margin-top: 0;
-}
-.welcome-message-cell-content p:last-child {
-    margin-bottom: 0;
-}
-.welcome-message-cell-content {
-    p {
-        margin-block: 1rem;
-    }
+.last-human-message {
+    /* Make it so that after a user submits a followup message, the response is
+       visible when the viewport is scrolled all the way down. */
+    padding-bottom: max(3rem, calc(2*var(--cell-spacing-y))) !important;
 }

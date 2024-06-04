@@ -27,6 +27,7 @@ import {
     scanForMentionTriggerInUserTextInput,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
+import type { UserAccountInfo } from '../../../Chat'
 import { useCurrentChatModel } from '../../../chat/models/chatModelContext'
 import { MentionMenu } from '../../../mentions/mentionMenu/MentionMenu'
 import {
@@ -64,7 +65,24 @@ const FLOATING_OPTIONS: UseFloatingOptions = {
     transform: false,
 }
 
-export default function MentionsPlugin(): JSX.Element | null {
+/**
+ * We allow whitespace for @-mentions in the Lexical editor because
+ * it has an explicit switch between modes and can render @-mentions
+ * as special nodes that can be detected in later edits.
+ *
+ * The Edit quick-pick menu uses a raw text input and lacks this functionality,
+ * so we rely on spaces to detect @-mentions and switch between @-item selection
+ * and regular text input.
+ */
+function scanForMentionTriggerInLexicalInput(text: string) {
+    return scanForMentionTriggerInUserTextInput({ textBeforeCursor: text, includeWhitespace: true })
+}
+
+export type setEditorQuery = (getNewQuery: (currentText: string) => string) => void
+
+export default function MentionsPlugin({
+    userInfo,
+}: { userInfo?: UserAccountInfo }): JSX.Element | null {
     const [editor] = useLexicalComposerContext()
 
     /**
@@ -89,14 +107,16 @@ export default function MentionsPlugin(): JSX.Element | null {
     })
 
     const setEditorQuery = useCallback(
-        (query: string): void => {
+        (getNewQuery: (currentText: string) => string): void => {
             if (editor) {
                 editor.update(() => {
                     const selection = $getSelection()
+
                     if (selection) {
                         const lastNode = selection.getNodes().at(-1)
                         if (lastNode) {
-                            const textNode = $createTextNode(`@${query}`)
+                            const currentText = lastNode.getTextContent()
+                            const textNode = $createTextNode(getNewQuery(currentText))
                             lastNode.replace(textNode)
                             textNode.selectEnd()
                         }
@@ -105,7 +125,7 @@ export default function MentionsPlugin(): JSX.Element | null {
             }
         },
         [editor]
-    )
+    ) satisfies setEditorQuery
 
     useEffect(() => {
         // Listen for changes to ContextItemMentionNode to update the token count.
@@ -204,7 +224,7 @@ export default function MentionsPlugin(): JSX.Element | null {
             onQueryChange={updateQuery}
             onSelectOption={onSelectOption}
             onClose={onClose}
-            triggerFn={scanForMentionTriggerInUserTextInput}
+            triggerFn={scanForMentionTriggerInLexicalInput}
             options={DUMMY_OPTIONS}
             anchorClassName={styles.resetAnchor}
             commandPriority={
@@ -224,7 +244,8 @@ export default function MentionsPlugin(): JSX.Element | null {
                     },
                 })
             }}
-            menuRenderFn={(anchorElementRef, { selectOptionAndCleanUp }) => {
+            menuRenderFn={(anchorElementRef, itemProps) => {
+                const { selectOptionAndCleanUp } = itemProps
                 anchorElementRef2.current = anchorElementRef.current ?? undefined
                 return (
                     anchorElementRef.current && (
@@ -241,6 +262,7 @@ export default function MentionsPlugin(): JSX.Element | null {
                                 className={clsx(styles.popover)}
                             >
                                 <MentionMenu
+                                    userInfo={userInfo}
                                     params={params}
                                     updateMentionMenuParams={updateMentionMenuParams}
                                     setEditorQuery={setEditorQuery}

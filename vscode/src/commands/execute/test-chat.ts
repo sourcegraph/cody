@@ -1,8 +1,8 @@
 import { type ContextItem, DefaultChatCommands, logDebug, logError, ps } from '@sourcegraph/cody-shared'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
+import type { ChatCommandResult } from '../../CommandResult'
 import { getEditor } from '../../editor/active-editor'
-import type { ChatCommandResult } from '../../main'
 // biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
 import { getContextFileFromCursor } from '../context/selection'
@@ -35,6 +35,11 @@ async function unitTestCommand(
     if (document) {
         try {
             const cursorContext = await getContextFileFromCursor()
+            if (cursorContext.length === 0) {
+                throw new Error(
+                    'Selection content is empty. Please select some code to generate tests for.'
+                )
+            }
             contextFiles.push(...cursorContext)
 
             contextFiles.push(...(await getContextFilesForTestCommand(document.uri)))

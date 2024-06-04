@@ -1,17 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import './App.css'
+import styles from './App.module.css'
 
 import {
     type AuthStatus,
     type ChatMessage,
-    type ContextItem,
-    type EnhancedContextContextT,
+    type ClientStateForWebview,
     GuardrailsPost,
     type ModelProvider,
     PromptString,
     type SerializedChatTranscript,
-    isMacOS,
 } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from './Chat'
 
@@ -24,14 +22,15 @@ import { Notices } from './Notices'
 import { LoginSimplified } from './OnboardingExperiment'
 import { ConnectionIssuesPage } from './Troubleshooting'
 import { type ChatModelContext, ChatModelContextProvider } from './chat/models/chatModelContext'
-import {
-    EnhancedContextContext,
-    EnhancedContextEventHandlers,
-} from './components/EnhancedContextSettings'
+import { ClientStateContextProvider, useClientActionDispatcher } from './client/clientState'
 import { WithContextProviders } from './mentions/providers'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
-import { createWebviewTelemetryRecorder, createWebviewTelemetryService } from './utils/telemetry'
+import {
+    TelemetryRecorderContext,
+    createWebviewTelemetryRecorder,
+    createWebviewTelemetryService,
+} from './utils/telemetry'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<(LocalEnv & ConfigurationSubsetForWebview) | null>(null)
@@ -54,27 +53,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [chatEnabled, setChatEnabled] = useState<boolean>(true)
     const [attributionEnabled, setAttributionEnabled] = useState<boolean>(false)
 
-    const [enhancedContextStatus, setEnhancedContextStatus] = useState<EnhancedContextContextT>({
-        groups: [],
-    })
-
-    const [userContextFromSelection, setUserContextFromSelection] = useState<ContextItem[]>([])
-
-    const onChooseRemoteSearchRepo = useCallback((): void => {
-        vscodeAPI.postMessage({ command: 'context/choose-remote-search-repo' })
-    }, [vscodeAPI])
-    const onRemoveRemoteSearchRepo = useCallback(
-        (id: string): void => {
-            vscodeAPI.postMessage({ command: 'context/remove-remote-search-repo', repoId: id })
-        },
-        [vscodeAPI]
-    )
-    const onConsentToEmbeddings = useCallback((): void => {
-        vscodeAPI.postMessage({ command: 'embeddings/index' })
-    }, [vscodeAPI])
-    const onShouldBuildSymfIndex = useCallback((): void => {
-        vscodeAPI.postMessage({ command: 'symf/index' })
-    }, [vscodeAPI])
+    const [clientState, setClientState] = useState<ClientStateForWebview>({ initialContext: [] })
+    const dispatchClientAction = useClientActionDispatcher()
 
     const guardrails = useMemo(() => {
         return new GuardrailsPost((snippet: string) => {
@@ -131,11 +111,11 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'history':
                         setUserHistory(Object.values(message.localHistory?.chat ?? {}))
                         break
-                    case 'chat-input-context':
-                        setUserContextFromSelection(message.items)
+                    case 'clientAction':
+                        dispatchClientAction(message)
                         break
-                    case 'enhanced-context':
-                        setEnhancedContextStatus(message.enhancedContextStatus)
+                    case 'clientState':
+                        setClientState(message.value)
                         break
                     case 'errors':
                         setErrorMessages([...errorMessages, message.errors].slice(-5))
@@ -167,7 +147,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                 }
             }),
-        [errorMessages, view, vscodeAPI, guardrails]
+        [errorMessages, view, vscodeAPI, guardrails, dispatchClientAction]
     )
 
     useEffect(() => {
@@ -231,47 +211,41 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     if (authStatus.showNetworkError) {
         return (
-            <div className="outer-container">
-                <ConnectionIssuesPage
-                    configuredEndpoint={authStatus.endpoint}
-                    telemetryService={telemetryService}
-                    telemetryRecorder={telemetryRecorder}
-                    vscodeAPI={vscodeAPI}
-                />
+            <div className={styles.outerContainer}>
+                <TelemetryRecorderContext.Provider value={telemetryRecorder}>
+                    <ConnectionIssuesPage
+                        configuredEndpoint={authStatus.endpoint}
+                        vscodeAPI={vscodeAPI}
+                    />
+                </TelemetryRecorderContext.Provider>
             </div>
         )
     }
 
     if (view === 'login' || !authStatus.isLoggedIn || !userAccountInfo) {
         return (
-            <div className="outer-container">
-                <LoginSimplified
-                    simplifiedLoginRedirect={loginRedirect}
-                    telemetryService={telemetryService}
-                    telemetryRecorder={telemetryRecorder}
-                    uiKindIsWeb={config?.uiKindIsWeb}
-                    vscodeAPI={vscodeAPI}
-                />
+            <div className={styles.outerContainer}>
+                <TelemetryRecorderContext.Provider value={telemetryRecorder}>
+                    <LoginSimplified
+                        simplifiedLoginRedirect={loginRedirect}
+                        telemetryService={telemetryService}
+                        uiKindIsWeb={config?.uiKindIsWeb}
+                        vscodeAPI={vscodeAPI}
+                    />
+                </TelemetryRecorderContext.Provider>
             </div>
         )
     }
 
     return (
-        <div className="outer-container">
+        <div className={styles.outerContainer}>
             {userHistory && <Notices probablyNewInstall={isNewInstall} vscodeAPI={vscodeAPI} />}
             {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
             {view === 'chat' && userHistory && (
-                <EnhancedContextEventHandlers.Provider
-                    value={{
-                        onChooseRemoteSearchRepo,
-                        onConsentToEmbeddings,
-                        onRemoveRemoteSearchRepo,
-                        onShouldBuildSymfIndex,
-                    }}
-                >
-                    <EnhancedContextContext.Provider value={enhancedContextStatus}>
-                        <ChatModelContextProvider value={chatModelContext}>
-                            <WithContextProviders>
+                <ChatModelContextProvider value={chatModelContext}>
+                    <WithContextProviders>
+                        <TelemetryRecorderContext.Provider value={telemetryRecorder}>
+                            <ClientStateContextProvider value={clientState}>
                                 <Chat
                                     chatEnabled={chatEnabled}
                                     userInfo={userAccountInfo}
@@ -279,16 +253,13 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                     transcript={transcript}
                                     vscodeAPI={vscodeAPI}
                                     telemetryService={telemetryService}
-                                    telemetryRecorder={telemetryRecorder}
                                     isTranscriptError={isTranscriptError}
-                                    welcomeMessage={welcomeMessageMarkdown}
                                     guardrails={attributionEnabled ? guardrails : undefined}
-                                    userContextFromSelection={userContextFromSelection}
                                 />
-                            </WithContextProviders>
-                        </ChatModelContextProvider>
-                    </EnhancedContextContext.Provider>
-                </EnhancedContextEventHandlers.Provider>
+                            </ClientStateContextProvider>
+                        </TelemetryRecorderContext.Provider>
+                    </WithContextProviders>
+                </ChatModelContextProvider>
             )}
         </div>
     )
@@ -296,14 +267,14 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
 const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (errors: string[]) => void }> =
     ({ errors, setErrors }) => (
-        <div className="error-container">
+        <div className={styles.errorContainer}>
             {errors.map((error, i) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: error strings might not be unique, so we have no natural id
-                <div key={i} className="error">
+                <div key={i} className={styles.error}>
                     <span>{error}</span>
                     <button
                         type="button"
-                        className="close-btn"
+                        className={styles.closeBtn}
                         onClick={() => setErrors(errors.filter(e => e !== error))}
                     >
                         ×
@@ -312,16 +283,3 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
             ))}
         </div>
     )
-
-const welcomeMessageMarkdown = `Welcome to Cody! Start writing code and Cody will autocomplete lines and entire functions for you.
-
-To run [Cody Commands](command:cody.menu.commands) use the keyboard shortcut <span class="keyboard-shortcut"><span>${
-    isMacOS() ? '⌥' : 'Alt'
-}</span><span>C</span></span>, the <span class="cody-icons">A</span> button, or right-click anywhere in your code.
-
-You can start a new chat at any time with <span class="keyboard-shortcut"><span>${
-    isMacOS() ? '⌥' : 'Alt'
-}</span><span>/</span></span> or using the <span class="cody-icons">H</span> button.
-
-For more tips and tricks, see the [Getting Started Guide](command:cody.welcome) and [docs](https://sourcegraph.com/docs/cody).
-`

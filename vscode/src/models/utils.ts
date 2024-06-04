@@ -21,7 +21,7 @@ export function getEnterpriseContextWindow(
     chatModel: string,
     configOverwrites: CodyLLMSiteConfiguration
 ): ModelContextWindow {
-    const { chatModelMaxTokens, smartContext } = configOverwrites
+    const { chatModelMaxTokens, smartContextWindow } = configOverwrites
     // Starts with the default context window.
     let contextWindow: ModelContextWindow = {
         input: chatModelMaxTokens ?? CHAT_INPUT_TOKEN_BUDGET,
@@ -29,7 +29,7 @@ export function getEnterpriseContextWindow(
     }
 
     // Use extended context window for models that support smart context when enabled.
-    if (smartContext && isModelWithExtendedContextWindowSupport(chatModel)) {
+    if (smartContextWindow && isModelWithExtendedContextWindowSupport(chatModel)) {
         contextWindow = {
             input: EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
             output: CHAT_OUTPUT_TOKEN_BUDGET,

@@ -16,14 +16,16 @@ import {
     assertFileURI,
     isFileURI,
     isWindows,
+    telemetryRecorder,
     uriBasename,
     uriDirname,
 } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
 
+import path from 'node:path'
 import { getSymfPath } from './download-symf'
-import { symfExpandQuery } from './symfExpandQuery'
+import { rewriteKeywordQuery } from './rewrite-keyword-query'
 
 const execFile = promisify(_execFile)
 const oneDayMillis = 1000 * 60 * 60 * 24
@@ -110,7 +112,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     }
 
     public getResults(userQuery: PromptString, scopeDirs: vscode.Uri[]): Promise<Promise<Result[]>[]> {
-        const expandedQuery = symfExpandQuery(this.completionsClient, userQuery)
+        const expandedQuery = rewriteKeywordQuery(this.completionsClient, userQuery)
         return Promise.resolve(
             scopeDirs
                 .filter(isFileURI)
@@ -206,6 +208,14 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
                 await this.ensureIndex(scopeDir, {
                     retryIfLastAttemptFailed: false,
                     ignoreExisting: true,
+                })
+
+                const { indexDir } = this.getIndexDir(scopeDir)
+                const indexSize = await getDirSize(indexDir.path)
+                telemetryRecorder.recordEvent('cody.context.symf', 'indexed', {
+                    metadata: {
+                        indexSize,
+                    },
                 })
             }
         } catch (error) {
@@ -647,4 +657,15 @@ function toSymfError(error: unknown): Error {
         errorMessage = `symf index creation failed: ${error}`
     }
     return new EvalError(errorMessage)
+}
+
+async function getDirSize(dirPath: string): Promise<number> {
+    const files = await fs.readdir(dirPath)
+    let totalSize = 0
+
+    for (const file of files) {
+        const stats = await fs.stat(path.join(dirPath, file))
+        totalSize += stats.size // Symf doesn't create indexes with nested directories, so don't recurse
+    }
+    return totalSize
 }

@@ -4,7 +4,7 @@ import {
     DefaultEditCommands,
     type PromptString,
 } from '@sourcegraph/cody-shared'
-import type { CommandResult } from '../../main'
+import type { CommandResult } from '../../CommandResult'
 import { executeDocCommand } from './doc'
 import { executeEditCommand } from './edit'
 import { executeExplainCommand } from './explain'

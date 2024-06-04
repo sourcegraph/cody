@@ -1,4 +1,4 @@
-.container {
+.buttons-container {
     display: flex;
     align-items: center;
     border-style: solid;
@@ -172,4 +172,10 @@ body[data-vscode-theme-kind='vscode-light'] .content pre > code {
 
 .content > *:last-child {
     margin-bottom: 0;
+}
+
+.content ul, .content ol {
+    margin-block: 1rem;
+    padding-inline-start: 2rem;
+    list-style: revert;
 }

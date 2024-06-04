@@ -2,8 +2,10 @@
 
 export { ModelProvider } from './models'
 export {
-    type ChatModel,
     type EditModel,
+    type EditProvider,
+    type ChatModel,
+    type ChatProvider,
     ModelUsage,
     type ModelContextWindow,
 } from './models/types'
@@ -22,7 +24,6 @@ export {
     type IgnoreFileContent,
     CODY_IGNORE_URI_PATH,
 } from './cody-ignore/ignore-helper'
-export { renderCodyMarkdown } from './chat/markdown'
 export { getSimplePreamble } from './chat/preamble'
 export type {
     SerializedChatInteraction,
@@ -66,11 +67,10 @@ export {
     type ContextItemWithContent,
     type ContextItemSymbol,
     type ContextFileType,
-    type ContextItemPackage,
-    type ContextItemGithubIssue,
-    type ContextItemGithubPullRequest,
     type ContextMessage,
     type SymbolKind,
+    type ContextItemTree,
+    type ContextItemRepository,
 } from './codebase-context/messages'
 export type {
     CodyCommand,
@@ -91,6 +91,7 @@ export {
     toRangeData,
     displayLineRange,
     displayRange,
+    isMultiLineRange,
 } from './common/range'
 export * from './common/abortController'
 export {
@@ -99,7 +100,6 @@ export {
     markdownCodeBlockLanguageIDForFilename,
     extensionForLanguage,
 } from './common/languages'
-export { renderMarkdown, escapeHTML } from './common/markdown'
 export {
     posixFilePaths,
     pathFunctionsForURI,
@@ -155,7 +155,6 @@ export type {
     FilenameContextFetcher,
     IndexedKeywordContextFetcher,
     LocalEmbeddingsFetcher,
-    IRemoteSearch,
     Result,
     SearchPanelFile,
     SearchPanelSnippet,
@@ -230,6 +229,7 @@ export {
     type ContextFilters,
     type CodyContextFilterItem,
     type RepoListResponse,
+    type RepoSearchResponse,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
@@ -257,8 +257,9 @@ export { testFileUri } from './test/path-helpers'
 export * from './tracing'
 export {
     convertGitCloneURLToCodebaseName,
-    isError,
     createSubscriber,
+    isError,
+    nextTick,
 } from './utils'
 export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
 export * from './auth/types'
@@ -293,12 +294,10 @@ export * from './sourcegraph-api/utils'
 export * from './token'
 export * from './token/constants'
 export * from './configuration'
-export * from './mentions/providers/packageMentions'
-export * from './mentions/providers/sourcegraphSearch'
-export { GITHUB_CONTEXT_MENTION_PROVIDER } from './mentions/providers/githubMentions'
-export { URL_CONTEXT_MENTION_PROVIDER } from './mentions/providers/urlMentions'
 export * from './githubClient'
 export {
     setOpenCtxClient,
     openCtx,
 } from './context/openctx/api'
+export { URL_CONTEXT_MENTION_PROVIDER } from './mentions/providers/urlMentions'
+export { type ClientStateForWebview } from './clientState'

@@ -1,6 +1,5 @@
-import type { AuthStatus } from '@sourcegraph/cody-shared'
+import { type AuthStatus, defaultAuthStatus, unauthenticatedStatus } from '@sourcegraph/cody-shared'
 import semver from 'semver'
-import { defaultAuthStatus, unauthenticatedStatus } from './protocol'
 
 /**
  * Checks a user's authentication status.

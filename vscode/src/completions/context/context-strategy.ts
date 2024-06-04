@@ -2,17 +2,17 @@ import * as vscode from 'vscode'
 import type { ContextRetriever } from '../types'
 import type { BfgRetriever } from './retrievers/bfg/bfg-retriever'
 import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
-import { SectionHistoryRetriever } from './retrievers/section-history/section-history-retriever'
+import { LspLightRetriever } from './retrievers/lsp-light/lsp-light-retriever'
 import { loadTscRetriever } from './retrievers/tsc/load-tsc-retriever'
 
 export type ContextStrategy =
+    | 'lsp-light'
     | 'bfg'
     | 'bfg-mixed'
     | 'jaccard-similarity'
     | 'new-jaccard-similarity'
     | 'tsc'
     | 'tsc-mixed'
-    | 'local-mixed'
     | 'none'
 
 export interface ContextStrategyFactory extends vscode.Disposable {
@@ -53,16 +53,14 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                     this.disposables.push(this.graphRetriever)
                 }
                 break
+            case 'lsp-light':
+                this.localRetriever = new JaccardSimilarityRetriever()
+                this.graphRetriever = new LspLightRetriever()
+                this.disposables.push(this.localRetriever, this.graphRetriever)
+                break
             case 'jaccard-similarity':
                 this.localRetriever = new JaccardSimilarityRetriever()
                 this.disposables.push(this.localRetriever)
-                break
-            case 'local-mixed':
-                this.localRetriever = new JaccardSimilarityRetriever()
-                // Filling the graphRetriever field with another local retriever but that's alright
-                // we simply mix them later anyways.
-                this.graphRetriever = SectionHistoryRetriever.createInstance()
-                this.disposables.push(this.localRetriever, this.graphRetriever)
         }
     }
 
@@ -74,6 +72,17 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
 
         switch (this.contextStrategy) {
             case 'none': {
+                break
+            }
+
+            // The lsp-light strategy mixes local and graph based retrievers
+            case 'lsp-light': {
+                if (this.graphRetriever?.isSupportedForLanguageId(document.languageId)) {
+                    retrievers.push(this.graphRetriever)
+                }
+                if (this.localRetriever) {
+                    retrievers.push(this.localRetriever)
+                }
                 break
             }
 
@@ -95,16 +104,6 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                 }
                 if (this.localRetriever) {
                     retrievers.push(this.localRetriever)
-                }
-                break
-
-            // The local mixed strategy combines two local retrievers
-            case 'local-mixed':
-                if (this.localRetriever) {
-                    retrievers.push(this.localRetriever)
-                }
-                if (this.graphRetriever) {
-                    retrievers.push(this.graphRetriever)
                 }
                 break
 

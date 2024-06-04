@@ -1,8 +1,10 @@
 import type { Preview } from '@storybook/react'
 import '../webviews/components/shadcn/shadcn.css'
+import '../webviews/utils/highlight.css'
 // biome-ignore lint/correctness/noUnusedImports: needed because UMD import
 import React from 'react'
 import { HeadProvider, Link } from 'react-head'
+import { Theme } from '../webviews/storybook/VSCodeStoryDecorator'
 
 const preview: Preview = {
     parameters: {
@@ -51,13 +53,13 @@ const preview: Preview = {
                     // to support any theme via
                     // https://main.vscode-cdn.net/stable/dc96b837cf6bb4af9cd736aa3af08cf8279f7685/extensions/theme-defaults/themes/dark_vs.json
                     // etc (see devtools network tab in https://vscode.dev/)
-                    { value: 'dark-plus', title: 'Dark+ Theme' },
-                    { value: 'dark-modern', title: 'Dark Modern Theme' },
-                    { value: 'dark-high-contrast', title: 'Dark High Contrast Theme' },
-                    { value: 'light-plus', title: 'Light+ Theme' },
-                    { value: 'light-modern', title: 'Light Modern Theme' },
-                    { value: 'light-high-contrast', title: 'Light High Contrast Theme' },
-                    { value: 'red', title: 'Red Theme' },
+                    { value: Theme.DarkPlus, title: 'Dark+ Theme' },
+                    { value: Theme.DarkModern, title: 'Dark Modern Theme' },
+                    { value: Theme.DarkHighContrast, title: 'Dark High Contrast Theme' },
+                    { value: Theme.LightPlus, title: 'Light+ Theme' },
+                    { value: Theme.LightModern, title: 'Light Modern Theme' },
+                    { value: Theme.LightHighContrast, title: 'Light High Contrast Theme' },
+                    { value: Theme.Red, title: 'Red Theme' },
                 ],
                 dynamicTitle: true,
             },

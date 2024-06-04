@@ -1,0 +1,61 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`LLM-as-judge > fix-acceptable 1`] = `
+"
+The original code had a type mismatch - it declared the function would return a string, but then tried to return the number 42. The fix correctly changed this to read the contents of a file into a string variable and return that, which matches the declared return type of string.
+
+However, the fix introduced a new issue by using the fs module without importing it. The fs module is used to read the file, but it needs to first be imported with require('fs') or import fs from 'fs' (depending on the version of Node.js). Without importing fs first, this code will throw an error.
+
+So in summary, the fix resolved the original type mismatch diagnostic, but introduced a new diagnostic about the undefined fs variable. The general approach of reading from a file is a good fix, but it wasn't fully implemented correctly.
+"
+`;
+
+exports[`LLM-as-judge > fix-amazing 1`] = `
+"
+The original code had a type mismatch - the function was declared to return a number, but was actually returning a string literal '42'. This caused the diagnostic "Type 'string' is not assignable to type 'number'".
+
+The AI coding assistant fixed this by changing the return value from the string '42' to the number 42. This resolved the type mismatch, making the return type match the declared return type of number.
+
+After the fix, there are no remaining diagnostics. The fix fully resolved the original issue without introducing any new problems.
+
+The code change is clean, efficient and appropriate. Converting the string literal to a number literal is the correct way to resolve the type mismatch diagnostic in this case.
+"
+`;
+
+exports[`LLM-as-judge > fix-bad 1`] = `
+"
+The original code had a type mismatch error, where the helper function was returning a string but the fixCommandExample function was expecting a boolean return value. 
+
+The AI coding assistant attempted to fix this by changing the argument passed to helper from 'hello' to null. However, this does not actually resolve the type mismatch. Passing null instead of a string doesn't change the return type of the helper function. The return value would still be a string, not a boolean as expected.
+
+The fix did not introduce any new diagnostics or error messages, but it also did not resolve the original type incompatibility. The code after the change would still result in the same diagnostic about the return type not being assignable to boolean.
+
+To properly fix this, the return type of fixCommandExample should be changed to string to match the helper function, or the helper function itself would need to be modified to return a boolean instead of a string. Simply changing the input argument does not address the return type mismatch.
+"
+`;
+
+exports[`Llm > fix-acceptable 1`] = `
+"
+The original code had a type mismatch issue, where the \`text\` variable was assigned the value \`42\`, which is a number, but the function was declared to return a \`string\`. The AI coding assistant's fix attempted to resolve this by replacing the hardcoded value \`42\` with a call to \`fs.readFileSync()\` to read the contents of a file at the specified \`filepath\`.
+
+This fix does resolve the original diagnostic, as the \`text\` variable is now assigned a string value. However, the fix introduces a new issue - the \`fs\` module is not defined, resulting in a \`Cannot find name 'fs'\` error. This means the fix is not complete, as it does not fully resolve all the issues in the code.
+
+Additionally, the fix could be improved by adding error handling for the file read operation, as the current implementation does not handle the case where the file does not exist or cannot be read.
+"
+`;
+
+exports[`Llm > fix-amazing 1`] = `
+"
+The original code had a diagnostic indicating that the return type of the \`fixCommandExample\` function was a string, but the function was declared to return a number. The AI coding assistant's fix addressed this issue by changing the return value from a string literal \`'42'\` to the number \`42\`. This resolves the original diagnostic, as the function now correctly returns a number as specified in the return type.
+
+The code after the fix has no remaining diagnostics, indicating that the fix was successful in addressing the original issue. The changes made are appropriate and straightforward, with no unnecessary complexity or potential new issues introduced.
+"
+`;
+
+exports[`Llm > fix-bad 1`] = `
+"
+The original code had a diagnostic indicating that the type of the argument passed to the \`helper\` function was a \`string\`, but it was expected to be a \`number\`. The AI coding assistant's fix attempted to resolve this by changing the argument to \`null\`. However, this introduces a new issue, as \`null\` is not a valid argument type for the \`helper\` function either.
+
+The fix did not fully resolve the original diagnostic, and it introduced a new diagnostic. The code changes made were not appropriate or effective in addressing the underlying issue. The fix is not satisfactory.
+"
+`;

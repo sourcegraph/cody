@@ -3,10 +3,12 @@ import { NodeSentryService } from './services/sentry/sentry.node'
 
 import * as vscode from 'vscode'
 
+import { defaultAuthStatus } from '@sourcegraph/cody-shared'
 import { startTokenReceiver } from './auth/token-receiver'
 import { CommandsProvider } from './commands/services/provider'
 import { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever'
 import { SourcegraphNodeCompletionsClient } from './completions/nodeClient'
+import { getFullConfig } from './configuration'
 import type { ExtensionApi } from './extension-api'
 import { type ExtensionClient, defaultVSCodeExtensionClient } from './extension-client'
 import { activate as activateCommon } from './extension.common'
@@ -21,7 +23,11 @@ import {
     createLocalEmbeddingsController,
 } from './local-context/local-embeddings'
 import { SymfRunner } from './local-context/symf'
+import { authProvider } from './services/AuthProvider'
+import { localStorage } from './services/LocalStorageProvider'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
+import { getExtensionDetails } from './services/telemetry'
+import { serializeConfigSnapshot } from './uninstall/serializeConfig'
 
 /**
  * Activation entrypoint for the VS Code extension when running VS Code as a desktop app
@@ -61,5 +67,20 @@ export function activate(
 
         onConfigurationChange: setCustomAgent,
         extensionClient,
+    })
+}
+
+// When Cody is deactivated, we serialize the current configuration to disk,
+// so that it can be sent with Telemetry when the post-uninstall script runs.
+// The vscode API is not available in the post-uninstall script.
+export async function deactivate(): Promise<void> {
+    const config = localStorage.getConfig() ?? (await getFullConfig())
+    const authStatus = authProvider?.getAuthStatus() ?? defaultAuthStatus
+    const { anonymousUserID } = await localStorage.anonymousUserID()
+    serializeConfigSnapshot({
+        config,
+        authStatus,
+        anonymousUserID,
+        extensionDetails: getExtensionDetails(config),
     })
 }

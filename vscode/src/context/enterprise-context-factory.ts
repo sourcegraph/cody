@@ -1,3 +1,4 @@
+import type { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 import { RemoteRepoSearcher } from './remote-repo-searcher'
 import { RemoteSearch } from './remote-search'
@@ -13,7 +14,7 @@ export class EnterpriseContextFactory implements vscode.Disposable {
     private readonly fetcher: RepoFetcher
     private readonly workspaceRepoMapper: WorkspaceRepoMapper
 
-    constructor() {
+    constructor(private completions: SourcegraphCompletionsClient) {
         this.fetcher = new RepoFetcher()
         this.workspaceRepoMapper = new WorkspaceRepoMapper()
         this.repoPicker = new RemoteRepoPicker(this.fetcher, this.workspaceRepoMapper)
@@ -38,7 +39,7 @@ export class EnterpriseContextFactory implements vscode.Disposable {
     // configuration updates; this is fine for the SimpleChatPanelProvider
     // client because chats are restarted if the configuration changes.
     public createRemoteSearch(): RemoteSearch {
-        return new RemoteSearch()
+        return new RemoteSearch(this.completions)
     }
 
     // Gets an object that can map codebase repo names into repository IDs on

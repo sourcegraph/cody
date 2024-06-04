@@ -18,7 +18,7 @@ import { ConsoleBatchSpanExporter } from './console-batch-span-exporter'
 
 export type OpenTelemetryServiceConfig = Pick<
     ConfigurationWithAccessToken,
-    'serverEndpoint' | 'experimentalTracing' | 'debugVerbose'
+    'serverEndpoint' | 'experimentalTracing' | 'debugVerbose' | 'accessToken'
 >
 
 export class OpenTelemetryService {
@@ -73,7 +73,11 @@ export class OpenTelemetryService {
         // Add the default tracer exporter used in production.
         this.tracerProvider.addSpanProcessor(
             new BatchSpanProcessor(
-                new CodyTraceExporter({ traceUrl, isTracingEnabled: this.isTracingEnabled })
+                new CodyTraceExporter({
+                    traceUrl,
+                    isTracingEnabled: this.isTracingEnabled,
+                    accessToken: this.config.accessToken,
+                })
             )
         )
 

@@ -1,22 +1,50 @@
 .button {
-    kbd {
-        font-family: inherit;
-        font-size: 80%;
-        padding: 0.05rem 0.2rem 0.05rem 0;
-        display: inline-flex;
-        align-items: center;
-        line-height: 1;
-        margin-bottom: -1.5px;
-        opacity: 0.8;
-
-         /* Override VS Code's builtin styles. */
-        border: none !important;
-        color: unset !important;
-        background-color: unset !important;
-    }
+    border: 1px solid var(--vscode-button-border, transparent);
+    background-color: var(--vscode-button-background);
+    cursor: pointer;
+    border-radius: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-/* State: Disabled or editor unfocused */
-.button:is(:not(.editorFocused), :disabled) {
-    --tint-color: color-mix(in srgb, var(--vscode-button-secondaryBackground) 60%, var(--vscode-button-secondaryForeground));
+.button svg {
+    transform: translateX(1px);
+}
+
+.button:hover, .button:focus-visible {
+    background-color: var(--vscode-button-hoverBackground);
+}
+
+.button:focus-visible {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: 2px;
+}
+
+.button path {
+    fill: var(--vscode-button-foreground);
+}
+
+.button[disabled] {
+    cursor: default;
+    border-color: transparent;
+    background-color: var(--vscode-disabledForeground);
+    opacity: 0.5;
+}
+
+/* For high contrast dark we make a few aesthetic tweaks, such as changing the button border color instead of an outline */
+body[data-vscode-theme-kind="vscode-high-contrast"] .button:focus-visible {
+    outline: none;
+    border-color: var(--vscode-focusBorder);
+}
+
+body[data-vscode-theme-kind="vscode-high-contrast"], body[data-vscode-theme-kind="vscode-high-contrast-light"] {
+    .button[disabled] {
+        background-color: transparent;
+        border-color: var(--vscode-disabledForeground);
+
+        path {
+            fill: var(--vscode-disabledForeground);
+        }
+    }
 }

@@ -1,9 +1,9 @@
-import { type ContextItem, PromptString, logError, ps } from '@sourcegraph/cody-shared'
+import { type ContextItem, PromptString, logDebug, logError, ps } from '@sourcegraph/cody-shared'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import type { URI } from 'vscode-uri'
 
 import { defaultCommands } from '.'
+import type { EditCommandResult } from '../../CommandResult'
 import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/context-filter'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import {
@@ -11,7 +11,6 @@ import {
     getEditDefaultProvidedRange,
 } from '../../edit/utils/edit-selection'
 import { getEditor } from '../../editor/active-editor'
-import type { EditCommandResult } from '../../main'
 import { execQueryWrapper } from '../../tree-sitter/query-sdk'
 import { getContextFilesForUnitTestCommand } from '../context/unit-test-file'
 import type { CodyCommandArgs } from '../types'
@@ -82,6 +81,7 @@ export async function executeTestEditCommand(
 ): Promise<EditCommandResult | undefined> {
     return wrapInActiveSpan('command.test', async span => {
         span.setAttribute('sampled', true)
+        logDebug('executeTestEditCommand', 'executing', { verbose: args })
 
         // The prompt for generating tests in a new test file
         const newTestFilePrompt = PromptString.fromDefaultCommands(defaultCommands, 'test')
@@ -90,44 +90,52 @@ export async function executeTestEditCommand(
 
         const editor = getEditor()?.active
         const document = editor?.document
-        if (!document) {
+        const uri = document?.uri
+
+        if (!document || !uri || (await isUriIgnoredByContextFilterWithNotification(uri, 'test'))) {
             return
         }
 
-        if (await isUriIgnoredByContextFilterWithNotification(document.uri, 'test')) {
-            return
+        const range = getTestableRange(editor)
+
+        const selectionText = document?.getText(range)
+
+        if (!selectionText?.trim()) {
+            throw new Error('Cannot generate unit test on empty selection.')
         }
 
         // Selection will be added by the edit command
         // Only add context from available test files
-        const contextFiles: ContextItem[] = []
-
-        try {
-            const files = await getContextFilesForUnitTestCommand(document.uri)
-            contextFiles.push(...files)
-        } catch (error) {
+        const contextFiles: ContextItem[] = await getContextFilesForUnitTestCommand(uri).catch(error => {
             logError('executeNewTestCommand', 'failed to fetch context', { verbose: error })
-        }
+            return []
+        })
 
         // Loop through current context to see if the file has an exisiting test file
-        let destinationFile: URI | undefined
-        for (const testFile of contextFiles) {
-            if (!destinationFile?.path && isTestFileForOriginal(document.uri, testFile.uri)) {
-                span.addEvent('hasExistingTestFile')
-                destinationFile = testFile.uri
-            }
+        const destinationFile = contextFiles.find(testFile =>
+            isTestFileForOriginal(uri, testFile.uri)
+        )?.uri
+
+        if (destinationFile) {
+            span.addEvent('hasExistingTestFile')
         }
+
+        // The prompt to use depends on whether the file has an existing test file.
+        const prompt = destinationFile?.path ? newTestSuitePrompt : newTestFilePrompt
 
         return {
             type: 'edit',
             task: await executeEdit({
                 configuration: {
-                    instruction: destinationFile?.path ? newTestSuitePrompt : newTestFilePrompt,
+                    instruction: prompt.replaceAll(
+                        '{languageName}',
+                        PromptString.fromMarkdownCodeBlockLanguageIDForFilename(uri)
+                    ),
                     document,
-                    range: getTestableRange(editor),
+                    range,
                     intent: 'test',
                     mode: 'insert',
-                    // use 3 context files as sharing too many context could result in quality issue
+                    // Limit to 3 context as too many context could result in quality issue.
                     userContextFiles: contextFiles.slice(0, 2),
                     destinationFile,
                 },

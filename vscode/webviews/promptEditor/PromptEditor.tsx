@@ -1,27 +1,34 @@
-import { $generateHtmlFromNodes } from '@lexical/html'
-import { type ChatMessage, type ContextItem, escapeHTML } from '@sourcegraph/cody-shared'
+import { $isRootTextContentEmpty } from '@lexical/text'
+import type { ChatMessage, ContextItem } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import {
     $createTextNode,
     $getRoot,
+    $getSelection,
     $insertNodes,
-    CLEAR_HISTORY_COMMAND,
     type LexicalEditor,
     type SerializedEditorState,
+    type SerializedRootNode,
 } from 'lexical'
 import type { EditorState, SerializedLexicalNode } from 'lexical'
-import { type FunctionComponent, useCallback, useImperativeHandle, useRef } from 'react'
+import { type FunctionComponent, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
+import type { UserAccountInfo } from '../Chat'
+import {
+    isEditorContentOnlyInitialContext,
+    lexicalNodesForContextItems,
+} from '../chat/cells/messageCell/human/editor/initialContext'
 import { BaseEditor, editorStateToText } from './BaseEditor'
 import styles from './PromptEditor.module.css'
 import {
-    $createContextItemMentionNode,
     type SerializedContextItem,
     deserializeContextItem,
     isSerializedContextItemMentionNode,
+    serializeContextItem,
 } from './nodes/ContextItemMentionNode'
 import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
 
 interface Props extends KeyboardEventPluginProps {
+    userInfo?: UserAccountInfo
     editorClassName?: string
     contentEditableClassName?: string
     seamless?: boolean
@@ -38,17 +45,19 @@ interface Props extends KeyboardEventPluginProps {
 }
 
 export interface PromptEditorRefAPI {
-    setEditorState(value: SerializedPromptEditorState | null): void
     getSerializedValue(): SerializedPromptEditorValue
-    setFocus(focus: boolean, moveCursorToEnd?: boolean): void
+    setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }): void
     appendText(text: string, ensureWhitespaceBefore?: boolean): void
-    addContextItemAsToken(items: ContextItem[]): void
+    addMentions(items: ContextItem[]): void
+    setInitialContextMentions(items: ContextItem[]): void
+    isEmpty(): boolean
 }
 
 /**
  * The component for composing and editing prompts.
  */
 export const PromptEditor: FunctionComponent<Props> = ({
+    userInfo,
     editorClassName,
     contentEditableClassName,
     seamless,
@@ -58,50 +67,52 @@ export const PromptEditor: FunctionComponent<Props> = ({
     onFocusChange,
     disabled,
     editorRef: ref,
-
-    // KeyboardEventPluginProps
-    onKeyDown,
     onEnterKey,
-    onEscapeKey,
 }) => {
     const editorRef = useRef<LexicalEditor>(null)
 
+    const hasSetInitialContext = useRef(false)
     useImperativeHandle(
         ref,
         (): PromptEditorRefAPI => ({
-            setEditorState(value: SerializedPromptEditorState | null): void {
-                if (value === null) {
-                    // Clearing seems to require a different code path because focusing fails if
-                    // the editor is empty.
-                    editorRef.current?.update(() => {
-                        $getRoot().clear()
-                    })
-                    return
-                }
-
-                const editor = editorRef.current
-                if (editor) {
-                    editor.setEditorState(editor.parseEditorState(value.lexicalEditorState))
-                    editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined)
-                    editor.focus()
-                }
-            },
             getSerializedValue(): SerializedPromptEditorValue {
                 if (!editorRef.current) {
                     throw new Error('PromptEditor has no Lexical editor ref')
                 }
                 return toSerializedPromptEditorValue(editorRef.current)
             },
-            setFocus(focus, moveCursorToEnd): void {
+            setFocus(focus, { moveCursorToEnd } = {}): void {
                 const editor = editorRef.current
                 if (editor) {
                     if (focus) {
-                        editor.focus(
-                            moveCursorToEnd
-                                ? () => {
-                                      editor.update(() => $getRoot().selectEnd())
-                                  }
-                                : undefined
+                        editor.update(
+                            () => {
+                                const selection = $getSelection()
+                                const root = $getRoot()
+
+                                // Copied from LexicalEditor#focus, but we need to set the
+                                // `skip-scroll-into-view` tag so that we don't always autoscroll.
+                                if (selection !== null) {
+                                    selection.dirty = true
+                                } else if (root.getChildrenSize() !== 0) {
+                                    root.selectEnd()
+                                }
+
+                                if (moveCursorToEnd) {
+                                    root.selectEnd()
+                                }
+
+                                // Ensure element is focused in case the editor is empty. Copied
+                                // from LexicalAutoFocusPlugin.
+                                const doFocus = () =>
+                                    editor.getRootElement()?.focus({ preventScroll: true })
+                                doFocus()
+
+                                // HACK(sqs): Needed in VS Code webviews to actually get it to focus
+                                // on initial load, for some reason.
+                                setTimeout(doFocus)
+                            },
+                            { tag: 'skip-scroll-into-view' }
                         )
                     } else {
                         editor.blur()
@@ -109,7 +120,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 }
             },
             appendText(text: string, ensureWhitespaceBefore?: boolean): void {
-                editorRef?.current?.update(() => {
+                editorRef.current?.update(() => {
                     const root = $getRoot()
                     const needsWhitespaceBefore = !/(^|\s)$/.test(root.getTextContent())
                     root.selectEnd()
@@ -121,12 +132,46 @@ export const PromptEditor: FunctionComponent<Props> = ({
                     root.selectEnd()
                 })
             },
-            addContextItemAsToken(items: ContextItem[]) {
-                editorRef?.current?.update(() => {
-                    const spaceNode = $createTextNode(' ')
-                    const mentionNodes = items.map($createContextItemMentionNode)
-                    $insertNodes([spaceNode, ...mentionNodes, spaceNode])
-                    spaceNode.select()
+            addMentions(items: ContextItem[]) {
+                editorRef.current?.update(() => {
+                    const nodesToInsert = lexicalNodesForContextItems(items, {
+                        isFromInitialContext: false,
+                    })
+                    $insertNodes([$createTextNode(' '), ...nodesToInsert])
+                    nodesToInsert.at(-1)?.select()
+                })
+            },
+            setInitialContextMentions(items: ContextItem[]) {
+                const editor = editorRef.current
+                if (!editor) {
+                    return
+                }
+
+                editor.update(() => {
+                    if (!hasSetInitialContext.current || isEditorContentOnlyInitialContext(editor)) {
+                        $getRoot().clear()
+                        const nodesToInsert = lexicalNodesForContextItems(items, {
+                            isFromInitialContext: true,
+                        })
+                        $insertNodes(nodesToInsert)
+
+                        const nodeToSelect = nodesToInsert.at(-1)
+                        nodeToSelect?.select()
+
+                        hasSetInitialContext.current = true
+                    }
+                })
+            },
+            isEmpty(): boolean {
+                if (!editorRef.current) {
+                    throw new Error('PromptEditor has no Lexical editor ref')
+                }
+                return editorRef.current.getEditorState().read(() => {
+                    const root = $getRoot()
+                    if (root.getChildrenSize() === 0) {
+                        return true
+                    }
+                    return $isRootTextContentEmpty(false, true)
                 })
             },
         }),
@@ -142,8 +187,19 @@ export const PromptEditor: FunctionComponent<Props> = ({
         [onChange]
     )
 
+    useEffect(() => {
+        if (initialEditorState) {
+            const editor = editorRef.current
+            if (editor) {
+                const newEditorState = editor.parseEditorState(initialEditorState.lexicalEditorState)
+                editor.setEditorState(newEditorState)
+            }
+        }
+    }, [initialEditorState])
+
     return (
         <BaseEditor
+            userInfo={userInfo}
             className={clsx(styles.editor, editorClassName, {
                 [styles.disabled]: disabled,
                 [styles.seamless]: seamless,
@@ -156,11 +212,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
             placeholder={placeholder}
             disabled={disabled}
             aria-label="Chat message"
-            //
-            // KeyboardEventPluginProps
-            onKeyDown={onKeyDown}
             onEnterKey={onEnterKey}
-            onEscapeKey={onEscapeKey}
         />
     )
 }
@@ -215,11 +267,6 @@ export interface SerializedPromptEditorState {
      * The [Lexical editor state](https://lexical.dev/docs/concepts/editor-state).
      */
     lexicalEditorState: SerializedEditorState
-
-    /**
-     * The HTML serialization of the editor state.
-     */
-    html: string
 }
 
 function toPromptEditorState(editor: LexicalEditor): SerializedPromptEditorState {
@@ -227,7 +274,6 @@ function toPromptEditorState(editor: LexicalEditor): SerializedPromptEditorState
     return {
         v: STATE_VERSION_CURRENT,
         lexicalEditorState: editorState.toJSON(),
-        html: editorState.read(() => $generateHtmlFromNodes(editor)),
     }
 }
 
@@ -267,7 +313,6 @@ export function serializedPromptEditorStateFromText(text: string): SerializedPro
     return {
         v: STATE_VERSION_CURRENT,
         lexicalEditorState: editorState,
-        html: escapeHTML(text),
     }
 }
 
@@ -312,4 +357,52 @@ export function contextItemsFromPromptEditorValue(
     }
 
     return contextItems
+}
+
+export function filterContextItemsFromPromptEditorValue(
+    value: SerializedPromptEditorValue,
+    keep: (item: SerializedContextItem) => boolean
+): SerializedPromptEditorValue {
+    const editorState: typeof value.editorState.lexicalEditorState = JSON.parse(
+        JSON.stringify(value.editorState.lexicalEditorState)
+    )
+    const queue: SerializedLexicalNode[] = [editorState.root]
+    while (queue.length > 0) {
+        const node = queue.shift()
+        if (node && 'children' in node && Array.isArray(node.children)) {
+            node.children = node.children.filter(child =>
+                isSerializedContextItemMentionNode(child) ? keep(child.contextItem) : true
+            )
+            for (const child of node.children as SerializedLexicalNode[]) {
+                queue.push(child)
+            }
+        }
+    }
+
+    function getTextContent(root: SerializedRootNode): string {
+        const text: string[] = []
+        const queue: SerializedLexicalNode[] = [root]
+        while (queue.length > 0) {
+            const node = queue.shift()!
+            if ('text' in node && typeof node.text === 'string') {
+                text.push(node.text)
+            }
+            if (node && 'children' in node && Array.isArray(node.children)) {
+                for (const child of node.children as SerializedLexicalNode[]) {
+                    queue.push(child)
+                }
+            }
+        }
+        return text.join('')
+    }
+
+    return {
+        ...value,
+        editorState: {
+            ...value.editorState,
+            lexicalEditorState: editorState,
+        },
+        text: getTextContent(editorState.root),
+        contextItems: value.contextItems.filter(item => keep(serializeContextItem(item))),
+    }
 }

@@ -148,6 +148,12 @@ export enum ExtensionMode {
     Development = 2,
     Test = 3,
 }
+export class DiagnosticRelatedInformation {
+    constructor(
+        public readonly location: Location,
+        public readonly message: string
+    ) {}
+}
 export enum DiagnosticSeverity {
     Error = 0,
     Warning = 1,
@@ -210,16 +216,15 @@ export class CodeAction {
 }
 export class CodeActionKind {
     static readonly Empty = new CodeActionKind('Empty')
-    static readonly QuickFix = new CodeActionKind('')
-    static readonly Refactor = new CodeActionKind('')
-    static readonly RefactorExtract = new CodeActionKind('')
-    static readonly RefactorInline = new CodeActionKind('')
-    static readonly RefactorMove = new CodeActionKind('')
-    static readonly RefactorRewrite = new CodeActionKind('')
-    static readonly Source = new CodeActionKind('')
-    static readonly SourceOrganizeImports = new CodeActionKind('')
-
-    static readonly SourceFixAll = new CodeActionKind('')
+    static readonly QuickFix = new CodeActionKind('QuickFix')
+    static readonly Refactor = new CodeActionKind('Refactor')
+    static readonly RefactorExtract = new CodeActionKind('RefactorExtract')
+    static readonly RefactorInline = new CodeActionKind('RefactorInline')
+    static readonly RefactorMove = new CodeActionKind('RefactorMove')
+    static readonly RefactorRewrite = new CodeActionKind('RefactorRewrite')
+    static readonly Source = new CodeActionKind('Source')
+    static readonly SourceOrganizeImports = new CodeActionKind('SourceOrganizeImports')
+    static readonly SourceFixAll = new CodeActionKind('SourceFixAll')
 
     constructor(public readonly value: string) {}
 }
@@ -443,6 +448,10 @@ export class Selection extends Range {
     isReversed = false
 }
 
+export enum CodeActionTriggerKind {
+    Invoke = 1,
+    Automatic = 2,
+}
 export enum FoldingRangeKind {
     Comment = 1,
     Imports = 2,
@@ -711,6 +720,7 @@ export const vsCodeMocks = {
     UIKind,
     QuickInputButtons,
     Uri,
+    Location,
     languages,
     env: {
         uiKind: 1 satisfies vscode_types.UIKind.Desktop,
@@ -829,6 +839,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     experimentalGuardrails: false,
     experimentalSimpleChatContext: true,
     experimentalSupercompletions: false,
+    experimentalMinionAnthropicKey: undefined,
     experimentalOllamaChat: true,
     experimentalSymfContext: true,
     experimentalTracing: false,

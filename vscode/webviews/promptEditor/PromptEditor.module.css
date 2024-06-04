@@ -1,12 +1,13 @@
 :root {
-    --prompt-editor-padding-y: 4px;
+    --prompt-editor-padding-y: 0.5rem;
     --prompt-editor-padding-x: 0.5rem;
 }
 
 .editor {
     font: inherit;
     width: 100%;
-    overflow: hidden;
+    overflow: auto;
+    scrollbar-width: none;
 
     /* Don't allow the input box to become larger than the webview to avoid submit buttons going off the screen */
     max-height: 80vh; /* 80% of viewport height */

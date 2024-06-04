@@ -1,27 +1,39 @@
 import {
     type ChatMessage,
+    ContextItemSource,
     type Guardrails,
     ps,
     reformatBotMessageForChat,
 } from '@sourcegraph/cody-shared'
-import { type FunctionComponent, useEffect, useMemo, useRef } from 'react'
+import { type FunctionComponent, type RefObject, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
 import { chatModelIconComponent } from '../../../../components/ChatModelIcon'
+import {
+    type PromptEditorRefAPI,
+    contextItemsFromPromptEditorValue,
+    filterContextItemsFromPromptEditorValue,
+    serializedPromptEditorStateFromChatMessage,
+} from '../../../../promptEditor/PromptEditor'
 import { ChatMessageContent, type CodeBlockActionsProps } from '../../../ChatMessageContent'
 import { ErrorItem, RequestErrorItem } from '../../../ErrorItem'
+import { type Interaction, editHumanMessage } from '../../../Transcript'
 import { FeedbackButtons } from '../../../components/FeedbackButtons'
 import { LoadingDots } from '../../../components/LoadingDots'
 import { useChatModelByID } from '../../../models/chatModelContext'
-import { BaseMessageCell } from '../BaseMessageCell'
+import { BaseMessageCell, MESSAGE_CELL_AVATAR_SIZE } from '../BaseMessageCell'
+import { ContextFocusActions } from './ContextFocusActions'
 
 /**
  * A component that displays a chat message from the assistant.
  */
 export const AssistantMessageCell: FunctionComponent<{
     message: ChatMessage
+
+    /** Information about the human message that led to this assistant response. */
+    humanMessage: PriorHumanMessageInfo | null
+
     userInfo: UserAccountInfo
     isLoading: boolean
-    disabled?: boolean
 
     showFeedbackButtons: boolean
     feedbackButtonsOnSubmit?: (text: string) => void
@@ -33,9 +45,9 @@ export const AssistantMessageCell: FunctionComponent<{
     guardrails?: Guardrails
 }> = ({
     message,
+    humanMessage,
     userInfo,
     isLoading,
-    disabled,
     showFeedbackButtons,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
@@ -51,23 +63,13 @@ export const AssistantMessageCell: FunctionComponent<{
     const chatModel = useChatModelByID(message.model)
     const ModelIcon = chatModel ? chatModelIconComponent(chatModel.model) : null
 
-    // If this message is in progress and it's out of the viewport when it first appears, scroll to
-    // make it visible or else the user might not realize there is a message streaming in below
-    // their viewport.
-    const someRef = useRef<HTMLElement | null>(null)
-    useEffect(() => {
-        if (isLoading) {
-            someRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-        }
-    }, [isLoading])
-
     return (
         <BaseMessageCell
             speaker={message.speaker}
             speakerIcon={
                 chatModel && ModelIcon ? (
-                    <span title={`${chatModel.title} by ${chatModel.provider}`} ref={someRef}>
-                        <ModelIcon size={20} />
+                    <span title={`${chatModel.title} by ${chatModel.provider}`}>
+                        <ModelIcon size={NON_HUMAN_CELL_AVATAR_SIZE} />
                     </span>
                 ) : null
             }
@@ -87,7 +89,7 @@ export const AssistantMessageCell: FunctionComponent<{
                     {displayMarkdown ? (
                         <ChatMessageContent
                             displayMarkdown={displayMarkdown}
-                            wrapLinksWithCodyCommand={true}
+                            isMessageLoading={isLoading}
                             copyButtonOnSubmit={copyButtonOnSubmit}
                             insertButtonOnSubmit={insertButtonOnSubmit}
                             guardrails={guardrails}
@@ -98,12 +100,82 @@ export const AssistantMessageCell: FunctionComponent<{
                 </>
             }
             footer={
-                showFeedbackButtons &&
-                feedbackButtonsOnSubmit && (
-                    <FeedbackButtons feedbackButtonsOnSubmit={feedbackButtonsOnSubmit} />
+                ((showFeedbackButtons && feedbackButtonsOnSubmit) || humanMessage) && (
+                    <div className="tw-flex tw-items-center tw-py-3 tw-divide-x tw-transition tw-divide-muted tw-opacity-65 hover:tw-opacity-100">
+                        {showFeedbackButtons && feedbackButtonsOnSubmit && (
+                            <FeedbackButtons
+                                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                                className="tw-pr-4"
+                            />
+                        )}
+                        {humanMessage && !isLoading && (
+                            <ContextFocusActions humanMessage={humanMessage} className="tw-pl-5" />
+                        )}
+                    </div>
                 )
             }
-            disabled={disabled}
         />
     )
+}
+
+export const NON_HUMAN_CELL_AVATAR_SIZE =
+    MESSAGE_CELL_AVATAR_SIZE * 0.83 /* make them "look" the same size as the human avatar icons */
+
+export interface HumanMessageInitialContextInfo {
+    repositories: boolean
+    files: boolean
+}
+
+export interface PriorHumanMessageInfo {
+    hasInitialContext: HumanMessageInitialContextInfo
+    rerunWithDifferentContext: (withInitialContext: HumanMessageInitialContextInfo) => void
+
+    hasExplicitMentions: boolean
+    appendAtMention: () => void
+}
+
+export function makeHumanMessageInfo(
+    { humanMessage, assistantMessage }: Interaction,
+    humanEditorRef: RefObject<PromptEditorRefAPI>
+): PriorHumanMessageInfo {
+    if (assistantMessage === null) {
+        throw new Error('unreachable')
+    }
+
+    const editorValue = serializedPromptEditorStateFromChatMessage(humanMessage)
+    const contextItems = contextItemsFromPromptEditorValue(editorValue)
+
+    return {
+        hasInitialContext: {
+            repositories: Boolean(
+                contextItems.some(item => item.type === 'repository' || item.type === 'tree')
+            ),
+            files: Boolean(
+                contextItems.some(
+                    item => item.type === 'file' && item.source === ContextItemSource.Initial
+                )
+            ),
+        },
+        rerunWithDifferentContext: withInitialContext => {
+            const editorValue = humanEditorRef.current?.getSerializedValue()
+            if (editorValue) {
+                const newEditorValue = filterContextItemsFromPromptEditorValue(
+                    editorValue,
+                    item =>
+                        ((item.type === 'repository' || item.type === 'tree') &&
+                            withInitialContext.repositories) ||
+                        (item.type === 'file' && withInitialContext.files)
+                )
+                editHumanMessage(assistantMessage.index - 1, newEditorValue)
+            }
+        },
+        hasExplicitMentions: Boolean(contextItems.some(item => item.source === ContextItemSource.User)),
+        appendAtMention: () => {
+            if (humanEditorRef.current?.getSerializedValue().text.trim().endsWith('@')) {
+                humanEditorRef.current?.setFocus(true, { moveCursorToEnd: true })
+            } else {
+                humanEditorRef.current?.appendText('@', true)
+            }
+        },
+    }
 }

@@ -3,11 +3,10 @@ import clsx from 'clsx'
 import { AtSignIcon } from 'lucide-react'
 import { type FunctionComponent, useCallback } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
-import { EnhancedContextSettings } from '../../../../../../components/EnhancedContextSettings'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { ToolbarButton } from '../../../../../../components/shadcn/ui/toolbar'
 import { useChatModelContext } from '../../../../../models/chatModelContext'
-import { SubmitButton } from './SubmitButton'
+import { SubmitButton, type SubmitButtonDisabled } from './SubmitButton'
 import styles from './Toolbar.module.css'
 
 /**
@@ -18,28 +17,27 @@ export const Toolbar: FunctionComponent<{
 
     isEditorFocused: boolean
 
-    isParentHovered: boolean
-
     onMentionClick?: () => void
 
-    onSubmitClick: (withEnhancedContext: boolean) => void
-    submitDisabled: boolean
+    onSubmitClick: () => void
+    submitDisabled: SubmitButtonDisabled
 
     /** Handler for clicks that are in the "gap" (dead space), not any toolbar items. */
     onGapClick?: () => void
 
     focusEditor?: () => void
 
+    hidden?: boolean
     className?: string
 }> = ({
     userInfo,
     isEditorFocused,
-    isParentHovered,
     onMentionClick,
     onSubmitClick,
     submitDisabled,
     onGapClick,
     focusEditor,
+    hidden,
     className,
 }) => {
     /**
@@ -62,6 +60,8 @@ export const Toolbar: FunctionComponent<{
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
         <menu
             role="toolbar"
+            aria-hidden={hidden}
+            hidden={hidden}
             className={clsx(styles.container, className)}
             onMouseDown={onMaybeGapClick}
             onClick={onMaybeGapClick}
@@ -75,16 +75,11 @@ export const Toolbar: FunctionComponent<{
                     aria-label="Add context"
                 />
             )}
-            <EnhancedContextSettings
-                presentationMode={userInfo.isDotComUser ? 'consumer' : 'enterprise'}
-                onCloseByEscape={focusEditor}
-            />
             <ModelSelectFieldToolbarItem userInfo={userInfo} focusEditor={focusEditor} />
             <div className={styles.spacer} />
             <SubmitButton
                 onClick={onSubmitClick}
                 isEditorFocused={isEditorFocused}
-                isParentHovered={isParentHovered}
                 disabled={submitDisabled}
             />
         </menu>
@@ -111,13 +106,16 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
         onCurrentChatModelChange &&
         userInfo &&
         userInfo.isDotComUser && (
-            <ModelSelectField
-                models={chatModels}
-                onModelSelect={onModelSelect}
-                userInfo={userInfo}
-                onCloseByEscape={focusEditor}
-                className={className}
-            />
+            <>
+                <div className="tw-ml-[5px] tw-mr-[5px] tw-border-l-[1px] tw-border-white tw-h-6 tw-opacity-10" />
+                <ModelSelectField
+                    models={chatModels}
+                    onModelSelect={onModelSelect}
+                    userInfo={userInfo}
+                    onCloseByEscape={focusEditor}
+                    className={className}
+                />
+            </>
         )
     )
 }

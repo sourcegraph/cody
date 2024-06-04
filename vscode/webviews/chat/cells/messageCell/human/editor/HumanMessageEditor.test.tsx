@@ -1,7 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import type { ComponentProps } from 'react'
-import { type Mock, describe, expect, test, vi } from 'vitest'
-import { AppWrapper } from '../../../../../AppWrapper'
+import { type Assertion, type Mock, describe, expect, test, vi } from 'vitest'
+import { TestAppWrapper } from '../../../../../AppWrapper'
+import { serializedPromptEditorStateFromText } from '../../../../../promptEditor/PromptEditor'
 import { FILE_MENTION_EDITOR_STATE_FIXTURE } from '../../../../../promptEditor/fixtures'
 import { FIXTURE_USER_ACCOUNT_INFO } from '../../../../fixtures'
 import { HumanMessageEditor } from './HumanMessageEditor'
@@ -17,34 +18,103 @@ const ENTER_KEYBOARD_EVENT_DATA: Pick<KeyboardEvent, 'key' | 'code' | 'keyCode'>
     keyCode: 13,
 }
 
-const ALT_KEYBOARD_EVENT_DATA: Pick<KeyboardEvent, 'key' | 'code' | 'keyCode' | 'altKey'> = {
-    key: 'Alt',
-    code: 'AltLeft',
-    keyCode: 18,
-    altKey: true,
-}
-
 describe('HumanMessageEditor', () => {
-    test('renders textarea', () => {
-        renderWithMocks({})
-        expect(screen.getByRole('textbox')).toBeInTheDocument()
+    test('renders textarea', async () => {
+        const { editor } = renderWithMocks({})
+        expect(editor).toHaveTextContent('What does @Symbol1')
+    })
+
+    describe('states', () => {
+        function expectState(
+            { mentionButton, submitButton }: ReturnType<typeof renderWithMocks>,
+            expected: {
+                toolbarVisible?: boolean
+                submitButtonVisible?: boolean
+                submitButtonEnabled?: boolean
+                submitButtonText?: string
+            }
+        ): void {
+            if (expected.toolbarVisible !== undefined) {
+                notUnless(expect.soft(mentionButton), expected.toolbarVisible).toBeVisible()
+            }
+            if (expected.submitButtonVisible !== undefined) {
+                notUnless(expect.soft(submitButton), expected.submitButtonVisible).toBeVisible()
+            }
+            if (expected.submitButtonEnabled !== undefined) {
+                notUnless(expect.soft(submitButton), expected.submitButtonEnabled).toBeEnabled()
+            }
+            if (expected.submitButtonText !== undefined) {
+                expect.soft(submitButton).toHaveAccessibleName(expected.submitButtonText)
+            }
+
+            function notUnless<T>(assertion: Assertion<T>, value: boolean): Assertion<T> {
+                return value ? assertion : assertion.not
+            }
+        }
+
+        test('!isSent', () => {
+            expectState(
+                renderWithMocks({
+                    initialEditorState: serializedPromptEditorStateFromText('abc'),
+                    isSent: false,
+                }),
+                { toolbarVisible: true, submitButtonEnabled: true, submitButtonText: 'Send' }
+            )
+        })
+
+        test('isSent && !isPendingResponse', () => {
+            const rendered = renderWithMocks({
+                initialEditorState: undefined,
+                isSent: true,
+            })
+            expectState(rendered, { toolbarVisible: false })
+            fireEvent.focus(rendered.editor)
+            expectState(rendered, { toolbarVisible: true })
+        })
+
+        test('isPendingPriorResponse', () => {
+            const rendered = renderWithMocks({
+                initialEditorState: undefined,
+                isPendingPriorResponse: true,
+            })
+            expectState(rendered, { toolbarVisible: true })
+        })
     })
 
     describe('submitting', () => {
-        test('empty editor', () => {
-            const { container, submitButton, onSubmit } = renderWithMocks({
-                initialEditorState: undefined,
-            })
-            expect(submitButton).toBeDisabled()
-
-            // Click
-            fireEvent.click(submitButton)
-            expect(onSubmit).toHaveBeenCalledTimes(0)
+        function testNoSubmitting({
+            container,
+            submitButton,
+            onSubmit,
+        }: ReturnType<typeof renderWithMocks>): void {
+            if (submitButton) {
+                expect(submitButton).toBeDisabled()
+                // Click
+                fireEvent.click(submitButton!)
+                expect(onSubmit).toHaveBeenCalledTimes(0)
+            }
 
             // Enter
             const editor = container.querySelector<HTMLElement>('[data-lexical-editor="true"]')!
             fireEvent.keyDown(editor, ENTER_KEYBOARD_EVENT_DATA)
             expect(onSubmit).toHaveBeenCalledTimes(0)
+        }
+
+        test('empty editor', () => {
+            testNoSubmitting(
+                renderWithMocks({
+                    initialEditorState: undefined,
+                })
+            )
+        })
+
+        test('isPendingPriorResponse', () => {
+            testNoSubmitting(
+                renderWithMocks({
+                    initialEditorState: serializedPromptEditorStateFromText('abc'),
+                    isPendingPriorResponse: true,
+                })
+            )
         })
 
         test('submit', async () => {
@@ -54,46 +124,24 @@ describe('HumanMessageEditor', () => {
             expect(submitButton).toBeEnabled()
 
             // Click
-            fireEvent.click(submitButton)
+            fireEvent.click(submitButton!)
             expect(onSubmit).toHaveBeenCalledTimes(1)
-            expect(onSubmit.mock.lastCall[1]).toBe(true) // addEnhancedContext === true
 
             // Enter
             const editor = container.querySelector<HTMLElement>('[data-lexical-editor="true"]')!
             fireEvent.keyDown(editor, ENTER_KEYBOARD_EVENT_DATA)
             expect(onSubmit).toHaveBeenCalledTimes(2)
-            expect(onSubmit.mock.lastCall[1]).toBe(true) // addEnhancedContext === true
-        })
-
-        test('submit w/o context', async () => {
-            const { container, onSubmit } = renderWithMocks({
-                initialEditorState: FILE_MENTION_EDITOR_STATE_FIXTURE,
-            })
-
-            const editor = container.querySelector<HTMLElement>('[data-lexical-editor="true"]')!
-            fireEvent.focus(editor)
-
-            // Click
-            const submitWithoutContextButton = screen.getByRole('button', {
-                name: 'Send without automatic code context',
-            })
-            fireEvent.keyDown(container, ALT_KEYBOARD_EVENT_DATA)
-            fireEvent.click(submitWithoutContextButton)
-            expect(onSubmit).toHaveBeenCalledTimes(1)
-            expect(onSubmit.mock.lastCall[1]).toBe(false) // addEnhancedContext === false
-
-            // Alt+Enter
-            fireEvent.keyDown(container, ALT_KEYBOARD_EVENT_DATA)
-            fireEvent.keyDown(editor, { ...ENTER_KEYBOARD_EVENT_DATA, altKey: true })
-            expect(onSubmit).toHaveBeenCalledTimes(2)
-            expect(onSubmit.mock.lastCall[1]).toBe(false) // addEnhancedContext === false
         })
     })
 })
 
+type EditorHTMLElement = HTMLDivElement & { dataset: { lexicalEditor: 'true' } }
+
 function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor>>): {
     container: HTMLElement
-    submitButton: HTMLElement
+    editor: EditorHTMLElement
+    mentionButton: HTMLElement | null
+    submitButton: HTMLElement | null
     onChange: Mock
     onSubmit: Mock
 } {
@@ -105,18 +153,23 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
         initialEditorState: FILE_MENTION_EDITOR_STATE_FIXTURE,
         placeholder: 'my-placeholder',
         isFirstMessage: true,
+        isPendingPriorResponse: false,
         isSent: false,
         onChange,
         onSubmit,
-        isEditorInitiallyFocused: false,
     }
 
     const { container } = render(<HumanMessageEditor {...DEFAULT_PROPS} {...props} />, {
-        wrapper: AppWrapper,
+        wrapper: TestAppWrapper,
     })
     return {
         container,
-        submitButton: screen.getByRole('button', { name: 'Send with automatic code context' }),
+        editor: container.querySelector<EditorHTMLElement>('[data-lexical-editor="true"]')!,
+        mentionButton: screen.queryByRole('button', { name: 'Add context', hidden: true }),
+        submitButton: screen.queryByRole('button', {
+            name: 'Send',
+            hidden: true,
+        }),
         onChange,
         onSubmit,
     }

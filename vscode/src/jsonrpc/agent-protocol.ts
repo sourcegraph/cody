@@ -53,13 +53,13 @@ export type ClientRequests = {
     // `webview/postMessage`. Returns a new *panel* ID, which can be used to
     // send a chat message via `chat/submitMessage`.
     'chat/restore': [
-        { modelID?: string | null; messages: SerializedChatMessage[]; chatID: string },
+        { modelID?: string | undefined | null; messages: SerializedChatMessage[]; chatID: string },
         string,
     ]
 
     'chat/models': [{ modelUsage: ModelUsage }, { models: ModelProvider[] }]
     'chat/export': [null, ChatExportResult[]]
-    'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] }]
+    'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] | undefined | null }]
 
     // High-level wrapper around webview/receiveMessage and webview/postMessage
     // to submit a chat message. The ID is the return value of chat/id, and the
@@ -82,7 +82,14 @@ export type ClientRequests = {
     'commands/custom': [{ key: string }, CustomCommandResult]
 
     // Trigger commands that edit the code.
-    'editCommands/code': [{ instruction: string; model: string }, EditTask]
+    'editCommands/code': [
+        {
+            instruction: string
+            model?: string | undefined | null
+            mode?: 'edit' | 'insert' | undefined | null
+        },
+        EditTask,
+    ]
     'editCommands/test': [null, EditTask]
     'editCommands/document': [null, EditTask]
 
@@ -101,6 +108,21 @@ export type ClientRequests = {
     // Low-level API to trigger a VS Code command with any argument list. Avoid
     // using this API in favor of high-level wrappers like 'chat/new'.
     'command/execute': [ExecuteCommandParams, any]
+
+    // Code actions are shortcuts to commands that can be triggered at a given
+    // location.  You may be most familiar with code actions as the menu that
+    // appears when you click on the lightbulb icon over diagnostics (red
+    // squiggles). The flow to use code actions is:
+    // 1. Request codeActions/provide to determine what actions are available
+    //    at the given location
+    // 2. Request codeActions/trigger for the selected code action.
+    'codeActions/provide': [
+        { location: ProtocolLocation; triggerKind: CodeActionTriggerKind },
+        { codeActions: ProtocolCodeAction[] },
+    ]
+    // The ID parameter should match ProtocolCodeAction.id from
+    // codeActions/provide.
+    'codeActions/trigger': [{ id: string }, EditTask]
 
     'autocomplete/execute': [AutocompleteParams, AutocompleteResult]
 
@@ -136,6 +158,11 @@ export type ClientRequests = {
     // `chat/submitMessage`.
     'webview/receiveMessage': [{ id: string; message: WebviewMessage }, null]
 
+    // Register diagnostics (aka. error/warning messages). Overwrites existing
+    // diagnostics for the provided document URIs. This request should be used
+    // alongside the `codeActions/provide` request.
+    'diagnostics/publish': [{ diagnostics: ProtocolDiagnostic[] }, null]
+
     // Only used for testing purposes. If you want to write an integration test
     // for dealing with progress bars then you can send a request to this
     // endpoint to emulate the scenario where the server creates a progress bar.
@@ -143,6 +170,11 @@ export type ClientRequests = {
     'testing/networkRequests': [null, { requests: NetworkRequest[] }]
     'testing/requestErrors': [null, { errors: NetworkRequest[] }]
     'testing/closestPostData': [{ url: string; postData: string }, { closestBody: string }]
+    'testing/memoryUsage': [null, { usage: MemoryUsage }]
+    'testing/awaitPendingPromises': [null, null]
+    // Returns diagnostics for the given URI. Lives under `testing/` instead of
+    // standalone `diagnostics/` because it only works for TypeScript files.
+    'testing/diagnostics': [{ uri: string }, { diagnostics: ProtocolDiagnostic[] }]
 
     // Only used for testing purposes. This operation runs indefinitely unless
     // the client sends progress/cancel.
@@ -171,7 +203,7 @@ export type ClientRequests = {
     'attribution/search': [
         { id: string; snippet: string },
         {
-            error: string | null
+            error?: string | undefined | null
             repoNames: string[]
             limitHit: boolean
         },
@@ -207,12 +239,12 @@ export type ClientRequests = {
     'remoteRepo/list': [
         {
             // The user input to perform a fuzzy match with
-            query?: string
+            query?: string | undefined | null
             // The maximum number of results to retrieve
             first: number
             // The repository ID of the last result in the previous
             // page, or `undefined` to start from the beginning.
-            afterId?: string
+            afterId?: string | undefined | null
         },
         {
             // The index of the first result in the filtered repository list.
@@ -238,12 +270,10 @@ export type ServerRequests = {
 
     'textDocument/edit': [TextDocumentEditParams, boolean]
     'textDocument/openUntitledDocument': [UntitledTextDocument, boolean]
-
-    // This is sent, for instance, when a fixup task creates a new file,
-    // instructing the client to show it before the streaming starts
-    // filling in the contents.
-    'textDocument/show': [{ uri: string; options?: TextDocumentShowOptionsParams }, boolean]
-
+    'textDocument/show': [
+        { uri: string; options?: TextDocumentShowOptionsParams | undefined | null },
+        boolean,
+    ]
     'workspace/edit': [WorkspaceEditParams, boolean]
 
     // Low-level API to handle requests from the VS Code extension to create a
@@ -366,12 +396,12 @@ interface CompletionItemParams {
 
 export interface AutocompleteParams {
     uri: string
-    filePath?: string
+    filePath?: string | undefined | null
     position: Position
     // Defaults to 'Automatic' for autocompletions which were not explicitly
     // triggered.
-    triggerKind?: 'Automatic' | 'Invoke'
-    selectedCompletionInfo?: SelectedCompletionInfo
+    triggerKind?: 'Automatic' | 'Invoke' | undefined | null
+    selectedCompletionInfo?: SelectedCompletionInfo | undefined | null
 }
 
 interface SelectedCompletionInfo {
@@ -386,8 +416,8 @@ export interface ChatExportResult {
 export interface AutocompleteResult {
     items: AutocompleteItem[]
 
-    /** completionEvent is not deprecated because it's used by non-editor clients like evaluate-autocomplete that need access to book-keeping data to evaluate results. */
-    completionEvent?: CompletionBookkeepingEvent
+    /** completionEvent is not deprecated because it's used by non-editor clients like cody-bench that need access to book-keeping data to evaluate results. */
+    completionEvent?: CompletionBookkeepingEvent | undefined | null
 }
 
 export interface AutocompleteItem {
@@ -402,49 +432,50 @@ export interface ClientInfo {
     workspaceRootUri: string
 
     /** @deprecated Use `workspaceRootUri` instead. */
-    workspaceRootPath?: string
+    workspaceRootPath?: string | undefined | null
 
-    extensionConfiguration?: ExtensionConfiguration
-    capabilities?: ClientCapabilities
+    extensionConfiguration?: ExtensionConfiguration | undefined | null
+    capabilities?: ClientCapabilities | undefined | null
 
     /**
      * Optional tracking attributes to inject into telemetry events recorded
      * by the agent.
      */
-    marketingTracking?: TelemetryEventMarketingTrackingInput
+    marketingTracking?: TelemetryEventMarketingTrackingInput | undefined | null
 }
 
 // The capability should match the name of the JSON-RPC methods.
-interface ClientCapabilities {
-    completions?: 'none'
+export interface ClientCapabilities {
+    completions?: 'none' | undefined | null
     //  When 'streaming', handles 'chat/updateMessageInProgress' streaming notifications.
-    chat?: 'none' | 'streaming'
+    chat?: 'none' | 'streaming' | undefined | null
     // TODO: allow clients to implement the necessary parts of the git extension.
     // https://github.com/sourcegraph/cody/issues/4165
-    git?: 'none' | 'enabled'
+    git?: 'none' | 'enabled' | undefined | null
     // If 'enabled', the client must implement the progress/start,
     // progress/report, and progress/end notification endpoints.
-    progressBars?: 'none' | 'enabled'
-    edit?: 'none' | 'enabled'
-    editWorkspace?: 'none' | 'enabled'
-    untitledDocuments?: 'none' | 'enabled'
-    showDocument?: 'none' | 'enabled'
-    codeLenses?: 'none' | 'enabled'
-    showWindowMessage?: 'notification' | 'request'
-    ignore?: 'none' | 'enabled'
+    progressBars?: 'none' | 'enabled' | undefined | null
+    edit?: 'none' | 'enabled' | undefined | null
+    editWorkspace?: 'none' | 'enabled' | undefined | null
+    untitledDocuments?: 'none' | 'enabled' | undefined | null
+    showDocument?: 'none' | 'enabled' | undefined | null
+    codeLenses?: 'none' | 'enabled' | undefined | null
+    showWindowMessage?: 'notification' | 'request' | undefined | null
+    ignore?: 'none' | 'enabled' | undefined | null
+    codeActions?: 'none' | 'enabled' | undefined | null
 }
 
 export interface ServerInfo {
     name: string
-    authenticated?: boolean
-    codyEnabled?: boolean
-    codyVersion?: string | null
-    authStatus?: AuthStatus
+    authenticated?: boolean | undefined | null
+    codyEnabled?: boolean | undefined | null
+    codyVersion?: string | undefined | null
+    authStatus?: AuthStatus | undefined | null
 }
 
 export interface ExtensionConfiguration {
     serverEndpoint: string
-    proxy?: string | null
+    proxy?: string | undefined | null
     accessToken: string
     customHeaders: Record<string, string>
 
@@ -453,22 +484,24 @@ export interface ExtensionConfiguration {
      * recorded. It is currently optional for backwards compatibility, but
      * it is strongly recommended to set this when connecting to Agent.
      */
-    anonymousUserID?: string
+    anonymousUserID?: string | undefined | null
 
-    autocompleteAdvancedProvider?: string
-    autocompleteAdvancedModel?: string | null
-    debug?: boolean
-    verboseDebug?: boolean
-    codebase?: string
+    autocompleteAdvancedProvider?: string | undefined | null
+    autocompleteAdvancedModel?: string | undefined | null
+    debug?: boolean | undefined | null
+    verboseDebug?: boolean | undefined | null
+    codebase?: string | undefined | null
 
     /**
      * When passed, the Agent will handle recording events.
      * If not passed, client must send `graphql/logEvent` requests manually.
      * @deprecated This is only used for the legacy logEvent - use `telemetry` instead.
      */
-    eventProperties?: EventProperties
+    eventProperties?: EventProperties | undefined | null
 
-    customConfiguration?: Record<string, any>
+    customConfiguration?: Record<string, any> | undefined | null
+
+    baseGlobalState?: Record<string, any> | undefined | null
 }
 
 /**
@@ -489,7 +522,10 @@ export interface ExtensionConfiguration {
 interface TelemetryEvent {
     feature: string
     action: string
-    parameters?: TelemetryEventParameters<{ [key: string]: number }, BillingProduct, BillingCategory>
+    parameters?:
+        | TelemetryEventParameters<{ [key: string]: number }, BillingProduct, BillingCategory>
+        | undefined
+        | null
 }
 
 /**
@@ -547,11 +583,23 @@ export interface ProtocolTextDocument {
     // Use TextDocumentWithUri.fromDocument(TextDocument) if you want to parse this `uri` property.
     uri: string
     /** @deprecated use `uri` instead. This property only exists for backwards compatibility during the migration period. */
-    filePath?: string
-    content?: string
-    selection?: Range
-    contentChanges?: ProtocolTextDocumentContentChangeEvent[]
-    visibleRange?: Range
+    filePath?: string | undefined | null
+    content?: string | undefined | null
+    selection?: Range | undefined | null
+    contentChanges?: ProtocolTextDocumentContentChangeEvent[] | undefined | null
+    visibleRange?: Range | undefined | null
+
+    // Only used during testing. When defined, the agent server will
+    // run additional validation to ensure that the document state of
+    // the client is correctly synchronized with the docment state of
+    // server.
+    testing?:
+        | {
+              selectedText?: string | undefined | null
+              sourceOfTruthDocument?: ProtocolTextDocument | undefined | null
+          }
+        | undefined
+        | null
 }
 
 export interface ProtocolTextDocumentContentChangeEvent {
@@ -561,7 +609,7 @@ export interface ProtocolTextDocumentContentChangeEvent {
 
 interface ExecuteCommandParams {
     command: string
-    arguments?: any[]
+    arguments?: any[] | undefined | null
 }
 
 export interface DebugMessage {
@@ -578,7 +626,7 @@ export interface ProgressReportParams {
     /** Unique ID for this operation. */
     id: string
     /** (optional) Text message to display in the progress bar */
-    message?: string
+    message?: string | undefined | null
     /**
      * (optional) increment to indicate how much percentage of the total
      * operation has been completed since the last report. The total % of the
@@ -586,24 +634,24 @@ export interface ProgressReportParams {
      * of 10 indicates '10%' of the progress has completed since the last
      * report. Can never be negative, and total can never exceed 100.
      */
-    increment?: number
+    increment?: number | undefined | null
 }
 interface ProgressOptions {
     /**
      * A human-readable string which will be used to describe the
      * operation.
      */
-    title?: string
+    title?: string | undefined | null
     /**
      * The location at which progress should show.
      * Either `location` or `locationViewId` must be set
      */
-    location?: string // one of: 'SourceControl' | 'Window' | 'Notification'
+    location?: string | undefined | null // one of: 'SourceControl' | 'Window' | 'Notification'
     /**
      * The location at which progress should show.
      * Either `location` or `locationViewId` must be set
      */
-    locationViewId?: string
+    locationViewId?: string | undefined | null
 
     /**
      * Controls if a cancel button should show to allow the user to
@@ -611,7 +659,7 @@ interface ProgressOptions {
      * `ProgressLocation.Notification` is supporting to show a cancel
      * button.
      */
-    cancellable?: boolean
+    cancellable?: boolean | undefined | null
 }
 
 export interface WebviewPostMessageParams {
@@ -621,7 +669,7 @@ export interface WebviewPostMessageParams {
 
 export interface WorkspaceEditParams {
     operations: WorkspaceEditOperation[]
-    metadata?: vscode.WorkspaceEditMetadata
+    metadata?: vscode.WorkspaceEditMetadata | undefined | null
 }
 
 export type WorkspaceEditOperation =
@@ -631,32 +679,35 @@ export type WorkspaceEditOperation =
     | EditFileOperation
 
 export interface WriteFileOptions {
-    overwrite?: boolean
-    ignoreIfExists?: boolean
+    overwrite?: boolean | undefined | null
+    ignoreIfExists?: boolean | undefined | null
 }
 
 export interface CreateFileOperation {
     type: 'create-file'
     uri: string
-    options?: WriteFileOptions
+    options?: WriteFileOptions | undefined | null
     textContents: string
-    metadata?: vscode.WorkspaceEditEntryMetadata
+    metadata?: vscode.WorkspaceEditEntryMetadata | undefined | null
 }
 export interface RenameFileOperation {
     type: 'rename-file'
     oldUri: string
     newUri: string
-    options?: WriteFileOptions
-    metadata?: vscode.WorkspaceEditEntryMetadata
+    options?: WriteFileOptions | undefined | null
+    metadata?: vscode.WorkspaceEditEntryMetadata | undefined | null
 }
 export interface DeleteFileOperation {
     type: 'delete-file'
     uri: string
-    deleteOptions?: {
-        readonly recursive?: boolean
-        readonly ignoreIfNotExists?: boolean
-    }
-    metadata?: vscode.WorkspaceEditEntryMetadata
+    deleteOptions?:
+        | {
+              readonly recursive?: boolean | undefined | null
+              readonly ignoreIfNotExists?: boolean | undefined | null
+          }
+        | undefined
+        | null
+    metadata?: vscode.WorkspaceEditEntryMetadata | undefined | null
 }
 export interface EditFileOperation {
     type: 'edit-file'
@@ -666,20 +717,20 @@ export interface EditFileOperation {
 
 export interface UntitledTextDocument {
     uri: string
-    content?: string
-    language?: string
+    content?: string | undefined | null
+    language?: string | undefined | null
 }
 
 export interface TextDocumentEditParams {
     uri: string
     edits: TextEdit[]
-    options?: { undoStopBefore: boolean; undoStopAfter: boolean }
+    options?: { undoStopBefore: boolean; undoStopAfter: boolean } | undefined | null
 }
 
 export interface TextDocumentShowOptionsParams {
-    preserveFocus?: boolean
-    preview?: boolean
-    selection?: Range
+    preserveFocus?: boolean | undefined | null
+    preview?: boolean | undefined | null
+    selection?: Range | undefined | null
 }
 
 export type TextEdit = ReplaceTextEdit | InsertTextEdit | DeleteTextEdit
@@ -687,32 +738,32 @@ export interface ReplaceTextEdit {
     type: 'replace'
     range: Range
     value: string
-    metadata?: vscode.WorkspaceEditEntryMetadata
+    metadata?: vscode.WorkspaceEditEntryMetadata | undefined | null
 }
 export interface InsertTextEdit {
     type: 'insert'
     position: Position
     value: string
-    metadata?: vscode.WorkspaceEditEntryMetadata
+    metadata?: vscode.WorkspaceEditEntryMetadata | undefined | null
 }
 export interface DeleteTextEdit {
     type: 'delete'
     range: Range
-    metadata?: vscode.WorkspaceEditEntryMetadata
+    metadata?: vscode.WorkspaceEditEntryMetadata | undefined | null
 }
 
 export interface EditTask {
     id: string
     state: CodyTaskState
-    error?: CodyError
+    error?: CodyError | undefined | null
     selectionRange: Range
-    instruction?: string
+    instruction?: string | undefined | null
 }
 
 export interface CodyError {
     message: string
-    cause?: CodyError
-    stack?: string
+    cause?: CodyError | undefined | null
+    stack?: string | undefined | null
 }
 
 export interface DisplayCodeLensParams {
@@ -722,7 +773,7 @@ export interface DisplayCodeLensParams {
 
 export interface ProtocolCodeLens {
     range: Range
-    command?: ProtocolCommand
+    command?: ProtocolCommand | undefined | null
     isResolved: boolean
 }
 
@@ -735,21 +786,21 @@ export interface ProtocolCommand {
         }[]
     }
     command: string
-    tooltip?: string
-    arguments?: any[]
+    tooltip?: string | undefined | null
+    arguments?: any[] | undefined | null
 }
 
 export interface NetworkRequest {
     url: string
-    body?: string
-    error?: string
+    body?: string | undefined | null
+    error?: string | undefined | null
 }
 
 export interface ShowWindowMessageParams {
     severity: 'error' | 'warning' | 'information'
     message: string
-    options?: vscode.MessageOptions
-    items?: string[]
+    options?: vscode.MessageOptions | undefined | null
+    items?: string[] | undefined | null
 }
 
 interface FileIdentifier {
@@ -791,5 +842,62 @@ export interface GetFoldingRangeResult {
 
 export interface RemoteRepoFetchState {
     state: 'paused' | 'fetching' | 'errored' | 'complete'
-    error: CodyError | undefined
+    error?: CodyError | undefined | null
+}
+
+// Copy-pasted from @types/node
+export interface MemoryUsage {
+    rss: number
+    heapTotal: number
+    heapUsed: number
+    external: number
+    arrayBuffers: number
+}
+
+export interface ProtocolLocation {
+    uri: string
+    range: Range
+}
+
+export interface ProtocolDiagnostic {
+    location: ProtocolLocation
+    message: string
+    severity: DiagnosticSeverity
+    code?: string | undefined | null
+    source?: string | undefined | null
+    relatedInformation?: ProtocolRelatedInformationDiagnostic[] | undefined | null
+}
+
+export interface ProtocolRelatedInformationDiagnostic {
+    location: ProtocolLocation
+    message: string
+}
+
+export type DiagnosticSeverity = 'error' | 'warning' | 'info' | 'suggestion'
+export type CodeActionTriggerKind = 'Invoke' | 'Automatic'
+export interface ProtocolCodeAction {
+    // Randomly generated ID of this code action that should be referenced in
+    // the `codeActions/trigger` request. In codeActions/trigger, you can only
+    // reference IDs from the most recent response from codeActions/provide.
+    // IDs from old codeActions/provide results are invalidated as soon as you
+    // send a new codeActions/provide request.
+    id: string
+    // Stable string ID of the VS Code command that will be triggered if you
+    // send a request to codeActions/trigger. Use this ID over `title`
+    commandID?: string | undefined | null
+    title: string
+    diagnostics?: ProtocolDiagnostic[] | undefined | null
+    kind?: string | undefined | null
+    isPreferred?: boolean | undefined | null
+    disabled?:
+        | {
+              /**
+               * Human readable description of why the code action is currently disabled.
+               *
+               * This is displayed in the code actions UI.
+               */
+              readonly reason: string
+          }
+        | undefined
+        | null
 }

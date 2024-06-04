@@ -2,21 +2,16 @@ import * as vscode from 'vscode'
 
 import {
     type ContextGroup,
-    type ContextItem,
-    type ContextItemFile,
-    ContextItemSource,
     type ContextSearchResult,
     type ContextStatusProvider,
     type Disposable,
-    type IRemoteSearch,
     type PromptString,
+    type SourcegraphCompletionsClient,
     contextFiltersProvider,
     graphqlClient,
-    isError,
 } from '@sourcegraph/cody-shared'
 
-import type { URI } from 'vscode-uri'
-import { repoNameResolver } from '../repository/repo-name-resolver'
+import { rewriteKeywordQuery } from '../local-context/rewrite-keyword-query'
 import type * as repofetcher from './repo-fetcher'
 
 export enum RepoInclusion {
@@ -28,11 +23,11 @@ interface DisplayRepo {
     displayName: string
 }
 
-export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
+export class RemoteSearch implements ContextStatusProvider {
     public static readonly MAX_REPO_COUNT = 10
     private disposeOnContextFilterChanged: () => void
 
-    constructor() {
+    constructor(private completions: SourcegraphCompletionsClient) {
         this.disposeOnContextFilterChanged = contextFiltersProvider.onContextFiltersChanged(() => {
             this.statusChangedEmitter.fire(this)
         })
@@ -58,7 +53,7 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
     }
 
     public get status(): ContextGroup[] {
-        return [...this.getRepoIdSet()].map(id => {
+        return this.getRepoIdSet().map(id => {
             const auto = this.reposAuto.get(id)
             const manual = this.reposManual.get(id)
             const displayName = auto?.displayName || manual?.displayName || '?'
@@ -108,66 +103,43 @@ export class RemoteSearch implements ContextStatusProvider, IRemoteSearch {
         this.statusChangedEmitter.fire(this)
     }
 
-    public getRepos(inclusion: RepoInclusion): repofetcher.Repo[] {
-        return [
-            ...(inclusion === RepoInclusion.Automatic ? this.reposAuto : this.reposManual).entries(),
-        ].map(([id, repo]) => ({ id, name: repo.displayName }))
+    public getRepos(inclusion: RepoInclusion | 'all'): repofetcher.Repo[] {
+        return uniqueRepos(
+            [
+                ...(inclusion === RepoInclusion.Automatic
+                    ? this.reposAuto.entries()
+                    : inclusion === RepoInclusion.Manual
+                      ? this.reposManual.entries()
+                      : [...this.reposAuto.entries(), ...this.reposManual.entries()]),
+            ].map(([id, repo]) => ({ id, name: repo.displayName }))
+        )
     }
 
     // Gets the set of all repositories to search.
-    public getRepoIdSet(): Set<string> {
-        return new Set([...this.reposAuto.keys(), ...this.reposManual.keys()])
+    public getRepoIdSet(): string[] {
+        return Array.from(new Set([...this.reposAuto.keys(), ...this.reposManual.keys()]))
     }
 
-    public async query(query: PromptString): Promise<ContextSearchResult[]> {
-        // Sending prompt strings to the Sourcegraph search backend is fine.
-        const result = await graphqlClient.contextSearch(this.getRepoIdSet(), query.toString())
+    public async query(query: PromptString, repoIDs: string[]): Promise<ContextSearchResult[]> {
+        if (repoIDs.length === 0) {
+            return []
+        }
+        const rewritten = await rewriteKeywordQuery(this.completions, query, { restrictRewrite: true })
+        const result = await graphqlClient.contextSearch(repoIDs, rewritten)
         if (result instanceof Error) {
             throw result
         }
         return result || []
     }
+}
 
-    // IRemoteSearch implementation. This is only used for inline edit context.
-
-    public async setWorkspaceUri(uri: URI): Promise<void> {
-        const [codebase] = await repoNameResolver.getRepoNamesFromWorkspaceUri(uri)
-        if (!codebase) {
-            this.setRepos([], RepoInclusion.Automatic)
-            return
+function uniqueRepos(repos: repofetcher.Repo[]): repofetcher.Repo[] {
+    const seen = new Set<string>()
+    return repos.filter(repo => {
+        if (seen.has(repo.id)) {
+            return false
         }
-        const repos = await graphqlClient.getRepoIds([codebase], 10)
-        if (isError(repos)) {
-            throw repos
-        }
-        this.setRepos(repos, RepoInclusion.Automatic)
-    }
-
-    public async search(query: PromptString): Promise<ContextItemFile[]> {
-        const results = await this.query(query)
-        if (isError(results)) {
-            throw results
-        }
-        return (results || []).map(
-            result =>
-                ({
-                    type: 'file',
-                    uri: result.uri,
-                    repoName: result.repoName,
-                    revision: result.commit,
-                    source: ContextItemSource.Unified,
-                    content: result.content,
-                    range: {
-                        start: {
-                            line: result.startLine,
-                            character: 0,
-                        },
-                        end: {
-                            line: result.endLine,
-                            character: 0,
-                        },
-                    },
-                }) satisfies ContextItem
-        )
-    }
+        seen.add(repo.id)
+        return true
+    })
 }

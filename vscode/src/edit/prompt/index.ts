@@ -5,10 +5,12 @@ import {
     type ChatMessage,
     type CompletionParameters,
     type EditModel,
+    type EditProvider,
     type Message,
     ModelProvider,
     PromptString,
     TokenCounter,
+    getModelInfo,
     getSimplePreamble,
     ps,
 } from '@sourcegraph/cody-shared'
@@ -23,12 +25,9 @@ import { claude } from './models/claude'
 import { openai } from './models/openai'
 import type { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } from './type'
 
-const INTERACTION_MODELS: Record<EditModel, EditLLMInteraction> = {
-    'anthropic/claude-3-opus-20240229': claude,
-    'anthropic/claude-3-sonnet-20240229': claude,
-    'anthropic/claude-3-haiku-20240307': claude,
-    'openai/gpt-3.5-turbo': openai,
-    'openai/gpt-4-turbo': openai,
+const INTERACTION_PROVIDERS: Record<EditProvider, EditLLMInteraction> = {
+    Anthropic: claude,
+    OpenAI: openai,
 } as const
 
 const getInteractionArgsFromIntent = (
@@ -36,8 +35,9 @@ const getInteractionArgsFromIntent = (
     model: EditModel,
     options: GetLLMInteractionOptions
 ): LLMInteraction => {
-    // Default to the generic Claude prompt if the model is unknown
-    const interaction = INTERACTION_MODELS[model] || claude
+    const { provider } = getModelInfo(model)
+    // Default to the generic Claude prompt if the provider is unknown
+    const interaction = INTERACTION_PROVIDERS[provider] || claude
     switch (intent) {
         case 'add':
             return interaction.getAdd(options)
@@ -74,25 +74,25 @@ export const buildInteraction = async ({
     editor,
 }: BuildInteractionOptions): Promise<BuiltInteraction> => {
     const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
-    const precedingText = PromptString.fromDocumentText(
-        document,
-        new vscode.Range(
-            task.selectionRange.start.translate({
-                lineDelta: -Math.min(task.selectionRange.start.line, 50),
-            }),
-            task.selectionRange.start
-        )
+    const prefixRange = new vscode.Range(
+        task.selectionRange.start.translate({
+            lineDelta: -Math.min(task.selectionRange.start.line, 50),
+        }),
+        task.selectionRange.start
     )
+    const precedingText = PromptString.fromDocumentText(document, prefixRange)
     const selectedText = PromptString.fromDocumentText(document, task.selectionRange)
     const tokenCount = TokenCounter.countPromptString(selectedText)
     if (tokenCount > contextWindow) {
         throw new Error("The amount of text selected exceeds Cody's current capacity.")
     }
     task.original = selectedText.toString()
-    const followingText = PromptString.fromDocumentText(
-        document,
-        new vscode.Range(task.selectionRange.end, task.selectionRange.end.translate({ lineDelta: 50 }))
+    const suffixRange = new vscode.Range(
+        task.selectionRange.end,
+        task.selectionRange.end.translate({ lineDelta: 50 })
     )
+    const followingText = PromptString.fromDocumentText(document, suffixRange)
+
     const { prompt, responseTopic, stopSequences, assistantText, assistantPrefix } =
         getInteractionArgsFromIntent(task.intent, model, {
             uri: task.fixupFile.uri,
@@ -124,17 +124,17 @@ export const buildInteraction = async ({
     }
     promptBuilder.tryAddMessages(transcript.reverse())
 
-    const contextItemsAndMessages = await getContext({
+    const contextItems = await getContext({
         intent: task.intent,
         uri: task.fixupFile.uri,
         selectionRange: task.selectionRange,
         userContextItems: task.userContextItems,
         editor,
-        followingText,
-        precedingText,
+        suffix: { text: followingText, range: suffixRange },
+        prefix: { text: precedingText, range: prefixRange },
         selectedText,
     })
-    await promptBuilder.tryAddContext('user', contextItemsAndMessages)
+    await promptBuilder.tryAddContext('user', contextItems)
 
     return {
         messages: promptBuilder.build(),

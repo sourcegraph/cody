@@ -1,5 +1,5 @@
 import dedent from 'dedent'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 
 import { testFileUri } from '@sourcegraph/cody-shared'
@@ -7,6 +7,7 @@ import { testFileUri } from '@sourcegraph/cody-shared'
 import { getCurrentDocContext } from '../../../get-current-doc-context'
 import { document, documentAndPosition } from '../../../test-helpers'
 
+import { initCompletionProviderConfig } from '../../../get-inline-completions-tests/helpers'
 import { JaccardSimilarityRetriever } from './jaccard-similarity-retriever'
 
 const { document: testDocument, position: testPosition } = documentAndPosition(
@@ -57,7 +58,9 @@ describe('JaccardSimilarityRetriever', () => {
         'typescript',
         testFileUri('unrelated.ts').toString()
     )
-
+    beforeAll(async () => {
+        await initCompletionProviderConfig({})
+    })
     beforeEach(() => {
         vi.spyOn(vscode.window, 'visibleTextEditors', 'get').mockReturnValue([
             { document: testDocument },

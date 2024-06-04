@@ -22,7 +22,7 @@ interface ContextItemCommon {
     /**
      * The content, either the entire document or the range subset.
      */
-    content?: string
+    content?: string | null
 
     repoName?: string
     revision?: string
@@ -69,16 +69,14 @@ export enum ContextItemSource {
     /** Explicitly @-mentioned by the user in chat */
     User = 'user',
 
-    /** From local keyword search */
-    Keyword = 'keyword',
-
     /** From the current editor state and open tabs/documents */
     Editor = 'editor',
 
-    Filename = 'filename',
-
     /** From symf search */
     Search = 'search',
+
+    /** In initial context */
+    Initial = 'initial',
 
     /** Remote search */
     Unified = 'unified',
@@ -92,14 +90,8 @@ export enum ContextItemSource {
     /** From URI */
     Uri = 'uri',
 
-    /** From a package repository */
-    Package = 'package',
-
     /** From source control history */
     History = 'history',
-
-    /** From Github API */
-    Github = 'github',
 }
 
 /**
@@ -107,65 +99,33 @@ export enum ContextItemSource {
  */
 export type ContextItem =
     | ContextItemFile
+    | ContextItemRepository
+    | ContextItemTree
     | ContextItemSymbol
-    | ContextItemPackage
-    | ContextItemGithubPullRequest
-    | ContextItemGithubIssue
     | ContextItemOpenCtx
 
 /**
- * A Github pull request that is included as context in a chat message.
+ * A context item that represents a repository.
  */
-export interface ContextItemGithubPullRequest extends ContextItemCommon {
-    type: 'github_pull_request'
-
-    /**
-     * the owner of the repository.
-     */
-    owner: string
-
-    /**
-     * the name of the repository.
-     */
+export interface ContextItemRepository extends ContextItemCommon {
+    type: 'repository'
     repoName: string
-
-    /**
-     *  the number for this pull request.
-     */
-    pullNumber: number
-
-    /**
-     * the title of this pull request.
-     */
-    title: string
+    repoID: string
+    content: null
 }
 
 /**
- * A Github issue that is included as context in a chat message.
+ * A context item that represents a tree (directory).
  */
-export interface ContextItemGithubIssue extends ContextItemCommon {
-    type: 'github_issue'
+export interface ContextItemTree extends ContextItemCommon {
+    type: 'tree'
 
-    /**
-     * the owner of the repository.
-     */
-    owner: string
+    /** Only workspace root trees are supported right now. */
+    isWorkspaceRoot: true
 
-    /**
-     * the name of the repository.
-     */
-    repoName: string
-
-    /**
-     *  the number for this issue.
-     */
-    issueNumber: number
-
-    /**
-     * the title of this issue.
-     */
-    title: string
+    content: null
 }
+
 /**
  * An OpenCtx context item returned from a provider.
  */
@@ -178,32 +138,8 @@ export interface ContextItemOpenCtx extends ContextItemCommon {
     mention?: {
         uri: string
         data?: any
+        description?: string
     }
-}
-
-/**
- * A package repository that is included as context in a chat message.
- */
-export interface ContextItemPackage extends ContextItemCommon {
-    type: 'package'
-
-    /**
-     * the repository id for this package.
-     */
-    repoID: string
-
-    /**
-     * the title for this package.
-     */
-    title: string
-    /**
-     * the ecosystem for this package.
-     */
-    ecosystem: string
-    /**
-     * the name for this package.
-     */
-    name: string
 }
 
 /**
@@ -230,7 +166,7 @@ export interface ContextItemSymbol extends ContextItemCommon {
 export type SymbolKind = 'class' | 'function' | 'method'
 
 /** {@link ContextItem} with the `content` field set to the content. */
-export type ContextItemWithContent = ContextItem & Required<Pick<ContextItem, 'content'>>
+export type ContextItemWithContent = ContextItem & { content: string }
 
 /**
  * A system chat message that adds a context item to the conversation.

@@ -15,11 +15,6 @@ export class ModelProvider {
      */
     public default = false
 
-    /**
-     * Whether the model is the server-set initial default for new users.
-     */
-    public initialDefault? = false
-
     // Whether the model is only available to Pro users
     public codyProOnly = false
     // The name of the provider of the model, e.g. "Anthropic"
@@ -152,7 +147,11 @@ export class ModelProvider {
             return models[0]
         }
         if (models.length === 0) {
-            throw new Error(`No model found for substring ${modelSubstring}`)
+            throw new Error(
+                `No model found for substring ${modelSubstring}. Available models: ${ModelProvider.providers
+                    .map(m => m.model)
+                    .join(', ')}`
+            )
         }
         throw new Error(
             `Multiple models found for substring ${modelSubstring}: ${models

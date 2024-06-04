@@ -20,7 +20,7 @@ type Story = StoryObj<typeof ContextCell>
 
 export const Default: Story = {
     args: {
-        contextFiles: [
+        contextItems: [
             { type: 'file', uri: URI.file('/foo/bar.go') },
             { type: 'file', uri: URI.file('/foo/qux.go') },
             { type: 'file', uri: URI.file('/this/is/a/very/very/very/very/long/file/path.ts') },

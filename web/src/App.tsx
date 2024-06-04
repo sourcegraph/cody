@@ -1,5 +1,6 @@
 import {
     type ChatMessage,
+    type ClientStateForWebview,
     type ModelProvider,
     PromptString,
     hydrateAfterPostMessage,
@@ -14,12 +15,16 @@ import {
     type ChatModelContext,
     ChatModelContextProvider,
 } from '../../vscode/webviews/chat/models/chatModelContext'
+import {
+    ClientStateContextProvider,
+    useClientActionDispatcher,
+} from '../../vscode/webviews/client/clientState'
 import { type VSCodeWrapper, setVSCodeWrapper } from '../../vscode/webviews/utils/VSCodeApi'
 import {
+    TelemetryRecorderContext,
     createWebviewTelemetryRecorder,
     createWebviewTelemetryService,
 } from '../../vscode/webviews/utils/telemetry'
-import styles from './App.module.css'
 import { type AgentClient, createAgentClient } from './agent/client'
 
 let ACCESS_TOKEN = localStorage.getItem('accessToken')
@@ -53,6 +58,8 @@ export const App: FunctionComponent = () => {
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>()
     const [chatModels, setChatModels] = useState<ModelProvider[]>()
+    const [clientState, setClientState] = useState<ClientStateForWebview>({ initialContext: [] })
+    const dispatchClientAction = useClientActionDispatcher()
 
     const [client, setClient] = useState<AgentClient | Error | null>(null)
     useEffect(() => {
@@ -142,9 +149,16 @@ export const App: FunctionComponent = () => {
                         isDotComUser: message.authStatus.isDotCom,
                         user: message.authStatus,
                     })
+                    break
+                case 'clientState':
+                    setClientState(message.value)
+                    break
+                case 'clientAction':
+                    dispatchClientAction(message)
+                    break
             }
         })
-    }, [vscodeAPI])
+    }, [vscodeAPI, dispatchClientAction])
     useEffect(() => {
         // Notify the extension host that we are ready to receive events.
         vscodeAPI.postMessage({ command: 'ready' })
@@ -176,13 +190,13 @@ export const App: FunctionComponent = () => {
         [chatModels, onCurrentChatModelChange]
     )
 
-    return (
-        <div className={styles.container}>
-            {client && userAccountInfo && chatModels ? (
-                isErrorLike(client) ? (
-                    <p>Error: {client.message}</p>
-                ) : (
-                    <ChatModelContextProvider value={chatModelContext}>
+    return client && userAccountInfo && chatModels ? (
+        isErrorLike(client) ? (
+            <p>Error: {client.message}</p>
+        ) : (
+            <ChatModelContextProvider value={chatModelContext}>
+                <TelemetryRecorderContext.Provider value={telemetryRecorder}>
+                    <ClientStateContextProvider value={clientState}>
                         <Chat
                             chatEnabled={true}
                             userInfo={userAccountInfo}
@@ -190,15 +204,13 @@ export const App: FunctionComponent = () => {
                             transcript={transcript}
                             vscodeAPI={vscodeAPI}
                             telemetryService={telemetryService}
-                            telemetryRecorder={telemetryRecorder}
                             isTranscriptError={isTranscriptError}
-                            userContextFromSelection={[]}
                         />
-                    </ChatModelContextProvider>
-                )
-            ) : (
-                <>Loading...</>
-            )}
-        </div>
+                    </ClientStateContextProvider>
+                </TelemetryRecorderContext.Provider>
+            </ChatModelContextProvider>
+        )
+    ) : (
+        <>Loading...</>
     )
 }

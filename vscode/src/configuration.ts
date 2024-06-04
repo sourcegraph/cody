@@ -83,7 +83,7 @@ export function getConfiguration(
         checkValidEnumValues(key, value)
     }
 
-    const autocompleteExperimentalGraphContext: 'bfg' | null = getHiddenSetting(
+    const autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | null = getHiddenSetting(
         'autocomplete.experimental.graphContext',
         null
     )
@@ -147,6 +147,7 @@ export function getConfiguration(
 
         experimentalOllamaChat: getHiddenSetting('experimental.ollamaChat', true),
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
+        experimentalMinionAnthropicKey: getHiddenSetting('experimental.minion.anthropicKey', undefined),
 
         experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
 

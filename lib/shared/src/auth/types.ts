@@ -30,3 +30,61 @@ export interface AuthStatus {
      */
     userCanUpgrade: boolean
 }
+
+export interface AuthStatusProvider {
+    getAuthStatus(): AuthStatus
+}
+
+export const defaultAuthStatus = {
+    endpoint: '',
+    isDotCom: true,
+    isLoggedIn: false,
+    showInvalidAccessTokenError: false,
+    authenticated: false,
+    hasVerifiedEmail: false,
+    requiresVerifiedEmail: false,
+    siteHasCodyEnabled: false,
+    siteVersion: '',
+    userCanUpgrade: false,
+    username: '',
+    primaryEmail: '',
+    displayName: '',
+    avatarURL: '',
+    codyApiVersion: 0,
+} satisfies AuthStatus
+
+export const unauthenticatedStatus = {
+    endpoint: '',
+    isDotCom: true,
+    isLoggedIn: false,
+    showInvalidAccessTokenError: true,
+    authenticated: false,
+    hasVerifiedEmail: false,
+    requiresVerifiedEmail: false,
+    siteHasCodyEnabled: false,
+    siteVersion: '',
+    userCanUpgrade: false,
+    username: '',
+    primaryEmail: '',
+    displayName: '',
+    avatarURL: '',
+    codyApiVersion: 0,
+} satisfies AuthStatus
+
+export const networkErrorAuthStatus = {
+    isDotCom: false,
+    showInvalidAccessTokenError: false,
+    authenticated: false,
+    isLoggedIn: false,
+    hasVerifiedEmail: false,
+    showNetworkError: true,
+    requiresVerifiedEmail: false,
+    siteHasCodyEnabled: false,
+    siteVersion: '',
+    userCanUpgrade: false,
+    username: '',
+    primaryEmail: '',
+    displayName: '',
+    avatarURL: '',
+    codyApiVersion: 0,
+} satisfies Omit<AuthStatus, 'endpoint'>

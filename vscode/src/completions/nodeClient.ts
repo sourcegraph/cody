@@ -71,7 +71,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 await googleChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
                 return
             }
-            if (provider === 'groq') {
+            if (provider === 'groq' || provider === 'openaicompatible') {
                 await groqChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
                 return
             }

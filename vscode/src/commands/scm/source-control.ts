@@ -237,8 +237,10 @@ export class CodySourceControl implements vscode.Disposable {
     }
 
     public dispose(): void {
-        for (const disposable of [...this.disposables]) {
-            disposable.dispose()
+        for (const disposable of this.disposables) {
+            if (disposable) {
+                disposable.dispose()
+            }
         }
         this.disposables = []
     }

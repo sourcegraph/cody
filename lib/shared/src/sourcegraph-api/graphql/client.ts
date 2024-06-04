@@ -26,6 +26,8 @@ import {
     CURRENT_USER_ID_QUERY,
     CURRENT_USER_INFO_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
+    FILE_CONTENTS_QUERY,
+    FILE_MATCH_SEARCH_QUERY,
     GET_FEATURE_FLAGS_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
@@ -34,6 +36,7 @@ import {
     REPOSITORY_IDS_QUERY,
     REPOSITORY_ID_QUERY,
     REPOSITORY_LIST_QUERY,
+    REPOSITORY_SEARCH_QUERY,
     REPO_NAME_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
 } from './queries'
@@ -98,7 +101,7 @@ interface CodyConfigFeaturesResponse {
 }
 
 interface CodyEnterpriseConfigSmartContextResponse {
-    site: { codyLLMConfiguration: { smartContext: string } | null } | null
+    site: { codyLLMConfiguration: { smartContextWindow: string } | null } | null
 }
 
 interface CurrentUserCodyProEnabledResponse {
@@ -152,6 +155,46 @@ export interface RepoListResponse {
             endCursor: string | null
         }
     }
+}
+
+export interface RepoSearchResponse {
+    repositories: {
+        nodes: { name: string; id: string; url: string }[]
+        pageInfo: {
+            endCursor: string | null
+        }
+    }
+}
+export interface FileMatchSearchResponse {
+    search: {
+        results: {
+            results: {
+                __typename: string
+                repository: {
+                    name: string
+                }
+                file: {
+                    url: string
+                    path: string
+                    commit: {
+                        oid: string
+                    }
+                }
+            }[]
+        }
+    }
+}
+
+export interface FileContentsResponse {
+    repository: {
+        commit: {
+            file: {
+                path: string
+                url: string
+                content: string
+            } | null
+        } | null
+    } | null
 }
 
 interface RepositoryIdResponse {
@@ -264,7 +307,7 @@ export interface CodyLLMSiteConfiguration {
     completionModel?: string
     completionModelMaxTokens?: number
     provider?: string
-    smartContext?: boolean
+    smartContextWindow?: boolean
 }
 
 export interface CurrentUserCodySubscription {
@@ -497,7 +540,7 @@ export class SourcegraphGraphQLAPIClient {
 
     public async getCodyLLMConfiguration(): Promise<undefined | CodyLLMSiteConfiguration | Error> {
         // fetch Cody LLM provider separately for backward compatability
-        const [configResponse, providerResponse, smartContext] = await Promise.all([
+        const [configResponse, providerResponse, smartContextWindow] = await Promise.all([
             this.fetchSourcegraphAPI<APIResponse<CodyLLMSiteConfigurationResponse>>(
                 CURRENT_SITE_CODY_LLM_CONFIGURATION
             ),
@@ -524,7 +567,7 @@ export class SourcegraphGraphQLAPIClient {
             provider = llmProvider
         }
 
-        return { ...config, provider, smartContext }
+        return { ...config, provider, smartContextWindow }
     }
 
     private async getCodyLLMConfigurationSmartContext(): Promise<boolean> {
@@ -536,7 +579,7 @@ export class SourcegraphGraphQLAPIClient {
                 .then(response => {
                     const smartContextResponse = extractDataOrError(
                         response,
-                        data => data?.site?.codyLLMConfiguration?.smartContext ?? ''
+                        data => data?.site?.codyLLMConfiguration?.smartContextWindow ?? ''
                     )
 
                     if (isError(smartContextResponse)) {
@@ -577,6 +620,43 @@ export class SourcegraphGraphQLAPIClient {
         }).then(response => extractDataOrError(response, data => data))
     }
 
+    /**
+     * Searches for repositories from the Sourcegraph instance.
+     * @param first the number of repositories to retrieve.
+     * @param after the last repository retrieved, if any, to continue enumerating the list.
+     * @param query the query to search the repositories.
+     * @returns the list of repositories. If `endCursor` is null, this is the end of the list.
+     */
+    public async searchRepos(
+        first: number,
+        after?: string,
+        query?: string
+    ): Promise<RepoSearchResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<RepoSearchResponse>>(REPOSITORY_SEARCH_QUERY, {
+            first,
+            after: after || null,
+            query,
+        }).then(response => extractDataOrError(response, data => data))
+    }
+
+    public async searchFileMatches(query?: string): Promise<FileMatchSearchResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<FileMatchSearchResponse>>(FILE_MATCH_SEARCH_QUERY, {
+            query,
+        }).then(response => extractDataOrError(response, data => data))
+    }
+
+    public async getFileContents(
+        repoName: string,
+        filePath: string,
+        rev?: string
+    ): Promise<FileContentsResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<FileContentsResponse>>(FILE_CONTENTS_QUERY, {
+            repoName,
+            filePath,
+            rev,
+        }).then(response => extractDataOrError(response, data => data))
+    }
+
     public async getRepoId(repoName: string): Promise<string | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<RepositoryIdResponse>>(REPOSITORY_ID_QUERY, {
             name: repoName,
@@ -608,11 +688,11 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async contextSearch(
-        repos: Set<string>,
+        repoIDs: string[],
         query: string
     ): Promise<ContextSearchResult[] | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<ContextSearchResponse>>(CONTEXT_SEARCH_QUERY, {
-            repos: [...repos],
+            repos: repoIDs,
             query,
             codeResultsCount: 15,
             textResultsCount: 5,
@@ -748,6 +828,9 @@ export class SourcegraphGraphQLAPIClient {
     public async logEvent(event: event, mode: LogEventMode): Promise<LogEventResponse | Error> {
         if (process.env.CODY_TESTING === 'true') {
             return this.sendEventLogRequestToTestingAPI(event)
+        }
+        if (isAgentTesting) {
+            return {}
         }
         if (this.config?.telemetryLevel === 'off') {
             return {}
