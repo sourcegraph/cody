@@ -289,7 +289,7 @@ async function doGetInlineCompletions(
         traceId: getActiveTraceAndSpanId()?.traceId,
     })
 
-    let requestParams: RequestParams = {
+    const requestParams: RequestParams = {
         document,
         docContext,
         position,
