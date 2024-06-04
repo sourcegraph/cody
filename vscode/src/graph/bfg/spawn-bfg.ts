@@ -21,6 +21,7 @@ export async function spawnBfg(
     const child = child_process.spawn(codyrpc, {
         stdio: 'pipe',
         env: {
+            ...process.env,
             VERBOSE_DEBUG: `${isVerboseDebug}`,
             RUST_BACKTRACE: isVerboseDebug ? '1' : '0',
             // See bfg issue 138

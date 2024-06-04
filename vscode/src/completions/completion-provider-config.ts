@@ -70,8 +70,6 @@ class CompletionProviderConfig {
                 return 'bfg'
             case 'bfg-mixed':
                 return 'bfg-mixed'
-            case 'local-mixed':
-                return 'local-mixed'
             case 'jaccard-similarity':
                 return 'jaccard-similarity'
             case 'new-jaccard-similarity':

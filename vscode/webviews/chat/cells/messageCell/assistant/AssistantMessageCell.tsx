@@ -171,7 +171,11 @@ export function makeHumanMessageInfo(
         },
         hasExplicitMentions: Boolean(contextItems.some(item => item.source === ContextItemSource.User)),
         appendAtMention: () => {
-            humanEditorRef.current?.appendText('@', true)
+            if (humanEditorRef.current?.getSerializedValue().text.trim().endsWith('@')) {
+                humanEditorRef.current?.setFocus(true, { moveCursorToEnd: true })
+            } else {
+                humanEditorRef.current?.appendText('@', true)
+            }
         },
     }
 }
