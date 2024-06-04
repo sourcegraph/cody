@@ -5,6 +5,7 @@ import {
     type AuthStatus,
     type ChatHistory,
     type ConfigurationWithAccessToken,
+    type MemoryStorage,
     type SerializedChatInteraction,
     type SerializedChatMessage,
     type UserLocalHistory,
@@ -13,13 +14,18 @@ import {
 
 import { isSourcegraphToken } from '../chat/protocol'
 
-type ChatHistoryKey = `${string}-${string}`
+type AuthStatusKey = `${string}-${string}`
+
 type AccountKeyedChatHistory = {
-    [key: ChatHistoryKey]: PersistedUserLocalHistory
+    [key: AuthStatusKey]: PersistedUserLocalHistory
 }
 
 interface PersistedUserLocalHistory {
     chat: ChatHistory
+}
+
+type AccountKeyedChatMemory = {
+    [key: AuthStatusKey]: MemoryStorage | null
 }
 
 class LocalStorage {
@@ -27,6 +33,7 @@ class LocalStorage {
     protected readonly KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
     protected readonly KEY_CONFIG = 'cody-config'
     protected readonly KEY_LOCAL_MINION_HISTORY = 'cody-local-minionHistory-v0'
+    protected readonly KEY_LOCAL_MEMORY = 'cody-local-memory-v1'
     public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
     public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     protected readonly CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
@@ -118,7 +125,7 @@ class LocalStorage {
     public async setChatHistory(authStatus: AuthStatus, history: UserLocalHistory): Promise<void> {
         try {
             const key = getKeyForAuthStatus(authStatus)
-            let fullHistory = this.storage.get<{ [key: ChatHistoryKey]: UserLocalHistory } | null>(
+            let fullHistory = this.storage.get<{ [key: AuthStatusKey]: UserLocalHistory } | null>(
                 this.KEY_LOCAL_HISTORY,
                 null
             )
@@ -162,6 +169,43 @@ class LocalStorage {
     public async removeChatHistory(authStatus: AuthStatus): Promise<void> {
         try {
             await this.setChatHistory(authStatus, { chat: {} })
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
+    public getChatMemory(authStatus: AuthStatus): MemoryStorage | null {
+        const history = this.storage.get<AccountKeyedChatMemory | null>(this.KEY_LOCAL_MEMORY, null)
+        const accountKey = getKeyForAuthStatus(authStatus)
+
+        return history?.[accountKey] ?? null
+    }
+
+    public async setChatMemory(authStatus: AuthStatus, memory: MemoryStorage | null): Promise<void> {
+        try {
+            const authStatusKey = getKeyForAuthStatus(authStatus)
+            let authStatusMemoryMap = this.storage.get<AccountKeyedChatMemory | null>(
+                this.KEY_LOCAL_HISTORY,
+                null
+            )
+
+            if (authStatusMemoryMap) {
+                authStatusMemoryMap[authStatusKey] = memory
+            } else {
+                authStatusMemoryMap = {
+                    [authStatusKey]: memory,
+                }
+            }
+
+            await this.storage.update(this.KEY_LOCAL_MEMORY, authStatusMemoryMap)
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
+    public async clearChatMemory(authStatus: AuthStatus): Promise<void> {
+        try {
+            await this.setChatMemory(authStatus, null)
         } catch (error) {
             console.error(error)
         }
@@ -237,7 +281,7 @@ class LocalStorage {
  */
 export const localStorage = new LocalStorage()
 
-function getKeyForAuthStatus(authStatus: AuthStatus): ChatHistoryKey {
+function getKeyForAuthStatus(authStatus: AuthStatus): AuthStatusKey {
     return `${authStatus.endpoint}-${authStatus.username}`
 }
 
