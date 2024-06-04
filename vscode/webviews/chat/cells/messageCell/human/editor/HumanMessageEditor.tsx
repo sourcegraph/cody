@@ -185,7 +185,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 const editor = editorRef.current
                 if (editor) {
                     editor.addMentions(addContextItemsToLastHumanInput)
-                    editor.setFocus(true)
+                    editor.setFocus(true, { scrollTo: true })
                 }
             },
             [isSent]

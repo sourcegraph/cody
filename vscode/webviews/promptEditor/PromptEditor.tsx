@@ -46,7 +46,7 @@ interface Props extends KeyboardEventPluginProps {
 
 export interface PromptEditorRefAPI {
     getSerializedValue(): SerializedPromptEditorValue
-    setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }): void
+    setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean; scrollTo?: boolean }): void
     appendText(text: string, ensureWhitespaceBefore?: boolean): void
     addMentions(items: ContextItem[]): void
     setInitialContextMentions(items: ContextItem[]): void
@@ -81,7 +81,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 }
                 return toSerializedPromptEditorValue(editorRef.current)
             },
-            setFocus(focus, { moveCursorToEnd } = {}): void {
+            setFocus(focus, { moveCursorToEnd, scrollTo } = {}): void {
                 const editor = editorRef.current
                 if (editor) {
                     if (focus) {
@@ -105,14 +105,14 @@ export const PromptEditor: FunctionComponent<Props> = ({
                                 // Ensure element is focused in case the editor is empty. Copied
                                 // from LexicalAutoFocusPlugin.
                                 const doFocus = () =>
-                                    editor.getRootElement()?.focus({ preventScroll: true })
+                                    editor.getRootElement()?.focus({ preventScroll: !scrollTo })
                                 doFocus()
 
                                 // HACK(sqs): Needed in VS Code webviews to actually get it to focus
                                 // on initial load, for some reason.
                                 setTimeout(doFocus)
                             },
-                            { tag: 'skip-scroll-into-view' }
+                            !scrollTo ? { tag: 'skip-scroll-into-view' } : undefined
                         )
                     } else {
                         editor.blur()
