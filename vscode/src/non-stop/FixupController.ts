@@ -778,7 +778,6 @@ export class FixupController
         task: FixupTask,
         options?: { undoStopBefore: boolean; undoStopAfter: boolean }
     ): Promise<boolean> {
-        logDebug('FixupController:insertEdit', `taskId=${task.id}`)
         const text = task.replacement
         // If we have specified a dedicated insertion point - use that.
         // Otherwise fall back to using the start of the selection range.
