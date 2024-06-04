@@ -34,7 +34,7 @@ suite('API tests', () => {
             },
         })
         assert.deepStrictEqual(
-            h.lastN(20).map(h => h.document.uri.toString()),
+            h.lastN(20, 'typescript').map(h => h.document.uri.toString()),
             [testFileUri('foo.ts').toString(), testFileUri('bar.ts').toString()]
         )
     })
