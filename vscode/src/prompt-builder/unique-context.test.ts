@@ -365,6 +365,16 @@ describe('Unique Context Items', () => {
             expect(isUniqueContextItem(item2, [item1, item2])).toBeFalsy()
         })
 
+        it('returns false when the new item has no range and an earlier item has whole file range', () => {
+            const item1: ContextItem = baseFile({
+                start: { line: 0, character: 0 },
+                end: { line: contentLines.length, character: 0 },
+            })
+            const item2: ContextItem = baseFile(undefined)
+
+            expect(isUniqueContextItem(item2, [item1])).toBeFalsy()
+        })
+
         it('returns false when the new item is a duplicate with a larger range', () => {
             const inner: ContextItem = baseFile({
                 start: { line: 0, character: 0 },
@@ -389,6 +399,23 @@ describe('Unique Context Items', () => {
             })
 
             expect(isUniqueContextItem(inner, [outter])).toBeFalsy()
+        })
+
+        it('returns false when the new item is a duplicate with a 2nd smaller range', () => {
+            const noOverlapFirst: ContextItem = baseFile({
+                start: { line: 11, character: 0 },
+                end: { line: 15, character: 0 },
+            })
+            const outer: ContextItem = baseFile({
+                start: { line: 0, character: 0 },
+                end: { line: 10, character: 0 },
+            })
+            const inner: ContextItem = baseFile({
+                start: { line: 2, character: 0 },
+                end: { line: 5, character: 0 },
+            })
+
+            expect(isUniqueContextItem(inner, [noOverlapFirst, outer])).toBeFalsy()
         })
     })
 })
