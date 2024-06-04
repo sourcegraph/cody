@@ -7,5 +7,5 @@
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
   },
   "include": ["src"],
-  "exclude": ["dist"],
+  "exclude": ["dist", "typehacks"],
 }
