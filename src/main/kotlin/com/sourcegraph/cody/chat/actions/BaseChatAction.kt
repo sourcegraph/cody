@@ -5,6 +5,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
 import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.config.CodyAuthenticationManager
+import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.ui.DumbAwareEDTAction
 
 abstract class BaseChatAction : DumbAwareEDTAction() {
@@ -23,8 +24,12 @@ abstract class BaseChatAction : DumbAwareEDTAction() {
 
   override fun update(event: AnActionEvent) {
     val project = event.project ?: return
-    val hasActiveAccount = !CodyAuthenticationManager.getInstance(project).hasNoActiveAccount()
-    event.presentation.isEnabledAndVisible = hasActiveAccount
+    val hasActiveAccount = CodyAuthenticationManager.getInstance(project).hasActiveAccount()
+    event.presentation.isEnabled = hasActiveAccount
+    if (!event.presentation.isEnabled) {
+      event.presentation.description =
+          CodyBundle.getString("action.sourcegraph.disabled.description")
+    }
   }
 
   private fun showToolbar(project: Project) =

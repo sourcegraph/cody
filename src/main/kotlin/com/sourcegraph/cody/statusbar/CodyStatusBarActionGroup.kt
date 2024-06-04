@@ -30,12 +30,15 @@ class CodyStatusBarActionGroup : DefaultActionGroup() {
       addAll(listOfNotNull(deriveWarningAction()))
       addSeparator()
       addAll(
+          CodyManageAccountsAction(),
+          CodyOpenSettingsAction(),
+      )
+      addSeparator()
+      addAll(
           CodyEnableAutocompleteAction(),
           CodyDisableAutocompleteAction(),
           CodyEnableLanguageForAutocompleteAction(),
           CodyDisableLanguageForAutocompleteAction(),
-          CodyManageAccountsAction(),
-          CodyOpenSettingsAction(),
       )
     }
   }

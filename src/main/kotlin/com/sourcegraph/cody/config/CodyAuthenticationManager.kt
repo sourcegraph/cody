@@ -147,7 +147,9 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
     }
   }
 
-  fun hasNoActiveAccount() = getInstance(project).getActiveAccount() == null
+  fun hasActiveAccount() = getInstance(project).getActiveAccount() != null
+
+  fun hasNoActiveAccount() = !hasActiveAccount()
 
   override fun dispose() {
     scheduler.shutdown()

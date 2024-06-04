@@ -6,9 +6,21 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
+import com.sourcegraph.cody.config.CodyAuthenticationManager
+import com.sourcegraph.common.CodyBundle
 
 abstract class InlineEditAction : AnAction(), DumbAware {
   private val logger = Logger.getInstance(InlineEditAction::class.java)
+
+  override fun update(event: AnActionEvent) {
+    val project = event.project ?: return
+    val hasActiveAccount = CodyAuthenticationManager.getInstance(project).hasActiveAccount()
+    event.presentation.isEnabled = hasActiveAccount
+    if (!event.presentation.isEnabled) {
+      event.presentation.description =
+          CodyBundle.getString("action.sourcegraph.disabled.description")
+    }
+  }
 
   abstract fun performAction(e: AnActionEvent, project: Project)
 
