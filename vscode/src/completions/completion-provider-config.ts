@@ -17,6 +17,7 @@ class CompletionProviderConfig {
         FeatureFlag.CodyAutocompleteTracing,
         FeatureFlag.CodyAutocompleteSmartThrottle,
         FeatureFlag.CodyAutocompleteReducedDebounce,
+        FeatureFlag.CodyAutocompleteContextExtendLanguagePool,
     ] as const
 
     private get config() {
@@ -69,8 +70,6 @@ class CompletionProviderConfig {
                 return 'bfg'
             case 'bfg-mixed':
                 return 'bfg-mixed'
-            case 'local-mixed':
-                return 'local-mixed'
             case 'jaccard-similarity':
                 return 'jaccard-similarity'
             case 'new-jaccard-similarity':

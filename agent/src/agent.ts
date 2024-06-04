@@ -333,6 +333,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 '*',
                 new IndentationBasedFoldingRangeProvider()
             )
+            if (clientInfo.extensionConfiguration?.baseGlobalState) {
+                for (const key in clientInfo.extensionConfiguration.baseGlobalState) {
+                    const value = clientInfo.extensionConfiguration.baseGlobalState[key]
+                    globalState.update(key, value)
+                }
+            }
             this.workspace.workspaceRootUri = vscode.Uri.parse(clientInfo.workspaceRootUri)
             vscode_shim.setWorkspaceDocuments(this.workspace)
             if (clientInfo.capabilities?.codeActions === 'enabled') {
