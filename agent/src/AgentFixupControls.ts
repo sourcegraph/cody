@@ -4,7 +4,6 @@ import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { type Agent, errorToCodyError } from './agent'
 import type { EditTask } from './protocol-alias'
-import { logDebug } from '../../vscode/src/log'
 
 export class AgentFixupControls implements FixupControlApplicator {
     constructor(
@@ -13,7 +12,6 @@ export class AgentFixupControls implements FixupControlApplicator {
     ) {}
 
     public accept(id: FixupTaskID): void {
-        logDebug('AgentFixupControls accepting', id)
         const task = this.fixups.taskForId(id)
         if (task) {
             this.fixups.accept(task)
@@ -28,7 +26,6 @@ export class AgentFixupControls implements FixupControlApplicator {
     }
 
     public cancel(id: FixupTaskID): void {
-        logDebug('AgentFixupControls canceling', id)
         const task = this.fixups.taskForId(id)
         if (task) {
             this.fixups.cancel(task)
