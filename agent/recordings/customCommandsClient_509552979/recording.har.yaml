@@ -5,11 +5,11 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: 6b16de44d8593d71e60f081f3b00edfd
+    - _id: 12e8efe3cf27710253140ac42d6a20d9
       _order: 0
       cache: {}
       request:
-        bodySize: 934
+        bodySize: 938
         cookies: []
         headers:
           - name: content-type
@@ -22,7 +22,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-88ce13f1b073c5f44bc0c8e6535c2351-b12c0720295b9531-01
+            value: 00-470b8769b52a8b61829f00e140d714ee-6e41197a383fc5d7-01
           - name: connection
             value: keep-alive
           - name: host
@@ -39,7 +39,7 @@ log:
               - speaker: system
                 text: You are Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: >-
+                text: >
                   Codebase context from file path src/example3.ts: export
                   function example(): string {
                       return 'example'
@@ -47,7 +47,7 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: >-
+                text: >
                   Codebase context from file path src/example2.ts: export
                   function example(): string {
                       return 'example'
@@ -81,10 +81,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 4004
+        bodySize: 4032
         content:
           mimeType: text/event-stream
-          size: 4004
+          size: 4032
           text: >+
             event: completion
 
@@ -98,7 +98,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 28 May 2024 11:58:22 GMT
+            value: Tue, 04 Jun 2024 10:17:18 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -127,7 +127,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-28T11:58:20.910Z
+      startedDateTime: 2024-06-04T10:17:16.975Z
       time: 0
       timings:
         blocked: -1
