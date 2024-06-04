@@ -57,8 +57,10 @@ export function isUniqueContextItem(itemToAdd: ContextItem, uniqueItems: Context
     for (const item of uniqueItems) {
         // Check for existing items with the same display path
         if (getContextItemDisplayPath(item) === itemToAddDisplayPath) {
+            const itemRange = item.range
+
             // Assume context with no range contains full file content (unique)
-            if (item === itemToAdd || !item.range) {
+            if (item === itemToAdd || !itemRange) {
                 return false // Duplicate found.
             }
 
@@ -69,10 +71,10 @@ export function isUniqueContextItem(itemToAdd: ContextItem, uniqueItems: Context
 
             // Duplicates if overlapping ranges on the same lines,
             // or if one range contains the other.
-            if (item.range && itemToAddRange) {
+            if (itemToAddRange) {
                 if (
-                    rangesOnSameLines(item.range, itemToAddRange) ||
-                    rangeContainsLines(item.range, itemToAddRange)
+                    rangesOnSameLines(itemRange, itemToAddRange) ||
+                    rangeContainsLines(itemRange, itemToAddRange)
                 ) {
                     return false
                 }
@@ -80,7 +82,7 @@ export function isUniqueContextItem(itemToAdd: ContextItem, uniqueItems: Context
 
             // Duplicates if whole file (undefined range) and selection has the
             // same content.
-            if (item.range && !itemToAddRange && equalContent(item, itemToAdd)) {
+            if (!itemToAddRange && equalContent(item, itemToAdd)) {
                 return false
             }
         }
