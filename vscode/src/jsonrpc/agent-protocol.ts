@@ -500,6 +500,8 @@ export interface ExtensionConfiguration {
     eventProperties?: EventProperties | undefined | null
 
     customConfiguration?: Record<string, any> | undefined | null
+
+    baseGlobalState?: Record<string, any> | undefined | null
 }
 
 /**
