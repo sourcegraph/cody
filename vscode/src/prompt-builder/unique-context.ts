@@ -82,7 +82,7 @@ export function isUniqueContextItem(itemToAdd: ContextItem, uniqueItems: Context
 
             // Duplicates if whole file (undefined range) and selection has the
             // same content.
-            if (!itemToAddRange && equalContent(item, itemToAdd)) {
+            if (!itemToAddRange && equalTrimmedContent(item, itemToAdd)) {
                 return false
             }
         }
@@ -119,6 +119,6 @@ function isUserAddedItem(item: ContextItem): boolean {
 /**
  * Checks if content is set and equal.
  */
-function equalContent(item1: ContextItem, item2: ContextItem): boolean {
-    return !!item1.content && item1.content === item2.content
+function equalTrimmedContent(item1: ContextItem, item2: ContextItem): boolean {
+    return !!item1.content && !!item2.content && item1.content.trim() === item2.content.trim()
 }
