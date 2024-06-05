@@ -3,6 +3,7 @@ import { isWindows } from '@sourcegraph/cody-shared'
 import {
     atMentionMenuMessage,
     chatInputMentions,
+    clickEditorTab,
     createEmptyChatPanel,
     expectContextCellCounts,
     focusChatInputAtEnd,
@@ -405,15 +406,19 @@ test.extend<ExpectedEvents>({
 test.extend<ExpectedEvents>({
     expectedEvents: ['CodyVSCodeExtension:addChatContext:clicked'],
     expectedV2Events: ['cody.addChatContext:clicked'],
-})('Add Selection to Cody Chat', async ({ page, sidebar }) => {
+})('Add Selection to Cody Chat', async ({ page, nap, sidebar }) => {
+    const addSelectionSlug = 'Cody: Add Selection to Cody Chat'
     await sidebarSignin(page, sidebar)
     const [, lastChatInput] = await createEmptyChatPanel(page)
 
+    await nap()
     await openFileInEditorTab(page, 'buzz.ts')
     await selectLineRangeInEditorTab(page, 2, 5)
+    await nap()
+    await executeCommandInPalette(page, addSelectionSlug)
     await lastChatInput.press('x')
+    await clickEditorTab(page, 'buzz.ts', { exact: true })
     await selectLineRangeInEditorTab(page, 7, 10)
-    await executeCommandInPalette(page, 'Cody: Add Selection to Cody Chat')
-
+    await executeCommandInPalette(page, addSelectionSlug)
     await expect(chatInputMentions(lastChatInput)).toHaveText(['@buzz.ts:2-5', '@buzz.ts:7-10'])
 })
