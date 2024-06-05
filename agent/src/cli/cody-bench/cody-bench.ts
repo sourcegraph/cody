@@ -6,7 +6,7 @@ import * as vscode from 'vscode'
 
 import { newAgentClient } from '../../agent'
 
-import { ModelProvider, getDotComDefaultModels } from '@sourcegraph/cody-shared'
+import { ModelsService, getDotComDefaultModels } from '@sourcegraph/cody-shared'
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
 import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled'
 import { arrayOption, booleanOption, intOption } from './cli-parsers'
@@ -293,7 +293,7 @@ export const codyBenchCommand = new commander.Command('cody-bench')
             recordingDirectory,
             keepUnusedRecordings: true,
         })
-        ModelProvider.setProviders(getDotComDefaultModels())
+        ModelsService.setModels(getDotComDefaultModels())
         try {
             await Promise.all(
                 workspacesToRun.map(workspace => evaluateWorkspace(workspace, recordingDirectory))
@@ -319,8 +319,8 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
 
     const baseGlobalState: Record<string, any> = {}
     try {
-        const provider = ModelProvider.getProviderByModelSubstringOrError(options.fixture.name)
-        baseGlobalState.editModel = provider.model
+        const model = ModelsService.getModelByIDSubstringOrError(options.fixture.name)
+        baseGlobalState.editModel = model.model
     } catch (error) {
         console.log(options.fixture.name, error)
     }
