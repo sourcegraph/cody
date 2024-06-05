@@ -68,7 +68,7 @@ import { captureException } from '@sentry/core'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import type { URI } from 'vscode-uri'
 import { getContextFileFromUri } from '../../commands/context/file-path'
-import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
+import { getContextFileFromCursor } from '../../commands/context/selection'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
@@ -559,13 +559,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
                 this.postEmptyMessageInProgress()
 
-                // Add user's current selection as context for chat messages.
-                const selectionContext = source === 'chat' ? await getContextFileFromSelection() : []
-                abortSignal.throwIfAborted()
-
                 const userContextItems: ContextItemWithContent[] = await resolveContextItems(
                     this.editor,
-                    [...mentions, ...selectionContext],
+                    [...mentions],
                     inputText
                 )
                 abortSignal.throwIfAborted()
