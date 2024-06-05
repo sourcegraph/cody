@@ -13,7 +13,7 @@
   "sideEffects": false,
   "scripts": {
     "dev": "vite --mode development",
-    "build": "tsc --build tsconfig.json --emitDeclarationOnly && vite build --mode production",
+    "build": "vite build --mode production",
     "test": "vitest"
   },
   "dependencies": {
@@ -24,21 +24,20 @@
     "@vscode/codicons": "^0.0.35",
     "buffer": "^6.0.3",
     "events": "^3.3.0",
+    "lodash": "4.17.21",
     "path-browserify": "^1.0.1",
     "stream-browserify": "^3.0.0",
     "util": "^0.12.5",
     "vscode-uri": "^3.0.7"
   },
-  "peerDependencies": {
-    "react": "18.2.0",
-    "react-dom": "18.2.0"
-  },
   "devDependencies": {
     "@types/highlightjs": "^9.12.6",
     "@vitejs/plugin-react": "^4.2.1",
     "@vitejs/plugin-react-swc": "^3.6.0",
+    "@types/lodash": "4.14.195",
     "postcss": "^8.4.38",
     "tailwind-merge": "^2.3.0",
+    "tailwindcss": "^3.4.3",
     "vite-plugin-dts": "^3.9.1"
   }
 }

@@ -39,11 +39,9 @@ export interface ExtensionClient {
  */
 export function defaultVSCodeExtensionClient(): ExtensionClient {
     return {
-        provide: async goodies => ({
-            dispose: () => {},
-        }),
-        createFixupControlApplicator: files => new FixupCodeLenses(files),
         clientName: 'vscode',
         clientVersion: version,
+        provide: async goodies => ({ dispose: () => {} }),
+        createFixupControlApplicator: files => new FixupCodeLenses(files),
     }
 }
