@@ -25,7 +25,6 @@ import type {
 } from './providers/provider'
 import type { RequestManager, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
-import type { SmartThrottleService } from './smart-throttle'
 import type { AutocompleteItem } from './suggested-autocomplete-items-cache'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import type { ProvideInlineCompletionsItemTraceData } from './tracer'
@@ -47,7 +46,6 @@ export interface InlineCompletionsParams {
     // Shared
     requestManager: RequestManager
     contextMixer: ContextMixer
-    smartThrottleService: SmartThrottleService | null
 
     // UI state
     isDotComUser: boolean
@@ -192,7 +190,6 @@ async function doGetInlineCompletions(
         providerConfig,
         contextMixer,
         requestManager,
-        smartThrottleService,
         lastCandidate,
         debounceInterval,
         setIsLoading,
@@ -292,7 +289,7 @@ async function doGetInlineCompletions(
         traceId: getActiveTraceAndSpanId()?.traceId,
     })
 
-    let requestParams: RequestParams = {
+    const requestParams: RequestParams = {
         document,
         docContext,
         position,
@@ -316,22 +313,11 @@ async function doGetInlineCompletions(
         }
     }
 
-    if (smartThrottleService) {
-        const throttledRequest = await smartThrottleService.throttle(requestParams, triggerKind)
-
-        if (throttledRequest === null) {
-            return null
-        }
-
-        requestParams = throttledRequest
-    }
-
-    const debounceTime = smartThrottleService
-        ? 0
-        : triggerKind !== TriggerKind.Automatic
-          ? 0
-          : ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) +
-            (artificialDelay ?? 0)
+    const debounceTime =
+        triggerKind !== TriggerKind.Automatic
+            ? 0
+            : ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) +
+              (artificialDelay ?? 0)
 
     // We split the desired debounceTime into two chunks. One that is at most 25ms where every
     // further execution is halted...

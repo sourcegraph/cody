@@ -862,7 +862,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
     autocompleteDisableInsideComments: false,
     autocompleteExperimentalHotStreak: false,
     autocompleteExperimentalGraphContext: null,
-    autocompleteExperimentalSmartThrottle: false,
     autocompleteExperimentalOllamaOptions: {
         model: 'codellama:7b-code',
         url: OLLAMA_DEFAULT_URL,
