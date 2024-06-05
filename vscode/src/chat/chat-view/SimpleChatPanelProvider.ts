@@ -561,7 +561,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
                 const userContextItems: ContextItemWithContent[] = await resolveContextItems(
                     this.editor,
-                    [...mentions],
+                    mentions,
                     inputText
                 )
                 abortSignal.throwIfAborted()
