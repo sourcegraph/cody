@@ -411,7 +411,6 @@ const register = async (
         // Process command with the commands controller
         return await executeCodyCommand(id, newCodyCommandArgs(args))
     }
-
     // Register Cody Commands
     disposables.push(
         vscode.commands.registerCommand('cody.action.command', (id, a) => executeCommand(id, a)),
@@ -495,6 +494,9 @@ const register = async (
                 query: '@ext:sourcegraph.cody-ai',
             })
         ),
+        vscode.commands.registerCommand('cody.chat.view.popOut', async () => {
+            vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow')
+        }),
         vscode.commands.registerCommand('cody.chat.history.panel', async () => {
             await displayHistoryQuickPick(authProvider.getAuthStatus())
         }),

@@ -208,16 +208,14 @@ async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
         return { provider: configuredProvider }
     }
 
-    const [starCoder2Hybrid, starCoderHybrid, llamaCode13B, claude3, finetunedFIMModelExperiment] =
-        await Promise.all([
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
-            featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteFIMFineTunedModelBaseFeatureFlag
-            ),
-        ])
+    const [starCoder2Hybrid, starCoderHybrid, claude3, finetunedFIMModelExperiment] = await Promise.all([
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
+        featureFlagProvider.evaluateFeatureFlag(
+            FeatureFlag.CodyAutocompleteFIMFineTunedModelBaseFeatureFlag
+        ),
+    ])
 
     // We run fine tuning experiment for VSC client only.
     // We disable for all agent clients like the JetBrains plugin.
@@ -228,10 +226,6 @@ async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
     if (!isFinetuningExperimentDisabled && finetunedFIMModelExperiment) {
         // The traffic in this feature flag is interpreted as a traffic allocated to the fine-tuned experiment.
         return resolveFinetunedModelFromFeatureFlags()
-    }
-
-    if (llamaCode13B) {
-        return { provider: 'fireworks', model: 'llama-code-13b' }
     }
 
     if (starCoder2Hybrid) {

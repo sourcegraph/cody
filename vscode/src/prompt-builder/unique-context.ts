@@ -57,8 +57,10 @@ export function isUniqueContextItem(itemToAdd: ContextItem, uniqueItems: Context
     for (const item of uniqueItems) {
         // Check for existing items with the same display path
         if (getContextItemDisplayPath(item) === itemToAddDisplayPath) {
+            const itemRange = item.range
+
             // Assume context with no range contains full file content (unique)
-            if (item === itemToAdd || !item.range) {
+            if (item === itemToAdd || !itemRange) {
                 return false // Duplicate found.
             }
 
@@ -69,11 +71,19 @@ export function isUniqueContextItem(itemToAdd: ContextItem, uniqueItems: Context
 
             // Duplicates if overlapping ranges on the same lines,
             // or if one range contains the other.
-            if (item.range && itemToAddRange) {
-                return !(
-                    rangesOnSameLines(item.range, itemToAddRange) ||
-                    rangeContainsLines(item.range, itemToAddRange)
-                )
+            if (itemToAddRange) {
+                if (
+                    rangesOnSameLines(itemRange, itemToAddRange) ||
+                    rangeContainsLines(itemRange, itemToAddRange)
+                ) {
+                    return false
+                }
+            }
+
+            // Duplicates if whole file (undefined range) and selection has the
+            // same content.
+            if (!itemToAddRange && equalTrimmedContent(item, itemToAdd)) {
+                return false
             }
         }
     }
@@ -104,4 +114,11 @@ function rangesOnSameLines(range1: RangeData, range2: RangeData): boolean {
  */
 function isUserAddedItem(item: ContextItem): boolean {
     return getContextItemTokenUsageType(item) === 'user'
+}
+
+/**
+ * Checks if content is set and equal.
+ */
+function equalTrimmedContent(item1: ContextItem, item2: ContextItem): boolean {
+    return !!item1.content && !!item2.content && item1.content.trim() === item2.content.trim()
 }

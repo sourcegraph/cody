@@ -71,6 +71,7 @@
       "agent/src/__tests__/",
       "agent/recordings/",
       "agent/src/cli/scip-codegen/scip.ts",
+      "lib/ts-worker/pkg/",
       "/vitest.workspace.js",
       "vitest.config.ts",
       "vite.config.ts",
