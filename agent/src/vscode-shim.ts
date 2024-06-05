@@ -1,17 +1,19 @@
 import { execSync } from 'node:child_process'
 import path from 'node:path'
 
+import { extensionForLanguage, logDebug, logError, setClientNameVersion } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
-
-import { extensionForLanguage, logDebug, logError, setClientNameVersion } from '@sourcegraph/cody-shared'
 
 // <VERY IMPORTANT - PLEASE READ>
 // This file must not import any module that transitively imports from 'vscode'.
 // It's only OK to `import type` from vscode. We can't depend on any vscode APIs
 // to implement this this file because this file is responsible for implementing
-// VS Code APIs resulting in cyclic dependencies.  If we make a mistake and
-// transitively import vscode then you are most likely to hit an error like this:
+// VS Code APIs resulting in cyclic dependencies.
+
+// This will automatically be checked when running build:agent but if we did
+// make a mistake and transitively import vscode you most likely hit an error
+// like this:
 //
 //     /pkg/prelude/bootstrap.js:1926
 //     return wrapper.apply(this.exports, args);

@@ -168,10 +168,6 @@ export function getConfiguration(
             'autocomplete.experimental.fireworksOptions',
             undefined
         ),
-        autocompleteExperimentalSmartThrottle: getHiddenSetting(
-            'autocomplete.experimental.smartThrottle',
-            false
-        ),
         autocompleteExperimentalMultiModelCompletions: getHiddenSetting(
             'autocomplete.experimental.multiModelCompletions',
             undefined

@@ -18,8 +18,9 @@
   "scripts": {
     "build": "tsc --build",
     "watch": "tsc --build --watch",
-    "check": "pnpm run -s biome && pnpm run -s check:css",
+    "check": "pnpm run -s check:build && pnpm run -s biome && pnpm run -s check:css",
     "check:css": "stylelint --quiet --cache '**/*.css'",
+    "check:build": "pnpm run -C vscode check:build",
     "biome": "biome check --apply --error-on-warnings .",
     "test": "vitest",
     "test:unit": "vitest run",

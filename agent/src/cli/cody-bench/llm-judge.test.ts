@@ -1,5 +1,5 @@
 import type { Polly } from '@pollyjs/core'
-import { ModelProvider, getDotComDefaultModels, ps } from '@sourcegraph/cody-shared'
+import { ModelsService, getDotComDefaultModels, ps } from '@sourcegraph/cody-shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
 import { TESTING_CREDENTIALS } from '../../../../vscode/src/testutils/testing-credentials'
@@ -9,7 +9,7 @@ import { llmJudgeFixTemplate } from './llm-judge-fix-template'
 // Skipped because the shared testing account is getting rate limited. It's OK
 // to manually run this test to begin with anyways.
 describe.skip('LLM-as-judge', () => {
-    ModelProvider.setProviders(getDotComDefaultModels())
+    ModelsService.setModels(getDotComDefaultModels())
     let polly: Polly | undefined
     beforeAll(() => {
         if (process.env.CODY_RECORDING_MODE !== 'passthrough') {

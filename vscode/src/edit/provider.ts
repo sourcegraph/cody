@@ -2,7 +2,7 @@ import { Utils } from 'vscode-uri'
 
 import {
     BotResponseMultiplexer,
-    ModelProvider,
+    ModelsService,
     Typewriter,
     isAbortError,
     isDotCom,
@@ -46,7 +46,7 @@ export class EditProvider {
         return wrapInActiveSpan('command.edit.start', async span => {
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
-            const contextWindow = ModelProvider.getContextWindowByID(model)
+            const contextWindow = ModelsService.getContextWindowByID(model)
             const {
                 messages,
                 stopSequences,

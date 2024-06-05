@@ -1,30 +1,31 @@
 import {
-    ModelProvider,
+    Model,
     ModelUsage,
+    ModelsService,
     defaultAuthStatus,
     getDotComDefaultModels,
     unauthenticatedStatus,
 } from '@sourcegraph/cody-shared'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { syncModelProviders } from './sync'
+import { syncModels } from './sync'
 import { getEnterpriseContextWindow } from './utils'
 
-describe('syncModelProviders', () => {
-    const setProvidersSpy = vi.spyOn(ModelProvider, 'setProviders')
+describe('syncModelsService', () => {
+    const setProvidersSpy = vi.spyOn(ModelsService, 'setModels')
 
     beforeEach(() => {
         setProvidersSpy.mockClear()
     })
 
     it('does not set providers if not authenticated', () => {
-        syncModelProviders(unauthenticatedStatus)
+        syncModels(unauthenticatedStatus)
         expect(setProvidersSpy).not.toHaveBeenCalled()
     })
 
     it('sets dotcom default models if on dotcom', () => {
         const authStatus = { ...defaultAuthStatus, isDotCom: true, authenticated: true }
 
-        syncModelProviders(authStatus)
+        syncModels(authStatus)
 
         expect(setProvidersSpy).toHaveBeenCalledWith(getDotComDefaultModels())
     })
@@ -38,12 +39,12 @@ describe('syncModelProviders', () => {
             configOverwrites: { chatModel },
         }
 
-        syncModelProviders(authStatus)
+        syncModels(authStatus)
 
         expect(setProvidersSpy).not.toHaveBeenCalledWith(getDotComDefaultModels())
 
         expect(setProvidersSpy).toHaveBeenCalledWith([
-            new ModelProvider(
+            new Model(
                 authStatus.configOverwrites.chatModel,
                 [ModelUsage.Chat, ModelUsage.Edit],
                 getEnterpriseContextWindow(chatModel, authStatus.configOverwrites)

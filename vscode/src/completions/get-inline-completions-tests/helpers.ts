@@ -182,7 +182,6 @@ export function params(
         providerConfig,
         requestManager: new RequestManager(),
         contextMixer: new ContextMixer(new DefaultContextStrategyFactory('none')),
-        smartThrottleService: null,
         completionIntent: getCompletionIntent({
             document,
             position,

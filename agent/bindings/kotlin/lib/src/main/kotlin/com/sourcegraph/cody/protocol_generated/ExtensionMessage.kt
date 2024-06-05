@@ -155,7 +155,7 @@ data class ClientActionExtensionMessage(
 
 data class ChatModelsExtensionMessage(
   val type: TypeEnum, // Oneof: chatModels
-  val models: List<ModelProvider>,
+  val models: List<Model>,
 ) : ExtensionMessage() {
 
   enum class TypeEnum {

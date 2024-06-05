@@ -42,7 +42,6 @@ import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 import type { ProviderConfig } from './providers/provider'
 import { RequestManager, type RequestParams } from './request-manager'
 import { getRequestParamsFromLastCandidate } from './reuse-last-candidate'
-import { SmartThrottleService } from './smart-throttle'
 import {
     type AutocompleteInlineAcceptedCommandArgs,
     type AutocompleteItem,
@@ -110,7 +109,6 @@ export class InlineCompletionItemProvider
 
     private requestManager: RequestManager
     private contextMixer: ContextMixer
-    private smartThrottleService: SmartThrottleService | null = null
 
     /** Mockable (for testing only). */
     protected getInlineCompletions = getInlineCompletions
@@ -173,11 +171,6 @@ export class InlineCompletionItemProvider
                 createBfgRetriever
             )
         )
-
-        if (completionProviderConfig.smartThrottle) {
-            this.smartThrottleService = new SmartThrottleService()
-            this.disposables.push(this.smartThrottleService)
-        }
 
         const chatHistory = localStorage.getChatHistory(this.config.authStatus)?.chat
         this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0
@@ -247,7 +240,7 @@ export class InlineCompletionItemProvider
             const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
 
             if (!configFeatures.autoComplete) {
-                // If Configfeatures exists and autocomplete is disabled then raise
+                // If ConfigFeatures exists and autocomplete is disabled then raise
                 // the error banner for autocomplete config turned off
                 const error = new Error('AutocompleteConfigTurnedOff')
                 this.onError(error)
@@ -373,7 +366,6 @@ export class InlineCompletionItemProvider
                     providerConfig: this.config.providerConfig,
                     contextMixer: this.contextMixer,
                     requestManager: this.requestManager,
-                    smartThrottleService: this.smartThrottleService,
                     lastCandidate: this.lastCandidate,
                     debounceInterval: {
                         singleLine: debounceInterval,
