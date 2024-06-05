@@ -9,7 +9,7 @@ import type {
 type ChatParameters = Omit<CompletionParameters, 'messages'>
 
 const DEFAULT_CHAT_COMPLETION_PARAMETERS: Omit<ChatParameters, 'maxTokensToSample'> = {
-    temperature: 0.0,
+    temperature: 0.2,
     topK: -1,
     topP: -1,
 }
