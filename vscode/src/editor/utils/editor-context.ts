@@ -21,6 +21,8 @@ import {
     logError,
     openCtx,
     toRangeData,
+    graphqlClient,
+    isErrorLike,
 } from '@sourcegraph/cody-shared'
 
 import { URI } from 'vscode-uri'
@@ -202,7 +204,7 @@ export async function getOpenTabsContextFile(): Promise<ContextItemFile[]> {
     )
 }
 
-async function createContextFileFromUri(
+export async function createContextFileFromUri(
     uri: vscode.Uri,
     source: ContextItemSource,
     type: 'symbol',
@@ -210,13 +212,13 @@ async function createContextFileFromUri(
     kind: SymbolKind,
     symbolName: string
 ): Promise<ContextItemSymbol[]>
-async function createContextFileFromUri(
+export async function createContextFileFromUri(
     uri: vscode.Uri,
     source: ContextItemSource,
     type: 'file',
     selectionRange?: vscode.Range
 ): Promise<ContextItemFile[]>
-async function createContextFileFromUri(
+export async function createContextFileFromUri(
     uri: vscode.Uri,
     source: ContextItemSource,
     type: ContextFileType,
@@ -284,7 +286,7 @@ export async function filterContextItemFiles(
 export async function resolveContextItems(
     editor: Editor,
     items: ContextItem[],
-    input: PromptString
+    input: PromptString,
 ): Promise<ContextItemWithContent[]> {
     return (
         await Promise.all(
@@ -368,9 +370,18 @@ async function resolveFileOrSymbolContextItem(
     contextItem: ContextItemFile | ContextItemSymbol,
     editor: Editor
 ): Promise<ContextItemWithContent> {
-    const content =
-        contextItem.content ??
-        (await editor.getTextEditorContentForFile(contextItem.uri, toVSCodeRange(contextItem.range)))
+    let content = contextItem.content
+
+    if (contextItem.type === 'file' && contextItem.remoteSource) {
+        const resultOrError = await graphqlClient.getFileContent(contextItem.remoteSource.repositoryName, contextItem.uri.path)
+
+        if (!isErrorLike(resultOrError)) {
+            content = resultOrError
+        }
+    }
+
+   content ??= await editor.getTextEditorContentForFile(contextItem.uri, toVSCodeRange(contextItem.range))
+
     return {
         ...contextItem,
         content,

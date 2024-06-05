@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 
 import dts from 'vite-plugin-dts'
-import react from '@vitejs/plugin-react'
+import react from '@vitejs/plugin-react-swc'
 
 import { defineProjectWithDefaults } from '../.config/viteShared'
 
@@ -70,10 +70,8 @@ export default defineProjectWithDefaults(__dirname, {
         // and need to apply the `define`s when building, not when testing. The `define`s leak into
         // the `agent` tests and cause some failures because process.env.CODY_SHIM_TESTING gets
         // `define`d to `false`.
-        ...(process.env.VITEST
-            ? null
-            : {
-                  'process': {},
+        ...( process.env.VITEST ? {} : {
+            'process': {},
         ...Object.fromEntries(
             Object.entries(FAKE_PROCESS_ENV).map(([key, value]) => [
                           `process.env.${key}`,

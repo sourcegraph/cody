@@ -52,6 +52,46 @@ query SiteProductVersion {
     }
 }`
 
+export const FUZZY_FILES_QUERY = `
+query FuzzyFiles($query: String!) {
+    search(patternType: regexp, query: $query) {
+        results {
+            results {
+                ... on FileMatch {
+                    __typename
+                    file {
+                        url
+                        path
+                        name
+                        byteSize
+                        isDirectory
+                    }
+                    repository {
+                        id
+                        name
+                    }
+                }
+            }
+        }
+    }
+}
+`
+
+export const GET_REMOTE_FILE_QUERY = `
+query GetRemoteFileQuery($repositoryName: String!, $filePath: String!) {
+  repository(name: $repositoryName) {
+    id
+    commit(rev: "HEAD") {
+      id
+      oid
+      blob(path: $filePath) {
+         content
+      }
+    }
+  }
+}
+`
+
 export const CURRENT_SITE_HAS_CODY_ENABLED_QUERY = `
 query SiteHasCodyEnabled {
     site {

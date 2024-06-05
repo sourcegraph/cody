@@ -8,6 +8,7 @@ import {
 import { LRUCache } from 'lru-cache'
 import {
     type FunctionComponent,
+    type Context,
     createContext,
     useContext,
     useEffect,
@@ -21,7 +22,7 @@ export interface ChatContextClient {
     getChatContextItems(query: MentionQuery): Promise<ContextItem[]>
 }
 
-const ChatContextClientContext: React.Context<ChatContextClient> = createContext({
+export const ChatContextClientContext: Context<ChatContextClient> = createContext({
     getChatContextItems(query: MentionQuery): Promise<ContextItem[]> {
         // Adapt the VS Code webview messaging API to be RPC-like for ease of use by our callers.
         return new Promise<ContextItem[]>((resolve, reject) => {
