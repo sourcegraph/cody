@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.edit.actions
 
+import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
@@ -11,6 +12,10 @@ import com.sourcegraph.common.CodyBundle
 
 abstract class InlineEditAction : AnAction(), DumbAware {
   private val logger = Logger.getInstance(InlineEditAction::class.java)
+
+  fun getActionUpdateThread(): ActionUpdateThread {
+    return ActionUpdateThread.EDT
+  }
 
   override fun update(event: AnActionEvent) {
     val project = event.project ?: return
