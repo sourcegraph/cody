@@ -2,28 +2,29 @@ import {
     ANSWER_TOKENS,
     type AuthStatus,
     CHAT_INPUT_TOKEN_BUDGET,
-    ModelProvider,
+    Model,
     ModelUsage,
+    ModelsService,
     getDotComDefaultModels,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getEnterpriseContextWindow } from './utils'
 
 /**
- * Sets the model providers based on the authentication status.
+ * Sets the available model based on the authentication status.
  *
- * If a chat model is configured to overwrite, it will add a model provider for that model.
+ * If a chat model is configured to overwrite, it will add a  provider for that model.
  * The token limit for the provider will use the configured limit,
  * or fallback to the limit from the authentication status if not configured.
  */
-export function syncModelProviders(authStatus: AuthStatus): void {
+export function syncModels(authStatus: AuthStatus): void {
     if (!authStatus.authenticated) {
         return
     }
 
     // For dotcom, we use the default models.
     if (authStatus.isDotCom) {
-        ModelProvider.setProviders(getDotComDefaultModels())
+        ModelsService.setModels(getDotComDefaultModels())
         getChatModelsFromConfiguration()
         return
     }
@@ -38,8 +39,8 @@ export function syncModelProviders(authStatus: AuthStatus): void {
     // NOTE: If authStatus?.configOverwrites?.chatModel is empty,
     // automatically fallback to use the default model configured on the instance.
     if (authStatus?.configOverwrites?.chatModel) {
-        ModelProvider.setProviders([
-            new ModelProvider(
+        ModelsService.setModels([
+            new Model(
                 authStatus.configOverwrites.chatModel,
                 // TODO (umpox) Add configOverwrites.editModel for separate edit support
                 [ModelUsage.Chat, ModelUsage.Edit],
@@ -64,29 +65,29 @@ interface ChatModelProviderConfig {
 /**
  * NOTE: DotCom Connections only as model options are not available for Enterprise
  *
- * Gets an array of `ModelProvider` instances based on the configuration for dev chat models.
+ * Gets an array of `Model` instances based on the configuration for dev chat models.
  * If the `cody.dev.models` setting is not configured or is empty, the function returns an empty array.
  *
- * @returns An array of `ModelProvider` instances for the configured chat models.
+ * @returns An array of `Model` instances for the configured chat models.
  */
-export function getChatModelsFromConfiguration(): ModelProvider[] {
+export function getChatModelsFromConfiguration(): Model[] {
     const codyConfig = vscode.workspace.getConfiguration('cody')
     const modelsConfig = codyConfig?.get<ChatModelProviderConfig[]>('dev.models')
     if (!modelsConfig?.length) {
         return []
     }
 
-    const providers: ModelProvider[] = []
+    const models: Model[] = []
     for (const m of modelsConfig) {
-        const provider = new ModelProvider(
+        const provider = new Model(
             `${m.provider}/${m.model}`,
             [ModelUsage.Chat, ModelUsage.Edit],
             { input: m.inputTokens ?? CHAT_INPUT_TOKEN_BUDGET, output: m.outputTokens ?? ANSWER_TOKENS },
             { apiKey: m.apiKey, apiEndpoint: m.apiEndpoint }
         )
-        providers.push(provider)
+        models.push(provider)
     }
 
-    ModelProvider.addProviders(providers)
-    return providers
+    ModelsService.addModels(models)
+    return models
 }

@@ -5,7 +5,7 @@ import {
     type ContextItem,
     type Message,
     type ModelContextWindow,
-    ModelProvider,
+    ModelsService,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     errorToChatError,
@@ -26,12 +26,12 @@ export class SimpleChatModel {
         private customChatTitle?: string,
         private selectedRepos?: Repo[]
     ) {
-        this.contextWindow = ModelProvider.getContextWindowByID(this.modelID)
+        this.contextWindow = ModelsService.getContextWindowByID(this.modelID)
     }
 
     public updateModel(newModelID: string): void {
         this.modelID = newModelID
-        this.contextWindow = ModelProvider.getContextWindowByID(this.modelID)
+        this.contextWindow = ModelsService.getContextWindowByID(this.modelID)
     }
 
     public isEmpty(): boolean {

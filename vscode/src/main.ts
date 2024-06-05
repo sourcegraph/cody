@@ -6,7 +6,7 @@ import {
     type ConfigurationWithAccessToken,
     type DefaultCodyCommands,
     type EventSource,
-    ModelProvider,
+    ModelsService,
     PromptMixin,
     PromptString,
     contextFiltersProvider,
@@ -58,7 +58,7 @@ import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
 import { logDebug, logError } from './log'
 import { MinionOrchestrator } from './minion/MinionOrchestrator'
 import { PoorMansBash } from './minion/environment'
-import { getChatModelsFromConfiguration, syncModelProviders } from './models/sync'
+import { getChatModelsFromConfiguration, syncModels } from './models/sync'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
 import { initVSCodeGitApi } from './repository/git-extension-api'
@@ -279,7 +279,7 @@ const register = async (
             return Promise.resolve()
         }
 
-        ModelProvider.onConfigChange(newConfig.experimentalOllamaChat)
+        ModelsService.onConfigChange(newConfig.experimentalOllamaChat)
 
         const promises: Promise<void>[] = []
         oldConfig = JSON.stringify(newConfig)
@@ -344,7 +344,7 @@ const register = async (
 
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
-        syncModelProviders(authStatus)
+        syncModels(authStatus)
         // Chat Manager uses Simple Context Provider
         await chatManager.syncAuthStatus(authStatus)
         editorManager.syncAuthStatus(authStatus)
@@ -371,10 +371,10 @@ const register = async (
 
     // Sync initial auth status
     const initAuthStatus = authProvider.getAuthStatus()
-    syncModelProviders(initAuthStatus)
+    syncModels(initAuthStatus)
     await chatManager.syncAuthStatus(initAuthStatus)
     editorManager.syncAuthStatus(initAuthStatus)
-    ModelProvider.onConfigChange(initialConfig.experimentalOllamaChat)
+    ModelsService.onConfigChange(initialConfig.experimentalOllamaChat)
     statusBar.syncAuthStatus(initAuthStatus)
     sourceControl.syncAuthStatus(initAuthStatus)
 

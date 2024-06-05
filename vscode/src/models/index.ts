@@ -1,4 +1,4 @@
-import type { ChatModel, EditModel, ModelProvider } from '@sourcegraph/cody-shared'
+import type { ChatModel, EditModel, Model } from '@sourcegraph/cody-shared'
 import type { AuthProvider } from '../services/AuthProvider'
 import { localStorage } from '../services/LocalStorageProvider'
 import { migrateAndNotifyForOutdatedModels } from './modelMigrator'
@@ -8,11 +8,7 @@ async function setModel(modelID: EditModel, storageKey: string) {
     return localStorage.set(storageKey, modelID)
 }
 
-function getModel<T extends string>(
-    authProvider: AuthProvider,
-    models: ModelProvider[],
-    storageKey: string
-): T {
+function getModel<T extends string>(authProvider: AuthProvider, models: Model[], storageKey: string): T {
     const authStatus = authProvider.getAuthStatus()
     // Free user can only use the default model
     if (authStatus.isDotCom && authStatus.userCanUpgrade) {
@@ -50,7 +46,7 @@ function getModel<T extends string>(
 
 function createModelAccessor<T extends string>(storageKey: string) {
     return {
-        get: (authProvider: AuthProvider, models: ModelProvider[]) =>
+        get: (authProvider: AuthProvider, models: Model[]) =>
             getModel<T>(authProvider, models, storageKey),
         set: (modelID: T) => setModel(modelID, storageKey),
     }
