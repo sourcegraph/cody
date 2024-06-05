@@ -1409,7 +1409,7 @@
     "parse-git-diff": "^0.0.14",
     "proxy-agent": "^6.4.0",
     "react-markdown": "^9.0.1",
-    "rehype-highlight": "^7.0.0",
+    "rehype-highlight": "^6.0.0",
     "rehype-sanitize": "^6.0.0",
     "remark-gfm": "^4.0.0",
     "semver": "^7.5.4",
