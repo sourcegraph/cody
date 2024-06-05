@@ -173,7 +173,7 @@ function jaccardSimilarity(left: number, right: number, intersection: number): n
 
 export function getWordOccurrences(s: string): WordOccurrences {
     const frequencyCounter: WordOccurrences = new Map()
-    const words = breakCamelAndSnakeCase(winkUtils.string.tokenize0(s))
+    const words = winkUtils.string.tokenize0(s).flatMap(breakCamelAndSnakeCaseWithCache)
 
     const filteredWords = winkUtils.tokens.removeWords(words)
     for (const word of filteredWords) {
@@ -254,21 +254,29 @@ const stemmerCache = new LRUCache<string, string>({ max: MAX_STEM_CACHE_SIZE })
 // meaning but only if we break these words.
 //
 // Note: kebab-case is skipped here since our tokenizer already handles this.
-function breakCamelAndSnakeCase(words: string[]): string[] {
+function breakCamelAndSnakeCase(word: string): string[] {
     const result: string[] = []
     const camelCaseRegex = /([a-z])([A-Z])/g
     const snakeKebabRegex = /[_]/g
 
-    for (const word of words) {
-        // Break camelCase words
-        let brokenWord = word
-        while (camelCaseRegex.test(brokenWord)) {
-            brokenWord = brokenWord.replace(camelCaseRegex, '$1 $2')
-        }
-        // Break snake_case and kebab-case words
-        brokenWord = brokenWord.replace(snakeKebabRegex, ' ')
-        result.push(...brokenWord.split(' '))
+    // Break camelCase words
+    let brokenWord = word
+    while (camelCaseRegex.test(brokenWord)) {
+        brokenWord = brokenWord.replace(camelCaseRegex, '$1 $2')
     }
+    // Break snake_case and kebab-case words
+    brokenWord = brokenWord.replace(snakeKebabRegex, ' ')
+    result.push(...brokenWord.split(' '))
 
     return result
 }
+
+function breakCamelAndSnakeCaseWithCache(word: string): string[] {
+    let broken = breakCamelAndSnakeCaseCache.get(word)
+    if (!broken) {
+        broken = breakCamelAndSnakeCase(word)
+        breakCamelAndSnakeCaseCache.set(word, broken)
+    }
+    return broken
+}
+const breakCamelAndSnakeCaseCache = new LRUCache<string, string[]>({ max: MAX_STEM_CACHE_SIZE })
