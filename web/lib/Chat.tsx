@@ -4,10 +4,14 @@ import { type FC, useCallback, useEffect, useMemo, useState, useRef } from 'reac
 import {
     type ChatMessage,
     type ModelProvider,
-    PromptString,
-    hydrateAfterPostMessage,
     isErrorLike,
+    MentionQuery,
+    ContextItem,
+    PromptString,
     setDisplayPathEnvInfo,
+    hydrateAfterPostMessage,
+    SourcegraphGraphQLAPIClient,
+    ContextItemSource,
 } from '@sourcegraph/cody-shared'
 
 import type { ExtensionMessage } from '@sourcegraph/vscode-cody/src/chat/protocol'
@@ -17,8 +21,10 @@ import {
     ChatModelContextProvider,
 } from '@sourcegraph/vscode-cody/webviews/chat/models/chatModelContext'
 import { type VSCodeWrapper, setVSCodeWrapper } from '@sourcegraph/vscode-cody/webviews/utils/VSCodeApi'
+import { ChatContextClientContext } from '@sourcegraph/vscode-cody/webviews/promptEditor/plugins/atMentions/chatContextClient'
 import { createWebviewTelemetryRecorder, createWebviewTelemetryService } from '@sourcegraph/vscode-cody/webviews/utils/telemetry'
 
+import { debouncePromise } from './agent/utils/debounce-promise'
 import { type AgentClient, createAgentClient } from './agent/client'
 
 import './cody-web-chat.css'
@@ -30,16 +36,22 @@ setDisplayPathEnvInfo({
     workspaceFolders: [URI.file('/tmp/foo')]
 })
 
+interface RepositoryMetadata {
+    id: string
+    name: string
+}
+
 export interface CodyWebChatProps {
     accessToken: string
     serverEndpoint: string
+    repositories: RepositoryMetadata[]
     className?: string
 }
 
 // NOTE: This code is copied from the VS Code webview's App component and implements a subset of the
 // functionality for the experimental web chat prototype.
 export const CodyWebChat: FC<CodyWebChatProps> = props => {
-    const { accessToken, serverEndpoint, className } = props
+    const { repositories, accessToken, serverEndpoint, className } = props
 
     const onMessageCallbacksRef = useRef<((message: ExtensionMessage) => void)[]>([])
 
@@ -50,13 +62,66 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
     const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>()
     const [chatModels, setChatModels] = useState<ModelProvider[]>()
 
+    const graphQlClient = useMemo(() => {
+        return new SourcegraphGraphQLAPIClient({
+            accessToken,
+            serverEndpoint,
+            customHeaders: {},
+            telemetryLevel: 'off'
+        })
+    }, [])
+
+    const getRepositoryFiles = useMemo(
+        () => debouncePromise(graphQlClient.getRepositoryFiles.bind(graphQlClient), 1500),
+        [graphQlClient]
+    )
+
+    const suggestionsSource = useMemo(() => {
+        return {
+            async getChatContextItems(query: MentionQuery): Promise<ContextItem[]> {
+                // TODO: Support symbols providers and add fallback for agent API for all other providers
+                const filesOrError = await getRepositoryFiles(
+                    repositories.map(repository => repository.name),
+                    query.text
+                )
+
+                if (isErrorLike(filesOrError) || filesOrError === 'skipped') {
+                    return []
+                }
+
+                return filesOrError.map<ContextItem>(item => ({
+                    type: 'file',
+                    uri: URI.file(item.file.path),
+                    source: ContextItemSource.User,
+                    isIgnored: false,
+                    size: item.file.byteSize,
+
+                    // This will tell to agent context resolvers use remote
+                    // context file resolution
+                    remoteSource: {
+                        id: item.repository.id,
+                        repositoryName: item.repository.name
+                    }
+                }))
+            }
+        }
+    }, [graphQlClient])
+
     useEffect(() => {
         ;(async () => {
             try {
                 const client = await createAgentClient({
                     serverEndpoint: serverEndpoint,
                     accessToken: accessToken ?? '',
-                    workspaceRootUri: 'file:///tmp/foo',
+                    workspaceRootUri: '',
+                })
+
+                client.rpc.sendRequest('webview/receiveMessage', {
+                    id: client.webviewPanelID,
+                    message: {
+                        command: 'context/choose-remote-search-repo',
+                        explicitRepos: repositories
+                    }
                 })
 
                 setClient(client)
@@ -150,7 +215,22 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
     useEffect(() => {
         // Notify the extension host that we are ready to receive events.
         vscodeAPI.postMessage({ command: 'ready' })
+
     }, [vscodeAPI])
+
+    useEffect(() => {
+        async function getChatHistory() {
+            if (!client || isErrorLike(client)) {
+                return
+            }
+
+            const chatHistory = await client.rpc.sendRequest('chat/export', null)
+
+            console.log('CHAT_HISTORY', { chatHistory })
+        }
+
+        getChatHistory()
+    }, [client]);
 
     // Deprecated V1 telemetry
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
@@ -184,24 +264,25 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                 isErrorLike(client) ? (
                     <p>Error: {client.message}</p>
                 ) : (
-                    <ChatModelContextProvider value={chatModelContext}>
-                        <Chat
-                            chatEnabled={true}
-                            userInfo={userAccountInfo}
-                            messageInProgress={messageInProgress}
-                            transcript={transcript}
-                            vscodeAPI={vscodeAPI}
-                            telemetryService={telemetryService}
-                            telemetryRecorder={telemetryRecorder}
-                            isTranscriptError={isTranscriptError}
-                            chatIDHistory={[]}
-                            userContextFromSelection={[]}
-                            isWebviewActive={true}
-                            isNewInstall={false}
-                        />
-                    </ChatModelContextProvider>
-                )
-            ) : (
+                    <ChatContextClientContext.Provider value={suggestionsSource}>
+                        <ChatModelContextProvider value={chatModelContext}>
+                            <Chat
+                                chatEnabled={true}
+                                userInfo={userAccountInfo}
+                                messageInProgress={messageInProgress}
+                                transcript={transcript}
+                                vscodeAPI={vscodeAPI}
+                                telemetryService={telemetryService}
+                                telemetryRecorder={telemetryRecorder}
+                                isTranscriptError={isTranscriptError}
+                                chatIDHistory={[]}
+                                userContextFromSelection={[]}
+                                isWebviewActive={true}
+                                isNewInstall={false}
+                            />
+                        </ChatModelContextProvider>
+                    </ChatContextClientContext.Provider>
+            )) : (
                 <>Loading...</>
             )}
         </div>

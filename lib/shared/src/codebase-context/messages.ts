@@ -157,7 +157,11 @@ export interface ContextItemOpenCtx extends ContextItemCommon {
  * A file (or a subset of a file given by a range) that is included as context in a chat message.
  */
 export interface ContextItemFile extends ContextItemCommon {
-    type: 'file'
+    type: 'file',
+    remoteSource?: {
+        id: string
+        repositoryName: string
+    }
 }
 
 /**
@@ -171,6 +175,11 @@ export interface ContextItemSymbol extends ContextItemCommon {
 
     /** The kind of symbol, used for presentation only (not semantically meaningful). */
     kind: SymbolKind
+
+    remoteSource?: {
+        commit: string
+        repositoryName: string
+    }
 }
 
 /** The valid kinds of a symbol. */

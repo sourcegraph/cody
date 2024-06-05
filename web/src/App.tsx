@@ -18,6 +18,10 @@ export const App: FC = () => {
             accessToken={ACCESS_TOKEN}
             serverEndpoint='https://sourcegraph.com'
             className={styles.container}
+            repositories={[{
+                "id": "UmVwb3NpdG9yeTozNjgwOTI1MA==",
+                "name": "github.com/sourcegraph/sourcegraph"
+            }]}
         />
     )
 }

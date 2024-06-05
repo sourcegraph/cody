@@ -1,4 +1,5 @@
 import type { Response as NodeResponse } from 'node-fetch'
+import { escapeRegExp } from 'lodash'
 import { URI } from 'vscode-uri'
 import { fetch } from '../../fetch'
 
@@ -38,7 +39,7 @@ import {
     REPOSITORY_LIST_QUERY,
     REPOSITORY_SEARCH_QUERY,
     REPO_NAME_QUERY,
-    SEARCH_ATTRIBUTION_QUERY,
+    SEARCH_ATTRIBUTION_QUERY, FUZZY_FILES_QUERY, GET_REMOTE_FILE_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
 
@@ -58,6 +59,41 @@ interface APIResponse<T> {
 interface SiteVersionResponse {
     site: { productVersion: string } | null
 }
+
+export type FuzzyFindFilesResponse = {
+    __typename?: 'Query',
+    search: {
+        results: {
+            results: Array<FuzzyFindFile>
+        }
+    } | null
+}
+
+type FuzzyFindFile = {
+    file: {
+        path: string
+        url: string
+        name: string
+        byteSize: number
+        isDirectory: boolean
+    }
+    repository: { id: string, name: string }
+}
+
+interface RemoteFileContentReponse {
+    __typename?: 'Query',
+    repository: {
+        id: string
+        commit: {
+            id: string
+            oid: string
+            blob: {
+                content: string
+            }
+        }
+    }
+}
+
 
 interface SiteIdentificationResponse {
     site: {
@@ -368,11 +404,12 @@ export interface event {
     hashedLicenseKey?: string
 }
 
-export type GraphQLAPIClientConfig = Pick<
-    ConfigurationWithAccessToken,
-    'serverEndpoint' | 'accessToken' | 'customHeaders'
-> &
-    Pick<Partial<ConfigurationWithAccessToken>, 'telemetryLevel'>
+export type GraphQLAPIClientConfig = {
+    accessToken: string | null
+    serverEndpoint: string
+    customHeaders?: Record<string, string>
+    telemetryLevel: ConfigurationWithAccessToken['telemetryLevel']
+}
 
 export let customUserAgent: string | undefined
 export function addCustomUserAgent(headers: Headers): void {
@@ -438,6 +475,34 @@ export class SourcegraphGraphQLAPIClient {
             extractDataOrError(
                 response,
                 data => data.site?.productVersion ?? new Error('site version not found')
+            )
+        )
+    }
+
+    public async getRepositoryFiles(repositories: string[], query: string): Promise<FuzzyFindFile[] | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<FuzzyFindFilesResponse>>(
+            FUZZY_FILES_QUERY,
+            { query: `type:path count:100 repo:^(${repositories.map(escapeRegExp).join('|')})$ ${query}` }
+        ).then(response =>
+            extractDataOrError(
+                response,
+                data =>
+                    data.search?.results.results
+                    ?? new Error('no files found')
+            )
+        )
+    }
+
+    public async getFileContent(repository: string, filePath: string): Promise<string | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<RemoteFileContentReponse>>(
+            GET_REMOTE_FILE_QUERY,
+            { repositoryName: repository, filePath }
+        ).then(response =>
+            extractDataOrError(
+                response,
+                data =>
+                    data.repository.commit.blob.content
+                    ?? new Error('no file found')
             )
         )
     }

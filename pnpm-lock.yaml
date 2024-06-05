@@ -726,6 +726,9 @@ importers:
       '@sourcegraph/vscode-cody':
         specifier: workspace:*
         version: link:../vscode
+      '@types/lodash':
+        specifier: 4.14.195
+        version: 4.14.195
       '@vitest/web-worker':
         specifier: ^1.4.0
         version: 1.4.0(vitest@1.6.0)
@@ -738,15 +741,12 @@ importers:
       events:
         specifier: ^3.3.0
         version: 3.3.0
+      lodash:
+        specifier: 4.17.21
+        version: 4.17.21
       path-browserify:
         specifier: ^1.0.1
         version: 1.0.1
-      react:
-        specifier: 18.2.0
-        version: 18.2.0
-      react-dom:
-        specifier: 18.2.0
-        version: 18.2.0(react@18.2.0)
       stream-browserify:
         specifier: ^3.0.0
         version: 3.0.0
@@ -5805,7 +5805,6 @@ packages:
 
   /@types/lodash@4.14.195:
     resolution: {integrity: sha512-Hwx9EUgdwf2GLarOjQp5ZH8ZmblzcbTBC2wtQWNKARBSxM9ezRIAUpeDTgoQRAFB0+8CNWXVA9+MaSOzOF3nPg==}
-    dev: true
 
   /@types/lodash@4.17.0:
     resolution: {integrity: sha512-t7dhREVv6dbNj0q17X12j7yDG4bD/DHYX7o5/DbDxobP0HnGPgpRz2Ej77aL7TZT3DSw13fqUTj8J4mMnqa7WA==}
