@@ -1,6 +1,7 @@
 import { type ConfigurationWithAccessToken, setOpenCtxClient } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 import { logDebug, outputChannel } from '../log'
+import GlobalChatMemoryProvider from './openctx/globalChatMemory'
 import RemoteFileProvider from './openctx/remoteFileSearch'
 import RemoteRepositorySearch from './openctx/remoteRepositorySearch'
 import WebProvider from './openctx/web'
@@ -30,6 +31,11 @@ export function exposeOpenCtxClient(
                     providerUri: RemoteFileProvider.providerUri,
                     settings: true,
                     provider: RemoteFileProvider,
+                })
+                providers.push({
+                    providerUri: GlobalChatMemoryProvider.providerUri,
+                    settings: true,
+                    provider: GlobalChatMemoryProvider,
                 })
             }
 

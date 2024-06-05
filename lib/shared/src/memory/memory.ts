@@ -1,5 +1,6 @@
 import lunr from 'elasticlunrjs'
 import type { Index, SearchResults, SerialisedIndexData } from 'elasticlunrjs'
+import type { ContextItem } from '../codebase-context/messages'
 import { isDefined } from '../common'
 
 /*
@@ -27,6 +28,7 @@ export interface MemoryDocument {
     messageID: string
     url?: string
     title?: string
+    contextItem?: ContextItem & { content?: undefined }
 }
 
 export interface MemorySearchOptions {
@@ -82,9 +84,8 @@ export class Memory {
             index
                 .search(query, {
                     fields: {
-                        url: {},
-                        title: {},
-                        content: {},
+                        title: { boost: 2 },
+                        content: { boost: 1 },
                     },
                     expand: true,
                 })

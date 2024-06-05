@@ -13,7 +13,7 @@ import { logDebug } from '../../log'
 import { PromptBuilder } from '../../prompt-builder'
 import type { SimpleChatModel } from './SimpleChatModel'
 
-interface PromptInfo {
+export interface PromptInfo {
     prompt: Message[]
     /**
      * The context items processed for the current message:

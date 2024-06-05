@@ -185,7 +185,7 @@ class LocalStorage {
         try {
             const authStatusKey = getKeyForAuthStatus(authStatus)
             let authStatusMemoryMap = this.storage.get<AccountKeyedChatMemory | null>(
-                this.KEY_LOCAL_HISTORY,
+                this.KEY_LOCAL_MEMORY,
                 null
             )
 

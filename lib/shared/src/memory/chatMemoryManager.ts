@@ -1,8 +1,8 @@
 import { URI } from 'vscode-uri'
 import type { AuthStatus } from '../auth/types'
 import type { ChatMessage } from '../chat/transcript/messages'
-import type { ContextItem, ContextItemMemory } from '../codebase-context/messages'
-import { Memory, type MemoryDocument, type MemoryStorage } from './memory'
+import { ContextItemSource, type ContextItemWithContent } from '../codebase-context/messages'
+import { Memory, type MemoryDocument, type MemorySearchResult, type MemoryStorage } from './memory'
 
 export interface ChatMemoryManagerConfig {
     authStatus: AuthStatus
@@ -62,12 +62,13 @@ export class ChatMemoryManager {
             // add context items document
             documents.push({
                 type: 'contextItem',
-                id: toContextItemDocumentID(message, contextItem),
+                id: toContextItemDocumentID(message, contextItem as ContextItemWithContent),
                 conversationID: message.conversationID,
                 messageID: message.messageID,
                 content: contextItem.content,
                 title: contextItem.title,
                 url: contextItem.uri.toString(),
+                contextItem: { ...contextItem, content: undefined },
             })
         })
 
@@ -108,10 +109,31 @@ export class ChatMemoryManager {
         this.memory.resetIndex()
         return await this.config.localStorage.clearChatMemory(this.config.authStatus)
     }
+
+    private convertSearchResultToContextItem = (result: MemorySearchResult): ContextItemWithContent => {
+        if (result.document.type === 'contextItem' && result.document.contextItem) {
+            return {
+                ...result.document.contextItem,
+                content: result.document.content,
+                source: ContextItemSource.Memory,
+            } satisfies ContextItemWithContent
+        }
+
+        return {
+            type: 'memory',
+            conversationID: result.document.conversationID,
+            messageID: result.document.messageID,
+            content: result.document.content,
+            source: ContextItemSource.Memory,
+            uri: URI.parse('https://google.com'),
+            title: toContextItemTitle(result.document),
+        } satisfies ContextItemWithContent
+    }
+
     public getContextItemsFromChatMemory = async (
         query: string,
         conversationID: string
-    ): Promise<ContextItem[]> => {
+    ): Promise<ContextItemWithContent[]> => {
         // The results will be scoped to the context items from that conversation.
         const results = await this.memory.search(query, {
             topK: 5,
@@ -119,36 +141,22 @@ export class ChatMemoryManager {
             types: ['contextItem'],
         })
 
-        return results.map(
-            result =>
-                ({
-                    type: 'memory',
-                    conversationID: result.document.conversationID,
-                    messageID: result.document.messageID,
-                    uri: URI.parse(result.document.url || ''),
-                    title: toContextItemTitle(result.document),
-                    content: result.document.content,
-                }) satisfies ContextItemMemory
-        )
+        return results.map(result => this.convertSearchResultToContextItem(result))
     }
 
-    public getContextItemsFromGlobalMemory = async (query: string): Promise<ContextItemMemory[]> => {
+    public getContextItemsFromGlobalMemory = async (
+        query: string
+    ): Promise<ContextItemWithContent[]> => {
         // The results will be scoped global memory and will include context items, human messages and assistant responses.
         const results = await this.memory.search(query, {
             topK: 5,
         })
 
-        return results.map(
-            result =>
-                ({
-                    type: 'memory',
-                    conversationID: result.document.conversationID,
-                    messageID: result.document.messageID,
-                    uri: URI.parse(result.document.url || ''),
-                    title: toContextItemTitle(result.document),
-                    content: result.document.content,
-                }) satisfies ContextItemMemory
-        )
+        return results.map(this.convertSearchResultToContextItem)
+    }
+
+    public getAllDocumentsFromMemory = async (): Promise<MemoryDocument[]> => {
+        return await this.memory.getDocuments()
     }
 }
 
@@ -156,7 +164,10 @@ function toChatMessageDocumentID(message: ChatMessageDocument): string {
     return `chat:${message.conversationID};message:${message.messageID};speaker:${message.speaker}`
 }
 
-function toContextItemDocumentID(message: ChatMessageDocument, contextItem: ContextItem): string {
+function toContextItemDocumentID(
+    message: ChatMessageDocument,
+    contextItem: ContextItemWithContent
+): string {
     // We index context items separately for each chat message, and not globally
     // against the URI. This redundancy ensures that if chats or messages are
     // deleted, the context items which still belong to other chat messages are

@@ -85,7 +85,7 @@ export const FileLink: React.FunctionComponent<
                 onClick={logFileLinkClicked}
             >
                 <i
-                    className={clsx('codicon', `codicon-${source === 'user' ? 'mention' : 'file'}`)}
+                    className={clsx('codicon', `codicon-${getFileSourceIconName(source)}`)}
                     title={getFileSourceIconTitle(source)}
                 />
                 <div className={clsx(styles.path, (isTooLarge || isIgnored) && styles.excluded)}>
@@ -116,7 +116,21 @@ function getFileSourceDisplayText(source?: string): string {
             return 'Selection'
         case 'user':
             return '@-mention'
+        case 'memory':
+            return 'Conversation Memory'
         default:
             return source ?? 'Enhanced Context'
+    }
+}
+
+function getFileSourceIconName(source?: string): string {
+    switch (source) {
+        case 'user':
+            return 'mention'
+        case 'memory':
+            // probably need a better icon
+            return 'sparkle'
+        default:
+            return 'file'
     }
 }

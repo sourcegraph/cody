@@ -13,6 +13,7 @@ import {
 import { clsx } from 'clsx'
 import {
     ArrowRightIcon,
+    BrainIcon,
     DatabaseIcon,
     FileIcon,
     FolderGitIcon,
@@ -26,6 +27,7 @@ import {
     IGNORED_FILE_WARNING_LABEL,
     LARGE_FILE_WARNING_LABEL,
 } from '../../../src/chat/context/constants'
+import GlobalChatMemoryProvider from '../../../src/context/openctx/globalChatMemory'
 import RemoteFileProvider from '../../../src/context/openctx/remoteFileSearch'
 import RemoteRepositorySearch from '../../../src/context/openctx/remoteRepositorySearch'
 import WebProvider from '../../../src/context/openctx/web'
@@ -133,5 +135,6 @@ export const iconForProvider: Record<
     'https://openctx.org/npm/@openctx/provider-sourcegraph-search': SourcegraphLogo,
     [RemoteRepositorySearch.providerUri]: FolderGitIcon,
     [RemoteFileProvider.providerUri]: FileIcon,
+    [GlobalChatMemoryProvider.providerUri]: BrainIcon,
     [WebProvider.providerUri]: LinkIcon,
 }

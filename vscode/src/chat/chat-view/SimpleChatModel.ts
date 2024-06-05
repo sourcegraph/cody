@@ -91,7 +91,6 @@ export class SimpleChatModel {
     public getLastHumanMessage(): ChatMessage | undefined {
         return findLast(this.messages, message => message.speaker === 'human')
     }
-
     public getLastSpeakerMessageIndex(speaker: 'human' | 'assistant'): number | undefined {
         return this.messages.findLastIndex(message => message.speaker === speaker)
     }

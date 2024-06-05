@@ -12,7 +12,6 @@ import {
     ConfigFeaturesSingleton,
     type ContextItem,
     ContextItemSource,
-    type ContextItemWithContent,
     type DefaultChatCommands,
     type EventSource,
     type FeatureFlagProvider,
@@ -96,7 +95,7 @@ import { InitDoer } from './InitDoer'
 import { SimpleChatModel, prepareChatMessage } from './SimpleChatModel'
 import { getChatPanelTitle, openFile } from './chat-helpers'
 import { getEnhancedContext } from './context'
-import { DefaultPrompter } from './prompt'
+import { DefaultPrompter, type PromptInfo } from './prompt'
 interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
     extensionUri: vscode.Uri
@@ -164,12 +163,24 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private history = new ChatHistoryManager()
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
     private allMentionProvidersMetadataQueryCancellation?: vscode.CancellationTokenSource
-    private chatMemoryManager: ChatMemoryManager
+    private chatMemoryManager: ChatMemoryManager | null = null
 
     private disposables: vscode.Disposable[] = []
     public dispose(): void {
         vscode.Disposable.from(...this.disposables).dispose()
         this.disposables = []
+    }
+
+    private initializeChatMemoryManager = async (): Promise<void> => {
+        // EXPERIMENTAL: only initialize chat memory manager if experimentalNoodle is enabled
+        getFullConfig().then(config => {
+            if (config.experimentalNoodle) {
+                this.chatMemoryManager = new ChatMemoryManager({
+                    authStatus: this.authProvider.getAuthStatus(),
+                    localStorage,
+                })
+            }
+        })
     }
 
     constructor({
@@ -199,10 +210,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.treeView = treeView
         this.chatModel = new SimpleChatModel(chatModel.get(authProvider, models))
         this.guardrails = guardrails
-        this.chatMemoryManager = new ChatMemoryManager({
-            authStatus: this.authProvider.getAuthStatus(),
-            localStorage,
-        })
+        this.initializeChatMemoryManager()
 
         if (TestSupport.instance) {
             TestSupport.instance.chatPanelProvider.set(this)
@@ -568,11 +576,21 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 const selectionContext = source === 'chat' ? await getContextFileFromSelection() : []
                 abortSignal.throwIfAborted()
 
-                const userContextItems: ContextItemWithContent[] = await resolveContextItems(
-                    this.editor,
-                    [...mentions, ...selectionContext],
-                    inputText
-                )
+                const explicitContextItems = (
+                    await Promise.all([
+                        // Include mentions in the context for the current chat.
+                        resolveContextItems(this.editor, [...mentions, ...selectionContext], inputText),
+
+                        // Automatically include related context items from the memory for the active
+                        // chat only. This includes only the context items from current chat and not
+                        // the human/assistant messages, as they are automatically included in the prompt.
+                        this.chatMemoryManager?.getContextItemsFromChatMemory(
+                            inputText.toString(),
+                            this.sessionID
+                        ) || Promise.resolve([]),
+                    ])
+                ).flat()
+
                 abortSignal.throwIfAborted()
 
                 /**
@@ -585,45 +603,25 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 const hasCorpusMentions = corpusMentions.length > 0
 
                 span.setAttribute('strategy', this.config.useContext)
-                const prompter = new DefaultPrompter(userContextItems, async text => {
-                    const contextRequests: Promise<ContextItem[]>[] = [
-                        new Promise(resolve =>
-                            this.getConfigForWebview()
-                                .then(config => {
-                                    if (config.experimentalNoodle) {
-                                        return resolve(
-                                            this.chatMemoryManager.getContextItemsFromChatMemory(
-                                                text.toString(),
-                                                this.sessionID
-                                            )
-                                        )
-                                    }
+                const prompter = new DefaultPrompter(
+                    explicitContextItems,
+                    addEnhancedContext || hasCorpusMentions
+                        ? async text =>
+                              getEnhancedContext({
+                                  strategy: this.config.useContext,
+                                  editor: this.editor,
+                                  input: { text, mentions },
+                                  addEnhancedContext,
+                                  providers: {
+                                      localEmbeddings: this.localEmbeddings,
+                                      symf: this.config.experimentalSymfContext ? this.symf : null,
+                                      remoteSearch: this.remoteSearch,
+                                  },
+                                  contextRanking: this.contextRanking,
+                              })
+                        : undefined
+                )
 
-                                    resolve([])
-                                })
-                                .catch(() => [])
-                        ),
-                    ]
-
-                    if (addEnhancedContext || hasCorpusMentions) {
-                        contextRequests.push(
-                            getEnhancedContext({
-                                strategy: this.config.useContext,
-                                editor: this.editor,
-                                input: { text, mentions },
-                                addEnhancedContext,
-                                providers: {
-                                    localEmbeddings: this.localEmbeddings,
-                                    symf: this.config.experimentalSymfContext ? this.symf : null,
-                                    remoteSearch: this.remoteSearch,
-                                },
-                                contextRanking: this.contextRanking,
-                            })
-                        )
-                    }
-
-                    return (await Promise.all(contextRequests)).flat()
-                })
                 const sendTelemetry = (contextSummary: any, privateContextStats?: any): void => {
                     const properties = {
                         ...sharedProperties,
@@ -656,9 +654,28 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 }
 
                 try {
-                    const prompt = await this.buildPrompt(prompter, abortSignal, sendTelemetry)
+                    const { prompt, context } = await this.buildPrompt(
+                        prompter,
+                        abortSignal,
+                        sendTelemetry
+                    )
                     abortSignal.throwIfAborted()
                     this.streamAssistantResponse(requestID, prompt, span, firstTokenSpan, abortSignal)
+
+                    if (this.chatMemoryManager) {
+                        // Save the human message to the chat memory. This also includes the used context items.
+                        const humanMessageIndex = this.chatModel.getLastSpeakerMessageIndex('human')
+                        if (humanMessageIndex !== undefined) {
+                            this.chatMemoryManager.saveChatMessage({
+                                messageID: String(humanMessageIndex),
+                                conversationID: this.sessionID,
+                                speaker: 'human',
+                                text: inputText,
+                                // only include the used context files
+                                contextFiles: context.used,
+                            })
+                        }
+                    }
                 } catch (error) {
                     if (isAbortErrorOrSocketHangUp(error as Error)) {
                         return
@@ -718,13 +735,27 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             if (humanMessageIndex === undefined) {
                 return
             }
-            const messages = this.chatModel.getMessages()
-            if (messages[humanMessageIndex]) {
-                await this.chatMemoryManager.removeChatMessage({
-                    ...messages[humanMessageIndex],
-                    messageID: String(humanMessageIndex),
-                    conversationID: this.sessionID,
-                })
+
+            if (this.chatMemoryManager) {
+                // Remove the present human & assistant message from the chat memory.
+                const messages = this.chatModel.getMessages()
+                const humanMessage = messages[humanMessageIndex]
+                const assistantMessage = messages[humanMessageIndex + 1]
+
+                if (humanMessage?.speaker === 'human') {
+                    await this.chatMemoryManager.removeChatMessage({
+                        ...humanMessage,
+                        messageID: String(humanMessageIndex),
+                        conversationID: this.sessionID,
+                    })
+                }
+                if (assistantMessage?.speaker === 'assistant') {
+                    await this.chatMemoryManager.removeChatMessage({
+                        ...humanMessage,
+                        messageID: String(humanMessageIndex + 1),
+                        conversationID: this.sessionID,
+                    })
+                }
             }
             this.chatModel.removeMessagesFromIndex(humanMessageIndex, 'human')
             return await this.handleUserMessageSubmission(
@@ -1030,7 +1061,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         prompter: DefaultPrompter,
         abortSignal: AbortSignal,
         sendTelemetry?: (contextSummary: any, privateContextStats?: any) => void
-    ): Promise<Message[]> {
+    ): Promise<PromptInfo> {
         const { prompt, context } = await prompter.makePrompt(
             this.chatModel,
             this.authProvider.getAuthStatus().codyApiVersion
@@ -1071,7 +1102,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             sendTelemetry(contextSummary, privateContextStats)
         }
 
-        return prompt
+        return { prompt, context }
     }
 
     private streamAssistantResponse(
@@ -1205,25 +1236,18 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const messageText = reformatBotMessageForChat(rawResponse)
         this.chatModel.addBotMessage({ text: messageText })
 
-        const humanMessageIndex = this.chatModel.getLastSpeakerMessageIndex('human')
-        const assitantMessageIndex = this.chatModel.getLastSpeakerMessageIndex('assistant')
-        const messages = this.chatModel.getMessages()
+        // Save the assistant messages to the chat memory.
+        if (this.chatMemoryManager) {
+            const assitantMessageIndex = this.chatModel.getLastSpeakerMessageIndex('assistant')
+            const messages = this.chatModel.getMessages()
 
-        // Save both human & assistant messages to the chat memory only when the assistant message is received
-        if (humanMessageIndex) {
-            void this.chatMemoryManager.saveChatMessage({
-                ...messages[humanMessageIndex],
-                messageID: String(humanMessageIndex),
-                conversationID: this.sessionID,
-            })
-        }
-
-        if (assitantMessageIndex) {
-            void this.chatMemoryManager.saveChatMessage({
-                ...messages[assitantMessageIndex],
-                messageID: String(assitantMessageIndex),
-                conversationID: this.sessionID,
-            })
+            if (assitantMessageIndex !== undefined) {
+                void this.chatMemoryManager.saveChatMessage({
+                    ...messages[assitantMessageIndex],
+                    messageID: String(assitantMessageIndex),
+                    conversationID: this.sessionID,
+                })
+            }
         }
 
         void this.saveSession()
@@ -1325,7 +1349,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             return
         }
 
-        void this.chatMemoryManager.removeChat(this.sessionID)
+        // remove all chat context from memory which it is deleted.
+        void this.chatMemoryManager?.removeChat(this.sessionID)
         this.cancelSubmitOrEditOperation()
         await this.saveSession()
 

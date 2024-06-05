@@ -92,6 +92,9 @@ export enum ContextItemSource {
 
     /** From source control history */
     History = 'history',
+
+    /** From chat memory */
+    Memory = 'memory',
 }
 
 /**
