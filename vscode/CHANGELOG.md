@@ -9,10 +9,15 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Fixed
 
 - Chat: Don't append @ when "Add context" is pressed multiple times. [pull/4439](https://github.com/sourcegraph/cody/pull/4439)
-- Performance: Reduced the performance overhead for certain types of context fetching, especially for larger files. This might have caused issues with slow autocomplete before. [pull/4446](https://github.com/sourcegraph/cody/pull/4446)
-- Chat: Fixed an issue where the chat view would crash and display a gray screen in VS Code due to an out-of-memory situation. [pull/4459](https://github.com/sourcegraph/cody/pull/4459)
 
 ### Changed
+
+## [1.20.2]
+
+### Fixed
+
+- Performance: Reduced the performance overhead for certain types of context fetching, especially for larger files. This might have caused issues with slow autocomplete before. [pull/4446](https://github.com/sourcegraph/cody/pull/4446)
+- Chat: Fixed an issue where the chat view would crash and display a gray screen in VS Code due to an out-of-memory situation. [pull/4459](https://github.com/sourcegraph/cody/pull/4459)
 
 ## [1.20.1]
 
