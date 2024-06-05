@@ -244,7 +244,17 @@ private constructor(
 
     private fun nodeBinaryName(): String {
       val os = if (SystemInfoRt.isMac) "macos" else if (SystemInfoRt.isWindows) "win" else "linux"
-      val arch = if (CpuArch.isArm64()) "arm64" else "x64"
+      val arch =
+          if (CpuArch.isArm64()) {
+            if (SystemInfoRt.isWindows) {
+              // Use x86 emulation on arm64 Windows
+              "x64"
+            } else {
+              "arm64"
+            }
+          } else {
+            "x64"
+          }
       return "node-" + os + "-" + arch + binarySuffix()
     }
 
