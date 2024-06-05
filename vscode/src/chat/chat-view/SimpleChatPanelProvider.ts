@@ -18,7 +18,7 @@ import {
     type Guardrails,
     type MentionQuery,
     type Message,
-    Model,
+    type Model,
     ModelUsage,
     ModelsService,
     PromptString,

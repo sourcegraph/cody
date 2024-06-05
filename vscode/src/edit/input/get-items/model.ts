@@ -25,10 +25,7 @@ const getModelProviderIcon = (provider: string): string => {
     }
 }
 
-export const getModelOptionItems = (
-    modelOptions: Model[],
-    isCodyPro: boolean
-): EditModelItem[] => {
+export const getModelOptionItems = (modelOptions: Model[], isCodyPro: boolean): EditModelItem[] => {
     const allOptions = modelOptions
         .map(modelOption => {
             if (modelOption.deprecated) {

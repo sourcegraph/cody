@@ -6,8 +6,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 
 import {
     DOTCOM_URL,
-    ModelsService,
     ModelUsage,
+    ModelsService,
     getDotComDefaultModels,
     isWindows,
 } from '@sourcegraph/cody-shared'

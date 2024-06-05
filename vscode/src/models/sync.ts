@@ -3,8 +3,8 @@ import {
     type AuthStatus,
     CHAT_INPUT_TOKEN_BUDGET,
     Model,
-    ModelsService,
     ModelUsage,
+    ModelsService,
     getDotComDefaultModels,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'

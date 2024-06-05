@@ -27,7 +27,7 @@ export class Model {
         /**
          * The model id that includes the provider name & the model name,
          * e.g. "anthropic/claude-3-sonnet-20240229"
-         * 
+         *
          * TODO(PRIME-282): Replace this with a `ModelRef` instance and introduce a separate
          * "modelId" that is distinct from the "modelName". (e.g. "claude-3-sonnet" vs. "claude-3-sonnet-20240229")
          */
@@ -69,7 +69,7 @@ export class Model {
  * ModelsService is the component responsible for keeping track of which models
  * are supported on the backend, which ones are available based on the user's
  * preferences, etc.
- * 
+ *
  * TODO(PRIME-228): Update this type to be able to fetch the models from the
  *      Sourcegraph backend instead of being hard-coded.
  * TODO(PRIME-283): Enable Cody Enterprise users to select which LLM model to
@@ -77,6 +77,12 @@ export class Model {
  *      from this type.)
  */
 export class ModelsService {
+    // Unused. Only to work around the linter complaining about a static-only class.
+    // When we are fetching data from the Sourcegraph backend, and relying on the
+    // current user's credentials, we'll need to turn this into a proper singleton
+    // with an initialization step on startup.
+    protected ModelsService() {}
+
     /**
      * Get all the providers currently available to the user
      */
@@ -120,11 +126,7 @@ export class ModelsService {
      * Get the list of the primary model, augmented with any local ones.
      * If currentModel is provided, sets it as the default model.
      */
-    public static getModels(
-        type: ModelUsage,
-        isCodyProUser: boolean,
-        currentModel?: string
-    ): Model[] {
+    public static getModels(type: ModelUsage, isCodyProUser: boolean, currentModel?: string): Model[] {
         const availableModels = ModelsService.models.filter(m => m.usage.includes(type))
 
         const currentDefault = currentModel
@@ -161,16 +163,12 @@ export class ModelsService {
             return models[0]
         }
 
-        const modelsList = ModelsService.models
-            .map(m => m.model)
-            .join(', ')
+        const modelsList = ModelsService.models.map(m => m.model).join(', ')
         if (models.length === 0) {
             throw new Error(
                 `No model found for substring ${modelSubstring}. Available models: ${modelsList}`
             )
         }
-        throw new Error(
-            `Multiple models found for substring ${modelSubstring}: ${modelsList}`
-        )
+        throw new Error(`Multiple models found for substring ${modelSubstring}: ${modelsList}`)
     }
 }

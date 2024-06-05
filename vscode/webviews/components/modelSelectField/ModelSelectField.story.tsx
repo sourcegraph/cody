@@ -2,12 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react'
 
 import { VSCodeStandaloneComponent } from '../../storybook/VSCodeStoryDecorator'
 
-import {
-    type Model,
-    ModelUIGroup,
-    ModelUsage,
-    getDotComDefaultModels,
-} from '@sourcegraph/cody-shared'
+import { type Model, ModelUIGroup, ModelUsage, getDotComDefaultModels } from '@sourcegraph/cody-shared'
 import { useArgs } from '@storybook/preview-api'
 import { ModelSelectField } from './ModelSelectField'
 

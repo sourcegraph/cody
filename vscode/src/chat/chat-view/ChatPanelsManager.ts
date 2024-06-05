@@ -7,8 +7,8 @@ import {
     type ConfigurationWithAccessToken,
     type FeatureFlagProvider,
     type Guardrails,
-    ModelsService,
     ModelUsage,
+    ModelsService,
     featureFlagProvider,
 } from '@sourcegraph/cody-shared'
 

@@ -6,12 +6,12 @@ import {
     EXTENDED_USER_CONTEXT_TOKEN_BUDGET,
 } from '../token/constants'
 
-import { ModelContextWindow, ModelUsage } from './types'
+import { type ModelContextWindow, ModelUsage } from './types'
 import { ModelUIGroup } from './utils'
 
 const basicContextWindow: ModelContextWindow = {
     input: CHAT_INPUT_TOKEN_BUDGET,
-    output: CHAT_OUTPUT_TOKEN_BUDGET
+    output: CHAT_OUTPUT_TOKEN_BUDGET,
 }
 const expandedContextWindow: ModelContextWindow = {
     input: EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
@@ -114,7 +114,6 @@ export const DEFAULT_DOT_COM_MODELS = [
         deprecated: false,
         uiGroup: ModelUIGroup.Accuracy,
     },
-
 
     // --------------------------------
     // Deprecated models

@@ -1,7 +1,7 @@
 import {
     Model,
-    ModelsService,
     ModelUsage,
+    ModelsService,
     defaultAuthStatus,
     getDotComDefaultModels,
     unauthenticatedStatus,

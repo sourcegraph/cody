@@ -8,11 +8,7 @@ async function setModel(modelID: EditModel, storageKey: string) {
     return localStorage.set(storageKey, modelID)
 }
 
-function getModel<T extends string>(
-    authProvider: AuthProvider,
-    models: Model[],
-    storageKey: string
-): T {
+function getModel<T extends string>(authProvider: AuthProvider, models: Model[], storageKey: string): T {
     const authStatus = authProvider.getAuthStatus()
     // Free user can only use the default model
     if (authStatus.isDotCom && authStatus.userCanUpgrade) {
