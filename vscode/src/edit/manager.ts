@@ -219,7 +219,6 @@ export class EditManager implements vscode.Disposable {
 
     private getProviderForTask(task: FixupTask): EditProvider {
         let provider = this.editProviders.get(task)
-
         if (!provider) {
             provider = new EditProvider({ task, controller: this.controller, ...this.options })
             this.editProviders.set(task, provider)

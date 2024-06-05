@@ -6,6 +6,12 @@ const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
 
 export async function getAccessToken(): Promise<string | null> {
     try {
+        if (process.env.CODY_INTEGRATION_TEST === 'true') {
+            const testToken = process.env.CODY_INTEGRATION_TEST_TOKEN
+            if (testToken) {
+                return testToken
+            }
+        }
         const token = (await secretStorage.get(CODY_ACCESS_TOKEN_SECRET)) || null
         if (token) {
             return token

@@ -12,7 +12,6 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
-import { logError } from '../log'
 import type { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 import { isNetworkError } from '../services/AuthProvider'
@@ -28,7 +27,7 @@ import { responseTransformer } from './output/response-transformer'
 import { buildInteraction } from './prompt'
 import { PROMPT_TOPICS } from './prompt/constants'
 
-interface EditProviderOptions extends EditManagerOptions {
+export interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
     controller: FixupController
 }
@@ -144,7 +143,6 @@ export class EditProvider {
                     }
                     case 'error': {
                         let err = message.error
-                        logError('EditProvider:onError', err.message)
 
                         if (isAbortError(err)) {
                             void this.handleResponse(text, false)

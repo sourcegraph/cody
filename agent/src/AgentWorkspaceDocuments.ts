@@ -48,6 +48,7 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     public openUri(uri: vscode.Uri): AgentTextDocument {
         return this.loadAndUpdateDocument(ProtocolTextDocumentWithUri.from(uri))
     }
+
     public loadAndUpdateDocument(document: ProtocolTextDocumentWithUri): AgentTextDocument {
         return this.loadDocumentWithChanges(document).document
     }

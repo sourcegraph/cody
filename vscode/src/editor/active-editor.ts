@@ -33,7 +33,7 @@ export function resetActiveEditor(): void {
     lastActiveTextEditor = { active: undefined, ignored: false }
 }
 
-// Support file, untitled, and notebooks
+// Support file, untitled, and notebooks.
 const validFileSchemes = new Set(['file', 'untitled', 'vscode-notebook', 'vscode-notebook-cell'])
 
 // When the webview panel is focused, calling activeTextEditor will return undefined.

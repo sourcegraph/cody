@@ -78,11 +78,15 @@ The following commands assume you are in the root directory of this repository:
   `console.log(...)` statements throughout the TypeScript code to trace values at
   specific points. This is a good fallback when the other debugging workflows are
   not sufficient.
+- You can also use VS Code or another Node debugger to connect to the agent,
+  set breakpoints, and single-step through the code. This is detailed in
+  [`CONTRIBUTING.md`](https://github.com/sourcegraph/jetbrains/blob/main/CONTRIBUTING.md).
+
 
 ## Client implementations
 
 - The Sourcegraph JetBrains plugin is defined in the `sourcegraph` repository's
-  [`client/jetbrains`](https://github.com/sourcegraph/sourcegraph/tree/main/client/jetbrains)
+  [`client/jetbrains`](https://github.com/sourcegraph/jetbrains)
   directory. The `CodyAgentClient.java` file implements the client side of the
   protocol.
 - The Sourcegraph Neovim plugin is defined in the

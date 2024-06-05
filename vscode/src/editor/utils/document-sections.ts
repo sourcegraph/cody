@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { isRunningInsideAgent } from '../..//jsonrpc/isRunningInsideAgent'
 import { IndentationBasedFoldingRangeProvider } from '../../lsp/foldingRanges'
 
 export async function getDocumentSections(
@@ -20,7 +21,11 @@ export async function getDocumentSections(
 
     const innerRanges = await removeOutermostFoldingRanges(doc, foldingRanges, getSymbols)
 
-    const ranges = removeNestedFoldingRanges(innerRanges, isPlainText)
+    // TODO: This is a bit tricky. In Java, if we exclude the nested folding ranges, we lose
+    // all methods on classes/interfaces, public inner classes, and other documentable objects.
+    const ranges = isRunningInsideAgent()
+        ? innerRanges
+        : removeNestedFoldingRanges(innerRanges, isPlainText)
 
     return ranges.map(r => foldingRangeToRange(doc, r))
 }
