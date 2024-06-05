@@ -11,7 +11,7 @@ import {
     type BillingCategory,
     type BillingProduct,
     FeatureFlag,
-    ModelProvider,
+    ModelsService,
     NoOpTelemetryRecorderProvider,
     PromptString,
     contextFiltersProvider,
@@ -333,6 +333,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 '*',
                 new IndentationBasedFoldingRangeProvider()
             )
+            if (clientInfo.extensionConfiguration?.baseGlobalState) {
+                for (const key in clientInfo.extensionConfiguration.baseGlobalState) {
+                    const value = clientInfo.extensionConfiguration.baseGlobalState[key]
+                    globalState.update(key, value)
+                }
+            }
             this.workspace.workspaceRootUri = vscode.Uri.parse(clientInfo.workspaceRootUri)
             vscode_shim.setWorkspaceDocuments(this.workspace)
             if (clientInfo.capabilities?.codeActions === 'enabled') {
@@ -1039,7 +1045,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
             const theModel = modelID
                 ? modelID
-                : ModelProvider.getProviders(
+                : ModelsService.getModels(
                       ModelUsage.Chat,
                       authStatus.isDotCom && !authStatus.userCanUpgrade
                   ).at(0)?.model
@@ -1069,7 +1075,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            const providers = ModelProvider.getProviders(
+            const providers = ModelsService.getModels(
                 modelUsage,
                 authStatus.isDotCom && !authStatus.userCanUpgrade
             )

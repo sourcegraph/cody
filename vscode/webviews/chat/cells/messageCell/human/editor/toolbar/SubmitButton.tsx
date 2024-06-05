@@ -30,9 +30,8 @@ export const SubmitButton: FunctionComponent<{
             disabled={disabled ? true : undefined}
         >
             {/* biome-ignore lint/a11y/noSvgWithoutTitle: */}
-            <svg width="20" height="20" viewBox="0 0 20 20">
-                <circle cx="10" cy="10" r="9.5" />
-                <path d="M8.25 6L14.25 10L8.25 14V6Z" strokeLinecap="round" strokeLinejoin="round" />
+            <svg width="8" height="10" viewBox="0 0 8 10">
+                <path d="M1.25 1L7.25 5L1.25 9V1Z" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
         </button>
     )

@@ -8,7 +8,7 @@ import type {
     ContextMentionProviderMetadata,
     EnhancedContextContextT,
     MentionQuery,
-    ModelProvider,
+    Model,
     RangeData,
     SearchPanelFile,
     SerializedChatMessage,
@@ -175,7 +175,7 @@ export type ExtensionMessage =
       }
     | { type: 'clientState'; value: ClientStateForWebview }
     | { type: 'clientAction'; addContextItemsToLastHumanInput: ContextItem[] }
-    | { type: 'chatModels'; models: ModelProvider[] }
+    | { type: 'chatModels'; models: Model[] }
     | {
           type: 'update-search-results'
           results: SearchPanelFile[]

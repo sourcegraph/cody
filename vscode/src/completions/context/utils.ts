@@ -1,19 +1,50 @@
+const typeScriptFamily = new Set(['typescript', 'typescriptreact'])
+const javaScriptFamily = new Set(['javascript', 'javascriptreact'])
+const cssFamily = new Set(['css', 'less', 'scss', 'sass'])
+const htmlFamily = new Set([
+    'typescriptreact',
+    'javascriptreact',
+    'html',
+    'handlebars',
+    'vue-html',
+    'razor',
+    'php',
+    'haml',
+    // This omits vue and svelte as these languages usually do not
+    // import CSS modules but define them in the same file instead.
+])
+
 /**
- * Returns the base language id for the given language id. This is used to determine which language
- * IDs can be included as context for a given language ID.
- *
- * TODO(beyang): handle JavaScript <-> TypeScript and verify this works for C header files omit
- * files of other languages
+ * Returns true if the given language ID should be used as context for the base
+ * language id.
  */
-export function baseLanguageId(languageId: string): string {
-    switch (languageId) {
-        case 'typescript':
-        case 'typescriptreact':
-            return 'typescript'
-        case 'javascript':
-        case 'javascriptreact':
-            return 'javascript'
-        default:
-            return languageId
+export function shouldBeUsedAsContext(
+    enableExtendedLanguagePool: boolean,
+    baseLanguageId: string,
+    languageId: string
+): boolean {
+    if (baseLanguageId === languageId) {
+        return true
     }
+
+    if (typeScriptFamily.has(baseLanguageId) && typeScriptFamily.has(languageId)) {
+        return true
+    }
+    if (javaScriptFamily.has(baseLanguageId) && javaScriptFamily.has(languageId)) {
+        return true
+    }
+
+    if (enableExtendedLanguagePool) {
+        // Allow template languages to use css files as context (in the hope
+        // that this allows filling class names more effectively)
+        if (htmlFamily.has(baseLanguageId) && cssFamily.has(languageId)) {
+            return true
+        }
+        // Allow css files to use template languages
+        if (cssFamily.has(baseLanguageId) && htmlFamily.has(languageId)) {
+            return true
+        }
+    }
+
+    return false
 }

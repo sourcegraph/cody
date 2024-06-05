@@ -1,6 +1,6 @@
 // Add anything else here that needs to be used outside of this library.
 
-export { ModelProvider } from './models'
+export { Model, ModelsService } from './models'
 export {
     type EditModel,
     type EditProvider,
@@ -257,8 +257,9 @@ export { testFileUri } from './test/path-helpers'
 export * from './tracing'
 export {
     convertGitCloneURLToCodebaseName,
-    isError,
     createSubscriber,
+    isError,
+    nextTick,
 } from './utils'
 export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
 export * from './auth/types'

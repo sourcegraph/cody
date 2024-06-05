@@ -1,4 +1,4 @@
-import type { ModelProvider } from '@sourcegraph/cody-shared'
+import type { Model } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import { AtSignIcon } from 'lucide-react'
 import { type FunctionComponent, useCallback } from 'react'
@@ -94,7 +94,7 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     const { chatModels, onCurrentChatModelChange } = useChatModelContext()
 
     const onModelSelect = useCallback(
-        (model: ModelProvider) => {
+        (model: Model) => {
             onCurrentChatModelChange?.(model)
             focusEditor?.()
         },

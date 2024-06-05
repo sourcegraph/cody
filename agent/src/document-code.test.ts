@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { ModelProvider, getDotComDefaultModels } from '@sourcegraph/cody-shared'
+import { ModelsService, getDotComDefaultModels } from '@sourcegraph/cody-shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient } from './TestClient'
@@ -14,7 +14,7 @@ describe('Document Code', () => {
     })
 
     beforeAll(async () => {
-        ModelProvider.setProviders(getDotComDefaultModels())
+        ModelsService.setModels(getDotComDefaultModels())
         await workspace.beforeAll()
         await client.beforeAll()
     })
@@ -30,6 +30,10 @@ describe('Document Code', () => {
 
     it('commands/document (Method as part of a class)', async () => {
         expect(await client.documentCode(workspace.file('src', 'TestClass.ts'))).toMatchSnapshot()
+
+        const { requests } = await client.request('testing/networkRequests', null)
+        expect(requests.find(r => r.body?.includes('const longSuffix'))).toBeTruthy()
+        expect(requests.find(r => r.body?.includes('const longPrefix'))).toBeTruthy()
     })
 
     it('commands/document (Function within a property)', async () => {

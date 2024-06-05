@@ -1,7 +1,7 @@
 import type { Decorator } from '@storybook/react'
 
 import {
-    type ModelProvider,
+    type Model,
     getDotComDefaultModels,
     isWindows,
     setDisplayPathEnvInfo,
@@ -37,7 +37,7 @@ export enum Theme {
 export const themeClassnames = {
     [Theme.DarkPlus]: 'vscode-dark',
     [Theme.DarkModern]: 'vscode-dark',
-    [Theme.DarkHighContrast]: 'vscode-high-contrast-dark',
+    [Theme.DarkHighContrast]: 'vscode-high-contrast',
     [Theme.LightPlus]: 'vscode-light',
     [Theme.LightModern]: 'vscode-light',
     [Theme.LightHighContrast]: 'vscode-high-contrast-light',
@@ -105,7 +105,7 @@ export function VSCodeDecorator(className: string | undefined, style?: CSSProper
 
 function useDummyChatModelContext(): ChatModelContext {
     const [chatModels, setChatModels] = useState(getDotComDefaultModels())
-    const onCurrentChatModelChange = (value: ModelProvider): void => {
+    const onCurrentChatModelChange = (value: Model): void => {
         setChatModels(chatModels =>
             chatModels.map(model => ({ ...model, default: model.model === value.model }))
         )

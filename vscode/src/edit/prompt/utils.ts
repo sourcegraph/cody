@@ -8,6 +8,11 @@ const contextMessageToContextItem = ({ text, file }: ExtractableContextMessage):
     return {
         type: 'file',
         content: text.toString(),
+        /**
+         * Range is required on `file` to ensure we can include more than one snippet from the same
+         * file. If range is `undefined`, additional snippets from the same URI will be excluded by
+         * the context deduplication logic.
+         */
         range: file.range
             ? new vscode.Range(
                   new vscode.Position(file.range.start.line, file.range.start.character),

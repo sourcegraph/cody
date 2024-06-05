@@ -6,8 +6,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 
 import {
     DOTCOM_URL,
-    ModelProvider,
     ModelUsage,
+    ModelsService,
     getDotComDefaultModels,
     isWindows,
 } from '@sourcegraph/cody-shared'
@@ -37,7 +37,7 @@ describe('Agent', () => {
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
-        ModelProvider.setProviders(getDotComDefaultModels())
+        ModelsService.setModels(getDotComDefaultModels())
         await workspace.beforeAll()
 
         // Init a repo in the workspace to make the parent-dirs repo-name resolver work for Cody Context Filters tests.
@@ -976,9 +976,8 @@ describe('Agent', () => {
 
                   it('does something else', () => {
                       // This line will error due to incorrect usage of \`performance.now\`
-                      /**
-                       * The starting time of the operation, in milliseconds.
-                       */
+                      // Record the start time using the Performance API's \`now\` method.
+                      // This captures a high resolution monotonic timestamp in milliseconds.
                       const startTime = performance.now(/* CURSOR */)
                   })
               })

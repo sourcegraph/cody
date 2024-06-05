@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { nextTick } from '@sourcegraph/cody-shared'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
@@ -12,7 +13,7 @@ import {
     type RequestParams,
     computeIfRequestStillRelevant,
 } from './request-manager'
-import { documentAndPosition, nextTick } from './test-helpers'
+import { documentAndPosition } from './test-helpers'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 
 class MockProvider extends Provider {
