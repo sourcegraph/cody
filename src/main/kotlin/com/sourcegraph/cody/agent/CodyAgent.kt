@@ -158,7 +158,11 @@ private constructor(
                 agentDirectory()?.resolve("index.js")
                     ?: throw CodyAgentException(
                         "Sourcegraph Cody + Code Search plugin path not found")
-            listOf(binaryPath, script.toFile().absolutePath)
+            if (shouldSpawnDebuggableAgent()) {
+              listOf(binaryPath, "--inspect", "--enable-source-maps", script.toFile().absolutePath)
+            } else {
+              listOf(binaryPath, script.toFile().absolutePath)
+            }
           }
 
       val processBuilder = ProcessBuilder(command)

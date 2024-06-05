@@ -400,6 +400,15 @@ You do not launch VS Code run configurations from the command palette.
 Instead, use ctrl-shift-D to open the Run and Debug view, and you can
 see the configuration dropdown at the top.
 
+## Tracing TypeScript Performance
+
+Chrome Tracing can be used to get CPU and memory profiles of Agent and the TypeScript extension code.
+
+1. Set `CODY_AGENT_DEBUG_INSPECT=true` in your run configuration/environment.
+2. Launch the target.
+3. Open DevTools however you're accustomed to do that, for example, `chrome://inspect` and click "inspect" next to the debuggee.
+4. Use the Performance tab to record CPU, memory profiles, etc.
+
 ## Known Issues
 
 - Force-stopping the target often corrupts IntelliJ's project indexes,
