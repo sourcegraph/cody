@@ -28,7 +28,7 @@ describe('getWords', () => {
 
 const MAX_MATCHES = 50
 
-describe('getWords', () => {
+describe('getWordOccurrences', () => {
     it('works with regular text', () => {
         expect(getWordOccurrences('foo bar baz')).toEqual(
             new Map<string, number>([
@@ -49,27 +49,65 @@ describe('getWords', () => {
     it('works with code snippets', () => {
         expect(getWordOccurrences(targetSnippet)).toEqual(
             new Map<string, number>([
-                ['import', 1],
-                ['bestjaccardmatch', 1],
-                ['getword', 4],
-                ['context', 1],
-                ['describ', 1],
-                ['work', 1],
-                ['regular', 1],
-                ['text', 1],
-                ['expect', 2],
-                ['foo', 2],
+                ['1', 6],
+                ['get', 4],
+                ['word', 4],
                 ['bar', 2],
                 ['baz', 2],
-                ['toequal', 2],
-                ['new', 2],
+                ['equal', 2],
+                ['expect', 2],
+                ['foo', 2],
                 ['map', 2],
-                ['string', 2],
+                ['new', 2],
                 ['number', 2],
-                ['1', 6],
-                ['run', 2],
                 ['rock', 2],
+                ['run', 2],
                 ['slip', 2],
+                ['string', 2],
+                ['best', 1],
+                ['context', 1],
+                ['describ', 1],
+                ['import', 1],
+                ['jaccard', 1],
+                ['match', 1],
+                ['regular', 1],
+                ['text', 1],
+                ['work', 1],
+            ])
+        )
+    })
+
+    it('breaks camelCase, snake_case, and kebab-case', () => {
+        expect(getWordOccurrences('fooBarBaz')).toEqual(
+            new Map<string, number>([
+                ['foo', 1],
+                ['bar', 1],
+                ['baz', 1],
+            ])
+        )
+        expect(getWordOccurrences('foo_bar_baz')).toEqual(
+            new Map<string, number>([
+                ['foo', 1],
+                ['bar', 1],
+                ['baz', 1],
+            ])
+        )
+        expect(getWordOccurrences('foo-bar-baz')).toEqual(
+            new Map<string, number>([
+                ['foo', 1],
+                ['bar', 1],
+                ['baz', 1],
+            ])
+        )
+        expect(getWordOccurrences('MySuperCaliFragilisticExpialidociousControllerController')).toEqual(
+            new Map<string, number>([
+                ['my', 1],
+                ['super', 1],
+                ['cali', 1],
+                // The next three terms are stemmed and thus do not match the original:
+                ['control', 2],
+                ['fragilist', 1],
+                ['expialidoci', 1],
             ])
         )
     })
@@ -176,7 +214,7 @@ describe('bestJaccardMatch', () => {
                       'foo',
                       'bar',",
             "endLine": 4,
-            "score": 0.08695652173913043,
+            "score": 0.1346153846153846,
             "startLine": 0,
           }
         `)

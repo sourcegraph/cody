@@ -173,7 +173,9 @@ function jaccardSimilarity(left: number, right: number, intersection: number): n
 
 export function getWordOccurrences(s: string): WordOccurrences {
     const frequencyCounter: WordOccurrences = new Map()
-    const words = winkUtils.string.tokenize0(s)
+    let words = winkUtils.string.tokenize0(s)
+
+    words = breakWords(words)
 
     const filteredWords = winkUtils.tokens.removeWords(words)
     for (const word of filteredWords) {
@@ -242,3 +244,22 @@ function stemWithCache(word: string): string {
     return stem
 }
 const stemmerCache = new LRUCache<string, string>({ max: MAX_STEM_CACHE_SIZE })
+
+function breakWords(words: string[]): string[] {
+    const result: string[] = []
+    const camelCaseRegex = /([a-z])([A-Z])/g
+    const snakeKebabRegex = /[-_]/g
+
+    for (const word of words) {
+        // Break camelCase words
+        let brokenWord = word
+        while (camelCaseRegex.test(brokenWord)) {
+            brokenWord = brokenWord.replace(camelCaseRegex, '$1 $2')
+        }
+        // Break snake_case and kebab-case words
+        brokenWord = brokenWord.replace(snakeKebabRegex, ' ')
+        result.push(...brokenWord.split(' '))
+    }
+
+    return result
+}
