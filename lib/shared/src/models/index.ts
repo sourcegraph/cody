@@ -162,13 +162,11 @@ export class ModelsService {
         if (models.length === 1) {
             return models[0]
         }
-
+        const errorMessage =
+            models.length > 1
+                ? `Multiple models found for substring ${modelSubstring}.`
+                : `No models found for substring ${modelSubstring}.`
         const modelsList = ModelsService.models.map(m => m.model).join(', ')
-        if (models.length === 0) {
-            throw new Error(
-                `No model found for substring ${modelSubstring}. Available models: ${modelsList}`
-            )
-        }
-        throw new Error(`Multiple models found for substring ${modelSubstring}: ${modelsList}`)
+        throw new Error(`${errorMessage} Available models: ${modelsList}`)
     }
 }
