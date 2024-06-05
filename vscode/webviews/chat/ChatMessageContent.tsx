@@ -298,13 +298,6 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
 
                 // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
                 preElement.parentNode.insertBefore(buttons, preElement.nextSibling)
-
-                // capture copy events (right click or keydown) on code block
-                preElement.addEventListener('copy', () => {
-                    if (copyButtonOnSubmit) {
-                        copyButtonOnSubmit(preText, 'Keydown')
-                    }
-                })
             }
         }
     }, [copyButtonOnSubmit, insertButtonOnSubmit, guardrails, displayMarkdown, isMessageLoading])
