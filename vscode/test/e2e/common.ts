@@ -54,7 +54,7 @@ async function disableNotifications(page: Page): Promise<void> {
  * Gets the chat panel frame locator.
  */
 export function getChatPanel(page: Page): FrameLocator {
-    return page.frameLocator('iframe.webview').frameLocator('iframe[title="New Chat"]')
+    return page.frameLocator('iframe.webview').last().frameLocator('iframe')
 }
 
 /**
@@ -66,9 +66,13 @@ export async function createEmptyChatPanel(
 ): Promise<[FrameLocator, Locator, Locator, Locator]> {
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
     const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    const chatInputs = chatFrame.getByRole('textbox', { name: 'Chat message' })
+    const chatInputs = getChatInputs(chatFrame)
 
     return [chatFrame, chatInputs.last(), chatInputs.first(), chatInputs]
+}
+
+export function getChatInputs(chatPanel: FrameLocator): Locator {
+    return chatPanel.getByRole('textbox', { name: 'Chat message' })
 }
 
 export async function focusChatInputAtEnd(chatInput: Locator): Promise<void> {
@@ -133,8 +137,17 @@ export async function selectMentionMenuItem(chatFrame: FrameLocator, title: stri
 }
 
 export async function openFileInEditorTab(page: Page, filename: string): Promise<void> {
-    await sidebarExplorer(page).click()
-    await page.getByRole('treeitem', { name: filename }).locator('a').dblclick()
+    await page.keyboard.press('F1')
+    // Without the leading `>`, the input is interpreted as a filename.
+    await page.getByPlaceholder('Type the name of a command to run.').fill(filename)
+    await expect(
+        page
+            .getByRole('listbox', { name: /^Search files/ })
+            .getByRole('option')
+            .first()
+    ).toHaveAccessibleName(new RegExp(`${filename},`))
+    await page.keyboard.press('Enter')
+
     await clickEditorTab(page, filename)
 }
 
@@ -149,11 +162,13 @@ export async function clickEditorTab(
 export async function selectLineRangeInEditorTab(
     page: Page,
     startLine: number,
-    endLine: number
+    endLine?: number
 ): Promise<void> {
     const lineNumbers = page.locator('div[class*="line-numbers"]')
     await lineNumbers.getByText(startLine.toString(), { exact: true }).click()
-    await lineNumbers.getByText(endLine.toString(), { exact: true }).click({
-        modifiers: ['Shift'],
-    })
+    if (typeof endLine !== 'undefined') {
+        await lineNumbers.getByText(endLine.toString(), { exact: true }).click({
+            modifiers: ['Shift'],
+        })
+    }
 }
