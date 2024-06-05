@@ -37,6 +37,10 @@ describe('Chat response quality', () => {
                 stdio: 'inherit',
             }
         )
+
+        await client.request('command/execute', {
+            command: 'cody.search.index-update',
+        })
     }, 20_000)
 
     beforeEach(async () => {
@@ -87,6 +91,16 @@ describe('Chat response quality', () => {
                 checkAccess(lastMessage)
             }, 10_000)
 
+            // Skip because this currently fails.
+            // * anthropic/claude-3-haiku: "I don't have access to any code you've written. I'm Claude, an AI assistant..."
+            it.skip('@zoekt describe my code', async () => {
+                const lastMessage = await sendMessage(client, modelString, '@zoekt describe my code', {
+                    addEnhancedContext: true,
+                    contextFiles: [],
+                })
+                checkAccess(lastMessage)
+            }, 10_000)
+
             it('Is my codebase clean?', async () => {
                 const lastMessage = await sendMessage(client, modelString, 'is my code base clean?', {
                     addEnhancedContext: false,
@@ -110,7 +124,7 @@ describe('Chat response quality', () => {
 
             // Skip because this currently fails.
             // * openai/gpt-3.5-turbo: "I'm sorry, but I am unable to browse through specific files"
-            it.skip('Can you look through the files?', async () => {
+            it('Can you look through the files?', async () => {
                 const lastMessage = await sendMessage(
                     client,
                     modelString,
@@ -198,7 +212,7 @@ function checkAccess(lastMessage: SerializedChatMessage | undefined) {
 }
 
 function checkFilesExist(lastMessage: SerializedChatMessage | undefined, questionFiles: string[], contextFiles: ContextItem[]) {
-    const filenameRegex = /\b(\w+\.\w+)\b/g
+    const filenameRegex = /\b(\w+\.(go|js|md|ts))\b/g
     const files = lastMessage?.text?.match(filenameRegex) ?? []
     const contextFilePaths = new Set(contextFiles.map(file => file.uri.path))
     for (const file of files) {
@@ -269,3 +283,13 @@ const externalServicesItem: ContextItem = {
     type: 'file',
     content: '\n```typescript\n        },\n    }\n}\n```',
 }
+
+// async function loadContextItem(name: string): Promise<ContextItem> {
+//     const uri = workspace.file(name);
+//     return vscode.workspace.fs.readFile(uri)
+//         .then(buffer => ({
+//             uri,
+//             type: 'file',
+//             content: buffer.toString()
+//         }));
+// }
