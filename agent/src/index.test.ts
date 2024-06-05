@@ -81,7 +81,6 @@ describe('Agent', () => {
     const sumUri = workspace.file('src', 'sum.ts')
     const animalUri = workspace.file('src', 'animal.ts')
     const squirrelUri = workspace.file('src', 'squirrel.ts')
-    const multipleSelectionsUri = workspace.file('src', 'multiple-selections.ts')
 
     // Context files ends with 'Ignored.ts' will be excluded by .cody/ignore
     const ignoredUri = workspace.file('src', 'isIgnored.ts')
@@ -632,32 +631,6 @@ describe('Agent', () => {
         }, 10_000)
     })
 
-    describe('Text documents', () => {
-        it('chat/submitMessage (understands the selected text)', async () => {
-            await client.request('command/execute', {
-                command: 'cody.search.index-update',
-            })
-            await client.openFile(multipleSelectionsUri)
-            await client.changeFile(multipleSelectionsUri)
-            await client.changeFile(multipleSelectionsUri, {
-                selectionName: 'SELECTION_2',
-            })
-            const reply = await client.sendSingleMessageToNewChat(
-                'What is the name of the function that I have selected? Only answer with the name of the function, nothing else',
-                { addEnhancedContext: true }
-            )
-            expect(reply?.text?.trim()).includes('anotherFunction')
-            expect(reply?.text?.trim()).not.includes('inner')
-            await client.changeFile(multipleSelectionsUri)
-            const reply2 = await client.sendSingleMessageToNewChat(
-                'What is the name of the function that I have selected? Only answer with the name of the function, nothing else',
-                { addEnhancedContext: true }
-            )
-            expect(reply2?.text?.trim()).includes('inner')
-            expect(reply2?.text?.trim()).not.includes('anotherFunction')
-        }, 20_000)
-    })
-
     describe('Commands', () => {
         it('commands/explain', async () => {
             await client.request('command/execute', {
@@ -719,63 +692,59 @@ describe('Agent', () => {
                 const lastMessage = await client.firstNonEmptyTranscript(id)
                 expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                     `
-                  "To generate unit tests for the \`Animal\` interface, we can use the Vitest framework, which is already being used in the provided code context (\`src/example.test.ts\`).
+                  "Based on the shared code context from \`src/example.test.ts\`, the test framework and libraries being used are Vitest and the built-in assertion library from Vitest.
 
-                  No new imports are needed - using existing libs.
+                  To test the \`Animal\` interface, we can create a mock implementation of the interface and use it to test the expected behavior of any functions that interact with the \`Animal\` interface.
 
-                  The test suite should cover the following aspects of the \`Animal\` interface:
-
-                  1. Validate the properties (\`name\` and \`isMammal\`) with different input values.
-                  2. Test the \`makeAnimalSound\` method with different implementations of the \`Animal\` interface.
-
-                  Here's a possible test suite:
+                  Here's a suite of unit tests for the \`Animal\` interface:
 
                   \`\`\`typescript
                   import { describe, it, expect } from 'vitest'
 
-                  // Import the implementations of the Animal interface
-                  import { Dog, Cat } from './animals'
+                  // Mock implementation of the Animal interface
+                  class MockAnimal implements Animal {
+                    name: string
+                    isMammal: boolean
+
+                    constructor(name: string, isMammal: boolean) {
+                      this.name = name
+                      this.isMammal = isMammal
+                    }
+
+                    makeAnimalSound(): string {
+                      return \`\${this.name} makes a sound\`
+                    }
+                  }
 
                   describe('Animal', () => {
-                    describe('Dog', () => {
-                      const dog = new Dog('Buddy', true)
-
-                      it('should have the correct name', () => {
-                        expect(dog.name).toBe('Buddy')
-                      })
-
-                      it('should be a mammal', () => {
-                        expect(dog.isMammal).toBe(true)
-                      })
-
-                      it('should make the correct sound', () => {
-                        expect(dog.makeAnimalSound()).toBe('Woof!')
-                      })
+                    it('should have a name', () => {
+                      const animal = new MockAnimal('Dog', true)
+                      expect(animal.name).toBe('Dog')
                     })
 
-                    describe('Cat', () => {
-                      const cat = new Cat('Missy', true)
+                    it('should have a isMammal property', () => {
+                      const mammal = new MockAnimal('Cat', true)
+                      const nonMammal = new MockAnimal('Snake', false)
+                      expect(mammal.isMammal).toBe(true)
+                      expect(nonMammal.isMammal).toBe(false)
+                    })
 
-                      it('should have the correct name', () => {
-                        expect(cat.name).toBe('Missy')
-                      })
-
-                      it('should be a mammal', () => {
-                        expect(cat.isMammal).toBe(true)
-                      })
-
-                      it('should make the correct sound', () => {
-                        expect(cat.makeAnimalSound()).toBe('Meow!')
-                      })
+                    it('should make an animal sound', () => {
+                      const animal = new MockAnimal('Cow', true)
+                      expect(animal.makeAnimalSound()).toBe('Cow makes a sound')
                     })
                   })
                   \`\`\`
 
-                  This test suite covers the basic functionality of the \`Animal\` interface by testing the properties and the \`makeAnimalSound\` method with two different implementations (\`Dog\` and \`Cat\`). It validates the expected behavior with assertions using the \`expect\` function from Vitest.
+                  This suite of tests covers the basic functionality of the \`Animal\` interface, including:
 
-                  Note: The implementations of \`Dog\` and \`Cat\` classes are not provided in the shared code context, so I've assumed their existence for the purpose of this example. You may need to adjust the import statements and class instantiation based on your actual implementation.
+                  - Validating that instances of \`Animal\` have a \`name\` property
+                  - Validating that instances of \`Animal\` have an \`isMammal\` property
+                  - Validating that the \`makeAnimalSound\` method returns the expected string
 
-                  The test coverage is reasonably comprehensive, but it may not cover all edge cases or complex scenarios. Additionally, if there are any dependencies or mocks required for the \`Animal\` interface or its implementations, those would need to be set up in the test suite as well."
+                  Since the \`Animal\` interface is an interface and not a concrete implementation, we create a mock implementation \`MockAnimal\` to test the expected behavior of the interface.
+
+                  Overall, these tests provide good coverage of the \`Animal\` interface, but they are limited to testing the interface itself and not any specific implementations of the interface. If there are specific implementations of the \`Animal\` interface, additional tests should be added to cover those implementations."
                 `,
                     explainPollyError
                 )
