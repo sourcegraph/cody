@@ -173,9 +173,7 @@ function jaccardSimilarity(left: number, right: number, intersection: number): n
 
 export function getWordOccurrences(s: string): WordOccurrences {
     const frequencyCounter: WordOccurrences = new Map()
-    let words = winkUtils.string.tokenize0(s)
-
-    words = breakWords(words)
+    const words = breakCamelAndSnakeCase(winkUtils.string.tokenize0(s))
 
     const filteredWords = winkUtils.tokens.removeWords(words)
     for (const word of filteredWords) {
@@ -245,10 +243,21 @@ function stemWithCache(word: string): string {
 }
 const stemmerCache = new LRUCache<string, string>({ max: MAX_STEM_CACHE_SIZE })
 
-function breakWords(words: string[]): string[] {
+// Uses a heuristics to break camelCase and snake_case compound words into their
+// constituent words. This is helpful since programming languages tend to use
+// either of those two patterns quite often.
+//
+// If we do not take this into account, symbols that have a similar meaning
+// might fall into different stems and thus not be detected by our ranker.
+//
+// E.g.: "bestJaccardMatch" and "JaccardSimilarityRetriever" have an overlapping
+// meaning but only if we break these words.
+//
+// Note: kebab-case is skipped here since our tokenizer already handles this.
+function breakCamelAndSnakeCase(words: string[]): string[] {
     const result: string[] = []
     const camelCaseRegex = /([a-z])([A-Z])/g
-    const snakeKebabRegex = /[-_]/g
+    const snakeKebabRegex = /[_]/g
 
     for (const word of words) {
         // Break camelCase words
