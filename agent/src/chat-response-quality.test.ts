@@ -158,29 +158,29 @@ describe('Chat response quality', () => {
             // Skip because this currently fails.
             // * openai/gpt-3.5-turbo: "I can't browse external repositories or specific codebases"
             it.skip('See zoekt repo find location of tensor function', async () => {
-                let contextFiles = [readmeItem, limitItem, evalItem]
+                const contextFiles = [readmeItem, limitItem, evalItem]
                 const lastMessage = await sendMessage(
                     client,
                     modelString,
                     'See zoekt repo find location of tensor function',
-                    { addEnhancedContext: false, contextFiles: contextFiles}
+                    { addEnhancedContext: false, contextFiles: contextFiles }
                 )
                 checkAccess(lastMessage)
                 checkFilesExist(lastMessage, [], contextFiles)
             }, 10_000)
 
             it('Explain the logic in src/agent.go', async () => {
-                let contextFiles = [readmeItem, limitItem]
+                const contextFiles = [readmeItem, limitItem]
                 const lastMessage = await sendMessage(
                     client,
                     modelString,
                     'Explain the logic in src/agent.go, particularly how agents interact with ranking',
-                    { addEnhancedContext: false, contextFiles: contextFiles}
+                    { addEnhancedContext: false, contextFiles: contextFiles }
                 )
                 // Don't check access, because this file does not exist in the context.
                 // Check it doesn't hallucinate
                 expect(lastMessage?.text).not.includes("Sure, let's")
-                checkFilesExist(lastMessage, ["agent.go"], contextFiles)
+                checkFilesExist(lastMessage, ['agent.go'], contextFiles)
             }, 10_000)
         })
     }
@@ -211,7 +211,11 @@ function checkAccess(lastMessage: SerializedChatMessage | undefined) {
     expect(lastMessage?.text ?? '').not.toMatch(accessCheck)
 }
 
-function checkFilesExist(lastMessage: SerializedChatMessage | undefined, questionFiles: string[], contextFiles: ContextItem[]) {
+function checkFilesExist(
+    lastMessage: SerializedChatMessage | undefined,
+    questionFiles: string[],
+    contextFiles: ContextItem[]
+) {
     const filenameRegex = /\b(\w+\.(go|js|md|ts))\b/g
     const files = lastMessage?.text?.match(filenameRegex) ?? []
     const contextFilePaths = new Set(contextFiles.map(file => file.uri.path))
