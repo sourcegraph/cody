@@ -63,12 +63,16 @@ export interface ExpectedV2Events {
     expectedV2Events: string[]
 }
 
+const vscodeRoot = path.resolve(__dirname, '..', '..')
+
+export const getAssetsDir = (testName: string): string =>
+    path.join(vscodeRoot, '..', 'playwright', escapeToPath(testName))
+
 export const test = base
     // By default, use ../../test/fixtures/workspace as the workspace.
     .extend<WorkspaceDirectory>({
         // biome-ignore lint/correctness/noEmptyPattern: Playwright needs empty pattern to specify "no dependencies".
         workspaceDirectory: async ({}, use) => {
-            const vscodeRoot = path.resolve(__dirname, '..', '..')
             const workspaceDirectory = path.join(vscodeRoot, 'test', 'fixtures', 'workspace')
             await use(workspaceDirectory)
         },
@@ -147,19 +151,12 @@ export const test = base
         ) => {
             void _page
 
-            const vscodeRoot = path.resolve(__dirname, '..', '..')
-
             const vscodeExecutablePath = await installVsCode()
             const extensionDevelopmentPath = vscodeRoot
 
             const userDataDirectory = mkdtempSync(path.join(os.tmpdir(), 'cody-vsce'))
             const extensionsDirectory = mkdtempSync(path.join(os.tmpdir(), 'cody-vsce'))
-            const videoDirectory = path.join(
-                vscodeRoot,
-                '..',
-                'playwright',
-                escapeToPath(testInfo.title)
-            )
+            const assetsDirectory = getAssetsDir(testInfo.title)
 
             await buildWorkSpaceSettings(workspaceDirectory, extraWorkspaceSettings)
             await buildCustomCommandConfigFile(workspaceDirectory)
@@ -201,8 +198,9 @@ export const test = base
                     workspaceDirectory,
                 ],
                 recordVideo: {
-                    dir: videoDirectory,
+                    dir: path.join(assetsDirectory, 'videos'),
                 },
+                tracesDir: path.join(assetsDirectory, 'traces'),
             })
 
             await waitUntil(() => app.windows().length > 0)
@@ -248,16 +246,21 @@ export const test = base
                     console.log('Logged:', loggedV2Events)
                     throw error
                 }
+            } else {
+                // Take a screenshot before closing the app if we failed
+                const screenshot = await page.screenshot({
+                    path: path.join(
+                        assetsDirectory,
+                        'screenshots',
+                        `run_${testInfo.repeatEachIndex}_retry_${testInfo.retry}_failure.png`
+                    ),
+                })
+                await testInfo.attach('screenshot', { body: screenshot, contentType: 'image/png' })
             }
 
             resetLoggedEvents()
 
             await app.close()
-
-            // Delete the recorded video if the test passes
-            if (testInfo.status === 'passed') {
-                await rmSyncWithRetries(videoDirectory, { recursive: true })
-            }
 
             await rmSyncWithRetries(userDataDirectory, { recursive: true })
             await rmSyncWithRetries(extensionsDirectory, { recursive: true })
@@ -284,7 +287,7 @@ export const test = base
  *    Error: EBUSY: resource busy or locked,
  *      unlink '\\?\C:\Users\RUNNER~1\AppData\Local\Temp\cody-vsced30WGT\Crashpad\metadata'
  */
-async function rmSyncWithRetries(path: PathLike, options?: RmOptions): Promise<void> {
+export async function rmSyncWithRetries(path: PathLike, options?: RmOptions): Promise<void> {
     const maxAttempts = 5
     let attempts = maxAttempts
     while (attempts-- >= 0) {

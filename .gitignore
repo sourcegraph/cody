@@ -11,3 +11,4 @@ playwright/**/*.webm
 **/*.iml
 **/*.vsix
 index.scip
+playwright

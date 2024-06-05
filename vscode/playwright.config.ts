@@ -12,4 +12,5 @@ export default defineConfig({
     expect: {
         timeout: isWin || isCI ? 5000 : 2000,
     },
+    reporter: isCI ? [['github']] : [['list'], ['./test/e2e/utils/garbage-collecting-reporter']],
 })
