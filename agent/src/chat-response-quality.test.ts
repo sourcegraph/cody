@@ -287,13 +287,3 @@ const externalServicesItem: ContextItem = {
     type: 'file',
     content: '\n```typescript\n        },\n    }\n}\n```',
 }
-
-// async function loadContextItem(name: string): Promise<ContextItem> {
-//     const uri = workspace.file(name);
-//     return vscode.workspace.fs.readFile(uri)
-//         .then(buffer => ({
-//             uri,
-//             type: 'file',
-//             content: buffer.toString()
-//         }));
-// }
