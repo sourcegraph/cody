@@ -177,7 +177,7 @@ test('edit (fixup) input - model selection', async ({ page, nap, sidebar }) => {
     // Check the correct range item is auto-selected
     await nap()
     const modelItem = page.getByText('Claude 3 Sonnet')
-    await page.waitForTimeout(300)
+    await nap()
     expect(modelItem).toBeVisible()
 
     // Open the model input and check it has the correct item selected
