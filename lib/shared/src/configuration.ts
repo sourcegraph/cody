@@ -83,6 +83,11 @@ export interface Configuration {
     autocompleteExperimentalMultiModelCompletions?: MultimodelSingleModelConfig[]
 
     /**
+     * Experimental edit
+     */
+    editExperimentalGraphContext?: 'lsp-light' | null
+
+    /**
      * Hidden settings
      */
     isRunningInsideAgent?: boolean

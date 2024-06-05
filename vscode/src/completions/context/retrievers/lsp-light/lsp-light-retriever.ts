@@ -21,9 +21,14 @@ const SUPPORTED_LANGUAGES = new Set([
     SupportedLanguage.typescriptreact,
 ])
 
-interface RetrieveParams extends Pick<ContextRetrieverOptions, 'document' | 'position' | 'hints'> {}
+interface RetrieveParams extends Pick<ContextRetrieverOptions, 'document' | 'position' | 'hints'> {
+    recursionLimit?: number
+    maxIdentifiersToResolve?: number
+    range?: vscode.Range
+}
+
 const RECURSION_LIMIT = 3
-const IDENTIFIERS_TO_RESOLVE = 1
+const MAX_IDENTIFIERS_TO_RESOLVE = 1
 
 export interface GetGraphContextForPositionParams {
     document: vscode.TextDocument
@@ -64,6 +69,9 @@ export class LspLightRetriever implements ContextRetriever {
             document,
             position,
             hints: { maxChars },
+            recursionLimit = RECURSION_LIMIT,
+            maxIdentifiersToResolve = MAX_IDENTIFIERS_TO_RESOLVE,
+            range,
         } = params
 
         const key = `${document.uri.toString()}█${position.line}█${document.lineAt(position.line).text}`
@@ -77,10 +85,16 @@ export class LspLightRetriever implements ContextRetriever {
         this.abortLastRequest = () => abortController.abort()
 
         // TODO: walk up the tree to find identifiers on the closest parent start line
+        // TODO: remove identifiers located inside of ranges of other identifiers  (e.g., property_identifier inside of interfaces/types)
         const symbolsSnippetRequests = getLastNGraphContextIdentifiersFromDocument({
-            n: IDENTIFIERS_TO_RESOLVE,
+            n: maxIdentifiersToResolve,
             document,
-            position,
+            range:
+                range ||
+                new vscode.Range(
+                    new vscode.Position(Math.max(position.line - 100, 0), 0),
+                    position.translate({ characterDelta: 1 })
+                ),
         })
 
         const resultKey = symbolsSnippetRequests
@@ -97,7 +111,7 @@ export class LspLightRetriever implements ContextRetriever {
         const start = performance.now()
         const contextSnippets = await getSymbolContextSnippets({
             symbolsSnippetRequests,
-            recursionLimit: RECURSION_LIMIT,
+            recursionLimit,
             abortSignal: abortController.signal,
         })
 

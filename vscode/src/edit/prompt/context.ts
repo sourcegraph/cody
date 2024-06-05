@@ -5,7 +5,7 @@ import {
     ContextItemSource,
     type ContextMessage,
     MAX_CURRENT_FILE_TOKENS,
-    type PromptString,
+    PromptString,
     populateCodeContextTemplate,
     populateCodeGenerationContextTemplate,
     populateCurrentEditorDiagnosticsTemplate,
@@ -16,6 +16,7 @@ import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { EditIntent } from '../types'
 
 import { truncatePromptString, truncatePromptStringStart } from '@sourcegraph/cody-shared'
+import { LspLightRetriever } from '../../completions/context/retrievers/lsp-light/lsp-light-retriever'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import { PROMPT_TOPICS } from './constants'
 import { extractContextItemsFromContextMessages } from './utils'
@@ -81,14 +82,51 @@ const getContextFromIntent = async ({
             ]
         }
         /**
-         * Specific case where a user is explciitly trying to "fix" a problem in their code.
+         * Specific case where a user is explicitly trying to "fix" a problem in their code.
          * No additional context is required. We already have the errors directly via the instruction, and we know their selected code.
          */
-        case 'fix':
-        /**
-         * Very narrow set of possible instructions.
-         * Fetching context is unlikely to be very helpful or optimal.
-         */
+
+        case 'fix': {
+            const graphContextType = vscode.workspace
+                .getConfiguration('cody.edit.experimental')
+                .get<string | null>('graphContext')
+
+            if (graphContextType !== 'lsp-light') {
+                /**
+                 * Very narrow set of possible instructions.
+                 * Fetching context is unlikely to be very helpful or optimal.
+                 */
+                return []
+            }
+
+            const document = await vscode.workspace.openTextDocument(uri)
+
+            // TODO: reuse the LSP context retriever when the graph context for Edit is enabled.
+            const lspContextRetriever = new LspLightRetriever()
+            const lspContextSnippets = await lspContextRetriever.retrieve({
+                document,
+                position: selectionRange.start,
+                range: selectionRange,
+                maxIdentifiersToResolve: 10,
+                recursionLimit: 3,
+                hints: { maxChars: 5000, maxMs: 5000 },
+            })
+
+            return lspContextSnippets.map(snippet => {
+                const safeSnippet = PromptString.fromAutocompleteContextSnippet(snippet)
+
+                return {
+                    speaker: 'human',
+                    text: populateCodeContextTemplate(
+                        safeSnippet.content,
+                        snippet.uri,
+                        undefined,
+                        'edit'
+                    ),
+                    file: { type: 'file', uri, source: ContextItemSource.Editor },
+                }
+            })
+        }
         case 'doc': {
             const contextMessages: ContextMessage[] = []
             if (truncatedPrecedingText.trim().length > 0) {

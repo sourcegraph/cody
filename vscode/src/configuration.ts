@@ -88,6 +88,11 @@ export function getConfiguration(
         null
     )
 
+    const editExperimentalGraphContext: 'lsp-light' | null = getHiddenSetting(
+        'edit.experimental.graphContext',
+        null
+    )
+
     function hasValidLocalEmbeddingsConfig(): boolean {
         return (
             [
@@ -136,6 +141,7 @@ export function getConfiguration(
         internalUnstable: getHiddenSetting('internal.unstable', isTesting),
 
         autocompleteExperimentalGraphContext,
+        editExperimentalGraphContext,
         experimentalSimpleChatContext: getHiddenSetting('experimental.simpleChatContext', true),
         experimentalSymfContext: getHiddenSetting('experimental.symfContext', true),
         experimentalCommitMessage: getHiddenSetting('experimental.commitMessage', true),
