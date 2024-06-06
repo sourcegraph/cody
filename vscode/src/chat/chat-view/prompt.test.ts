@@ -113,7 +113,10 @@ describe('DefaultPrompter', () => {
                     },
                 ])
         ).makePrompt(chat, 0)
+
         chat.setLastMessageContext(info.context.used)
+        chat.addBotMessage({ text: ps`Oh hello there.` })
+        chat.addHumanMessage({ text: ps`Hello again!` })
 
         checkPrompt(info.prompt, [
             'You are Cody, an AI coding assistant from Sourcegraph.',
@@ -157,6 +160,8 @@ describe('DefaultPrompter', () => {
             'Codebase context from file user2.go',
             'Ok.',
             'Hello, world!',
+            'Oh hello there.',
+            'Hello again!',
         ])
     })
 
