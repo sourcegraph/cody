@@ -235,7 +235,7 @@ export const MentionMenu: FunctionComponent<
             ref={ref}
         >
             <CommandList>
-                {data.quickPickItems && data.quickPickItems.length > 0 && (
+                {!params.parentItem && data.quickPickItems && data.quickPickItems.length > 0 && (
                     <CommandGroup>
                         {data.quickPickItems.map(item => (
                             <CommandItem
