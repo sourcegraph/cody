@@ -3,6 +3,5 @@ package com.sourcegraph.cody.protocol_generated
 
 data class ClientStateForWebview(
   val initialContext: List<ContextItem>,
-  val availableEditorContext: List<ContextItem>,
 )
 

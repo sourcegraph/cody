@@ -60,7 +60,6 @@ export const App: FunctionComponent = () => {
     const [chatModels, setChatModels] = useState<Model[]>()
     const [clientState, setClientState] = useState<ClientStateForWebview>({
         initialContext: [],
-        availableEditorContext: [],
     })
     const dispatchClientAction = useClientActionDispatcher()
 

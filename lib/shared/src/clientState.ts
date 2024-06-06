@@ -8,5 +8,4 @@ export interface ClientStateForWebview {
      * Initial context items to populate in the input in chat inputs.
      */
     initialContext: ContextItem[]
-    availableEditorContext: ContextItem[]
 }

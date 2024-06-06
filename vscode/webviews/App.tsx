@@ -55,7 +55,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const [clientState, setClientState] = useState<ClientStateForWebview>({
         initialContext: [],
-        availableEditorContext: [],
     })
     const dispatchClientAction = useClientActionDispatcher()
 

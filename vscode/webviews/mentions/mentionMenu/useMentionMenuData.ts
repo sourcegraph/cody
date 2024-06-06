@@ -63,7 +63,7 @@ export function useMentionMenuData(
             items: results
                 ?.slice(0, limit)
                 .map(item => prepareContextItemForMentionMenu(item, remainingTokenBudget)),
-            quickPickItems: clientState.availableEditorContext.filter(item =>
+            quickPickItems: clientState.initialContext.filter(item =>
                 queryLower
                     ? item.title?.toLowerCase().includes(queryLower) ||
                       item.uri.toString().toLowerCase().includes(queryLower) ||

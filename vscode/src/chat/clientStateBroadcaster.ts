@@ -30,7 +30,6 @@ export function startClientStateBroadcaster({
 
     async function sendClientState(): Promise<void> {
         const items: ContextItem[] = []
-        const availableEditorContext: ContextItem[] = []
 
         // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
         // remote search).
@@ -60,7 +59,6 @@ export function startClientStateBroadcaster({
                     icon: 'folder',
                 }
                 items.push(item)
-                availableEditorContext.push(item)
             }
         } else {
             // TODO(sqs): Support multi-root. Right now, this only supports the 1st workspace root.
@@ -79,7 +77,6 @@ export function startClientStateBroadcaster({
                 } satisfies ContextItemTree
 
                 items.push(item)
-                availableEditorContext.push(item)
             }
         }
         const [contextFile] = await getContextFileFromSelection()
@@ -98,10 +95,9 @@ export function startClientStateBroadcaster({
             } satisfies ContextItem
 
             items.push(item)
-            availableEditorContext.push(item)
         }
 
-        postMessage({ type: 'clientState', value: { initialContext: items, availableEditorContext } })
+        postMessage({ type: 'clientState', value: { initialContext: items } })
     }
 
     const disposables: vscode.Disposable[] = []
