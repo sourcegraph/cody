@@ -1,14 +1,10 @@
 import { Ollama } from 'ollama/browser'
-import _ollama from 'ollama/browser'
-import { OLLAMA_DEFAULT_URL, getCompletionsModelConfig } from '../..'
+import { getCompletionsModelConfig } from '../..'
 import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import { onAbort } from '../../common/abortController'
 import { CompletionStopReason } from '../../inferenceClient/misc'
 import type { CompletionLogger } from '../../sourcegraph-api/completions/client'
 import type { CompletionCallbacks, CompletionParameters } from '../../sourcegraph-api/completions/types'
-
-let ollama = _ollama
-let ollamaHost = OLLAMA_DEFAULT_URL
 
 /**
  * Calls the Ollama API for chat completions with history.
@@ -30,14 +26,10 @@ export async function ollamaChatClient(
 
     const config = getCompletionsModelConfig(params.model)
     const model = config?.model ?? params.model
-    const endpoint = config?.endpoint ?? ollamaHost
+    const endpoint = config?.endpoint
 
     // Update the host if it's different from the current one.
-    if (endpoint !== ollamaHost) {
-        ollamaHost = endpoint
-        ollama = new Ollama({ host: endpoint })
-    }
-
+    const ollama = new Ollama({ host: endpoint })
     const result = {
         completion: '',
         stopReason: CompletionStopReason.StreamingChunk,
