@@ -153,6 +153,7 @@ const TranscriptInteraction: FunctionComponent<
                     key={`${humanMessage.index}-context`}
                     contextItems={humanMessage.contextFiles}
                     model={assistantMessage?.model}
+                    isForFirstMessage={humanMessage.index === 0}
                 />
             )}
             {assistantMessage && !isContextLoading && (
