@@ -1,5 +1,5 @@
-import { statSync } from 'fs'
-import { resolve } from 'path'
+import { statSync } from 'node:fs'
+import { resolve } from 'node:path'
 
 import { defineProjectWithDefaults } from '../.config/viteShared'
 
