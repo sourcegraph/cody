@@ -2,6 +2,9 @@ import type { FullConfig, Reporter, Suite, TestCase, TestResult } from '@playwri
 
 import { getAssetsDir, rmSyncWithRetries } from '../helpers'
 
+// Test reporter that cleans up assets after a successful test run. It keeps uses the value of
+// repeat-each to determine how many successful test runs it needs to see before it deletes
+// assets related to the running test. Otherwise, it will leave the assets in place for debugging.
 export default class GarbageCollectingReporter implements Reporter {
     repeatEach = 0
     runs = new Map<string, number>()

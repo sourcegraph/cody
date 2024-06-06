@@ -261,9 +261,9 @@ export const test = base
         ) => {
             sendTestInfo(testInfo.title, testInfo.testId, uuid.v4())
 
-            // if (process.env.DEBUG) {
-            //     await openDevTools()
-            // }
+            if (process.env.DEBUG) {
+                await openDevTools()
+            }
 
             // Bring the cody sidebar to the foreground if not already visible
             await focusSidebar(page)
