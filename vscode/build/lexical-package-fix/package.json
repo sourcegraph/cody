@@ -1,0 +1,6 @@
+{
+  "description": "Same as the `lexical` package but with only a CommonJS entrypoint. This is needed for the vscode dir to build a CommonJS output file because Lexical's own package.json specifies that Node builds must always use a `.mjs` file, which makes `esbuild --format=cjs` produce an error.",
+  "name": "lexical",
+  "main": "../../node_modules/lexical/Lexical.js",
+  "sideEffects": false
+}

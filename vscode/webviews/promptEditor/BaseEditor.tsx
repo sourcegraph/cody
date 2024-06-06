@@ -6,7 +6,7 @@ import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { clsx } from 'clsx'
-import { $getRoot, type EditorState, type LexicalEditor, type SerializedEditorState } from 'lexical'
+import type { EditorState, LexicalEditor, SerializedEditorState } from 'lexical'
 import { type FunctionComponent, type RefObject, useMemo } from 'react'
 import type { UserAccountInfo } from '../Chat'
 import styles from './BaseEditor.module.css'
@@ -94,8 +94,4 @@ export const BaseEditor: FunctionComponent<Props> = ({
             </div>
         </div>
     )
-}
-
-export function editorStateToText(editorState: EditorState): string {
-    return editorState.read(() => $getRoot().getTextContent())
 }

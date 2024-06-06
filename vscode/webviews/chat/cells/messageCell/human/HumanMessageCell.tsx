@@ -1,12 +1,12 @@
-import type { ChatMessage } from '@sourcegraph/cody-shared'
+import {
+    type ChatMessage,
+    type SerializedPromptEditorValue,
+    serializedPromptEditorStateFromChatMessage,
+} from '@sourcegraph/cody-shared'
 import { type FunctionComponent, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../Chat'
 import { UserAvatar } from '../../../../components/UserAvatar'
-import {
-    type PromptEditorRefAPI,
-    type SerializedPromptEditorValue,
-    serializedPromptEditorStateFromChatMessage,
-} from '../../../../promptEditor/PromptEditor'
+import type { PromptEditorRefAPI } from '../../../../promptEditor/PromptEditor'
 import { BaseMessageCell, MESSAGE_CELL_AVATAR_SIZE } from '../BaseMessageCell'
 import { HumanMessageEditor } from './editor/HumanMessageEditor'
 

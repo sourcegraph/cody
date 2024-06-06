@@ -5,7 +5,7 @@ import { getContextItemDisplayPath, getContextItemTokenUsageType } from './utils
  * Filters exisiting context items for uniqueness.
  *
  * NOTE: The transcript is reversed during the prompt-building process to ensure
- * that the most recent items are considered first. Therefre, the `reversedItems`
+ * that the most recent items are considered first. Therefore, the `reversedItems`
  * parameter should be in reverse order.
  *
  * @param reversedItems - The list of ContextItem to filter for uniqueness.
@@ -60,7 +60,7 @@ export function isUniqueContextItem(itemToAdd: ContextItem, uniqueItems: Context
             const itemRange = item.range
 
             // Assume context with no range contains full file content (unique)
-            if (item === itemToAdd || !itemRange) {
+            if (item === itemToAdd || (!itemRange && !isUserAddedItem(itemToAdd))) {
                 return false // Duplicate found.
             }
 
@@ -71,7 +71,7 @@ export function isUniqueContextItem(itemToAdd: ContextItem, uniqueItems: Context
 
             // Duplicates if overlapping ranges on the same lines,
             // or if one range contains the other.
-            if (itemToAddRange) {
+            if (itemToAddRange && itemRange) {
                 if (
                     rangesOnSameLines(itemRange, itemToAddRange) ||
                     rangeContainsLines(itemRange, itemToAddRange)

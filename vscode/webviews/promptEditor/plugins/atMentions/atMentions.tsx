@@ -25,6 +25,7 @@ import {
     type ContextItem,
     FAST_CHAT_INPUT_TOKEN_BUDGET,
     scanForMentionTriggerInUserTextInput,
+    toSerializedPromptEditorValue,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import type { UserAccountInfo } from '../../../Chat'
@@ -34,7 +35,6 @@ import {
     useMentionMenuData,
     useMentionMenuParams,
 } from '../../../mentions/mentionMenu/useMentionMenuData'
-import { toSerializedPromptEditorValue } from '../../PromptEditor'
 import {
     $createContextItemMentionNode,
     $createContextItemTextNode,

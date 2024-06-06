@@ -1358,7 +1358,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 2ad38622fb82b541efd248f28fdd0048
+    - _id: 20eb7d2233f9fb5d055de5116da4ef1f
       _order: 0
       cache: {}
       request:
@@ -1392,6 +1392,10 @@ log:
               - speaker: system
                 text: You are Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
+                text: "Codebase context from file path src/animal.ts: /* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n}\n/* SELECTION_END */"
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
                 text: |-
                   My selected code from @src/animal.ts:1-6:
                   ```
@@ -1405,7 +1409,7 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: "Explain what @src/animal.ts:1-6  does in simple terms. Assume the
+                text: "Explain what @src/animal.ts:1-6 ( @src/animal.ts ) does in simple terms. Assume the
                   audience is a beginner programmer who has just learned the
                   language features and basic syntax. Focus on explaining: 1)
                   The purpose of the code 2) What input(s) it takes 3) What
@@ -1676,7 +1680,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: ad4d12b86c3f16e562cdecb23a262d4e
+    - _id: d19331cfa2444498d0574efe7441a0d6
       _order: 0
       cache: {}
       request:
@@ -1710,6 +1714,10 @@ log:
               - speaker: system
                 text: You are Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
+                text: "Codebase context from file path src/animal.ts: /* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n}\n/* SELECTION_END */"
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
                 text: |-
                   My selected code from @src/animal.ts:1-6:
                   ```
@@ -1723,7 +1731,7 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: Please review and analyze @src/animal.ts:1-6  and identify potential areas
+                text: Please review and analyze @src/animal.ts:1-6 ( @src/animal.ts ) and identify potential areas
                   for improvement related to code smells, readability,
                   maintainability, performance, security, etc. Do not list
                   issues already addressed in the given code. Focus on providing

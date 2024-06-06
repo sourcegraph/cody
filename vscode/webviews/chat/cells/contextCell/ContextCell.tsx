@@ -84,7 +84,7 @@ export const ContextCell: React.FunctionComponent<{
                     <ul className={styles.list}>
                         {contextItems?.map((item, i) => (
                             // biome-ignore lint/suspicious/noArrayIndexKey: stable order
-                            <li key={i}>
+                            <li key={i} data-testid="context-item">
                                 <FileLink
                                     uri={item.uri}
                                     repoName={item.repoName}
@@ -92,12 +92,8 @@ export const ContextCell: React.FunctionComponent<{
                                     source={item.source}
                                     range={item.range}
                                     title={item.title}
-                                    isTooLarge={
-                                        item.type === 'file' && item.isTooLarge && item.source === 'user'
-                                    }
-                                    isIgnored={
-                                        item.type === 'file' && item.isIgnored && item.source === 'user'
-                                    }
+                                    isTooLarge={item.isTooLarge}
+                                    isIgnored={item.isIgnored}
                                     className={clsx(styles.contextItem, MENTION_CLASS_NAME)}
                                     linkClassName={styles.contextItemLink}
                                 />
