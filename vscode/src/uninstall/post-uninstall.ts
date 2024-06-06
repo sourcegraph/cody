@@ -14,6 +14,11 @@ class StaticAuthStatusProvider implements AuthStatusProvider {
 }
 
 async function main() {
+    // Do not record telemetry events during testing
+    if (process.env.CODY_TESTING) {
+        return
+    }
+
     const uninstaller = readConfig()
     if (uninstaller) {
         const { config, extensionDetails, authStatus, anonymousUserID } = uninstaller
