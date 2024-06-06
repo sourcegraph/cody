@@ -8,7 +8,7 @@ async function setModel(modelID: EditModel, storageKey: string) {
     return localStorage.set(storageKey, modelID)
 }
 
-function getModel<T extends string>(authProvider: AuthProvider, models: Model[], storageKey: string): T {
+async function getModel<T extends string>(authProvider: AuthProvider, models: Model[], storageKey: string): Promise<T> {
     const authStatus = authProvider.getAuthStatus()
 
     if (!authStatus.authenticated) {
@@ -27,7 +27,7 @@ function getModel<T extends string>(authProvider: AuthProvider, models: Model[],
     }
 
     // Check for the last selected model
-    const lastSelectedModelID = localStorage.get<string>(storageKey)
+    const lastSelectedModelID = await localStorage.get<string>(storageKey)
     const migratedModelID = migrateAndNotifyForOutdatedModels(lastSelectedModelID)
 
     if (migratedModelID && migratedModelID !== lastSelectedModelID) {

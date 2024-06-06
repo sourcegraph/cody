@@ -18,14 +18,14 @@ interface HistoryItem {
     kind?: vscode.QuickPickItemKind
 }
 
-export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats | null {
+export async function groupCodyChats(authStatus: AuthStatus | undefined): Promise<GroupedChats | null> {
     const chatHistoryGroups = new Map<string, CodySidebarTreeItem[]>()
 
     if (!authStatus) {
         return null
     }
 
-    const chats = chatHistory.getLocalHistory(authStatus)?.chat
+    const chats = (await chatHistory.getLocalHistory(authStatus))?.chat
     if (!chats) {
         return null
     }
@@ -72,7 +72,7 @@ export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats
 }
 
 export async function displayHistoryQuickPick(authStatus: AuthStatus): Promise<void> {
-    const groupedChats = groupCodyChats(authStatus)
+    const groupedChats = await groupCodyChats(authStatus)
     if (!groupedChats) {
         return
     }

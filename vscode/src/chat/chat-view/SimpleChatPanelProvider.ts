@@ -118,6 +118,7 @@ interface SimpleChatPanelProviderOptions {
     models: Model[]
     guardrails: Guardrails
     startTokenReceiver?: typeof startTokenReceiver
+    chatModel: SimpleChatModel
 }
 
 export interface ChatSession {
@@ -173,12 +174,19 @@ export class SimpleChatPanelProvider
     private allMentionProvidersMetadataQueryCancellation?: vscode.CancellationTokenSource
 
     private disposables: vscode.Disposable[] = []
+
     public dispose(): void {
         vscode.Disposable.from(...this.disposables).dispose()
         this.disposables = []
     }
 
-    constructor({
+    static async create(options: Omit<SimpleChatPanelProviderOptions, 'chatModel'>): Promise<SimpleChatPanelProvider> {
+        const chatModelInstance = new SimpleChatModel(await chatModel.get(options.authProvider, options.models))
+
+        return new SimpleChatPanelProvider({ ...options, chatModel: chatModelInstance})
+    }
+
+    private constructor({
         extensionUri,
         authProvider,
         chatClient,
@@ -1383,7 +1391,7 @@ export class SimpleChatPanelProvider
     // current in-progress completion. If the chat does not exist, then this
     // is a no-op.
     public async restoreSession(sessionID: string): Promise<void> {
-        const oldTranscript = chatHistory.getChat(this.authProvider.getAuthStatus(), sessionID)
+        const oldTranscript = await chatHistory.getChat(this.authProvider.getAuthStatus(), sessionID)
         if (!oldTranscript) {
             return this.newSession()
         }
@@ -1453,7 +1461,7 @@ export class SimpleChatPanelProvider
 
         const viewType = CodyChatPanelViewType
         const panelTitle =
-            chatHistory.getChat(this.authProvider.getAuthStatus(), this.chatModel.sessionID)
+            (await chatHistory.getChat(this.authProvider.getAuthStatus(), this.chatModel.sessionID)
                 ?.chatTitle || getChatPanelTitle(lastQuestion)
         const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')

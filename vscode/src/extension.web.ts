@@ -4,7 +4,7 @@ import { SourcegraphBrowserCompletionsClient } from '@sourcegraph/cody-shared'
 
 import type { ExtensionApi } from './extension-api'
 import { type ExtensionClient, defaultVSCodeExtensionClient } from './extension-client'
-import { activate as activateCommon } from './extension.common'
+import { activate as activateCommon, PlatformContext } from './extension.common'
 import { WebSentryService } from './services/sentry/sentry.web'
 
 /**
@@ -20,4 +20,15 @@ export function activate(
         createSentryService: (...args) => new WebSentryService(...args),
         extensionClient: extensionClient ?? defaultVSCodeExtensionClient(),
     })
+}
+
+export function createActivation(platformContext: Partial<PlatformContext>): typeof activate {
+    return (context: vscode.ExtensionContext, extensionClient?: ExtensionClient) => {
+        return activateCommon(context, {
+            ...platformContext,
+            createCompletionsClient: (...args) => new SourcegraphBrowserCompletionsClient(...args),
+            createSentryService: (...args) => new WebSentryService(...args),
+            extensionClient: extensionClient ?? defaultVSCodeExtensionClient(),
+        })
+    }
 }

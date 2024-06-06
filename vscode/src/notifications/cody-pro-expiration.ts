@@ -71,7 +71,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
      * Perform an immediate check and display a notification if appropriate.
      */
     public async triggerExpirationCheck(): Promise<void> {
-        if (this.shouldSuppressNotifications()) return // May have been triggered by a timer, so check again
+        if (await this.shouldSuppressNotifications()) return // May have been triggered by a timer, so check again
 
         // Set up check for each time auth changes...
         if (!this.authProviderSubscription) {
@@ -95,7 +95,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
         const useSscForCodySubscription = await this.featureFlagProvider.evaluateFeatureFlag(
             FeatureFlag.UseSscForCodySubscription
         )
-        if (this.shouldSuppressNotifications()) return // Status may have changed during await
+        if (await this.shouldSuppressNotifications()) return // Status may have changed during await
 
         if (!useSscForCodySubscription) {
             // Flag has not been enabled yet, so schedule a later check.
@@ -104,7 +104,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
         }
 
         const res = await this.apiClient.getCurrentUserCodySubscription()
-        if (this.shouldSuppressNotifications()) return // Status may have changed during await
+        if (await this.shouldSuppressNotifications()) return // Status may have changed during await
         if (res instanceof Error) {
             // Something went wrong - schedule a future check to try again.
             console.error(res)
@@ -124,7 +124,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
         const codyProTrialEnded = await this.featureFlagProvider.evaluateFeatureFlag(
             FeatureFlag.CodyProTrialEnded
         )
-        if (this.shouldSuppressNotifications()) return // Status may have changed during await
+        if (await this.shouldSuppressNotifications()) return // Status may have changed during await
 
         // We will now definitely show a message, so dispose so that no other checks that might overlap can also trigger this.
         this.dispose()
@@ -151,10 +151,10 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
     /**
      * Checks if it's still valid to show a notification.
      */
-    private shouldSuppressNotifications(): boolean {
+    private async shouldSuppressNotifications(): Promise<boolean> {
         if (this.isDisposed) return true
 
-        if (localStorage.get(CodyProExpirationNotifications.localStorageSuppressionKey)) {
+        if (await localStorage.get(CodyProExpirationNotifications.localStorageSuppressionKey)) {
             this.dispose()
             return true
         }

@@ -13,9 +13,9 @@ import { telemetryService } from '../telemetry'
  * @param key The feature flag key.
  * @param isEnabled Whether the user has the feature flag enabled or not.
  */
-export function logFirstEnrollmentEvent(key: FeatureFlag, isEnabled: boolean): boolean {
+export async function logFirstEnrollmentEvent(key: FeatureFlag, isEnabled: boolean): Promise<boolean> {
     // Check if the user is enrolled in the experiment or not
-    const isEnrolled = localStorage.getEnrollmentHistory(key)
+    const isEnrolled = await localStorage.getEnrollmentHistory(key)
     const eventName = getFeatureFlagEventName(key)
 
     // If the user is already enrolled or the event name is not found, return early,

@@ -28,7 +28,7 @@ export function migrateAndNotifyForOutdatedModels(model: string | null): string 
 }
 
 async function showNotificationIfNotShownYet(title: string, key: string): Promise<void> {
-    const value = localStorage.get(key)
+    const value = await localStorage.get(key)
     if (!value) {
         await localStorage.set(key, 'true')
         await vscode.window.showInformationMessage(title)
