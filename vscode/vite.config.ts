@@ -9,7 +9,7 @@ export default defineProjectWithDefaults(__dirname, {
         // functions don't need the DOM.
         environmentMatchGlobs: [['webviews/**/*.test.tsx', 'happy-dom']],
         benchmark: {
-            include: ['{src,webviews}/**/*.bench.ts']
-        }
+            include: ['{src,webviews}/**/*.bench.ts'],
+        },
     },
 })

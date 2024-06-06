@@ -73,14 +73,14 @@ export function chatMessageRows(chatPanel: FrameLocator): Locator {
 }
 
 /**
- * Gets the chat context cell. If {@link counts} is specified, then validates that the context
- * exactly matches the specified file and line counts.
+ * Gets the chat context cell.
  */
-export function getContextCell(
-    chatPanel: FrameLocator,
-    counts?: { files: number; lines: number }
-): Locator {
+export function getContextCell(chatPanel: FrameLocator): Locator {
     return chatPanel.locator('details', { hasText: 'Context' })
+}
+
+export function contextCellItems(contextCell: Locator): Locator {
+    return contextCell.locator('[data-testid="context-item"]')
 }
 
 export async function expectContextCellCounts(
