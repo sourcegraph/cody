@@ -393,7 +393,7 @@ function needsReadmeContext(editor: VSCodeEditor, input: PromptString): boolean 
 
     let containsProjectSignifier = false
     const workspaceName = vscode.workspace.workspaceFolders?.[0]?.name
-    if (workspaceName && new RegExp(`\\b${workspaceName}\\b`, 'i').test(stringInput)) {
+    if (workspaceName && stringInput.includes('@' + workspaceName)) {
         containsProjectSignifier = true
     } else {
         const projectSignifiers = [
