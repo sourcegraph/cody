@@ -19,9 +19,17 @@ const expandedContextWindow: ModelContextWindow = {
     context: { user: EXTENDED_USER_CONTEXT_TOKEN_BUDGET },
 }
 
-// The models must first be added to the custom chat models list in https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
+/**
+ * Returns an array of Models representing the default models for DotCom.
+ * The order listed here is the order shown to users. Put the default LLM first.
+ *
+ * NOTE: The models MUST first be added to the custom chat models list in Cody Gateway.
+ * @link https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
+ *
+ * @returns An array of `Models` objects.
+ */
 export const DEFAULT_DOT_COM_MODELS = [
-    // The order listed here is the order shown to users. Put the default LLM first.
+    // Anthropic models
     {
         title: 'Claude 3 Sonnet',
         model: 'anthropic/claude-3-sonnet-20240229',
@@ -57,6 +65,8 @@ export const DEFAULT_DOT_COM_MODELS = [
         deprecated: false,
         uiGroup: ModelUIGroup.Speed,
     },
+
+    // OpenAI models
     {
         title: 'GPT-4o',
         model: 'openai/gpt-4o',
@@ -78,7 +88,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: basicContextWindow,
         deprecated: false,
-        uiGroup: ModelUIGroup.Accuracy,
+        uiGroup: ModelUIGroup.Balanced,
     },
     {
         title: 'GPT-3.5 Turbo',
@@ -91,6 +101,31 @@ export const DEFAULT_DOT_COM_MODELS = [
         deprecated: false,
         uiGroup: ModelUIGroup.Speed,
     },
+
+    // Google models
+    {
+        title: 'Gemini 1.5 Pro',
+        model: 'google/gemini-1.5-pro-latest',
+        provider: 'Google',
+        default: false,
+        codyProOnly: true,
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+        contextWindow: expandedContextWindow,
+        deprecated: false,
+        uiGroup: ModelUIGroup.Accuracy,
+    },
+    {
+        title: 'Gemini 1.5 Flash',
+        model: 'google/gemini-1.5-flash-latest',
+        provider: 'Google',
+        default: false,
+        codyProOnly: true,
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+        contextWindow: expandedContextWindow,
+        deprecated: false,
+        uiGroup: ModelUIGroup.Speed,
+    },
+
     // TODO (tom) Improve prompt for Mixtral + Edit to see if we can use it there too.
     {
         title: 'Mixtral 8x7B',
