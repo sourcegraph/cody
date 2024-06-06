@@ -287,7 +287,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
                     scopeDir.fsPath,
                     '--fmt',
                     'json',
-                    '--expanded-query',
+                    '--rewritten-query',
                     `"${keywordQuery}"`,
                     `${userQuery}`,
                 ],

@@ -11,6 +11,7 @@ import {
     graphqlClient,
 } from '@sourcegraph/cody-shared'
 
+import { isError } from 'lodash'
 import { rewriteKeywordQuery } from '../local-context/rewrite-keyword-query'
 import type * as repofetcher from './repo-fetcher'
 
@@ -124,9 +125,9 @@ export class RemoteSearch implements ContextStatusProvider {
         if (repoIDs.length === 0) {
             return []
         }
-        const rewritten = await rewriteKeywordQuery(this.completions, query, { restrictRewrite: true })
+        const rewritten = await rewriteKeywordQuery(this.completions, query)
         const result = await graphqlClient.contextSearch(repoIDs, rewritten)
-        if (result instanceof Error) {
+        if (isError(result)) {
             throw result
         }
         return result || []

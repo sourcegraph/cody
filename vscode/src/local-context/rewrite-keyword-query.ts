@@ -7,27 +7,27 @@ import {
     ps,
 } from '@sourcegraph/cody-shared'
 
-// biome-ignore lint: this regex intentionally contains control characters
-const containsNonAscii = /[^\u0000-\u007F]/
+import { francAll } from 'franc-min'
+
 const containsMultipleSentences = /[.!?][\s\r\n]+\w/
 
 /**
  * Rewrite the query, using the fast completions model to pull out keywords.
  *
  * For some context backends, rewriting the query can make performance worse. Setting the 'restrictRewrite' param
- * only rewrites in cases where it clearly helps: there are non-ASCII characters (meaning it's very likely in a
- * foreign language), or there are multiple sentences (so we need to distill the question).
+ *
  */
 export async function rewriteKeywordQuery(
     completionsClient: SourcegraphCompletionsClient,
-    query: PromptString,
-    options?: {
-        restrictRewrite: boolean
-    }
+    query: PromptString
 ): Promise<string> {
-    if (options?.restrictRewrite) {
-        const queryString = query.toString()
-        if (!containsNonAscii.test(queryString) && !containsMultipleSentences.test(queryString)) {
+    // In evals, we saw that rewriting tends to make performance worse for simple queries. So we only rewrite
+    // in cases where it clearly helps: when there are non-ASCII characters (meaning it's very likely in a
+    //  foreign language), or there are multiple sentences (so we really need to distill the question).
+    const queryString = query.toString()
+    if (!containsMultipleSentences.test(queryString)) {
+        const english = francAll(queryString).find(v => v[0] === 'eng')
+        if (english && english[1] > 0.9) {
             return queryString
         }
     }
@@ -71,16 +71,9 @@ export async function rewriteKeywordQuery(
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         document?.keywords?.keyword ?? []
     const result = new Set<string>()
-    for (const { value, variants } of keywords) {
-        if (typeof value === 'string' && value) {
+    for (const { value } of keywords) {
+        if (value) {
             result.add(value)
-        }
-        if (typeof variants === 'string') {
-            for (const variant of variants.split(' ')) {
-                if (variant) {
-                    result.add(variant)
-                }
-            }
         }
     }
     return [...result].sort().join(' ')

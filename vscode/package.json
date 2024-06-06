@@ -1462,6 +1462,7 @@
     "express": "^4.18.2",
     "fast-json-stable-stringify": "^2.1.0",
     "fs-extra": "^11.2.0",
+    "franc-min": "^6.2.0",
     "fuzzysort": "^2.0.4",
     "mocha": "^10.2.0",
     "ovsx": "^0.8.2",
