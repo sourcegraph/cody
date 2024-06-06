@@ -406,7 +406,7 @@ function needsReadmeContext(editor: VSCodeEditor, input: PromptString): boolean 
     if (workspaceUri) {
         const rootBase = workspaceUri.toString().split('/').at(-1)
         if (rootBase) {
-            let tokens = rootBase.split(/\W+/).filter(w => w.length > 0)
+            const tokens = rootBase.split(/\W+/).filter(w => w.length > 0)
             for (const token of tokens) {
                 projectSignifiers.push(token.toLowerCase())
             }
