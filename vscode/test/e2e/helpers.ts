@@ -11,7 +11,14 @@ import {
 import * as os from 'node:os'
 import * as path from 'node:path'
 
-import { type ElectronApplication, type Frame, type Page, test as base, expect } from '@playwright/test'
+import {
+    type ElectronApplication,
+    type Frame,
+    type Page,
+    type TestInfo,
+    test as base,
+    expect,
+} from '@playwright/test'
 import { _electron as electron } from 'playwright'
 import * as uuid from 'uuid'
 
@@ -73,6 +80,9 @@ const vscodeRoot = path.resolve(__dirname, '..', '..')
 
 export const getAssetsDir = (testName: string): string =>
     path.join(vscodeRoot, '..', 'playwright', escapeToPath(testName))
+
+export const getTempVideoDir = (testName: string): string =>
+    path.join(getAssetsDir(testName), 'temp-videos')
 
 export const test = base
     // By default, use ../../test/fixtures/workspace as the workspace.
@@ -156,7 +166,8 @@ export const test = base
             { auto: true },
         ],
     })
-    .extend<{ app: ElectronApplication; vscode: Page }>({
+    .extend<{ app: ElectronApplication }>({
+        // starts a new instance of vscode with the given workspace settings
         app: async (
             {
                 workspaceDirectory,
@@ -164,10 +175,10 @@ export const test = base
                 dotcomUrl,
                 preAuthenticate,
                 userDataDirectory,
-                assetsDirectory,
                 extensionsDirectory,
             },
-            use
+            use,
+            testInfo
         ) => {
             const vscodeExecutablePath = await installVsCode()
             const extensionDevelopmentPath = vscodeRoot
@@ -210,9 +221,10 @@ export const test = base
                     workspaceDirectory,
                 ],
                 recordVideo: {
-                    dir: path.join(assetsDirectory, 'videos'),
+                    // All running tests will be recorded to a temp video file.
+                    // successful runs will be deleted, failures will be kept
+                    dir: getTempVideoDir(testInfo.title),
                 },
-                tracesDir: path.join(assetsDirectory, 'traces'),
             })
 
             await waitUntil(() => app.windows().length > 0)
@@ -224,23 +236,17 @@ export const test = base
             await rmSyncWithRetries(userDataDirectory, { recursive: true })
             await rmSyncWithRetries(extensionsDirectory, { recursive: true })
         },
-        // vscode is the actual `Page` object for the vscode instance, but the
-        // later page override does the actual setup. This is just to make the
-        // page model available to the other fixtures
-        vscode: async ({ app }, use) => {
-            await use(await app.firstWindow())
-        },
     })
     .extend<{ openDevTools: () => Promise<void> }>({
         // utility which can be called in a test to open developer tools in the
         // vscode under test. They can't be opened manually so this can be called
         // from a test before a page.pause() to inspect the page.
-        openDevTools: async ({ app, vscode }, use) => {
+        openDevTools: async ({ app }, use) => {
             await use(async () => {
-                const window = await app.browserWindow(vscode)
+                const window = await app.browserWindow(await app.firstWindow())
                 await window.evaluate(async app => {
                     app.setFullScreen(true)
-                    await app.webContents.openDevTools({ mode: 'right' })
+                    await app.webContents.openDevTools()
                 })
             })
         },
@@ -249,7 +255,7 @@ export const test = base
         page: async (
             {
                 page: _page,
-                vscode: page,
+                app,
                 openDevTools,
                 assetsDirectory,
                 expectedEvents,
@@ -264,6 +270,7 @@ export const test = base
             if (process.env.DEBUG) {
                 await openDevTools()
             }
+            const page = await app.firstWindow()
 
             // Bring the cody sidebar to the foreground if not already visible
             await focusSidebar(page)
@@ -303,15 +310,7 @@ export const test = base
                     throw error
                 }
             } else {
-                // Take a screenshot before closing the app if we failed
-                const screenshot = await page.screenshot({
-                    path: path.join(
-                        assetsDirectory,
-                        'screenshots',
-                        `run_${testInfo.repeatEachIndex}_retry_${testInfo.retry}_failure.png`
-                    ),
-                })
-                await testInfo.attach('screenshot', { body: screenshot, contentType: 'image/png' })
+                await attachArtifacts(testInfo, page, assetsDirectory)
             }
 
             resetLoggedEvents()
@@ -338,6 +337,29 @@ export const test = base
             })
         },
     })
+
+// Attaches a screenshot and the video of the test run to the test
+const attachArtifacts = async (
+    testInfo: TestInfo,
+    page: Page,
+    assetsDirectory: string
+): Promise<void> => {
+    const testSlug = `run_${testInfo.repeatEachIndex}_retry_${testInfo.retry}_failure`
+    // Take a screenshot before closing the app if we failed
+    const screenshot = await page.screenshot({
+        path: path.join(assetsDirectory, 'screenshots', `${testSlug}.png`),
+    })
+    await testInfo.attach('screenshot', { body: screenshot, contentType: 'image/png' })
+    // Copy the file from the temporary video directory to the assets directory
+    // to the assets directory so it is not deleted
+    const [video] = await fs.readdir(getTempVideoDir(testInfo.title))
+    const oldVideoPath = path.join(getTempVideoDir(testInfo.title), video)
+    const newVideoPath = path.join(assetsDirectory, 'videos', `${testSlug}.webm`)
+    await fs.mkdir(path.join(assetsDirectory, 'video'), { recursive: true })
+    await fs.rename(oldVideoPath, newVideoPath)
+    await testInfo.attach('video', { path: newVideoPath, contentType: 'video/webm' })
+}
+
 /**
  * Calls rmSync(path, options) and retries a few times if it fails before throwing.
  *
