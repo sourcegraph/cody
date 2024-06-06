@@ -255,7 +255,6 @@ const stemmerCache = new LRUCache<string, string>({ max: MAX_STEM_CACHE_SIZE })
 //
 // Note: kebab-case is skipped here since our tokenizer already handles this.
 function breakCamelAndSnakeCase(word: string): string[] {
-    const result: string[] = []
     const camelCaseRegex = /([a-z])([A-Z])/g
     const snakeKebabRegex = /[_]/g
 
@@ -266,9 +265,15 @@ function breakCamelAndSnakeCase(word: string): string[] {
     }
     // Break snake_case and kebab-case words
     brokenWord = brokenWord.replace(snakeKebabRegex, ' ')
-    result.push(...brokenWord.split(' '))
 
-    return result
+    if (word === brokenWord) {
+        return [word]
+    }
+    const array = brokenWord.split(' ')
+    // We keep adding the original un-split symbol to not loose signal for exact
+    // overlap.
+    array.push(word)
+    return array
 }
 
 function breakCamelAndSnakeCaseWithCache(word: string): string[] {

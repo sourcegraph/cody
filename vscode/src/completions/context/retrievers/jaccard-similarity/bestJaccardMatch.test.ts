@@ -52,9 +52,11 @@ describe('getWordOccurrences', () => {
                 ['1', 6],
                 ['get', 4],
                 ['word', 4],
+                ['getword', 4],
                 ['bar', 2],
                 ['baz', 2],
                 ['equal', 2],
+                ['toequal', 2],
                 ['expect', 2],
                 ['foo', 2],
                 ['map', 2],
@@ -63,6 +65,7 @@ describe('getWordOccurrences', () => {
                 ['run', 2],
                 ['slip', 2],
                 ['best', 1],
+                ['bestjaccardmatch', 1],
                 ['context', 1],
                 ['describ', 1],
                 ['import', 1],
@@ -75,40 +78,30 @@ describe('getWordOccurrences', () => {
         )
     })
 
-    it('breaks camelCase, snake_case, and kebab-case', () => {
-        expect(getWordOccurrences('fooBarBaz')).toEqual(
-            new Map([
-                ['foo', 1],
-                ['bar', 1],
-                ['baz', 1],
-            ])
-        )
-        expect(getWordOccurrences('foo_bar_baz')).toEqual(
-            new Map([
-                ['foo', 1],
-                ['bar', 1],
-                ['baz', 1],
-            ])
-        )
-        expect(getWordOccurrences('foo-bar-baz')).toEqual(
-            new Map([
-                ['foo', 1],
-                ['bar', 1],
-                ['baz', 1],
-            ])
-        )
-        expect(getWordOccurrences('MySuperCaliFragilisticExpialidociousControllerController')).toEqual(
-            new Map([
-                ['my', 1],
-                ['super', 1],
-                ['cali', 1],
+    it.each([
+        { symbol: 'comeVisitVienna', words: { comevisitvienna: 1, come: 1, visit: 1, vienna: 1 } },
+        {
+            symbol: 'a_dev_named_philipp',
+            words: { a_dev_named_philipp: 1, dev: 1, name: 1, philipp: 1 },
+        },
+        {
+            symbol: 'MySuperCaliFragilisticExpialidociousControllerController',
+            words: {
+                mysupercalifragilisticexpialidociouscontrollercontrol: 1,
+                my: 1,
+                super: 1,
+                cali: 1,
                 // The next three terms are stemmed and thus do not match the original:
-                ['control', 2],
-                ['fragilist', 1],
-                ['expialidoci', 1],
-            ])
-        )
-        expect(getWordOccurrences('PDFium')).toEqual(new Map([['pdfium', 1]]))
+                fragilist: 1,
+                expialidoci: 1,
+                control: 2,
+            },
+        },
+        { symbol: 'PDFiumPDFPDF', words: { pdfiumpdfpdf: 1, pdfium: 1, pdfpdf: 1 } },
+        // Kebab-case is already split by the default tokenizer we use
+        { symbol: 'best-kebab-in-favoriten', words: { best: 1, kebab: 1, favoriten: 1 } },
+    ])('breaks and stems $symbol', ({ symbol, words }) => {
+        expect(getWordOccurrences(symbol)).toEqual(new Map(Object.entries(words)))
     })
 })
 
@@ -213,7 +206,7 @@ describe('bestJaccardMatch', () => {
                       'foo',
                       'bar',",
             "endLine": 4,
-            "score": 0.14583333333333334,
+            "score": 0.14285714285714285,
             "startLine": 0,
           }
         `)
