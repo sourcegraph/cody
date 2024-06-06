@@ -268,9 +268,9 @@ test.extend<ExpectedEvents>({
     // The files from the open tabs should be added as context
     await expectContextCellCounts(contextCell, { files: 2 })
     await contextCell.click()
-    await expect(chatContext.getByRole('link', { name: 'index.html:1-11' })).toBeVisible()
+    await expect(chatContext.getByRole('link', { name: 'index.html' })).toBeVisible()
     await expect(
-        chatContext.getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go:1') })
+        chatContext.getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go') })
     ).toBeVisible()
 })
 

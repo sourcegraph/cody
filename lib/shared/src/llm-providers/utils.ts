@@ -1,31 +1,21 @@
 import type { CompletionsModelConfig } from '.'
-import { ModelProvider } from '../models'
+import { ModelsService } from '../models'
 
 export function getCompletionsModelConfig(modelID: string): CompletionsModelConfig | undefined {
-    const provider = ModelProvider.getProviderByModel(modelID)
-    if (provider?.model.startsWith('google/') && provider.config?.apiKey) {
-        return {
-            model: provider.model.replace('google/', ''),
-            key: provider.config.apiKey,
-            endpoint: provider.config?.apiEndpoint,
-        }
+    const provider = ModelsService.getModelByID(modelID)
+    if (!provider) {
+        return undefined
     }
 
-    if (provider?.model.startsWith('ollama/')) {
-        return {
-            model: provider.model.replace('ollama/', ''),
-            key: provider.config?.apiKey || '',
-            endpoint: provider.config?.apiEndpoint,
-        }
-    }
+    const {
+        model,
+        config: { apiKey = '', apiEndpoint } = {},
+    } = provider
+    const strippedModelName = model.split('/').pop() || model
 
-    if (provider?.model.startsWith('groq/') || provider?.model.startsWith('openaicompatible/')) {
-        return {
-            model: provider.model.replace('groq/', '').replace('openaicompatible/', ''),
-            key: provider.config?.apiKey || '',
-            endpoint: provider.config?.apiEndpoint,
-        }
+    return {
+        model: strippedModelName,
+        key: apiKey,
+        endpoint: apiEndpoint,
     }
-
-    return undefined
 }
