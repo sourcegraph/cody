@@ -1,9 +1,3 @@
-export interface GeminiModelConfig {
-    model: string
-    key: string
-    endpoint?: string
-}
-
 export interface GeminiCompletionResponse {
     candidates: {
         content: {

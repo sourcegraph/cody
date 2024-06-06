@@ -4,8 +4,18 @@
     "module": "ESNext",
     "rootDir": "src",
     "outDir": "dist",
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "moduleResolution": "Bundler",
   },
-  "include": ["src"],
-  "exclude": ["dist", "typehacks"],
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "dist",
+    "typehacks"
+  ],
 }
