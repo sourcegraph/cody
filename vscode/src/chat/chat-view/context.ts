@@ -391,39 +391,30 @@ function needsReadmeContext(editor: VSCodeEditor, input: PromptString): boolean 
     const words = stringInput.split(/\W+/).filter(w => w.length > 0)
     const bagOfWords = Object.fromEntries(words.map(w => [w, true]))
 
-    const projectSignifiers = [
-        'project',
-        'repository',
-        'repo',
-        'library',
-        'package',
-        'module',
-        'codebase',
-    ]
-    const questionIndicators = ['what', 'how', 'describe', 'explain', '?']
-
-    const workspaceUri = editor.getWorkspaceRootUri()
-    if (workspaceUri) {
-        const rootBase = workspaceUri.toString().split('/').at(-1)
-        if (rootBase) {
-            const tokens = rootBase.split(/\W+/).filter(w => w.length > 0)
-            for (const token of tokens) {
-                projectSignifiers.push(token.toLowerCase())
-            }
-            projectSignifiers.push(rootBase.toLowerCase())
-        }
-    }
-
     let containsProjectSignifier = false
-    for (const p of projectSignifiers) {
-        if (bagOfWords[p]) {
-            containsProjectSignifier = true
-            break
+    const workspaceName = vscode.workspace.workspaceFolders?.[0]?.name
+    if (workspaceName && new RegExp(`\\b${workspaceName}\\b`, 'i').test(stringInput)) {
+        containsProjectSignifier = true
+    } else {
+        const projectSignifiers = [
+            'project',
+            'repository',
+            'repo',
+            'library',
+            'package',
+            'module',
+            'codebase',
+        ]
+        for (const p of projectSignifiers) {
+            if (bagOfWords[p]) {
+                containsProjectSignifier = true
+                break
+            }
         }
     }
 
     let containsQuestionIndicator = false
-    for (const q of questionIndicators) {
+    for (const q of ['what', 'how', 'describe', 'explain']) {
         if (bagOfWords[q]) {
             containsQuestionIndicator = true
             break
