@@ -112,6 +112,7 @@ interface SimpleChatPanelProviderOptions {
     featureFlagProvider: FeatureFlagProvider
     models: Model[]
     guardrails: Guardrails
+    chatModel: SimpleChatModel
 }
 
 export interface ChatSession {
@@ -167,12 +168,19 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private allMentionProvidersMetadataQueryCancellation?: vscode.CancellationTokenSource
 
     private disposables: vscode.Disposable[] = []
+
     public dispose(): void {
         vscode.Disposable.from(...this.disposables).dispose()
         this.disposables = []
     }
 
-    constructor({
+    static async create(options: Omit<SimpleChatPanelProviderOptions, 'chatModel'>): Promise<SimpleChatPanelProvider> {
+        const chatModelInstance = new SimpleChatModel(await chatModel.get(options.authProvider, options.models))
+
+        return new SimpleChatPanelProvider({ ...options, chatModel: chatModelInstance})
+    }
+
+    private constructor({
         config,
         extensionUri,
         authProvider,
@@ -182,9 +190,9 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         symf,
         editor,
         treeView,
-        models,
         guardrails,
         enterpriseContext,
+        chatModel
     }: SimpleChatPanelProviderOptions) {
         this.config = config
         this.extensionUri = extensionUri
@@ -197,7 +205,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
         this.treeView = treeView
-        this.chatModel = new SimpleChatModel(chatModel.get(authProvider, models))
+        this.chatModel = chatModel
         this.guardrails = guardrails
 
         if (TestSupport.instance) {
@@ -1228,7 +1236,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     // current in-progress completion. If the chat does not exist, then this
     // is a no-op.
     public async restoreSession(sessionID: string): Promise<void> {
-        const oldTranscript = this.history.getChat(this.authProvider.getAuthStatus(), sessionID)
+        const oldTranscript = await this.history.getChat(this.authProvider.getAuthStatus(), sessionID)
         if (!oldTranscript) {
             return this.newSession()
         }
@@ -1303,7 +1311,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         const viewType = CodyChatPanelViewType
         const panelTitle =
-            this.history.getChat(this.authProvider.getAuthStatus(), this.chatModel.sessionID)
+            (await this.history.getChat(this.authProvider.getAuthStatus(), this.chatModel.sessionID))
                 ?.chatTitle || getChatPanelTitle(lastQuestion)
         const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')

@@ -180,7 +180,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         // Get the view column of the current active chat panel so that we can open a new one on top of it
         const activePanelViewColumn = this.activePanelProvider?.webviewPanel?.viewColumn
 
-        const provider = this.createProvider()
+        const provider = await this.createProvider()
         if (chatID) {
             await provider.restoreSession(chatID)
         } else {
@@ -220,7 +220,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     /**
      * Creates a provider for the chat panel.
      */
-    private createProvider(): SimpleChatPanelProvider {
+    private createProvider(): Promise<SimpleChatPanelProvider> {
         const authProvider = this.options.authProvider
         const authStatus = authProvider.getAuthStatus()
 
@@ -228,7 +228,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         const isCodyProUser = !authStatus.userCanUpgrade
         const models = ModelsService.getModels(ModelUsage.Chat, isCodyProUser)
 
-        return new SimpleChatPanelProvider({
+        return SimpleChatPanelProvider.create({
             ...this.options,
             config: this.options.contextProvider.config,
             chatClient: this.chatClient,

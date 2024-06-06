@@ -15,12 +15,12 @@ export const showSetupNotification = async (config: ConfigurationWithAccessToken
         return
     }
 
-    if (localStorage.get('notification.setupDismissed') === 'true') {
+    if (await localStorage.get('notification.setupDismissed') === 'true') {
         // User has clicked "Do not show again" on this notification.
         return
     }
 
-    if (localStorage.get('extension.hasActivatedPreviously') !== 'true') {
+    if (await localStorage.get('extension.hasActivatedPreviously') !== 'true') {
         // User is on first activation, so has only just installed Cody.
         // Show Cody so that they can get started.
         await vscode.commands.executeCommand('cody.chat.focus')

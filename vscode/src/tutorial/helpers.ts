@@ -31,7 +31,7 @@ export const maybeStartInteractiveTutorial = async () => {
     telemetryRecorder.recordEvent('cody.interactiveTutorial', 'attemptingStart')
     await featureFlagProvider.syncAuthStatus()
     const enabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyInteractiveTutorial)
-    logFirstEnrollmentEvent(FeatureFlag.CodyInteractiveTutorial, enabled)
+    await logFirstEnrollmentEvent(FeatureFlag.CodyInteractiveTutorial, enabled)
     if (!enabled) {
         return
     }

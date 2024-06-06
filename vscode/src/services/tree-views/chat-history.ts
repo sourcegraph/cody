@@ -7,7 +7,7 @@ import { CodyTreeItem } from './TreeItemProvider'
  * Method to initialize the grouped chats for the History items
  */
 export async function initializeGroupedChats(authStatus?: AuthStatus): Promise<CodyTreeItem[]> {
-    const groupedChats = groupCodyChats(authStatus)
+    const groupedChats = await groupCodyChats(authStatus)
     if (!authStatus || !groupedChats) {
         void vscode.commands.executeCommand('setContext', 'cody.hasChatHistory', 0)
         return []

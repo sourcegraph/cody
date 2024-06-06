@@ -126,7 +126,16 @@ export class InlineCompletionItemProvider
 
     private firstCompletionDecoration = new FirstCompletionDecorationHandler()
 
-    constructor({
+    static async create(config: CodyCompletionItemProviderConfig): Promise<InlineCompletionItemProvider> {
+        const provider = new InlineCompletionItemProvider(config)
+
+        const chatHistory = (await localStorage.getChatHistory(config.authStatus))?.chat
+        provider.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0
+
+        return provider
+    }
+
+    private constructor({
         completeSuggestWidgetSelection = true,
         formatOnAccept = true,
         disableInsideComments = false,
@@ -519,7 +528,7 @@ export class InlineCompletionItemProvider
         // Remove the completion from the network cache
         this.requestManager.removeFromCache(completion.requestParams)
 
-        this.handleFirstCompletionOnboardingNotices(completion.requestParams)
+        await this.handleFirstCompletionOnboardingNotices(completion.requestParams)
 
         this.lastAcceptedCompletionItem = completion
 
@@ -535,9 +544,9 @@ export class InlineCompletionItemProvider
     /**
      * Handles showing a notification on the first completion acceptance.
      */
-    private handleFirstCompletionOnboardingNotices(request: RequestParams): void {
+    private async handleFirstCompletionOnboardingNotices(request: RequestParams): Promise<void> {
         const key = 'completion.inline.hasAcceptedFirstCompletion'
-        if (localStorage.get(key)) {
+        if (await localStorage.get(key)) {
             return // Already seen notice.
         }
 

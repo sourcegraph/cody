@@ -735,9 +735,6 @@ importers:
       '@sourcegraph/vscode-cody':
         specifier: workspace:*
         version: link:../vscode
-      '@types/lodash':
-        specifier: 4.14.195
-        version: 4.14.195
       '@vitest/web-worker':
         specifier: ^1.4.0
         version: 1.4.0(vitest@1.6.0)
@@ -750,6 +747,9 @@ importers:
       events:
         specifier: ^3.3.0
         version: 3.3.0
+      idb:
+        specifier: ^8.0.0
+        version: 8.0.0
       lodash:
         specifier: 4.17.21
         version: 4.17.21
@@ -769,6 +769,9 @@ importers:
       '@types/highlightjs':
         specifier: ^9.12.6
         version: 9.12.6
+      '@types/lodash':
+        specifier: 4.14.195
+        version: 4.14.195
       '@vitejs/plugin-react':
         specifier: ^4.2.1
         version: 4.2.1(vite@5.2.9)
@@ -5840,6 +5843,7 @@ packages:
 
   /@types/lodash@4.14.195:
     resolution: {integrity: sha512-Hwx9EUgdwf2GLarOjQp5ZH8ZmblzcbTBC2wtQWNKARBSxM9ezRIAUpeDTgoQRAFB0+8CNWXVA9+MaSOzOF3nPg==}
+    dev: true
 
   /@types/lodash@4.17.0:
     resolution: {integrity: sha512-t7dhREVv6dbNj0q17X12j7yDG4bD/DHYX7o5/DbDxobP0HnGPgpRz2Ej77aL7TZT3DSw13fqUTj8J4mMnqa7WA==}
@@ -9678,6 +9682,10 @@ packages:
     engines: {node: '>=0.10.0'}
     dependencies:
       safer-buffer: 2.1.2
+
+  /idb@8.0.0:
+    resolution: {integrity: sha512-l//qvlAKGmQO31Qn7xdzagVPPaHTxXx199MhrAFuVBTPqydcPYBWjkrbv4Y0ktB+GmWOiwHl237UUOrLmQxLvw==}
+    dev: false
 
   /identity-function@1.0.0:
     resolution: {integrity: sha512-kNrgUK0qI+9qLTBidsH85HjDLpZfrrS0ElquKKe/fJFdB3D7VeKdXXEvOPDUHSHOzdZKCAAaQIWWyp0l2yq6pw==}

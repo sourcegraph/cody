@@ -55,7 +55,7 @@ export async function createOrUpdateEventLogger(
     const { anonymousUserID, created } = await localStorage.anonymousUserID()
     globalAnonymousUserID = anonymousUserID
 
-    const serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
+    const serverEndpoint = await localStorage?.getEndpoint() || config.serverEndpoint
 
     if (!eventLogger) {
         eventLogger = new EventLogger(serverEndpoint, extensionDetails, config, () =>
