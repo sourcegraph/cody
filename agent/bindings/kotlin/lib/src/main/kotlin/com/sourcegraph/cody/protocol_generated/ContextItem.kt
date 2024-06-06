@@ -31,6 +31,7 @@ data class ContextItemFile(
   val repoName: String? = null,
   val revision: String? = null,
   val title: String? = null,
+  val description: String? = null,
   val source: ContextItemSource? = null, // Oneof: embeddings, user, editor, search, initial, unified, selection, terminal, uri, history
   val size: Int? = null,
   val isIgnored: Boolean? = null,
@@ -51,6 +52,7 @@ data class ContextItemRepository(
   val repoName: String? = null,
   val revision: String? = null,
   val title: String? = null,
+  val description: String? = null,
   val source: ContextItemSource? = null, // Oneof: embeddings, user, editor, search, initial, unified, selection, terminal, uri, history
   val size: Int? = null,
   val isIgnored: Boolean? = null,
@@ -72,6 +74,7 @@ data class ContextItemTree(
   val repoName: String? = null,
   val revision: String? = null,
   val title: String? = null,
+  val description: String? = null,
   val source: ContextItemSource? = null, // Oneof: embeddings, user, editor, search, initial, unified, selection, terminal, uri, history
   val size: Int? = null,
   val isIgnored: Boolean? = null,
@@ -93,6 +96,7 @@ data class ContextItemSymbol(
   val repoName: String? = null,
   val revision: String? = null,
   val title: String? = null,
+  val description: String? = null,
   val source: ContextItemSource? = null, // Oneof: embeddings, user, editor, search, initial, unified, selection, terminal, uri, history
   val size: Int? = null,
   val isIgnored: Boolean? = null,
@@ -115,6 +119,7 @@ data class ContextItemOpenCtx(
   val repoName: String? = null,
   val revision: String? = null,
   val title: String? = null,
+  val description: String? = null,
   val source: ContextItemSource? = null, // Oneof: embeddings, user, editor, search, initial, unified, selection, terminal, uri, history
   val size: Int? = null,
   val isIgnored: Boolean? = null,
