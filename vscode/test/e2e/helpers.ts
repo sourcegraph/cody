@@ -11,7 +11,7 @@ import {
 import * as os from 'node:os'
 import * as path from 'node:path'
 
-import { type Frame, type Page, test as base, expect } from '@playwright/test'
+import { type ElectronApplication, type Frame, type Page, test as base, expect } from '@playwright/test'
 import { _electron as electron } from 'playwright'
 import * as uuid from 'uuid'
 
@@ -50,7 +50,7 @@ export interface DotcomUrlOverride {
 }
 
 export interface TestConfiguration {
-    preAuthenticate?: true | false
+    preAuthenticate?: boolean
 }
 
 // playwright test extension: Add expectedEvents to each test to compare against
@@ -61,6 +61,12 @@ export interface ExpectedEvents {
 // playwright test extension: Add expectedV2Events to each test to compare against
 export interface ExpectedV2Events {
     expectedV2Events: string[]
+}
+
+export interface TestDirectories {
+    assetsDirectory: string
+    userDataDirectory: string
+    extensionsDirectory: string
 }
 
 const vscodeRoot = path.resolve(__dirname, '..', '..')
@@ -125,43 +131,49 @@ export const test = base
                       ]
             ),
     })
-
-    .extend<{ server: MockServer }>({
+    .extend<TestDirectories>({
         // biome-ignore lint/correctness/noEmptyPattern: Playwright ascribes meaning to the empty pattern: No dependencies.
-        server: async ({}, use) => {
-            MockServer.run(async server => {
-                await use(server)
-            })
+        assetsDirectory: async ({}, use, testInfo) => {
+            await use(getAssetsDir(testInfo.title))
+        },
+        // biome-ignore lint/correctness/noEmptyPattern: Playwright ascribes meaning to the empty pattern: No dependencies.
+        userDataDirectory: async ({}, use) => {
+            await use(mkdtempSync(path.join(os.tmpdir(), 'cody-vsce')))
+        },
+        // biome-ignore lint/correctness/noEmptyPattern: Playwright ascribes meaning to the empty pattern: No dependencies.
+        extensionsDirectory: async ({}, use) => {
+            await use(mkdtempSync(path.join(os.tmpdir(), 'cody-vsce')))
         },
     })
-    .extend({
-        page: async (
+    .extend<{ server: MockServer }>({
+        server: [
+            // biome-ignore lint/correctness/noEmptyPattern: Playwright ascribes meaning to the empty pattern: No dependencies.
+            async ({}, use) => {
+                MockServer.run(async server => {
+                    await use(server)
+                })
+            },
+            { auto: true },
+        ],
+    })
+    .extend<{ app: ElectronApplication; vscode: Page }>({
+        app: async (
             {
-                page: _page,
                 workspaceDirectory,
                 extraWorkspaceSettings,
                 dotcomUrl,
-                server: MockServer,
-                expectedEvents,
-                expectedV2Events,
                 preAuthenticate,
+                userDataDirectory,
+                assetsDirectory,
+                extensionsDirectory,
             },
-            use,
-            testInfo
+            use
         ) => {
-            void _page
-
             const vscodeExecutablePath = await installVsCode()
             const extensionDevelopmentPath = vscodeRoot
 
-            const userDataDirectory = mkdtempSync(path.join(os.tmpdir(), 'cody-vsce'))
-            const extensionsDirectory = mkdtempSync(path.join(os.tmpdir(), 'cody-vsce'))
-            const assetsDirectory = getAssetsDir(testInfo.title)
-
             await buildWorkSpaceSettings(workspaceDirectory, extraWorkspaceSettings)
             await buildCustomCommandConfigFile(workspaceDirectory)
-
-            sendTestInfo(testInfo.title, testInfo.testId, uuid.v4())
 
             let dotcomUrlOverride: { [key: string]: string } = {}
             if (dotcomUrl) {
@@ -205,7 +217,53 @@ export const test = base
 
             await waitUntil(() => app.windows().length > 0)
 
-            const page = await app.firstWindow()
+            await use(app)
+
+            await app.close()
+
+            await rmSyncWithRetries(userDataDirectory, { recursive: true })
+            await rmSyncWithRetries(extensionsDirectory, { recursive: true })
+        },
+        // vscode is the actual `Page` object for the vscode instance, but the
+        // later page override does the actual setup. This is just to make the
+        // page model available to the other fixtures
+        vscode: async ({ app }, use) => {
+            await use(await app.firstWindow())
+        },
+    })
+    .extend<{ openDevTools: () => Promise<void> }>({
+        // utility which can be called in a test to open developer tools in the
+        // vscode under test. They can't be opened manually so this can be called
+        // from a test before a page.pause() to inspect the page.
+        openDevTools: async ({ app, vscode }, use) => {
+            await use(async () => {
+                const window = await app.browserWindow(vscode)
+                await window.evaluate(async app => {
+                    app.setFullScreen(true)
+                    await app.webContents.openDevTools({ mode: 'right' })
+                })
+            })
+        },
+    })
+    .extend({
+        page: async (
+            {
+                page: _page,
+                vscode: page,
+                openDevTools,
+                assetsDirectory,
+                expectedEvents,
+                expectedV2Events,
+                preAuthenticate,
+            },
+            use,
+            testInfo
+        ) => {
+            sendTestInfo(testInfo.title, testInfo.testId, uuid.v4())
+
+            // if (process.env.DEBUG) {
+            //     await openDevTools()
+            // }
 
             // Bring the cody sidebar to the foreground if not already visible
             await focusSidebar(page)
@@ -257,11 +315,6 @@ export const test = base
             }
 
             resetLoggedEvents()
-
-            await app.close()
-
-            await rmSyncWithRetries(userDataDirectory, { recursive: true })
-            await rmSyncWithRetries(extensionsDirectory, { recursive: true })
         },
     })
     .extend<{ sidebar: Frame | null; getCodySidebar: () => Promise<Frame> }>({
