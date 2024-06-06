@@ -12,8 +12,6 @@ export const TokenIndicators: React.FunctionComponent<{
         maxEnhanced: number
     }
 }> = ({ remainingTokens }) => {
-    // Add a new state variable to store the remaining token counts
-
     return (
         <div className={clsx(tokenStyles.tokenIndicators)}>
             <div className={tokenStyles.tokenIndicator}>

@@ -30,9 +30,16 @@
     width: 30%;
     height: 10px;
     appearance: none;
-    border-radius: 5px;
+    border-radius: 3px;
     overflow: hidden;
-    background-color: #ffffff;
+}
+
+.tokenProgress::-webkit-progress-bar {
+    background-color: #808080; /* Background color of the progress bar */
+}
+
+.tokenProgress::-webkit-progress-value {
+    background-color: #3894ff; /* Fill color of the progress bar */
 }
 
 .tokenCount {
