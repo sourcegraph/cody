@@ -1,55 +1,63 @@
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
 import semver from 'semver'
+import { version } from '../package.json'
 
-const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'))
-const changelogFile = fs.readFileSync('CHANGELOG.md', 'utf8')
+/*
+ * This script is used to bump the version of the extension in package.json and update the CHANGELOG.md file.
+
+ * It can be run with the following command:
+ *  pnpm run version-bump:minor for a minor version bump
+ *  pnpm run version-bump:dry-run for testing the script without committing the changes
+ */
+
 const releaseType = (process.env.RELEASE_TYPE || '').toLowerCase() as semver.ReleaseType
+const isDryRun = releaseType === 'prerelease'
 
-try {
-    const currentVersion = packageJson.version
+const isValidReleaseType = ['minor', 'patch', 'prerelease'].includes(releaseType)
+if (!isDryRun && !isValidReleaseType) {
+    process.stdout.write(`Invalid release type: ${releaseType}. Valid types: minor, patch, prerelease\n`)
+    process.exit(1)
+}
 
-    if (!['minor', 'patch'].includes(releaseType)) {
-        throw new Error(`Release type is invalid: ${releaseType}`)
-    }
+process.stdout.write(`Starting version bump from ${version} for ${releaseType} release...\n`)
 
-    console.log(`Current version: ${currentVersion}`)
+const nextInsiderVersion = semver.inc(version, releaseType)!
+const isPatchRelease = releaseType === 'patch' || isDryRun
 
-    // Increase minor version number by twice for minor release because ODD minor number is for pre-release
-    const isPatchRelease = releaseType === 'patch'
-    const nextVersion = isPatchRelease
-        ? semver.inc(currentVersion, releaseType)!
-        : semver.inc(semver.inc(currentVersion, releaseType)!, releaseType)!
+// Increase minor version number twice for minor release as ODD minor number is reserved for pre-releases.
+const nextVersion = isPatchRelease ? nextInsiderVersion : semver.inc(nextInsiderVersion, releaseType)!
 
-    if (!nextVersion) {
-        throw new Error('Version number is invalid.')
-    }
-
-    console.log(`Next version: ${nextVersion}`)
-
-    // Update version number in package.json
-    packageJson.version = nextVersion
-    fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2))
-
-    // Update version number in Changelog
-    const template = '## [Unreleased]\n\n### Added\n\n### Fixed\n\n### Changed\n\n## $VERSION'
-    const updatedChangelogFile = changelogFile.replace(
-        '## [Unreleased]',
-        template.replace('$VERSION', nextVersion)
+if (!nextVersion || !semver.valid(nextVersion)) {
+    process.stdout.write(
+        `Failed to compute the next version number for ${version} and ${releaseType}.\n`
     )
-    fs.writeFileSync('CHANGELOG.md', updatedChangelogFile)
+    process.exit(1)
+}
 
-    // Commit and push
-    execSync(
-        `git add . && git commit -m "VS Code: Release v${nextVersion}" && git push -u origin HEAD`,
-        {
-            stdio: 'inherit',
-        }
-    )
+process.stdout.write(`Updating files to the next version: ${nextVersion}\n`)
 
-    console.log(`Version bumped to ${nextVersion} successfully!`)
-} catch (error) {
-    // Revert changes if an error occurred
-    fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2))
-    fs.writeFileSync('CHANGELOG.md', changelogFile)
+const template = '## [Unreleased]\n\n### Added\n\n### Fixed\n\n### Changed\n\n## $VERSION'
+
+updateFile('CHANGELOG.md', '## [Unreleased]', template.replace('$VERSION', nextVersion))
+updateFile('package.json', `"version": "${version}"`, `"version": "${nextVersion}"`)
+
+process.stdout.write(`Version bumped to ${nextVersion} successfully!`)
+
+if (isDryRun) {
+    process.stdout.write('\nDry run completed. Showing the diff...\n\n')
+    execSync('git diff', { stdio: 'inherit' })
+    process.exit(0)
+}
+
+// Commit and push
+const gitCommit = `git add . && git commit -m "VS Code: Release v${nextVersion}" && git push -u origin HEAD`
+execSync(gitCommit, { stdio: 'inherit' })
+process.stdout.write(`${releaseType} release job is done!`)
+
+function updateFile(fileName: string, keyword: string, replacer: string) {
+    const fileContent = fs.readFileSync(fileName, 'utf8')
+    const updatedFile = fileContent.replace(keyword, replacer)
+
+    fs.writeFileSync(fileName, updatedFile)
 }
