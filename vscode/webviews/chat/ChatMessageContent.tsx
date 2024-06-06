@@ -1,6 +1,6 @@
 import { type Guardrails, isError } from '@sourcegraph/cody-shared'
 import type React from 'react'
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 
 import {
     CheckCodeBlockIcon,
@@ -302,8 +302,6 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
         }
     }, [copyButtonOnSubmit, insertButtonOnSubmit, guardrails, displayMarkdown, isMessageLoading])
 
-    usePreserveSelectionOnUpdate(rootRef, [displayMarkdown])
-
     return (
         <div ref={rootRef}>
             <MarkdownFromCody className={clsx(styles.content, className)}>
@@ -311,55 +309,4 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
             </MarkdownFromCody>
         </div>
     )
-}
-
-function usePreserveSelectionOnUpdate(
-    elementRef: React.RefObject<HTMLDivElement>,
-    deps: React.DependencyList
-) {
-    // Restore prior selection from before the `displayMarkdown` changed and we updated the DOM
-    // below.
-    type SerializedSelection = {
-        anchorNode: NonNullable<Selection['anchorNode']>
-        anchorOffset: NonNullable<Selection['anchorOffset']>
-        focusNode: NonNullable<Selection['focusNode']>
-        focusOffset: NonNullable<Selection['focusOffset']>
-    }
-    const lastSelection = useRef<SerializedSelection | null>(null)
-    const s = window.getSelection()
-    lastSelection.current =
-        s?.anchorNode && s.focusNode
-            ? {
-                  anchorNode: s.anchorNode,
-                  anchorOffset: s.anchorOffset,
-                  focusNode: s.focusNode,
-                  focusOffset: s.focusOffset,
-              }
-            : null
-    // biome-ignore lint/correctness/useExhaustiveDependencies: elementRef is a ref, and its value is stable.
-    useLayoutEffect(() => {
-        if (!lastSelection.current) {
-            return
-        }
-        if (
-            !elementRef.current?.contains(lastSelection.current.anchorNode) &&
-            !elementRef.current?.contains(lastSelection.current.focusNode)
-        ) {
-            // Don't restore selections that are outside of `elementRef`.
-            return
-        }
-        try {
-            window
-                .getSelection()
-                ?.setBaseAndExtent(
-                    lastSelection.current.anchorNode,
-                    lastSelection.current.anchorOffset,
-                    lastSelection.current.focusNode,
-                    lastSelection.current.focusOffset
-                )
-        } catch (error) {
-            console.error(error)
-            lastSelection.current = null
-        }
-    }, deps)
 }
