@@ -1,6 +1,7 @@
 import type { Span } from '@opentelemetry/api'
 import type { ConfigurationWithAccessToken } from '../../configuration'
 
+import { useCustomChatClient } from '../../llm-providers'
 import { recordErrorToSpan } from '../../tracing'
 import type {
     CompletionCallbacks,
@@ -127,7 +128,19 @@ export abstract class SourcegraphCompletionsClient {
                 send({ type: 'error', error, statusCode })
             },
         }
-        await this._streamWithCallbacks(params, apiVersion, callbacks, signal)
+
+        // Custom chat clients for Non-Sourcegraph-supported providers.
+        const isNonSourcegraphProvider = await useCustomChatClient(
+            this.completionsEndpoint,
+            params,
+            callbacks,
+            this.logger,
+            signal
+        )
+
+        if (!isNonSourcegraphProvider) {
+            await this._streamWithCallbacks(params, apiVersion, callbacks, signal)
+        }
 
         for (let i = 0; ; i++) {
             const val = await values[i]

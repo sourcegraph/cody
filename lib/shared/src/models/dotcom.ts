@@ -29,7 +29,9 @@ const expandedContextWindow: ModelContextWindow = {
  * @returns An array of `Models` objects.
  */
 export const DEFAULT_DOT_COM_MODELS = [
+    // --------------------------------
     // Anthropic models
+    // --------------------------------
     {
         title: 'Claude 3 Sonnet',
         model: 'anthropic/claude-3-sonnet-20240229',
@@ -66,7 +68,9 @@ export const DEFAULT_DOT_COM_MODELS = [
         uiGroup: ModelUIGroup.Speed,
     },
 
+    // --------------------------------
     // OpenAI models
+    // --------------------------------
     {
         title: 'GPT-4o',
         model: 'openai/gpt-4o',
@@ -102,7 +106,9 @@ export const DEFAULT_DOT_COM_MODELS = [
         uiGroup: ModelUIGroup.Speed,
     },
 
+    // --------------------------------
     // Google models
+    // --------------------------------
     {
         title: 'Gemini 1.5 Pro',
         model: 'google/gemini-1.5-pro-latest',
