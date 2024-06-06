@@ -102,7 +102,7 @@ export class ContextItemMentionNode extends TextNode {
         if (this.contextItem.type === 'repository') {
             dom.title = `Repository: ${this.contextItem.repoName ?? this.contextItem.title ?? 'unknown'}`
         } else if (this.contextItem.type === 'tree') {
-            dom.title = 'Local workspace'
+            dom.title = this.contextItem.title || 'Local workspace'
         } else if (this.contextItem.type === 'file') {
             dom.title = displayPath(URI.parse(this.contextItem.uri))
         }
@@ -174,7 +174,7 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
             return `@${trimCommonRepoNamePrefixes(contextItem.repoName) ?? 'unknown repository'}`
 
         case 'tree':
-            return `@${contextItem.title?.replace(/^@/, '') ?? 'unknown folder'}`
+            return `@${contextItem.repoName ?? 'unknown folder'}`
 
         case 'symbol':
             return `@${contextItem.symbolName}`

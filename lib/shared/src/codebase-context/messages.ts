@@ -62,6 +62,11 @@ interface ContextItemCommon {
      * if from a built-in context source such as files and symbols).
      */
     provider?: string
+
+    /**
+     * Lucid icon name for the context item
+     */
+    icon?: string
 }
 
 /**

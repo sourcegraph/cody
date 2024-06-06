@@ -1,9 +1,4 @@
-import {
-    type ContextItem,
-    type ContextMentionProviderMetadata,
-    displayLineRange,
-    displayPathBasename,
-} from '@sourcegraph/cody-shared'
+import type { ContextItem, ContextMentionProviderMetadata } from '@sourcegraph/cody-shared'
 import { useMemo, useState } from 'react'
 import { useClientState } from '../../client/clientState'
 import { useChatContextItems } from '../../promptEditor/plugins/atMentions/chatContextClient'
@@ -34,7 +29,7 @@ export function useMentionMenuParams(): {
 
 export interface MentionMenuData {
     providers: ContextMentionProviderMetadata[]
-    quickPickItems?: ContextItem[]
+    quickPickItems?: (ContextItem & { icon?: string })[]
     items: ContextItem[] | undefined
 }
 
@@ -68,27 +63,13 @@ export function useMentionMenuData(
             items: results
                 ?.slice(0, limit)
                 .map(item => prepareContextItemForMentionMenu(item, remainingTokenBudget)),
-            quickPickItems: clientState.availableEditorContext
-                .map(item => {
-                    const menuItem = prepareContextItemForMentionMenu(item, remainingTokenBudget)
-                    if (menuItem.type === 'file') {
-                        menuItem.title = menuItem.range ? '@currentSelection' : '@currentFile'
-                        menuItem.description =
-                            displayPathBasename(menuItem.uri) +
-                            (menuItem.range ? `:${displayLineRange(menuItem.range)}` : '')
-                    }
-                    if (menuItem.type === 'repository' || menuItem.type === 'tree') {
-                        menuItem.title = `@${menuItem.title}`
-                    }
-                    return menuItem
-                })
-                .filter(item =>
-                    queryLower
-                        ? item.title?.toLowerCase().includes(queryLower) ||
-                          item.uri.toString().toLowerCase().includes(queryLower) ||
-                          item.description?.toString().toLowerCase().includes(queryLower)
-                        : true
-                ),
+            quickPickItems: clientState.availableEditorContext.filter(item =>
+                queryLower
+                    ? item.title?.toLowerCase().includes(queryLower) ||
+                      item.uri.toString().toLowerCase().includes(queryLower) ||
+                      item.description?.toString().toLowerCase().includes(queryLower)
+                    : true
+            ),
         }),
         [params.parentItem, providers, queryLower, results, limit, remainingTokenBudget, clientState]
     )

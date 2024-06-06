@@ -3,6 +3,8 @@ import {
     ContextItemSource,
     type ContextItemTree,
     contextFiltersProvider,
+    displayLineRange,
+    displayPathBasename,
     isMultiLineRange,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -52,10 +54,11 @@ export function startClientStateBroadcaster({
                             url: `repo:${repo.name}`,
                         })
                     ),
+                    title: 'Current Codebase',
+                    description: repo.name,
                     source: ContextItemSource.Initial,
-                    description: 'Entire codebase context',
+                    icon: 'folder',
                 }
-
                 items.push(item)
                 availableEditorContext.push(item)
             }
@@ -66,39 +69,37 @@ export function startClientStateBroadcaster({
                 const item = {
                     type: 'tree',
                     uri: workspaceFolder.uri,
-                    title: workspaceFolder.name,
+                    title: 'Current Codebase',
+                    repoName: workspaceFolder.name,
+                    description: workspaceFolder.name,
                     isWorkspaceRoot: true,
                     content: null,
                     source: ContextItemSource.Initial,
-                    description: 'Entire codebase context',
+                    icon: 'folder',
                 } satisfies ContextItemTree
 
                 items.push(item)
                 availableEditorContext.push(item)
             }
         }
-        ;(await getContextFileFromSelection()).map(contextFile => {
+        const [contextFile] = await getContextFileFromSelection()
+        if (contextFile) {
+            const range =
+                contextFile.range && isMultiLineRange(contextFile.range) ? contextFile.range : undefined
             const item = {
                 ...contextFile,
                 type: 'file',
-                range:
-                    contextFile.range && isMultiLineRange(contextFile.range)
-                        ? contextFile.range
-                        : undefined,
+                title: 'Current File',
+                description:
+                    displayPathBasename(contextFile.uri) + (range ? `:${displayLineRange(range)}` : ''),
+                range,
                 source: ContextItemSource.Initial,
+                icon: range ? 'text-select' : 'file-code',
             } satisfies ContextItem
 
             items.push(item)
             availableEditorContext.push(item)
-
-            if (item.range) {
-                // also include the compelte file as a context item
-                availableEditorContext.push({
-                    ...item,
-                    range: undefined,
-                })
-            }
-        })
+        }
 
         postMessage({ type: 'clientState', value: { initialContext: items, availableEditorContext } })
     }
