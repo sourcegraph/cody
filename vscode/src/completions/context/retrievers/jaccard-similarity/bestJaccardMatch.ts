@@ -270,8 +270,7 @@ function breakCamelAndSnakeCase(word: string): string[] {
         return [word]
     }
     const array = brokenWord.split(' ')
-    // We keep adding the original un-split symbol to not loose signal for exact
-    // overlap.
+    // Add the original un-split symbol to not loose signal for exact overlap
     array.push(word)
     return array
 }
