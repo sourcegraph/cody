@@ -40,6 +40,10 @@ import SourcegraphLogo from '../../icons/providers/sourcegraph.svg?react'
 import styles from './MentionMenuItem.module.css'
 
 function getDescription(item: ContextItem, query: MentionQuery): string {
+    if (item.description) {
+        return item.description
+    }
+
     const range = query.range ?? item.range
     const defaultDescription = `${displayPath(item.uri)}:${range ? displayLineRange(range) : ''}`
 

@@ -53,7 +53,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [chatEnabled, setChatEnabled] = useState<boolean>(true)
     const [attributionEnabled, setAttributionEnabled] = useState<boolean>(false)
 
-    const [clientState, setClientState] = useState<ClientStateForWebview>({ initialContext: [] })
+    const [clientState, setClientState] = useState<ClientStateForWebview>({
+        initialContext: [],
+        availableEditorContext: [],
+    })
     const dispatchClientAction = useClientActionDispatcher()
 
     const guardrails = useMemo(() => {

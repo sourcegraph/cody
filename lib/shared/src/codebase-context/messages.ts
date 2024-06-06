@@ -33,6 +33,11 @@ interface ContextItemCommon {
     title?: string
 
     /**
+     * The description of the context item used to display in mentions menu.
+     */
+    description?: string
+
+    /**
      * The source of this context item.
      */
     source?: ContextItemSource

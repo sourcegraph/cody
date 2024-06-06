@@ -91,7 +91,9 @@ export function VSCodeDecorator(className: string | undefined, style?: CSSProper
                     <WithChatContextClient value={dummyChatContextClient}>
                         <ChatModelContextProvider value={useDummyChatModelContext()}>
                             <TelemetryRecorderContext.Provider value={telemetryRecorder}>
-                                <ClientStateContextProvider value={{ initialContext: [] }}>
+                                <ClientStateContextProvider
+                                    value={{ initialContext: [], availableEditorContext: [] }}
+                                >
                                     {story()}
                                 </ClientStateContextProvider>
                             </TelemetryRecorderContext.Provider>

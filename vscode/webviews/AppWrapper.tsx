@@ -18,7 +18,7 @@ export const AppWrapper: FunctionComponent<{ children: ReactNode }> = ({ childre
 export const TestAppWrapper: FunctionComponent<{ children: ReactNode }> = ({ children }) => (
     <AppWrapper>
         <TelemetryRecorderContext.Provider value={NOOP_TELEMETRY_RECORDER}>
-            <ClientStateContextProvider value={{ initialContext: [] }}>
+            <ClientStateContextProvider value={{ initialContext: [], availableEditorContext: [] }}>
                 {children}
             </ClientStateContextProvider>
         </TelemetryRecorderContext.Provider>

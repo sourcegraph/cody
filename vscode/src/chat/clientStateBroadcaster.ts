@@ -28,6 +28,7 @@ export function startClientStateBroadcaster({
 
     async function sendClientState(): Promise<void> {
         const items: ContextItem[] = []
+        const availableEditorContext: ContextItem[] = []
 
         // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
         // remote search).
@@ -43,7 +44,7 @@ export function startClientStateBroadcaster({
                     continue
                 }
 
-                items.push({
+                const item = {
                     ...contextItemMentionFromOpenCtxItem(
                         createRemoteRepositoryMention({
                             id: repo.id,
@@ -52,37 +53,54 @@ export function startClientStateBroadcaster({
                         })
                     ),
                     source: ContextItemSource.Initial,
-                })
+                    description: 'Entire codebase context',
+                }
+
+                items.push(item)
+                availableEditorContext.push(item)
             }
         } else {
             // TODO(sqs): Support multi-root. Right now, this only supports the 1st workspace root.
             const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
             if (workspaceFolder) {
-                items.push({
+                const item = {
                     type: 'tree',
                     uri: workspaceFolder.uri,
                     title: workspaceFolder.name,
                     isWorkspaceRoot: true,
                     content: null,
                     source: ContextItemSource.Initial,
-                } satisfies ContextItemTree)
+                    description: 'Entire codebase context',
+                } satisfies ContextItemTree
+
+                items.push(item)
+                availableEditorContext.push(item)
             }
         }
+        ;(await getContextFileFromSelection()).map(contextFile => {
+            const item = {
+                ...contextFile,
+                type: 'file',
+                range:
+                    contextFile.range && isMultiLineRange(contextFile.range)
+                        ? contextFile.range
+                        : undefined,
+                source: ContextItemSource.Initial,
+            } satisfies ContextItem
 
-        items.push(
-            ...(await getContextFileFromSelection()).map(
-                item =>
-                    ({
-                        ...item,
-                        type: 'file',
-                        // If the user has no selection, consider the whole file.
-                        range: item.range && isMultiLineRange(item.range) ? item.range : undefined,
-                        source: ContextItemSource.Initial,
-                    }) satisfies ContextItem
-            )
-        )
+            items.push(item)
+            availableEditorContext.push(item)
 
-        postMessage({ type: 'clientState', value: { initialContext: items } })
+            if (item.range) {
+                // also include the compelte file as a context item
+                availableEditorContext.push({
+                    ...item,
+                    range: undefined,
+                })
+            }
+        })
+
+        postMessage({ type: 'clientState', value: { initialContext: items, availableEditorContext } })
     }
 
     const disposables: vscode.Disposable[] = []

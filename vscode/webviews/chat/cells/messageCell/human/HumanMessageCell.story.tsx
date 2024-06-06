@@ -72,6 +72,7 @@ export const WithInitialContext: StoryObj<typeof meta> = {
                     },
                     { type: 'file', uri: URI.file('/foo.js') },
                 ],
+                availableEditorContext: [],
             }}
         >
             <HumanMessageCell {...props} />
