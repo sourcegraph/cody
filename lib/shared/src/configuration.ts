@@ -80,7 +80,6 @@ export interface Configuration {
     autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | 'bfg-mixed' | 'tsc' | 'tsc-mixed' | null
     autocompleteExperimentalOllamaOptions: OllamaOptions
     autocompleteExperimentalFireworksOptions?: FireworksOptions
-    autocompleteExperimentalSmartThrottle?: boolean
     autocompleteExperimentalMultiModelCompletions?: MultimodelSingleModelConfig[]
 
     /**

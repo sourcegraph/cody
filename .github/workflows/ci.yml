@@ -144,7 +144,7 @@ jobs:
         if: matrix.runner == 'ubuntu'
       - run: pnpm -C vscode run test:e2e
         if: matrix.runner != 'ubuntu'
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: playwright-recordings ${{ matrix.runner }}

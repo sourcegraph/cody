@@ -1,7 +1,7 @@
 import type { Decorator } from '@storybook/react'
 
 import {
-    type ModelProvider,
+    type Model,
     getDotComDefaultModels,
     isWindows,
     setDisplayPathEnvInfo,
@@ -105,7 +105,7 @@ export function VSCodeDecorator(className: string | undefined, style?: CSSProper
 
 function useDummyChatModelContext(): ChatModelContext {
     const [chatModels, setChatModels] = useState(getDotComDefaultModels())
-    const onCurrentChatModelChange = (value: ModelProvider): void => {
+    const onCurrentChatModelChange = (value: Model): void => {
         setChatModels(chatModels =>
             chatModels.map(model => ({ ...model, default: model.model === value.model }))
         )

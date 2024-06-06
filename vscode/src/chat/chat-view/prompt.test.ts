@@ -1,4 +1,4 @@
-import { ModelProvider, ModelUsage, contextFiltersProvider } from '@sourcegraph/cody-shared'
+import { Model, ModelUsage, ModelsService, contextFiltersProvider } from '@sourcegraph/cody-shared'
 import { type Message, ps } from '@sourcegraph/cody-shared'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
@@ -14,8 +14,8 @@ describe('DefaultPrompter', () => {
     })
 
     it('constructs a prompt with no context', async () => {
-        ModelProvider.setProviders([
-            new ModelProvider('a-model-id', [ModelUsage.Chat], { input: 100000, output: 100 }),
+        ModelsService.setModels([
+            new Model('a-model-id', [ModelUsage.Chat], { input: 100000, output: 100 }),
         ])
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
@@ -52,8 +52,8 @@ describe('DefaultPrompter', () => {
             update: vi.fn(() => Promise.resolve()),
         }))
 
-        ModelProvider.setProviders([
-            new ModelProvider('a-model-id', [ModelUsage.Chat], { input: 100000, output: 100 }),
+        ModelsService.setModels([
+            new Model('a-model-id', [ModelUsage.Chat], { input: 100000, output: 100 }),
         ])
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })

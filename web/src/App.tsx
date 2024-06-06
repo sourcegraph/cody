@@ -1,7 +1,7 @@
 import {
     type ChatMessage,
     type ClientStateForWebview,
-    type ModelProvider,
+    type Model,
     PromptString,
     hydrateAfterPostMessage,
     isErrorLike,
@@ -57,7 +57,7 @@ export const App: FunctionComponent = () => {
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>()
-    const [chatModels, setChatModels] = useState<ModelProvider[]>()
+    const [chatModels, setChatModels] = useState<Model[]>()
     const [clientState, setClientState] = useState<ClientStateForWebview>({ initialContext: [] })
     const dispatchClientAction = useClientActionDispatcher()
 
@@ -170,7 +170,7 @@ export const App: FunctionComponent = () => {
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
     const onCurrentChatModelChange = useCallback(
-        (selected: ModelProvider): void => {
+        (selected: Model): void => {
             if (!chatModels || !setChatModels) {
                 return
             }

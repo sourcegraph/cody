@@ -1,18 +1,13 @@
-import { OLLAMA_DEFAULT_URL, type OllamaChatParams, type OllamaGenerateResponse } from '.'
+import { Ollama } from 'ollama/browser'
+import { getCompletionsModelConfig } from '../..'
 import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import { onAbort } from '../../common/abortController'
 import { CompletionStopReason } from '../../inferenceClient/misc'
 import type { CompletionLogger } from '../../sourcegraph-api/completions/client'
-import type {
-    CompletionCallbacks,
-    CompletionParameters,
-    CompletionResponse,
-} from '../../sourcegraph-api/completions/types'
+import type { CompletionCallbacks, CompletionParameters } from '../../sourcegraph-api/completions/types'
 
 /**
  * Calls the Ollama API for chat completions with history.
- *
- * Doc: https://github.com/ollama/ollama/blob/main/docs/api.md#chat-request-with-history
  */
 export async function ollamaChatClient(
     params: CompletionParameters,
@@ -23,71 +18,72 @@ export async function ollamaChatClient(
     signal?: AbortSignal
 ): Promise<void> {
     const log = logger?.startCompletion(params, completionsEndpoint)
-    const model = params.model?.replace('ollama/', '')
-    if (!model || !params.messages) {
+
+    if (!params.model || !params.messages) {
         log?.onError('No model or messages')
         throw new Error('No model or messages')
     }
 
-    const ollamaChatParams = {
-        model,
-        messages: await Promise.all(
-            params.messages.map(async msg => {
-                return {
-                    role: msg.speaker === 'human' ? 'user' : 'assistant',
-                    content: (await msg.text?.toFilteredString(contextFiltersProvider)) ?? '',
-                }
+    const config = getCompletionsModelConfig(params.model)
+    const model = config?.model ?? params.model
+    const endpoint = config?.endpoint
+
+    // Update the host if it's different from the current one.
+    const ollama = new Ollama({ host: endpoint })
+    const result = {
+        completion: '',
+        stopReason: CompletionStopReason.StreamingChunk,
+    }
+
+    onAbort(signal, () => ollama.abort())
+
+    try {
+        const messages = await Promise.all(
+            params.messages.map(async msg => ({
+                role: msg.speaker === 'human' ? 'user' : 'assistant',
+                content: (await msg.text?.toFilteredString(contextFiltersProvider)) ?? '',
+            }))
+        )
+
+        ollama
+            .chat({
+                model,
+                messages,
+                options: {
+                    temperature: params.temperature,
+                    top_k: params.topK,
+                    top_p: params.topP,
+                    tfs_z: params.maxTokensToSample,
+                },
+                stream: true,
             })
-        ),
-        options: {
-            temperature: params.temperature,
-            top_k: params.topK,
-            top_p: params.topP,
-            tfs_z: params.maxTokensToSample,
-        },
-    } satisfies OllamaChatParams
+            .then(
+                async res => {
+                    for await (const part of res) {
+                        result.completion += part.message.content
+                        cb.onChange(result.completion)
 
-    // Sends the completion parameters and callbacks to the Ollama API.
-    fetch(new URL('/api/chat', OLLAMA_DEFAULT_URL).href, {
-        method: 'POST',
-        body: JSON.stringify(ollamaChatParams),
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        signal,
-    }).then(async response => {
-        if (!response.body) {
-            log?.onError('No response body')
-            throw new Error('No response body')
-        }
+                        if (signal?.aborted) {
+                            result.stopReason = CompletionStopReason.RequestAborted
+                            ollama.abort()
+                            break
+                        }
 
-        const reader = response.body.getReader()
+                        if (part.done) {
+                            result.stopReason = CompletionStopReason.RequestFinished
+                            cb.onComplete()
+                        }
+                    }
 
-        onAbort(signal, () => reader.cancel())
-
-        // Handles the response stream to accumulate the full completion text.“
-        let insertText = ''
-        while (true) {
-            const { done, value } = await reader.read()
-            if (done) {
-                cb.onComplete()
-                break
-            }
-
-            const textDecoder = new TextDecoder()
-            const decoded = textDecoder.decode(value, { stream: true })
-            const parsedLine = JSON.parse(decoded) as OllamaGenerateResponse
-
-            if (parsedLine.message) {
-                insertText += parsedLine.message.content
-                cb.onChange(insertText)
-            }
-        }
-
-        const completionResponse: CompletionResponse = {
-            completion: insertText,
-            stopReason: CompletionStopReason.RequestFinished,
-        }
-        log?.onComplete(completionResponse)
-    })
+                    log?.onComplete(result)
+                },
+                err => {
+                    throw err
+                }
+            )
+    } catch (e) {
+        const error = new Error(`Ollama Client Failed: ${e}`)
+        cb.onError(error, 500)
+        log?.onError(error.message)
+    }
 }
