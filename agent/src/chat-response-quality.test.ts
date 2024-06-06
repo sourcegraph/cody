@@ -140,10 +140,13 @@ describe('Chat response quality', () => {
                     client,
                     modelString,
                     'Mind taking a second look at the file? @limit.go',
-                    {addEnhancedContext: false, contextFiles: [readmeItem, limitItem, evalItem, externalServicesItem]}
+                    {
+                        addEnhancedContext: false,
+                        contextFiles: [readmeItem, limitItem, evalItem, externalServicesItem],
+                    }
                 )
                 checkAccess(lastMessage)
-                expect(lastMessage?.text).not.includes("provide me with the contents")
+                expect(lastMessage?.text).not.includes('provide me with the contents')
                 expect(lastMessage?.text).not.includes("I can't review specific files")
             }, 10_000)
 
@@ -192,7 +195,7 @@ describe('Chat response quality', () => {
                 )
                 // Don't check access, because this file does not exist in the context.
                 // Check it doesn't hallucinate
-                expect(lastMessage?.text).not.includes("Certainly!")
+                expect(lastMessage?.text).not.includes('Certainly!')
                 expect(lastMessage?.text).not.includes("Sure, let's")
                 checkFilesExist(lastMessage, ['agent.go'], contextFiles)
             }, 10_000)
