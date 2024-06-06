@@ -37,8 +37,9 @@ type Unsubscribe = () => void
 
 const HAS_AUTHENTICATED_BEFORE_KEY = 'has-authenticated-before'
 
-type AuthConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
-export class AuthProvider implements AuthStatusProvider {
+type AuthProviderConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
+
+export class AuthProvider  implements AuthStatusProvider {
     private endpointHistory: string[] = []
 
     private client: SourcegraphGraphQLAPIClient | null = null
@@ -46,21 +47,20 @@ export class AuthProvider implements AuthStatusProvider {
     private authStatus: AuthStatus = defaultAuthStatus
     private listeners: Set<Listener> = new Set()
 
-    static create(config: AuthConfig) {
-        if (!authProvider) {
-            authProvider = new AuthProvider(config)
-        }
+    static async createAuthProvider(config: AuthProviderConfig): Promise<AuthProvider> {
+        const authProvider = new AuthProvider(config)
+        await authProvider.loadEndpointHistory()
+
         return authProvider
     }
 
-    private constructor(private config: AuthConfig) {
+    private constructor(private config: AuthProviderConfig) {
         this.authStatus.endpoint = 'init'
-        this.loadEndpointHistory()
     }
 
-    // Sign into the last endpoint the user was signed into, if any
+    // Sign in to the last endpoint the user was signed in to, if any
     public async init(): Promise<void> {
-        let lastEndpoint = localStorage?.getEndpoint() || this.config.serverEndpoint
+        let lastEndpoint = await localStorage?.getEndpoint() || this.config.serverEndpoint
         let token = (await secretStorage.get(lastEndpoint || '')) || this.config.accessToken
         logDebug(
             'AuthProvider:init:lastEndpoint',
@@ -380,8 +380,8 @@ export class AuthProvider implements AuthStatusProvider {
             if (isExtensionStartup && isLoggedIn) {
                 await this.setHasAuthenticatedBefore()
             } else if (isLoggedIn) {
-                this.handleFirstEverAuthentication()
-            }
+                await this.handleFirstEverAuthentication()
+        }
 
             return { authStatus, isLoggedIn }
         } catch (error) {
@@ -485,8 +485,8 @@ export class AuthProvider implements AuthStatusProvider {
     }
 
     // Refresh current endpoint history with the one from local storage
-    private loadEndpointHistory(): void {
-        this.endpointHistory = localStorage.getEndpointHistory() || []
+    private async loadEndpointHistory(): Promise<void> {
+        this.endpointHistory = await localStorage.getEndpointHistory() || []
     }
 
     // Store endpoint in local storage, token in secret storage, and update endpoint history.
@@ -501,7 +501,7 @@ export class AuthProvider implements AuthStatusProvider {
         if (token) {
             await secretStorage.storeToken(endpoint, token)
         }
-        this.loadEndpointHistory()
+        await this.loadEndpointHistory()
     }
 
     // Notifies the AuthProvider that the simplified onboarding experiment is
@@ -517,8 +517,8 @@ export class AuthProvider implements AuthStatusProvider {
     }
 
     // Logs a telemetry event if the user has never authenticated to Sourcegraph.
-    private handleFirstEverAuthentication(): void {
-        if (localStorage.get(HAS_AUTHENTICATED_BEFORE_KEY)) {
+    private async handleFirstEverAuthentication(): Promise<void> {
+        if (await localStorage.get(HAS_AUTHENTICATED_BEFORE_KEY)) {
             // User has authenticated before, noop
             return
         }

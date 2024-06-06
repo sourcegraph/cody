@@ -412,7 +412,7 @@ export type GraphQLAPIClientConfig = {
     accessToken: string | null
     serverEndpoint: string
     customHeaders?: Record<string, string>
-    telemetryLevel: ConfigurationWithAccessToken['telemetryLevel']
+    telemetryLevel?: ConfigurationWithAccessToken['telemetryLevel']
 }
 
 export let customUserAgent: string | undefined

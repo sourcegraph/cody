@@ -5,7 +5,7 @@ import {
     createMessageConnection,
     type MessageConnection,
 } from 'vscode-jsonrpc/browser'
-import type { ServerInfo } from '@sourcegraph/vscode-cody/src/jsonrpc/agent-protocol'
+import type { ChatExportResult, ServerInfo } from '@sourcegraph/vscode-cody/src/jsonrpc/agent-protocol'
 
 // Inline Agent web worker since we're building cody/web package
 // in the cody repository and ship it via published npm package
@@ -81,7 +81,31 @@ export async function createAgentClient({
     })
     rpc.sendNotification('initialized', null)
 
-    const webviewPanelID: string = await rpc.sendRequest('chat/new', null)
+    const chatHistory = await rpc.sendRequest<ChatExportResult[]>('chat/export', null)
+
+    if (chatHistory.length === 0) {
+        const webviewPanelID: string = await rpc.sendRequest('chat/new', null)
+
+        return {
+            rpc,
+            serverInfo,
+            webviewPanelID,
+            dispose(): void {
+                rpc.end()
+                worker.terminate()
+            },
+        }
+    }
+
+    // Restore last active chat
+    const lastAvailableChat = chatHistory[chatHistory.length - 1]
+
+    const webviewPanelID: string = await rpc.sendRequest('chat/restore', {
+        chatID: lastAvailableChat.chatID,
+        messages: lastAvailableChat.transcript.interactions.map(interaction => {
+            return [interaction.humanMessage, interaction.assistantMessage]
+        }).flat()
+    })
 
     return {
         serverInfo,

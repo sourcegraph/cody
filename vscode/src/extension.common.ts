@@ -26,6 +26,7 @@ import type {
     OpenTelemetryServiceConfig,
 } from './services/open-telemetry/OpenTelemetryService.node'
 import { type SentryService, captureException } from './services/sentry/sentry'
+import { AsyncMemento } from './services/LocalStorageProvider';
 
 type Constructor<T extends new (...args: any) => any> = T extends new (
     ...args: infer A
@@ -34,6 +35,7 @@ type Constructor<T extends new (...args: any) => any> = T extends new (
     : never
 
 export interface PlatformContext {
+    createStorage?: () => Promise<vscode.Memento | AsyncMemento>
     createCommandsProvider?: Constructor<typeof CommandsProvider>
     createLocalEmbeddingsController?: (
         config: LocalEmbeddingsConfig

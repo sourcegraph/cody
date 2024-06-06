@@ -17,12 +17,12 @@ export class ChatHistoryManager implements vscode.Disposable {
         }
     }
 
-    public getLocalHistory(authStatus: AuthStatus): UserLocalHistory | null {
+    public getLocalHistory(authStatus: AuthStatus): Promise<UserLocalHistory | null> {
         return localStorage.getChatHistory(authStatus)
     }
 
-    public getChat(authStatus: AuthStatus, sessionID: string): SerializedChatTranscript | null {
-        const chatHistory = this.getLocalHistory(authStatus)
+    public async getChat(authStatus: AuthStatus, sessionID: string): Promise<SerializedChatTranscript | null> {
+        const chatHistory = await this.getLocalHistory(authStatus)
         return chatHistory?.chat ? chatHistory.chat[sessionID] : null
     }
 
@@ -30,7 +30,7 @@ export class ChatHistoryManager implements vscode.Disposable {
         authStatus: AuthStatus,
         chat: SerializedChatTranscript
     ): Promise<UserLocalHistory> {
-        const history = localStorage.getChatHistory(authStatus)
+        const history = await localStorage.getChatHistory(authStatus)
         history.chat[chat.id] = chat
         await localStorage.setChatHistory(authStatus, history)
         this.historyChanged.fire()
