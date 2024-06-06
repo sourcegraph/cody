@@ -47,6 +47,9 @@ export type ClientRequests = {
     // webview/didDispose.
     'chat/new': [null, string]
 
+    'grosshacks/chat/new': [null, null]
+    'grosshacks/webview/postMessageClientToServer': [WebviewMessage, null]
+
     // Similar to `chat/new` except it starts a new chat session from an
     // existing transcript. The chatID matches the `chatID` property of the
     // `type: 'transcript'` ExtensionMessage that is sent via
@@ -344,6 +347,8 @@ export type ServerNotifications = {
     // chat/new). Subscribe to these messages to get access to streaming updates
     // on the chat reply.
     'webview/postMessage': [WebviewPostMessageParams]
+
+    'grosshacks/webview/postMessage': [ExtensionMessage]
 
     'progress/start': [ProgressStartParams]
 

@@ -898,6 +898,78 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
         })
 
+        let realWebview:
+            | (vscode.Webview & { forwardPostMessage: (message: WebviewMessage) => void })
+            | undefined
+
+        // DONOTCOMMIT: This is a hack to create a single chat for assessing chat UX implications of VSCode UX in JetBrains
+        this.registerAuthenticatedRequest(
+            'grosshacks/webview/postMessageClientToServer',
+            async message => {
+                // TODO: Wire CEF JetBrains to call this when web client calls postMessage
+                realWebview?.forwardPostMessage(message)
+                return null
+            }
+        )
+
+        this.registerAuthenticatedRequest('grosshacks/chat/new', async () => {
+            // DONOTCOMMIT: This is a hack to create a single chat for assessing chat UX implications of VSCode UX in JetBrains
+            const postMessageEmitter = new vscode.EventEmitter()
+            vscode_shim.setCreateWebviewPanel((viewType, title, showOptions, options) => {
+                realWebview = {
+                    options: options || {},
+                    get html(): string {
+                        return 'WebView thunk html getter NYI'
+                    },
+                    set html(value: string) {
+                        throw 'WebView thunk html setter NYI'
+                    },
+                    onDidReceiveMessage: postMessageEmitter.event,
+                    postMessage: (message: any): Thenable<boolean> => {
+                        // TODO: Wire this JetBrains side to forward to CEF WebView and dispatch 'message' event.
+                        // TODO: Add a routing ID.
+                        this.notify('grosshacks/webview/postMessage', message)
+                        // TODO: Timing of this is inaccurate but is that important?
+                        return Promise.resolve(true)
+                    },
+                    asWebviewUri: (localResource: vscode.Uri): vscode.Uri => {
+                        throw 'WebView thunk asWebviewUri NYI'
+                    },
+                    // TODO: What is this for a real webview and does it matter?
+                    cspSource: "'self' https://*.sourcegraphstatic.com",
+                    forwardPostMessage: (message: WebviewMessage) => {
+                        postMessageEmitter.fire(message)
+                    },
+                }
+                // TODO: Some of this protocol may be necessary, work out the subset.
+                // For example, we need a dispose protocol.
+                return {
+                    webview: realWebview,
+                    viewType,
+                    title,
+                    options: options || {},
+                    active: true,
+                    viewColumn: vscode.ViewColumn.One,
+                    visible: true,
+                    onDidChangeViewState:
+                        new vscode.EventEmitter<vscode.WebviewPanelOnDidChangeViewStateEvent>().event,
+                    onDidDispose: new vscode.EventEmitter<void>().event,
+                    reveal: async (viewColumn?: vscode.ViewColumn, preserveFocus?: boolean) => {
+                        // TODO: Implement reveal logic
+                        return Promise.resolve()
+                    },
+                    dispose: () => {
+                        // TODO: Work out a dispose protocol.
+                        console.log('unexpected dispose on fake WebView panel')
+                    },
+                }
+            })
+
+            // TODO: Now run the "new chat" command and have it create the webview, etc.
+            await vscode.commands.executeCommand('cody.chat.panel.new')
+            return null
+        })
+
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
             const theModel = modelID
