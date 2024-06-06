@@ -78,6 +78,7 @@ class FixupService(val project: Project) : Disposable {
     if (!CodyEditorUtil.isEditorValidForAutocomplete(editor)) {
       runInEdt { EditingNotAvailableNotification().notify(project) }
       logger.warn("Edit code invoked when editing not available")
+      getActiveSession()?.cancel()
       return false
     }
     val policy = IgnoreOracle.getInstance(project).policyForEditor(editor)
