@@ -215,7 +215,10 @@ export class BfgRetriever implements ContextRetriever {
                     ...getLastNGraphContextIdentifiersFromDocument({
                         n: 10,
                         document,
-                        position,
+                        range: new vscode.Range(
+                            new vscode.Position(Math.max(position.line - 100), 0),
+                            position.translate({ characterDelta: 1 })
+                        ),
                     }),
                 ])
             )

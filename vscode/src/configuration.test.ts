@@ -110,6 +110,8 @@ describe('getConfiguration', () => {
                         return ''
                     case 'cody.experimental.minion.anthropicKey':
                         return undefined
+                    case 'cody.edit.experimental.graphContext':
+                        return undefined
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -165,6 +167,7 @@ describe('getConfiguration', () => {
                 multiline: undefined,
                 singleline: undefined,
             },
+            editExperimentalGraphContext: undefined,
             testingModelConfig: undefined,
             experimentalChatContextRanker: false,
         } satisfies Configuration)

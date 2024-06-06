@@ -10,7 +10,7 @@ import { lines } from '../../../text-processing'
 interface GetLastNGraphContextIdentifiersFromDocumentParams {
     n: number
     document: vscode.TextDocument
-    position: vscode.Position
+    range: vscode.Range
 }
 
 interface SymbolRequest {
@@ -24,17 +24,11 @@ interface SymbolRequest {
 export function getLastNGraphContextIdentifiersFromDocument(
     params: GetLastNGraphContextIdentifiersFromDocumentParams
 ): SymbolRequest[] {
-    const { document, position, n } = params
+    const { document, range, n } = params
 
     const queryPoints = {
-        startPoint: asPoint({
-            line: Math.max(position.line - 100, 0),
-            character: 0,
-        }),
-        endPoint: asPoint({
-            line: position.line,
-            character: position.character + 1,
-        }),
+        startPoint: asPoint(range.start),
+        endPoint: asPoint(range.end),
     }
 
     const symbolRequests = execQueryWrapper({

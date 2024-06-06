@@ -129,7 +129,7 @@ describe('LspLightRetriever', () => {
     it('preloads the results when navigating to a line', async () => {
         await onDidChangeTextEditorSelection({
             textEditor: { document: testDocuments.document1 },
-            selections: [{ active: { line: 3, character: 0 } }],
+            selections: [{ active: new Position(3, 0) }],
         })
 
         // Preloading is debounced so we need to advance the timer manually
@@ -172,7 +172,7 @@ describe('LspLightRetriever', () => {
 
         await onDidChangeTextEditorSelection({
             textEditor: { document: testDocuments.document1 },
-            selections: [{ active: { line: 1, character: 0 } }],
+            selections: [{ active: new Position(1, 0) }],
         })
         await vi.advanceTimersToNextTimerAsync()
 
@@ -196,7 +196,7 @@ describe('LspLightRetriever', () => {
         getSymbolContextSnippets.mockImplementation(() => Promise.resolve([]))
         await onDidChangeTextEditorSelection({
             textEditor: { document: testDocuments.document1 },
-            selections: [{ active: { line: 2, character: 0 } }],
+            selections: [{ active: new Position(2, 0) }],
         })
         await vi.advanceTimersToNextTimerAsync()
 

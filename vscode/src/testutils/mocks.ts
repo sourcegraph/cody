@@ -870,6 +870,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
         multiline: undefined,
         singleline: undefined,
     },
+    editExperimentalGraphContext: null,
     testingModelConfig: undefined,
     experimentalChatContextRanker: false,
 } satisfies Configuration
