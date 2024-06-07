@@ -178,7 +178,7 @@ private constructor(
               else -> CodyBundle.getString("chat.rate-limit-error.explain")
             }
           } else {
-            val errorReportLink = CodyErrorSubmitter().getEncodedUrl(chatError.message)
+            val errorReportLink = CodyErrorSubmitter().getEncodedUrl(project, chatError.message)
             CodyBundle.getString("chat.general-error").fmt(errorReportLink, chatError.message)
           }
 
@@ -193,7 +193,8 @@ private constructor(
       CodyAgentService.setAgentError(project, e)
 
       val message = ((e.cause as? CodyAgentException) ?: e).message ?: e.toString()
-      val errorReportLink = CodyErrorSubmitter().getEncodedUrl(e.getThrowableText(), message)
+      val errorReportLink =
+          CodyErrorSubmitter().getEncodedUrl(project, e.getThrowableText(), message)
       addErrorMessageAsAssistantMessage(
           CodyBundle.getString("chat.general-error").fmt(errorReportLink, message))
     } finally {

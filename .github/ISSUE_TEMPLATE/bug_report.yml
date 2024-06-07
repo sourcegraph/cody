@@ -6,7 +6,6 @@ description: "File a bug report for any of the JetBrains IDEs: IntelliJ, Goland,
 title: "bug: "
 labels:
   - bug
-  - team/jetbrains
 projects:
   - sourcegraph/381
 body:
@@ -16,13 +15,8 @@ body:
         Thanks for taking the time to fill out this bug report! Please include as much information as possible to help us fix the issue. 
 
         Tip: You can attach images or videos by dragging it into the text box.
-  - type: input
-    attributes:
-      label: Cody Version
-      description: Please specify the exact Cody extension version you're reporting for.
-    validations:
-      required: true
-  - type: textarea
+  - id: about
+    type: textarea
     attributes:
       label: IDE Information
       description: Trigger the action "About" (Shift Shift -> Actions), click on "Copy and Close" and paste the output here.
@@ -30,14 +24,8 @@ body:
       required: true
   - type: textarea
     attributes:
-      label: Describe the bug
-      description: Description of what the bug is. Please include steps on how to reproduce the behaviour.
-    validations:
-      required: true
-  - type: textarea
-    attributes:
-      label: Expected behavior
-      description: Description of what you expected to happen.
+      label: Bug Description
+      description: Please describe the bug. Include steps for reproducing the behavior and actual and expected results.
     validations:
       required: true
   - id: logs

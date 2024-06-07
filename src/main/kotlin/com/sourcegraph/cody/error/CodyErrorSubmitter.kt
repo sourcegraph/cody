@@ -1,11 +1,12 @@
 package com.sourcegraph.cody.error
 
 import com.intellij.ide.BrowserUtil
-import com.intellij.openapi.application.ApplicationInfo
+import com.intellij.ide.actions.AboutDialog
 import com.intellij.openapi.diagnostic.ErrorReportSubmitter
 import com.intellij.openapi.diagnostic.IdeaLoggingEvent
 import com.intellij.openapi.diagnostic.SubmittedReportInfo
 import com.intellij.openapi.diagnostic.SubmittedReportInfo.SubmissionStatus
+import com.intellij.openapi.project.Project
 import com.intellij.util.Consumer
 import java.awt.Component
 import java.net.URLEncoder
@@ -23,7 +24,11 @@ class CodyErrorSubmitter : ErrorReportSubmitter() {
     try {
       if (events.isNotEmpty()) {
         val event = events.first()
-        val url = getEncodedUrl(event.throwableText, additionalInfo)
+        val url =
+            getEncodedUrl(
+                project = null,
+                throwableText = event.throwableText,
+                additionalInfo = additionalInfo)
         BrowserUtil.browse(url)
       }
     } catch (e: Exception) {
@@ -34,13 +39,17 @@ class CodyErrorSubmitter : ErrorReportSubmitter() {
     return true
   }
 
-  public fun getEncodedUrl(throwableText: String, additionalInfo: String? = null): String {
+  fun getEncodedUrl(
+      project: Project?,
+      throwableText: String? = null,
+      additionalInfo: String? = null
+  ): String {
     return "https://github.com/sourcegraph/jetbrains/issues/new" +
         "?template=bug_report.yml" +
-        "&labels=bug,clients/jetbrains" +
+        "&labels=bug" +
         "&projects=sourcegraph/381" +
-        "&title=${encode(getTitle(throwableText))}" +
-        "&version=${encode(getVersion())}" +
+        (throwableText?.let { "&title=${encode(getTitle(throwableText))}" } ?: "") +
+        "&about=${encode(getAboutText(project))}" +
         "&logs=${encode(formatLogs(throwableText, additionalInfo))}"
   }
 
@@ -49,14 +58,12 @@ class CodyErrorSubmitter : ErrorReportSubmitter() {
     return "bug: $title"
   }
 
-  private fun getVersion() =
-      formatAttributes(
-          "Plugin version" to pluginDescriptor?.version,
-          "IDE version" to ApplicationInfo.getInstance().build.toString())
+  private fun getAboutText(project: Project?) = AboutDialog(project).extendedAboutText
 
-  private fun formatLogs(throwableText: String, additionalInfo: String?) =
+  private fun formatLogs(throwableText: String?, additionalInfo: String?) =
       formatAttributes(
-          "Stacktrace" to trimPostfix(throwableText, 6500), // max total length is 8192
+          "Stacktrace" to
+              throwableText?.let { trimPostfix(throwableText, 6500) }, // max total length is 8192
           "Additional info" to additionalInfo)
 
   private fun trimPostfix(text: String, maxLength: Int): String {
