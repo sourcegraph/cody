@@ -103,7 +103,7 @@ export async function createAgentClient({
     const webviewPanelID: string = await rpc.sendRequest('chat/restore', {
         chatID: lastAvailableChat.chatID,
         messages: lastAvailableChat.transcript.interactions.map(interaction => {
-            return [interaction.humanMessage, interaction.assistantMessage]
+            return [interaction.humanMessage, interaction.assistantMessage].filter(message => message)
         }).flat()
     })
 

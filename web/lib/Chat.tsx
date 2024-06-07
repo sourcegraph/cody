@@ -3,7 +3,8 @@ import { type FC, useCallback, useEffect, useMemo, useState, useRef } from 'reac
 
 import {
     type ChatMessage,
-    type ModelProvider,
+    type Model,
+    type ClientStateForWebview,
     isErrorLike,
     MentionQuery,
     ContextItem,
@@ -22,7 +23,8 @@ import {
 } from '@sourcegraph/vscode-cody/webviews/chat/models/chatModelContext'
 import { type VSCodeWrapper, setVSCodeWrapper } from '@sourcegraph/vscode-cody/webviews/utils/VSCodeApi'
 import { ChatContextClientContext } from '@sourcegraph/vscode-cody/webviews/promptEditor/plugins/atMentions/chatContextClient'
-import { createWebviewTelemetryRecorder, createWebviewTelemetryService } from '@sourcegraph/vscode-cody/webviews/utils/telemetry'
+import { createWebviewTelemetryRecorder, createWebviewTelemetryService, TelemetryRecorderContext } from '@sourcegraph/vscode-cody/webviews/utils/telemetry'
+import { ClientStateContextProvider, useClientActionDispatcher, } from '@sourcegraph/vscode-cody/webviews/client/clientState'
 
 import { debouncePromise } from './agent/utils/debounce-promise'
 import { type AgentClient, createAgentClient } from './agent/client'
@@ -51,7 +53,12 @@ export interface CodyWebChatProps {
 // NOTE: This code is copied from the VS Code webview's App component and implements a subset of the
 // functionality for the experimental web chat prototype.
 export const CodyWebChat: FC<CodyWebChatProps> = props => {
-    const { repositories, accessToken, serverEndpoint, className } = props
+    const {
+        repositories,
+        accessToken,
+        serverEndpoint,
+        className
+    } = props
 
     const onMessageCallbacksRef = useRef<((message: ExtensionMessage) => void)[]>([])
 
@@ -60,7 +67,13 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>()
-    const [chatModels, setChatModels] = useState<ModelProvider[]>()
+    const [chatModels, setChatModels] = useState<Model[]>()
+
+    const [clientState, setClientState] = useState<ClientStateForWebview>({
+        initialContext: [],
+    })
+
+    const dispatchClientAction = useClientActionDispatcher()
 
     const graphQlClient = useMemo(() => {
         return new SourcegraphGraphQLAPIClient({
@@ -208,6 +221,13 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                         isDotComUser: message.authStatus.isDotCom,
                         user: message.authStatus,
                     })
+                    break
+                case 'clientState':
+                    setClientState(message.value)
+                    break
+                case 'clientAction':
+                    dispatchClientAction(message)
+                    break
             }
         })
     }, [vscodeAPI])
@@ -224,7 +244,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
     const onCurrentChatModelChange = useCallback(
-        (selected: ModelProvider): void => {
+        (selected: Model): void => {
             if (!chatModels || !setChatModels) {
                 return
             }
@@ -251,22 +271,21 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                     <p>Error: {client.message}</p>
                 ) : (
                     <ChatContextClientContext.Provider value={suggestionsSource}>
-                        <ChatModelContextProvider value={chatModelContext}>
-                            <Chat
-                                chatEnabled={true}
-                                userInfo={userAccountInfo}
-                                messageInProgress={messageInProgress}
-                                transcript={transcript}
-                                vscodeAPI={vscodeAPI}
-                                telemetryService={telemetryService}
-                                telemetryRecorder={telemetryRecorder}
-                                isTranscriptError={isTranscriptError}
-                                chatIDHistory={[]}
-                                userContextFromSelection={[]}
-                                isWebviewActive={true}
-                                isNewInstall={false}
-                            />
-                        </ChatModelContextProvider>
+                        <TelemetryRecorderContext.Provider value={telemetryRecorder}>
+                            <ChatModelContextProvider value={chatModelContext}>
+                                <ClientStateContextProvider value={clientState}>
+                                    <Chat
+                                        chatEnabled={true}
+                                        userInfo={userAccountInfo}
+                                        messageInProgress={messageInProgress}
+                                        transcript={transcript}
+                                        vscodeAPI={vscodeAPI}
+                                        telemetryService={telemetryService}
+                                        isTranscriptError={isTranscriptError}
+                                    />
+                                </ClientStateContextProvider>
+                            </ChatModelContextProvider>
+                        </TelemetryRecorderContext.Provider>
                     </ChatContextClientContext.Provider>
             )) : (
                 <>Loading...</>
