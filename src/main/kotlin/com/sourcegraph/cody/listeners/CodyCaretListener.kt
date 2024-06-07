@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.listeners
 
 import com.intellij.openapi.command.CommandProcessor
+import com.intellij.openapi.editor.EditorKind
 import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.CaretListener
 import com.intellij.openapi.project.Project
@@ -14,7 +15,7 @@ import com.sourcegraph.utils.CodyEditorUtil
 
 class CodyCaretListener(val project: Project) : CaretListener {
   override fun caretPositionChanged(e: CaretEvent) {
-    if (!ConfigUtil.isCodyEnabled()) {
+    if (!ConfigUtil.isCodyEnabled() || e.editor.editorKind != EditorKind.MAIN_EDITOR) {
       return
     }
 
