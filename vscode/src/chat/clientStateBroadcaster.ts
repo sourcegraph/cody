@@ -53,7 +53,7 @@ export function startClientStateBroadcaster({
                             url: `repo:${repo.name}`,
                         })
                     ),
-                    title: 'Current Codebase',
+                    title: 'Repository',
                     description: repo.name,
                     source: ContextItemSource.Initial,
                     icon: 'folder',
@@ -67,8 +67,8 @@ export function startClientStateBroadcaster({
                 const item = {
                     type: 'tree',
                     uri: workspaceFolder.uri,
-                    title: 'Current Codebase',
-                    repoName: workspaceFolder.name,
+                    title: 'Repository',
+                    name: workspaceFolder.name,
                     description: workspaceFolder.name,
                     isWorkspaceRoot: true,
                     content: null,
@@ -86,12 +86,12 @@ export function startClientStateBroadcaster({
             const item = {
                 ...contextFile,
                 type: 'file',
-                title: 'Current File',
+                title: range ? 'Current Selection' : 'Current File',
                 description:
                     displayPathBasename(contextFile.uri) + (range ? `:${displayLineRange(range)}` : ''),
                 range,
                 source: ContextItemSource.Initial,
-                icon: range ? 'text-select' : 'file-code',
+                icon: range ? 'list-selection' : 'file',
             } satisfies ContextItem
 
             items.push(item)

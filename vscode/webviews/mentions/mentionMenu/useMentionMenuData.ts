@@ -29,7 +29,7 @@ export function useMentionMenuParams(): {
 
 export interface MentionMenuData {
     providers: ContextMentionProviderMetadata[]
-    quickPickItems?: (ContextItem & { icon?: string })[]
+    initialContextItems?: (ContextItem & { icon?: string })[]
     items: ContextItem[] | undefined
 }
 
@@ -63,7 +63,7 @@ export function useMentionMenuData(
             items: results
                 ?.slice(0, limit)
                 .map(item => prepareContextItemForMentionMenu(item, remainingTokenBudget)),
-            quickPickItems: clientState.initialContext.filter(item =>
+            initialContextItems: clientState.initialContext.filter(item =>
                 queryLower
                     ? item.title?.toLowerCase().includes(queryLower) ||
                       item.uri.toString().toLowerCase().includes(queryLower) ||

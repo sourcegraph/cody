@@ -85,6 +85,7 @@ data class ContextItemTree(
   val icon: String? = null,
   val type: TypeEnum, // Oneof: tree
   val isWorkspaceRoot: Boolean,
+  val name: String,
 ) : ContextItem() {
 
   enum class TypeEnum {

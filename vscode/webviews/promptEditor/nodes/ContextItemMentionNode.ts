@@ -174,7 +174,7 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
             return `@${trimCommonRepoNamePrefixes(contextItem.repoName) ?? 'unknown repository'}`
 
         case 'tree':
-            return `@${contextItem.repoName ?? 'unknown folder'}`
+            return `@${contextItem.name ?? 'unknown folder'}`
 
         case 'symbol':
             return `@${contextItem.symbolName}`

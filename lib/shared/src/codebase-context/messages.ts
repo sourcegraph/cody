@@ -134,6 +134,7 @@ export interface ContextItemTree extends ContextItemCommon {
     isWorkspaceRoot: true
 
     content: null
+    name: string
 }
 
 /**
