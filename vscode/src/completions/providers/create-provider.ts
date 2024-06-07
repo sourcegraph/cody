@@ -80,7 +80,7 @@ export async function createProviderConfig(
     /**
      * Look for the autocomplete provider in VSCode settings and return matching provider config.
      */
-    const providerAndModelFromVSCodeConfig = await resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
+    const providerAndModelFromVSCodeConfig = await resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
         config.autocompleteAdvancedProvider
     )
     if (providerAndModelFromVSCodeConfig) {
@@ -154,8 +154,8 @@ export async function createProviderConfig(
     return createAnthropicProviderConfig({ client })
 }
 
-async function resolveFinetunedModelProviderFromFeatureFlags(): ReturnType<
-    typeof resolveDefaultProviderFromVSCodeConfigOrFeatureFlags
+async function resolveFinetunedModelFromFeatureFlags(): ReturnType<
+    typeof resolveDefaultModelFromVSCodeConfigOrFeatureFlags
 > {
     /**
      * The traffic allocated to the fine-tuned-base feature flag is further split between multiple feature flag in function.
@@ -198,7 +198,7 @@ async function resolveFinetunedModelProviderFromFeatureFlags(): ReturnType<
     return { provider: 'fireworks', model: 'starcoder-hybrid' }
 }
 
-async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
+async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
     configuredProvider: string | null
 ): Promise<{
     provider: string
@@ -208,16 +208,14 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
         return { provider: configuredProvider }
     }
 
-    const [starCoder2Hybrid, starCoderHybrid, llamaCode13B, claude3, finetunedFIMModelExperiment] =
-        await Promise.all([
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteLlamaCode13B),
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
-            featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteFIMFineTunedModelBaseFeatureFlag
-            ),
-        ])
+    const [starCoder2Hybrid, starCoderHybrid, claude3, finetunedFIMModelExperiment] = await Promise.all([
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
+        featureFlagProvider.evaluateFeatureFlag(
+            FeatureFlag.CodyAutocompleteFIMFineTunedModelBaseFeatureFlag
+        ),
+    ])
 
     // We run fine tuning experiment for VSC client only.
     // We disable for all agent clients like the JetBrains plugin.
@@ -227,11 +225,7 @@ async function resolveDefaultProviderFromVSCodeConfigOrFeatureFlags(
 
     if (!isFinetuningExperimentDisabled && finetunedFIMModelExperiment) {
         // The traffic in this feature flag is interpreted as a traffic allocated to the fine-tuned experiment.
-        return resolveFinetunedModelProviderFromFeatureFlags()
-    }
-
-    if (llamaCode13B) {
-        return { provider: 'fireworks', model: 'llama-code-13b' }
+        return resolveFinetunedModelFromFeatureFlags()
     }
 
     if (starCoder2Hybrid) {

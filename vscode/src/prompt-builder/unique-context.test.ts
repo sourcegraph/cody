@@ -1,4 +1,4 @@
-import { type ContextItem, ContextItemSource } from '@sourcegraph/cody-shared'
+import { type ContextItem, ContextItemSource, type RangeData } from '@sourcegraph/cody-shared'
 import { describe, expect, it } from 'vitest'
 import { URI } from 'vscode-uri'
 import { getUniqueContextItems, isUniqueContextItem } from './unique-context'
@@ -308,55 +308,54 @@ describe('Unique Context Items', () => {
     })
 
     describe('isUniqueContextItem', () => {
-        const baseFile = {
-            type: 'file',
-            uri: URI.file('/foo/bar'),
-            content: 'foobar',
-        } as ContextItem
+        const contentLines = [...Array(20).keys()].map(i => `line ${i + 1}`)
+
+        /** returns the file with content respecting range */
+        const baseFile = (range?: RangeData): ContextItem => {
+            let content = contentLines.join('\n')
+            if (range) {
+                // sliceing below depends on character being 0
+                expect(range.start.character).toEqual(0)
+                expect(range.end.character).toEqual(0)
+                expect(range.end.line).toBeLessThanOrEqual(contentLines.length)
+                content = contentLines.slice(range.start.line, range.end.line).join('\n')
+            }
+            return {
+                type: 'file',
+                uri: URI.file('/foo/bar'),
+                content,
+                range,
+            }
+        }
 
         it('returns false when the new item is a duplicate with the same display path and range', () => {
-            const item = {
-                ...baseFile,
-                range: {
-                    start: { line: 0, character: 0 },
-                    end: { line: 5, character: 0 },
-                },
-            }
+            const item = baseFile({
+                start: { line: 0, character: 0 },
+                end: { line: 5, character: 0 },
+            })
 
             expect(isUniqueContextItem(item, [item])).toBeFalsy()
         })
 
         it('returns true when the new item has a different range (unique)', () => {
-            const item1: ContextItem = {
-                ...baseFile,
-                range: {
-                    start: { line: 0, character: 0 },
-                    end: { line: 10, character: 0 },
-                },
-            }
-            const item2: ContextItem = {
-                ...baseFile,
-                range: {
-                    start: { line: 11, character: 0 },
-                    end: { line: 20, character: 0 },
-                },
-            }
+            const item1: ContextItem = baseFile({
+                start: { line: 0, character: 0 },
+                end: { line: 10, character: 0 },
+            })
+            const item2: ContextItem = baseFile({
+                start: { line: 11, character: 0 },
+                end: { line: 20, character: 0 },
+            })
 
             expect(isUniqueContextItem(item2, [item1])).toBeTruthy()
         })
 
         it('returns true when the new item has no range and not duplicate', () => {
-            const item1: ContextItem = {
-                ...baseFile,
-                range: {
-                    start: { line: 0, character: 0 },
-                    end: { line: 10, character: 0 },
-                },
-            }
-            const item2: ContextItem = {
-                ...baseFile,
-                range: undefined,
-            }
+            const item1: ContextItem = baseFile({
+                start: { line: 0, character: 0 },
+                end: { line: 10, character: 0 },
+            })
+            const item2: ContextItem = baseFile(undefined)
 
             expect(isUniqueContextItem(item2, [item1])).toBeTruthy()
 
@@ -366,42 +365,57 @@ describe('Unique Context Items', () => {
             expect(isUniqueContextItem(item2, [item1, item2])).toBeFalsy()
         })
 
+        it('returns false when the new item has no range and an earlier item has whole file range', () => {
+            const item1: ContextItem = baseFile({
+                start: { line: 0, character: 0 },
+                end: { line: contentLines.length, character: 0 },
+            })
+            const item2: ContextItem = baseFile(undefined)
+
+            expect(isUniqueContextItem(item2, [item1])).toBeFalsy()
+        })
+
         it('returns false when the new item is a duplicate with a larger range', () => {
-            const inner: ContextItem = {
-                ...baseFile,
-                range: {
-                    start: { line: 0, character: 0 },
-                    end: { line: 5, character: 0 },
-                },
-            }
-            const outter: ContextItem = {
-                ...baseFile,
-                range: {
-                    start: { line: 0, character: 0 },
-                    end: { line: 10, character: 0 },
-                },
-            }
+            const inner: ContextItem = baseFile({
+                start: { line: 0, character: 0 },
+                end: { line: 5, character: 0 },
+            })
+            const outter: ContextItem = baseFile({
+                start: { line: 0, character: 0 },
+                end: { line: 10, character: 0 },
+            })
 
             expect(isUniqueContextItem(inner, [outter])).toBeFalsy()
         })
 
         it('returns false when the new item is a duplicate with a smaller range', () => {
-            const outter: ContextItem = {
-                ...baseFile,
-                range: {
-                    start: { line: 0, character: 0 },
-                    end: { line: 10, character: 0 },
-                },
-            }
-            const inner: ContextItem = {
-                ...baseFile,
-                range: {
-                    start: { line: 2, character: 0 },
-                    end: { line: 5, character: 0 },
-                },
-            }
+            const outter: ContextItem = baseFile({
+                start: { line: 0, character: 0 },
+                end: { line: 10, character: 0 },
+            })
+            const inner: ContextItem = baseFile({
+                start: { line: 2, character: 0 },
+                end: { line: 5, character: 0 },
+            })
 
             expect(isUniqueContextItem(inner, [outter])).toBeFalsy()
+        })
+
+        it('returns false when the new item is a duplicate with a 2nd smaller range', () => {
+            const noOverlapFirst: ContextItem = baseFile({
+                start: { line: 11, character: 0 },
+                end: { line: 15, character: 0 },
+            })
+            const outer: ContextItem = baseFile({
+                start: { line: 0, character: 0 },
+                end: { line: 10, character: 0 },
+            })
+            const inner: ContextItem = baseFile({
+                start: { line: 2, character: 0 },
+                end: { line: 5, character: 0 },
+            })
+
+            expect(isUniqueContextItem(inner, [noOverlapFirst, outer])).toBeFalsy()
         })
     })
 })

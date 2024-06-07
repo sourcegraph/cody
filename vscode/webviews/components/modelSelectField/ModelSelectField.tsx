@@ -1,4 +1,4 @@
-import { type ModelProvider, ModelUIGroup } from '@sourcegraph/cody-shared'
+import { type Model, ModelUIGroup } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import { BookOpenIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
@@ -22,8 +22,8 @@ interface SelectListOption {
 }
 
 export const ModelSelectField: React.FunctionComponent<{
-    models: ModelProvider[]
-    onModelSelect: (model: ModelProvider) => void
+    models: Model[]
+    onModelSelect: (model: Model) => void
 
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
 
@@ -48,7 +48,7 @@ export const ModelSelectField: React.FunctionComponent<{
     const showCodyProBadge = !isEnterpriseUser && !isCodyProUser
 
     const onModelSelect = useCallback(
-        (model: ModelProvider): void => {
+        (model: Model): void => {
             if (showCodyProBadge && model.codyProOnly) {
                 getVSCodeAPI().postMessage({
                     command: 'links',
@@ -274,7 +274,7 @@ type ModelAvailability = 'available' | 'needs-cody-pro' | 'not-selectable-on-ent
 
 function modelAvailability(
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>,
-    model: ModelProvider
+    model: Model
 ): ModelAvailability {
     if (!userInfo.isDotComUser) {
         return 'not-selectable-on-enterprise'
@@ -286,7 +286,7 @@ function modelAvailability(
 }
 
 const ModelTitleWithIcon: FunctionComponent<{
-    model: ModelProvider
+    model: Model
     showIcon?: boolean
     showProvider?: boolean
     modelAvailability?: ModelAvailability

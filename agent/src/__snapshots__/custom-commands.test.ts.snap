@@ -13,9 +13,10 @@ exports[`Custom Commands > commands/custom, edit command, edit mode 1`] = `
     name: string
     makeAnimalSound(): string
     isMammal: boolean
-    logName(): void
+    logName(): void {
+        console.log(this.name);
+    }
 }
-
 "
 `;
 

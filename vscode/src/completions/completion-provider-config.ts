@@ -15,8 +15,8 @@ class CompletionProviderConfig {
         FeatureFlag.CodyAutocompleteUserLatency,
         FeatureFlag.CodyAutocompleteEagerCancellation,
         FeatureFlag.CodyAutocompleteTracing,
-        FeatureFlag.CodyAutocompleteSmartThrottle,
         FeatureFlag.CodyAutocompleteReducedDebounce,
+        FeatureFlag.CodyAutocompleteContextExtendLanguagePool,
     ] as const
 
     private get config() {
@@ -78,17 +78,6 @@ class CompletionProviderConfig {
                     ? 'bfg-mixed'
                     : 'jaccard-similarity'
         }
-    }
-
-    public get smartThrottle(): boolean {
-        return (
-            // smart throttle is required for the bfg-mixed context strategy
-            // because it allows us to update the completion based on the identifiers
-            // user typed in the current line.
-            this.contextStrategy === 'bfg-mixed' ||
-            this.config.autocompleteExperimentalSmartThrottle ||
-            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteSmartThrottle)
-        )
     }
 }
 

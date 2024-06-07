@@ -7,7 +7,7 @@ import {
     type ChatMessage,
     type ClientStateForWebview,
     GuardrailsPost,
-    type ModelProvider,
+    type Model,
     PromptString,
     type SerializedChatTranscript,
 } from '@sourcegraph/cody-shared'
@@ -48,12 +48,14 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
 
-    const [chatModels, setChatModels] = useState<ModelProvider[]>()
+    const [chatModels, setChatModels] = useState<Model[]>()
 
     const [chatEnabled, setChatEnabled] = useState<boolean>(true)
     const [attributionEnabled, setAttributionEnabled] = useState<boolean>(false)
 
-    const [clientState, setClientState] = useState<ClientStateForWebview>({ initialContext: [] })
+    const [clientState, setClientState] = useState<ClientStateForWebview>({
+        initialContext: [],
+    })
     const dispatchClientAction = useClientActionDispatcher()
 
     const guardrails = useMemo(() => {
@@ -184,7 +186,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const isNewInstall = useMemo(() => !userHistory?.some(c => c?.interactions?.length), [userHistory])
 
     const onCurrentChatModelChange = useCallback(
-        (selected: ModelProvider): void => {
+        (selected: Model): void => {
             if (!chatModels || !setChatModels) {
                 return
             }

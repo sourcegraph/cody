@@ -57,11 +57,13 @@ interface StatusBarItem extends vscode.QuickPickItem {
     onSelect: () => Promise<void>
 }
 
+const STATUS_BAR_INTERACTION_COMMAND = 'cody.status-bar.interacted'
+
 export function createStatusBar(): CodyStatusBar {
     const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
     statusBarItem.text = DEFAULT_TEXT
     statusBarItem.tooltip = DEFAULT_TOOLTIP
-    statusBarItem.command = 'cody.status-bar.interacted'
+    statusBarItem.command = STATUS_BAR_INTERACTION_COMMAND
     statusBarItem.show()
 
     let isCodyIgnoredType: null | CodyIgnoreType = null
@@ -95,7 +97,7 @@ export function createStatusBar(): CodyStatusBar {
     }
 
     let authStatus: AuthStatus | undefined
-    const command = vscode.commands.registerCommand(statusBarItem.command, async () => {
+    const command = vscode.commands.registerCommand(STATUS_BAR_INTERACTION_COMMAND, async () => {
         telemetryService.log(
             'CodyVSCodeExtension:statusBarIcon:clicked',
             { loggedIn: Boolean(authStatus?.isLoggedIn) },

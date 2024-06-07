@@ -6,7 +6,7 @@ import * as vscode from 'vscode'
 
 import { newAgentClient } from '../../agent'
 
-import { ModelProvider, getDotComDefaultModels } from '@sourcegraph/cody-shared'
+import { ModelsService, getDotComDefaultModels, graphqlClient } from '@sourcegraph/cody-shared'
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
 import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled'
 import { arrayOption, booleanOption, intOption } from './cli-parsers'
@@ -61,7 +61,7 @@ interface EvaluationConfig extends Partial<CodyBenchOptions> {
     fixtures?: EvaluationFixture[]
 }
 
-enum EvaluationStrategy {
+export enum BenchStrategy {
     BFG = 'bfg',
     GitLog = 'git-log',
     Fix = 'fix',
@@ -70,7 +70,7 @@ enum EvaluationStrategy {
 interface EvaluationFixture {
     name: string
     customConfiguration?: Record<string, any>
-    strategy: EvaluationStrategy
+    strategy: BenchStrategy
     codyAgentBinary?: string
 }
 
@@ -91,7 +91,7 @@ async function loadEvaluationConfig(options: CodyBenchOptions): Promise<CodyBenc
         const rootDir = path.dirname(options.evaluationConfig)
         const workspace = path.normalize(path.join(rootDir, test.workspace))
         const fixtures: EvaluationFixture[] = config.fixtures ?? [
-            { name: 'default', strategy: EvaluationStrategy.BFG },
+            { name: 'default', strategy: BenchStrategy.BFG },
         ]
         for (const fixture of fixtures) {
             if (!fixture.strategy) {
@@ -115,7 +115,7 @@ async function loadEvaluationConfig(options: CodyBenchOptions): Promise<CodyBenc
                 snapshotDirectory,
                 codyAgentBinary,
                 fixture,
-                csvPath: path.join(snapshotDirectory, 'autocomplete.csv'),
+                csvPath: path.join(snapshotDirectory, 'cody-bench.csv'),
             })
         }
     }
@@ -285,6 +285,14 @@ export const codyBenchCommand = new commander.Command('cody-bench')
                     testOptions.fixture.name
                 )
         )
+
+        // Required to use `PromptString`.
+        graphqlClient.onConfigurationChange({
+            accessToken: options.srcAccessToken,
+            serverEndpoint: options.srcEndpoint,
+            customHeaders: {},
+        })
+
         const recordingDirectory = path.join(path.dirname(options.evaluationConfig), 'recordings')
         const polly = startPollyRecording({
             recordingName: 'cody-bench',
@@ -293,7 +301,7 @@ export const codyBenchCommand = new commander.Command('cody-bench')
             recordingDirectory,
             keepUnusedRecordings: true,
         })
-        ModelProvider.setProviders(getDotComDefaultModels())
+        ModelsService.setModels(getDotComDefaultModels())
         try {
             await Promise.all(
                 workspacesToRun.map(workspace => evaluateWorkspace(workspace, recordingDirectory))
@@ -319,8 +327,8 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
 
     const baseGlobalState: Record<string, any> = {}
     try {
-        const provider = ModelProvider.getProviderByModelSubstringOrError(options.fixture.name)
-        baseGlobalState.editModel = provider.model
+        const model = ModelsService.getModelByIDSubstringOrError(options.fixture.name)
+        baseGlobalState.editModel = model.model
     } catch (error) {
         console.log(options.fixture.name, error)
     }
@@ -348,19 +356,19 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
         },
     })
     try {
-        if (options.fixture.strategy === EvaluationStrategy.BFG) {
+        if (options.fixture.strategy === BenchStrategy.BFG) {
             await evaluateBfgStrategy(client, options)
-        } else if (options.fixture.strategy === EvaluationStrategy.GitLog) {
+        } else if (options.fixture.strategy === BenchStrategy.GitLog) {
             await evaluateGitLogStrategy(client, options)
         }
         switch (options.fixture.strategy) {
-            case EvaluationStrategy.BFG:
+            case BenchStrategy.BFG:
                 await evaluateBfgStrategy(client, options)
                 break
-            case EvaluationStrategy.GitLog:
+            case BenchStrategy.GitLog:
                 await evaluateGitLogStrategy(client, options)
                 break
-            case EvaluationStrategy.Fix:
+            case BenchStrategy.Fix:
                 await evaluateFixStrategy(client, options)
                 break
             default:

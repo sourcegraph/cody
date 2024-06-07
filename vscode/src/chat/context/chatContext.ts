@@ -47,10 +47,11 @@ export async function getChatContextItemsForMention(
             // If a range is provided, that means user is trying to mention a specific line range.
             // We will get the content of the file for that range to display file size warning if needed.
             if (mentionQuery.range && files.length > 0) {
-                return getContextFileFromUri(
+                const item = await getContextFileFromUri(
                     files[0].uri,
                     new vscode.Range(mentionQuery.range.start.line, 0, mentionQuery.range.end.line, 0)
                 )
+                return item ? [item] : []
             }
 
             return files

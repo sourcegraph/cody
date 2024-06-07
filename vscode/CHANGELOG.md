@@ -9,9 +9,27 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Fixed
 
 - Chat: Don't append @ when "Add context" is pressed multiple times. [pull/4439](https://github.com/sourcegraph/cody/pull/4439)
-- Performance: Reduced the performance overhead for certain types of context fetching, especially for larger files. This might have caused issues with slow autocomplete before. [pull/4446](https://github.com/sourcegraph/cody/pull/4446)
+- Chat: Fix an issue where copying code (with right-click or Cmd/Ctrl+C) causes many event logs and may trip rate limits. [pull/4469](https://github.com/sourcegraph/cody/pull/4469)
+- Chat: Fix an issue where it was difficult to copy code from responses that were still streaming in. [pull/4472](https://github.com/sourcegraph/cody/pull/4472)
+- Chat: Fix an issue where opening the @-mention menu in a followup input would scroll the window to the top. [pull/4475](https://github.com/sourcegraph/cody/pull/4475)
+- Chat: Show "Explain Code" and other commands in a more pleasant way, with @-mentions, in the chat. [pull/4424](https://github.com/sourcegraph/cody/pull/4424)
 
 ### Changed
+
+- Autocomplete: Improve finding of related code snippets by breaking camelCase and snake_case words. [pull/4467](https://github.com/sourcegraph/cody/pull/4467)
+
+## [1.20.3]
+
+### Fixed
+
+- Chat: Fix an issue where copying code (with right-click or Cmd/Ctrl+C) causes many event logs and may trip rate limits. [pull/4469](https://github.com/sourcegraph/cody/pull/4469)
+
+## [1.20.2]
+
+### Fixed
+
+- Performance: Reduced the performance overhead for certain types of context fetching, especially for larger files. This might have caused issues with slow autocomplete before. [pull/4446](https://github.com/sourcegraph/cody/pull/4446)
+- Chat: Fixed an issue where the chat view would crash and display a gray screen in VS Code due to an out-of-memory situation. [pull/4459](https://github.com/sourcegraph/cody/pull/4459)
 
 ## [1.20.1]
 
@@ -22,8 +40,6 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Edit: Fixed an issue where the edit commands context was removed from the final prompt. [pull/4432](https://github.com/sourcegraph/cody/pull/4432)
 - Agent: Fixed an issue where the agent incorrectly calculated document range for out of bounds line numbers. [pull/4435](https://github.com/sourcegraph/cody/pull/4435)
 - Chat: Fixed the contrast and colors of send button. [pull/4436](https://github.com/sourcegraph/cody/pull/4436)
-
-### Changed
 
 ## [1.20.0]
 

@@ -13,8 +13,6 @@ export enum FeatureFlag {
     // This flag is used to track the overall eligibility to use the StarCoder model. The `-hybrid`
     // suffix is no longer relevant
     CodyAutocompleteStarCoderHybrid = 'cody-autocomplete-default-starcoder-hybrid',
-    // Enable Llama Code 13b as the default model via Fireworks
-    CodyAutocompleteLlamaCode13B = 'cody-autocomplete-llama-code-13b',
     // Enable StarCoder2 7b and 15b as the default model via Fireworks
     CodyAutocompleteStarCoder2Hybrid = 'cody-autocomplete-starcoder2-hybrid',
     // Enable the FineTuned model as the default model via Fireworks
@@ -40,10 +38,11 @@ export enum FeatureFlag {
     // Continue generations after a single-line completion and use the response to see the next line
     // if the first completion is accepted.
     CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
-    // Enable smart-throttling for more aggressive request cancellation and lower initial latencies
-    CodyAutocompleteSmartThrottle = 'cody-autocomplete-smart-throttle',
     // When activated, reduces the debounce time to 25ms (from 75ms).
     CodyAutocompleteReducedDebounce = 'cody-autocomplete-reduced-debounce',
+    // When enabled, it will extend the number of languages considered for context (e.g. React files
+    // will be able to use CSS files as context).
+    CodyAutocompleteContextExtendLanguagePool = 'cody-autocomplete-context-extend-language-pool',
 
     // use-ssc-for-cody-subscription is a feature flag that enables the use of SSC as the source of truth for Cody subscription data.
     UseSscForCodySubscription = 'use-ssc-for-cody-subscription',

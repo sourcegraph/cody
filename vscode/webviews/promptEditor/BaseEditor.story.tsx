@@ -1,8 +1,9 @@
+import { editorStateToText } from '@sourcegraph/cody-shared'
 import type { Meta, StoryObj } from '@storybook/react'
 import type { EditorState } from 'lexical'
 import { useState } from 'react'
 import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
-import { BaseEditor, editorStateToText } from './BaseEditor'
+import { BaseEditor } from './BaseEditor'
 import styles from './BaseEditor.story.module.css'
 
 const meta: Meta<typeof BaseEditor> = {

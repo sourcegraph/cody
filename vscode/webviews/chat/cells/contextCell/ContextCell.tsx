@@ -1,4 +1,4 @@
-import type { ContextItem, ModelProvider } from '@sourcegraph/cody-shared'
+import type { ContextItem, Model } from '@sourcegraph/cody-shared'
 import { pluralize } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import { BrainIcon } from 'lucide-react'
@@ -18,7 +18,7 @@ import styles from './ContextCell.module.css'
  */
 export const ContextCell: React.FunctionComponent<{
     contextItems: ContextItem[] | undefined
-    model?: ModelProvider['model']
+    model?: Model['model']
     className?: string
 
     /** For use in storybooks only. */
@@ -84,7 +84,7 @@ export const ContextCell: React.FunctionComponent<{
                     <ul className={styles.list}>
                         {contextItems?.map((item, i) => (
                             // biome-ignore lint/suspicious/noArrayIndexKey: stable order
-                            <li key={i}>
+                            <li key={i} data-testid="context-item">
                                 <FileLink
                                     uri={item.uri}
                                     repoName={item.repoName}
@@ -92,12 +92,8 @@ export const ContextCell: React.FunctionComponent<{
                                     source={item.source}
                                     range={item.range}
                                     title={item.title}
-                                    isTooLarge={
-                                        item.type === 'file' && item.isTooLarge && item.source === 'user'
-                                    }
-                                    isIgnored={
-                                        item.type === 'file' && item.isIgnored && item.source === 'user'
-                                    }
+                                    isTooLarge={item.isTooLarge}
+                                    isIgnored={item.isIgnored}
                                     className={clsx(styles.contextItem, MENTION_CLASS_NAME)}
                                     linkClassName={styles.contextItemLink}
                                 />
