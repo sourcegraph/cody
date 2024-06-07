@@ -71,7 +71,8 @@ export async function evaluateGitLogStrategy(
                             workspace: path.basename(options.workspace),
                         },
                         content,
-                        uri
+                        uri,
+                        options
                     )
 
                     const isLastFile = index === parsedDiff.files.length - 1
