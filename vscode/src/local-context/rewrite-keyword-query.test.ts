@@ -40,6 +40,10 @@ describe('rewrite-query', () => {
         expect(expanded).toMatchInlineSnapshot(`"scan tokens in C++"`)
     )
 
+    check(ps`type Zoekt struct {`, expanded =>
+        expect(expanded).toMatchInlineSnapshot(`"struct zoekt"`)
+    )
+
     check(ps`C'est ou la logique pour recloner les dépôts?`, expanded =>
         expect(expanded).toMatchInlineSnapshot(`"clone config logic repository"`)
     )
@@ -48,14 +52,14 @@ describe('rewrite-query', () => {
     // this test just documents the current behavior.
     check(ps`Wie kann ich eine neue Datenbankmigration definieren?`, expanded =>
         expect(expanded).toMatchInlineSnapshot(
-            `"database migration migration configuration migration definition migration script"`
+            `"configuration database definition migration script"`
         )
     )
 
     check(
         ps`Explain how the context window limit is calculated. how much budget is given to @-mentions vs. search context?`,
         expanded =>
-            expect(expanded).toMatchInlineSnapshot(`"budget context window mentions search context"`)
+            expect(expanded).toMatchInlineSnapshot(`"budget context mentions search window"`)
     )
 
     check(

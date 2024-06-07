@@ -5,6 +5,111 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
+    - _id: f5c04a1365a604273be3a155126ba039
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 878
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 255
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            fast: true
+            maxTokensToSample: 400
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: "You are helping the user search over a codebase. List some filename
+                  fragments that would match files relevant to read to answer
+                  the user's query. Present your results in an XML list in the
+                  following format: <keywords><keyword><value>a single
+                  keyword</value><variants>a space separated list of synonyms
+                  and variants of the keyword, including acronyms,
+                  abbreviations, and expansions</variants><weight>a numerical
+                  weight between 0.0 and 1.0 that indicates the importance of
+                  the keyword</weight></keyword></keywords>. Here is the user
+                  query: <userQuery>type Zoekt struct {</userQuery>"
+              - speaker: assistant
+            temperature: 0
+            topK: 1
+        queryString: []
+        url: https://sourcegraph.com/.api/completions/stream
+      response:
+        bodySize: 20175
+        content:
+          mimeType: text/event-stream
+          size: 20175
+          text: >+
+            event: completion
+
+            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ezoekt\u003c/value\u003e\n\u003cvariants\u003esearch search_engine indexer\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003estruct\u003c/value\u003e\n\u003cvariants\u003etype class object\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 07 Jun 2024 22:18:13 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1284
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-06-07T22:18:13.268Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: 6238718613e237a0677ac946f74fbed1
       _order: 0
       cache: {}
@@ -72,7 +177,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Jun 2024 20:44:06 GMT
+            value: Fri, 07 Jun 2024 22:18:15 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -101,7 +206,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-07T20:44:06.232Z
+      startedDateTime: 2024-06-07T22:18:14.426Z
       time: 0
       timings:
         blocked: -1
@@ -178,7 +283,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Jun 2024 20:44:08 GMT
+            value: Fri, 07 Jun 2024 22:18:16 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -207,7 +312,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-07T20:44:07.967Z
+      startedDateTime: 2024-06-07T22:18:16.087Z
       time: 0
       timings:
         blocked: -1
@@ -285,7 +390,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Jun 2024 20:44:10 GMT
+            value: Fri, 07 Jun 2024 22:18:18 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -314,7 +419,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-07T20:44:09.901Z
+      startedDateTime: 2024-06-07T22:18:18.064Z
       time: 0
       timings:
         blocked: -1
@@ -396,7 +501,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Jun 2024 20:44:12 GMT
+            value: Fri, 07 Jun 2024 22:18:20 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -425,7 +530,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-07T20:44:11.888Z
+      startedDateTime: 2024-06-07T22:18:20.003Z
       time: 0
       timings:
         blocked: -1
