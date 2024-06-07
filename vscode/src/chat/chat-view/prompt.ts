@@ -81,7 +81,8 @@ export class DefaultPrompter {
 
             // If there's room left, add context from previous messages (both user-defined and enhanced).
             const historyItems = reverseTranscript.flatMap(m => m?.contextFiles).filter(isDefined)
-            await tryAddContext('history', historyItems)
+            // Reverse the history items to add the most recent items first.
+            await tryAddContext('history', historyItems.reverse())
 
             // Remove content before sending the list to the webview.
             context.used.map(c => ({ ...c, content: undefined }))
