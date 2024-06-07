@@ -1,9 +1,10 @@
 import { type Model, ModelUIGroup } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { BookOpenIcon, ExternalLinkIcon } from 'lucide-react'
+import { BookOpenIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
+import { useTelemetryRecorder } from '../../utils/telemetry'
 import { chatModelIconComponent } from '../ChatModelIcon'
 import { Command, CommandGroup, CommandItem, CommandLink, CommandList } from '../shadcn/ui/command'
 import { ToolbarPopoverItem } from '../shadcn/ui/toolbar'
@@ -156,6 +157,8 @@ export const ModelSelectField: React.FunctionComponent<{
         [onCloseByEscape]
     )
 
+    const telemetryRecorder = useTelemetryRecorder()
+
     if (!usableModels.length || usableModels.length < 1) {
         return null
     }
@@ -191,6 +194,37 @@ export const ModelSelectField: React.FunctionComponent<{
                                 ))}
                             </CommandGroup>
                         ))}
+                        <CommandGroup heading="Enterprise Model Options">
+                            {ENTERPRISE_MODEL_OPTIONS.map(({ id, url, title }) => (
+                                <CommandLink
+                                    key={id}
+                                    href={url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onClick={() =>
+                                        telemetryRecorder.recordEvent(
+                                            'cody.modelSelector',
+                                            'clickEnterpriseModelOption',
+                                            { metadata: { [id]: 1 } }
+                                        )
+                                    }
+                                    className={styles.modelTitleWithIcon}
+                                >
+                                    <span className={styles.modelIcon}>
+                                        {/* wider than normal to fit in with provider icons */}
+                                        <BuildingIcon size={16} strokeWidth={2} />{' '}
+                                    </span>
+                                    <span className={styles.modelName}>{title}</span>
+                                    <span className={styles.rightIcon}>
+                                        <ExternalLinkIcon
+                                            size={16}
+                                            strokeWidth={1.25}
+                                            className="tw-opacity-80"
+                                        />
+                                    </span>
+                                </CommandLink>
+                            ))}
+                        </CommandGroup>
                         <CommandGroup>
                             <CommandLink
                                 href="https://sourcegraph.com/docs/cody/clients/install-vscode#supported-llm-models"
@@ -230,6 +264,32 @@ export const ModelSelectField: React.FunctionComponent<{
         </ToolbarPopoverItem>
     )
 }
+
+const ENTERPRISE_MODEL_DOCS_PAGE =
+    'https://sourcegraph.com/docs/cody/clients/enable-cody-enterprise?utm_source=cody.modelSelector'
+
+const ENTERPRISE_MODEL_OPTIONS: { id: string; url: string; title: string }[] = [
+    {
+        id: 'anthropic-account',
+        url: `${ENTERPRISE_MODEL_DOCS_PAGE}#use-your-organizations-anthropic-account`,
+        title: 'Anthropic account',
+    },
+    {
+        id: 'openai-account',
+        url: `${ENTERPRISE_MODEL_DOCS_PAGE}#use-your-organizations-openai-account`,
+        title: 'OpenAI account',
+    },
+    {
+        id: 'amazon-bedrock',
+        url: `${ENTERPRISE_MODEL_DOCS_PAGE}#use-amazon-bedrock-aws`,
+        title: 'Amazon Bedrock',
+    },
+    {
+        id: 'azure-openai-service',
+        url: `${ENTERPRISE_MODEL_DOCS_PAGE}#use-azure-openai-service`,
+        title: 'Azure OpenAI Service',
+    },
+]
 
 const GROUP_ORDER = [
     ModelUIGroup.Accuracy,
