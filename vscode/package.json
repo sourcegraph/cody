@@ -1107,6 +1107,12 @@
           "type": "string",
           "default": ""
         },
+        "cody.experimental.autocomplete.firstCompletionTimeout": {
+          "order": 99,
+          "type": "number",
+          "default": 1500,
+          "markdownDescription": "TODO"
+        },
         "cody.debug.verbose": {
           "order": 99,
           "type": "boolean",

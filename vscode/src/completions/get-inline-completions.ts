@@ -57,6 +57,7 @@ export interface InlineCompletionsParams {
     abortSignal?: AbortSignal
     tracer?: (data: Partial<ProvideInlineCompletionsItemTraceData>) => void
     artificialDelay?: number
+    firstCompletionTimeout: number
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
@@ -363,6 +364,7 @@ async function doGetInlineCompletions(
         triggerKind,
         providerConfig,
         docContext,
+        firstCompletionTimeout: params.firstCompletionTimeout,
     })
 
     tracer?.({
@@ -395,7 +397,10 @@ async function doGetInlineCompletions(
 }
 
 interface GetCompletionProvidersParams
-    extends Pick<InlineCompletionsParams, 'document' | 'position' | 'triggerKind' | 'providerConfig'> {
+    extends Pick<
+        InlineCompletionsParams,
+        'document' | 'position' | 'triggerKind' | 'providerConfig' | 'firstCompletionTimeout'
+    > {
     docContext: DocumentContext
 }
 
@@ -409,7 +414,7 @@ function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
         position,
         hotStreak: completionProviderConfig.hotStreak,
         // For now the value is static and based on the average multiline completion latency.
-        firstCompletionTimeout: 1500,
+        firstCompletionTimeout: params.firstCompletionTimeout,
     }
 
     // Show more if manually triggered (but only showing 1 is faster, so we use it

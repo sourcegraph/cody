@@ -363,6 +363,7 @@ export class InlineCompletionItemProvider
                     triggerKind,
                     selectedCompletionInfo: context.selectedCompletionInfo,
                     docContext,
+                    // MARK
                     providerConfig: this.config.providerConfig,
                     contextMixer: this.contextMixer,
                     requestManager: this.requestManager,
@@ -379,6 +380,7 @@ export class InlineCompletionItemProvider
                         this.unstable_handleDidPartiallyAcceptCompletionItem.bind(this),
                     completeSuggestWidgetSelection: takeSuggestWidgetSelectionIntoAccount,
                     artificialDelay,
+                    firstCompletionTimeout: 1500, // TODO(beyang): NEXT: set this value from the config
                     completionIntent,
                     lastAcceptedCompletionItem: this.lastAcceptedCompletionItem,
                     isDotComUser: this.config.isDotComUser,
