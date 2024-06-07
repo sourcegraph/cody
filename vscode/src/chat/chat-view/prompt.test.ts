@@ -128,7 +128,7 @@ describe('DefaultPrompter', () => {
             'Hello, world!',
         ])
 
-        // Second chat message should only include previous message's user-provided context
+        // Second chat should give highest priority to new context (both explicit and enhanced)
         info = await new DefaultPrompter(
             [
                 {
@@ -170,7 +170,9 @@ describe('DefaultPrompter', () => {
         for (let i = 0; i < expectedPrefixes.length; i++) {
             const actual = prompt[i].text?.toString()
             const expected = expectedPrefixes[i]
-            expect(actual?.startsWith(expected)).toBe(true)
+            if (!actual?.startsWith(expected)) {
+                expect.fail(`Message mismatch: expected ${actual} to start with ${expectedPrefixes[i]}`)
+            }
         }
     }
 })
