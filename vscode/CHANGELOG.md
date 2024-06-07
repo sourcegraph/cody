@@ -6,6 +6,11 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+- Chat & Commands: New models available for Cody Pro users:
+  - Google Gemini 1.5 Pro [#4360](https://github.com/sourcegraph/cody/pull/4360)
+  - Google Gemini 1.5 Flash [#4360](https://github.com/sourcegraph/cody/pull/4360)
+- Chat: Followup responses now more clearly indicate that prior context in the thread was used to generate the response. [pull/4479](https://github.com/sourcegraph/cody/pull/4479)
+
 ### Fixed
 
 - Chat: Don't append @ when "Add context" is pressed multiple times. [pull/4439](https://github.com/sourcegraph/cody/pull/4439)
@@ -15,6 +20,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Show "Explain Code" and other commands in a more pleasant way, with @-mentions, in the chat. [pull/4424](https://github.com/sourcegraph/cody/pull/4424)
 
 ### Changed
+
+- Autocomplete: Improve finding of related code snippets by breaking camelCase and snake_case words. [pull/4467](https://github.com/sourcegraph/cody/pull/4467)
 
 ## [1.20.3]
 

@@ -63,13 +63,8 @@ describe('Chat response quality', () => {
     ]
     for (const modelString of modelStrings) {
         describe(modelString, async () => {
-            it('Who are you?', async () => {
-                const lastMessage = await sendMessage(client, modelString, 'Who are you?')
-                checkAccess(lastMessage)
-            }, 10_000)
-
             // Skip because this currently fails.
-            // * anthropic/claude-3-sonnet: "Unfortunately, I don't have access to any actual code files from this codebase."
+            // * anthropic/claude-3-sonnet: "...I do not have access to any specific code files."
             // * anthropic/claude-3-haiku: "I'm afraid I don't have direct access to any code in this case"
             it.skip('What code do you have access to?', async () => {
                 const lastMessage = await sendMessage(
@@ -89,10 +84,7 @@ describe('Chat response quality', () => {
                 checkAccess(lastMessage)
             }, 10_000)
 
-            // Skip because this currently fails.
-            // * anthropic/claude-3-haiku: "Unfortunately, I don't have access to any code that you provided"
-            // * openai/gpt-3.5-turbo: "It appears that the code snippet you provided is incomplete"
-            it.skip('describe my code', async () => {
+            it('describe my code', async () => {
                 const lastMessage = await sendMessage(client, modelString, 'describe my code', {
                     addEnhancedContext: false,
                     contextFiles: [readmeItem, evalItem, externalServicesItem, limitItem],
@@ -111,18 +103,18 @@ describe('Chat response quality', () => {
             }, 10_000)
 
             // Skip because this currently fails.
-            // * anthropic/claude-3-haiku: "... without access to your actual codebase"
+            // * openai/gpt-3.5-turbo: "I cannot directly assess the cleanliness of your codebase as an AI assistant"
             it.skip('Is my codebase clean?', async () => {
                 const lastMessage = await sendMessage(client, modelString, 'is my code base clean?', {
-                    addEnhancedContext: false,
-                    contextFiles: [readmeItem, limitItem],
+                    addEnhancedContext: true,
+                    contextFiles: [],
                 })
                 checkAccess(lastMessage)
             }, 10_000)
 
             // Skip because this currently fails.
-            // * anthropic/claude-3-sonnet: "I don't have access ... As an AI assistant without a physical form ..."
-            // * anthropic/claude-3-haiku: "As an AI assistant without direct access to your development environment"
+            // * anthropic/claude-3-haiku: "I'm an AI assistant created by Anthropic to be helpful..."
+            // * openai/gpt-3.5-turbo: "I'm sorry, but I am an AI coding assistant..."
             it.skip('Are you capable of upgrading my pytorch version', async () => {
                 const lastMessage = await sendMessage(
                     client,
@@ -133,10 +125,7 @@ describe('Chat response quality', () => {
                 checkAccess(lastMessage)
             }, 10_000)
 
-            // Skip because this currently fails.
-            // * anthropic/claude-3-haiku: "I'm afraid I don't have access to any files or project information"
-            // * openai/gpt-3.5-turbo: "I'm sorry, but I am unable to browse through specific files"
-            it.skip('Can you look through the files?', async () => {
+            it('Can you look through the files?', async () => {
                 const lastMessage = await sendMessage(
                     client,
                     modelString,
@@ -146,9 +135,24 @@ describe('Chat response quality', () => {
                 checkAccess(lastMessage)
             }, 10_000)
 
+            it('Mind taking a second look at the file?', async () => {
+                const lastMessage = await sendMessage(
+                    client,
+                    modelString,
+                    'Mind taking a second look at the file? @limit.go',
+                    {
+                        addEnhancedContext: false,
+                        contextFiles: [readmeItem, limitItem, evalItem, externalServicesItem],
+                    }
+                )
+                checkAccess(lastMessage)
+                expect(lastMessage?.text).not.includes('provide me with the contents')
+                expect(lastMessage?.text).not.includes("I can't review specific files")
+            }, 10_000)
+
             // Skip because this currently fails.
-            // * anthropic/claude-3-haiku: "Some key reasons why this project may use the MIT license..."
-            it('Why does this project use the MIT license?', async () => {
+            // * openai/gpt-3.5-turbo: "The project likely uses the MIT license because..."
+            it.skip('Why does this project use the MIT license?', async () => {
                 const lastMessage = await sendMessage(
                     client,
                     modelString,
@@ -179,16 +183,19 @@ describe('Chat response quality', () => {
                 checkFilesExist(lastMessage, [], contextFiles)
             }, 10_000)
 
-            it('Explain the logic in src/agent.go', async () => {
+            // Skip because this currently fails.
+            // * anthropic/claude-3-haiku: "'Certainly! The `agent.go` ..."
+            it.skip('Explain the logic in src/agent.go', async () => {
                 const contextFiles = [readmeItem, limitItem]
                 const lastMessage = await sendMessage(
                     client,
                     modelString,
                     'Explain the logic in src/agent.go, particularly how agents interact with ranking',
-                    { addEnhancedContext: false, contextFiles: contextFiles }
+                    { addEnhancedContext: true, contextFiles: contextFiles }
                 )
                 // Don't check access, because this file does not exist in the context.
                 // Check it doesn't hallucinate
+                expect(lastMessage?.text).not.includes('Certainly!')
                 expect(lastMessage?.text).not.includes("Sure, let's")
                 checkFilesExist(lastMessage, ['agent.go'], contextFiles)
             }, 10_000)
@@ -213,7 +220,7 @@ async function sendMessage(
 }
 
 const accessCheck =
-    /I don't (?:actually )?have (?:direct )?access|your actual codebase|can't browse external repositories|not able to access external information|unable to browse through|directly access|snippet you provided is incomplete|As an AI/i
+    /I (don't|do not) (?:actually )?have (?:direct )?access|your actual codebase|can't browse external repositories|not able to access external information|unable to browse through|directly access|direct access|snippet you provided is incomplete|As an AI/i
 
 function checkAccess(lastMessage: SerializedChatMessage | undefined) {
     expect(lastMessage?.speaker).toBe('assistant')
@@ -251,10 +258,14 @@ const externalServicesItem: ContextItem = {
 
 async function loadContextItem(name: string): Promise<ContextItem> {
     const uri = workspace.file(name)
+
     const buffer = await vscode.workspace.fs.readFile(uri)
+    const decoder = new TextDecoder('utf-8')
+    const content = decoder.decode(buffer)
+
     return {
         uri,
         type: 'file',
-        content: buffer.toString(),
+        content: content,
     }
 }

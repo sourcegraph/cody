@@ -58,7 +58,9 @@ export const App: FunctionComponent = () => {
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>()
     const [chatModels, setChatModels] = useState<Model[]>()
-    const [clientState, setClientState] = useState<ClientStateForWebview>({ initialContext: [] })
+    const [clientState, setClientState] = useState<ClientStateForWebview>({
+        initialContext: [],
+    })
     const dispatchClientAction = useClientActionDispatcher()
 
     const [client, setClient] = useState<AgentClient | Error | null>(null)

@@ -9,11 +9,13 @@ import { AgentTextDocument } from '../../AgentTextDocument'
 import { TestClient } from '../../TestClient'
 import type { MessageHandler } from '../../jsonrpc-alias'
 import { renderUnifiedDiff } from '../../renderUnifiedDiff'
+import { vscodeRange } from '../../vscode-type-converters'
+import { EvaluationDocument } from './EvaluationDocument'
 import type { CodyBenchOptions } from './cody-bench'
 import { evaluateEachFile } from './evaluateEachFile'
 import { LlmJudge, type LlmJudgeScore } from './llm-judge'
 import { llmJudgeFixTemplate } from './llm-judge-fix-template'
-import { prettyDiagnostic } from './prettyDiagnostic'
+import { prettyDiagnostic, prettyDiagnosticMessage } from './prettyDiagnostic'
 import { runVoidCommand } from './testTypecheck'
 
 export async function evaluateFixStrategy(
@@ -48,7 +50,8 @@ export async function evaluateFixStrategy(
         if (testCount <= 0) {
             return undefined
         }
-        const document = new AgentTextDocument(
+        const document = EvaluationDocument.from(params, options)
+        const textDocument = new AgentTextDocument(
             ProtocolTextDocumentWithUri.from(params.uri, { content: params.content })
         )
         client.openFile(params.uri, { text: params.content })
@@ -75,52 +78,65 @@ export async function evaluateFixStrategy(
             const newDocument = client.workspace.getDocument(params.uri)
             const newText = newDocument?.getText() ?? ''
             const isFixed = newDiagnostics.length === 0
+            const diagnosticBeforeFix = PromptString.fromTextEditorDiagnostic(
+                {
+                    text: prettyDiagnostic(diagnostic),
+                    message: '',
+                    range: diagnostic.location.range,
+                    type: 'error',
+                },
+                params.uri
+            ).text
+            const diagnosticsAfterFix = PromptString.fromTextEditorDiagnostic(
+                {
+                    text: newDiagnostics.map(d => prettyDiagnostic(d)).join('\n'),
+                    message: '',
+                    range:
+                        newDiagnostics.length > 0
+                            ? newDiagnostics[0].location.range
+                            : new vscode.Range(0, 0, 0, 0),
+                    type: 'error',
+                },
+                params.uri
+            ).text
             const score = await llm.judge(
                 llmJudgeFixTemplate({
-                    codeBeforeFix: PromptString.fromDocumentText(document),
+                    codeBeforeFix: PromptString.fromDocumentText(textDocument),
                     codeAfterFix: newDocument ? PromptString.fromDocumentText(newDocument) : ps``,
-                    diagnosticBeforeFix: PromptString.fromTextEditorDiagnostic(
-                        {
-                            text: prettyDiagnostic(diagnostic),
-                            message: '',
-                            range: diagnostic.location.range,
-                            type: 'error',
-                        },
-                        params.uri
-                    ).text,
-                    diagnosticsAfterFix: PromptString.fromTextEditorDiagnostic(
-                        {
-                            text: newDiagnostics.map(d => prettyDiagnostic(d)).join('\n'),
-                            message: '',
-                            range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-                            type: 'error',
-                        },
-                        params.uri
-                    ).text,
+                    diagnosticBeforeFix,
+                    diagnosticsAfterFix,
                 })
             )
-            console.log(`${params.file}: ${isFixed ? 'Fixed!' : 'Still errors!'}`)
+            console.log(`${params.file}: ${isFixed ? 'Fixed!' : 'Still errors!'} score=${score.score}`)
             for (const newDiagnostic of newDiagnostics) {
                 console.log(prettyDiagnostic(newDiagnostic))
             }
-            console.log({
-                name: options.fixture.name,
-                ...score,
-            })
-            console.log(
-                renderUnifiedDiff(
-                    { header: `${params.uri.fsPath} (before)`, text: params.content },
-                    { header: `${params.uri.fsPath} (after)`, text: newText }
-                )
+            const unifiedDiff = renderUnifiedDiff(
+                { header: `${params.uri.fsPath} (before)`, text: params.content },
+                { header: `${params.uri.fsPath} (after)`, text: newText }
             )
+            console.log(unifiedDiff)
             totalErrors += 1
             if (isFixed) {
                 fixedErrors += 1
             }
             testCount -= 1
             scores.push(score)
+            document.pushItem({
+                range: vscodeRange(diagnostic.location.range),
+
+                editDiff: renderUnifiedDiff(
+                    { header: '(before)', text: params.content },
+                    { header: '(after)', text: newText }
+                ),
+                llmJudgeScore: score.scoreNumeric,
+                llmJudgeReasoning: score.reasoning,
+                resultTypechecks: newDiagnostics.length === 0,
+                fixBeforeDiagnostic: prettyDiagnosticMessage(diagnostic),
+                fixAfterDiagnostic: newDiagnostics.map(d => prettyDiagnosticMessage(d)).join('\n'),
+            })
         }
-        return undefined
+        return document
     })
     console.log({
         fixture: options.fixture.name,

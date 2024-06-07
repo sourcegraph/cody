@@ -40,6 +40,10 @@ import SourcegraphLogo from '../../icons/providers/sourcegraph.svg?react'
 import styles from './MentionMenuItem.module.css'
 
 function getDescription(item: ContextItem, query: MentionQuery): string {
+    if (item.description) {
+        return item.description
+    }
+
     const range = query.range ?? item.range
     const defaultDescription = `${displayPath(item.uri)}:${range ? displayLineRange(range) : ''}`
 
@@ -65,7 +69,8 @@ export const MentionMenuContextItemContent: FunctionComponent<{
     const isOpenCtx = item.type === 'openctx'
     const isFileType = item.type === 'file'
     const isSymbol = item.type === 'symbol'
-    const icon = isSymbol ? (item.kind === 'class' ? 'symbol-structure' : 'symbol-method') : null
+    const icon =
+        item.icon || (isSymbol ? (item.kind === 'class' ? 'symbol-structure' : 'symbol-method') : null)
     const title = item.title ?? (isSymbol ? item.symbolName : displayPathBasename(item.uri))
     const description = getDescription(item, query)
 
@@ -83,9 +88,7 @@ export const MentionMenuContextItemContent: FunctionComponent<{
     return (
         <>
             <div className={styles.row}>
-                {item.type === 'symbol' && icon && (
-                    <i className={`codicon codicon-${icon}`} title={item.kind} />
-                )}
+                {icon && <i className={`codicon codicon-${icon}`} title={isSymbol ? item.kind : ''} />}
                 <span className={clsx(styles.title, warning && styles.titleWithWarning)}>{title}</span>
                 {description && <span className={styles.description}>{description}</span>}
             </div>

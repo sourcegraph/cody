@@ -79,7 +79,7 @@ export class DefaultPrompter {
                 await tryAddContext('enhanced', autoContext)
             }
 
-            // Add user and enhanced context from chat transcript
+            // If there's room left, add context from previous messages (both user-defined and enhanced).
             const historyItems = reverseTranscript.flatMap(m => m?.contextFiles).filter(isDefined)
             await tryAddContext('history', historyItems)
 
