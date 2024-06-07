@@ -28,6 +28,8 @@ import type { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } fro
 const INTERACTION_PROVIDERS: Record<EditProvider, EditLLMInteraction> = {
     Anthropic: claude,
     OpenAI: openai,
+    // NOTE: Sharing the same model for GPT models for now.
+    Google: openai,
 } as const
 
 const getInteractionArgsFromIntent = (

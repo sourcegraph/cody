@@ -82,11 +82,6 @@ export class DefaultPrompter {
             // NOTE: Only used for display excluded context from user-specified context items in UI
             context.ignored.push(...newUserContext.ignored.map(c => ({ ...c, isTooLarge: true })))
 
-            // Add user and enhanced context from previous messages (chat transcript)
-            const historyItems = reverseTranscript.flatMap(m => m?.contextFiles).filter(isDefined)
-            const historyContext = await promptBuilder.tryAddContext('history', historyItems.reverse())
-            ignoredContext.transcript += historyContext.ignored.length
-
             // Get new enhanced context from current editor or broader search when enabled
             if (this.getEnhancedContext) {
                 const lastMessage = reverseTranscript[0]
@@ -104,6 +99,11 @@ export class DefaultPrompter {
                 context.used.push(...newEnhancedMessages.added)
                 ignoredContext.enhanced += newEnhancedMessages.ignored.length
             }
+
+            // If there's room left, add context from previous messages (both user-defined and enhanced).
+            const historyItems = reverseTranscript.flatMap(m => m?.contextFiles).filter(isDefined)
+            const historyContext = await promptBuilder.tryAddContext('history', historyItems.reverse())
+            ignoredContext.transcript += historyContext.ignored.length
 
             logDebug(
                 'DefaultPrompter.makePrompt',
