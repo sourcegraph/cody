@@ -152,6 +152,52 @@ const CommandShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanE
 }
 CommandShortcut.displayName = 'CommandShortcut'
 
+export const CommandLink: React.FunctionComponent<React.AnchorHTMLAttributes<HTMLAnchorElement>> = ({
+    href,
+    className,
+    children,
+    ...props
+}) => {
+    const linkRef = React.useRef<HTMLAnchorElement>(null)
+    return (
+        <CommandItem
+            onSelect={() => {
+                // TODO: When cmdk supports links, use that instead. This workaround is only needed
+                // because the link's native onClick is not being fired because cmdk traps it. See
+                // https://github.com/pacocoursey/cmdk/issues/258.
+                //
+                // This workaround successfully opens an external link in VS Code webviews (which
+                // block `window.open` and plain click MouseEvents) and in browsers.
+                try {
+                    linkRef.current?.focus()
+                    linkRef.current?.dispatchEvent(
+                        new MouseEvent('click', {
+                            button: 0,
+                            ctrlKey: true,
+                            metaKey: true,
+                        })
+                    )
+                } catch (error) {
+                    console.error(error)
+                }
+            }}
+            asChild
+        >
+            <a
+                {...props}
+                href={href}
+                className={cn(
+                    '!tw-text-foreground aria-selected:!tw-text-accent-foreground hover:!tw-text-accent-foreground',
+                    className
+                )}
+                ref={linkRef}
+            >
+                {children}
+            </a>
+        </CommandItem>
+    )
+}
+
 export {
     Command,
     CommandDialog,
