@@ -50,11 +50,10 @@ public class RepoUtil {
       remoteUrl = getRemoteRepoUrl(project, file);
       remoteUrl = doReplacements(codyProjectSettings, remoteUrl);
 
-      // If the current branch doesn't exist on the remote or if the remote
-      // for the current branch doesn't correspond with the sourcegraph remote,
+      // If the current branch doesn't exist on the remote
       // use the default branch for the project.
       remoteBranchName = getRemoteBranchName(project, file);
-      if (remoteBranchName == null || !remoteUrl.contains(remoteBranchName)) {
+      if (remoteBranchName == null) {
         remoteBranchName = codyProjectSettings.getDefaultBranchName();
       }
     } catch (Exception err) {
