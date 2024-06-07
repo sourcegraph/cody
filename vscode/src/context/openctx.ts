@@ -5,44 +5,43 @@ import RemoteFileProvider from './openctx/remoteFileSearch'
 import RemoteRepositorySearch from './openctx/remoteRepositorySearch'
 import WebProvider from './openctx/web'
 
-export function exposeOpenCtxClient(
+export async function exposeOpenCtxClient(
     secrets: vscode.SecretStorage,
     config: ConfigurationWithAccessToken
-): void {
+) {
     logDebug('openctx', 'OpenCtx is enabled in Cody')
-    import('@openctx/vscode-lib')
-        .then(({ createController }) => {
-            const providers = [
-                {
-                    providerUri: WebProvider.providerUri,
-                    settings: true,
-                    provider: WebProvider,
-                },
-                {
-                    providerUri: RemoteRepositorySearch.providerUri,
-                    settings: true,
-                    provider: RemoteRepositorySearch,
-                },
-            ]
+    try {
+        const { createController } = await import('@openctx/vscode-lib')
+        const providers = [
+            {
+                providerUri: WebProvider.providerUri,
+                settings: true,
+                provider: WebProvider,
+            },
+            {
+                providerUri: RemoteRepositorySearch.providerUri,
+                settings: true,
+                provider: RemoteRepositorySearch,
+            },
+        ]
 
-            if (config.experimentalNoodle) {
-                providers.push({
-                    providerUri: RemoteFileProvider.providerUri,
-                    settings: true,
-                    provider: RemoteFileProvider,
-                })
-            }
+        if (config.experimentalNoodle) {
+            providers.push({
+                providerUri: RemoteFileProvider.providerUri,
+                settings: true,
+                provider: RemoteFileProvider,
+            })
+        }
 
-            setOpenCtxClient(
-                createController({
-                    outputChannel,
-                    secrets,
-                    features: {},
-                    providers,
-                }).controller.client
-            )
-        })
-        .catch(error => {
-            logDebug('openctx', `Failed to load OpenCtx client: ${error}`)
-        })
+        setOpenCtxClient(
+            createController({
+                outputChannel,
+                secrets,
+                features: {},
+                providers,
+            }).controller.client
+        )
+    } catch (error) {
+        logDebug('openctx', `Failed to load OpenCtx client: ${error}`)
+    }
 }
