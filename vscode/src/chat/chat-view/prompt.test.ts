@@ -98,7 +98,7 @@ describe('DefaultPrompter', () => {
         let info = await new DefaultPrompter(
             [
                 {
-                    uri: vscode.Uri.file('/user1.go'),
+                    uri: vscode.Uri.file('user1.go'),
                     type: 'file',
                     content: 'import vscode',
                     source: ContextItemSource.User,
@@ -107,7 +107,7 @@ describe('DefaultPrompter', () => {
             () =>
                 Promise.resolve([
                     {
-                        uri: vscode.Uri.file('/enhanced1.ts'),
+                        uri: vscode.Uri.file('enhanced1.ts'),
                         type: 'file',
                         content: 'import vscode',
                     },
