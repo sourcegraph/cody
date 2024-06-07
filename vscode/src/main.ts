@@ -135,6 +135,7 @@ const register = async (
 
     setClientNameVersion(platform.extensionClient.clientName, platform.extensionClient.clientVersion)
     const authProvider = await AuthProvider.createAuthProvider(initialConfig)
+    await localStorage.setConfig(initialConfig)
 
     // Initialize `displayPath` first because it might be used to display paths in error messages
     // from the subsequent initialization.
