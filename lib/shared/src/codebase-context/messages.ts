@@ -33,6 +33,11 @@ interface ContextItemCommon {
     title?: string
 
     /**
+     * The description of the context item used to display in mentions menu.
+     */
+    description?: string
+
+    /**
      * The source of this context item.
      */
     source?: ContextItemSource
@@ -57,6 +62,11 @@ interface ContextItemCommon {
      * if from a built-in context source such as files and symbols).
      */
     provider?: string
+
+    /**
+     * Lucid icon name for the context item
+     */
+    icon?: string
 }
 
 /**
@@ -124,6 +134,7 @@ export interface ContextItemTree extends ContextItemCommon {
     isWorkspaceRoot: true
 
     content: null
+    name: string
 }
 
 /**

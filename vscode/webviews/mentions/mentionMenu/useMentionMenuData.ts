@@ -1,5 +1,6 @@
 import type { ContextItem, ContextMentionProviderMetadata } from '@sourcegraph/cody-shared'
 import { useMemo, useState } from 'react'
+import { useClientState } from '../../client/clientState'
 import { useChatContextItems } from '../../promptEditor/plugins/atMentions/chatContextClient'
 import { prepareContextItemForMentionMenu } from '../../promptEditor/plugins/atMentions/util'
 import { useContextProviders } from '../providers'
@@ -28,6 +29,7 @@ export function useMentionMenuParams(): {
 
 export interface MentionMenuData {
     providers: ContextMentionProviderMetadata[]
+    initialContextItems?: (ContextItem & { icon?: string })[]
     items: ContextItem[] | undefined
 }
 
@@ -41,9 +43,10 @@ export function useMentionMenuData(
     { remainingTokenBudget, limit }: { remainingTokenBudget: number; limit: number }
 ): MentionMenuData {
     const results = useChatContextItems(params.query, params.parentItem)
-    const queryLower = params.query?.toLowerCase() ?? null
+    const queryLower = params.query?.toLowerCase()?.trim() ?? null
 
     const { providers } = useContextProviders()
+    const clientState = useClientState()
 
     return useMemo(
         () => ({
@@ -52,21 +55,22 @@ export function useMentionMenuData(
                     ? []
                     : providers.filter(
                           provider =>
-                              provider.id.toLowerCase().includes(queryLower.trim()) ||
-                              provider.title?.toLowerCase().includes(queryLower.trim()) ||
-                              provider.id
-                                  .toLowerCase()
-                                  .replaceAll(' ', '')
-                                  .includes(queryLower.trim()) ||
-                              provider.title
-                                  ?.toLowerCase()
-                                  .replaceAll(' ', '')
-                                  .includes(queryLower.trim())
+                              provider.id.toLowerCase().includes(queryLower) ||
+                              provider.title?.toLowerCase().includes(queryLower) ||
+                              provider.id.toLowerCase().replaceAll(' ', '').includes(queryLower) ||
+                              provider.title?.toLowerCase().replaceAll(' ', '').includes(queryLower)
                       ),
             items: results
                 ?.slice(0, limit)
                 .map(item => prepareContextItemForMentionMenu(item, remainingTokenBudget)),
+            initialContextItems: clientState.initialContext.filter(item =>
+                queryLower
+                    ? item.title?.toLowerCase().includes(queryLower) ||
+                      item.uri.toString().toLowerCase().includes(queryLower) ||
+                      item.description?.toString().toLowerCase().includes(queryLower)
+                    : true
+            ),
         }),
-        [params.parentItem, providers, queryLower, results, limit, remainingTokenBudget]
+        [params.parentItem, providers, queryLower, results, limit, remainingTokenBudget, clientState]
     )
 }
