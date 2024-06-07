@@ -9,8 +9,7 @@ import {
     isDefined,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { logDebug } from '../../log'
-import { PromptBuilder } from '../../prompt-builder'
+import { PromptBuilder, type PromptContextType } from '../../prompt-builder'
 import type { SimpleChatModel } from './SimpleChatModel'
 
 interface PromptInfo {
@@ -22,7 +21,7 @@ interface PromptInfo {
      */
     context: {
         used: ContextItem[]
-        ignored: ContextItem[]
+        excluded: ContextItem[]
     }
 }
 
@@ -53,64 +52,43 @@ export class DefaultPrompter {
                 )
             }
 
-            // Add existing chat transcript messages
+            // Add existing chat transcript messages.
             const reverseTranscript = [...chat.getDehydratedMessages()].reverse()
-            const transcriptLimitReached = promptBuilder.tryAddMessages(reverseTranscript)
-            if (transcriptLimitReached) {
-                logDebug(
-                    'DefaultPrompter.makePrompt',
-                    `Ignored ${transcriptLimitReached} chat messages due to context limit`
-                )
+            const lastMessage = this.getEnhancedContext && reverseTranscript[0]
+            if (!lastMessage?.text || lastMessage.speaker !== 'human') {
+                throw new Error('Last message in prompt needs speaker "human", but was "assistant"')
+            }
+            promptBuilder.tryAddMessages(reverseTranscript)
+
+            // Context items that were added/excluded in the final prompt.
+            // Excluded items are items that were ignored due to context limit or context filter (cody ignored).
+            const context: PromptInfo['context'] = { used: [], excluded: [] }
+            async function tryAddContext(type: PromptContextType, items: ContextItem[]): Promise<void> {
+                const processed = await promptBuilder.tryAddContext(type, items)
+                context.used.push(...processed.added)
+                context.excluded.push(...processed.ignored)
             }
 
-            // Counter for context items categorized by source
-            const ignoreCounter = { user: 0, enhanced: 0, transcript: 0 }
+            // Add new user-specified context, e.g. @-mentions, active selection, etc.
+            await tryAddContext('user', this.explicitContext)
 
-            // NOTE: For UI display only & not used in the prompt.
-            const uiContext: PromptInfo['context'] = { used: [], ignored: [] }
-
-            // Add context from new user-specified context items, e.g. @-mentions, active selection, etc.
-            const newUserContext = await promptBuilder.tryAddContext('user', this.explicitContext)
-            uiContext.used.push(...newUserContext.added)
-            uiContext.ignored.push(...newUserContext.ignored)
-            ignoreCounter.user += newUserContext.ignored.length
-
-            // Get new enhanced context from current editor or broader search when enabled
-            if (this.getEnhancedContext) {
-                const lastMessage = reverseTranscript[0]
-                if (!lastMessage?.text || lastMessage.speaker !== 'human') {
-                    throw new Error('Last message in prompt needs speaker "human", but was "assistant"')
-                }
-
-                const newEnhancedContextItems = await this.getEnhancedContext(lastMessage.text)
-                const newEnhancedMessages = await promptBuilder.tryAddContext(
-                    'enhanced',
-                    newEnhancedContextItems
-                )
-                // NOTE: We deliberately not to show the new enhanced context that are ignored in UI,
-                // because these items were unknown to the users.
-                uiContext.used.push(...newEnhancedMessages.added)
-                ignoreCounter.enhanced += newEnhancedMessages.ignored.length
+            // Add auto context
+            const autoContext = await this.getEnhancedContext?.(lastMessage.text)
+            if (autoContext) {
+                await tryAddContext('enhanced', autoContext)
             }
 
-            // Add user and enhanced context from previous messages (chat transcript)
+            // Add user and enhanced context from chat transcript
             const historyItems = reverseTranscript.flatMap(m => m?.contextFiles).filter(isDefined)
-            const historyContext = await promptBuilder.tryAddContext('history', historyItems.reverse())
-            uiContext.used.push(...historyContext.added)
-            uiContext.ignored.push(...historyContext.ignored)
-            ignoreCounter.transcript += historyContext.ignored.length
+            await tryAddContext('history', historyItems)
 
-            logDebug('DefaultPrompter', 'Ignored context due to context limit', {
-                verbose: ignoreCounter,
-            })
-
-            // Remove content from uiContext before sending them to webview.
-            uiContext.used.map(c => ({ ...c, isTooLarge: false, content: undefined }))
-            uiContext.ignored.map(c => ({ ...c, isTooLarge: true, content: undefined }))
+            // Remove content before sending the list to the webview.
+            context.used.map(c => ({ ...c, content: undefined }))
+            context.excluded.map(c => ({ ...c, content: undefined }))
 
             return {
                 prompt: promptBuilder.build(),
-                context: uiContext,
+                context,
             }
         })
     }

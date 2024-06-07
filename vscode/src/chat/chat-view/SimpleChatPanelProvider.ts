@@ -1009,7 +1009,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         // Update UI based on prompt construction
         // Includes the excluded context items to display in the UI
-        this.chatModel.setLastMessageContext([...context.used, ...context.ignored])
+        this.chatModel.setLastMessageContext([...context.used, ...context.excluded])
 
         if (sendTelemetry) {
             // Create a summary of how many code snippets of each context source are being
@@ -1036,7 +1036,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             // NOTE: The private context stats are only logged for DotCom users
             const privateContextStats = {
                 included: getContextStats(context.used.filter(f => f.source === 'user')),
-                excluded: getContextStats(context.ignored.filter(f => f.source === 'user')),
+                excluded: getContextStats(context.excluded.filter(f => f.source === 'user')),
             }
             sendTelemetry(contextSummary, privateContextStats)
         }

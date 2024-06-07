@@ -40,7 +40,7 @@ describe('DefaultPrompter', () => {
             },
         ])
         expect(context.used).toEqual([])
-        expect(context.ignored).toEqual([])
+        expect(context.excluded).toEqual([])
     })
 
     it('adds the cody.chat.preInstruction vscode setting if set', async () => {
@@ -78,6 +78,6 @@ describe('DefaultPrompter', () => {
             },
         ])
         expect(context.used).toEqual([])
-        expect(context.ignored).toEqual([])
+        expect(context.excluded).toEqual([])
     })
 })
