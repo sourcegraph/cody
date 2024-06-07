@@ -144,10 +144,7 @@ export class PromptBuilder {
                 contextMessage,
             ])
 
-            // Don't update context items from the past (history items) unless undefined.
-            if (type !== 'history' || item.isTooLarge === undefined) {
-                item.isTooLarge = !isWithinLimit
-            }
+            item.isTooLarge = !isWithinLimit
 
             // Skip item that would exceed token limit & add it to the ignored list.
             if (!isWithinLimit) {

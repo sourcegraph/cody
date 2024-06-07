@@ -64,24 +64,16 @@ export class DefaultPrompter {
             }
 
             // Counter for context items categorized by source
-            const ignoredContext = { user: 0, enhanced: 0, transcript: 0 }
+            const ignoreCounter = { user: 0, enhanced: 0, transcript: 0 }
+
+            // NOTE: For UI display only & not used in the prompt.
+            const uiContext: PromptInfo['context'] = { used: [], ignored: [] }
 
             // Add context from new user-specified context items, e.g. @-mentions, active selection, etc.
             const newUserContext = await promptBuilder.tryAddContext('user', this.explicitContext)
-            ignoredContext.user += newUserContext.ignored.length
-
-            // Lists of context items added from the last human message.
-            // NOTE: For UI display only, not used in the prompt.
-            const context: PromptInfo['context'] = { used: [], ignored: [] }
-            // List of valid context items added from the last human message
-            context.used.push(...newUserContext.added.map(c => ({ ...c, isTooLarge: false })))
-            // NOTE: Only used for display excluded context from user-specified context items in UI
-            context.ignored.push(...newUserContext.ignored.map(c => ({ ...c, isTooLarge: true })))
-
-            // Add user and enhanced context from previous messages (chat transcript)
-            const historyItems = reverseTranscript.flatMap(m => m?.contextFiles).filter(isDefined)
-            const historyContext = await promptBuilder.tryAddContext('history', historyItems.reverse())
-            ignoredContext.transcript += historyContext.ignored.length
+            uiContext.used.push(...newUserContext.added)
+            uiContext.ignored.push(...newUserContext.ignored)
+            ignoreCounter.user += newUserContext.ignored.length
 
             // Get new enhanced context from current editor or broader search when enabled
             if (this.getEnhancedContext) {
@@ -96,19 +88,33 @@ export class DefaultPrompter {
                     newEnhancedContextItems
                 )
                 // Because this enhanced context is added for the last human message,
-                // we will also add it to the context list for display.
-                context.used.push(...newEnhancedMessages.added)
-                ignoredContext.enhanced += newEnhancedMessages.ignored.length
+                // we will also add it to the context list for UI to display.
+                // NOTE: We deliberately not to show the new ignored enhanced context in UI because
+                // these items were unknown to the users.
+                uiContext.used.push(...newEnhancedMessages.added)
+                ignoreCounter.enhanced += newEnhancedMessages.ignored.length
             }
 
-            logDebug(
-                'DefaultPrompter.makePrompt',
-                `Ignored context due to context limit: user=${ignoredContext.user}, enhanced=${ignoredContext.enhanced}, previous=${ignoredContext.transcript}`
-            )
+            // Add user and enhanced context from previous messages (chat transcript)
+            const historyItems = reverseTranscript.flatMap(m => m?.contextFiles).filter(isDefined)
+            const historyContext = await promptBuilder.tryAddContext('history', historyItems.reverse())
+            uiContext.used.push(...historyContext.added)
+            uiContext.ignored.push(...historyContext.ignored)
+            ignoreCounter.transcript += historyContext.ignored.length
+
+            logDebug('DefaultPrompter', 'Ignored context due to context limit', {
+                verbose: ignoreCounter,
+            })
+
+            // We alter the isTooLarge flag for the uiContext for the UI to display,
+            // but we do not alter the promptBuilder's isTooLarge flag because we want
+            // to keep the context items display in the previous chat messages.
+            uiContext.used.map(c => ({ ...c, isTooLarge: false }))
+            uiContext.ignored.map(c => ({ ...c, isTooLarge: true }))
 
             return {
                 prompt: promptBuilder.build(),
-                context,
+                context: uiContext,
             }
         })
     }
