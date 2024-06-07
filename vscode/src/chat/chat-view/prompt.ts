@@ -87,10 +87,8 @@ export class DefaultPrompter {
                     'enhanced',
                     newEnhancedContextItems
                 )
-                // Because this enhanced context is added for the last human message,
-                // we will also add it to the context list for UI to display.
-                // NOTE: We deliberately not to show the new ignored enhanced context in UI because
-                // these items were unknown to the users.
+                // NOTE: We deliberately not to show the new enhanced context that are ignored in UI,
+                // because these items were unknown to the users.
                 uiContext.used.push(...newEnhancedMessages.added)
                 ignoreCounter.enhanced += newEnhancedMessages.ignored.length
             }
@@ -106,11 +104,9 @@ export class DefaultPrompter {
                 verbose: ignoreCounter,
             })
 
-            // We alter the isTooLarge flag for the uiContext for the UI to display,
-            // but we do not alter the promptBuilder's isTooLarge flag because we want
-            // to keep the context items display in the previous chat messages.
-            uiContext.used.map(c => ({ ...c, isTooLarge: false }))
-            uiContext.ignored.map(c => ({ ...c, isTooLarge: true }))
+            // Remove content from uiContext before sending them to webview.
+            uiContext.used.map(c => ({ ...c, isTooLarge: false, content: undefined }))
+            uiContext.ignored.map(c => ({ ...c, isTooLarge: true, content: undefined }))
 
             return {
                 prompt: promptBuilder.build(),
