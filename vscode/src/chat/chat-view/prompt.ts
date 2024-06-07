@@ -54,10 +54,6 @@ export class DefaultPrompter {
 
             // Add existing chat transcript messages.
             const reverseTranscript = [...chat.getDehydratedMessages()].reverse()
-            const lastMessage = this.getEnhancedContext && reverseTranscript[0]
-            if (!lastMessage?.text || lastMessage.speaker !== 'human') {
-                throw new Error('Last message in prompt needs speaker "human", but was "assistant"')
-            }
             promptBuilder.tryAddMessages(reverseTranscript)
 
             // Context items that were added/excluded in the final prompt.
@@ -73,8 +69,13 @@ export class DefaultPrompter {
             await tryAddContext('user', this.explicitContext)
 
             // Add auto context
-            const autoContext = await this.getEnhancedContext?.(lastMessage.text)
-            if (autoContext) {
+            if (this.getEnhancedContext) {
+                const lastMessage = reverseTranscript[0]
+                if (!lastMessage?.text || lastMessage.speaker !== 'human') {
+                    throw new Error('Last message in prompt needs speaker "human", but was "assistant"')
+                }
+
+                const autoContext = await this.getEnhancedContext(lastMessage.text)
                 await tryAddContext('enhanced', autoContext)
             }
 
