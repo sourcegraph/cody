@@ -355,7 +355,7 @@ const attachArtifacts = async (
     const [video] = await fs.readdir(getTempVideoDir(testInfo.title))
     const oldVideoPath = path.join(getTempVideoDir(testInfo.title), video)
     const newVideoPath = path.join(assetsDirectory, 'videos', `${testSlug}.webm`)
-    await fs.mkdir(path.join(assetsDirectory, 'video'), { recursive: true })
+    await fs.mkdir(path.join(assetsDirectory, 'videos'), { recursive: true })
     await fs.rename(oldVideoPath, newVideoPath)
     await testInfo.attach('video', { path: newVideoPath, contentType: 'video/webm' })
 }
