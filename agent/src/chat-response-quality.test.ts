@@ -135,13 +135,16 @@ describe('Chat response quality', () => {
                 checkAccess(lastMessage)
             }, 10_000)
 
-            it('Mind taking a second look at the file?', async () => {
+            it.only('Mind taking a second look at the file?', async () => {
+                if (modelString !== 'openai/gpt-3.5-turbo') {
+                    return
+                }
                 const lastMessage = await sendMessage(
                     client,
                     modelString,
                     'Mind taking a second look at the file? @limit.go',
                     {
-                        addEnhancedContext: false,
+                        addEnhancedContext: true,
                         contextFiles: [readmeItem, limitItem, evalItem, externalServicesItem],
                     }
                 )

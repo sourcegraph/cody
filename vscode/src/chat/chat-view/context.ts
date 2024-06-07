@@ -21,6 +21,7 @@ import type { ContextRankingController } from '../../local-context/context-ranki
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
+import { sortContextItems } from './agentContextSorting'
 
 interface HumanInput {
     text: PromptString
@@ -214,6 +215,16 @@ async function searchRemote(
  * Uses symf to conduct a local search within the current workspace folder
  */
 async function searchSymf(
+    symf: SymfRunner | null,
+    editor: VSCodeEditor,
+    userText: PromptString,
+    blockOnIndex = false
+): Promise<ContextItem[]> {
+    const results = await searchSymfRaw(symf, editor, userText, blockOnIndex)
+    sortContextItems(results)
+    return results
+}
+async function searchSymfRaw(
     symf: SymfRunner | null,
     editor: VSCodeEditor,
     userText: PromptString,

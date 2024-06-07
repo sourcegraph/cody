@@ -74,6 +74,7 @@ export function startPollyRecording(userOptions: PollyOptions): Polly {
                 if (header) {
                     header = redactAuthorizationHeader(header)
                 }
+                console.log({ headers })
 
                 // Normalize to always be a single header value (not an array).
                 return header ? { authorization: header } : {}
