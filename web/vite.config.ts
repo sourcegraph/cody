@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 import dts from 'vite-plugin-dts'
 import react from '@vitejs/plugin-react-swc'
 
+// @ts-ignore
 import { defineProjectWithDefaults } from '../.config/viteShared'
 
 const FAKE_PROCESS_ENV: Record<string, string | boolean> = {

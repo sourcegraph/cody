@@ -218,20 +218,6 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
 
     }, [vscodeAPI])
 
-    useEffect(() => {
-        async function getChatHistory() {
-            if (!client || isErrorLike(client)) {
-                return
-            }
-
-            const chatHistory = await client.rpc.sendRequest('chat/export', null)
-
-            console.log('CHAT_HISTORY', { chatHistory })
-        }
-
-        getChatHistory()
-    }, [client]);
-
     // Deprecated V1 telemetry
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
     // V2 telemetry recorder
