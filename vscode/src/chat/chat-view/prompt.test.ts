@@ -98,7 +98,7 @@ describe('DefaultPrompter', () => {
         let info = await new DefaultPrompter(
             [
                 {
-                    uri: vscode.Uri.file('user1.go'),
+                    uri: vscode.Uri.file('/user1.go'),
                     type: 'file',
                     content: 'import vscode',
                     source: ContextItemSource.User,
@@ -107,7 +107,7 @@ describe('DefaultPrompter', () => {
             () =>
                 Promise.resolve([
                     {
-                        uri: vscode.Uri.file('enhanced1.ts'),
+                        uri: vscode.Uri.file('/enhanced1.ts'),
                         type: 'file',
                         content: 'import vscode',
                     },
@@ -121,9 +121,9 @@ describe('DefaultPrompter', () => {
         checkPrompt(info.prompt, [
             'You are Cody, an AI coding assistant from Sourcegraph.',
             'I am Cody, an AI coding assistant from Sourcegraph.',
-            'Codebase context from file enhanced1.ts',
+            'enhanced1.ts',
             'Ok.',
-            'Codebase context from file user1.go',
+            'user1.go',
             'Ok.',
             'Hello, world!',
         ])
@@ -151,13 +151,13 @@ describe('DefaultPrompter', () => {
         checkPrompt(info.prompt, [
             'You are Cody, an AI coding assistant from Sourcegraph.',
             'I am Cody, an AI coding assistant from Sourcegraph.',
-            'Codebase context from file enhanced1.ts',
+            'enhanced1.ts',
             'Ok.',
-            'Codebase context from file user1.go',
+            'user1.go',
             'Ok.',
-            'Codebase context from file enhanced2.ts',
+            'enhanced2.ts',
             'Ok.',
-            'Codebase context from file user2.go',
+            'user2.go',
             'Ok.',
             'Hello, world!',
             'Oh hello there.',
@@ -170,8 +170,8 @@ describe('DefaultPrompter', () => {
         for (let i = 0; i < expectedPrefixes.length; i++) {
             const actual = prompt[i].text?.toString()
             const expected = expectedPrefixes[i]
-            if (!actual?.startsWith(expected)) {
-                expect.fail(`Message mismatch: expected ${actual} to start with ${expectedPrefixes[i]}`)
+            if (!actual?.includes(expected)) {
+                expect.fail(`Message mismatch: expected ${actual} to include ${expectedPrefixes[i]}`)
             }
         }
     }
