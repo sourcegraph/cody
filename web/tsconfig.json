@@ -5,8 +5,8 @@
     "module": "ESNext",
     "outDir": "dist",
     "jsx": "react-jsx",
-    "skipDefaultLibCheck": true,
     "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
     "emitDeclarationOnly": true,
     "lib": ["ESNext", "DOM"]
   },
