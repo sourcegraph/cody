@@ -73,7 +73,9 @@ export async function rewriteKeywordQuery(
     const result = new Set<string>()
     for (const { value } of keywords) {
         if (value) {
-            value.split(' ').forEach(v => result.add(v))
+            for (const v of value.split(' ')) {
+                result.add(v)
+            }
         }
     }
     return [...result].sort().join(' ')
