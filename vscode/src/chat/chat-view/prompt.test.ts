@@ -114,11 +114,11 @@ describe('DefaultPrompter', () => {
                 ])
         ).makePrompt(chat, 0)
 
-        chat.setLastMessageContext(info.context.used)
+        chat.setLastMessageContext(info.promptInfo.context.used)
         chat.addBotMessage({ text: ps`Oh hello there.` })
         chat.addHumanMessage({ text: ps`Hello again!` })
 
-        checkPrompt(info.prompt, [
+        checkPrompt(info.promptInfo.prompt, [
             'You are Cody, an AI coding assistant from Sourcegraph.',
             'I am Cody, an AI coding assistant from Sourcegraph.',
             'enhanced1.ts',
@@ -148,7 +148,7 @@ describe('DefaultPrompter', () => {
                 ])
         ).makePrompt(chat, 0)
 
-        checkPrompt(info.prompt, [
+        checkPrompt(info.promptInfo.prompt, [
             'You are Cody, an AI coding assistant from Sourcegraph.',
             'I am Cody, an AI coding assistant from Sourcegraph.',
             'enhanced1.ts',
