@@ -25,7 +25,7 @@ export function syncModels(authStatus: AuthStatus): void {
     // For dotcom, we use the default models.
     if (authStatus.isDotCom) {
         ModelsService.setModels(getDotComDefaultModels())
-        getChatModelsFromConfiguration()
+        registerModelsFromVSCodeConfiguration()
         return
     }
 
@@ -63,18 +63,18 @@ interface ChatModelProviderConfig {
 }
 
 /**
+ * Adds any Models defined by the Visual Studio "cody.dev.models" configuration into the
+ * ModelsService. This provides a way to interact with models not hard-coded by default.
+ * 
  * NOTE: DotCom Connections only as model options are not available for Enterprise
- *
- * Gets an array of `Model` instances based on the configuration for dev chat models.
- * If the `cody.dev.models` setting is not configured or is empty, the function returns an empty array.
  *
  * @returns An array of `Model` instances for the configured chat models.
  */
-export function getChatModelsFromConfiguration(): Model[] {
+export function registerModelsFromVSCodeConfiguration() {
     const codyConfig = vscode.workspace.getConfiguration('cody')
     const modelsConfig = codyConfig?.get<ChatModelProviderConfig[]>('dev.models')
     if (!modelsConfig?.length) {
-        return []
+        return
     }
 
     const models: Model[] = []
@@ -89,5 +89,4 @@ export function getChatModelsFromConfiguration(): Model[] {
     }
 
     ModelsService.addModels(models)
-    return models
 }
