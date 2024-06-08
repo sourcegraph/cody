@@ -100,13 +100,6 @@ describe('[getInlineCompletions] completion event', () => {
                     "totalChars": 0,
                   },
                   "id": "stable-uuid",
-                  "inlineCompletionItemContext": {
-                    "context": [],
-                    "prefix": "function foo() {",
-                    "suffix": "}",
-                    "triggerCharacter": 16,
-                    "triggerLine": 0,
-                  },
                   "languageId": "typescript",
                   "multiline": true,
                   "multilineMode": "block",
@@ -164,13 +157,6 @@ describe('[getInlineCompletions] completion event', () => {
                     "totalChars": 0,
                   },
                   "id": "stable-uuid",
-                  "inlineCompletionItemContext": {
-                    "context": [],
-                    "prefix": "function foo() {\n  return",
-                    "suffix": "}",
-                    "triggerCharacter": 8,
-                    "triggerLine": 1,
-                  },
                   "languageId": "typescript",
                   "multiline": false,
                   "multilineMode": null,
@@ -204,6 +190,32 @@ describe('[getInlineCompletions] completion event', () => {
             )
 
             expect(eventWithoutTimestamps.items?.some(item => item.insertText)).toBe(true)
+        })
+        it('logs `inlineCompletionItemContext` only for DotCom users', async () => {
+            const eventWithoutTimestamps = await getAnalyticsEvent(
+                'function foo() {\n  return█}',
+                '"foo"',
+                {
+                    isDotComUser: true,
+                }
+            )
+
+            expect(eventWithoutTimestamps.params?.inlineCompletionItemContext).toMatchInlineSnapshot(`
+                {
+                  "context": [],
+                  "prefix": "function foo() {\n  return",
+                  "suffix": "}",
+                  "triggerCharacter": 8,
+                  "triggerLine": 1,
+                }
+            `)
+        })
+        it('does not log `inlineCompletionItemContext` for enterprise users', async () => {
+            const eventWithoutTimestamps = await getAnalyticsEvent(
+                'function foo() {\n  return█}',
+                '"foo"'
+            )
+            expect(eventWithoutTimestamps.params?.inlineCompletionItemContext).toBeUndefined()
         })
     })
 })

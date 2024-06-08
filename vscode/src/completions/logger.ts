@@ -526,7 +526,8 @@ export function loaded(
         event.items = items.map(item => completionItemToItemInfo(item, isDotComUser))
     }
 
-    if (event.params.inlineCompletionItemContext === undefined) {
+    // 🚨 SECURITY: included only for DotCom users.
+    if (isDotComUser && event.params.inlineCompletionItemContext === undefined) {
         const contextSnippets: InlineCompletionItemRetrivedContext[] = []
         if (inlineContextParams?.context) {
             for (const snippet of inlineContextParams.context) {
@@ -750,7 +751,22 @@ export function flushActiveSuggestionRequests(): void {
 function getInlineContextItemToLog(
     inlineCompletionItemContext: InlineCompletionItemContext | undefined
 ): InlineCompletionItemContext | undefined {
-    return inlineCompletionItemContext
+    if (inlineCompletionItemContext === undefined) {
+        return undefined
+    }
+    const MAX_CONTEXT_ITEMS = 15
+    const MAX_CHARACTERS = 4000
+    // Add basic truncation to 1000 tokens.
+    return {
+        prefix: inlineCompletionItemContext.prefix.slice(-MAX_CHARACTERS),
+        suffix: inlineCompletionItemContext.suffix.slice(0, MAX_CHARACTERS),
+        triggerLine: inlineCompletionItemContext.triggerLine,
+        triggerCharacter: inlineCompletionItemContext.triggerCharacter,
+        context: inlineCompletionItemContext.context.slice(0, MAX_CONTEXT_ITEMS).map(c => ({
+            ...c,
+            content: c.content.slice(0, MAX_CHARACTERS),
+        })),
+    }
 }
 
 function logSuggestionEvents(): void {
