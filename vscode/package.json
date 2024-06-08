@@ -1351,6 +1351,13 @@
       }
     }
   },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "Cody only uses providers (configured in `openctx.providers`) from trusted workspaces because providers may execute arbitrary code.",
+      "restrictedConfigurations": ["openctx.providers"]
+    }
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.20.8",
     "@floating-ui/react": "^0.26.9",

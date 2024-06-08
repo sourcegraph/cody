@@ -6,6 +6,7 @@ import {
     getSimplePreamble,
     ps,
 } from '@sourcegraph/cody-shared'
+import { logDebug } from '../log'
 
 import { francAll } from 'franc-min'
 
@@ -32,6 +33,23 @@ export async function rewriteKeywordQuery(
         }
     }
 
+    const rewritten = doRewrite(completionsClient, query)
+    return rewritten
+        .then(value => {
+            // If there are no rewritten terms, just return the original query.
+            return value.length !== 0 ? value.sort().join(' ') : query.toString()
+        })
+        .catch(err => {
+            logDebug('rewrite-keyword-query', 'failed', { verbose: err })
+            // If we fail to rewrite, just return the original query.
+            return query.toString()
+        })
+}
+
+async function doRewrite(
+    completionsClient: SourcegraphCompletionsClient,
+    query: PromptString
+): Promise<string[]> {
     const preamble = getSimplePreamble(undefined, 0)
     const stream = completionsClient.stream(
         {
@@ -39,7 +57,7 @@ export async function rewriteKeywordQuery(
                 ...preamble,
                 {
                     speaker: 'human',
-                    text: ps`You are helping the user search over a codebase. List some filename fragments that would match files relevant to read to answer the user's query. Present your results in an XML list in the following format: <keywords><keyword><value>a single keyword</value><variants>a space separated list of synonyms and variants of the keyword, including acronyms, abbreviations, and expansions</variants><weight>a numerical weight between 0.0 and 1.0 that indicates the importance of the keyword</weight></keyword></keywords>. Here is the user query: <userQuery>${query}</userQuery>`,
+                    text: ps`You are helping the user search over a codebase. List some filename fragments that would match files relevant to read to answer the user's query. Present your results in a *single* XML list in the following format: <keywords><keyword><value>a single keyword</value><variants>a space separated list of synonyms and variants of the keyword, including acronyms, abbreviations, and expansions</variants><weight>a numerical weight between 0.0 and 1.0 that indicates the importance of the keyword</weight></keyword></keywords>. Here is the user query: <userQuery>${query}</userQuery>`,
                 },
                 { speaker: 'assistant' },
             ],
@@ -67,6 +85,7 @@ export async function rewriteKeywordQuery(
     const text = streamingText.at(-1) ?? ''
     const parser = new XMLParser()
     const document = parser.parse(text)
+
     const keywords: { value?: string; variants?: string; weight?: number }[] =
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         document?.keywords?.keyword ?? []
@@ -78,5 +97,6 @@ export async function rewriteKeywordQuery(
             }
         }
     }
-    return [...result].sort().join(' ')
+
+    return [...result]
 }

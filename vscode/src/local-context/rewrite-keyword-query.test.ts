@@ -40,7 +40,29 @@ describe('rewrite-query', () => {
         expect(expanded).toMatchInlineSnapshot(`"scan tokens in C++"`)
     )
 
+    check(ps`parse file with tree-sitter`, expanded =>
+        expect(expanded).toMatchInlineSnapshot(
+            `"file files parse parser parsing sitter tree tree-parser tree-sitter treesitter"`
+        )
+    )
+
     check(ps`type Zoekt struct {`, expanded => expect(expanded).toMatchInlineSnapshot(`"struct zoekt"`))
+
+    check(
+        ps`type Zoekt struct {
+\tClient zoekt.Searcher
+
+\t// DisableCache when true prevents caching of Client.List. Useful in
+\t// tests.
+\tDisableCache bool
+
+\tmu       sync.RWMute
+`,
+        expanded =>
+            expect(expanded).toMatchInlineSnapshot(
+                `"cache cached caching mutex search search_engine searcher sync synchronization test testing zoekt"`
+            )
+    )
 
     check(ps`C'est ou la logique pour recloner les dépôts?`, expanded =>
         expect(expanded).toMatchInlineSnapshot(`"clone config logic repository"`)
