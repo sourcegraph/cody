@@ -170,7 +170,7 @@ export const ModelSelectField: React.FunctionComponent<{
             iconEnd={readOnly ? undefined : 'chevron'}
             className={cn('tw-justify-between', className)}
             disabled={readOnly}
-            defaultOpen={__storybook__open}
+            __storybook__open={__storybook__open}
             tooltip={readOnly ? undefined : 'Select a model'}
             aria-label="Select a model"
             popoverContent={close => (
