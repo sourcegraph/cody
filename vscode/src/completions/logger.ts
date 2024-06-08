@@ -30,7 +30,12 @@ import type { ContextSummary } from './context/context-mixer'
 import type { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import type { RequestParams } from './request-manager'
 import * as statistics from './statistics'
-import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import type {
+    InlineCompletionItemContext,
+    InlineCompletionItemRetrivedContext,
+    InlineCompletionItemWithAnalytics,
+    InlineContextItemsParams,
+} from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
 import type { InlineCompletionItem } from './types'
 
@@ -121,6 +126,10 @@ interface SharedEventPayload extends InteractionIDPayload {
     /** The round trip timings to reach the Sourcegraph and Cody Gateway instances. */
     upstreamLatency?: number
     gatewayLatency?: number
+
+    /** Inline Context items used by LLM to get the completions */
+    // 🚨 SECURITY: included log for DotCom users.
+    inlineCompletionItemContext?: InlineCompletionItemContext
 }
 
 /**
@@ -493,7 +502,8 @@ export function loaded(
     params: RequestParams,
     items: InlineCompletionItemWithAnalytics[],
     source: InlineCompletionsResultSource,
-    isDotComUser: boolean
+    isDotComUser: boolean,
+    inlineContextParams: InlineContextItemsParams | undefined = undefined
 ): void {
     const event = activeSuggestionRequests.get(id)
     if (!event) {
@@ -512,9 +522,29 @@ export function loaded(
     if (!event.loadedAt) {
         event.loadedAt = performance.now()
     }
-
     if (event.items.length === 0) {
         event.items = items.map(item => completionItemToItemInfo(item, isDotComUser))
+    }
+
+    if (event.params.inlineCompletionItemContext === undefined) {
+        const contextSnippets: InlineCompletionItemRetrivedContext[] = []
+        if (inlineContextParams?.context) {
+            for (const snippet of inlineContextParams.context) {
+                contextSnippets.push({
+                    content: snippet.content,
+                    startLine: snippet.startLine,
+                    endLine: snippet.endLine,
+                    filePath: snippet.uri.fsPath,
+                })
+            }
+        }
+        event.params.inlineCompletionItemContext = {
+            prefix: params.docContext.prefix,
+            suffix: params.docContext.suffix,
+            triggerLine: params.position.line,
+            triggerCharacter: params.position.character,
+            context: contextSnippets,
+        }
     }
 }
 
@@ -717,6 +747,12 @@ export function flushActiveSuggestionRequests(): void {
     logSuggestionEvents()
 }
 
+function getInlineContextItemToLog(
+    inlineCompletionItemContext: InlineCompletionItemContext | undefined
+): InlineCompletionItemContext | undefined {
+    return inlineCompletionItemContext
+}
+
 function logSuggestionEvents(): void {
     const now = performance.now()
     // biome-ignore lint/complexity/noForEach: LRUCache#forEach has different typing than #entries, so just keeping it for now
@@ -744,6 +780,9 @@ function logSuggestionEvents(): void {
         const seen = displayDuration >= READ_TIMEOUT_MS
         const accepted = acceptedAt !== null
         const read = accepted || seen
+        const inlineCompletionItemContext = getInlineContextItemToLog(
+            completionEvent.params.inlineCompletionItemContext
+        )
 
         if (!suggestionAnalyticsLoggedAt) {
             completionEvent.suggestionAnalyticsLoggedAt = now
@@ -760,6 +799,7 @@ function logSuggestionEvents(): void {
             read,
             accepted,
             completionsStartedSinceLastSuggestion,
+            inlineCompletionItemContext,
         })
 
         completionsStartedSinceLastSuggestion = 0
@@ -834,6 +874,9 @@ function getSharedParams(event: CompletionBookkeepingEvent): SharedEventPayload 
         otherCompletionProviders,
         upstreamLatency: upstreamHealthProvider.getUpstreamLatency(),
         gatewayLatency: upstreamHealthProvider.getGatewayLatency(),
+
+        // 🚨 SECURITY: Do not include any context by default
+        inlineCompletionItemContext: undefined,
     }
 }
 

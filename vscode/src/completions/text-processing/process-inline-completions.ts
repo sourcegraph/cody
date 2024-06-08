@@ -1,14 +1,17 @@
 import { type Position, Range, type TextDocument } from 'vscode'
 import type { Tree } from 'web-tree-sitter'
 
-import { type DocumentContext, dedupeWith } from '@sourcegraph/cody-shared'
+import {
+    type AutocompleteContextSnippet,
+    type DocumentContext,
+    dedupeWith,
+} from '@sourcegraph/cody-shared'
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { getNodeAtCursorAndParents } from '../../tree-sitter/ast-getters'
 import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
 import type { ItemPostProcessingInfo } from '../logger'
 import type { InlineCompletionItem } from '../types'
-
 import { type ParsedCompletion, dropParserFields } from './parse-completion'
 import { findLastAncestorOnTheSameRow } from './truncate-parsed-completion'
 import { collapseDuplicativeWhitespace, removeTrailingWhitespace, trimUntilSuffix } from './utils'
@@ -17,6 +20,25 @@ interface ProcessInlineCompletionsParams {
     document: TextDocument
     position: Position
     docContext: DocumentContext
+}
+
+export interface InlineCompletionItemRetrivedContext {
+    content: string
+    filePath: string
+    startLine: number
+    endLine: number
+}
+
+export interface InlineContextItemsParams {
+    context: AutocompleteContextSnippet[]
+}
+
+export interface InlineCompletionItemContext {
+    prefix: string
+    suffix: string
+    triggerLine: number
+    triggerCharacter: number
+    context: InlineCompletionItemRetrivedContext[]
 }
 
 export interface InlineCompletionItemWithAnalytics extends ItemPostProcessingInfo, InlineCompletionItem {

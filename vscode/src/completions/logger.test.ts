@@ -112,6 +112,13 @@ describe('logger', () => {
                 displayDuration: expect.any(Number),
                 read: true,
                 latency: expect.any(Number),
+                inlineCompletionItemContext: {
+                    context: [],
+                    prefix: 'const foo = ',
+                    suffix: '',
+                    triggerCharacter: 12,
+                    triggerLine: 0,
+                },
             },
             { agent: true, hasV2Event: true }
         )

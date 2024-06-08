@@ -384,8 +384,10 @@ async function doGetInlineCompletions(
         isCacheEnabled: triggerKind !== TriggerKind.Manual,
         tracer: tracer ? createCompletionProviderTracer(tracer) : undefined,
     })
-
-    CompletionLogger.loaded(logId, requestParams, completions, source, isDotComUser)
+    const inlineContextParams = {
+        context: contextResult?.context,
+    }
+    CompletionLogger.loaded(logId, requestParams, completions, source, isDotComUser, inlineContextParams)
 
     return {
         logId,
