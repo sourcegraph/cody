@@ -156,12 +156,25 @@ export const CommandLink: React.FunctionComponent<React.AnchorHTMLAttributes<HTM
     href,
     className,
     children,
+    onClick: parentOnClick,
     ...props
 }) => {
     const linkRef = React.useRef<HTMLAnchorElement>(null)
+
+    // We use a workaround to make links work in VS Code via keyboard and click (see the
+    // `dispatchEvent` call and related comment below). However, to avoid a click opening the link
+    // twice, we need to check if we're already opening a link due to a click and prevent the
+    // `dispatchEvent` code path from being called. When cmdk supports links
+    // (https://github.com/pacocoursey/cmdk/issues/258), this workaround will no longer be needed.
+    const isHandlingClick = React.useRef(false)
+
     return (
         <CommandItem
             onSelect={() => {
+                if (isHandlingClick.current) {
+                    return
+                }
+
                 // TODO: When cmdk supports links, use that instead. This workaround is only needed
                 // because the link's native onClick is not being fired because cmdk traps it. See
                 // https://github.com/pacocoursey/cmdk/issues/258.
@@ -179,6 +192,8 @@ export const CommandLink: React.FunctionComponent<React.AnchorHTMLAttributes<HTM
                     )
                 } catch (error) {
                     console.error(error)
+                } finally {
+                    isHandlingClick.current = false
                 }
             }}
             asChild
@@ -190,6 +205,13 @@ export const CommandLink: React.FunctionComponent<React.AnchorHTMLAttributes<HTM
                     '!tw-text-foreground aria-selected:!tw-text-accent-foreground hover:!tw-text-accent-foreground',
                     className
                 )}
+                onClick={e => {
+                    isHandlingClick.current = true
+                    setTimeout(() => {
+                        isHandlingClick.current = false
+                    })
+                    parentOnClick?.(e)
+                }}
                 ref={linkRef}
             >
                 {children}
