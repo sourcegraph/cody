@@ -165,6 +165,7 @@ describe('getConfiguration', () => {
                 multiline: undefined,
                 singleline: undefined,
             },
+            autocompleteFirstCompletionTimeout: 1500,
             testingModelConfig: undefined,
             experimentalChatContextRanker: false,
         } satisfies Configuration)

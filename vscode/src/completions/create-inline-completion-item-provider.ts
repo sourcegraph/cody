@@ -80,6 +80,7 @@ export async function createInlineCompletionItemProvider({
         const completionsProvider = new InlineCompletionItemProvider({
             authStatus,
             providerConfig,
+            firstCompletionTimeout: config.autocompleteFirstCompletionTimeout,
             statusBar,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
             formatOnAccept: config.autocompleteFormatOnAccept,

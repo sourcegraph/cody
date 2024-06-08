@@ -11,7 +11,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { localStorage } from '../services/LocalStorageProvider'
-import { vsCodeMocks } from '../testutils/mocks'
+import { DEFAULT_VSCODE_SETTINGS, vsCodeMocks } from '../testutils/mocks'
 import { withPosixPaths } from '../testutils/textDocument'
 
 import { SupportedLanguage } from '../tree-sitter/grammars'
@@ -79,6 +79,9 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
             }),
             triggerNotice: null,
             authStatus: DUMMY_AUTH_STATUS,
+            firstCompletionTimeout:
+                superArgs?.firstCompletionTimeout ??
+                DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
             ...superArgs,
         })
         this.getInlineCompletions = mockGetInlineCompletions

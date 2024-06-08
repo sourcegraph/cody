@@ -189,6 +189,10 @@ export function getConfiguration(
                 undefined
             ),
         },
+        autocompleteFirstCompletionTimeout: getHiddenSetting<number>(
+            'autocomplete.advanced.timeout.firstCompletion',
+            1_500
+        ),
         testingModelConfig:
             isTesting && hasValidLocalEmbeddingsConfig()
                 ? {
