@@ -23,8 +23,8 @@ export async function rewriteKeywordQuery(
     query: PromptString
 ): Promise<string> {
     // In evals, we saw that rewriting tends to make performance worse for simple queries. So we only rewrite
-    // in cases where it clearly helps: when there are non-ASCII characters (meaning it's very likely in a
-    //  foreign language), or there are multiple sentences (so we really need to distill the question).
+    // in cases where it clearly helps: when it's likely in a non-English language, or there are multiple
+    //  sentences (so we really need to distill the question).
     const queryString = query.toString()
     if (!containsMultipleSentences.test(queryString)) {
         const english = francAll(queryString).find(v => v[0] === 'eng')

@@ -42,7 +42,7 @@ describe('rewrite-query', () => {
 
     check(ps`parse file with tree-sitter`, expanded =>
         expect(expanded).toMatchInlineSnapshot(
-            `"file files parse parser parsing sitter tree tree-parser tree-sitter treesitter"`
+            `"parse file with tree-sitter"`
         )
     )
 
@@ -60,18 +60,16 @@ describe('rewrite-query', () => {
 `,
         expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                `"cache cached caching mutex search search_engine searcher sync synchronization test testing zoekt"`
+                `"cache sync test zoekt"`
             )
     )
 
     check(ps`C'est ou la logique pour recloner les dépôts?`, expanded =>
-        expect(expanded).toMatchInlineSnapshot(`"clone config logic repository"`)
+        expect(expanded).toMatchInlineSnapshot(`"clone logic repository"`)
     )
 
-    // We currently don't rewrite this, because our foreign language detection is too simple. This is a bug, and
-    // this test just documents the current behavior.
     check(ps`Wie kann ich eine neue Datenbankmigration definieren?`, expanded =>
-        expect(expanded).toMatchInlineSnapshot(`"configuration database definition migration script"`)
+        expect(expanded).toMatchInlineSnapshot(`"database define migration"`)
     )
 
     check(
@@ -81,7 +79,7 @@ describe('rewrite-query', () => {
 
     check(
         ps`parse file with tree-sitter. follow these rules:\n*use the Google Go style guide\n*panic if parsing fails`,
-        expanded => expect(expanded).toMatchInlineSnapshot(`"go panic parser tree-sitter"`)
+        expanded => expect(expanded).toMatchInlineSnapshot(`"go google guide panic parse style tree-sitter"`)
     )
 
     afterAll(async () => {

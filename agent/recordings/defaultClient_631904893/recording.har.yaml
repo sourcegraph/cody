@@ -1234,153 +1234,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 1668a2afd7ba6791b44c46a9aaea04cc
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 1183
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - name: user-agent
-            value: defaultClient / v1
-          - name: traceparent
-            value: 00-a5be0f5c58d2cb38549819531ed71025-409361995fc8bf47-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 415
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/squirrel.ts:
-
-                  ```typescript
-
-                  /**
-                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
-                   * It is related to the implementation of precise code navigation in Sourcegraph.
-                   */
-                  export interface Squirrel {}
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/animal.ts:
-                  ```typescript
-                  /* SELECTION_START */
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-                  /* SELECTION_END */
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  My selected code from @src/animal.ts:1-6:
-                  ```
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: Write a class Dog that implements the Animal interface in my workspace.
-                  Show the code only, no explanation needed.
-            model: anthropic/claude-3-sonnet-20240229
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 11260
-        content:
-          mimeType: text/event-stream
-          size: 11260
-          text: >+
-            event: completion
-
-            data: {"completion":"```typescript\nclass Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 07 Jun 2024 21:37:39 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-06-07T21:37:37.943Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: ea09a2497c1301ecf6208119bec83f5d
       _order: 0
       cache: {}
@@ -1803,6 +1656,171 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-06-07T21:37:49.708Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: aaac2d0f56613ca7b5ccb71b4175750a
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1547
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-78b5cc5e2359387c5dce760c32584499-f2be2a695d6840c6-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 415
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/TestClass.ts:
+                  ```typescript
+                  const foo = 42
+
+                  export class TestClass {
+                      constructor(private shouldGreet: boolean) {}
+
+                      public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+                      }
+                  }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/squirrel.ts:
+
+                  ```typescript
+
+                  /**
+                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                   * It is related to the implementation of precise code navigation in Sourcegraph.
+                   */
+                  export interface Squirrel {}
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/animal.ts:
+                  ```typescript
+                  /* SELECTION_START */
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  /* SELECTION_END */
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  My selected code from @src/animal.ts:1-6:
+                  ```
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: Write a class Dog that implements the Animal interface in my workspace.
+                  Show the code only, no explanation needed.
+            model: anthropic/claude-3-sonnet-20240229
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 11260
+        content:
+          mimeType: text/event-stream
+          size: 11260
+          text: >+
+            event: completion
+
+            data: {"completion":"```typescript\nclass Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Sat, 08 Jun 2024 18:56:45 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-06-08T18:56:43.716Z
       time: 0
       timings:
         blocked: -1
@@ -3206,11 +3224,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 8bc9bbaf90bcaec66cd48785d79db439
+    - _id: 713578328fa5e424b304fff37eb1490e
       _order: 0
       cache: {}
       request:
-        bodySize: 973
+        bodySize: 981
         cookies: []
         headers:
           - name: content-type
@@ -3223,7 +3241,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-a5be0f5c58d2cb38549819531ed71025-ea4ef47026c593ed-01
+            value: 00-78b5cc5e2359387c5dce760c32584499-f01be06bc6e9c0d4-01
           - name: connection
             value: keep-alive
           - name: host
@@ -3245,8 +3263,8 @@ log:
               - speaker: human
                 text: "You are helping the user search over a codebase. List some filename
                   fragments that would match files relevant to read to answer
-                  the user's query. Present your results in an XML list in the
-                  following format: <keywords><keyword><value>a single
+                  the user's query. Present your results in a *single* XML list
+                  in the following format: <keywords><keyword><value>a single
                   keyword</value><variants>a space separated list of synonyms
                   and variants of the keyword, including acronyms,
                   abbreviations, and expansions</variants><weight>a numerical
@@ -3265,14 +3283,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 77430
+        bodySize: 93412
         content:
           mimeType: text/event-stream
-          size: 77430
+          size: 93412
           text: >+
             event: completion
 
-            data: {"completion":"Here are some filename fragments that would match files relevant to the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003edog\u003c/value\u003e\n\u003cvariants\u003ecanine\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eanimal\u003c/value\u003e\n\u003cvariants\u003ecreature creature_interface creature_impl\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003einterface\u003c/value\u003e\n\u003cvariants\u003eapi contract spec\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eimplementation\u003c/value\u003e\n\u003cvariants\u003eimpl concrete_class\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
+            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003edog\u003c/value\u003e\n\u003cvariants\u003ecanine hound mutt puppy\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eanimal\u003c/value\u003e\n\u003cvariants\u003ecreature organism being\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003einterface\u003c/value\u003e\n\u003cvariants\u003eapi contract specification\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclass\u003c/value\u003e\n\u003cvariants\u003etype object\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eimplement\u003c/value\u003e\n\u003cvariants\u003erealize fulfill actualize\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
 
 
             event: done
@@ -3282,7 +3300,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Jun 2024 21:37:36 GMT
+            value: Sat, 08 Jun 2024 18:56:42 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -3311,7 +3329,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-07T21:37:35.916Z
+      startedDateTime: 2024-06-08T18:56:41.693Z
       time: 0
       timings:
         blocked: -1
@@ -3321,11 +3339,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: aebd71d7818fbee68b9ddd4277323e4b
+    - _id: 7c49f5f0a33226bd9ac5a5c2a1b0eead
       _order: 0
       cache: {}
       request:
-        bodySize: 969
+        bodySize: 977
         cookies: []
         headers:
           - name: content-type
@@ -3338,7 +3356,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-9b3bde5d8ff3e244f36c41cf76f5d214-a26e9b24ac9aa672-01
+            value: 00-e3ff75cc428a27294e05f5de45fbea92-30f137ac50269ee1-01
           - name: connection
             value: keep-alive
           - name: host
@@ -3360,8 +3378,8 @@ log:
               - speaker: human
                 text: "You are helping the user search over a codebase. List some filename
                   fragments that would match files relevant to read to answer
-                  the user's query. Present your results in an XML list in the
-                  following format: <keywords><keyword><value>a single
+                  the user's query. Present your results in a *single* XML list
+                  in the following format: <keywords><keyword><value>a single
                   keyword</value><variants>a space separated list of synonyms
                   and variants of the keyword, including acronyms,
                   abbreviations, and expansions</variants><weight>a numerical
@@ -3380,14 +3398,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 50869
+        bodySize: 39737
         content:
           mimeType: text/event-stream
-          size: 50869
+          size: 39737
           text: >+
             event: completion
 
-            data: {"completion":"Here are some filename fragments that could be relevant to answering the user's query:\n\n\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003efunction\u003c/value\u003e\n\u003cvariants\u003emethod procedure subroutine routine\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ename\u003c/value\u003e\n\u003cvariants\u003etitle identifier label\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eselect\u003c/value\u003e\n\u003cvariants\u003echoose pick highlight\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
+            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003efunction\u003c/value\u003e\n\u003cvariants\u003emethod procedure subroutine routine\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ename\u003c/value\u003e\n\u003cvariants\u003etitle identifier label\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eselected\u003c/value\u003e\n\u003cvariants\u003echosen picked highlighted\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
 
 
             event: done
@@ -3397,7 +3415,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Jun 2024 21:37:45 GMT
+            value: Sat, 08 Jun 2024 18:56:47 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -3426,7 +3444,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-07T21:37:45.185Z
+      startedDateTime: 2024-06-08T18:56:46.698Z
       time: 0
       timings:
         blocked: -1
