@@ -287,7 +287,6 @@ const register = async (
 
         promises.push(featureFlagProvider.syncAuthStatus())
         graphqlClient.onConfigurationChange(newConfig)
-        promises.push(exposeOpenCtxClient(secretStorage, newConfig))
         upstreamHealthProvider.onConfigurationChange(newConfig)
         githubClient.onConfigurationChange({ authToken: initialConfig.experimentalGithubAccessToken })
         promises.push(
