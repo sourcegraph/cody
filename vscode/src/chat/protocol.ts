@@ -164,7 +164,6 @@ export type ExtensionMessage =
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; view: View }
     | { type: 'errors'; errors: string }
-    | { type: 'notice'; notice: { key: string } }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
     /**
      * Context files returned from a @-mention search

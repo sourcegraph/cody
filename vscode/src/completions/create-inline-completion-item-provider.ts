@@ -21,7 +21,6 @@ export interface InlineCompletionItemProviderArgs {
     client: CodeCompletionsClient
     statusBar: CodyStatusBar
     authProvider: AuthProvider
-    triggerNotice: ((notice: { key: string }) => void) | null
     createBfgRetriever?: () => BfgRetriever
 }
 
@@ -46,7 +45,6 @@ export async function createInlineCompletionItemProvider({
     client,
     statusBar,
     authProvider,
-    triggerNotice,
     createBfgRetriever,
 }: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
     const authStatus = authProvider.getAuthStatus()
@@ -85,7 +83,6 @@ export async function createInlineCompletionItemProvider({
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
             formatOnAccept: config.autocompleteFormatOnAccept,
             disableInsideComments: config.autocompleteDisableInsideComments,
-            triggerNotice,
             isRunningInsideAgent: config.isRunningInsideAgent,
             createBfgRetriever,
             isDotComUser: isDotCom(authStatus.endpoint || ''),

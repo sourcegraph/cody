@@ -67,7 +67,6 @@ export async function createInlineCompletionItemFromMultipleProviders({
     client,
     statusBar,
     authProvider,
-    triggerNotice,
     createBfgRetriever,
 }: InlineCompletionItemProviderArgs): Promise<vscode.Disposable> {
     // Creates multiple providers to get completions from.
@@ -129,7 +128,6 @@ export async function createInlineCompletionItemFromMultipleProviders({
                 completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
                 formatOnAccept: config.autocompleteFormatOnAccept,
                 disableInsideComments: config.autocompleteDisableInsideComments,
-                triggerNotice,
                 isRunningInsideAgent: config.isRunningInsideAgent,
                 createBfgRetriever,
                 isDotComUser: isDotCom(authStatus.endpoint || ''),
