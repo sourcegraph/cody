@@ -14,10 +14,11 @@ import * as path from 'node:path'
 import {
     type ElectronApplication,
     type Frame,
+    type MatcherReturnType,
     type Page,
     type TestInfo,
     test as base,
-    expect,
+    expect as baseExpect,
 } from '@playwright/test'
 import { _electron as electron } from 'playwright'
 import * as uuid from 'uuid'
@@ -293,22 +294,8 @@ export const test = base
             if (testInfo.status === 'passed') {
                 // Critical test to prevent event logging regressions.
                 // Do not remove without consulting data analytics team.
-                try {
-                    await assertEvents(loggedEvents, expectedEvents)
-                } catch (error) {
-                    console.error('Expected events do not match actual events!')
-                    console.log('Expected:', expectedEvents)
-                    console.log('Logged:', loggedEvents)
-                    throw error
-                }
-                try {
-                    await assertEvents(loggedV2Events, expectedV2Events)
-                } catch (error) {
-                    console.error('Expected v2 events do not match actual events!')
-                    console.log('Expected:', expectedV2Events)
-                    console.log('Logged:', loggedV2Events)
-                    throw error
-                }
+                await expect(loggedEvents).toContainEvents(expectedEvents)
+                await expect(loggedV2Events).toContainEvents(expectedV2Events)
             } else {
                 await attachArtifacts(testInfo, page, assetsDirectory)
             }
@@ -462,11 +449,56 @@ export async function executeCommandInPalette(page: Page, commandName: string): 
 /**
  * Verifies that loggedEvents contain all of expectedEvents (in any order).
  */
-export async function assertEvents(loggedEvents: string[], expectedEvents: string[]): Promise<void> {
-    await expect
-        .poll(() => loggedEvents, { timeout: 3000 })
-        .toEqual(expect.arrayContaining(expectedEvents))
-}
+const expect = baseExpect.extend({
+    async toContainEvents(
+        received: string[],
+        expected: string[],
+        options?: { timeout?: number; interval?: number; retries?: number }
+    ): Promise<MatcherReturnType> {
+        const name = 'toContainEvents'
+        const missing: string[] = []
+        const extra: string[] = []
+
+        try {
+            await baseExpect
+                .poll(() => received, { timeout: 3000, ...options })
+                .toEqual(baseExpect.arrayContaining(expected))
+        } catch (e: any) {
+            // const missingEvents = new Set()
+            // const extraEvents = new Set()
+            const receivedSet = new Set(received)
+            for (const event of expected) {
+                if (!receivedSet.has(event)) {
+                    missing.push(event)
+                }
+            }
+            for (const event of received) {
+                if (!expected.includes(event)) {
+                    extra.push(event)
+                }
+            }
+        }
+        let message = this.utils.matcherHint(name, undefined, undefined, {
+            isNot: this.isNot,
+        })
+        if (missing.length) {
+            message += '\n\nThe following expected events were missing:\n'
+            message += this.utils.printReceived(missing)
+
+            if (extra.length) {
+                message += '\n\nAdditionally, the following extra events were reported:\n'
+                message += this.utils.printExpected(extra)
+            }
+        }
+        return {
+            message: () => message,
+            pass: missing.length === 0,
+            name,
+            expected,
+            actual: received,
+        }
+    },
+})
 
 // Creates a temporary directory, calls `f`, and then deletes the temporary
 // directory when done.
