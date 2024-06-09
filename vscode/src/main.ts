@@ -18,7 +18,6 @@ import {
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { CommandResult } from './CommandResult'
-import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
 import {
@@ -221,22 +220,11 @@ const register = async (
 
     // Initialize context provider
     const editor = new VSCodeEditor()
-    const contextProvider = new ContextProvider(
-        initialConfig,
-        editor,
-        authProvider,
-        localEmbeddings,
-        enterpriseContextFactory.createRemoteSearch()
-    )
-    disposables.push(contextProvider)
     disposables.push(contextFiltersProvider)
-    await contextFiltersProvider
-        .init(repoNameResolver.getRepoNamesFromWorkspaceUri)
-        .then(() => contextProvider.init())
+    await contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri)
 
     configWatcher.onChange(async config => {
         await contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri)
-        await contextProvider.onConfigurationChange(config)
         await localEmbeddings?.setAccessToken(config.serverEndpoint, config.accessToken)
     }, disposables)
 
@@ -249,7 +237,6 @@ const register = async (
             guardrails,
             editor,
             authProvider,
-            contextProvider,
             enterpriseContextFactory,
             localEmbeddings,
             contextRanking,
@@ -269,8 +256,9 @@ const register = async (
         // Chat Manager uses Simple Context Provider
         await chatManager.syncAuthStatus(authStatus)
         editorManager.syncAuthStatus(authStatus)
-        // Update context provider first it will also update the configuration
-        await contextProvider.syncAuthStatus()
+
+        // // Update context provider first it will also update the configuration
+        // await contextProvider.syncAuthStatus()
 
         const parallelPromises: Promise<void>[] = []
         // feature flag provider
@@ -680,7 +668,6 @@ interface RegisterChatOptions {
     guardrails: Guardrails
     editor: VSCodeEditor
     authProvider: AuthProvider
-    contextProvider: ContextProvider
     enterpriseContextFactory: EnterpriseContextFactory
     localEmbeddings?: LocalEmbeddingsController
     contextRanking?: ContextRankingController
@@ -696,7 +683,6 @@ function registerChat(
         guardrails,
         editor,
         authProvider,
-        contextProvider,
         enterpriseContextFactory,
         localEmbeddings,
         contextRanking,
@@ -715,7 +701,6 @@ function registerChat(
         guardrails,
         editor,
         authProvider,
-        contextProvider,
     }
     const chatManager = new ChatManager(
         {
@@ -740,22 +725,22 @@ function registerChat(
         authProvider,
         extensionClient: platform.extensionClient,
     })
-    disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider({ contextProvider }))
+    disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider())
 
     // Register tree views
     disposables.push(
         chatManager,
         vscode.window.registerWebviewViewProvider('cody.chat', chatManager.sidebarViewController, {
             webviewOptions: { retainContextWhenHidden: true },
-        }),
-
-        // NOTE(beyang): it was necessary to keep this, as it is the vector through which
-        // auth status propagates to the LLM client and guardrails after sign in. Without this,
-        // the auth status does not propagate.
-        contextProvider.configurationChangeEvent.event(async () => {
-            const newConfig = await getFullConfig()
-            configWatcher.set(newConfig)
         })
+
+        // // NOTE(beyang): it was necessary to keep this, as it is the vector through which
+        // // auth status propagates to the LLM client and guardrails after sign in. Without this,
+        // // the auth status does not propagate.
+        // contextProvider.configurationChangeEvent.event(async () => {
+        //     const newConfig = await getFullConfig()
+        //     configWatcher.set(newConfig)
+        // })
     )
 
     if (localEmbeddings) {

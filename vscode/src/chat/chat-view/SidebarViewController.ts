@@ -11,7 +11,6 @@ import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 // biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
 import { openExternalLinks } from '../../services/utils/workspace-action'
-import type { ContextProvider } from '../ContextProvider'
 import type { MessageErrorType, MessageProviderOptions } from '../MessageProvider'
 import type { ExtensionMessage, WebviewMessage } from '../protocol'
 
@@ -38,12 +37,10 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
     private disposables: vscode.Disposable[] = []
 
     private authProvider: AuthProvider
-    private readonly contextProvider: ContextProvider
     private startTokenReceiver?: typeof startTokenReceiver
 
     constructor({ extensionUri, ...options }: SidebarViewOptions) {
         this.authProvider = options.authProvider
-        this.contextProvider = options.contextProvider
         this.extensionUri = extensionUri
         this.startTokenReceiver = options.startTokenReceiver
     }
@@ -51,12 +48,12 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'ready':
-                await this.contextProvider.syncAuthStatus()
+                // TODO!(sqs): postMessage to webview 'config'
                 break
             case 'initialized':
                 logDebug('SidebarViewController:onDidReceiveMessage', 'initialized')
                 await this.setWebviewView('chat')
-                await this.contextProvider.init()
+                // TODO!(sqs): sth like: `this.statusEmbeddings = this.statusAggregator.addProvider(this.localEmbeddings)` ??
                 break
             case 'auth': {
                 if (message.authKind === 'callback' && message.endpoint) {
@@ -208,7 +205,6 @@ export class SidebarViewController implements vscode.WebviewViewProvider {
         _token: vscode.CancellationToken
     ): Promise<void> {
         this.webview = webviewView.webview
-        this.contextProvider.webview = webviewView.webview
 
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         webviewView.webview.options = {
