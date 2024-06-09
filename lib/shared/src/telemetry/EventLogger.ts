@@ -123,8 +123,6 @@ export class EventLogger {
             tier: getTier(this.getAuthStatus()),
             configurationDetails: {
                 contextSelection: this.config.useContext,
-                guardrails: this.config.experimentalGuardrails,
-                ollama: this.config.experimentalOllamaChat,
             },
             version: this.extensionDetails.version, // for backcompat
             hasV2Event,

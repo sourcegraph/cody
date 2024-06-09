@@ -11,7 +11,6 @@ import {
     PromptString,
     contextFiltersProvider,
     featureFlagProvider,
-    githubClient,
     graphqlClient,
     newPromptMixin,
     setClientNameVersion,
@@ -67,7 +66,6 @@ import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
-import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { displayHistoryQuickPick } from './services/HistoryChat'
 import { localStorage } from './services/LocalStorageProvider'
 import { VSCodeSecretStorage, getAccessToken, secretStorage } from './services/SecretStorageProvider'
@@ -188,7 +186,6 @@ const register = async (
     await exposeOpenCtxClient(context.secrets, initialConfig)
 
     graphqlClient.onConfigurationChange(initialConfig)
-    githubClient.onConfigurationChange({ authToken: initialConfig.experimentalGithubAccessToken })
     void featureFlagProvider.syncAuthStatus()
 
     const {
@@ -280,7 +277,7 @@ const register = async (
             return Promise.resolve()
         }
 
-        ModelsService.onConfigChange(newConfig.experimentalOllamaChat)
+        ModelsService.onConfigChange()
 
         const promises: Promise<void>[] = []
         oldConfig = JSON.stringify(newConfig)
@@ -288,7 +285,6 @@ const register = async (
         promises.push(featureFlagProvider.syncAuthStatus())
         graphqlClient.onConfigurationChange(newConfig)
         upstreamHealthProvider.onConfigurationChange(newConfig)
-        githubClient.onConfigurationChange({ authToken: initialConfig.experimentalGithubAccessToken })
         promises.push(
             contextFiltersProvider
                 .init(repoNameResolver.getRepoNamesFromWorkspaceUri)
@@ -324,10 +320,7 @@ const register = async (
     const statusBar = createStatusBar()
     const sourceControl = new CodySourceControl(chatClient)
 
-    // Important to respect `config.experimentalSymfContext`. The agent
-    // currently crashes with a cryptic error when running with symf enabled so
-    // we need a way to reliably disable symf until we fix the root problem.
-    if (symfRunner && config.experimentalSymfContext) {
+    if (symfRunner) {
         const searchViewProvider = new SearchViewProvider(symfRunner)
         disposables.push(searchViewProvider)
         searchViewProvider.initialize()
@@ -374,7 +367,7 @@ const register = async (
     syncModels(initAuthStatus)
     await chatManager.syncAuthStatus(initAuthStatus)
     editorManager.syncAuthStatus(initAuthStatus)
-    ModelsService.onConfigChange(initialConfig.experimentalOllamaChat)
+    ModelsService.onConfigChange()
     statusBar.syncAuthStatus(initAuthStatus)
     sourceControl.syncAuthStatus(initAuthStatus)
 
@@ -731,15 +724,6 @@ const register = async (
     }
 
     const autocompleteSetup = setupAutocomplete().catch(() => {})
-
-    if (initialConfig.experimentalGuardrails) {
-        const guardrailsProvider = new GuardrailsProvider(guardrails, editor)
-        disposables.push(
-            vscode.commands.registerCommand('cody.guardrails.debug', async () => {
-                await guardrailsProvider.debugEditorSelection()
-            })
-        )
-    }
 
     if (!isRunningInsideAgent()) {
         // TODO: The interactive tutorial is currently VS Code specific, both in terms of features and keyboard shortcuts.

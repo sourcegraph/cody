@@ -415,12 +415,6 @@
         "enablement": "cody.activated"
       },
       {
-        "command": "cody.guardrails.debug",
-        "category": "Cody",
-        "title": "Guardrails Debug Attribution",
-        "enablement": "config.cody.experimental.guardrails && editorHasSelection"
-      },
-      {
         "command": "cody.menu.commands",
         "category": "Cody Menu",
         "title": "Cody Commands",
@@ -756,10 +750,6 @@
           "when": "!cody.activated"
         },
         {
-          "command": "cody.guardrails.debug",
-          "when": "config.cody.experimental.guardrails && editorHasSelection"
-        },
-        {
           "command": "cody.show-page",
           "when": "false"
         },
@@ -837,11 +827,6 @@
         {
           "command": "cody.focus",
           "when": "!cody.activated",
-          "group": "other"
-        },
-        {
-          "command": "cody.guardrails.debug",
-          "when": "cody.activated && config.cody.experimental.guardrails && editorHasSelection",
           "group": "other"
         }
       ],
@@ -1028,18 +1013,6 @@
           "markdownDescription": "Adds code lenses to current file for quick access to Cody commands.",
           "default": false
         },
-        "cody.experimental.guardrails": {
-          "order": 9,
-          "type": "boolean",
-          "markdownDescription": "Experimental feature for internal use.",
-          "default": false
-        },
-        "cody.experimental.localSymbols": {
-          "order": 9,
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Experimental feature for internal use."
-        },
         "cody.chat.preInstruction": {
           "order": 6,
           "type": "string",
@@ -1065,30 +1038,6 @@
           "type": "boolean",
           "markdownDescription": "Enable hints for Cody commands such as \"Opt+K to Edit\" or \"Opt+D to Document\"",
           "default": true
-        },
-        "cody.experimental.simpleChatContext": {
-          "order": 99,
-          "type": "boolean",
-          "markdownDescription": "Uses the new simplifed chat context fetcher",
-          "default": true
-        },
-        "cody.experimental.ollamaChat": {
-          "order": 99,
-          "type": "boolean",
-          "markdownDescription": "Enable local Ollama models for chat and commands",
-          "default": false
-        },
-        "cody.experimental.symfContext": {
-          "order": 99,
-          "type": "boolean",
-          "markdownDescription": "Enable symf code search context for chat",
-          "default": true
-        },
-        "cody.experimental.symf.path": {
-          "order": 99,
-          "type": "string",
-          "markdownDescription": "Path to symf binary",
-          "default": ""
         },
         "cody.experimental.tracing": {
           "order": 99,

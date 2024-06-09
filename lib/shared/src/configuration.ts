@@ -55,17 +55,11 @@ export interface Configuration {
     /**
      * Experimental
      */
-    experimentalGuardrails: boolean
-    experimentalSymfContext: boolean
     experimentalTracing: boolean
-    experimentalSimpleChatContext: boolean
     experimentalChatContextRanker: boolean | undefined
-    experimentalOllamaChat: boolean
     experimentalSupercompletions: boolean
-    experimentalGithubAccessToken: string
     experimentalCommitMessage: boolean
     experimentalNoodle: boolean
-    experimentalURLContext: boolean
     experimentalMinionAnthropicKey: string | undefined
 
     /**

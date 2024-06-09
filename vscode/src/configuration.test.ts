@@ -35,21 +35,9 @@ describe('getConfiguration', () => {
                         return { '*': true }
                     case 'cody.commandCodeLenses':
                         return true
-                    case 'cody.experimental.guardrails':
-                        return true
                     case 'cody.codeActions.enabled':
                         return true
                     case 'cody.commandHints.enabled':
-                        return true
-                    case 'cody.experimental.localSymbols':
-                        return true
-                    case 'cody.experimental.ollamaChat':
-                        return true
-                    case 'cody.experimental.symf.path':
-                        return '/usr/local/bin/symf'
-                    case 'cody.experimental.simpleChatContext':
-                        return true
-                    case 'cody.experimental.symfContext':
                         return true
                     case 'cody.experimental.tracing':
                         return true
@@ -104,10 +92,6 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.noodle':
                         return false
-                    case 'cody.experimental.urlContext':
-                        return false
-                    case 'cody.experimental.github.accessToken':
-                        return ''
                     case 'cody.experimental.minion.anthropicKey':
                         return undefined
                     case 'cody.autocomplete.advanced.timeout.firstCompletion':
@@ -132,17 +116,11 @@ describe('getConfiguration', () => {
                 '*': true,
             },
             commandCodeLenses: true,
-            experimentalSimpleChatContext: true,
             experimentalSupercompletions: false,
             experimentalMinionAnthropicKey: undefined,
-            experimentalSymfContext: true,
             experimentalTracing: true,
-            experimentalGuardrails: true,
-            experimentalOllamaChat: true,
             experimentalCommitMessage: true,
             experimentalNoodle: false,
-            experimentalURLContext: false,
-            experimentalGithubAccessToken: '',
             codeActions: true,
             commandHints: true,
             isRunningInsideAgent: false,

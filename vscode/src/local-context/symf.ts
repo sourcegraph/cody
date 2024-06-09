@@ -650,7 +650,7 @@ function toSymfError(error: unknown): Error {
     let errorMessage: string
     if (errorString.includes('ENOENT')) {
         errorMessage =
-            'symf binary not found. Do you have "cody.experimental.symf.path" set and is it valid?'
+            'symf binary not found. If needed, download symf manually and set "cody.internal.symf.path".'
     } else if (errorString.includes('401')) {
         errorMessage = `symf: Unauthorized. Is Cody signed in? ${error}`
     } else {
