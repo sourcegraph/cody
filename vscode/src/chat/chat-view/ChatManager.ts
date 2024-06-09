@@ -227,18 +227,6 @@ export class ChatManager implements vscode.Disposable {
         }
     }
 
-    public async triggerNotice(notice: { key: string }): Promise<void> {
-        const provider = await this.chatPanelsManager.getActiveChatPanel()
-        provider.webviewPanel?.onDidChangeViewState(e => {
-            if (e.webviewPanel.visible) {
-                void provider?.webview?.postMessage({
-                    type: 'notice',
-                    notice,
-                })
-            }
-        })
-    }
-
     /**
      * See docstring for {@link CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID}.
      */
