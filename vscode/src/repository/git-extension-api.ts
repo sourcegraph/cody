@@ -1,5 +1,8 @@
 import * as vscode from 'vscode'
 
+import { getConfiguration } from '../configuration'
+import { getEditor } from '../editor/active-editor'
+import { repoNameResolver } from '../repository/repo-name-resolver'
 import type { API, GitExtension } from './builtinGitExtension'
 
 /**
@@ -78,4 +81,29 @@ export function gitRemoteUrlsFromGitExtension(uri: vscode.Uri): string[] | undef
 export function gitCommitIdFromGitExtension(uri: vscode.Uri): string | undefined {
     const repository = vscodeGitAPI?.getRepository(uri)
     return repository?.state?.HEAD?.commit
+}
+
+export interface GitIdentifiersForFile {
+    localFolder: vscode.Uri
+    remote?: string
+    commit?: string
+}
+
+export async function getGitRemoteUriForCurrentEditor(): Promise<GitIdentifiersForFile | undefined> {
+    const config = getConfiguration()
+    const currentFile = getEditor()?.active?.document?.uri
+    const remote =
+        config.codebase ||
+        (currentFile
+            ? (await repoNameResolver.getRepoNamesFromWorkspaceUri(currentFile))[0]
+            : config.codebase)
+    if (currentFile) {
+        const commit = gitCommitIdFromGitExtension(currentFile)
+        return {
+            localFolder: currentFile,
+            remote: remote,
+            commit: commit,
+        }
+    }
+    return undefined
 }

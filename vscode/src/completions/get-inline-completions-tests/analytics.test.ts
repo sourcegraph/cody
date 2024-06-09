@@ -191,25 +191,6 @@ describe('[getInlineCompletions] completion event', () => {
 
             expect(eventWithoutTimestamps.items?.some(item => item.insertText)).toBe(true)
         })
-        it('logs `inlineCompletionItemContext` only for DotCom users', async () => {
-            const eventWithoutTimestamps = await getAnalyticsEvent(
-                'function foo() {\n  return█}',
-                '"foo"',
-                {
-                    isDotComUser: true,
-                }
-            )
-
-            expect(eventWithoutTimestamps.params?.inlineCompletionItemContext).toMatchInlineSnapshot(`
-                {
-                  "context": [],
-                  "prefix": "function foo() {\n  return",
-                  "suffix": "}",
-                  "triggerCharacter": 8,
-                  "triggerLine": 1,
-                }
-            `)
-        })
         it('does not log `inlineCompletionItemContext` for enterprise users', async () => {
             const eventWithoutTimestamps = await getAnalyticsEvent(
                 'function foo() {\n  return█}',

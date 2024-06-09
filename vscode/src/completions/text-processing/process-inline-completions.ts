@@ -31,9 +31,13 @@ export interface InlineCompletionItemRetrivedContext {
 
 export interface InlineContextItemsParams {
     context: AutocompleteContextSnippet[]
+    gitUrl: string | undefined
+    commit: string | undefined
 }
 
 export interface InlineCompletionItemContext {
+    gitUrl: string
+    commit?: string
     prefix: string
     suffix: string
     triggerLine: number

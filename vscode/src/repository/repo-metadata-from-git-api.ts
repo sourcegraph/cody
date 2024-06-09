@@ -19,6 +19,10 @@ export class RepoMetadatafromGitApi {
         return RepoMetadatafromGitApi.instance
     }
 
+    public getRepoMetadataIfCached(gitUrl: string): RepoMetaData | undefined {
+        return this.cache.get(gitUrl)
+    }
+
     public async getRepoMetadataUsingGitUrl(gitUrl: string): Promise<RepoMetaData | undefined> {
         if (this.cache.has(gitUrl)) {
             return this.cache.get(gitUrl)

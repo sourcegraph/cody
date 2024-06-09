@@ -12,6 +12,8 @@ import { logError } from '../log'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import { isValidTestFile } from '../commands/utils/test-commands'
+import { getGitRemoteUriForCurrentEditor } from '../repository/git-extension-api'
+import { RepoMetadatafromGitApi } from '../repository/repo-metadata-from-git-api'
 import { completionProviderConfig } from './completion-provider-config'
 import type { ContextMixer } from './context/context-mixer'
 import { insertIntoDocContext } from './get-current-doc-context'
@@ -205,6 +207,12 @@ async function doGetInlineCompletions(
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
 
+    const gitIdentifiersForFile = await getGitRemoteUriForCurrentEditor()
+    if (gitIdentifiersForFile?.remote) {
+        const repoMetadataInstance = RepoMetadatafromGitApi.getInstance()
+        repoMetadataInstance.getRepoMetadataUsingGitUrl(gitIdentifiersForFile.remote)
+    }
+
     // If we have a suffix in the same line as the cursor and the suffix contains any word
     // characters, do not attempt to make a completion. This means we only make completions if
     // we have a suffix in the same line for special characters like `)]}` etc.
@@ -384,8 +392,11 @@ async function doGetInlineCompletions(
         isCacheEnabled: triggerKind !== TriggerKind.Manual,
         tracer: tracer ? createCompletionProviderTracer(tracer) : undefined,
     })
+
     const inlineContextParams = {
         context: contextResult?.context,
+        gitUrl: gitIdentifiersForFile?.remote,
+        commit: gitIdentifiersForFile?.commit,
     }
     CompletionLogger.loaded(logId, requestParams, completions, source, isDotComUser, inlineContextParams)
 

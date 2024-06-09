@@ -24,6 +24,7 @@ import type {
     PersistenceRemovedEventPayload,
 } from '../common/persistence-tracker/types'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
+import { RepoMetadatafromGitApi } from '../repository/repo-metadata-from-git-api'
 import { upstreamHealthProvider } from '../services/UpstreamHealthProvider'
 import { completionProviderConfig } from './completion-provider-config'
 import type { ContextSummary } from './context/context-mixer'
@@ -526,8 +527,18 @@ export function loaded(
         event.items = items.map(item => completionItemToItemInfo(item, isDotComUser))
     }
 
-    // 🚨 SECURITY: included only for DotCom users.
-    if (isDotComUser && event.params.inlineCompletionItemContext === undefined) {
+    // 🚨 SECURITY: included only for DotCom users & Public github Repos.
+
+    if (
+        isDotComUser &&
+        inlineContextParams?.gitUrl &&
+        event.params.inlineCompletionItemContext === undefined
+    ) {
+        const instance = RepoMetadatafromGitApi.getInstance()
+        const gitRepoMetadata = instance.getRepoMetadataIfCached(inlineContextParams.gitUrl)
+        if (gitRepoMetadata === undefined || gitRepoMetadata.isPublic === false) {
+            return
+        }
         const contextSnippets: InlineCompletionItemRetrivedContext[] = []
         if (inlineContextParams?.context) {
             for (const snippet of inlineContextParams.context) {
@@ -540,6 +551,8 @@ export function loaded(
             }
         }
         event.params.inlineCompletionItemContext = {
+            gitUrl: inlineContextParams.gitUrl,
+            commit: inlineContextParams.commit,
             prefix: params.docContext.prefix,
             suffix: params.docContext.suffix,
             triggerLine: params.position.line,
@@ -758,10 +771,9 @@ function getInlineContextItemToLog(
     const MAX_CHARACTERS = 4000
     // Add basic truncation to 1000 tokens.
     return {
+        ...inlineCompletionItemContext,
         prefix: inlineCompletionItemContext.prefix.slice(-MAX_CHARACTERS),
         suffix: inlineCompletionItemContext.suffix.slice(0, MAX_CHARACTERS),
-        triggerLine: inlineCompletionItemContext.triggerLine,
-        triggerCharacter: inlineCompletionItemContext.triggerCharacter,
         context: inlineCompletionItemContext.context.slice(0, MAX_CONTEXT_ITEMS).map(c => ({
             ...c,
             content: c.content.slice(0, MAX_CHARACTERS),
