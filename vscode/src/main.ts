@@ -5,6 +5,7 @@ import {
     ConfigFeaturesSingleton,
     type ConfigurationWithAccessToken,
     type DefaultCodyCommands,
+    ModelUsage,
     ModelsService,
     PromptMixin,
     PromptString,
@@ -19,6 +20,7 @@ import {
 import type { CommandResult } from './CommandResult'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
+import { SimpleChatPanelProvider } from './chat/chat-view/SimpleChatPanelProvider'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
@@ -236,7 +238,6 @@ const register = async (
         {
             ...messageProviderOptions,
             extensionUri: context.extensionUri,
-            config,
             startTokenReceiver: platform.startTokenReceiver,
         },
         chatClient,
@@ -285,14 +286,6 @@ const register = async (
         promises.push(localStorage.setConfig(newConfig))
         await Promise.all(promises)
     }
-
-    // Register tree views
-    disposables.push(
-        chatManager,
-        vscode.window.registerWebviewViewProvider('cody.chat', chatManager.sidebarViewController, {
-            webviewOptions: { retainContextWhenHidden: true },
-        })
-    )
 
     const statusBar = createStatusBar()
     const sourceControl = new CodySourceControl(chatClient)
@@ -343,6 +336,31 @@ const register = async (
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)
     repoNameResolver.init(authProvider)
+
+    // Register tree views
+    const webviewViewProvider = new SimpleChatPanelProvider({
+        extensionUri: context.extensionUri,
+        authProvider,
+        chatClient,
+        editor,
+        guardrails,
+        startTokenReceiver: platform.startTokenReceiver,
+        localEmbeddings: localEmbeddings ?? null,
+        contextRanking: contextRanking ?? null,
+        models: ModelsService.getModels(
+            ModelUsage.Chat,
+            true /* TODO!(sqs): dont hardcode isCodyProUser */
+        ),
+        symf: symfRunner ?? null,
+        enterpriseContext: enterpriseContextFactory,
+        featureFlagProvider,
+    })
+    disposables.push(
+        chatManager,
+        vscode.window.registerWebviewViewProvider('cody.chat', webviewViewProvider, {
+            webviewOptions: { retainContextWhenHidden: true },
+        })
+    )
 
     // Execute Cody Commands and Cody Custom Commands
     const executeCommand = (
