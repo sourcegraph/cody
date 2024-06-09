@@ -14,6 +14,8 @@ import {
     type Result,
     type SourcegraphCompletionsClient,
     assertFileURI,
+    displayPath,
+    isDefined,
     isFileURI,
     isWindows,
     telemetryRecorder,
@@ -24,6 +26,7 @@ import {
 import { logDebug } from '../log'
 
 import path from 'node:path'
+import { getEditor } from '../editor/active-editor'
 import { getSymfPath } from './download-symf'
 import { rewriteKeywordQuery } from './rewrite-keyword-query'
 
@@ -56,6 +59,8 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
 
     private status: IndexStatus = new IndexStatus()
 
+    private indexManagementDisposable: vscode.Disposable
+
     constructor(
         private context: vscode.ExtensionContext,
         private sourcegraphServerEndpoint: string | null,
@@ -72,10 +77,13 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
             throw new Error('symf only supports running on the file system')
         }
         this.indexRoot = indexRoot
+
+        this.indexManagementDisposable = initializeSymfIndexManagement(this)
     }
 
     public dispose(): void {
         this.status.dispose()
+        this.indexManagementDisposable.dispose()
     }
 
     public onIndexStart(cb: (e: IndexStartEvent) => void): vscode.Disposable {
@@ -668,4 +676,171 @@ async function getDirSize(dirPath: string): Promise<number> {
         totalSize += stats.size // Symf doesn't create indexes with nested directories, so don't recurse
     }
     return totalSize
+}
+
+function initializeSymfIndexManagement(symf: SymfRunner): vscode.Disposable {
+    const disposables: vscode.Disposable[] = []
+
+    const indexManager = new IndexManager(symf)
+    disposables.push(indexManager)
+
+    disposables.push(
+        vscode.commands.registerCommand('cody.search.index-update', async () => {
+            const scopeDirs = getScopeDirs()
+            if (scopeDirs.length === 0) {
+                void vscode.window.showWarningMessage('Open a workspace folder to index')
+                return
+            }
+            await indexManager.refreshIndex(scopeDirs[0])
+        }),
+        vscode.commands.registerCommand('cody.search.index-update-all', async () => {
+            const folders = vscode.workspace.workspaceFolders
+                ?.map(folder => folder.uri)
+                .filter(isFileURI)
+            if (!folders) {
+                void vscode.window.showWarningMessage('Open a workspace folder to index')
+                return
+            }
+            for (const folder of folders) {
+                await indexManager.refreshIndex(folder)
+            }
+        })
+    )
+    // Kick off search index creation for all workspace folders
+    if (vscode.workspace.workspaceFolders) {
+        for (const folder of vscode.workspace.workspaceFolders) {
+            if (isFileURI(folder.uri)) {
+                void symf.ensureIndex(folder.uri, {
+                    retryIfLastAttemptFailed: false,
+                    ignoreExisting: false,
+                })
+            }
+        }
+    }
+    disposables.push(
+        vscode.workspace.onDidChangeWorkspaceFolders(event => {
+            for (const folder of event.added) {
+                if (isFileURI(folder.uri)) {
+                    void symf.ensureIndex(folder.uri, {
+                        retryIfLastAttemptFailed: false,
+                        ignoreExisting: false,
+                    })
+                }
+            }
+        })
+    )
+
+    return vscode.Disposable.from(...disposables)
+}
+
+/**
+ * @returns the list of workspace folders to search. The first folder is the active file's folder.
+ */
+function getScopeDirs(): FileURI[] {
+    const folders = vscode.workspace.workspaceFolders?.map(f => f.uri).filter(isFileURI)
+    if (!folders) {
+        return []
+    }
+    const uri = getEditor().active?.document.uri
+    if (!uri) {
+        return folders
+    }
+    const currentFolder = vscode.workspace.getWorkspaceFolder(uri)
+    if (!currentFolder) {
+        return folders
+    }
+
+    return [
+        isFileURI(currentFolder.uri) ? currentFolder.uri : undefined,
+        ...folders.filter(folder => folder.toString() !== currentFolder.uri.toString()),
+    ].filter(isDefined)
+}
+
+class IndexManager implements vscode.Disposable {
+    private currentlyRefreshing = new Map<string /* uri.toString() */, Promise<void>>()
+    private scopeDirIndexInProgress: Map<string /* uri.toString() */, Promise<void>> = new Map()
+    private disposables: vscode.Disposable[] = []
+
+    constructor(private symf: SymfRunner) {
+        this.disposables.push(this.symf.onIndexStart(event => this.showIndexProgress(event)))
+    }
+
+    public dispose(): void {
+        vscode.Disposable.from(...this.disposables).dispose()
+    }
+
+    /**
+     * Show a warning message if indexing is already in progress for scopeDirs.
+     * This is needed, because the user may have dismissed previous indexing progress
+     * messages.
+     */
+    public showMessageIfIndexingInProgress(scopeDirs: vscode.Uri[]): void {
+        const indexingScopeDirs: vscode.Uri[] = []
+        for (const scopeDir of scopeDirs) {
+            if (this.scopeDirIndexInProgress.has(scopeDir.toString())) {
+                indexingScopeDirs.push(scopeDir)
+            }
+        }
+        if (indexingScopeDirs.length === 0) {
+            return
+        }
+        void vscode.window.showWarningMessage(
+            `Still indexing: ${indexingScopeDirs.map(displayPath).join(', ')}`
+        )
+    }
+
+    public showIndexProgress({ scopeDir, cancel, done }: IndexStartEvent): void {
+        if (this.scopeDirIndexInProgress.has(scopeDir.toString())) {
+            void vscode.window.showWarningMessage(`Duplicate index request for ${displayPath(scopeDir)}`)
+            return
+        }
+        this.scopeDirIndexInProgress.set(scopeDir.toString(), done)
+        void done.finally(() => {
+            this.scopeDirIndexInProgress.delete(scopeDir.toString())
+        })
+
+        void vscode.window.withProgress(
+            {
+                location: vscode.ProgressLocation.Notification,
+                title: `Updating Cody search index for ${uriBasename(scopeDir)}`,
+                cancellable: true,
+            },
+            async (_progress, token) => {
+                if (token.isCancellationRequested) {
+                    cancel()
+                } else {
+                    token.onCancellationRequested(() => cancel())
+                }
+                await done
+            }
+        )
+    }
+
+    public refreshIndex(scopeDir: FileURI): Promise<void> {
+        const fromCache = this.currentlyRefreshing.get(scopeDir.toString())
+        if (fromCache) {
+            return fromCache
+        }
+        const result = this.forceRefreshIndex(scopeDir)
+        this.currentlyRefreshing.set(scopeDir.toString(), result)
+        return result
+    }
+
+    private async forceRefreshIndex(scopeDir: FileURI): Promise<void> {
+        try {
+            await this.symf.deleteIndex(scopeDir)
+            await this.symf.ensureIndex(scopeDir, {
+                retryIfLastAttemptFailed: true,
+                ignoreExisting: false,
+            })
+        } catch (error) {
+            if (!(error instanceof vscode.CancellationError)) {
+                void vscode.window.showErrorMessage(
+                    `Error refreshing search index for ${displayPath(scopeDir)}: ${error}`
+                )
+            }
+        } finally {
+            this.currentlyRefreshing.delete(scopeDir.toString())
+        }
+    }
 }
