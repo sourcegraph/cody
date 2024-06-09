@@ -1218,8 +1218,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             (await this.repoPicker?.getDefaultRepos()) || [],
             RepoInclusion.Manual
         )
-
-        vscode.commands.executeCommand('setContext', 'cody.hasNewChatOpened', true)
     }
 
     // Attempts to restore the chat to the given sessionID, if it exists in
@@ -1269,8 +1267,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         this.chatModel = new SimpleChatModel(this.chatModel.modelID)
         this.postViewTranscript()
-
-        vscode.commands.executeCommand('setContext', 'cody.hasNewChatOpened', true)
     }
 
     // #endregion
