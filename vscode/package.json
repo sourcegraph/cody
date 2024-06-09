@@ -579,14 +579,6 @@
         "title": "Copy Cody Extension Version"
       },
       {
-        "command": "cody.symf.search",
-        "category": "Cody",
-        "group": "Search",
-        "icon": "$(search)",
-        "title": "Natural Language Search Code (Beta)",
-        "enablement": "cody.activated && workspaceFolderCount > 0"
-      },
-      {
         "command": "cody.test.set-context-filters",
         "title": "[Internal] Set Context Filters Overwrite",
         "enablement": "cody.activated && cody.devOrTest"
