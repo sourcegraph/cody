@@ -88,6 +88,7 @@ export interface Configuration {
     isRunningInsideAgent?: boolean
     agentIDE?: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
     autocompleteTimeouts: AutocompleteTimeouts
+    autocompleteFirstCompletionTimeout: number
 
     testingModelConfig: EmbeddingsModelConfig | undefined
 }

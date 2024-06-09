@@ -124,6 +124,7 @@ export async function createInlineCompletionItemFromMultipleProviders({
             const completionsProvider = new InlineCompletionItemProvider({
                 authStatus,
                 providerConfig,
+                firstCompletionTimeout: config.autocompleteFirstCompletionTimeout,
                 statusBar,
                 completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
                 formatOnAccept: config.autocompleteFormatOnAccept,

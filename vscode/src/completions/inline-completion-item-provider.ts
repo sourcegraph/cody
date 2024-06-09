@@ -60,6 +60,7 @@ interface AutocompleteResult extends vscode.InlineCompletionList {
 
 interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
+    firstCompletionTimeout: number
     statusBar: CodyStatusBar
     tracer?: ProvideInlineCompletionItemsTracer | null
     triggerNotice: ((notice: { key: string }) => void) | null
@@ -379,6 +380,7 @@ export class InlineCompletionItemProvider
                         this.unstable_handleDidPartiallyAcceptCompletionItem.bind(this),
                     completeSuggestWidgetSelection: takeSuggestWidgetSelectionIntoAccount,
                     artificialDelay,
+                    firstCompletionTimeout: this.config.firstCompletionTimeout,
                     completionIntent,
                     lastAcceptedCompletionItem: this.lastAcceptedCompletionItem,
                     isDotComUser: this.config.isDotComUser,
