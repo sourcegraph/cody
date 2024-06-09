@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import {
     type AuthStatus,
     type ChatClient,
-    type Configuration,
     type ConfigurationWithAccessToken,
     type FeatureFlagProvider,
     type Guardrails,
@@ -22,6 +21,7 @@ import { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 import type { MessageProviderOptions } from '../MessageProvider'
 import type { ExtensionMessage } from '../protocol'
 
+import { getConfiguration } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { chatHistory } from './ChatHistoryManager'
@@ -44,7 +44,6 @@ interface ChatPanelProviderOptions extends MessageProviderOptions {
     extensionUri: vscode.Uri
     treeView: TreeViewProvider
     featureFlagProvider: FeatureFlagProvider
-    config: Pick<Configuration, 'isRunningInsideAgent'>
 }
 
 export class ChatPanelsManager implements vscode.Disposable {
@@ -56,7 +55,7 @@ export class ChatPanelsManager implements vscode.Disposable {
 
     // Tree view for chat history
     public treeViewProvider = new TreeViewProvider('chat', featureFlagProvider)
-    public treeView
+    public treeView: vscode.TreeView<vscode.TreeItem>
 
     public supportTreeViewProvider = new TreeViewProvider('support', featureFlagProvider)
 
@@ -135,7 +134,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     public async getActiveChatPanel(): Promise<SimpleChatPanelProvider> {
         // Check if any existing panel is available
         // NOTE: Never reuse webviews when running inside the agent.
-        if (this.activePanelProvider && !this.options.config.isRunningInsideAgent) {
+        if (this.activePanelProvider && !getConfiguration().isRunningInsideAgent) {
             return this.activePanelProvider
         }
 
@@ -164,7 +163,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         // Reuse existing "New Chat" panel if there is an empty one
         const emptyNewChatProvider = this.panelProviders.find(p => p.webviewPanel?.title === 'New Chat')
         if (
-            !this.options.config.isRunningInsideAgent && // Don't reuse panels in the agent
+            !getConfiguration().isRunningInsideAgent && // Don't reuse panels in the agent
             !chatID &&
             !panel &&
             this.panelProviders.length &&
@@ -172,7 +171,6 @@ export class ChatPanelsManager implements vscode.Disposable {
         ) {
             emptyNewChatProvider.webviewPanel?.reveal()
             this.activePanelProvider = emptyNewChatProvider
-            this.options.contextProvider.webview = emptyNewChatProvider.webview
             void this.selectTreeItem(emptyNewChatProvider.sessionID)
             return emptyNewChatProvider
         }
@@ -199,7 +197,6 @@ export class ChatPanelsManager implements vscode.Disposable {
         provider.webviewPanel?.onDidChangeViewState(e => {
             if (e.webviewPanel.visible && e.webviewPanel.active) {
                 this.activePanelProvider = provider
-                this.options.contextProvider.webview = provider.webview
                 void this.selectTreeItem(provider.sessionID)
             }
         })
@@ -230,7 +227,6 @@ export class ChatPanelsManager implements vscode.Disposable {
 
         return new SimpleChatPanelProvider({
             ...this.options,
-            config: this.options.contextProvider.config,
             chatClient: this.chatClient,
             localEmbeddings: isConsumer ? this.localEmbeddings : null,
             contextRanking: isConsumer ? this.contextRanking : null,

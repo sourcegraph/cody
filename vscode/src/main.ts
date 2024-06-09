@@ -18,7 +18,6 @@ import {
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { CommandResult } from './CommandResult'
-import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
 import {
@@ -224,18 +223,8 @@ const register = async (
     const enterpriseContextFactory = new EnterpriseContextFactory(completionsClient)
     disposables.push(enterpriseContextFactory)
 
-    const contextProvider = new ContextProvider(
-        initialConfig,
-        editor,
-        authProvider,
-        localEmbeddings,
-        enterpriseContextFactory.createRemoteSearch()
-    )
     disposables.push(contextFiltersProvider)
-    disposables.push(contextProvider)
-    await contextFiltersProvider
-        .init(repoNameResolver.getRepoNamesFromWorkspaceUri)
-        .then(() => contextProvider.init())
+    await contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri)
 
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
@@ -243,7 +232,6 @@ const register = async (
         guardrails,
         editor,
         authProvider,
-        contextProvider,
     }
 
     const chatManager = new ChatManager(
@@ -269,7 +257,7 @@ const register = async (
         authProvider,
         extensionClient: platform.extensionClient,
     })
-    disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider({ contextProvider }))
+    disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider())
 
     let oldConfig = JSON.stringify(initialConfig)
     async function onConfigurationChange(newConfig: ConfigurationWithAccessToken): Promise<void> {
@@ -285,11 +273,7 @@ const register = async (
         promises.push(featureFlagProvider.syncAuthStatus())
         graphqlClient.onConfigurationChange(newConfig)
         upstreamHealthProvider.onConfigurationChange(newConfig)
-        promises.push(
-            contextFiltersProvider
-                .init(repoNameResolver.getRepoNamesFromWorkspaceUri)
-                .then(() => contextProvider.onConfigurationChange(newConfig))
-        )
+        promises.push(contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri))
         externalServicesOnDidConfigurationChange(newConfig)
         promises.push(configureEventsInfra(newConfig, isExtensionModeDevOrTest, authProvider))
         platform.onConfigurationChange?.(newConfig)
@@ -309,11 +293,6 @@ const register = async (
         chatManager,
         vscode.window.registerWebviewViewProvider('cody.chat', chatManager.sidebarViewController, {
             webviewOptions: { retainContextWhenHidden: true },
-        }),
-        // Update external services when configurationChangeEvent is fired by chatProvider
-        contextProvider.configurationChangeEvent.event(async () => {
-            const newConfig = await getFullConfig()
-            await onConfigurationChange(newConfig)
         })
     )
 
@@ -341,8 +320,6 @@ const register = async (
         // Chat Manager uses Simple Context Provider
         await chatManager.syncAuthStatus(authStatus)
         editorManager.syncAuthStatus(authStatus)
-        // Update context provider first it will also update the configuration
-        await contextProvider.syncAuthStatus()
         const parallelPromises: Promise<void>[] = []
         parallelPromises.push(featureFlagProvider.syncAuthStatus())
         // feature flag provider
