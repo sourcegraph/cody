@@ -43,7 +43,7 @@ import {
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import type { View } from '../../../webviews/NavBar'
-import { getFullConfig } from '../../configuration'
+import { getConfiguration, getFullConfig } from '../../configuration'
 import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
@@ -90,7 +90,7 @@ import type {
 } from '../protocol'
 import { ChatHistoryManager } from './ChatHistoryManager'
 import { CodyChatPanelViewType, addWebviewViewHTML } from './ChatManager'
-import type { ChatPanelConfig, ChatViewProviderWebview } from './ChatPanelsManager'
+import type { ChatViewProviderWebview } from './ChatPanelsManager'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { InitDoer } from './InitDoer'
 import { SimpleChatModel, prepareChatMessage } from './SimpleChatModel'
@@ -99,7 +99,6 @@ import { getEnhancedContext } from './context'
 import { DefaultPrompter } from './prompt'
 
 interface SimpleChatPanelProviderOptions {
-    config: ChatPanelConfig
     extensionUri: vscode.Uri
     authProvider: AuthProvider
     chatClient: ChatClient
@@ -148,7 +147,6 @@ export interface ChatSession {
 export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private chatModel: SimpleChatModel
 
-    private config: ChatPanelConfig
     private readonly authProvider: AuthProvider
     private readonly chatClient: ChatClient
     private readonly codebaseStatusProvider: CodebaseStatusProvider
@@ -173,7 +171,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     constructor({
-        config,
         extensionUri,
         authProvider,
         chatClient,
@@ -186,7 +183,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         guardrails,
         enterpriseContext,
     }: SimpleChatPanelProviderOptions) {
-        this.config = config
         this.extensionUri = extensionUri
         this.authProvider = authProvider
         this.chatClient = chatClient
@@ -578,13 +574,14 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 )
                 const hasCorpusMentions = corpusMentions.length > 0
 
-                span.setAttribute('strategy', this.config.useContext)
+                const config = getConfiguration()
+                span.setAttribute('strategy', config.useContext)
                 const prompter = new DefaultPrompter(
                     userContextItems,
                     addEnhancedContext || hasCorpusMentions
                         ? async text =>
                               getEnhancedContext({
-                                  strategy: this.config.useContext,
+                                  strategy: config.useContext,
                                   editor: this.editor,
                                   input: { text, mentions },
                                   addEnhancedContext,
