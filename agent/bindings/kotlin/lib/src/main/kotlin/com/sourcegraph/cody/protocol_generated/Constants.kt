@@ -14,7 +14,6 @@ object Constants {
   const val chat = "chat"
   const val login = "login"
   const val errors = "errors"
-  const val notice = "notice"
   const val `transcript-errors` = "transcript-errors"
   const val userContextFiles = "userContextFiles"
   const val clientState = "clientState"

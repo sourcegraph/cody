@@ -698,9 +698,7 @@ const register = async (
                         client: codeCompletionsClient,
                         statusBar,
                         authProvider,
-                        triggerNotice: notice => {
-                            void chatManager.triggerNotice(notice)
-                        },
+
                         createBfgRetriever: platform.createBfgRetriever,
                     })
                 )
@@ -710,9 +708,7 @@ const register = async (
                         client: codeCompletionsClient,
                         statusBar,
                         authProvider,
-                        triggerNotice: notice => {
-                            void chatManager.triggerNotice(notice)
-                        },
+
                         createBfgRetriever: platform.createBfgRetriever,
                     })
                 )
