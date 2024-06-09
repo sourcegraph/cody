@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react'
 import { CODY_FEEDBACK_URL } from '../../../src/chat/protocol'
 import styles from './FeedbackButtons.module.css'
 
-export interface FeedbackButtonsProps {
+interface FeedbackButtonsProps {
     className?: string
     disabled?: boolean
     feedbackButtonsOnSubmit: (text: string) => void

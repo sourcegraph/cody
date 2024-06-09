@@ -271,7 +271,6 @@ export {
     scanForMentionTriggerInUserTextInput,
 } from './mentions/query'
 export {
-    type ContextMentionProvider,
     type ContextItemProps,
     allMentionProvidersMetadata,
     openCtxMentionProviders,
@@ -299,7 +298,6 @@ export {
     setOpenCtxClient,
     openCtx,
 } from './context/openctx/api'
-export { URL_CONTEXT_MENTION_PROVIDER } from './mentions/providers/urlMentions'
 export { type ClientStateForWebview } from './clientState'
 export * from './lexicalEditor/editorState'
 export * from './lexicalEditor/nodes'

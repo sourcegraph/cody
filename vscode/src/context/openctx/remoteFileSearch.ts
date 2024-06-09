@@ -34,7 +34,7 @@ const RemoteFileProvider: Provider & { providerUri: string } = {
     },
 }
 
-export async function getRepoMentions(query?: string): Promise<Mention[]> {
+async function getRepoMentions(query?: string): Promise<Mention[]> {
     const dataOrError = await graphqlClient.searchRepos(10, undefined, query)
 
     if (isError(dataOrError) || dataOrError === null) {
@@ -53,7 +53,7 @@ export async function getRepoMentions(query?: string): Promise<Mention[]> {
     }))
 }
 
-export async function getFileMentions(repoName: string, filePath?: string): Promise<Mention[]> {
+async function getFileMentions(repoName: string, filePath?: string): Promise<Mention[]> {
     const query = `repo:${repoName} type:file count:10` + (filePath ? ` file:${filePath}` : '')
 
     const dataOrError = await graphqlClient.searchFileMatches(query)
@@ -84,7 +84,7 @@ export async function getFileMentions(repoName: string, filePath?: string): Prom
         })
         .filter(isDefined)
 }
-export async function getFileItem(repoName: string, filePath: string, rev = 'HEAD'): Promise<Item[]> {
+async function getFileItem(repoName: string, filePath: string, rev = 'HEAD'): Promise<Item[]> {
     const dataOrError = await graphqlClient.getFileContents(repoName, filePath, rev)
 
     if (isError(dataOrError)) {

@@ -35,7 +35,7 @@ async function manuallyGetCompletionItemsForProvider(
     }
 }
 
-export async function triggerMultiModelAutocompletionsForComparison(
+async function triggerMultiModelAutocompletionsForComparison(
     allCompletionsProvidersConfig: providerConfig[]
 ) {
     const activeEditor = vscode.window.activeTextEditor
