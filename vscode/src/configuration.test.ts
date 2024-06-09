@@ -110,6 +110,8 @@ describe('getConfiguration', () => {
                         return ''
                     case 'cody.experimental.minion.anthropicKey':
                         return undefined
+                    case 'cody.autocomplete.advanced.timeout.firstCompletion':
+                        return 1500
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
