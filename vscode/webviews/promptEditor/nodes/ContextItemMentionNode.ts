@@ -15,7 +15,6 @@ import {
     type DOMConversionOutput,
     type DOMExportOutput,
     type EditorConfig,
-    type LexicalNode,
     type NodeKey,
     TextNode,
 } from 'lexical'
@@ -203,12 +202,6 @@ export function $createContextItemMentionNode(
         node.setStyle('font-weight: bold')
     }
     return $applyNodeReplacement(node)
-}
-
-export function $isContextItemMentionNode(
-    node: LexicalNode | null | undefined
-): node is ContextItemMentionNode {
-    return node instanceof ContextItemMentionNode
 }
 
 export function $createContextItemTextNode(contextItem: ContextItem | SerializedContextItem): TextNode {

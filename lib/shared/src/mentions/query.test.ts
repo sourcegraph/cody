@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
 import { FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER } from './api'
-import { URL_CONTEXT_MENTION_PROVIDER } from './providers/urlMentions'
 import {
     type MentionQuery,
     type MentionTrigger,
@@ -65,22 +64,6 @@ describe('parseMentionQuery', () => {
             provider: FILE_CONTEXT_MENTION_PROVIDER.id,
             text: '@baz',
             maybeHasRangeSuffix: false,
-        })
-    })
-
-    test('url query', () => {
-        expect(parseMentionQuery('https://example.com/p', null)).toEqual<MentionQuery>({
-            // Not interpreted as URL because there is no (longer any) support for trigger prefixes
-            // for custom providers.
-            provider: FILE_CONTEXT_MENTION_PROVIDER.id,
-            text: 'https://example.com/p',
-            maybeHasRangeSuffix: false,
-        })
-        expect(
-            parseMentionQuery('https://example.com/p', URL_CONTEXT_MENTION_PROVIDER)
-        ).toEqual<MentionQuery>({
-            provider: URL_CONTEXT_MENTION_PROVIDER.id,
-            text: 'https://example.com/p',
         })
     })
 })

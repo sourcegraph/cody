@@ -379,7 +379,7 @@ export async function executeCommandInPalette(page: Page, commandName: string): 
 /**
  * Verifies that loggedEvents contain all of expectedEvents (in any order).
  */
-export async function assertEvents(loggedEvents: string[], expectedEvents: string[]): Promise<void> {
+async function assertEvents(loggedEvents: string[], expectedEvents: string[]): Promise<void> {
     await expect
         .poll(() => loggedEvents, { timeout: 3000 })
         .toEqual(expect.arrayContaining(expectedEvents))
@@ -411,21 +411,6 @@ export function spawn(...args: Parameters<typeof child_process.spawn>): Promise<
             }
         })
     })
-}
-
-// Uses VSCode command palette to open a file by typing its name.
-export async function openFile(page: Page, filename: string): Promise<void> {
-    const metaKey = getMetaKeyByOS()
-    // Open a file from the file picker
-    await page.keyboard.press(`${metaKey}+P`)
-    // Makes sure the file picker input box has the focus
-    await page.getByPlaceholder(/Search files by name/).click()
-    await page.keyboard.type(`${filename}`)
-    // Makes sure the file is visible in the file picker
-    await expect(page.locator('a').filter({ hasText: filename })).toBeVisible()
-    await page.keyboard.press('Enter')
-    // Makes sure the file is opened in the editor
-    await expect(page.getByRole('tab', { name: filename })).toBeVisible()
 }
 
 export function withPlatformSlashes(input: string) {
