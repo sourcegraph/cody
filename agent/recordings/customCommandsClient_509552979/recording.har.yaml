@@ -428,11 +428,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: ed2ed8a10eee7b5a74d5a8e5e73a82e8
+    - _id: 9ba7bc6e9c3b5e410df6653c7fc87fad
       _order: 0
       cache: {}
       request:
-        bodySize: 1164
+        bodySize: 1162
         cookies: []
         headers:
           - name: content-type
@@ -445,7 +445,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-b443c407f2d29ca44a16321959764bc3-ef64dbe6ae33e990-01
+            value: 00-0f2121547578a68f46c86679d47035cf-beaeb5b57f84d19c-01
           - name: connection
             value: keep-alive
           - name: host
@@ -489,10 +489,10 @@ log:
                 text: Ok.
               - speaker: human
                 text: "The provided context are the code you need and have access to. Do not
-                  make any assumptions. Give me a high-level overview based on
-                  the given context first before asking for additional context
-                  to answer the following question: Give me the names of the
-                  files I have shared with you so far. Format the response as a
+                  make any assumptions. Just give me a high-level overview based
+                  on the given context only if you need additional context to
+                  answer the following question: Give me the names of the files
+                  I have shared with you so far. Format the response as a
                   bulleted list. Only include the raw filename, no extra
                   formatting like quotes."
             model: anthropic/claude-3-sonnet-20240229
@@ -508,14 +508,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 31567
+        bodySize: 4020
         content:
           mimeType: text/event-stream
-          size: 31567
+          size: 4020
           text: >+
             event: completion
 
-            data: {"completion":"Based on the given context, here is a high-level overview and the names of the files you have shared so far, formatted as a bulleted list with only the raw filenames:\n\nHigh-level Overview:\nThe provided context consists of three code snippets, each exporting a function named `example` that returns the string 'example'. These code snippets appear to be from separate files within a codebase.\n\nFile Names:\n- example1.ts\n- example2.ts\n- example3.ts","stopReason":"end_turn"}
+            data: {"completion":"Based on the provided context, here are the filenames you have shared:\n\n- example1.ts\n- example2.ts\n- example3.ts","stopReason":"end_turn"}
 
 
             event: done
@@ -525,7 +525,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 23:08:48 GMT
+            value: Mon, 10 Jun 2024 23:15:30 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -554,7 +554,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T23:08:47.175Z
+      startedDateTime: 2024-06-10T23:15:29.244Z
       time: 0
       timings:
         blocked: -1
@@ -564,11 +564,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 40d9955f8f8d9aa30f037bc36d6d8538
+    - _id: 6f56bdb7285e03cab063dd1884062033
       _order: 0
       cache: {}
       request:
-        bodySize: 1921
+        bodySize: 1919
         cookies: []
         headers:
           - name: content-type
@@ -581,7 +581,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-5bc5f653792da954d895c3f45bdb77f4-1150570d5a9c05e4-01
+            value: 00-3579b46de0e2f026a4c198e244ca8401-fd859a411c825d19-01
           - name: connection
             value: keep-alive
           - name: host
@@ -666,9 +666,9 @@ log:
                 text: Ok.
               - speaker: human
                 text: "The provided context are the code you need and have access to. Do not
-                  make any assumptions. Give me a high-level overview based on
-                  the given context first before asking for additional context
-                  to answer the following question: How many file context have I
+                  make any assumptions. Just give me a high-level overview based
+                  on the given context only if you need additional context to
+                  answer the following question: How many file context have I
                   shared with you? Reply single number. Skip preamble."
             model: anthropic/claude-3-sonnet-20240229
             temperature: 0
@@ -689,7 +689,7 @@ log:
           size: 150
           text: |+
             event: completion
-            data: {"completion":"7","stopReason":"end_turn"}
+            data: {"completion":"6","stopReason":"end_turn"}
 
             event: done
             data: {}
@@ -697,7 +697,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 23:08:51 GMT
+            value: Mon, 10 Jun 2024 23:15:32 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -726,7 +726,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T23:08:50.264Z
+      startedDateTime: 2024-06-10T23:15:30.953Z
       time: 0
       timings:
         blocked: -1

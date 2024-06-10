@@ -353,19 +353,7 @@ describe('Agent', () => {
             // is not a git directory and symf reports some git-related error.
             expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "Based on the provided context, here's a high-level overview:
-
-              1. \`TestClass.ts\` defines a class \`TestClass\` with a constructor and a method \`functionName()\` that logs \`'Hello World!'\` to the console if \`shouldGreet\` is true.
-              2. \`squirrel.ts\` defines an interface \`Squirrel\` which seems unrelated to the task.
-              3. \`animal.ts\` defines an interface \`Animal\` with properties \`name\` (string), \`makeAnimalSound\` (function returning a string), and \`isMammal\` (boolean).
-
-              To write a class \`Dog\` that implements the \`Animal\` interface, I would need the interface definition from \`animal.ts\`.
-
-              Here's the code for the \`Dog\` class implementing the \`Animal\` interface:
-
-              \`\`\`typescript
-              import { Animal } from './animal';
-
+              "\`\`\`typescript
               class Dog implements Animal {
                   name: string;
                   isMammal: boolean = true;
@@ -375,7 +363,7 @@ describe('Agent', () => {
                   }
 
                   makeAnimalSound(): string {
-                      return 'Woof!';
+                      return "Woof!";
                   }
               }
               \`\`\`"

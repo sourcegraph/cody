@@ -1232,11 +1232,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 51552b383560737fbd3ba46ec7e40c1e
+    - _id: 68a74781fdfa794a63a42f440c30b41e
       _order: 0
       cache: {}
       request:
-        bodySize: 1773
+        bodySize: 1771
         cookies: []
         headers:
           - name: content-type
@@ -1249,7 +1249,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-b1b756b2d225afd653584661f76356ec-ad4aeceebf65b1e9-01
+            value: 00-aaeda36c971a87a8e182efb8d152af4f-2d913dc18a98708a-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1327,9 +1327,9 @@ log:
                 text: Ok.
               - speaker: human
                 text: "The provided context are the code you need and have access to. Do not
-                  make any assumptions. Give me a high-level overview based on
-                  the given context first before asking for additional context
-                  to answer the following question: Write a class Dog that
+                  make any assumptions. Just give me a high-level overview based
+                  on the given context only if you need additional context to
+                  answer the following question: Write a class Dog that
                   implements the Animal interface in my workspace. Show the code
                   only, no explanation needed."
             model: anthropic/claude-3-sonnet-20240229
@@ -1345,14 +1345,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 125609
+        bodySize: 11260
         content:
           mimeType: text/event-stream
-          size: 125609
+          size: 11260
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided context, here's a high-level overview:\n\n1. `TestClass.ts` defines a class `TestClass` with a constructor and a method `functionName()` that logs `'Hello World!'` to the console if `shouldGreet` is true.\n2. `squirrel.ts` defines an interface `Squirrel` which seems unrelated to the task.\n3. `animal.ts` defines an interface `Animal` with properties `name` (string), `makeAnimalSound` (function returning a string), and `isMammal` (boolean).\n\nTo write a class `Dog` that implements the `Animal` interface, I would need the interface definition from `animal.ts`.\n\nHere's the code for the `Dog` class implementing the `Animal` interface:\n\n```typescript\nimport { Animal } from './animal';\n\nclass Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return 'Woof!';\n    }\n}\n```","stopReason":"end_turn"}
+            data: {"completion":"```typescript\nclass Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```","stopReason":"end_turn"}
 
 
             event: done
@@ -1362,7 +1362,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 23:08:50 GMT
+            value: Mon, 10 Jun 2024 23:15:32 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1391,7 +1391,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T23:08:48.666Z
+      startedDateTime: 2024-06-10T23:15:30.544Z
       time: 0
       timings:
         blocked: -1
@@ -1401,11 +1401,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: f2aab6d014702d7eaa7f8836881ce6ef
+    - _id: a62b73af34f2b19369fe150ecca59ea5
       _order: 0
       cache: {}
       request:
-        bodySize: 816
+        bodySize: 814
         cookies: []
         headers:
           - name: content-type
@@ -1418,7 +1418,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-7363a741eea45e53723bd3df3e35cf45-4f6c08de6604776d-01
+            value: 00-f358f9f978eb75e572ccc9f2bab37361-2c84a2e9d7645bee-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1451,9 +1451,9 @@ log:
                 text: Ok.
               - speaker: human
                 text: "The provided context are the code you need and have access to. Do not
-                  make any assumptions. Give me a high-level overview based on
-                  the given context first before asking for additional context
-                  to answer the following question: What is Squirrel?"
+                  make any assumptions. Just give me a high-level overview based
+                  on the given context only if you need additional context to
+                  answer the following question: What is Squirrel?"
             model: anthropic/claude-3-sonnet-20240229
             temperature: 0
             topK: -1
@@ -1467,14 +1467,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 151643
+        bodySize: 24211
         content:
           mimeType: text/event-stream
-          size: 151643
+          size: 24211
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided context, `Squirrel` is an interface declared in TypeScript. The comment above the interface definition suggests that `Squirrel` is an interface that mocks something completely unrelated to actual squirrels, and it is related to the implementation of precise code navigation in Sourcegraph.\n\nHowever, the interface itself is empty, and there is no additional information provided about its purpose or how it is used. Without more context from the codebase, it is difficult to provide a more detailed overview of what `Squirrel` represents or its role in the implementation of precise code navigation.\n\nTo better understand the purpose and usage of `Squirrel`, I would need additional context from the codebase, such as:\n\n1. Other code files or modules that import and use the `Squirrel` interface.\n2. Implementation details or descriptions of how `Squirrel` relates to precise code navigation.\n3. Examples or test cases that demonstrate the usage of `Squirrel`.\n\nWith more context from the codebase, I could provide a more comprehensive overview and answer the question \"What is Squirrel?\" more accurately.","stopReason":"end_turn"}
+            data: {"completion":"Based solely on the provided code context, Squirrel is an interface in TypeScript that does not have any properties or methods defined. The comment states that this interface is used to mock something unrelated to actual squirrels, and that it is related to the implementation of precise code navigation in Sourcegraph. However, without additional context or code, it is impossible to determine the exact purpose or usage of this interface.","stopReason":"end_turn"}
 
 
             event: done
@@ -1484,7 +1484,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 23:08:57 GMT
+            value: Mon, 10 Jun 2024 23:15:35 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1513,7 +1513,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T23:08:56.420Z
+      startedDateTime: 2024-06-10T23:15:34.678Z
       time: 0
       timings:
         blocked: -1
@@ -1523,11 +1523,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 5d530820a727cd7fcb4ad515e51c8486
+    - _id: e72fbee583fa700062df98762489e939
       _order: 0
       cache: {}
       request:
-        bodySize: 1681
+        bodySize: 1076
         cookies: []
         headers:
           - name: content-type
@@ -1540,7 +1540,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-f6b74922846660394d20467fe786da5d-cd54969b9e134214-01
+            value: 00-f1f99fa4298f4c359bad0c87a9436236-86d5dfe79e257419-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1573,36 +1573,6 @@ log:
                 text: Ok.
               - speaker: human
                 text: |-
-                  Codebase context from file src/multiple-selections.ts:
-                  ```typescript
-                  function outer() {
-                      /* SELECTION_START */
-                      return function inner() {}
-                      /* SELECTION_END */
-                  }
-
-                  /* SELECTION_2_START */
-                  function anotherFunction() {}
-                  /* SELECTION_2_END */
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/animal.ts:
-                  ```typescript
-                  /* SELECTION_START */
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-                  /* SELECTION_END */
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
                   My selected code from @src/multiple-selections.ts:7-8:
                   ```
 
@@ -1612,9 +1582,9 @@ log:
                 text: Ok.
               - speaker: human
                 text: "The provided context are the code you need and have access to. Do not
-                  make any assumptions. Give me a high-level overview based on
-                  the given context first before asking for additional context
-                  to answer the following question: What is the name of the
+                  make any assumptions. Just give me a high-level overview based
+                  on the given context only if you need additional context to
+                  answer the following question: What is the name of the
                   function that I have selected? Only answer with the name of
                   the function, nothing else"
             model: anthropic/claude-3-sonnet-20240229
@@ -1644,7 +1614,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 23:09:04 GMT
+            value: Mon, 10 Jun 2024 23:15:39 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1673,7 +1643,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T23:09:03.583Z
+      startedDateTime: 2024-06-10T23:15:39.063Z
       time: 0
       timings:
         blocked: -1
@@ -1683,11 +1653,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 706b43fca463aff20e16a87040c47837
+    - _id: de761067194a2d763c303af92d2c9d1b
       _order: 0
       cache: {}
       request:
-        bodySize: 1686
+        bodySize: 1081
         cookies: []
         headers:
           - name: content-type
@@ -1700,7 +1670,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-f68fb79813dbc9d921cf2b89a1ad5527-faa2b14afcee3d5f-01
+            value: 00-f795eceaf869589be56cfbd5f50ecbd0-008c6a8f025b3a55-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1733,36 +1703,6 @@ log:
                 text: Ok.
               - speaker: human
                 text: |-
-                  Codebase context from file src/multiple-selections.ts:
-                  ```typescript
-                  function outer() {
-                      /* SELECTION_START */
-                      return function inner() {}
-                      /* SELECTION_END */
-                  }
-
-                  /* SELECTION_2_START */
-                  function anotherFunction() {}
-                  /* SELECTION_2_END */
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/animal.ts:
-                  ```typescript
-                  /* SELECTION_START */
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-                  /* SELECTION_END */
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
                   My selected code from @src/multiple-selections.ts:2-4:
                   ```
 
@@ -1772,9 +1712,9 @@ log:
                 text: Ok.
               - speaker: human
                 text: "The provided context are the code you need and have access to. Do not
-                  make any assumptions. Give me a high-level overview based on
-                  the given context first before asking for additional context
-                  to answer the following question: What is the name of the
+                  make any assumptions. Just give me a high-level overview based
+                  on the given context only if you need additional context to
+                  answer the following question: What is the name of the
                   function that I have selected? Only answer with the name of
                   the function, nothing else"
             model: anthropic/claude-3-sonnet-20240229
@@ -1804,7 +1744,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 23:09:07 GMT
+            value: Mon, 10 Jun 2024 23:15:42 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1833,7 +1773,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T23:09:06.372Z
+      startedDateTime: 2024-06-10T23:15:41.118Z
       time: 0
       timings:
         blocked: -1
@@ -3237,11 +3177,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: bb321ba8566b8cd24d8e34b28a66639d
+    - _id: aaf3558ff1cf989f0f278a23e749b29e
       _order: 0
       cache: {}
       request:
-        bodySize: 1207
+        bodySize: 1205
         cookies: []
         headers:
           - name: content-type
@@ -3254,7 +3194,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-b1b756b2d225afd653584661f76356ec-fecaf35317b62ab7-01
+            value: 00-aaeda36c971a87a8e182efb8d152af4f-8ec702cc1dd5a1f2-01
           - name: connection
             value: keep-alive
           - name: host
@@ -3284,11 +3224,11 @@ log:
                   weight between 0.0 and 1.0 that indicates the importance of
                   the keyword</weight></keyword></keywords>. Here is the user
                   query: <userQuery>The provided context are the code you need
-                  and have access to. Do not make any assumptions. Give me a
-                  high-level overview based on the given context first before
-                  asking for additional context to answer the following
-                  question: Write a class Dog that implements the Animal
-                  interface in my workspace. Show the code only, no explanation
+                  and have access to. Do not make any assumptions. Just give me
+                  a high-level overview based on the given context only if you
+                  need additional context to answer the following question:
+                  Write a class Dog that implements the Animal interface in my
+                  workspace. Show the code only, no explanation
                   needed.</userQuery>"
               - speaker: assistant
             temperature: 0
@@ -3300,14 +3240,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 99215
+        bodySize: 94191
         content:
           mimeType: text/event-stream
-          size: 99215
+          size: 94191
           text: >+
             event: completion
 
-            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eanimal\u003c/value\u003e\n\u003cvariants\u003efauna creature organism living-thing\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003edog\u003c/value\u003e\n\u003cvariants\u003ecanine hound mutt pup puppy\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003einterface\u003c/value\u003e\n\u003cvariants\u003eapi contract specification\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclass\u003c/value\u003e\n\u003cvariants\u003etype object-oriented\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eimplementation\u003c/value\u003e\n\u003cvariants\u003ecode realization\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
+            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eanimal\u003c/value\u003e\n\u003cvariants\u003ecreature creature creature creature\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003edog\u003c/value\u003e\n\u003cvariants\u003ecanine puppy hound\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003einterface\u003c/value\u003e\n\u003cvariants\u003eapi contract specification\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclass\u003c/value\u003e\n\u003cvariants\u003etype object\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eimplementation\u003c/value\u003e\n\u003cvariants\u003erealization concrete\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
 
 
             event: done
@@ -3317,7 +3257,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 23:08:47 GMT
+            value: Mon, 10 Jun 2024 23:15:29 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -3346,7 +3286,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T23:08:46.780Z
+      startedDateTime: 2024-06-10T23:15:28.524Z
       time: 0
       timings:
         blocked: -1
@@ -3356,11 +3296,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 8ac596c133457f0e15faccd41598182f
+    - _id: 265f870a5902e2a593649cc3f12eee56
       _order: 0
       cache: {}
       request:
-        bodySize: 1110
+        bodySize: 1108
         cookies: []
         headers:
           - name: content-type
@@ -3373,7 +3313,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-7363a741eea45e53723bd3df3e35cf45-0d1a676f52e491a4-01
+            value: 00-f358f9f978eb75e572ccc9f2bab37361-ff8a1ca4bcc94e28-01
           - name: connection
             value: keep-alive
           - name: host
@@ -3403,10 +3343,10 @@ log:
                   weight between 0.0 and 1.0 that indicates the importance of
                   the keyword</weight></keyword></keywords>. Here is the user
                   query: <userQuery>The provided context are the code you need
-                  and have access to. Do not make any assumptions. Give me a
-                  high-level overview based on the given context first before
-                  asking for additional context to answer the following
-                  question: What is Squirrel?</userQuery>"
+                  and have access to. Do not make any assumptions. Just give me
+                  a high-level overview based on the given context only if you
+                  need additional context to answer the following question: What
+                  is Squirrel?</userQuery>"
               - speaker: assistant
             temperature: 0
             topK: 1
@@ -3417,14 +3357,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 114041
+        bodySize: 15464
         content:
           mimeType: text/event-stream
-          size: 114041
+          size: 15464
           text: >+
             event: completion
 
-            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esquirrel\u003c/value\u003e\n\u003cvariants\u003esquirrel.h squirrel.cpp squirrel.py squirrel.js squirrel_api.h squirrel_impl.cpp squirrel_utils.py\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eoverview\u003c/value\u003e\n\u003cvariants\u003esummary intro background context\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eapi\u003c/value\u003e\n\u003cvariants\u003einterface library module\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eimplementation\u003c/value\u003e\n\u003cvariants\u003esource code internals\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eutils\u003c/value\u003e\n\u003cvariants\u003eutilities helpers\u003c/variants\u003e\n\u003cweight\u003e0.6\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
+            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esquirrel\u003c/value\u003e\n\u003cvariants\u003esquirrels squirrel-related squirrel_related squirrel-utils squirrel_utils squirrel-api squirrel_api\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
 
 
             event: done
@@ -3434,7 +3374,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 23:08:54 GMT
+            value: Mon, 10 Jun 2024 23:15:34 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -3463,7 +3403,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T23:08:54.219Z
+      startedDateTime: 2024-06-10T23:15:33.179Z
       time: 0
       timings:
         blocked: -1
@@ -3473,11 +3413,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: e0b4dcf13b1d277f7658e3323c29e417
+    - _id: b2aff510cffc5fab1356b2c12e5dca06
       _order: 0
       cache: {}
       request:
-        bodySize: 1203
+        bodySize: 1201
         cookies: []
         headers:
           - name: content-type
@@ -3490,7 +3430,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-f6b74922846660394d20467fe786da5d-e2a00b59d59ba2d7-01
+            value: 00-f1f99fa4298f4c359bad0c87a9436236-cca3efcf0257cfe2-01
           - name: connection
             value: keep-alive
           - name: host
@@ -3520,12 +3460,11 @@ log:
                   weight between 0.0 and 1.0 that indicates the importance of
                   the keyword</weight></keyword></keywords>. Here is the user
                   query: <userQuery>The provided context are the code you need
-                  and have access to. Do not make any assumptions. Give me a
-                  high-level overview based on the given context first before
-                  asking for additional context to answer the following
-                  question: What is the name of the function that I have
-                  selected? Only answer with the name of the function, nothing
-                  else</userQuery>"
+                  and have access to. Do not make any assumptions. Just give me
+                  a high-level overview based on the given context only if you
+                  need additional context to answer the following question: What
+                  is the name of the function that I have selected? Only answer
+                  with the name of the function, nothing else</userQuery>"
               - speaker: assistant
             temperature: 0
             topK: 1
@@ -3536,14 +3475,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 39737
+        bodySize: 20849
         content:
           mimeType: text/event-stream
-          size: 39737
+          size: 20849
           text: >+
             event: completion
 
-            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003efunction\u003c/value\u003e\n\u003cvariants\u003emethod procedure subroutine routine\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ename\u003c/value\u003e\n\u003cvariants\u003etitle identifier label\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eselected\u003c/value\u003e\n\u003cvariants\u003echosen picked highlighted\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
+            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003efunction\u003c/value\u003e\n\u003cvariants\u003emethod procedure subroutine routine\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ename\u003c/value\u003e\n\u003cvariants\u003etitle identifier label\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
 
 
             event: done
@@ -3553,7 +3492,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 23:09:02 GMT
+            value: Mon, 10 Jun 2024 23:15:38 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -3582,7 +3521,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T23:09:02.259Z
+      startedDateTime: 2024-06-10T23:15:37.591Z
       time: 0
       timings:
         blocked: -1
