@@ -22,7 +22,7 @@ interface ProcessInlineCompletionsParams {
     docContext: DocumentContext
 }
 
-export interface InlineCompletionItemRetrivedContext {
+export interface InlineCompletionItemRetrievedContext {
     content: string
     filePath: string
     startLine: number
@@ -42,7 +42,7 @@ export interface InlineCompletionItemContext {
     suffix: string
     triggerLine: number
     triggerCharacter: number
-    context: InlineCompletionItemRetrivedContext[]
+    context: InlineCompletionItemRetrievedContext[]
 }
 
 export interface InlineCompletionItemWithAnalytics extends ItemPostProcessingInfo, InlineCompletionItem {

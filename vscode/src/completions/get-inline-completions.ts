@@ -12,7 +12,7 @@ import { logError } from '../log'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import { isValidTestFile } from '../commands/utils/test-commands'
-import { getGitRemoteUriForCurrentEditor } from '../repository/git-extension-api'
+import { gitMetadataForCurrentEditor } from '../repository/git-metadata-for-editor'
 import { RepoMetadatafromGitApi } from '../repository/repo-metadata-from-git-api'
 import { completionProviderConfig } from './completion-provider-config'
 import type { ContextMixer } from './context/context-mixer'
@@ -207,9 +207,11 @@ async function doGetInlineCompletions(
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
 
-    const gitIdentifiersForFile = await getGitRemoteUriForCurrentEditor()
+    const gitIdentifiersForFile =
+        isDotComUser === true ? gitMetadataForCurrentEditor.getGitIdentifiersForFile() : undefined
     if (gitIdentifiersForFile?.remote) {
         const repoMetadataInstance = RepoMetadatafromGitApi.getInstance()
+        // Calling this so that it precomputes the `gitRepoUrl` and store in its cache for query later.
         repoMetadataInstance.getRepoMetadataUsingGitUrl(gitIdentifiersForFile.remote)
     }
 

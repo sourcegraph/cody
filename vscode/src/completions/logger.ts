@@ -33,7 +33,6 @@ import type { RequestParams } from './request-manager'
 import * as statistics from './statistics'
 import type {
     InlineCompletionItemContext,
-    InlineCompletionItemRetrivedContext,
     InlineCompletionItemWithAnalytics,
     InlineContextItemsParams,
 } from './text-processing/process-inline-completions'
@@ -528,27 +527,16 @@ export function loaded(
     }
 
     // 🚨 SECURITY: included only for DotCom users & Public github Repos.
-
     if (
         isDotComUser &&
         inlineContextParams?.gitUrl &&
         event.params.inlineCompletionItemContext === undefined
     ) {
         const instance = RepoMetadatafromGitApi.getInstance()
+        // Get the metadata only if already cached, We don't wait for the network call here.
         const gitRepoMetadata = instance.getRepoMetadataIfCached(inlineContextParams.gitUrl)
         if (gitRepoMetadata === undefined || gitRepoMetadata.isPublic === false) {
             return
-        }
-        const contextSnippets: InlineCompletionItemRetrivedContext[] = []
-        if (inlineContextParams?.context) {
-            for (const snippet of inlineContextParams.context) {
-                contextSnippets.push({
-                    content: snippet.content,
-                    startLine: snippet.startLine,
-                    endLine: snippet.endLine,
-                    filePath: snippet.uri.fsPath,
-                })
-            }
         }
         event.params.inlineCompletionItemContext = {
             gitUrl: inlineContextParams.gitUrl,
@@ -557,7 +545,12 @@ export function loaded(
             suffix: params.docContext.suffix,
             triggerLine: params.position.line,
             triggerCharacter: params.position.character,
-            context: contextSnippets,
+            context: inlineContextParams.context.map(snippet => ({
+                content: snippet.content,
+                startLine: snippet.startLine,
+                endLine: snippet.endLine,
+                filePath: snippet.uri.fsPath,
+            })),
         }
     }
 }
