@@ -19,14 +19,16 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-${{ matrix.node }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-${{ matrix.node }}-pnpm-store-
           restore-keys: ${{ runner.os }}-${{ matrix.node }}-pnpm-store-k
-      - uses: actions/cache@v4
+      - name: Cache gradle and sourcegraph stores
+        uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+            ~/.sourcegraph/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', 'gradle.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
       - name: Gradle Wrapper Validation
@@ -42,6 +44,7 @@ jobs:
           cache: gradle
       # Skip Code Search build in CI because it's slow, and we don't use it anyway for testing purposes.
       - run: echo "SKIP_CODE_SEARCH_BUILD=true" >> $GITHUB_ENV
+      - run: ./gradlew spotlessCheck
       - run: ./gradlew test
       - name: Upload test report
         if: always()
@@ -50,6 +53,5 @@ jobs:
           name: test-report
           path: build/reports/tests/
       - run: ./gradlew buildPlugin
-      - run: ./gradlew spotlessCheck
       - run: ./gradlew runPluginVerifier -Pvalidation=lite
       - run: ./gradlew --stop
