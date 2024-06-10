@@ -78,6 +78,8 @@ import type {
     CustomCommandResult,
     EditTask,
     ExtensionConfiguration,
+    GetDocumentsParams,
+    GetDocumentsResult,
     GetFoldingRangeResult,
     ProtocolCommand,
     ProtocolTextDocument,
@@ -464,30 +466,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
             this.workspace.setActiveTextEditor(this.workspace.newTextEditor(textDocument))
         })
 
-        this.registerNotification('textDocument/didChange', document => {
-            const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
-            const { document: textDocument, contentChanges } =
-                this.workspace.loadDocumentWithChanges(documentWithUri)
-            const textEditor = this.workspace.newTextEditor(textDocument)
-            this.workspace.setActiveTextEditor(textEditor)
+        this.registerNotification('textDocument/didChange', async document => {
+            await this.handleDocumentChange(document)
+        })
 
-            if (contentChanges.length > 0) {
-                this.pushPendingPromise(
-                    vscode_shim.onDidChangeTextDocument.cody_fireAsync({
-                        document: textDocument,
-                        contentChanges,
-                        reason: undefined,
-                    })
-                )
-            }
-
-            if (document.selection) {
-                vscode_shim.onDidChangeTextEditorSelection.fire({
-                    textEditor,
-                    kind: undefined,
-                    selections: [textEditor.selection],
-                })
-            }
+        this.registerRequest('textDocument/change', async document => {
+            await this.handleDocumentChange(document)
+            return { success: true }
         })
 
         this.registerNotification('textDocument/didClose', document => {
@@ -751,6 +736,28 @@ export class Agent extends MessageHandler implements ExtensionClient {
             globalState.reset()
             return null
         })
+
+        this.registerAuthenticatedRequest(
+            'testing/workspaceDocuments',
+            async (params: GetDocumentsParams): Promise<GetDocumentsResult> => {
+                const uris = params.uris ?? this.workspace.allDocuments().map(doc => doc.uri.toString())
+
+                const documents: ProtocolTextDocument[] = uris
+                    .map(uri => {
+                        const document = this.workspace.getDocument(vscode.Uri.parse(uri))
+                        return document
+                            ? ({
+                                  uri: document.uri.toString(),
+                                  content: document.content ?? undefined,
+                                  selection: document.protocolDocument?.selection ?? undefined,
+                              } as ProtocolTextDocument)
+                            : null
+                    })
+                    .filter((doc): doc is ProtocolTextDocument => doc !== null)
+
+                return { documents }
+            }
+        )
 
         this.registerAuthenticatedRequest('command/execute', async params => {
             await vscode.commands.executeCommand(params.command, ...(params.arguments ?? []))
@@ -1424,6 +1431,30 @@ export class Agent extends MessageHandler implements ExtensionClient {
             'cody.auth.status'
         )
         return result
+    }
+
+    private async handleDocumentChange(document: ProtocolTextDocument): Promise<void> {
+        const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
+        const { document: textDocument, contentChanges } =
+            this.workspace.loadDocumentWithChanges(documentWithUri)
+        const textEditor = this.workspace.newTextEditor(textDocument)
+        this.workspace.setActiveTextEditor(textEditor)
+
+        if (contentChanges.length > 0) {
+            await vscode_shim.onDidChangeTextDocument.cody_fireAsync({
+                document: textDocument,
+                contentChanges,
+                reason: undefined,
+            })
+        }
+
+        if (document.selection) {
+            vscode_shim.onDidChangeTextEditorSelection.fire({
+                textEditor,
+                kind: undefined,
+                selections: [textEditor.selection],
+            })
+        }
     }
 
     private registerWebviewHandlers(): void {

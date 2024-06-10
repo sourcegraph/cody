@@ -180,6 +180,8 @@ export type ClientRequests = {
     'testing/closestPostData': [{ url: string; postData: string }, { closestBody: string }]
     'testing/memoryUsage': [null, { usage: MemoryUsage }]
     'testing/awaitPendingPromises': [null, null]
+    // Retrieve the Agent's copy of workspace documents, for testing/validation.
+    'testing/workspaceDocuments': [GetDocumentsParams, GetDocumentsResult]
     // Returns diagnostics for the given URI. Lives under `testing/` instead of
     // standalone `diagnostics/` because it only works for TypeScript files.
     'testing/diagnostics': [{ uri: string }, { diagnostics: ProtocolDiagnostic[] }]
@@ -200,6 +202,8 @@ export type ClientRequests = {
 
     // Returns the current authentication status without making changes to it.
     'extensionConfiguration/status': [null, AuthStatus | null]
+
+    'textDocument/change': [ProtocolTextDocument, { success: boolean }]
 
     // Run attribution search for a code snippet displayed in chat.
     // Attribution is an enterprise feature which allows to look for code generated
@@ -922,4 +926,16 @@ export interface ProtocolCodeAction {
           }
         | undefined
         | null
+}
+
+/**
+ * Omitting uris parameter will retrieve all open documents for the
+ * current workspace root.
+ */
+export interface GetDocumentsParams {
+    uris?: string[]
+}
+
+export interface GetDocumentsResult {
+    documents: ProtocolTextDocument[]
 }
