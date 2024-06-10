@@ -59,6 +59,9 @@ import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
 // traffic.
 export const isTesting = process.env.CODY_SHIM_TESTING === 'true'
 
+// Completely different testing flag set while running client-side integration tests.
+export const isIntegrationTesting = process.env.CODY_INTEGRATION_TESTING === 'true'
+
 export { AgentEventEmitter as EventEmitter } from '../../vscode/src/testutils/AgentEventEmitter'
 
 export {

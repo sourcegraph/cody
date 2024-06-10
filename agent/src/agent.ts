@@ -467,7 +467,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerNotification('textDocument/didChange', async document => {
-            await this.handleDocumentChange(document)
+            this.handleDocumentChange(document)
         })
 
         this.registerRequest('textDocument/change', async document => {
@@ -1251,11 +1251,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
     }
 
     private pushPendingPromise(pendingPromise: Promise<unknown>): void {
-        if (!vscode_shim.isTesting) {
-            return
+        if (vscode_shim.isTesting || vscode_shim.isIntegrationTesting) {
+            this.pendingPromises.add(pendingPromise)
+            pendingPromise.finally(() => this.pendingPromises.delete(pendingPromise))
         }
-        this.pendingPromises.add(pendingPromise)
-        pendingPromise.finally(() => this.pendingPromises.delete(pendingPromise))
     }
 
     // ExtensionClient callbacks.
@@ -1439,21 +1438,27 @@ export class Agent extends MessageHandler implements ExtensionClient {
         const textEditor = this.workspace.newTextEditor(textDocument)
         this.workspace.setActiveTextEditor(textEditor)
 
+        let lastPromise: Promise<any> | undefined
+
         if (contentChanges.length > 0) {
-            await vscode_shim.onDidChangeTextDocument.cody_fireAsync({
+            lastPromise = vscode_shim.onDidChangeTextDocument.cody_fireAsync({
                 document: textDocument,
                 contentChanges,
                 reason: undefined,
             })
+            this.pushPendingPromise(lastPromise)
         }
 
         if (document.selection) {
-            vscode_shim.onDidChangeTextEditorSelection.fire({
+            lastPromise = vscode_shim.onDidChangeTextEditorSelection.cody_fireAsync({
                 textEditor,
                 kind: undefined,
                 selections: [textEditor.selection],
             })
+            this.pushPendingPromise(lastPromise)
         }
+
+        return lastPromise || Promise.resolve()
     }
 
     private registerWebviewHandlers(): void {
