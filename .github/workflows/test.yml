@@ -10,18 +10,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Fetch Sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - run: yarn global add pnpm@8.6.7
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash
         id: pnpm-cache
       - name: Cache pnpm store
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
           key: ${{ runner.os }}-${{ matrix.node }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-${{ matrix.node }}-pnpm-store-k
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
@@ -30,12 +30,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
       - name: Gradle Wrapper Validation
-        uses: gradle/wrapper-validation-action@v1.1.0
-      - uses: actions/setup-node@v3
+        uses: gradle/actions/wrapper-validation@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
       - name: Setup Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: zulu
           java-version: 11
