@@ -355,11 +355,26 @@ describe('Agent', () => {
                 `
               "Based on the provided codebase context, here's a high-level overview:
 
-              - \`TestClass.ts\` contains a class \`TestClass\` with a constructor that takes a \`shouldGreet\` boolean parameter and a \`functionName\` method that logs \`'Hello World!'\` if \`shouldGreet\` is true.
-              - \`squirrel.ts\` defines an interface \`Squirrel\` that is unrelated to actual squirrels but is related to the implementation of precise code navigation in Sourcegraph.
-              - \`animal.ts\` defines an interface \`Animal\` with properties \`name\` (string), \`makeAnimalSound\` (function returning a string), and \`isMammal\` (boolean).
+              - The \`src/TestClass.ts\` file defines a class \`TestClass\` with a constructor that takes a \`shouldGreet\` parameter and a \`functionName\` method that logs "Hello World!" to the console if \`shouldGreet\` is true.
+              - The \`src/squirrel.ts\` file defines an interface \`Squirrel\` with no properties or methods, which is supposedly unrelated to actual squirrels but related to the implementation of precise code navigation in Sourcegraph.
+              - The \`src/animal.ts\` file defines an interface \`Animal\` with a \`name\` property (string), a \`makeAnimalSound\` method (returns string), and an \`isMammal\` property (boolean).
 
-              To write a class \`Dog\` that implements the \`Animal\` interface, I would need the \`Animal\` interface definition from \`animal.ts\`. If you could provide the full contents of \`animal.ts\`, I can then show you the code for the \`Dog\` class that implements the \`Animal\` interface."
+              To write a class \`Dog\` that implements the \`Animal\` interface, I need access to the \`Animal\` interface definition. The provided codebase context includes the \`Animal\` interface definition, so I can use it to implement the \`Dog\` class as follows:
+
+              \`\`\`typescript
+              export class Dog implements Animal {
+                  name: string;
+                  isMammal: boolean = true;
+
+                  constructor(name: string) {
+                      this.name = name;
+                  }
+
+                  makeAnimalSound(): string {
+                      return "Woof!";
+                  }
+              }
+              \`\`\`"
             `,
                 explainPollyError
             )
