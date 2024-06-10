@@ -37,8 +37,8 @@ interface EditProviderOptions extends EditManagerOptions {
 // "tools" like directing the response into a specific file. Code is forwarded
 // to the FixupTask.
 export class EditProvider {
-    private editQueue: { response: string; isMessageInProgress: boolean }[] = []
-    private editInProgress = false
+    private insertionQueue: { response: string; isMessageInProgress: boolean }[] = []
+    private insertionInProgress = false
     private abortController: AbortController | null = null
 
     constructor(public config: EditProviderOptions) {}
@@ -215,36 +215,28 @@ export class EditProvider {
             })
         }
 
-        const streamingEnabled = false
-        if (streamingEnabled) {
-            this.queueEdit(response, isMessageInProgress)
+        const intentsForInsert = ['add', 'test']
+        if (intentsForInsert.includes(this.config.task.intent)) {
+            this.queueInsertion(response, isMessageInProgress)
         } else {
             this.handleFixupEdit(response, isMessageInProgress)
         }
     }
 
-    private queueEdit(response: string, isMessageInProgress: boolean): void {
-        this.editQueue.push({ response, isMessageInProgress })
-        if (!this.editInProgress) {
+    private queueInsertion(response: string, isMessageInProgress: boolean): void {
+        this.insertionQueue.push({ response, isMessageInProgress })
+        if (!this.insertionInProgress) {
             this.processQueue()
         }
     }
 
     private async processQueue(): Promise<void> {
-        const intentsForInsert = ['add', 'test']
-        this.editInProgress = true
-        try {
-            while (this.editQueue.length > 0) {
-                const { response, isMessageInProgress } = this.editQueue.shift()!
-                if (intentsForInsert.includes(this.config.task.intent)) {
-                    await this.handleFixupInsert(response, isMessageInProgress)
-                } else {
-                    await this.handleFixupStreamedEdit(response, isMessageInProgress)
-                }
-            }
-        } finally {
-            this.editInProgress = false
+        this.insertionInProgress = true
+        while (this.insertionQueue.length > 0) {
+            const { response, isMessageInProgress } = this.insertionQueue.shift()!
+            await this.handleFixupInsert(response, isMessageInProgress)
         }
+        this.insertionInProgress = false
     }
 
     /**
@@ -257,17 +249,6 @@ export class EditProvider {
 
     private async handleFixupEdit(response: string, isMessageInProgress: boolean): Promise<void> {
         return this.config.controller.didReceiveFixupText(
-            this.config.task.id,
-            responseTransformer(response, this.config.task, isMessageInProgress),
-            isMessageInProgress ? 'streaming' : 'complete'
-        )
-    }
-
-    private async handleFixupStreamedEdit(
-        response: string,
-        isMessageInProgress: boolean
-    ): Promise<void> {
-        return this.config.controller.didReceiveFixupEdit(
             this.config.task.id,
             responseTransformer(response, this.config.task, isMessageInProgress),
             isMessageInProgress ? 'streaming' : 'complete'

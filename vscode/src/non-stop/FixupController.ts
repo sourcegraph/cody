@@ -564,11 +564,7 @@ export class FixupController
         )
     }
 
-    private async streamTask(
-        task: FixupTask,
-        state: 'streaming' | 'complete',
-        mode: 'insert' | 'edit' = 'insert'
-    ): Promise<void> {
+    private async streamTask(task: FixupTask, state: 'streaming' | 'complete'): Promise<void> {
         if (task.state !== CodyTaskState.Inserting) {
             return
         }
@@ -590,10 +586,90 @@ export class FixupController
         }
 
         if (state === 'complete') {
-            // TODO: Re-add completion code, omitted for now for debugging
+            const replacement = task.replacement
+            if (replacement === undefined) {
+                throw new Error('Task applied with no replacement text')
+            }
+
+            // We will format this code once applied, so we do not place an undo stop after this edit to avoid cluttering the undo stack.
+            const applyEditOptions = {
+                undoStopBefore: false,
+                undoStopAfter: false,
+            }
+
+            let editOk: boolean
+            if (edit instanceof vscode.WorkspaceEdit) {
+                edit.replace(document.uri, task.selectionRange, replacement)
+                editOk = await vscode.workspace.applyEdit(edit)
+            } else {
+                editOk = await edit(editBuilder => {
+                    editBuilder.replace(task.selectionRange, replacement)
+                }, applyEditOptions)
+            }
+
+            // Add the missing undo stop after this change.
+            // Now when the user hits 'undo', the entire format and edit will be undone at once
+            const formatEditOptions = {
+                undoStopBefore: false,
+                undoStopAfter: true,
+            }
+            this.setTaskState(task, CodyTaskState.Formatting)
+            await new Promise((resolve, reject) => {
+                task.formattingResolver = resolve
+
+                this.formatEdit(
+                    visibleEditor ? visibleEditor.edit.bind(this) : new vscode.WorkspaceEdit(),
+                    document,
+                    task,
+                    formatEditOptions
+                )
+                    .then(resolve)
+                    .catch(reject)
+                    .finally(() => {
+                        task.formattingResolver = null
+                    })
+            })
+
+            // TODO: See if we can discard a FixupFile now.
+            this.setTaskState(task, CodyTaskState.Applied)
+            this.logTaskCompletion(task, document, editOk)
+
+            // Inform the user about the change if it happened in the background
+            // TODO: This will show a new notification for each unique file name.
+            // Consider only ever showing 1 notification that opens a UI to display all fixups.
+            if (!visibleEditor) {
+                await this.notifyTaskComplete(task)
+            }
             return
         }
-        return
+
+        // In progress insertion, apply the partial replacement and adjust the range
+        const replacement = task.inProgressReplacement
+        if (replacement === undefined) {
+            throw new Error('Task applied with no replacement text')
+        }
+
+        // Avoid adding any undo stops when streaming. We want the completed edit to be undone as a single unit, once finished.
+        const applyEditOptions = {
+            undoStopBefore: false,
+            undoStopAfter: false,
+        }
+
+        // Insert updated text at selection range
+        let editOk: boolean
+        if (edit instanceof vscode.WorkspaceEdit) {
+            edit.replace(document.uri, task.selectionRange, replacement)
+            editOk = await vscode.workspace.applyEdit(edit)
+        } else {
+            editOk = await edit(editBuilder => {
+                editBuilder.replace(task.selectionRange, replacement)
+            }, applyEditOptions)
+        }
+
+        if (editOk) {
+            // Expand the selection range to accompany the edit
+            task.selectionRange = expandRangeToInsertedText(task.selectionRange, replacement)
+        }
     }
 
     private async applyTask(task: FixupTask): Promise<void> {
@@ -921,48 +997,6 @@ export class FixupController
 
         task.inProgressReplacement = replacementText
         return this.streamTask(task, state)
-    }
-
-    public async didReceiveFixupEdit(
-        id: string,
-        text: string,
-        state: 'streaming' | 'complete'
-    ): Promise<void> {
-        const task = this.tasks.get(id)
-        if (!task) {
-            return
-        }
-
-        if (task.state !== CodyTaskState.Inserting) {
-            this.setTaskState(task, CodyTaskState.Inserting)
-        }
-
-        const trimmedReplacement = state === 'complete' ? text : text.replace(/\n[^\n]*$/, '')
-        if (trimmedReplacement === text) {
-            // Hack to stop streaming the first line, fix this...
-            return
-        }
-
-        const replacementText = trimmedReplacement
-            .split('\n')
-            .map((line, index) =>
-                index === 0 ? line : ' '.repeat(task.selectionRange.start.character) + line
-            )
-            .join('\n')
-
-        if (state === 'complete') {
-            task.inProgressReplacement = undefined
-            task.replacement = replacementText
-            return this.streamTask(task, state, 'edit')
-        }
-
-        if (replacementText === task.inProgressReplacement) {
-            // Incoming text has already been applied, do nothing
-            return
-        }
-
-        task.inProgressReplacement = replacementText
-        return this.streamTask(task, state, 'edit')
     }
 
     public async didReceiveFixupText(
