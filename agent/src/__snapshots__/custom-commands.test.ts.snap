@@ -1,13 +1,15 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`Custom Commands > commands/custom, chat command, open tabs context 1`] = `
-"Based on the provided codebase context, here are the filenames I've seen so far:
+"Based on the provided codebase context, here is a high-level overview:
 
-- example3.ts
-- example2.ts
+The code snippets you have shared are all exporting a function named \`example\` that returns the string \`'example'\`. These snippets appear to be from separate files within the same codebase.
+
+To answer your question about the names of the files you have shared, here is a bulleted list of the raw filenames:
+
 - example1.ts
-
-To answer your question fully regarding the names of the files you've shared, I would need you to confirm if these are the only files or if there are any additional files in the codebase that you haven't shared yet."
+- example2.ts
+- example3.ts"
 `;
 
 exports[`Custom Commands > commands/custom, edit command, edit mode 1`] = `
@@ -16,7 +18,7 @@ exports[`Custom Commands > commands/custom, edit command, edit mode 1`] = `
     makeAnimalSound(): string
     isMammal: boolean
     logName(): void {
-        console.log(this.name)
+        console.log(\`Animal name: \${this.name}\`)
     }
 }
 

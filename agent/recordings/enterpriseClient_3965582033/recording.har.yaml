@@ -107,11 +107,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: c13de76c951e67de1fd7f3c23b5fbd85
+    - _id: aa5a490815f3b012a231fac93bac2881
       _order: 0
       cache: {}
       request:
-        bodySize: 3605
+        bodySize: 3364
         cookies: []
         headers:
           - name: content-type
@@ -124,7 +124,7 @@ log:
           - name: user-agent
             value: enterpriseClient / v1
           - name: traceparent
-            value: 00-2a4302f765a6b89193c55db80c1b13f4-cbcac3ac40c0441c-01
+            value: 00-d53d4f29654a406a28a9c131718cbe78-7831842510f5e8dc-01
           - name: connection
             value: keep-alive
           - name: host
@@ -225,10 +225,7 @@ log:
 
                   </INSTRUCTIONS7390>
               - speaker: assistant
-                text: "The provided codebase context are the code you need and have access to.
-                  Do not make any assumptions. Give me a high-level overview
-                  based on the given context first before asking for additional
-                  context to answer the following question fully: <CODE5711>"
+                text: <CODE5711>
             model: anthropic/claude-3-opus-20240229
             stopSequences:
               - </CODE5711>
@@ -243,14 +240,14 @@ log:
             value: v1
         url: https://demo.sourcegraph.com/.api/completions/stream?client-name=enterpriseclient&client-version=v1
       response:
-        bodySize: 5398
+        bodySize: 1627
         content:
           mimeType: text/event-stream
-          size: 5398
+          size: 1627
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Records the start time using `performance.now()`.\n * This can be used to measure the duration of an operation by comparing it to the end time.\n */","stopReason":"stop_sequence"}
+            data: {"completion":"/**\n * The start time of the operation, in milliseconds.\n */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -260,7 +257,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:05:23 GMT
+            value: Mon, 10 Jun 2024 22:12:37 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -289,7 +286,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:05:21.157Z
+      startedDateTime: 2024-06-10T22:12:35.276Z
       time: 0
       timings:
         blocked: -1

@@ -22,7 +22,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-aa9bff29ca90bc426d6a621a2db70514-02af52de778f0d45-01
+            value: 00-7fe3f05dd2e58a74cf0e46c40d84f820-133d8ead32a7106a-01
           - name: connection
             value: keep-alive
           - name: host
@@ -232,14 +232,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 268724
+        bodySize: 323590
         content:
           mimeType: text/event-stream
-          size: 268724
+          size: 323590
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided code context, it seems that this repository is part of a larger project called \"zoekt\". The code deals with handling file matches and truncating or limiting the results based on certain search options.\n\nThe main functionality revolves around the `SortAndTruncateFiles` function, which sorts the file matches and then truncates them based on the provided search options using a `DisplayTruncator`.\n\nThe `DisplayTruncator` is a stateful function that enforces limits on the number of documents (files) and matches displayed. The `NewDisplayTruncator` function creates a `DisplayTruncator` instance based on the search options, which include `MaxDocDisplayCount` and `MaxMatchDisplayCount`.\n\nThe `limitMatches` function is responsible for limiting the number of matches (either chunk matches or line matches) based on the provided limit and a flag indicating whether to chunk matches or not.\n\nThe `limitChunkMatches` and `limitLineMatches` functions are helpers that truncate the chunk matches and line matches, respectively, based on the provided limit.\n\nOverall, this code seems to be part of a search engine or a tool that processes and displays search results, with the ability to limit the number of files and matches shown based on user-specified options.\n\nHowever, without broader context from the rest of the repository, it's difficult to determine the exact purpose or functionality of this project. Additional context about the overall project structure, dependencies, and usage would be helpful to fully understand the purpose of this repository.","stopReason":"end_turn"}
+            data: {"completion":"Based on the provided codebase context, it seems that this code is part of a package called \"zoekt\". The package appears to be related to search functionality, specifically for handling file matches and applying limits or truncation to the search results.\n\nThe key components and their purposes are:\n\n1. `SortAndTruncateFiles` function: This function sorts the given file matches and then applies truncation based on the provided search options.\n\n2. `DisplayTruncator` type: This is a stateful function type that enforces display limits for documents (files) and matches within those files. It truncates the results based on the specified limits.\n\n3. `NewDisplayTruncator` function: This function creates a `DisplayTruncator` instance based on the provided search options. If there are no limits to enforce, it returns a no-op truncator.\n\n4. `limitMatches` function: This function limits the number of matches (either chunk matches or line matches) in the given file matches based on the specified limit.\n\n5. `limitChunkMatches` function: This function limits the number of chunk matches in a given file match. It handles truncation of content, ranges, and symbol information.\n\n6. `limitLineMatches` function: This function limits the number of line matches in a given file match.\n\nThe code deals with sorting and truncating search results, specifically file matches and their associated matches (chunk or line matches). It provides a way to enforce limits on the number of displayed files and matches within those files.\n\nTo fully understand the purpose and context of this repository, it would be helpful to have additional information about the overall project or application that this package is a part of.","stopReason":"end_turn"}
 
 
             event: done
@@ -249,7 +249,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:04:36 GMT
+            value: Mon, 10 Jun 2024 22:23:57 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -278,7 +278,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:04:34.194Z
+      startedDateTime: 2024-06-10T22:23:55.686Z
       time: 0
       timings:
         blocked: -1
@@ -305,7 +305,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-c38baebb016588f60410398d077a5804-1d6ee974e872f91f-01
+            value: 00-84140df824ad6c7bc681ceccc7b7564b-88b071d87462181a-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1510,14 +1510,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 159311
+        bodySize: 227965
         content:
           mimeType: text/event-stream
-          size: 159311
+          size: 227965
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided codebase context, here's a high-level overview:\n\n1. `eval.go` contains the core logic for executing search queries and returning search results. It defines functions like `Search` and `List` that take a query and search options, and return the relevant search results or repository list.\n\n2. `limit.go` defines functions related to limiting and truncating search results based on various options, such as maximum match count, maximum document count, and whether to merge or separate overlapping matches.\n\n3. `README.md` provides an overview of Zoekt, a fast text search engine intended for source code. It includes instructions for indexing and searching code repositories, as well as some background information on the project.\n\n4. `vscode/src/external-services.ts` is a TypeScript file, likely related to integrating Zoekt with the Visual Studio Code editor.\n\nWith this high-level overview, I can provide a more detailed description if you have a specific question about the codebase. If you would like me to describe how the code works in more detail, please let me know, and I may request additional context from specific files or functions.","stopReason":"end_turn"}
+            data: {"completion":"Based on the provided codebase context, here's a high-level overview:\n\n1. The code is part of the Zoekt project, which is a fast text search engine intended for use with source code.\n2. The `vscode/src/external-services.ts` file seems to be related to integrating Zoekt with Visual Studio Code (VSCode) as an external service.\n3. The `README.md` file provides instructions for downloading, indexing, searching, and installing Zoekt as a service.\n4. The `limit.go` file contains functions related to limiting and truncating the search results, such as `SortAndTruncateFiles`, `DisplayTruncator`, and helper functions like `limitChunkMatches` and `limitLineMatches`.\n5. The `eval.go` file contains core functionality for evaluating search queries, including:\n   - Simplifying and optimizing queries (`simplify` and related functions)\n   - Setting default search options (`SetDefaults`)\n   - Performing the actual search (`Search` function)\n   - Handling multi-repository searches (`simplifyMultiRepo`)\n   - Converting regular expressions to match trees (`regexpToMatchTreeRecursive`)\n   - Gathering matches and branches from search results (`gatherMatches`, `gatherBranches`)\n   - Listing repositories matching a query (`List`)\n\nTo provide a more detailed description of the code, I may need additional context or specific areas of interest within the codebase.","stopReason":"end_turn"}
 
 
             event: done
@@ -1527,7 +1527,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:04:46 GMT
+            value: Mon, 10 Jun 2024 22:24:09 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1556,7 +1556,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:04:42.783Z
+      startedDateTime: 2024-06-10T22:24:05.042Z
       time: 0
       timings:
         blocked: -1
@@ -1583,7 +1583,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-358bbdbd23ab6cdff33b79ca25f153ea-779c7329a605d3cf-01
+            value: 00-d98c157a18485969b408e0eb4fec3dc7-30e98f13da2e4746-01
           - name: connection
             value: keep-alive
           - name: host
@@ -2457,14 +2457,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 175851
+        bodySize: 295284
         content:
           mimeType: text/event-stream
-          size: 175851
+          size: 295284
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided code context, it appears that this codebase is related to a search engine or indexing system called \"zoekt\". The code seems to handle searching across multiple shards or partitions of data, with functionalities like streaming search, handling different search options, and scoring the search results.\n\nSome key points:\n\n1. The code deals with indexing and searching documents, handling features like file names, content, branches, and repositories.\n2. There are structs and functions for managing sharded searchers (`shardedSearcher`), handling search queries (`query.Q`), and building indexes (`IndexBuilder`).\n3. There are functions for performing regular searches (`Search`) and streaming searches (`StreamSearch`).\n4. The code includes benchmarking and testing utilities for the search functionality.\n5. There are implementations for handling different search options, such as document ranking, context lines, and scoring methods (e.g., BM25).\n6. The code seems to support features like handling public/private repositories, forks, and archived repositories.\n\nTo provide a more detailed overview and answer your specific question, I would need additional context about the overall architecture, purpose, and usage of this codebase.","stopReason":"end_turn"}
+            data: {"completion":"Based on the provided code context, it appears that this codebase is related to a search engine or indexing system called `zoekt`. The code deals with searching and indexing documents, managing shards (partitions) of the index, and handling various search options and configurations.\n\nThe code snippets cover different aspects of the system, including:\n\n1. **Search and Indexing**: The `indexData` struct and its `Search` method handle searching the index and returning results based on a given query and search options. It includes features like document ranking, scoring, context lines, and branch handling.\n\n2. **Sharding and Distributed Search**: The `shardedSearcher` struct and related functions handle distributing search queries across multiple shards or partitions of the index. This allows for scalability and parallelization of searches.\n\n3. **Query Evaluation and Filtering**: The `typeRepoSearcher` struct and related functions handle evaluating and filtering queries based on specific criteria, such as repository types, public/private repositories, and forks.\n\n4. **Testing and Benchmarking**: There are various test functions and benchmarks for testing different aspects of the system, including search accuracy, performance, and edge cases.\n\n5. **Data Structures and Utilities**: The codebase includes various data structures and utility functions for managing matches, branches, repositories, and other data related to the indexing and search functionality.\n\nTo provide a more comprehensive overview and answer specific questions about the codebase, it would be helpful to have additional context or clarification on the specific areas or functionalities you are interested in.","stopReason":"end_turn"}
 
 
             event: done
@@ -2474,7 +2474,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:04:53 GMT
+            value: Mon, 10 Jun 2024 22:24:17 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2503,7 +2503,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:04:50.647Z
+      startedDateTime: 2024-06-10T22:24:15.295Z
       time: 0
       timings:
         blocked: -1
@@ -2513,11 +2513,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: c004e80cffb73613c6ba99ddfa074185
+    - _id: a814c5902031b84c4772d1b0521d66fe
       _order: 0
       cache: {}
       request:
-        bodySize: 3036
+        bodySize: 5850
         cookies: []
         headers:
           - name: content-type
@@ -2530,7 +2530,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-aa62b677120e2e93d9225ec255cbf53d-91062ff222905975-01
+            value: 00-1fa8ffa3818c327b9e344e00c951a7ad-acd97e28740d00ae-01
           - name: connection
             value: keep-alive
           - name: host
@@ -2548,14 +2548,139 @@ log:
                 text: You are Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
                 text: >-
-                  Codebase context from file shards/aggregate.go:
+                  Codebase context from file README.md:
 
-                  ```go
+                  ```markdown
 
-                  var metricFinalAggregateSize = promauto.NewHistogramVec(prometheus.HistogramOpts{
-                  	Name:    "zoekt_final_aggregate_size",
-                  	Help:    "The number of file matches we aggregated before flushing",
-                  	Buckets: prometheus.ExponentialBuckets(1, 2, 20),
+                  ### CLI
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt
+                      $GOPATH/bin/zoekt 'ngram f:READ'
+
+                  ## Installation
+
+                  A more organized installation on a Linux server should use a systemd unit file,
+
+                  eg.
+
+                      [Unit]
+                      Description=zoekt webserver
+
+                      [Service]
+                      ExecStart=/zoekt/bin/zoekt-webserver -index /zoekt/index -listen :443  --ssl_cert /zoekt/etc/cert.pem   --ssl_key /zoekt/etc/key.pem
+                      Restart=always
+
+                      [Install]
+                      WantedBy=default.target
+
+
+                  # SEARCH SERVICE
+
+
+                  Zoekt comes with a small service management program:
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-indexserver
+
+                      cat << EOF > config.json
+                      [{"GithubUser": "username"},
+                       {"GithubOrg": "org"},
+                       {"GitilesURL": "https://gerrit.googlesource.com", "Name": "zoekt" }
+                      ]
+                      EOF
+
+                      $GOPATH/bin/zoekt-indexserver -mirror_config config.json
+
+                  This will mirror all repos under 'github.com/username', 'github.com/org', as
+
+                  well as the 'zoekt' repository. It will index the repositories.
+
+
+                  It takes care of fetching and indexing new data and cleaning up logfiles.
+
+
+                  The webserver can be started from a standard service management framework, such
+
+                  as systemd.
+
+
+
+                  # SYMBOL SEARCH
+
+
+                  It is recommended to install [Universal
+
+                  ctags](https://github.com/universal-ctags/ctags) to improve
+
+                  ranking. See [here](doc/ctags.md) for more information.
+
+
+
+                  # ACKNOWLEDGEMENTS
+
+
+                  Thanks to Han-Wen Nienhuys for creating Zoekt. Thanks to Alexander Neubeck for
+
+                  coming up with this idea, and helping Han-Wen Nienhuys flesh it out.
+
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file README.md:
+
+                  ```markdown
+
+                  # FORK DETAILS
+
+
+                  Originally this fork contained some changes that do not make sense to upstream
+
+                  and or have not yet been upstreamed. However, this is now the defacto source
+
+                  for Zoekt. This section will remain for historical reasons and contains
+
+                  outdated information. It can be removed once the dust settles on moving from
+
+                  google/zoekt to sourcegraph/zoekt. Differences:
+
+
+                  - [zoekt-sourcegraph-indexserver](cmd/zoekt-sourcegraph-indexserver/main.go)
+                    is a Sourcegraph specific command which indexes all enabled repositories on
+                    Sourcegraph, as well as keeping the indexes up to date.
+                  - We have exposed the API via
+                    [keegancsmith/rpc](https://github.com/keegancsmith/rpc) (a fork of `net/rpc`
+                    which supports cancellation).
+                  - Query primitive `BranchesRepos` to efficiently specify a set of repositories to
+                    search.
+                  - Allow empty shard directories on startup. Needed when starting a fresh
+                    instance which hasn't indexed anything yet.
+                  - We can return symbol/ctag data in results. Additionally we can run symbol regex queries.
+
+                  - We search shards in order of repo name and ignore shard ranking.
+
+                  - Other minor changes.
+
+
+                  Assuming you have the gerrit upstream configured, a useful way to see what we
+
+                  changed is:
+
+
+                  ``` shellsession
+
+                  $ git diff gerrit/master -- ':(exclude)vendor/' ':(exclude)Gopkg*'
+
+                  ```
+
+
+                  # DISCLAIMER
+
+
+                  This is not an official Google product
+
                   ```
               - speaker: assistant
                 text: Ok.
@@ -2647,14 +2772,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 416893
+        bodySize: 309199
         content:
           mimeType: text/event-stream
-          size: 416893
+          size: 309199
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided context, I can give you a high-level overview related to the code quality and cleanliness of the codebase.\n\nThe `shards/aggregate.go` file contains a Prometheus metric for tracking the number of file matches aggregated before flushing. This metric can be used to monitor the performance and efficiency of the search engine. However, without seeing the surrounding code, it's difficult to assess the overall code quality of this file or the larger codebase.\n\nThe `README.md` file provides instructions for downloading, indexing, and searching with Zoekt, a fast text search engine for source code. It includes examples for indexing directories, Git repositories, and Repo repositories. The README also explains how to run the web interface and interact with the JSON API.\n\nWhile the README is well-written and provides clear instructions, it does not directly reveal information about the code quality or cleanliness of the codebase itself.\n\nTo fully assess the cleanliness and quality of the codebase, I would need additional context and information, such as:\n\n1. The overall project structure and organization of the codebase.\n2. The coding style and conventions followed throughout the project.\n3. The presence and quality of test cases and code coverage.\n4. The use of best practices for error handling, logging, and monitoring.\n5. The adherence to coding principles such as SOLID, DRY, and KISS.\n6. The quality and maintainability of the documentation (beyond just the README).\n7. The complexity and readability of the core functionality and algorithms.\n8. The presence of technical debt, code smells, or areas in need of refactoring.\n\nWithout access to the complete codebase and a more in-depth analysis, it's difficult to provide a definitive assessment of the code cleanliness. Please let me know if you can provide additional context or specific areas of concern within the codebase.","stopReason":"end_turn"}
+            data: {"completion":"Based on the provided codebase context from the README.md file, it seems that Zoekt is a fast text search engine intended for use with source code. The repository is a fork of the original Google Zoekt repository and is now the main maintained source for Zoekt.\n\nThe README provides instructions for downloading, indexing, and searching using Zoekt. It covers indexing directories, Git repositories, and Repo repositories. It also includes instructions for running the Zoekt web server and accessing search results via the JSON API.\n\nThe README also mentions some historical differences between this fork and the original Google repository, such as the addition of a Sourcegraph-specific indexing command, exposing the API with cancellation support, and some other minor changes.\n\nTo fully assess if the codebase is clean, I would need additional context, such as:\n\n1. The codebase itself, including the source code files, directory structure, and any available tests or documentation.\n2. Information about coding conventions, style guidelines, or best practices followed by the project.\n3. Details on the build process, continuous integration, and deployment practices.\n4. Information on code quality tools or static analysis tools used in the project.\n5. Details on the project's testing strategy and code coverage.\n\nWithout access to the actual codebase and additional information about the project's practices and standards, it is difficult to provide a comprehensive assessment of the codebase's cleanliness. The README provides a high-level overview of the project and its functionality, but it does not provide insight into the codebase's quality, maintainability, or adherence to best practices.","stopReason":"end_turn"}
 
 
             event: done
@@ -2664,7 +2789,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:05:00 GMT
+            value: Mon, 10 Jun 2024 22:24:27 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2693,7 +2818,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:04:59.545Z
+      startedDateTime: 2024-06-10T22:24:25.448Z
       time: 0
       timings:
         blocked: -1
@@ -2720,7 +2845,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-b7e735fc8dfb378dc41f41fc02b50e96-00ff677d5658d9f0-01
+            value: 00-ee71ec648c37defbe997c717e335630d-fbac2a6112daa5b3-01
           - name: connection
             value: keep-alive
           - name: host
@@ -3120,14 +3245,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 233456
+        bodySize: 64723
         content:
           mimeType: text/event-stream
-          size: 233456
+          size: 64723
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided context, I can see that this is a part of the Zoekt codebase, which is a fast text search engine intended for use with source code. The `limit.go` file appears to contain functions related to limiting the number of search results and matches returned based on certain options.\n\nHowever, I do not have enough context from the provided files to identify any conflicting packages that may be causing issues. The `README.md` file provides an overview of the project and instructions for installation, indexing, and searching, but it does not mention anything about conflicting packages or issues with dependencies.\n\nTo fully answer the question about identifying conflicting packages, I would need additional context, such as:\n\n1. Information about the specific issue or error you are encountering related to conflicting packages.\n2. Access to the project's dependency management files (e.g., `go.mod`, `Gopkg.toml`, etc.) and the project's directory structure to understand the project's dependencies and package organization.\n3. Logs or error messages that might provide more details about the conflicting packages or dependencies.\n4. Information about the development environment and any recent changes made to the codebase or dependencies.\n\nWithout this additional context, it is difficult for me to pinpoint the cause of conflicting packages or provide a more specific answer based solely on the `README.md` and `limit.go` files provided.","stopReason":"end_turn"}
+            data: {"completion":"The provided code context does not contain any information about conflicting packages or errors related to package conflicts. The code appears to be related to implementing limits and truncation for search results in the Zoekt code search engine.\n\nThe `limit.go` file contains functions for sorting and truncating file matches based on various limits specified in the search options, such as a maximum number of files to display or a maximum number of line/chunk matches to include for each file.\n\nWithout additional context or error information, I cannot identify any conflicting packages based on the provided code snippets. If there is a specific issue or error message related to package conflicts, providing that information would be helpful to diagnose the problem.","stopReason":"end_turn"}
 
 
             event: done
@@ -3137,7 +3262,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:05:10 GMT
+            value: Mon, 10 Jun 2024 22:24:35 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -3166,7 +3291,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:05:09.121Z
+      startedDateTime: 2024-06-10T22:24:33.758Z
       time: 0
       timings:
         blocked: -1
@@ -3193,7 +3318,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-cb0e50b8531969a884797a3843edbb29-4c5ed2625c390618-01
+            value: 00-866c7b5e9c9c2fb2814edf372dd82860-f38f481ab113319e-01
           - name: connection
             value: keep-alive
           - name: host
@@ -4398,14 +4523,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 38298
+        bodySize: 131772
         content:
           mimeType: text/event-stream
-          size: 38298
+          size: 131772
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided context, I can give a high-level overview for the `limit.go` file:\n\nThe `limit.go` file contains utility functions related to search and limiting results. The `SortAndTruncate` function is likely used to sort and truncate a list of file matches based on a search pattern and maximum number of results. \n\nFor the `@limit.go` file, I don't have enough context to fully explain what it is being used for. I need to see the surrounding application logic and how that function is being called/used.","stopReason":"end_turn"}
+            data: {"completion":"From the provided context, I can see that this is the source code for a text search engine or indexing tool called \"Zoekt\". The context includes a function called `SortAndTruncateFiles` that appears to be iterating over and processing a list of files, potentially for indexing.\n\nA high-level overview from the provided context:\n- The code is written in Go and is part of a project called \"Zoekt\" that appears to be some kind of text search engine or indexing tool.il\n- The function `sortAndTracteFiles` is an implementation for iterating over and processing a list of files, potentially for indexing them.\n- No other context is provided about what this tool does or how it is used.\n\nI'm missing some context about exactly what this \"Zoekt\" tool is and how it is used. I would need some additional details about the project and what it is used for.  Try providing a quick overview of what this \"Zoekt\" tool is and what it is typically used for, as well as a quick context of how the examples are being used.","stopReason":"end_turn"}
 
 
             event: done
@@ -4415,7 +4540,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:05:21 GMT
+            value: Mon, 10 Jun 2024 22:24:43 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -4444,7 +4569,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:05:17.277Z
+      startedDateTime: 2024-06-10T22:24:39.024Z
       time: 0
       timings:
         blocked: -1
@@ -4471,7 +4596,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-76167df218579cb8f4477934c38d405f-cca91a02e055effe-01
+            value: 00-9511d13b07ae0a0aba41d8515ef7d1c6-1a536c51dbd7c34f-01
           - name: connection
             value: keep-alive
           - name: host
@@ -4870,14 +4995,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 135531
+        bodySize: 185404
         content:
           mimeType: text/event-stream
-          size: 135531
+          size: 185404
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided context, it appears that Zoekt is a fast text search engine intended for use with source code. The codebase contains functionality for indexing directories, Git repositories, and repositories from various sources like GitHub and Gitiles. It also provides a web interface, a JSON API, and a command-line interface for searching the indexed repositories.\n\nThe provided context does not mention anything about the license used for this project. To fully answer why this project uses the MIT license, I would need additional context, such as:\n\n1. The license file or license information in the codebase or project documentation.\n2. Any comments or discussions from the project maintainers or contributors regarding the choice of license.\n3. Information about the project's origin, sponsorship, or affiliation that might influence the license choice.\n\nWithout this additional context, I can only speculate about the reasons for choosing the MIT license, which could include factors like promoting widespread adoption, compatibility with other projects or dependencies, or aligning with the project's goals and contributors' preferences.","stopReason":"end_turn"}
+            data: {"completion":"Based on the provided context, it seems that Zoekt is a fast text search engine intended for use with source code. The codebase includes functionality for indexing directories, Git repositories, and repositories from hosting services like GitHub and Google Source. It also provides a web interface, a JSON API, and a command-line interface for performing searches.\n\nThe provided context does not contain any information about the license used for this project. To fully answer the question \"Why does this project use the MIT license?\", I would need additional context, such as:\n\n1. The actual license file or statement in the codebase that specifies the license used.\n2. Any documentation, comments, or discussions from the project maintainers or contributors regarding the rationale behind choosing the MIT license over other options.\n3. Information about the project's origin, sponsorship, and the organizations or individuals involved in its development, as licensing decisions are often influenced by such factors.\n\nWithout this additional context, I can only speculate about the reasons for using the MIT license, which may or may not be accurate. If you can provide any relevant information from the codebase or project documentation regarding the licensing, I'd be happy to analyze it and provide a more informed answer.","stopReason":"end_turn"}
 
 
             event: done
@@ -4887,7 +5012,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:05:25 GMT
+            value: Mon, 10 Jun 2024 22:24:48 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -4916,7 +5041,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:05:23.259Z
+      startedDateTime: 2024-06-10T22:24:46.286Z
       time: 0
       timings:
         blocked: -1
@@ -4943,7 +5068,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-098b6efd7426c768fc7cf90388ebee01-3f4c45a778f7a0c4-01
+            value: 00-3c31c11f7cd8be5234d658e8d0700d30-4687961bc682465e-01
           - name: connection
             value: keep-alive
           - name: host
@@ -6136,14 +6261,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 563217
+        bodySize: 219106
         content:
           mimeType: text/event-stream
-          size: 563217
+          size: 219106
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided code context, Zoekt is a fast text search engine intended for use with source code. It supports indexing and searching code repositories, with features like regular expression matching, file type filtering, and branch/commit filtering.\n\nThe key components and functionalities exposed in the provided code are:\n\n1. **Indexing**: Zoekt can index directories, Git repositories, and repositories hosted on services like Gitiles.\n\n2. **Searching**: The `Search` function in `eval.go` performs the core search operation. It takes a query (`query.Q`), search options, and returns search results (`SearchResult`).\n\n3. **Query Simplification**: The `simplify` function in `eval.go` simplifies and optimizes the query for efficient evaluation.\n\n4. **Match Tree Construction**: Zoekt constructs a \"match tree\" data structure from the query, which is used for efficient matching against the indexed content.\n\n5. **Result Scoring and Ranking**: Zoekt supports scoring and ranking of search results based on factors like repository priority, match positions, and experimental BM25 scoring.\n\n6. **Result Truncation and Limiting**: The search results can be truncated based on configurable limits, such as maximum document count, maximum match count, and context lines.\n\n7. **Repository Listing**: The `List` function in `eval.go` provides a way to list repositories matching a given query.\n\n8. **Regular Expression Handling**: Zoekt has utilities for converting regular expressions to match trees, enabling efficient regular expression matching.\n\nTo fully answer your question about finding the location of the \"tensor\" function, I would need additional context, such as:\n\n1. Is \"tensor\" a regular expression pattern or a literal string?\n2. Are you looking for a specific function named \"tensor\", or any occurrences of the word \"tensor\"?\n3. Do you want to search within a specific repository, or across all indexed repositories?\n4. Are there any additional constraints or filters you want to apply, such as file types or programming languages?\n\nWith this additional context, I can better understand your search requirements and provide more specific guidance on how to use Zoekt's search capabilities to find the desired occurrences of \"tensor\" in the codebase.","stopReason":"end_turn"}
+            data: {"completion":"Based on the provided codebase context, Zoekt is a fast text search engine intended for use with source code. Here's a high-level overview of what I understand from the given context:\n\n1. **zoekt** is the main package that contains the core functionality of the search engine.\n2. The `indexData` struct seems to be the central data structure that holds information about the indexed files, repositories, branches, and other metadata.\n3. The `Search` function in `eval.go` is the main entry point for performing searches. It takes a query `q` and search options `opts` and returns a `SearchResult`.\n4. The `List` function in `eval.go` is used to list repositories based on a given query.\n5. The `regexpToMatchTreeRecursive` function in `eval.go` converts a regular expression to a matchTree data structure, which is used for efficient pattern matching.\n6. The `limit.go` file contains functions for limiting and truncating search results based on various options, such as maximum document count, maximum match count, and chunking matches.\n\nTo fully answer the question \"See zoekt repo find location of tensor function\", I would need more context about the specific codebase you're searching and the expected location of the \"tensor function\". Please provide additional details or context related to the codebase you're searching and the specific function you're looking for.","stopReason":"end_turn"}
 
 
             event: done
@@ -6153,7 +6278,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:05:34 GMT
+            value: Mon, 10 Jun 2024 22:24:57 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -6182,7 +6307,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:05:30.145Z
+      startedDateTime: 2024-06-10T22:24:53.376Z
       time: 0
       timings:
         blocked: -1
@@ -6209,7 +6334,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-5a380f0cd2ba400911531933ae176cdb-01aef5ab79d4e63b-01
+            value: 00-b2a501d52b7bda869e569c0f4f77a5f4-5907d299ed6d477a-01
           - name: connection
             value: keep-alive
           - name: host
@@ -6859,14 +6984,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 63050
+        bodySize: 75105
         content:
           mimeType: text/event-stream
-          size: 63050
+          size: 75105
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided code context from the `limit.go` file, I cannot provide an overview or explanation related to the logic in `src/agent.go` or how agents interact with ranking. The given code context is focused on implementing functionality to limit the number of matches and files displayed in search results based on the provided search options, such as `MaxDocDisplayCount` and `MaxMatchDisplayCount`.\n\nWithout additional context from files like `src/agent.go`, I cannot provide a meaningful explanation of the agent logic or how it interacts with ranking. If you can provide the relevant code context from `src/agent.go` and any other related files, I would be able to analyze and explain that logic.","stopReason":"end_turn"}
+            data: {"completion":"Based on the provided code context, I don't have enough information to explain the logic in `src/agent.go` or how agents interact with ranking. The provided code is from the `limit.go` file and appears to be related to limiting the number of search results displayed based on various options like `MaxDocDisplayCount` and `MaxMatchDisplayCount`. It defines functions like `SortAndTruncateFiles`, `NewDisplayTruncator`, `limitMatches`, `limitChunkMatches`, and `limitLineMatches` that are used to enforce these display limits on the search results.\n\nTo fully explain the logic in `src/agent.go` and how agents interact with ranking, I would need additional context from that file and potentially other related files that define the agent functionality and ranking logic.","stopReason":"end_turn"}
 
 
             event: done
@@ -6876,7 +7001,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:05:42 GMT
+            value: Mon, 10 Jun 2024 22:25:05 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -6905,7 +7030,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:05:40.199Z
+      startedDateTime: 2024-06-10T22:25:03.040Z
       time: 0
       timings:
         blocked: -1
@@ -6932,7 +7057,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-73c3d17385641ee7dea28e50b093a7d6-3cf9997e192814aa-01
+            value: 00-7f76e812c533bb43ac44342c51fcee71-8cd30dd9e8172a54-01
           - name: connection
             value: keep-alive
           - name: host
@@ -7142,14 +7267,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 396833
+        bodySize: 260223
         content:
           mimeType: text/event-stream
-          size: 396833
+          size: 260223
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided codebase context, this code appears to be part of a larger project called \"zoekt\", which is likely a search or indexing tool. The key functionality shown in this file is:\n\n1. `SortAndTruncateFiles`: This function takes a list of `FileMatch` objects, sorts them, and then truncates the list based on the configured search options.\n\n2. `DisplayTruncator`: This is a stateful function that enforces limits on the number of documents and matches to be displayed. It returns a function that can be used to truncate the list of `FileMatch` objects, ensuring that the display limits are not exceeded.\n\n3. `limitMatches`: This function is used by `DisplayTruncator` to limit the number of matches (either chunk matches or line matches) for each `FileMatch` object, in order to respect the configured display limits.\n\nThe code seems focused on managing the display of search results, ensuring that the number of documents and matches shown to the user does not exceed the configured limits. This suggests that the larger \"zoekt\" project is likely a search or indexing tool that needs to efficiently handle and display large amounts of search results.\n\nTo fully understand the purpose and functionality of this codebase, it would be helpful to have additional context, such as:\n\n1. What is the overall purpose and use case of the \"zoekt\" project?\n2. How does this `limit.go` file fit into the larger codebase and architecture?\n3. What are the specific use cases or requirements that necessitate the display limit functionality implemented in this file?\n4. Are there any other key components or features of the \"zoekt\" project that would help provide a more complete understanding of its purpose and capabilities?\n\nWith this additional context, I could provide a more comprehensive overview of what this codebase does and how it fits into the larger \"zoekt\" project.","stopReason":"end_turn"}
+            data: {"completion":"Based on the provided code context, this appears to be part of the \"zoekt\" package, which is likely a search-related functionality in some larger codebase. The main functionality seems to be:\n\n1. `SortAndTruncateFiles`: This function takes a slice of `FileMatch` objects, sorts them, and then truncates the slice based on the provided `SearchOptions`. This suggests that the codebase is dealing with search results and needs to apply some limits or truncation to the results.\n\n2. `DisplayTruncator`: This is a stateful function that acts as a truncator for the search results. It enforces limits on the number of documents and matches that are displayed, and it mutates the input slice of `FileMatch` objects to remove any excess data.\n\n3. `limitMatches`: This function is responsible for limiting the number of matches within each `FileMatch` object, based on whether the matches are \"chunk\" matches or \"line\" matches.\n\n4. `limitChunkMatches` and `limitLineMatches`: These functions implement the actual logic for truncating the matches within a `FileMatch` object, either by limiting the number of \"chunk\" matches or \"line\" matches.\n\nFrom this high-level overview, it seems that this codebase is part of a larger search-related system that needs to apply limits and truncation to the search results before displaying them to the user. However, without more context about the overall system or repository, I can't provide a more detailed answer about what this repo does.","stopReason":"end_turn"}
 
 
             event: done
@@ -7159,7 +7284,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:05:46 GMT
+            value: Mon, 10 Jun 2024 22:25:09 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -7188,7 +7313,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:05:45.703Z
+      startedDateTime: 2024-06-10T22:25:08.837Z
       time: 0
       timings:
         blocked: -1
@@ -7215,7 +7340,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-195b37296298ddc2f02b79173bb0e752-5fdd47eb0676b50a-01
+            value: 00-f3d09dc2372e0294be9418f4b548ce79-d38557598695ce0c-01
           - name: connection
             value: keep-alive
           - name: host
@@ -7626,14 +7751,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 275353
+        bodySize: 443981
         content:
           mimeType: text/event-stream
-          size: 275353
+          size: 443981
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided codebase context, this code appears to be part of the Zoekt search engine, which is a fast text search engine intended for use with source code. The code is written in Go and is part of the Sourcegraph fork of the original Zoekt project.\n\nThe main functionality of the code is to handle the display and truncation of search results, ensuring that the number of displayed documents and matches are limited based on the search options specified. \n\nThe key components are:\n\n1. `SortAndTruncateFiles`: This function takes a list of `FileMatch` objects, sorts them, and then truncates the list based on the search options to ensure that the display limits are not exceeded.\n\n2. `DisplayTruncator`: This is a stateful function that enforces the document and match display limits by truncating and mutating the list of `FileMatch` objects. It returns a function that can be used to perform this truncation.\n\n3. `limitMatches`: This function is responsible for limiting the number of matches (either chunk matches or line matches) within each `FileMatch` object, ensuring that the display limits are not exceeded.\n\n4. `limitChunkMatches` and `limitLineMatches`: These are helper functions that handle the actual truncation of the chunk matches and line matches, respectively, within a `FileMatch` object.\n\nOverall, this code seems to be a crucial part of the Zoekt search engine, responsible for ensuring that the search results are displayed in a concise and user-friendly manner, according to the specified search options.","stopReason":"end_turn"}
+            data: {"completion":"Based on the provided codebase context, this appears to be part of the Zoekt search engine, which is a fast text search engine intended for use with source code. The code is written in Go and is focused on limiting the amount of search results displayed to the user based on certain options.\n\nThe key components are:\n\n1. `SortAndTruncateFiles`: This function takes a list of `FileMatch` objects, sorts them, and then truncates the list based on the `SearchOptions` provided.\n\n2. `DisplayTruncator`: This is a stateful function that enforces document and match display limits by truncating and mutating the `FileMatch` objects before returning them. It returns a function that can be called to perform this truncation.\n\n3. `NewDisplayTruncator`: This function creates a `DisplayTruncator` based on the `SearchOptions` provided. If there are no limits to enforce, it returns a pass-through function.\n\n4. `limitMatches`: This function is used by the `DisplayTruncator` to limit the number of matches (either chunk matches or line matches) in each `FileMatch` object.\n\n5. `limitChunkMatches` and `limitLineMatches`: These are helper functions that actually perform the truncation of the `ChunkMatches` and `LineMatches` in a `FileMatch` object, respectively.\n\nThe purpose of this code is to ensure that the search results displayed to the user do not exceed the configured limits, in order to provide a more manageable and user-friendly experience.\n\nTo fully answer the question \"describe my code\", I would need some additional context, such as:\n\n- How the `FileMatch` and `SearchOptions` structs are defined and used in the broader codebase\n- How this code fits into the overall Zoekt search engine architecture\n- Any additional functionality or use cases for the `DisplayTruncator` and related functions\n\nWith this additional context, I could provide a more comprehensive description of the code and its role within the Zoekt system.","stopReason":"end_turn"}
 
 
             event: done
@@ -7643,7 +7768,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:05:51 GMT
+            value: Mon, 10 Jun 2024 22:25:13 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -7672,7 +7797,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:05:50.020Z
+      startedDateTime: 2024-06-10T22:25:12.547Z
       time: 0
       timings:
         blocked: -1
@@ -7699,7 +7824,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-027433ee74f61841ec26e335be49ec4d-284cdee9c5539346-01
+            value: 00-1b033291caeb046c224977e76c544309-bc50d191b942d20d-01
           - name: connection
             value: keep-alive
           - name: host
@@ -8573,14 +8698,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 389013
+        bodySize: 529086
         content:
           mimeType: text/event-stream
-          size: 389013
+          size: 529086
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided codebase context, this appears to be a part of a search engine implementation called Zoekt. The code is primarily focused on handling sharded search functionality, including the following key components:\n\n1. `shards_test.go`:\n   - Contains test cases for sharded searches, including `testShardedSearch` and `testShardedStreamSearch` functions.\n   - Provides utility functions like `mkSearchResult` and `createMockSearchResult` to create mock search result data.\n   - Includes a `BenchmarkShardedSearch` function to benchmark the performance of sharded searches.\n   - Defines `rankSearcher` and `crashSearcher` structs for testing purposes.\n\n2. `eval.go`:\n   - Implements the `typeRepoSearcher` struct, which handles search queries that involve type and repository filters.\n   - Provides `StreamSearch` and `Search` methods for the `typeRepoSearcher` to perform the corresponding search operations.\n\n3. `eval_test.go`:\n   - Contains tests for the `typeRepoSearcher` functionality, including various search queries with type and repository filters.\n\n4. `eval.go`:\n   - Defines the `indexData` struct, which appears to be the main implementation of the search engine.\n   - Provides the `Search` method for the `indexData` struct, which handles the core search logic, including query simplification, match tree construction, and file matching.\n   - Includes helper functions like `branchIndex` to retrieve information from the index data.\n\nOverall, the provided codebase context suggests that this is a part of a larger search engine implementation that supports sharded search, type and repository filtering, and ranking of search results. To fully understand and describe the code, additional context, such as the purpose of the overall system, the relationship between the different components, and the broader architectural design, would be helpful.","stopReason":"end_turn"}
+            data: {"completion":"Based on the provided codebase context, this appears to be a part of a search engine implementation called `zoekt`. The code is mainly focused on handling sharded search, which involves dividing the search index into multiple parts (shards) and performing the search across these shards.\n\nThe key components and functionality in the provided code are:\n\n1. **Sharded Searching**: The code includes functions like `testShardedSearch` and `testShardedStreamSearch` that test the sharded search functionality, including the ability to use document ranks for ranking search results.\n\n2. **Raw Query Search**: The `TestRawQuerySearch` function tests the handling of raw search queries, which can include various flags (e.g., only public repositories, no forks, only archived repositories) to filter the search results.\n\n3. **File-based Search**: The `TestFileBasedSearch` function tests the search functionality using a simulated index with a few documents.\n\n4. **Benchmark**: The `BenchmarkShardedSearch` function benchmarks the sharded search performance with various search queries and configurations.\n\n5. **Rank-based Searcher**: The `rankSearcher` struct and its `Search` method provide a mock implementation of a searcher that returns ranked search results.\n\n6. **Crashing Searcher**: The `crashSearcher` struct and its `Search` method provide a mock implementation of a searcher that always panics.\n\n7. **Type-based Repo Searcher**: The `typeRepoSearcher` struct and its `StreamSearch` and `Search` methods provide an implementation that evaluates the search query and performs the search through a sharded searcher.\n\n8. **Index Data**: The `indexData` struct and its `Search` method implement the core search functionality, including handling various search options, filtering, scoring, and ranking of the search results.\n\nTo fully answer the question \"describe my code\", I would need additional context about the overall architecture, the purpose of the search engine, and how these components fit together. The provided codebase context gives a good overview of the specific functionality implemented, but more information about the larger system would be helpful to provide a more comprehensive description.","stopReason":"end_turn"}
 
 
             event: done
@@ -8590,7 +8715,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:05:55 GMT
+            value: Mon, 10 Jun 2024 22:25:19 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -8619,7 +8744,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:05:54.189Z
+      startedDateTime: 2024-06-10T22:25:18.692Z
       time: 0
       timings:
         blocked: -1
@@ -8629,11 +8754,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 047a100b419f8f54c256c74ef9a925bf
+    - _id: 30c2d45fc7229cd209dcc6fcde380b28
       _order: 0
       cache: {}
       request:
-        bodySize: 3035
+        bodySize: 5849
         cookies: []
         headers:
           - name: content-type
@@ -8646,7 +8771,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-ee9af02c8ec780771e85aefdfc0e3ed8-39b6b331d76ed36b-01
+            value: 00-af9ea142222269acfd83a6e0781e3d4f-c753c037a56a58ac-01
           - name: connection
             value: keep-alive
           - name: host
@@ -8664,14 +8789,139 @@ log:
                 text: You are Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
                 text: >-
-                  Codebase context from file shards/aggregate.go:
+                  Codebase context from file README.md:
 
-                  ```go
+                  ```markdown
 
-                  var metricFinalAggregateSize = promauto.NewHistogramVec(prometheus.HistogramOpts{
-                  	Name:    "zoekt_final_aggregate_size",
-                  	Help:    "The number of file matches we aggregated before flushing",
-                  	Buckets: prometheus.ExponentialBuckets(1, 2, 20),
+                  ### CLI
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt
+                      $GOPATH/bin/zoekt 'ngram f:READ'
+
+                  ## Installation
+
+                  A more organized installation on a Linux server should use a systemd unit file,
+
+                  eg.
+
+                      [Unit]
+                      Description=zoekt webserver
+
+                      [Service]
+                      ExecStart=/zoekt/bin/zoekt-webserver -index /zoekt/index -listen :443  --ssl_cert /zoekt/etc/cert.pem   --ssl_key /zoekt/etc/key.pem
+                      Restart=always
+
+                      [Install]
+                      WantedBy=default.target
+
+
+                  # SEARCH SERVICE
+
+
+                  Zoekt comes with a small service management program:
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-indexserver
+
+                      cat << EOF > config.json
+                      [{"GithubUser": "username"},
+                       {"GithubOrg": "org"},
+                       {"GitilesURL": "https://gerrit.googlesource.com", "Name": "zoekt" }
+                      ]
+                      EOF
+
+                      $GOPATH/bin/zoekt-indexserver -mirror_config config.json
+
+                  This will mirror all repos under 'github.com/username', 'github.com/org', as
+
+                  well as the 'zoekt' repository. It will index the repositories.
+
+
+                  It takes care of fetching and indexing new data and cleaning up logfiles.
+
+
+                  The webserver can be started from a standard service management framework, such
+
+                  as systemd.
+
+
+
+                  # SYMBOL SEARCH
+
+
+                  It is recommended to install [Universal
+
+                  ctags](https://github.com/universal-ctags/ctags) to improve
+
+                  ranking. See [here](doc/ctags.md) for more information.
+
+
+
+                  # ACKNOWLEDGEMENTS
+
+
+                  Thanks to Han-Wen Nienhuys for creating Zoekt. Thanks to Alexander Neubeck for
+
+                  coming up with this idea, and helping Han-Wen Nienhuys flesh it out.
+
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file README.md:
+
+                  ```markdown
+
+                  # FORK DETAILS
+
+
+                  Originally this fork contained some changes that do not make sense to upstream
+
+                  and or have not yet been upstreamed. However, this is now the defacto source
+
+                  for Zoekt. This section will remain for historical reasons and contains
+
+                  outdated information. It can be removed once the dust settles on moving from
+
+                  google/zoekt to sourcegraph/zoekt. Differences:
+
+
+                  - [zoekt-sourcegraph-indexserver](cmd/zoekt-sourcegraph-indexserver/main.go)
+                    is a Sourcegraph specific command which indexes all enabled repositories on
+                    Sourcegraph, as well as keeping the indexes up to date.
+                  - We have exposed the API via
+                    [keegancsmith/rpc](https://github.com/keegancsmith/rpc) (a fork of `net/rpc`
+                    which supports cancellation).
+                  - Query primitive `BranchesRepos` to efficiently specify a set of repositories to
+                    search.
+                  - Allow empty shard directories on startup. Needed when starting a fresh
+                    instance which hasn't indexed anything yet.
+                  - We can return symbol/ctag data in results. Additionally we can run symbol regex queries.
+
+                  - We search shards in order of repo name and ignore shard ranking.
+
+                  - Other minor changes.
+
+
+                  Assuming you have the gerrit upstream configured, a useful way to see what we
+
+                  changed is:
+
+
+                  ``` shellsession
+
+                  $ git diff gerrit/master -- ':(exclude)vendor/' ':(exclude)Gopkg*'
+
+                  ```
+
+
+                  # DISCLAIMER
+
+
+                  This is not an official Google product
+
                   ```
               - speaker: assistant
                 text: Ok.
@@ -8763,14 +9013,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 193686
+        bodySize: 335475
         content:
           mimeType: text/event-stream
-          size: 193686
+          size: 335475
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided codebase context, here is a high-level overview:\n\nThe codebase appears to be related to a text search engine called \"Zoekt\", which is a fork of the original Google project and is now the main maintained source. The codebase includes:\n\n1. `aggregate.go` file:\n   - This file appears to contain a Prometheus histogram metric called `zoekt_final_aggregate_size`, which is used to track the number of file matches that are aggregated before flushing.\n\n2. README.md file:\n   - This file provides instructions for downloading, indexing, and searching using the Zoekt search engine.\n   - It covers how to install the necessary commands (`zoekt-index`, `zoekt-git-index`, `zoekt-repo-index`, `zoekt-mirror-gitiles`, `zoekt-webserver`) and how to use the web interface and JSON API for searching.\n\nBased on this limited context, it's difficult to assess the overall cleanliness of the codebase. Additional information, such as the size of the codebase, the number of files, the coding practices used, the presence of tests, and the overall project structure, would be needed to make a more comprehensive evaluation. Please provide any additional context you can share, and I'll be happy to analyze the codebase further.","stopReason":"end_turn"}
+            data: {"completion":"Based on the provided codebase context from the README.md file, here's a high-level overview:\n\n1. **CLI**: The codebase includes a command-line interface (CLI) for the Zoekt search engine. Users can run the `zoekt` command to perform searches.\n\n2. **Installation**: The codebase provides instructions for a more organized installation of the Zoekt webserver on a Linux server using a systemd unit file.\n\n3. **Search Service**: The codebase includes a search service management program called `zoekt-indexserver`. This program can be used to mirror and index repositories from GitHub, Gitiles, and other sources.\n\n4. **Symbol Search**: The codebase recommends installing Universal ctags to improve ranking for symbol search.\n\n5. **Fork Details**: This is a fork of the original Zoekt project maintained by Sourcegraph. The README.md file outlines the differences between this fork and the original project.\n\n6. **Disclaimer**: This is not an official Google product.\n\nBased on this high-level overview, it's difficult to determine if the codebase is \"clean\" without more context. The README.md file provides a good overview of the functionality and setup, but doesn't give specific details about the code quality, architecture, or development practices. To fully assess the cleanliness of the codebase, I would need additional information, such as:\n\n- Code organization and structure\n- Coding standards and conventions\n- Automated testing coverage\n- Dependency management\n- Documentation quality\n- Continuous integration and deployment processes\n- Ongoing maintenance and support\n\nWithout access to the actual codebase, I can only make a high-level assessment based on the provided documentation. Further investigation would be needed to determine the overall cleanliness of the codebase.","stopReason":"end_turn"}
 
 
             event: done
@@ -8780,7 +9030,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:06:00 GMT
+            value: Mon, 10 Jun 2024 22:25:26 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -8809,7 +9059,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:05:59.223Z
+      startedDateTime: 2024-06-10T22:25:25.309Z
       time: 0
       timings:
         blocked: -1
@@ -8836,7 +9086,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-a9fb0546aeb8f6a070ec08ef7804494c-94082a74d30dc3a2-01
+            value: 00-39f7e7feba321f34329c0962e1e976d2-de2a621658056fe9-01
           - name: connection
             value: keep-alive
           - name: host
@@ -9236,14 +9486,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 183418
+        bodySize: 203966
         content:
           mimeType: text/event-stream
-          size: 183418
+          size: 203966
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided codebase context, here's a high-level overview:\n\nThe code is part of the `zoekt` package, which appears to be a fast text search engine intended for use with source code. The main components are:\n\n1. `SortAndTruncateFiles`: A function that sorts the search results and then truncates them based on the search options.\n2. `DisplayTruncator`: A stateful function that enforces display limits on the search results by truncating and mutating the data.\n3. `limitChunkMatches` and `limitLineMatches`: Helper functions that limit the number of chunk and line matches in the search results.\n\nThe code is focused on managing the display of search results, ensuring that the number of documents and matches shown adheres to the specified limits in the search options.\n\nWithout any additional context about the overall codebase structure or any potential issues, I cannot identify any conflicting packages that may be causing problems. The provided code seems to be self-contained within the `zoekt` package and does not reference any external packages or dependencies.\n\nTo fully answer your question, I would need more information about the broader codebase, any error messages or unexpected behavior, and any other relevant context that could help me identify potential conflicts or issues.","stopReason":"end_turn"}
+            data: {"completion":"Based on the provided codebase context, here's a high-level overview:\n\nThe code is part of the \"zoekt\" project, which appears to be a fast text search engine intended for use with source code. The main functionality is related to indexing and searching code repositories.\n\nThe `limit.go` file contains functions related to limiting the number of search results displayed. Specifically:\n\n1. `SortAndTruncateFiles`: Sorts the search results and then truncates them based on the search options.\n2. `NewDisplayTruncator`: Creates a function that enforces the document and match display limits specified in the search options.\n3. `limitChunkMatches`: Limits the number of ChunkMatches in a FileMatch.\n4. `limitLineMatches`: Limits the number of LineMatches in a FileMatch.\n\nThese functions are responsible for ensuring that the search results are displayed in a manageable way, based on the user's preferences.\n\nTo fully answer the question about any conflicting packages, I would need more information about the specific issue you are encountering. The provided codebase context does not indicate any obvious package conflicts. Could you please provide more details about the problem you are trying to solve, or any errors or unexpected behavior you are seeing? That would help me better understand the context and provide a more relevant and helpful response.","stopReason":"end_turn"}
 
 
             event: done
@@ -9253,7 +9503,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:06:03 GMT
+            value: Mon, 10 Jun 2024 22:25:30 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -9282,7 +9532,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:06:02.409Z
+      startedDateTime: 2024-06-10T22:25:29.251Z
       time: 0
       timings:
         blocked: -1
@@ -9309,7 +9559,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-4e8c4436fd59a9d019efd3547e0a1f35-b01c77dc8ee4b18b-01
+            value: 00-20ac076350cb390801e000e32c810efb-8f52179344c08528-01
           - name: connection
             value: keep-alive
           - name: host
@@ -9720,14 +9970,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 340258
+        bodySize: 267005
         content:
           mimeType: text/event-stream
-          size: 340258
+          size: 267005
           text: >+
             event: completion
 
-            data: {"completion":"Sure, let me take a closer look at the `limit.go` file.\n\nFrom the code provided, it seems this file contains utility functions related to limiting the display of search results in a text search engine, specifically the `Zoekt` project.\n\nThe main functions in this file are:\n\n1. `SortAndTruncateFiles`: This function takes a slice of `FileMatch` (search results) and a `SearchOptions` struct, sorts the results, and then truncates them based on the limits specified in the `SearchOptions`.\n\n2. `NewDisplayTruncator`: This function returns a `DisplayTruncator` function that can be used to enforce the document and match display limits specified in the `SearchOptions`. The `DisplayTruncator` function takes a slice of `FileMatch` and returns a truncated slice based on the limits, along with a boolean indicating if there are more results to display.\n\n3. `limitMatches`: This function takes a slice of `FileMatch` and a limit, and applies the appropriate limit function (`limitChunkMatches` or `limitLineMatches`) to each `FileMatch` object, returning the truncated slice and the remaining limit.\n\n4. `limitChunkMatches`: This function truncates the `ChunkMatches` field of a `FileMatch` object based on the specified limit, updating the `Content`, `Ranges`, and `SymbolInfo` fields accordingly.\n\n5. `limitLineMatches`: This function truncates the `LineMatches` field of a `FileMatch` object based on the specified limit.\n\nThe overall purpose of this code seems to be to provide a way to limit the display of search results in a space-efficient manner, ensuring that the most relevant information is shown to the user while respecting the specified limits.","stopReason":"end_turn"}
+            data: {"completion":"Sure, let me provide a high-level overview of the `limit.go` file based on the provided context:\n\nThe `limit.go` file contains functions related to limiting the number of file matches and match details returned by a search operation. The key functions are:\n\n1. `SortAndTruncateFiles(files, opts)`: This function takes a slice of `FileMatch` objects and the search options, sorts the files, and then truncates the results based on the limits specified in the search options.\n\n2. `NewDisplayTruncator(opts)`: This function creates a `DisplayTruncator` function that enforces the document and match display limits specified in the `SearchOptions`. The `DisplayTruncator` function can be used to progressively truncate the search results.\n\n3. `limitMatches(files, limit, chunkMatches)`: This function is used by the `DisplayTruncator` to limit the number of matches per file, either by limiting the number of \"chunk matches\" or \"line matches\" based on the `chunkMatches` flag.\n\n4. `limitChunkMatches(file, limit)` and `limitLineMatches(file, limit)`: These functions are used to actually truncate the `ChunkMatches` and `LineMatches` within a `FileMatch` object, respectively, based on the specified limit.\n\nThe overall purpose of this code seems to be to provide functionality for limiting the amount of search result data returned to the client, in order to improve performance and prevent the client from being overwhelmed with too much information.","stopReason":"end_turn"}
 
 
             event: done
@@ -9737,7 +9987,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:06:07 GMT
+            value: Mon, 10 Jun 2024 22:25:33 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -9766,7 +10016,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:06:06.293Z
+      startedDateTime: 2024-06-10T22:25:32.467Z
       time: 0
       timings:
         blocked: -1
@@ -9793,7 +10043,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-5fbcab7f40954e4bf1d8abdd2b85b135-e756b7ae6af6fcbb-01
+            value: 00-cd40656ca3766fc87739d83262332f6c-36e2db9542676871-01
           - name: connection
             value: keep-alive
           - name: host
@@ -10192,14 +10442,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 188985
+        bodySize: 93953
         content:
           mimeType: text/event-stream
-          size: 188985
+          size: 93953
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided codebase context, this project seems to be a fast text search engine, specifically intended for searching source code. The project is a fork of the Google-maintained \"zoekt\" project, and is now the main maintained source of Zoekt.\n\nThe code provided focuses on the functionality of limiting and truncating search results, specifically the `SortAndTruncateFiles`, `NewDisplayTruncator`, `limitChunkMatches`, and `limitLineMatches` functions. These functions seem to be responsible for enforcing limits on the number of documents and matches displayed in the search results, in order to provide a manageable and efficient user experience.\n\nHowever, the codebase context does not provide any information about the licensing of this project. The README.md file does not mention the license, and the source code files also do not contain any licensing information. Without additional context about the project's history, development, and the original licensing of the \"zoekt\" project, I cannot provide a definitive answer as to why this project uses the MIT license.\n\nTo fully answer this question, I would need more information about the project's origins, the rationale behind the decision to use the MIT license, and any relevant discussions or documentation that may exist regarding the licensing choice.","stopReason":"end_turn"}
+            data: {"completion":"Based on the provided codebase context, this project appears to be a fast text search engine, specifically designed for searching through source code. The codebase includes several components, such as indexing tools, a web server, and a command-line interface. The project also includes some customizations and features specific to the Sourcegraph fork, such as indexing all repositories enabled on Sourcegraph and returning symbol/ctag data in search results.\n\nHowever, the given code does not contain any information about the project's license. The README.md file does not mention the license used for this project. Without additional context about the project's history, development, or any licensing information, I cannot provide a definitive answer as to why this project uses the MIT license. To fully answer this question, I would need more information about the project's licensing considerations and decision-making process.","stopReason":"end_turn"}
 
 
             event: done
@@ -10209,7 +10459,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:06:11 GMT
+            value: Mon, 10 Jun 2024 22:25:36 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -10238,7 +10488,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:06:10.123Z
+      startedDateTime: 2024-06-10T22:25:35.751Z
       time: 0
       timings:
         blocked: -1
@@ -10265,7 +10515,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-9a6bb6ecf4255488f837652c2c83f241-7c2b139bd3a626be-01
+            value: 00-af79dbc6f249bcf104556ab2f398f40b-5b429f7e8e15d7af-01
           - name: connection
             value: keep-alive
           - name: host
@@ -10664,14 +10914,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 236461
+        bodySize: 393085
         content:
           mimeType: text/event-stream
-          size: 236461
+          size: 393085
           text: >+
             event: completion
 
-            data: {"completion":"Okay, based on the provided codebase context, here's a high-level overview:\n\nThe code appears to be part of the \"zoekt\" project, which is a fast text search engine intended for use with source code. The `limit.go` file contains functions related to limiting the number of results returned by a search.\n\nThe `SortAndTruncateFiles` function is a convenience function that sorts and then truncates the search results based on the specified search options.\n\nThe `NewDisplayTruncator` function returns a stateful function that enforces the document and match display limits specified in the search options. This function is responsible for truncating the search results to fit within the specified limits.\n\nThe `limitChunkMatches` and `limitLineMatches` functions are used by the `NewDisplayTruncator` function to limit the number of chunk matches and line matches, respectively, within each file match.\n\nTo fully answer the question \"See zoekt repo find location of tensor function\", I would need additional context, such as:\n\n1. Is the \"tensor function\" a specific function that exists in the zoekt codebase?\n2. If so, where is this function located (e.g., in which file, class, or package)?\n3. What is the purpose of this \"tensor function\" and how does it relate to the overall functionality of the zoekt project?\n\nWith this additional context, I can provide a more detailed and helpful answer.","stopReason":"end_turn"}
+            data: {"completion":"Okay, let's break this down step-by-step:\n\nBased on the README.md file, this codebase is a fast text search engine called \"Zoekt\" that is primarily used for searching source code. It is a fork of the original \"zoekt\" project from Google, and is now the main maintained version.\n\nThe limit.go file contains functions related to limiting and truncating search results to adhere to certain display limits specified in the SearchOptions. Specifically:\n\n1. `SortAndTruncateFiles`: This function takes a list of `FileMatch` results, sorts them, and then truncates them based on the display limits in the `SearchOptions`.\n\n2. `NewDisplayTruncator`: This function creates a \"DisplayTruncator\" function that can be used to enforce the document and match display limits specified in the `SearchOptions`. The truncator function is returned along with a boolean indicating whether any limits need to be enforced.\n\n3. `limitMatches`: This function limits the number of matches (either chunk matches or line matches) in a list of `FileMatch` results, based on the specified limit.\n\n4. `limitChunkMatches` and `limitLineMatches`: These are helper functions used by `limitMatches` to truncate the chunk matches and line matches within each `FileMatch` object.\n\nTo find the location of a \"tensor\" function, I would need additional context about the Zoekt codebase, such as:\n\n1. Where the code for the main search functionality is located (e.g. which file(s) contain the code for searching the indexed documents).\n2. Whether the \"tensor\" function is a part of the search implementation or some other part of the Zoekt system.\n\nWithout this additional context, I cannot provide a specific answer for the location of the \"tensor\" function. I would need to explore the codebase further to determine where this function is implemented.","stopReason":"end_turn"}
 
 
             event: done
@@ -10681,7 +10931,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:06:14 GMT
+            value: Mon, 10 Jun 2024 22:25:39 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -10710,7 +10960,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:06:13.266Z
+      startedDateTime: 2024-06-10T22:25:38.142Z
       time: 0
       timings:
         blocked: -1
@@ -10737,7 +10987,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-869623bfa83784e09961256f86b34b6f-7d5c0aa203367370-01
+            value: 00-c695b7151b4a668248a2d32af633474b-a8733ff3ee801646-01
           - name: connection
             value: keep-alive
           - name: host
@@ -11387,14 +11637,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 320056
+        bodySize: 229143
         content:
           mimeType: text/event-stream
-          size: 320056
+          size: 229143
           text: >+
             event: completion
 
-            data: {"completion":"Unfortunately, I don't have access to the `src/agent.go` file, as the provided codebase context is limited to the `shards/shards_test.go` and `limit.go` files. \n\nBased on the provided context, I can give you a high-level overview of the code:\n\n1. `shards/shards_test.go`:\n   - This file contains tests for the `shardedSearcher` component, which is responsible for managing and searching across multiple shards (indices) of data.\n   - The tests cover the ranking and document ranking functionality of the `shardedSearcher`.\n   - The `TestShardedSearcher_Ranking` and `TestShardedSearcher_DocumentRanking` tests demonstrate how the `shardedSearcher` ranks and orders the search results based on repository priority and document ranking.\n\n2. `limit.go`:\n   - This file contains functions related to limiting and truncating the number of search results displayed.\n   - The `SortAndTruncateFiles` function first sorts the search results and then truncates them based on the provided `SearchOptions`.\n   - The `NewDisplayTruncator` function creates a stateful function that enforces the document and match display limits specified in the `SearchOptions`.\n   - The `limitChunkMatches` and `limitLineMatches` functions are used to limit the number of chunk matches and line matches, respectively, in the search results.\n\nWithout the `src/agent.go` file, I don't have enough context to explain the logic in that file, particularly how agents interact with ranking. If you can provide the `src/agent.go` file or any additional relevant context, I'd be happy to take another look and provide a more detailed explanation.","stopReason":"end_turn"}
+            data: {"completion":"Unfortunately, the provided codebase context does not contain any files named `agent.go`. The code provided is from the `limit.go` file in the `zoekt` package, which appears to be responsible for implementing search result truncation and limiting based on the specified search options.\n\nThe key functionality in this code includes:\n\n1. `SortAndTruncateFiles`: This function takes a slice of `FileMatch` objects, sorts them, and then truncates the results based on the search options. It uses the `NewDisplayTruncator` function to create a truncator function that enforces the specified limits.\n\n2. `NewDisplayTruncator`: This function creates a `DisplayTruncator` function that can be used to truncate the search results. It checks the search options for limits on the number of documents and matches to display, and returns a function that will apply those limits.\n\n3. `limitMatches`: This function is used by the `DisplayTruncator` to limit the number of matches within each `FileMatch` object, either by limiting the number of `ChunkMatches` or `LineMatches` based on the search options.\n\nWithout any context from a file named `agent.go`, I cannot provide any insights into the logic of how agents interact with ranking. If you could provide the relevant code from `agent.go`, I would be happy to take a closer look and provide a more detailed explanation.","stopReason":"end_turn"}
 
 
             event: done
@@ -11404,7 +11654,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:06:18 GMT
+            value: Mon, 10 Jun 2024 22:25:45 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -11433,7 +11683,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:06:16.982Z
+      startedDateTime: 2024-06-10T22:25:44.662Z
       time: 0
       timings:
         blocked: -1
@@ -11443,11 +11693,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 100867c7c3c54848aac130af532b2c1f
+    - _id: c16bf05239df5e0ce86612713170fd34
       _order: 0
       cache: {}
       request:
-        bodySize: 890
+        bodySize: 1131
         cookies: []
         headers:
           - name: content-type
@@ -11460,7 +11710,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-83d908243f5faa3e42b9c3fc3fd36684-51e25a8d27b99301-01
+            value: 00-d98c157a18485969b408e0eb4fec3dc7-4f2029ae77fb5a13-01
           - name: connection
             value: keep-alive
           - name: host
@@ -11489,7 +11739,11 @@ log:
                   abbreviations, and expansions</variants><weight>a numerical
                   weight between 0.0 and 1.0 that indicates the importance of
                   the keyword</weight></keyword></keywords>. Here is the user
-                  query: <userQuery>@zoekt describe my code</userQuery>"
+                  query: <userQuery>The provided codebase context are the code
+                  you need and have access to. Do not make any assumptions. Give
+                  me a high-level overview based on the given context first
+                  before asking for additional context to answer the following
+                  question fully: @zoekt describe my code</userQuery>"
               - speaker: assistant
             temperature: 0
             topK: 1
@@ -11500,14 +11754,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 41362
+        bodySize: 65480
         content:
           mimeType: text/event-stream
-          size: 41362
+          size: 65480
           text: >+
             event: completion
 
-            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ezoekt\u003c/value\u003e\n\u003cvariants\u003esearch search-engine indexer\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ecode\u003c/value\u003e\n\u003cvariants\u003ecodebase repository source-code\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003edescribe\u003c/value\u003e\n\u003cvariants\u003eanalyze explain summarize\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
+            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ezoekt\u003c/value\u003e\n\u003cvariants\u003esearch search-engine indexer\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ecode\u003c/value\u003e\n\u003cvariants\u003ecodebase source-code\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eoverview\u003c/value\u003e\n\u003cvariants\u003esummary high-level-description\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext\u003c/value\u003e\n\u003cvariants\u003eenvironment setup\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
 
 
             event: done
@@ -11517,7 +11771,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 18:10:39 GMT
+            value: Mon, 10 Jun 2024 22:24:14 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -11546,7 +11800,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T18:10:38.782Z
+      startedDateTime: 2024-06-10T22:24:13.736Z
       time: 0
       timings:
         blocked: -1
@@ -11556,11 +11810,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 55f7489225d72144bd4409117cfc3f73
+    - _id: 37f9417c16d1fa190c22f51811cc0301
       _order: 0
       cache: {}
       request:
-        bodySize: 889
+        bodySize: 1130
         cookies: []
         headers:
           - name: content-type
@@ -11573,7 +11827,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-77029fc1963d54b26f7c551c49652d60-cd785a5bacdabf71-01
+            value: 00-1fa8ffa3818c327b9e344e00c951a7ad-eac7fd98b5213213-01
           - name: connection
             value: keep-alive
           - name: host
@@ -11602,7 +11856,11 @@ log:
                   abbreviations, and expansions</variants><weight>a numerical
                   weight between 0.0 and 1.0 that indicates the importance of
                   the keyword</weight></keyword></keywords>. Here is the user
-                  query: <userQuery>is my code base clean?</userQuery>"
+                  query: <userQuery>The provided codebase context are the code
+                  you need and have access to. Do not make any assumptions. Give
+                  me a high-level overview based on the given context first
+                  before asking for additional context to answer the following
+                  question fully: is my code base clean?</userQuery>"
               - speaker: assistant
             temperature: 0
             topK: 1
@@ -11613,14 +11871,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 78858
+        bodySize: 64705
         content:
           mimeType: text/event-stream
-          size: 78858
+          size: 64705
           text: >+
             event: completion
 
-            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ecode quality\u003c/value\u003e\n\u003cvariants\u003ecode cleanliness code hygiene code health\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ecode analysis\u003c/value\u003e\n\u003cvariants\u003ecode review code inspection code audit\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ecode metrics\u003c/value\u003e\n\u003cvariants\u003ecode complexity code duplication code coverage\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erefactoring\u003c/value\u003e\n\u003cvariants\u003ecode refactoring technical debt\u003c/variants\u003e\n\u003cweight\u003e0.6\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
+            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ecode\u003c/value\u003e\n\u003cvariants\u003ecodebase source program software\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclean\u003c/value\u003e\n\u003cvariants\u003etidy organized maintainable\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eoverview\u003c/value\u003e\n\u003cvariants\u003esummary high-level\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext\u003c/value\u003e\n\u003cvariants\u003eenvironment background\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
 
 
             event: done
@@ -11630,7 +11888,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 18:20:52 GMT
+            value: Mon, 10 Jun 2024 22:24:24 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -11659,7 +11917,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T18:20:51.383Z
+      startedDateTime: 2024-06-10T22:24:23.740Z
       time: 0
       timings:
         blocked: -1
@@ -11669,11 +11927,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 3ffa6170ce25982a645850caa404e0fd
+    - _id: d6a656b4fbb989091a05015097eec971
       _order: 0
       cache: {}
       request:
-        bodySize: 947
+        bodySize: 1188
         cookies: []
         headers:
           - name: content-type
@@ -11686,7 +11944,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-64e2298fe8b685ff10eb93392a2731a4-6a2f4ba4537f2276-01
+            value: 00-b2a501d52b7bda869e569c0f4f77a5f4-e6b4e522240dc8c1-01
           - name: connection
             value: keep-alive
           - name: host
@@ -11715,7 +11973,11 @@ log:
                   abbreviations, and expansions</variants><weight>a numerical
                   weight between 0.0 and 1.0 that indicates the importance of
                   the keyword</weight></keyword></keywords>. Here is the user
-                  query: <userQuery>Explain the logic in src/agent.go,
+                  query: <userQuery>The provided codebase context are the code
+                  you need and have access to. Do not make any assumptions. Give
+                  me a high-level overview based on the given context first
+                  before asking for additional context to answer the following
+                  question fully: Explain the logic in src/agent.go,
                   particularly how agents interact with ranking</userQuery>"
               - speaker: assistant
             temperature: 0
@@ -11727,14 +11989,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 39612
+        bodySize: 97704
         content:
           mimeType: text/event-stream
-          size: 39612
+          size: 97704
           text: >+
             event: completion
 
-            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eagent\u003c/value\u003e\n\u003cvariants\u003eagents\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eranking\u003c/value\u003e\n\u003cvariants\u003erank rank_agent rank_agents\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esrc/agent.go\u003c/value\u003e\n\u003cvariants\u003eagent.go\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
+            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eagent\u003c/value\u003e\n\u003cvariants\u003eagents\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eranking\u003c/value\u003e\n\u003cvariants\u003erank rank_agent rank_agents\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esrc\u003c/value\u003e\n\u003cvariants\u003esource source_code\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003ealgorithm algorithms flow flow_control\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eoverview\u003c/value\u003e\n\u003cvariants\u003ehigh_level_overview summary\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
 
 
             event: done
@@ -11744,7 +12006,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 18:21:01 GMT
+            value: Mon, 10 Jun 2024 22:25:01 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -11773,7 +12035,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T18:21:00.769Z
+      startedDateTime: 2024-06-10T22:25:01.060Z
       time: 0
       timings:
         blocked: -1
@@ -11800,7 +12062,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-bd84ac7efb7bfef3721776692abee547-ec05e8d8decda0fe-01
+            value: 00-52a233320401e0782ba588fa1dbd3864-6fe860d933c12704-01
           - name: connection
             value: keep-alive
           - name: host
@@ -12011,14 +12273,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 22312
+        bodySize: 36113
         content:
           mimeType: text/event-stream
-          size: 22312
+          size: 36113
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided codebase context, it appears to be a Go package related to searching and displaying search results. The code includes functions for sorting and truncating file matches based on search options, enforcing limits on document and match display, and limiting the number of chunk matches and line matches in file matches. The package seems to provide functionality for processing and displaying search results in a structured manner.","stopReason":"stop"}
+            data: {"completion":"Based on the provided codebase context, the code appears to be related to sorting and truncating file matches for a search functionality in the `zoekt` package. The `SortAndTruncateFiles` function sorts and truncates file matches based on search options. The `DisplayTruncator` function enforces display limits for documents and matches by truncating results. The `NewDisplayTruncator` function creates a display truncator based on search options. Additionally, there are functions to limit chunk matches and line matches within file matches.","stopReason":"stop"}
 
 
             event: done
@@ -12028,7 +12290,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:06:22 GMT
+            value: Mon, 10 Jun 2024 22:25:49 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -12057,7 +12319,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:06:21.356Z
+      startedDateTime: 2024-06-10T22:25:48.630Z
       time: 0
       timings:
         blocked: -1
@@ -12084,7 +12346,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-9c7d94f1147d6ed934d2c17921b21c02-66456d9177b336f5-01
+            value: 00-414615e19cc046107f1c854521e7e184-4801f2d8cf57f8d9-01
           - name: connection
             value: keep-alive
           - name: host
@@ -12496,14 +12758,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 73999
+        bodySize: 118672
         content:
           mimeType: text/event-stream
-          size: 73999
+          size: 118672
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided codebase context from the file limit.go, it appears to be a part of the Sourcegraph codebase related to sorting and truncating file matches based on search options. The code defines functions for sorting and truncating files, creating a display truncator, and limiting the number of match results displayed in the search output. The code handles scenarios where there are limits set for displaying document counts and match counts, and it enforces these limits while truncating the results accordingly. Additionally, there are functions for limiting chunk matches and line matches within file matches.\n\nFor a complete description of the code and its functionality, I would need additional context about the overall structure and purpose of the Sourcegraph codebase, as well as any other relevant code files or dependencies.","stopReason":"stop"}
+            data: {"completion":"Based on the provided codebase context, it appears to be a Go package related to searching and filtering file matches. The code includes functions for sorting and truncating files based on search options, as well as methods for limiting the display of document and match counts. \n\nThe `SortAndTruncateFiles` function is used to sort and truncate a list of `FileMatch` objects based on search options. The `DisplayTruncator` type is defined as a stateful function for enforcing display limits by truncating and mutating file matches. \n\nThe `NewDisplayTruncator` function creates a `DisplayTruncator` based on search options, enforcing limits on document and match counts. It includes logic for truncating file matches based on specified limits and settings. Different limit strategies are implemented for chunk matches and line matches in the `limitChunkMatches` and `limitLineMatches` functions.\n\nOverall, the codebase seems to be focused on providing functionality for filtering and displaying search results in a structured and organized manner.","stopReason":"stop"}
 
 
             event: done
@@ -12513,7 +12775,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:06:24 GMT
+            value: Mon, 10 Jun 2024 22:25:52 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -12542,7 +12804,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:06:23.350Z
+      startedDateTime: 2024-06-10T22:25:51.065Z
       time: 0
       timings:
         blocked: -1
@@ -12569,7 +12831,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-79106c6b6ad822cfe5d119ec95c92035-bbf8f1c2a9bd5a6a-01
+            value: 00-d9acb17eb6d842cbbc3a6da646f74898-bc701f159de65055-01
           - name: connection
             value: keep-alive
           - name: host
@@ -13444,14 +13706,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 66094
+        bodySize: 34145
         content:
           mimeType: text/event-stream
-          size: 66094
+          size: 34145
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided code from the file `eval.go`, we can see a function `Search` defined on the `indexData` struct. This function takes a query, search options, and context as input parameters, and it performs searching on the index data based on the query. The function applies default search options if not set, simplifies the query, constructs a match tree, prunes the match tree, and then searches for matches in the index data. It iterates over documents, filters based on various conditions such as repository, and constructs file matches. It also calculates scores, gathers matches, fills in context lines, and stores match counts and other statistics related to the search. Finally, it sorts and truncates the results if document ranking is enabled.","stopReason":"stop"}
+            data: {"completion":"The provided code consists of functions related to searching within an index data structure. It includes methods for setting default search options, performing searches based on a query, and processing search results. The code handles matching queries against a document index, retrieving file matches, calculating scores, and gathering branch information. Additionally, there are functions for evaluating match trees, pruning them, and managing search options. The codebase seems to be focused on efficiently searching and retrieving results from the index data structure.","stopReason":"stop"}
 
 
             event: done
@@ -13461,7 +13723,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:06:28 GMT
+            value: Mon, 10 Jun 2024 22:26:03 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -13490,7 +13752,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:06:27.180Z
+      startedDateTime: 2024-06-10T22:26:02.803Z
       time: 0
       timings:
         blocked: -1
@@ -13500,11 +13762,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: cc9f941fc1a6332ab621acce983505db
+    - _id: b495747a8f2e2d071dbee83d1f5e14b2
       _order: 0
       cache: {}
       request:
-        bodySize: 3130
+        bodySize: 5944
         cookies: []
         headers:
           - name: content-type
@@ -13517,7 +13779,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-a88b0899f71100b4c823e92f127c0c5a-f4ee4a2a834e3c6f-01
+            value: 00-c9e1ffb89fc03d76665ad66002dc3ff6-09c9e98728ec7add-01
           - name: connection
             value: keep-alive
           - name: host
@@ -13537,14 +13799,139 @@ log:
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
                 text: >-
-                  Codebase context from file shards/aggregate.go:
+                  Codebase context from file README.md:
 
-                  ```go
+                  ```markdown
 
-                  var metricFinalAggregateSize = promauto.NewHistogramVec(prometheus.HistogramOpts{
-                  	Name:    "zoekt_final_aggregate_size",
-                  	Help:    "The number of file matches we aggregated before flushing",
-                  	Buckets: prometheus.ExponentialBuckets(1, 2, 20),
+                  ### CLI
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt
+                      $GOPATH/bin/zoekt 'ngram f:READ'
+
+                  ## Installation
+
+                  A more organized installation on a Linux server should use a systemd unit file,
+
+                  eg.
+
+                      [Unit]
+                      Description=zoekt webserver
+
+                      [Service]
+                      ExecStart=/zoekt/bin/zoekt-webserver -index /zoekt/index -listen :443  --ssl_cert /zoekt/etc/cert.pem   --ssl_key /zoekt/etc/key.pem
+                      Restart=always
+
+                      [Install]
+                      WantedBy=default.target
+
+
+                  # SEARCH SERVICE
+
+
+                  Zoekt comes with a small service management program:
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-indexserver
+
+                      cat << EOF > config.json
+                      [{"GithubUser": "username"},
+                       {"GithubOrg": "org"},
+                       {"GitilesURL": "https://gerrit.googlesource.com", "Name": "zoekt" }
+                      ]
+                      EOF
+
+                      $GOPATH/bin/zoekt-indexserver -mirror_config config.json
+
+                  This will mirror all repos under 'github.com/username', 'github.com/org', as
+
+                  well as the 'zoekt' repository. It will index the repositories.
+
+
+                  It takes care of fetching and indexing new data and cleaning up logfiles.
+
+
+                  The webserver can be started from a standard service management framework, such
+
+                  as systemd.
+
+
+
+                  # SYMBOL SEARCH
+
+
+                  It is recommended to install [Universal
+
+                  ctags](https://github.com/universal-ctags/ctags) to improve
+
+                  ranking. See [here](doc/ctags.md) for more information.
+
+
+
+                  # ACKNOWLEDGEMENTS
+
+
+                  Thanks to Han-Wen Nienhuys for creating Zoekt. Thanks to Alexander Neubeck for
+
+                  coming up with this idea, and helping Han-Wen Nienhuys flesh it out.
+
+
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file README.md:
+
+                  ```markdown
+
+                  # FORK DETAILS
+
+
+                  Originally this fork contained some changes that do not make sense to upstream
+
+                  and or have not yet been upstreamed. However, this is now the defacto source
+
+                  for Zoekt. This section will remain for historical reasons and contains
+
+                  outdated information. It can be removed once the dust settles on moving from
+
+                  google/zoekt to sourcegraph/zoekt. Differences:
+
+
+                  - [zoekt-sourcegraph-indexserver](cmd/zoekt-sourcegraph-indexserver/main.go)
+                    is a Sourcegraph specific command which indexes all enabled repositories on
+                    Sourcegraph, as well as keeping the indexes up to date.
+                  - We have exposed the API via
+                    [keegancsmith/rpc](https://github.com/keegancsmith/rpc) (a fork of `net/rpc`
+                    which supports cancellation).
+                  - Query primitive `BranchesRepos` to efficiently specify a set of repositories to
+                    search.
+                  - Allow empty shard directories on startup. Needed when starting a fresh
+                    instance which hasn't indexed anything yet.
+                  - We can return symbol/ctag data in results. Additionally we can run symbol regex queries.
+
+                  - We search shards in order of repo name and ignore shard ranking.
+
+                  - Other minor changes.
+
+
+                  Assuming you have the gerrit upstream configured, a useful way to see what we
+
+                  changed is:
+
+
+                  ``` shellsession
+
+                  $ git diff gerrit/master -- ':(exclude)vendor/' ':(exclude)Gopkg*'
+
+                  ```
+
+
+                  # DISCLAIMER
+
+
+                  This is not an official Google product
+
                   ```
               - speaker: assistant
                 text: Ok.
@@ -13635,14 +14022,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 46955
+        bodySize: 72459
         content:
           mimeType: text/event-stream
-          size: 46955
+          size: 72459
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided codebase context, it appears that the codebase is for a project called \"Zoekt,\" which is a fast text search engine designed for use with source code. The code seems to include instructions for downloading, indexing (for directories, Git repositories, and Repo repositories), and searching using tools provided in the Zoekt project. The README.md file provides details on installation steps, usage instructions, and available interfaces for searching, such as a web interface and JSON API.\n\nTo determine if the codebase is clean, I would need to inspect the actual code implementation in addition to the provided context.","stopReason":"stop"}
+            data: {"completion":"Based on the provided README.md file, the codebase appears to be a fork of the Zoekt project, originally from Google but now maintained by Sourcegraph. It is a fast text search engine primarily used for searching source code. The README.md file includes instructions for downloading, indexing directories, Git repositories, and searching using the web interface or JSON API.\n\nThe fork contains specific changes that are not part of the upstream repository, and it mentions Sourcegraph-specific commands and enhancements that have been made, such as indexing enabled repositories on Sourcegraph, exposing the API via keegancsmith/rpc, and allowing symbol/ctag data in search results.\n\nBefore determining whether the codebase is clean, additional context and a deeper dive into the code itself would be needed.","stopReason":"stop"}
 
 
             event: done
@@ -13652,7 +14039,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:06:31 GMT
+            value: Mon, 10 Jun 2024 22:26:07 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -13681,7 +14068,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:06:30.611Z
+      startedDateTime: 2024-06-10T22:26:06.607Z
       time: 0
       timings:
         blocked: -1
@@ -13708,7 +14095,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-a6e722b484dbed2d6973a296f9a85e28-e772981728a926c1-01
+            value: 00-d93e95946ac6138abe83061a6de84d73-a404537ed68d8655-01
           - name: connection
             value: keep-alive
           - name: host
@@ -14109,14 +14496,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 87740
+        bodySize: 175552
         content:
           mimeType: text/event-stream
-          size: 87740
+          size: 175552
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided codebase context, the `limit.go` file in the `zoekt` package contains functions related to sorting and truncating file matches based on search options. The `SortAndTruncateFiles` function sorts and truncates file matches according to specified search options. The `DisplayTruncator` type and the `NewDisplayTruncator` function are used to enforce limits on the display of documents and matches. The `limitMatches`, `limitChunkMatches`, and `limitLineMatches` functions are used to limit the number of chunk matches and line matches in file matches. Additionally, there is some logic to handle truncating content based on line numbers.\n\nBased on this overview, the file handles sorting and truncation of file matches as well as enforcing display limits based on search options. It also includes functions for limiting chunk matches and line matches in file matches.","stopReason":"stop"}
+            data: {"completion":"From the provided codebase context, we have a file named `limit.go` that contains functions related to sorting and truncating file matches in the context of searching. \n\nThe `SortAndTruncateFiles` function is a convenience function that sorts the file matches and truncates them based on the search options. It internally uses the `SortFiles` function and a `DisplayTruncator` function to perform the sorting and truncation.\n\nThe `DisplayTruncator` type is a stateful function that enforces document and match display limits by truncating and mutating file matches. It returns a subset of file matches respecting the specified limits.\n\nThe `NewDisplayTruncator` function creates a `DisplayTruncator` based on the search options provided. It enforces limits on the number of documents and matches displayed and determines whether limits are applicable based on the options.\n\nThe `limitMatches`, `limitChunkMatches`, and `limitLineMatches` functions are utility functions used by `NewDisplayTruncator` to limit the number of chunk matches or line matches within a file match based on the specified limits.\n\nOverall, the code in `limit.go` focuses on sorting and truncating file matches based on search options and enforcing display limits in search results.","stopReason":"stop"}
 
 
             event: done
@@ -14126,7 +14513,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:06:34 GMT
+            value: Mon, 10 Jun 2024 22:26:10 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -14155,7 +14542,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:06:33.728Z
+      startedDateTime: 2024-06-10T22:26:09.491Z
       time: 0
       timings:
         blocked: -1
@@ -14182,7 +14569,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-03e1ad0e59c62073040310bc5a5d640f-433f37e8c5cbb71b-01
+            value: 00-af28de4564ec9ede803a1c973a86e3bc-2e63eeda6762e91d-01
           - name: connection
             value: keep-alive
           - name: host
@@ -14594,14 +14981,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 78851
+        bodySize: 33067
         content:
           mimeType: text/event-stream
-          size: 78851
+          size: 33067
           text: >+
             event: completion
 
-            data: {"completion":"Based on the given context from the file `limit.go`, it appears to contain functions related to sorting and truncating files based on search options in the context of a search engine. \n\nThe file defines a `SortAndTruncateFiles` function that sorts and truncates files based on search options, a `DisplayTruncator` function for enforcing display limits, and a `NewDisplayTruncator` function for creating a display truncator based on search options.\n\nAdditionally, there are functions `limitMatches`, `limitChunkMatches`, and `limitLineMatches` that handle limiting the number of matches or line fragments in file matches based on specified limits.\n\nThese functions seem to play a role in managing the display of search results by limiting the number of matches or lines displayed, as well as sorting files within a search context.","stopReason":"stop"}
+            data: {"completion":"The limit.go file contains functions related to sorting and truncating files for display based on search options in the Zoekt codebase. It includes a function SortAndTruncateFiles that sorts and truncates files, as well as a DisplayTruncator function that enforces document and match display limits by truncating and mutating the files. There are also functions for limiting the number of ChunkMatches and LineMatches in FileMatches. These functions handle truncating and limiting the display of search results in Zoekt.","stopReason":"stop"}
 
 
             event: done
@@ -14611,7 +14998,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:06:38 GMT
+            value: Mon, 10 Jun 2024 22:26:15 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -14640,7 +15027,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:06:37.480Z
+      startedDateTime: 2024-06-10T22:26:14.049Z
       time: 0
       timings:
         blocked: -1
@@ -14667,7 +15054,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-5f3a1e90f68093f788fd5e42863037f0-001bb918e4abbc61-01
+            value: 00-1281d7382ad10832693540a2701ff267-6445a16fd5f08b73-01
           - name: connection
             value: keep-alive
           - name: host
@@ -15067,14 +15454,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 39231
+        bodySize: 49947
         content:
           mimeType: text/event-stream
-          size: 39231
+          size: 49947
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided codebase context, the project seems to be a search engine implementation called \"Zoekt.\" The code includes functions for sorting and truncating file matches based on search options, as well as enforcing limits on the display of documents and matches. The code also includes functions for limiting chunk matches and line matches within file matches.\n\nTo fully answer the question of why this project uses the MIT license, additional context such as the project's licensing information, contributors' intentions, or any specific reasons mentioned in project documentation would be required.","stopReason":"stop"}
+            data: {"completion":"Based on the provided codebase context, the `limit.go` file in the `zoekt` package contains functionality related to sorting and truncating file matches in a search result, enforcing display limits for documents and matches, and limiting the number of chunk and line matches in file matches. The code includes functions for sorting and truncating files, creating a display truncator based on search options, and limiting chunk and line matches in file matches.\n\nTo answer the question of why this project uses the MIT license, additional context is required to examine the project's licensing information, rationale, or any specific reasons stated by the project maintainers.","stopReason":"stop"}
 
 
             event: done
@@ -15084,7 +15471,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:06:48 GMT
+            value: Mon, 10 Jun 2024 22:26:21 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -15113,7 +15500,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:06:47.443Z
+      startedDateTime: 2024-06-10T22:26:20.214Z
       time: 0
       timings:
         blocked: -1
@@ -15140,7 +15527,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-f98cfbcc44edee0c91a8ba59bdfa12d1-3f7b6cb02914a934-01
+            value: 00-fe0a5111225833512066edf8379bd86b-159c63e4986bd616-01
           - name: connection
             value: keep-alive
           - name: host
@@ -15540,14 +15927,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 76780
+        bodySize: 149569
         content:
           mimeType: text/event-stream
-          size: 76780
+          size: 149569
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided codebase context, the code includes functions related to sorting and truncating file matches in a search engine called Zoekt. The `SortAndTruncateFiles` function sorts and truncates file matches based on search options. The `DisplayTruncator` function enforces display limits for documents and matches by truncating and mutating the input before returning the results. The code also includes functions for limiting the number of chunk matches and line matches in file matches.\n\nTo find the location of the `tensor` function in the Zoekt repository, we would need to search through the codebase for the definition of the `tensor` function. More context about the structure of the Zoekt repository and the specific code organization would be required to pinpoint the exact location of the `tensor` function.","stopReason":"stop"}
+            data: {"completion":"Based on the provided codebase context, the code includes functions related to sorting and truncating file matches in the context of a search operation. The `SortAndTruncateFiles` function sorts and truncates a list of file matches based on search options. The `DisplayTruncator` function enforces display limits for documents and matches by truncating and mutating the file matches. The `NewDisplayTruncator` function creates a display truncator based on search options, enforcing limits on document and match displays. Additionally, there are functions to limit the number of chunk matches and line matches within a file match. These functions handle truncation based on specified limits.\n\nNow, in order to locate the `tensor` function within the `zoekt` repository, I would need to search for a function specifically named `tensor` within the codebase. This may involve examining the codebase more thoroughly for functions containing the keyword `tensor` or related functionality. \n\nIf you can provide additional context such as file names or specific locations where the `tensor` function is expected to be, it would help in locating the function accurately within the codebase.","stopReason":"stop"}
 
 
             event: done
@@ -15557,7 +15944,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:06:50 GMT
+            value: Mon, 10 Jun 2024 22:26:23 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -15586,7 +15973,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:06:50.022Z
+      startedDateTime: 2024-06-10T22:26:22.951Z
       time: 0
       timings:
         blocked: -1
@@ -15613,7 +16000,7 @@ log:
           - name: user-agent
             value: chat-response-quality / v1
           - name: traceparent
-            value: 00-75412d7f76d45bc9398f6874658da855-8417529d0d8d352f-01
+            value: 00-b6f762775bd83f80ef014a04bf7c6e17-2813518f83fe3cb2-01
           - name: connection
             value: keep-alive
           - name: host
@@ -16264,14 +16651,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=chat-response-quality&client-version=v1
       response:
-        bodySize: 53640
+        bodySize: 87203
         content:
           mimeType: text/event-stream
-          size: 53640
+          size: 87203
           text: >+
             event: completion
 
-            data: {"completion":"The provided code is related to sorting and truncating search results in a text search engine called Zoekt. The code includes functions for sorting and truncating files based on search options, creating a display truncator based on document and match display limits, and limiting the number of chunk matches and line matches in file matches.\n\nTo explain the logic in src/agent.go, particularly how agents interact with ranking, I would need to know additional context about the agent functionality and how ranking is defined and calculated within the Zoekt search engine. Additional context on how agents utilize ranking information and interact with the search results would be necessary to provide a detailed explanation.","stopReason":"stop"}
+            data: {"completion":"Based on the provided context, the code snippet in limit.go defines functions for sorting and truncating file matches based on search options in a search engine. The `SortAndTruncateFiles` function sorts files and then truncates them based on display limits specified in the search options. The `NewDisplayTruncator` function creates a stateful function to enforce document and match display limits. It returns a display truncator and a boolean indicating if there are limits to enforce. The `limitMatches`, `limitChunkMatches`, and `limitLineMatches` functions are used to limit the number of matches or fragments in file matches based on the specified limits. \n\nNow, to fully explain how agents interact with ranking in `src/agent.go`, I would need to review the code in that particular file to understand the logic and functions related to agent interactions with ranking.","stopReason":"stop"}
 
 
             event: done
@@ -16281,7 +16668,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:06:54 GMT
+            value: Mon, 10 Jun 2024 22:26:29 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -16310,7 +16697,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:06:53.537Z
+      startedDateTime: 2024-06-10T22:26:28.922Z
       time: 0
       timings:
         blocked: -1

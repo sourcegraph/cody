@@ -153,11 +153,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 1acfaa86ba1586bc18ac2e4188eed7f4
+    - _id: 5c6544452ca1c26d15ca25b163fa9752
       _order: 0
       cache: {}
       request:
-        bodySize: 2756
+        bodySize: 2515
         cookies: []
         headers:
           - name: content-type
@@ -170,7 +170,7 @@ log:
           - name: user-agent
             value: edit / v1
           - name: traceparent
-            value: 00-f3628f91285d9a60405a733629dc5c83-d50d45797315791f-01
+            value: 00-e167d7ee18b7706ad6b9f25e37fe81f3-f6f85e2f31ed15e1-01
           - name: connection
             value: keep-alive
           - name: host
@@ -252,10 +252,7 @@ log:
 
                   </INSTRUCTIONS7390>
               - speaker: assistant
-                text: "The provided codebase context are the code you need and have access to.
-                  Do not make any assumptions. Give me a high-level overview
-                  based on the given context first before asking for additional
-                  context to answer the following question fully: <CODE5711>"
+                text: <CODE5711>
             model: anthropic/claude-3-opus-20240229
             stopSequences:
               - </CODE5711>
@@ -288,7 +285,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:04:39 GMT
+            value: Mon, 10 Jun 2024 22:12:28 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -317,7 +314,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:04:37.182Z
+      startedDateTime: 2024-06-10T22:12:25.385Z
       time: 0
       timings:
         blocked: -1
@@ -327,11 +324,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: bf580e5ddd0e669bd87cb344894e8b71
+    - _id: fa263b4c0c914112a377b1c976114f9f
       _order: 0
       cache: {}
       request:
-        bodySize: 3046
+        bodySize: 2805
         cookies: []
         headers:
           - name: content-type
@@ -344,7 +341,7 @@ log:
           - name: user-agent
             value: edit / v1
           - name: traceparent
-            value: 00-1b90eddf32e3f675a8a317030442d13c-f9b3fcaa41ce6978-01
+            value: 00-8613097df3e52aebadae9fb0ab0687ea-d9a859be517bfe47-01
           - name: connection
             value: keep-alive
           - name: host
@@ -416,19 +413,13 @@ log:
 
                   </INSTRUCTIONS7390>
               - speaker: assistant
-                text: >-
-                  The provided codebase context are the code you need and have
-                  access to. Do not make any assumptions. Give me a high-level
-                  overview based on the given context first before asking for
-                  additional context to answer the following question fully:
+                text: |-
                   <PRECEDINGCODE3493>import React = require("react");
-
 
                   interface HeadingProps {
                       text: string;
                       level?: number;
                   }
-
 
                   </PRECEDINGCODE3493><CODE5711>
             model: anthropic/claude-3-opus-20240229
@@ -446,14 +437,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=edit&client-version=v1
       response:
-        bodySize: 116456
+        bodySize: 11770
         content:
           mimeType: text/event-stream
-          size: 116456
+          size: 11770
           text: >+
             event: completion
 
-            data: {"completion":"/* Based on the provided code, we have:\n- An import of the React module\n- An interface `HeadingProps` that defines the expected props for a Heading component:\n  - `text` prop of type string \n  - optional `level` prop of type number\nTo create the Heading component:\n1. Define a functional component named `Heading` that accepts `props` of type `HeadingProps`  \n2. Determine the heading level based on the `level` prop, defaulting to `1` if not provided\n3. Render the appropriate heading element (`\u003ch1\u003e` to `\u003ch6\u003e`) based on the level, with the `text` prop as the content\n4. Export the `Heading` component using a named export\n*/\n\nexport const Heading: React.FC\u003cHeadingProps\u003e = ({ text, level = 1 }) =\u003e {\n  const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;\n\n  return \u003cHeadingTag\u003e{text}\u003c/HeadingTag\u003e;\n};\n","stopReason":"stop_sequence"}
+            data: {"completion":"export const Heading: React.FC\u003cHeadingProps\u003e = ({ text, level = 1 }) =\u003e {\n  const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;\n  return \u003cHeadingTag\u003e{text}\u003c/HeadingTag\u003e;\n};\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -463,7 +454,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:04:44 GMT
+            value: Mon, 10 Jun 2024 22:12:32 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -492,7 +483,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:04:41.060Z
+      startedDateTime: 2024-06-10T22:12:29.455Z
       time: 0
       timings:
         blocked: -1

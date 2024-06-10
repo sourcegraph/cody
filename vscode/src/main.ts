@@ -6,12 +6,10 @@ import {
     type ConfigurationWithAccessToken,
     type DefaultCodyCommands,
     ModelsService,
-    PromptMixin,
     PromptString,
     contextFiltersProvider,
     featureFlagProvider,
     graphqlClient,
-    newPromptMixin,
     setClientNameVersion,
     setLogger,
     telemetryRecorder,
@@ -115,9 +113,6 @@ export async function start(
                 const config = await getFullConfig()
                 await onConfigurationChange(config)
                 platform.onConfigurationChange?.(config)
-                if (config.chatPreInstruction.length > 0) {
-                    PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
-                }
                 getChatModelsFromConfiguration()
             }
         })
@@ -157,10 +152,6 @@ const register = async (
     // Could we use the `initialConfig` instead?
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
-
-    if (config.chatPreInstruction.length > 0) {
-        PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
-    }
 
     void parseAllVisibleDocuments()
 

@@ -92,8 +92,6 @@ describe('Chat response quality', () => {
                 checkAccess(lastMessage)
             }, 10_000)
 
-            // Skip because this currently fails.
-            // * anthropic/claude-3-haiku: "I don't have access to any code you've written. I'm Claude, an AI assistant..."
             it('@zoekt describe my code', async () => {
                 const lastMessage = await sendMessage(client, modelString, '@zoekt describe my code', {
                     addEnhancedContext: true,
@@ -102,8 +100,6 @@ describe('Chat response quality', () => {
                 checkAccess(lastMessage)
             }, 10_000)
 
-            // Skip because this currently fails.
-            // * openai/gpt-3.5-turbo: "I cannot directly assess the cleanliness of your codebase as an AI assistant"
             it('Is my codebase clean?', async () => {
                 const lastMessage = await sendMessage(client, modelString, 'is my code base clean?', {
                     addEnhancedContext: true,
@@ -150,8 +146,6 @@ describe('Chat response quality', () => {
                 expect(lastMessage?.text).not.includes("I can't review specific files")
             }, 10_000)
 
-            // Skip because this currently fails.
-            // * openai/gpt-3.5-turbo: "The project likely uses the MIT license because..."
             it('Why does this project use the MIT license?', async () => {
                 const lastMessage = await sendMessage(
                     client,
@@ -183,8 +177,6 @@ describe('Chat response quality', () => {
                 checkFilesExist(lastMessage, [], contextFiles)
             }, 10_000)
 
-            // Skip because this currently fails.
-            // * anthropic/claude-3-haiku: "'Certainly! The `agent.go` ..."
             it('Explain the logic in src/agent.go', async () => {
                 const contextFiles = [readmeItem, limitItem]
                 const lastMessage = await sendMessage(
@@ -198,7 +190,10 @@ describe('Chat response quality', () => {
                 expect(lastMessage?.text).not.includes('Certainly!')
                 expect(lastMessage?.text).not.includes("Sure, let's")
                 // Should ask for additional (relevant) context.
-                expect(lastMessage?.text).toMatch(/additional( relevant)? context/i)
+                // TODO: This is a bit brittle, should update to improve response across models.
+                expect(lastMessage?.text?.toLowerCase()).toMatch(
+                    /(if you could provide|need to review the code|additional( relevant)? (context|code))/i
+                )
             }, 10_000)
         })
     }

@@ -111,21 +111,8 @@ describe('Edit', () => {
               level?: number;
           }
 
-          /* Based on the provided code, we have:
-          - An import of the React module
-          - An interface \`HeadingProps\` that defines the expected props for a Heading component:
-            - \`text\` prop of type string
-            - optional \`level\` prop of type number
-          To create the Heading component:
-          1. Define a functional component named \`Heading\` that accepts \`props\` of type \`HeadingProps\`
-          2. Determine the heading level based on the \`level\` prop, defaulting to \`1\` if not provided
-          3. Render the appropriate heading element (\`<h1>\` to \`<h6>\`) based on the level, with the \`text\` prop as the content
-          4. Export the \`Heading\` component using a named export
-          */
-
           export const Heading: React.FC<HeadingProps> = ({ text, level = 1 }) => {
             const HeadingTag = \`h\${level}\` as keyof JSX.IntrinsicElements;
-
             return <HeadingTag>{text}</HeadingTag>;
           };
 

@@ -3,7 +3,6 @@ import {
     type ContextItem,
     type Message,
     type ModelContextWindow,
-    PromptMixin,
     TokenCounter,
     contextFiltersProvider,
     isCodyIgnoredFile,
@@ -58,9 +57,6 @@ export class PromptBuilder {
             const messagePair = contextMessage && [ASSISTANT_MESSAGE, contextMessage]
             messagePair && this.reverseMessages.push(...messagePair)
         }
-
-        // Apply prompt mixin to the first human message in the reverseMessages.
-        this.reverseMessages[0] = PromptMixin.mixInto(this.reverseMessages[0])
     }
 
     public tryAddToPrefix(messages: Message[]): boolean {

@@ -301,11 +301,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 0f0b01eb76011dec7e9c45c4ab80956a
+    - _id: 63d9ee7ab3b16c922af2cc52dfdcef75
       _order: 0
       cache: {}
       request:
-        bodySize: 3734
+        bodySize: 3493
         cookies: []
         headers:
           - name: content-type
@@ -318,7 +318,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-a49849f1335ee4a63597b144f082ddec-415e3066c6cd38fd-01
+            value: 00-ec31244134bf72aeb3bcecd620d30f4f-188694731ada41cf-01
           - name: connection
             value: keep-alive
           - name: host
@@ -434,10 +434,7 @@ log:
 
                   </INSTRUCTIONS7390>
               - speaker: assistant
-                text: "The provided codebase context are the code you need and have access to.
-                  Do not make any assumptions. Give me a high-level overview
-                  based on the given context first before asking for additional
-                  context to answer the following question fully: <CODE5711>"
+                text: <CODE5711>
             model: anthropic/claude-3-haiku-20240307
             stopSequences:
               - </CODE5711>
@@ -454,14 +451,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 3167
+        bodySize: 1950
         content:
           mimeType: text/event-stream
-          size: 3167
+          size: 1950
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Logs the greeting 'Hello World!' to the console if the `shouldGreet` flag is true.\n */","stopReason":"stop_sequence"}
+            data: {"completion":"/**\n * Logs 'Hello World!' if `shouldGreet` is true.\n */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -471,7 +468,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:04:46 GMT
+            value: Mon, 10 Jun 2024 22:12:37 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -500,7 +497,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:04:45.903Z
+      startedDateTime: 2024-06-10T22:12:36.116Z
       time: 0
       timings:
         blocked: -1
@@ -510,11 +507,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 12cb6472d8b73d3574442a0ff140a87f
+    - _id: ec4aab0107eed8a8a574b6a79775b6e1
       _order: 0
       cache: {}
       request:
-        bodySize: 3269
+        bodySize: 3028
         cookies: []
         headers:
           - name: content-type
@@ -527,7 +524,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-3132b5da41c8a9a94e245c7dbf82f760-04c5bfe30731244b-01
+            value: 00-2df1a11a0cfab5ec4e2d06de66861448-599650970aa9369f-01
           - name: connection
             value: keep-alive
           - name: host
@@ -610,10 +607,7 @@ log:
 
                   </INSTRUCTIONS7390>
               - speaker: assistant
-                text: "The provided codebase context are the code you need and have access to.
-                  Do not make any assumptions. Give me a high-level overview
-                  based on the given context first before asking for additional
-                  context to answer the following question fully: <CODE5711>"
+                text: <CODE5711>
             model: anthropic/claude-3-haiku-20240307
             stopSequences:
               - </CODE5711>
@@ -630,14 +624,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 2116
+        bodySize: 1037
         content:
           mimeType: text/event-stream
-          size: 2116
+          size: 1037
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Logs a message to the console indicating that a log is being recorded.\n */","stopReason":"stop_sequence"}
+            data: {"completion":"\n/**\n * Records a log message.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -647,7 +641,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:04:47 GMT
+            value: Mon, 10 Jun 2024 22:12:38 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -676,7 +670,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:04:47.065Z
+      startedDateTime: 2024-06-10T22:12:37.246Z
       time: 0
       timings:
         blocked: -1
@@ -686,11 +680,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: a64c42b1304bfddb03ca5355c008a26b
+    - _id: fc7803a3e5566ea112584b8e407485b5
       _order: 0
       cache: {}
       request:
-        bodySize: 3522
+        bodySize: 3281
         cookies: []
         headers:
           - name: content-type
@@ -703,7 +697,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-faaa697b045bd0b29ec9a0c05642a599-8fa890007613564e-01
+            value: 00-63b2e4c1752b29d56f7632f373bddad3-cd0d8de55aa1725c-01
           - name: connection
             value: keep-alive
           - name: host
@@ -802,10 +796,7 @@ log:
 
                   </INSTRUCTIONS7390>
               - speaker: assistant
-                text: "The provided codebase context are the code you need and have access to.
-                  Do not make any assumptions. Give me a high-level overview
-                  based on the given context first before asking for additional
-                  context to answer the following question fully: <CODE5711>"
+                text: <CODE5711>
             model: anthropic/claude-3-haiku-20240307
             stopSequences:
               - </CODE5711>
@@ -822,14 +813,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 4414
+        bodySize: 5301
         content:
           mimeType: text/event-stream
-          size: 4414
+          size: 5301
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Gets the current time in milliseconds since the page was loaded.\n * This can be used to measure the duration of an operation.\n */","stopReason":"stop_sequence"}
+            data: {"completion":"\n/**\n * Retrieves the current timestamp in milliseconds since the page was loaded.\n * This can be used to measure the duration of a specific operation.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -839,7 +830,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:04:48 GMT
+            value: Mon, 10 Jun 2024 22:12:39 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -868,7 +859,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:04:48.034Z
+      startedDateTime: 2024-06-10T22:12:38.222Z
       time: 0
       timings:
         blocked: -1

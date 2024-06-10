@@ -1,7 +1,7 @@
 import type { ChatMessage } from '../chat/transcript/messages'
 import { PromptString, ps } from './prompt-string'
 
-const CONTEXT_PROMPT = ps`The provided codebase context are the code you need and have access to. Do not make any assumptions. Give me a high-level overview based on the given context first before asking for additional context to answer the following question fully:`
+export const CONTEXT_ASSIST_PROMPT = ps`The provided codebase context are the code you need and have access to. Do not make any assumptions. Give me a high-level overview based on the given context first before asking for additional context to answer the following question fully:`
 
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.
@@ -11,7 +11,7 @@ export class PromptMixin {
     private static mixins: PromptMixin[] = []
     private static customMixin: PromptMixin[] = []
     // The prompt that instructs Cody to identify itself and avoid hallucinations.
-    private static defaultMixin: PromptMixin = new PromptMixin(CONTEXT_PROMPT)
+    private static defaultMixin: PromptMixin = new PromptMixin(CONTEXT_ASSIST_PROMPT)
 
     /**
      * Adds a custom prompt mixin but not to the global set to make sure it will not be added twice

@@ -9,6 +9,7 @@ import {
     isDefined,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { logDebug } from '../../log'
 import { PromptBuilder } from '../../prompt-builder'
 import type { SimpleChatModel } from './SimpleChatModel'
@@ -29,7 +30,12 @@ interface PromptInfo {
 export class DefaultPrompter {
     constructor(
         private explicitContext: ContextItemWithContent[],
-        private getEnhancedContext?: (query: PromptString) => Promise<ContextItem[]>
+        private getEnhancedContext?: (query: PromptString) => Promise<ContextItem[]>,
+        /**
+         * Whether the current message is from a default command.
+         * We will apply context assist prompt for non-command chat messages.
+         */
+        private isCommand = false
     ) {}
     // Constructs the raw prompt to send to the LLM, with message order reversed, so we can construct
     // an array with the most important messages (which appear most important first in the reverse-prompt.
@@ -55,6 +61,16 @@ export class DefaultPrompter {
 
             // Add existing chat transcript messages
             const reverseTranscript = [...chat.getDehydratedMessages()].reverse()
+            const historyItems = reverseTranscript.flatMap(m => m?.contextFiles).filter(isDefined)
+
+            // HACK: Add assist prompt for non-command chat messages with context items available.
+            if (
+                !this.isCommand &&
+                Boolean(this.getEnhancedContext || this.explicitContext?.length || historyItems?.length)
+            ) {
+                reverseTranscript[0] = PromptMixin.mixInto(reverseTranscript[0])
+            }
+
             const transcriptLimitReached = promptBuilder.tryAddMessages(reverseTranscript)
             if (transcriptLimitReached) {
                 logDebug(
@@ -97,7 +113,6 @@ export class DefaultPrompter {
             }
 
             // If there's room left, add context from previous messages (both user-defined and enhanced).
-            const historyItems = reverseTranscript.flatMap(m => m?.contextFiles).filter(isDefined)
             const historyContext = await promptBuilder.tryAddContext('history', historyItems.reverse())
             ignoredContext.transcript += historyContext.ignored.length
 

@@ -779,7 +779,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-dd3752f177409a32597505e665ed8897-8dc4e23ffeca5785-01
+            value: 00-8a2dcc9e7286447c2bdd53a628392ae2-590779e3b1d28dfd-01
           - name: connection
             value: keep-alive
           - name: host
@@ -875,14 +875,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 267421
+        bodySize: 104378
         content:
           mimeType: text/event-stream
-          size: 267421
+          size: 104378
           text: >+
             event: completion
 
-            data: {"completion":"Based on the given context, here's a high-level overview:\n\n1. `src/TestClass.ts` contains a class `TestClass` with a constructor and a method `functionName()` that logs \"Hello World!\" to the console if a certain condition is met.\n\n2. `src/squirrel.ts` contains an interface `Squirrel` that is unrelated to actual squirrels and is related to the implementation of precise code navigation in Sourcegraph.\n\n3. `src/animal.ts` contains an interface `Animal` with three properties: `name` (a string), `makeAnimalSound()` (a method that returns a string), and `isMammal` (a boolean).\n\nTo write a class `Dog` that implements the `Animal` interface, I need more context about the expected implementation of the `makeAnimalSound()` method.\n\nHere's the code for the `Dog` class that implements the `Animal` interface:\n\n```typescript\nclass Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return 'Woof!';\n    }\n}\n```\n\nIn this implementation, the `Dog` class has a `name` property of type `string` and an `isMammal` property of type `boolean` (initialized to `true`). The constructor takes a `name` parameter to initialize the `name` property.\n\nThe `makeAnimalSound()` method is implemented to return the string `'Woof!'`, which represents the sound a dog makes.","stopReason":"end_turn"}
+            data: {"completion":"Based on the provided codebase context, here's a high-level overview:\n\n- `TestClass.ts` contains a class `TestClass` with a constructor that takes a `shouldGreet` boolean parameter and a `functionName` method that logs `'Hello World!'` if `shouldGreet` is true.\n- `squirrel.ts` defines an interface `Squirrel` that is unrelated to actual squirrels but is related to the implementation of precise code navigation in Sourcegraph.\n- `animal.ts` defines an interface `Animal` with properties `name` (string), `makeAnimalSound` (function returning a string), and `isMammal` (boolean).\n\nTo write a class `Dog` that implements the `Animal` interface, I would need the `Animal` interface definition from `animal.ts`. If you could provide the full contents of `animal.ts`, I can then show you the code for the `Dog` class that implements the `Animal` interface.","stopReason":"end_turn"}
 
 
             event: done
@@ -892,7 +892,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:04:36 GMT
+            value: Mon, 10 Jun 2024 22:24:00 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -921,7 +921,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:04:35.339Z
+      startedDateTime: 2024-06-10T22:23:58.617Z
       time: 0
       timings:
         blocked: -1
@@ -931,11 +931,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b9cba46138c785303c9d8a31d51c42e0
+    - _id: 8540fcec0f6cc94bf2e37947274f9c7e
       _order: 0
       cache: {}
       request:
-        bodySize: 1105
+        bodySize: 831
         cookies: []
         headers:
           - name: content-type
@@ -948,7 +948,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-25fabf8e938682c02e900d3167d071b5-6bb24fe9ef4a7a1f-01
+            value: 00-5fdfb9bebcddcdc721d9fd858848d02a-32feedb6c7340045-01
           - name: connection
             value: keep-alive
           - name: host
@@ -980,20 +980,6 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: |-
-                  Codebase context from file src/animal.ts:
-                  ```typescript
-                  /* SELECTION_START */
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-                  /* SELECTION_END */
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
                 text: "The provided codebase context are the code you need and have access to.
                   Do not make any assumptions. Give me a high-level overview
                   based on the given context first before asking for additional
@@ -1012,14 +998,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 76708
+        bodySize: 168448
         content:
           mimeType: text/event-stream
-          size: 76708
+          size: 168448
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided codebase context, it is difficult to determine exactly what Squirrel is or its purpose. The comment in `src/squirrel.ts` mentions that Squirrel is an interface that mocks something unrelated to squirrels and is related to the implementation of precise code navigation in Sourcegraph. However, the interface itself is empty, providing no further information about its structure or usage.\n\nThe `src/animal.ts` file defines an `Animal` interface with properties for `name`, `makeAnimalSound`, and `isMammal`, which seems unrelated to the Squirrel interface.\n\nWithout additional context or code implementation details, it is challenging to provide a comprehensive explanation of what Squirrel is or how it relates to the concept of precise code navigation in Sourcegraph.","stopReason":"end_turn"}
+            data: {"completion":"Based on the provided code context, Squirrel is an interface defined in the TypeScript file `src/squirrel.ts`. The code comments indicate that this interface is not related to actual squirrels but instead mocks something completely unrelated and is related to the implementation of precise code navigation in Sourcegraph.\n\nHowever, without additional context or implementation details, it's difficult to provide a more comprehensive explanation of what Squirrel represents or how it's used within the codebase. The interface itself is empty, and its purpose or the functionality it encapsulates is not clear from this code snippet alone.\n\nTo fully understand and explain what Squirrel is and its role in the codebase, I would need more context, such as:\n\n1. How this interface is implemented or extended elsewhere in the codebase.\n2. Where and how instances of this interface are created and used.\n3. What other components or modules interact with or depend on the Squirrel interface.\n4. Additional documentation or comments that provide more details about Squirrel's purpose and functionality.\n\nWithout this additional context, I can only provide a high-level overview based on the limited information available in the provided code snippet.","stopReason":"end_turn"}
 
 
             event: done
@@ -1029,7 +1015,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:04:43 GMT
+            value: Mon, 10 Jun 2024 22:24:06 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1058,7 +1044,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:04:42.711Z
+      startedDateTime: 2024-06-10T22:24:05.059Z
       time: 0
       timings:
         blocked: -1
@@ -1085,7 +1071,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-5b7c5b2ebee8b5a407042dc539b24b00-9abc35b86338bf6e-01
+            value: 00-f8fccb2483754fc83cbb488ef6898c92-5124c12217c9d562-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1189,7 +1175,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:04:48 GMT
+            value: Mon, 10 Jun 2024 22:24:14 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1218,7 +1204,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:04:47.656Z
+      startedDateTime: 2024-06-10T22:24:13.334Z
       time: 0
       timings:
         blocked: -1
@@ -1245,7 +1231,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-d3d48a5efa720f0ed99837e0b31b2b21-fa53ae1f7bd1f8b3-01
+            value: 00-8f6d61a058e5642ba9b6b4fc4122bb60-10b143788dbe57df-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1349,7 +1335,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:04:50 GMT
+            value: Mon, 10 Jun 2024 22:24:17 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1378,7 +1364,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:04:49.037Z
+      startedDateTime: 2024-06-10T22:24:16.223Z
       time: 0
       timings:
         blocked: -1
@@ -1388,11 +1374,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 3a1e2c38361ce32e99942cd07c1b50f7
+    - _id: 20eb7d2233f9fb5d055de5116da4ef1f
       _order: 0
       cache: {}
       request:
-        bodySize: 1838
+        bodySize: 1597
         cookies: []
         headers:
           - name: content-type
@@ -1405,7 +1391,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-031a45a08215dc727299b5e72eb2bdbc-79fd911a30d0230a-01
+            value: 00-2fbf803ea52183269090aa3493d7374c-729beada57771caa-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1449,11 +1435,7 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: "The provided codebase context are the code you need and have access to.
-                  Do not make any assumptions. Give me a high-level overview
-                  based on the given context first before asking for additional
-                  context to answer the following question fully: Explain what
-                  @src/animal.ts:1-6 ( @src/animal.ts ) does in simple terms.
+                text: "Explain what @src/animal.ts:1-6 ( @src/animal.ts ) does in simple terms.
                   Assume the audience is a beginner programmer who has just
                   learned the language features and basic syntax. Focus on
                   explaining: 1) The purpose of the code 2) What input(s) it
@@ -1481,14 +1463,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 485524
+        bodySize: 436208
         content:
           mimeType: text/event-stream
-          size: 485524
+          size: 436208
           text: >+
             event: completion
 
-            data: {"completion":"The code you provided defines an interface named `Animal` in TypeScript. An interface is a way to define a contract or a set of rules that an object must follow. In this case, the `Animal` interface outlines the properties and methods that any object implementing this interface should have.\n\nThe `Animal` interface has three members:\n\n1. `name`: This is a string property that likely represents the name of the animal.\n\n2. `makeAnimalSound()`: This is a method that does not take any inputs (parameters), and it is expected to return a string. The purpose of this method is likely to produce the sound that the particular animal makes.\n\n3. `isMammal`: This is a boolean property that indicates whether the animal is a mammal or not.\n\nThe code you provided does not take any direct inputs, as it is just defining an interface. However, it sets the requirements for any object that wants to be considered an `Animal`. Any object implementing this interface must have a `name` property (a string), a `makeAnimalSound()` method that returns a string, and an `isMammal` property (a boolean).\n\nThe output of this code is not a tangible value, but rather a contract or a blueprint for objects representing animals. This interface can be used throughout the codebase to ensure that any object representing an animal adheres to the defined structure, making the code more maintainable and less prone to errors.\n\nThe purpose of this code is to provide a consistent and reusable way of working with animal objects in the codebase. By defining the `Animal` interface, developers can create objects representing different types of animals, and they can be sure that these objects will have the required properties and methods defined in the interface.\n\nIt's important to note that this code does not contain any logic or implementation details. It simply defines the structure that objects representing animals should follow. The actual implementation of the `makeAnimalSound()` method and the values of the `name` and `isMammal` properties will depend on the specific animal objects that are created based on this interface.","stopReason":"end_turn"}
+            data: {"completion":"The code `@src/animal.ts:1-6` is defining an interface in TypeScript called `Animal`. An interface in TypeScript is a blueprint or a contract that defines the structure of an object. It specifies the properties and methods that an object must have to be considered an instance of that interface.\n\nIn this case, the `Animal` interface has three properties:\n\n1. `name`: This property is a string data type and is likely meant to hold the name of the animal.\n2. `makeAnimalSound()`: This is a method (a function attached to an object) that doesn't take any input parameters. It is expected to return a string value, which will probably be the sound that the animal makes.\n3. `isMammal`: This is a boolean property that indicates whether the animal is a mammal or not.\n\nThe purpose of this code is to provide a blueprint or a contract that any object representing an animal must follow. It defines the minimum requirements for an object to be considered an instance of the `Animal` interface.\n\nThe code itself does not take any input or produce any output directly. It is a definition or a template that other parts of the code can use to create and work with objects representing animals.\n\nTo achieve its purpose, the code leverages TypeScript's interface feature, which allows developers to define the structure of objects without providing any implementation details. This helps in catching type-related errors during development, making the code more robust and maintainable.\n\nThe logic flow or data transformation is not directly present in this code snippet, as it is a definition of an interface. However, when other parts of the code create instances of the `Animal` interface, they must provide values for the `name` and `isMammal` properties, and implement the `makeAnimalSound()` method according to the requirements specified in the interface.\n\nOverall, this code serves as a blueprint or a contract for representing animals in the application, ensuring consistency and type safety when working with animal-related objects.","stopReason":"end_turn"}
 
 
             event: done
@@ -1498,7 +1480,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:04:51 GMT
+            value: Mon, 10 Jun 2024 22:24:19 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1527,7 +1509,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:04:50.442Z
+      startedDateTime: 2024-06-10T22:24:17.685Z
       time: 0
       timings:
         blocked: -1
@@ -1537,11 +1519,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 3df699323796cecaf800a129eb00bdde
+    - _id: ca9db2a2d35f28f09eee89118ab57160
       _order: 0
       cache: {}
       request:
-        bodySize: 3064
+        bodySize: 2823
         cookies: []
         headers:
           - name: content-type
@@ -1554,7 +1536,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-051c16e3d21831b04b60e33872d3a3d7-aab47af96ea843f1-01
+            value: 00-0c71139a9747de821dbb010d19d4f126-b85957f17b1d17d2-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1627,11 +1609,7 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: "The provided codebase context are the code you need and have access to.
-                  Do not make any assumptions. Give me a high-level overview
-                  based on the given context first before asking for additional
-                  context to answer the following question fully: Review the
-                  shared code context and configurations to identify the test
+                text: Review the shared code context and configurations to identify the test
                   framework and libraries in use. Then, generate a suite of
                   multiple unit tests for the functions in <selected> using the
                   detected test framework and libraries. Be sure to import the
@@ -1654,7 +1632,7 @@ log:
                   single markdown codeblock. No fragments or TODO. The new tests
                   should validate expected functionality and cover edge cases
                   for <selected> with all required imports, including importing
-                  the function being tested. Do not repeat existing tests."
+                  the function being tested. Do not repeat existing tests.
             model: anthropic/claude-3-sonnet-20240229
             temperature: 0
             topK: -1
@@ -1668,14 +1646,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 604220
+        bodySize: 610005
         content:
           mimeType: text/event-stream
-          size: 604220
+          size: 610005
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided codebase context, the test framework in use is Vitest, which is a Vite-native test runner. Vitest provides a familiar API inspired by popular testing libraries such as Jest and Jasmine.\n\nTo generate a suite of unit tests for the `Animal` interface, we can create a new test file in the same directory as the `animal.ts` file. Since no existing tests were provided for the `Animal` interface, we will import the necessary testing utilities from Vitest.\n\nHere's a summary of the test coverage and limitations:\n\n- Test coverage: The generated tests cover the expected behavior of the `makeAnimalSound` method and validate the `isMammal` property for different animal implementations.\n- Limitations: The tests assume that the `name` property is a non-empty string. Additional tests may be needed to validate edge cases for the `name` property, such as handling empty strings or null values.\n\n```typescript\n// animal.test.ts\nimport { describe, it, expect } from 'vitest'\nimport { Animal } from './animal'\n\nclass Dog implements Animal {\n  name = 'Buddy'\n  isMammal = true\n\n  makeAnimalSound(): string {\n    return 'Woof!'\n  }\n}\n\nclass Bird implements Animal {\n  name = 'Tweety'\n  isMammal = false\n\n  makeAnimalSound(): string {\n    return 'Chirp!'\n  }\n}\n\ndescribe('Animal', () =\u003e {\n  describe('Dog', () =\u003e {\n    const dog = new Dog()\n\n    it('should make the correct sound', () =\u003e {\n      expect(dog.makeAnimalSound()).toBe('Woof!')\n    })\n\n    it('should be a mammal', () =\u003e {\n      expect(dog.isMammal).toBe(true)\n    })\n  })\n\n  describe('Bird', () =\u003e {\n    const bird = new Bird()\n\n    it('should make the correct sound', () =\u003e {\n      expect(bird.makeAnimalSound()).toBe('Chirp!')\n    })\n\n    it('should not be a mammal', () =\u003e {\n      expect(bird.isMammal).toBe(false)\n    })\n  })\n})\n```\n\nThis suite of tests covers the expected functionality of the `makeAnimalSound` method and validates the `isMammal` property for both a mammal (Dog) and a non-mammal (Bird) implementation of the `Animal` interface.","stopReason":"end_turn"}
+            data: {"completion":"Importing test framework that matches shared context usage: 'vitest'\nImporting the Animal interface from './animal.ts'\n\nThe shared code context shows that the project is using the Vitest testing framework for unit tests. The `describe` and `it` functions are being imported from Vitest, and the `expect` function is used for assertions.\n\nThe `\u003cselected\u003e` code defines an `Animal` interface with three properties: `name` (a string), `makeAnimalSound` (a function that returns a string), and `isMammal` (a boolean).\n\nTo test the `Animal` interface, we can create an object that implements the interface and then assert that it has the correct properties and methods. However, since the `Animal` interface itself does not contain any logic, the tests will be relatively simple.\n\nHere's a suite of unit tests that cover the basic functionality of the `Animal` interface:\n\n```typescript\nimport { describe, it, expect } from 'vitest'\nimport { Animal } from './animal'\n\nclass Dog implements Animal {\n  name = 'Buddy'\n  makeAnimalSound = () =\u003e 'Woof!'\n  isMammal = true\n}\n\ndescribe('Animal', () =\u003e {\n  it('should have a name property', () =\u003e {\n    const dog = new Dog()\n    expect(dog.name).toBe('Buddy')\n  })\n\n  it('should have a makeAnimalSound method', () =\u003e {\n    const dog = new Dog()\n    expect(typeof dog.makeAnimalSound).toBe('function')\n  })\n\n  it('should make an animal sound', () =\u003e {\n    const dog = new Dog()\n    expect(dog.makeAnimalSound()).toBe('Woof!')\n  })\n\n  it('should have an isMammal property', () =\u003e {\n    const dog = new Dog()\n    expect(dog.isMammal).toBe(true)\n  })\n})\n```\n\nThese tests cover the basic functionality of the `Animal` interface, including checking that an object that implements the interface has the correct properties and that the `makeAnimalSound` method returns the expected value.\n\nHowever, it's important to note that these tests do not cover any edge cases or complex logic, since the `Animal` interface itself does not contain any complex logic. Additionally, these tests do not cover any specific implementation details of the `makeAnimalSound` method, as the interface only defines the method signature and not its implementation.","stopReason":"end_turn"}
 
 
             event: done
@@ -1685,7 +1663,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:05:01 GMT
+            value: Mon, 10 Jun 2024 22:24:28 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1714,7 +1692,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:05:00.206Z
+      startedDateTime: 2024-06-10T22:24:27.229Z
       time: 0
       timings:
         blocked: -1
@@ -1724,11 +1702,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 5d9b34c5bdee804ceb64d107784d8b9d
+    - _id: d19331cfa2444498d0574efe7441a0d6
       _order: 0
       cache: {}
       request:
-        bodySize: 1634
+        bodySize: 1393
         cookies: []
         headers:
           - name: content-type
@@ -1741,7 +1719,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-87c06faf4d8f9ad932e703f1a28953bb-d7af6dd438105f9f-01
+            value: 00-fa3a89873f6858db5fb9df3534ad66a8-f6de6b8f9e7c2612-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1785,21 +1763,18 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: "The provided codebase context are the code you need and have access to.
-                  Do not make any assumptions. Give me a high-level overview
-                  based on the given context first before asking for additional
-                  context to answer the following question fully: Please review
-                  and analyze @src/animal.ts:1-6 ( @src/animal.ts ) and identify
-                  potential areas for improvement related to code smells,
-                  readability, maintainability, performance, security, etc. Do
-                  not list issues already addressed in the given code. Focus on
-                  providing up to 5 constructive suggestions that could make the
-                  code more robust, efficient, or align with best practices. For
-                  each suggestion, provide a brief explanation of the potential
-                  benefits. After listing any recommendations, summarize if you
-                  found notable opportunities to enhance the code quality
-                  overall or if the code generally follows sound design
-                  principles. If no issues found, reply 'There are no errors.'"
+                text: Please review and analyze @src/animal.ts:1-6 ( @src/animal.ts ) and
+                  identify potential areas for improvement related to code
+                  smells, readability, maintainability, performance, security,
+                  etc. Do not list issues already addressed in the given code.
+                  Focus on providing up to 5 constructive suggestions that could
+                  make the code more robust, efficient, or align with best
+                  practices. For each suggestion, provide a brief explanation of
+                  the potential benefits. After listing any recommendations,
+                  summarize if you found notable opportunities to enhance the
+                  code quality overall or if the code generally follows sound
+                  design principles. If no issues found, reply 'There are no
+                  errors.'
             model: anthropic/claude-3-sonnet-20240229
             temperature: 0
             topK: -1
@@ -1813,14 +1788,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 387482
+        bodySize: 425794
         content:
           mimeType: text/event-stream
-          size: 387482
+          size: 425794
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided code snippet from `@src/animal.ts:1-6`, here are a few potential areas for improvement:\n\n1. **Naming Convention**: The `isMammal` property name could be more descriptive. Instead of using a boolean, consider using an enum or a string to represent different animal types (e.g., `animalType: 'mammal' | 'reptile' | 'bird'`). This would make the code more readable and extensible.\n\n2. **Return Type Inference**: Instead of explicitly defining the return type of the `makeAnimalSound` method, you could leverage TypeScript's type inference by providing a return statement within the method body (e.g., `makeAnimalSound(): string { return 'moo' }`). This can make the code more concise and maintainable.\n\n3. **Interface Documentation**: Consider adding documentation comments or JSDoc annotations to the `Animal` interface to explain its purpose, the meaning of each property, and any constraints or assumptions. This will improve code readability and maintainability, especially for larger codebases or when working in a team.\n\n4. **Method Naming**: The `makeAnimalSound` method name could be more specific or descriptive. For example, if the method is intended to return the sound of a specific animal, the name could be `getSound` or `getMammalSound`.\n\n5. **Interface Extensibility**: Depending on the requirements, you might want to consider making the `Animal` interface more extensible by defining optional properties or methods. This would allow for easier implementation of different animal types or behaviors in the future.\n\nOverall, while the provided code snippet follows basic TypeScript interface syntax and conventions, there are opportunities to improve readability, maintainability, and extensibility. However, without further context or requirements, it's difficult to assess the code's overall quality or adherence to best practices more comprehensively.","stopReason":"end_turn"}
+            data: {"completion":"The provided code snippet is a TypeScript interface definition for an `Animal` object. Here are a few suggestions for potential improvements:\n\n1. **Consider using a more descriptive name for the interface**: While the name `Animal` is straightforward, a more descriptive name that reflects the specific purpose or context of the interface might improve code readability and maintainability.\n\n2. **Add a description or documentation comment**: Adding a brief description or a documentation comment above the interface definition can help other developers understand the purpose and intended usage of the interface, especially if it's being used across multiple files or modules.\n\n3. **Consider using a type alias instead of an interface**: TypeScript provides both interfaces and type aliases for defining object shapes. In some cases, using a type alias can be more concise and may provide better tooling support, especially when working with complex types or nested objects.\n\n4. **Evaluate the need for the `isMammal` property**: The `isMammal` property might be unnecessary if it can be inferred from the implementation of the `makeAnimalSound()` method or other properties. If it's not an essential characteristic for the `Animal` interface, consider removing it to keep the interface lean and focused.\n\n5. **Consider adding additional properties or methods**: Depending on the specific requirements of your application, you might want to consider adding additional properties or methods to the `Animal` interface. For example, you could include properties for age, weight, or species, or methods for behaviors like `eat()` or `sleep()`.\n\nOverall, the provided code snippet follows sound design principles and adheres to TypeScript's interface syntax. However, the suggestions above could potentially improve readability, maintainability, and alignment with best practices. It's always a good idea to periodically review and refactor code to ensure it remains maintainable and aligned with evolving project requirements.","stopReason":"end_turn"}
 
 
             event: done
@@ -1830,7 +1805,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 19:05:12 GMT
+            value: Mon, 10 Jun 2024 22:24:39 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1859,7 +1834,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T19:05:11.029Z
+      startedDateTime: 2024-06-10T22:24:37.695Z
       time: 0
       timings:
         blocked: -1
@@ -3263,11 +3238,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 713578328fa5e424b304fff37eb1490e
+    - _id: 4cb6f32ba68e1e3094fecd7016f9d0e6
       _order: 0
       cache: {}
       request:
-        bodySize: 981
+        bodySize: 1222
         cookies: []
         headers:
           - name: content-type
@@ -3280,7 +3255,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-264b5981a27095d815855b236d2d25b5-98221cf906349f85-01
+            value: 00-8a2dcc9e7286447c2bdd53a628392ae2-f81d5e0a7de5205a-01
           - name: connection
             value: keep-alive
           - name: host
@@ -3309,7 +3284,11 @@ log:
                   abbreviations, and expansions</variants><weight>a numerical
                   weight between 0.0 and 1.0 that indicates the importance of
                   the keyword</weight></keyword></keywords>. Here is the user
-                  query: <userQuery>Write a class Dog that implements the Animal
+                  query: <userQuery>The provided codebase context are the code
+                  you need and have access to. Do not make any assumptions. Give
+                  me a high-level overview based on the given context first
+                  before asking for additional context to answer the following
+                  question fully: Write a class Dog that implements the Animal
                   interface in my workspace. Show the code only, no explanation
                   needed.</userQuery>"
               - speaker: assistant
@@ -3322,14 +3301,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 93412
+        bodySize: 92855
         content:
           mimeType: text/event-stream
-          size: 93412
+          size: 92855
           text: >+
             event: completion
 
-            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003edog\u003c/value\u003e\n\u003cvariants\u003ecanine hound mutt puppy\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eanimal\u003c/value\u003e\n\u003cvariants\u003ecreature organism being\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003einterface\u003c/value\u003e\n\u003cvariants\u003eapi contract specification\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclass\u003c/value\u003e\n\u003cvariants\u003etype object\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eimplement\u003c/value\u003e\n\u003cvariants\u003erealize fulfill actualize\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
+            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eanimal\u003c/value\u003e\n\u003cvariants\u003efauna creature beast\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003edog\u003c/value\u003e\n\u003cvariants\u003ecanine hound puppy\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003einterface\u003c/value\u003e\n\u003cvariants\u003eapi contract specification\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclass\u003c/value\u003e\n\u003cvariants\u003etype object\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eimplementation\u003c/value\u003e\n\u003cvariants\u003erealization concrete code\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
 
 
             event: done
@@ -3339,7 +3318,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Sat, 08 Jun 2024 17:50:05 GMT
+            value: Mon, 10 Jun 2024 22:23:57 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -3368,7 +3347,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-08T17:50:04.360Z
+      startedDateTime: 2024-06-10T22:23:56.732Z
       time: 0
       timings:
         blocked: -1
@@ -3378,11 +3357,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 04faf159fb97d4d4c96910a1e4b8c8cb
+    - _id: a1c1f30861a077fb04452bc6433c23c7
       _order: 0
       cache: {}
       request:
-        bodySize: 884
+        bodySize: 1125
         cookies: []
         headers:
           - name: content-type
@@ -3395,7 +3374,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-71ab043836d4cb19eaaedf5b47acc737-625db9436c8430e3-01
+            value: 00-5fdfb9bebcddcdc721d9fd858848d02a-19b06e2c9e923d64-01
           - name: connection
             value: keep-alive
           - name: host
@@ -3424,7 +3403,11 @@ log:
                   abbreviations, and expansions</variants><weight>a numerical
                   weight between 0.0 and 1.0 that indicates the importance of
                   the keyword</weight></keyword></keywords>. Here is the user
-                  query: <userQuery>What is Squirrel?</userQuery>"
+                  query: <userQuery>The provided codebase context are the code
+                  you need and have access to. Do not make any assumptions. Give
+                  me a high-level overview based on the given context first
+                  before asking for additional context to answer the following
+                  question fully: What is Squirrel?</userQuery>"
               - speaker: assistant
             temperature: 0
             topK: 1
@@ -3435,14 +3418,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 93107
+        bodySize: 39865
         content:
           mimeType: text/event-stream
-          size: 93107
+          size: 39865
           text: >+
             event: completion
 
-            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esquirrel\u003c/value\u003e\n\u003cvariants\u003esquirrels squirrel's\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eanimal\u003c/value\u003e\n\u003cvariants\u003eanimals fauna wildlife\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erodent\u003c/value\u003e\n\u003cvariants\u003erodents\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebehavior\u003c/value\u003e\n\u003cvariants\u003ebehaviors ethology\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ehabitat\u003c/value\u003e\n\u003cvariants\u003ehabitats environment ecology\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
+            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esquirrel\u003c/value\u003e\n\u003cvariants\u003esquirrel squirrels\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eoverview\u003c/value\u003e\n\u003cvariants\u003ehigh-level overview summary\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext\u003c/value\u003e\n\u003cvariants\u003ecodebase code\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
 
 
             event: done
@@ -3452,7 +3435,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Sat, 08 Jun 2024 17:50:09 GMT
+            value: Mon, 10 Jun 2024 22:24:04 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -3481,7 +3464,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-08T17:50:09.004Z
+      startedDateTime: 2024-06-10T22:24:03.729Z
       time: 0
       timings:
         blocked: -1
@@ -3491,11 +3474,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 7c49f5f0a33226bd9ac5a5c2a1b0eead
+    - _id: a2a1c1855c4c5b5f32bd9c49ed3cfeb6
       _order: 0
       cache: {}
       request:
-        bodySize: 977
+        bodySize: 1218
         cookies: []
         headers:
           - name: content-type
@@ -3508,7 +3491,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-83b473412a00f0f8076eb75d4617d6d6-41682783b94dfb25-01
+            value: 00-f8fccb2483754fc83cbb488ef6898c92-528d091042217b33-01
           - name: connection
             value: keep-alive
           - name: host
@@ -3537,7 +3520,11 @@ log:
                   abbreviations, and expansions</variants><weight>a numerical
                   weight between 0.0 and 1.0 that indicates the importance of
                   the keyword</weight></keyword></keywords>. Here is the user
-                  query: <userQuery>What is the name of the function that I have
+                  query: <userQuery>The provided codebase context are the code
+                  you need and have access to. Do not make any assumptions. Give
+                  me a high-level overview based on the given context first
+                  before asking for additional context to answer the following
+                  question fully: What is the name of the function that I have
                   selected? Only answer with the name of the function, nothing
                   else</userQuery>"
               - speaker: assistant
@@ -3567,7 +3554,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Sat, 08 Jun 2024 17:50:12 GMT
+            value: Mon, 10 Jun 2024 22:24:12 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -3596,7 +3583,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-08T17:50:11.359Z
+      startedDateTime: 2024-06-10T22:24:11.882Z
       time: 0
       timings:
         blocked: -1
