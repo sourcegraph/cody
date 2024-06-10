@@ -115,21 +115,15 @@ private constructor(
                   addEnhancedContext = chatPanel.isEnhancedContextEnabled(),
                   contextFiles = contextItems)
 
-          try {
-            val request =
-                agent.server.chatSubmitMessage(
-                    ChatSubmitMessageParams(connectionId.get().get(), message))
+          val request =
+              agent.server.chatSubmitMessage(
+                  ChatSubmitMessageParams(connectionId.get().get(), message))
 
-            GraphQlLogger.logCodyEvent(project, "chat-question", "submitted")
+          GraphQlLogger.logCodyEvent(project, "chat-question", "submitted")
 
-            createCancellationToken(
-                onCancel = { request.cancel(true) },
-                onFinish = { GraphQlLogger.logCodyEvent(project, "chat-question", "executed") })
-          } catch (e: Exception) {
-            createCancellationToken(onCancel = {}, onFinish = {})
-            handleException(e)
-            throw e
-          }
+          createCancellationToken(
+              onCancel = { request.cancel(true) },
+              onFinish = { GraphQlLogger.logCodyEvent(project, "chat-question", "executed") })
         },
         onFailure = { e ->
           createCancellationToken(onCancel = {}, onFinish = {})
