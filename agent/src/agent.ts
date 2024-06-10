@@ -742,18 +742,17 @@ export class Agent extends MessageHandler implements ExtensionClient {
             async (params: GetDocumentsParams): Promise<GetDocumentsResult> => {
                 const uris = params?.uris ?? this.workspace.allDocuments().map(doc => doc.uri.toString())
 
-                const documents: ProtocolTextDocument[] = uris
-                    .map(uri => {
-                        const document = this.workspace.getDocument(vscode.Uri.parse(uri))
-                        return document
-                            ? ({
-                                  uri: document.uri.toString(),
-                                  content: document.content ?? undefined,
-                                  selection: document.protocolDocument?.selection ?? undefined,
-                              } as ProtocolTextDocument)
-                            : null
-                    })
-                    .filter((doc): doc is ProtocolTextDocument => doc !== null)
+                const documents: ProtocolTextDocument[] = []
+                for (const uri of uris) {
+                    const document = this.workspace.getDocument(vscode.Uri.parse(uri))
+                    if (document) {
+                        documents.push({
+                            uri: document.uri.toString(),
+                            content: document.content ?? undefined,
+                            selection: document.protocolDocument?.selection ?? undefined,
+                        })
+                    }
+                }
 
                 return { documents }
             }
