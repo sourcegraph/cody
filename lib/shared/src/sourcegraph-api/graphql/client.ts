@@ -134,7 +134,7 @@ interface CodyLLMSiteConfigurationProviderResponse {
     } | null
 }
 
-export interface PackageListResponse {
+interface PackageListResponse {
     packageRepoReferences: {
         nodes: {
             id: string
@@ -165,7 +165,7 @@ export interface RepoSearchResponse {
         }
     }
 }
-export interface FileMatchSearchResponse {
+interface FileMatchSearchResponse {
     search: {
         results: {
             results: {
@@ -185,7 +185,7 @@ export interface FileMatchSearchResponse {
     }
 }
 
-export interface FileContentsResponse {
+interface FileContentsResponse {
     repository: {
         commit: {
             file: {
@@ -258,7 +258,7 @@ export interface ContextSearchResult {
     content: string
 }
 
-export interface ContextFiltersResponse {
+interface ContextFiltersResponse {
     site: {
         codyContextFilters: {
             raw: ContextFilters | null

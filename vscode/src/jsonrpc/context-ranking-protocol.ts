@@ -31,14 +31,14 @@ export interface RankerPrediction {
     score: number
 }
 
-export interface EmbeddingModelQueryParams {
+interface EmbeddingModelQueryParams {
     repoPath: string
     query: string
     modelName: string
     numResults: number
 }
 
-export interface PrecomputeEmbeddingsParams {
+interface PrecomputeEmbeddingsParams {
     query: string
 }
 

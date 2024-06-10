@@ -23,7 +23,7 @@ export const showSetupNotification = async (config: ConfigurationWithAccessToken
     if (localStorage.get('extension.hasActivatedPreviously') !== 'true') {
         // User is on first activation, so has only just installed Cody.
         // Show Cody so that they can get started.
-        await vscode.commands.executeCommand('cody.focus')
+        await vscode.commands.executeCommand('cody.chat.focus')
         return
     }
 
@@ -36,7 +36,7 @@ export const showSetupNotification = async (config: ConfigurationWithAccessToken
             {
                 label: 'Sign In',
                 onClick: async () => {
-                    vscode.commands.executeCommand('cody.focus')
+                    vscode.commands.executeCommand('cody.chat.focus')
                     telemetryService.log(
                         'CodyVSCodeExtension:signInNotification:signIn:clicked',
                         undefined,

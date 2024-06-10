@@ -271,7 +271,6 @@ export {
     scanForMentionTriggerInUserTextInput,
 } from './mentions/query'
 export {
-    type ContextMentionProvider,
     type ContextItemProps,
     allMentionProvidersMetadata,
     openCtxMentionProviders,
@@ -294,12 +293,10 @@ export * from './sourcegraph-api/utils'
 export * from './token'
 export * from './token/constants'
 export * from './configuration'
-export * from './githubClient'
 export {
     setOpenCtxClient,
     openCtx,
 } from './context/openctx/api'
-export { URL_CONTEXT_MENTION_PROVIDER } from './mentions/providers/urlMentions'
 export { type ClientStateForWebview } from './clientState'
 export * from './lexicalEditor/editorState'
 export * from './lexicalEditor/nodes'

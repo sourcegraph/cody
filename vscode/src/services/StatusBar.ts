@@ -109,7 +109,7 @@ export function createStatusBar(): CodyStatusBar {
 
         if (!authStatus?.isLoggedIn) {
             // Bring up the sidebar view
-            void vscode.commands.executeCommand('cody.focus')
+            void vscode.commands.executeCommand('cody.chat.focus')
             return
         }
 
@@ -230,29 +230,6 @@ export function createStatusBar(): CodyStatusBar {
                     const enablement = await getGhostHintEnablement()
                     return enablement.Document || enablement.EditOrChat || enablement.Generate
                 }
-            ),
-            await createFeatureToggle(
-                'Search Context',
-                'Beta',
-                'Enable using the natural language search index as an Enhanced Context chat source',
-                'cody.experimental.symfContext',
-                c => c.experimentalSymfContext,
-                false
-            ),
-            await createFeatureToggle(
-                'Ollama for Chat',
-                'Experimental',
-                'Use local Ollama models for chat and commands when available',
-                'cody.experimental.ollamaChat',
-                c => c.experimentalOllamaChat,
-                false,
-                [
-                    {
-                        iconPath: new vscode.ThemeIcon('book'),
-                        tooltip: 'Learn more about using local models',
-                        onClick: () => vscode.commands.executeCommand('cody.statusBar.ollamaDocs'),
-                    } as vscode.QuickInputButton,
-                ]
             ),
             { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
             {

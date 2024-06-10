@@ -221,7 +221,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
         this.codebaseStatusProvider = new CodebaseStatusProvider(
             this.editor,
-            this.config.experimentalSymfContext ? this.symf : null,
+            this.symf,
             enterpriseContext ? enterpriseContext.getCodebaseRepoIdMapper() : null
         )
         this.disposables.push(this.contextStatusAggregator.addProvider(this.codebaseStatusProvider))
@@ -396,9 +396,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         return {
             uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
             serverEndpoint: config.serverEndpoint,
-            experimentalGuardrails: config.experimentalGuardrails,
             experimentalNoodle: config.experimentalNoodle,
-            experimentalURLContext: config.experimentalURLContext,
         }
     }
 
@@ -594,7 +592,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                                   addEnhancedContext,
                                   providers: {
                                       localEmbeddings: this.localEmbeddings,
-                                      symf: this.config.experimentalSymfContext ? this.symf : null,
+                                      symf: this.symf,
                                       remoteSearch: this.remoteSearch,
                                   },
                                   contextRanking: this.contextRanking,
@@ -736,11 +734,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.allMentionProvidersMetadataQueryCancellation = cancellation
 
         try {
-            const config = await this.getConfigForWebview()
-            if (cancellation.token.isCancellationRequested) {
-                return
-            }
-            const providers = await allMentionProvidersMetadata(config)
+            const providers = await allMentionProvidersMetadata()
             if (cancellation.token.isCancellationRequested) {
                 return
             }
@@ -1260,8 +1254,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             (await this.repoPicker?.getDefaultRepos()) || [],
             RepoInclusion.Manual
         )
-
-        vscode.commands.executeCommand('setContext', 'cody.hasNewChatOpened', true)
     }
 
     // Attempts to restore the chat to the given sessionID, if it exists in

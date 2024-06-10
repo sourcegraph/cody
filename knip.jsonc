@@ -7,7 +7,7 @@
                 "scripts/*.ts",
                 "test/integration/*.ts",
                 "webviews/index.tsx",
-                "webviews/search.tsx"
+                "webviews/minion/index.tsx"
             ],
             "ignore": ["src/tree-sitter/query-tests/test-data/**", "src/jsonrpc/agent-protocol.ts"],
             "ignoreBinaries": ["code", "code-insiders"],
@@ -20,12 +20,16 @@
             ]
         },
         "agent": {
+            "entry": ["src/cli/root.ts", "src/index.ts"],
             "vitest": {
                 "entry": ["**/__tests__/**/*.ts"]
             },
             "ignore": ["src/vscode-shim.ts"]
+        },
+        "web": {
+            "entry": ["src/index.tsx", "src/agent/worker.ts"]
         }
     },
-    "ignore": ["**/__mocks__/**", "**/mocks.*"],
+    "ignore": ["**/__mocks__/**", "**/mocks.*", "lints/**"],
     "exclude": []
 }

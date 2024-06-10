@@ -33,7 +33,7 @@ export interface MentionMenuData {
     items: ContextItem[] | undefined
 }
 
-export interface MentionMenuContextValue {
+interface MentionMenuContextValue {
     updateMentionMenuParams: (update: Partial<Pick<MentionMenuParams, 'parentItem'>>) => void
     setEditorQuery: (query: string) => void
 }

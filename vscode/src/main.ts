@@ -5,13 +5,11 @@ import {
     ConfigFeaturesSingleton,
     type ConfigurationWithAccessToken,
     type DefaultCodyCommands,
-    type EventSource,
     ModelsService,
     PromptMixin,
     PromptString,
     contextFiltersProvider,
     featureFlagProvider,
-    githubClient,
     graphqlClient,
     newPromptMixin,
     setClientNameVersion,
@@ -63,11 +61,9 @@ import { CodyProExpirationNotifications } from './notifications/cody-pro-expirat
 import { showSetupNotification } from './notifications/setup-notification'
 import { initVSCodeGitApi } from './repository/git-extension-api'
 import { repoNameResolver } from './repository/repo-name-resolver'
-import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
-import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { displayHistoryQuickPick } from './services/HistoryChat'
 import { localStorage } from './services/LocalStorageProvider'
 import { VSCodeSecretStorage, getAccessToken, secretStorage } from './services/SecretStorageProvider'
@@ -188,7 +184,6 @@ const register = async (
     await exposeOpenCtxClient(context.secrets, initialConfig)
 
     graphqlClient.onConfigurationChange(initialConfig)
-    githubClient.onConfigurationChange({ authToken: initialConfig.experimentalGithubAccessToken })
     void featureFlagProvider.syncAuthStatus()
 
     const {
@@ -280,7 +275,7 @@ const register = async (
             return Promise.resolve()
         }
 
-        ModelsService.onConfigChange(newConfig.experimentalOllamaChat)
+        ModelsService.onConfigChange()
 
         const promises: Promise<void>[] = []
         oldConfig = JSON.stringify(newConfig)
@@ -288,7 +283,6 @@ const register = async (
         promises.push(featureFlagProvider.syncAuthStatus())
         graphqlClient.onConfigurationChange(newConfig)
         upstreamHealthProvider.onConfigurationChange(newConfig)
-        githubClient.onConfigurationChange({ authToken: initialConfig.experimentalGithubAccessToken })
         promises.push(
             contextFiltersProvider
                 .init(repoNameResolver.getRepoNamesFromWorkspaceUri)
@@ -323,15 +317,6 @@ const register = async (
 
     const statusBar = createStatusBar()
     const sourceControl = new CodySourceControl(chatClient)
-
-    // Important to respect `config.experimentalSymfContext`. The agent
-    // currently crashes with a cryptic error when running with symf enabled so
-    // we need a way to reliably disable symf until we fix the root problem.
-    if (symfRunner && config.experimentalSymfContext) {
-        const searchViewProvider = new SearchViewProvider(symfRunner)
-        disposables.push(searchViewProvider)
-        searchViewProvider.initialize()
-    }
 
     if (localEmbeddings) {
         // kick-off embeddings initialization
@@ -374,7 +359,7 @@ const register = async (
     syncModels(initAuthStatus)
     await chatManager.syncAuthStatus(initAuthStatus)
     editorManager.syncAuthStatus(initAuthStatus)
-    ModelsService.onConfigChange(initialConfig.experimentalOllamaChat)
+    ModelsService.onConfigChange()
     statusBar.syncAuthStatus(initAuthStatus)
     sourceControl.syncAuthStatus(initAuthStatus)
 
@@ -486,9 +471,6 @@ const register = async (
             }
         ),
         // Chat
-        vscode.commands.registerCommand('cody.focus', () =>
-            vscode.commands.executeCommand('cody.chat.focus')
-        ),
         vscode.commands.registerCommand('cody.settings.extension', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', {
                 query: '@ext:sourcegraph.cody-ai',
@@ -579,31 +561,6 @@ const register = async (
                 false
             )
         }),
-        vscode.commands.registerCommand('cody.welcome-mock', () =>
-            vscode.commands.executeCommand(
-                'workbench.action.openWalkthrough',
-                'sourcegraph.cody-ai#welcome',
-                false
-            )
-        ),
-        vscode.commands.registerCommand('cody.walkthrough.showLogin', () =>
-            vscode.commands.executeCommand('workbench.view.extension.cody')
-        ),
-        vscode.commands.registerCommand('cody.walkthrough.showChat', () =>
-            chatManager.setWebviewView('chat')
-        ),
-        vscode.commands.registerCommand('cody.walkthrough.showFixup', () =>
-            chatManager.setWebviewView('chat')
-        ),
-        vscode.commands.registerCommand('cody.walkthrough.showExplain', async () => {
-            telemetryService.log(
-                'CodyVSCodeExtension:walkthrough:clicked',
-                { page: 'showExplain' },
-                { hasV2Event: true }
-            )
-            telemetryRecorder.recordEvent('cody.walkthrough.showExplain', 'clicked')
-            await chatManager.setWebviewView('chat')
-        }),
 
         // StatusBar Commands
         vscode.commands.registerCommand('cody.statusBar.ollamaDocs', () => {
@@ -634,17 +591,6 @@ const register = async (
             vscode.window.showInformationMessage,
             vscode.env.openExternal
         ),
-        // For register sidebar clicks
-        vscode.commands.registerCommand('cody.sidebar.click', (name: string, command: string) => {
-            const source: EventSource = 'sidebar'
-            telemetryService.log(`CodyVSCodeExtension:command:${name}:clicked`, {
-                source,
-            })
-            telemetryRecorder.recordEvent(`cody.command.${name}`, 'clicked', {
-                privateMetadata: { source },
-            })
-            void vscode.commands.executeCommand(command, [source])
-        }),
         ...setUpCodyIgnore(initialConfig),
         // For debugging
         vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri)),
@@ -705,9 +651,7 @@ const register = async (
                         client: codeCompletionsClient,
                         statusBar,
                         authProvider,
-                        triggerNotice: notice => {
-                            void chatManager.triggerNotice(notice)
-                        },
+
                         createBfgRetriever: platform.createBfgRetriever,
                     })
                 )
@@ -717,9 +661,7 @@ const register = async (
                         client: codeCompletionsClient,
                         statusBar,
                         authProvider,
-                        triggerNotice: notice => {
-                            void chatManager.triggerNotice(notice)
-                        },
+
                         createBfgRetriever: platform.createBfgRetriever,
                     })
                 )
@@ -731,15 +673,6 @@ const register = async (
     }
 
     const autocompleteSetup = setupAutocomplete().catch(() => {})
-
-    if (initialConfig.experimentalGuardrails) {
-        const guardrailsProvider = new GuardrailsProvider(guardrails, editor)
-        disposables.push(
-            vscode.commands.registerCommand('cody.guardrails.debug', async () => {
-                await guardrailsProvider.debugEditorSelection()
-            })
-        )
-    }
 
     if (!isRunningInsideAgent()) {
         // TODO: The interactive tutorial is currently VS Code specific, both in terms of features and keyboard shortcuts.
