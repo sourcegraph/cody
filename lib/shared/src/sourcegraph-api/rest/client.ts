@@ -40,7 +40,9 @@ export class RestClient {
         addCustomUserAgent(headers)
         addTraceparent(headers)
 
-        const url = this.endpointUrl + urlSuffix
+        const endpoint = new URL(this.endpointUrl)
+        endpoint.pathname = urlSuffix
+        const url = endpoint.href
         return wrapInActiveSpan(`rest-api.${name}`, () =>
             fetch(url, {
                 method: 'GET',
