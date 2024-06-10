@@ -1,7 +1,7 @@
 import type { ChatMessage } from '../chat/transcript/messages'
 import { PromptString, ps } from './prompt-string'
 
-export const CONTEXT_ASSIST_PROMPT = ps`The provided codebase context are the code you need and have access to. Do not make any assumptions. Give me a high-level overview based on the given context first before asking for additional context to answer the following question fully:`
+export const CONTEXT_ASSIST_PROMPT = ps`The provided context are the code you need and have access to. Do not make any assumptions. Give me a high-level overview based on the given context first before asking for additional context to answer the following question:`
 
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.

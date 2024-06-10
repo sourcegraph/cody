@@ -1,12 +1,12 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`Custom Commands > commands/custom, chat command, open tabs context 1`] = `
-"Based on the provided codebase context, here is a high-level overview:
+"Based on the given context, here is a high-level overview and the names of the files you have shared so far, formatted as a bulleted list with only the raw filenames:
 
-The code snippets you have shared are all exporting a function named \`example\` that returns the string \`'example'\`. These snippets appear to be from separate files within the same codebase.
+High-level Overview:
+The provided context consists of three code snippets, each exporting a function named \`example\` that returns the string 'example'. These code snippets appear to be from separate files within a codebase.
 
-To answer your question about the names of the files you have shared, here is a bulleted list of the raw filenames:
-
+File Names:
 - example1.ts
 - example2.ts
 - example3.ts"

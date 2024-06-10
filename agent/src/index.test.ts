@@ -353,16 +353,20 @@ describe('Agent', () => {
             // is not a git directory and symf reports some git-related error.
             expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "Based on the provided codebase context, here's a high-level overview:
+              "Based on the provided context, here's a high-level overview:
 
-              - The \`src/TestClass.ts\` file defines a class \`TestClass\` with a constructor that takes a \`shouldGreet\` parameter and a \`functionName\` method that logs "Hello World!" to the console if \`shouldGreet\` is true.
-              - The \`src/squirrel.ts\` file defines an interface \`Squirrel\` with no properties or methods, which is supposedly unrelated to actual squirrels but related to the implementation of precise code navigation in Sourcegraph.
-              - The \`src/animal.ts\` file defines an interface \`Animal\` with a \`name\` property (string), a \`makeAnimalSound\` method (returns string), and an \`isMammal\` property (boolean).
+              1. \`TestClass.ts\` defines a class \`TestClass\` with a constructor and a method \`functionName()\` that logs \`'Hello World!'\` to the console if \`shouldGreet\` is true.
+              2. \`squirrel.ts\` defines an interface \`Squirrel\` which seems unrelated to the task.
+              3. \`animal.ts\` defines an interface \`Animal\` with properties \`name\` (string), \`makeAnimalSound\` (function returning a string), and \`isMammal\` (boolean).
 
-              To write a class \`Dog\` that implements the \`Animal\` interface, I need access to the \`Animal\` interface definition. The provided codebase context includes the \`Animal\` interface definition, so I can use it to implement the \`Dog\` class as follows:
+              To write a class \`Dog\` that implements the \`Animal\` interface, I would need the interface definition from \`animal.ts\`.
+
+              Here's the code for the \`Dog\` class implementing the \`Animal\` interface:
 
               \`\`\`typescript
-              export class Dog implements Animal {
+              import { Animal } from './animal';
+
+              class Dog implements Animal {
                   name: string;
                   isMammal: boolean = true;
 
@@ -371,7 +375,7 @@ describe('Agent', () => {
                   }
 
                   makeAnimalSound(): string {
-                      return "Woof!";
+                      return 'Woof!';
                   }
               }
               \`\`\`"

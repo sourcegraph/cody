@@ -428,11 +428,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: f52947e4c685db3688e32ea158c63e13
+    - _id: ed2ed8a10eee7b5a74d5a8e5e73a82e8
       _order: 0
       cache: {}
       request:
-        bodySize: 1179
+        bodySize: 1164
         cookies: []
         headers:
           - name: content-type
@@ -445,7 +445,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-841634083ae3f5187a52e589a116d1c3-aaf04f1882b1b47e-01
+            value: 00-b443c407f2d29ca44a16321959764bc3-ef64dbe6ae33e990-01
           - name: connection
             value: keep-alive
           - name: host
@@ -488,13 +488,13 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: "The provided codebase context are the code you need and have access to.
-                  Do not make any assumptions. Give me a high-level overview
-                  based on the given context first before asking for additional
-                  context to answer the following question fully: Give me the
-                  names of the files I have shared with you so far. Format the
-                  response as a bulleted list. Only include the raw filename, no
-                  extra formatting like quotes."
+                text: "The provided context are the code you need and have access to. Do not
+                  make any assumptions. Give me a high-level overview based on
+                  the given context first before asking for additional context
+                  to answer the following question: Give me the names of the
+                  files I have shared with you so far. Format the response as a
+                  bulleted list. Only include the raw filename, no extra
+                  formatting like quotes."
             model: anthropic/claude-3-sonnet-20240229
             temperature: 0
             topK: -1
@@ -508,14 +508,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 29088
+        bodySize: 31567
         content:
           mimeType: text/event-stream
-          size: 29088
+          size: 31567
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided codebase context, here is a high-level overview:\n\nThe code snippets you have shared are all exporting a function named `example` that returns the string `'example'`. These snippets appear to be from separate files within the same codebase.\n\nTo answer your question about the names of the files you have shared, here is a bulleted list of the raw filenames:\n\n- example1.ts\n- example2.ts\n- example3.ts","stopReason":"end_turn"}
+            data: {"completion":"Based on the given context, here is a high-level overview and the names of the files you have shared so far, formatted as a bulleted list with only the raw filenames:\n\nHigh-level Overview:\nThe provided context consists of three code snippets, each exporting a function named `example` that returns the string 'example'. These code snippets appear to be from separate files within a codebase.\n\nFile Names:\n- example1.ts\n- example2.ts\n- example3.ts","stopReason":"end_turn"}
 
 
             event: done
@@ -525,7 +525,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 22:23:58 GMT
+            value: Mon, 10 Jun 2024 23:08:48 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -554,7 +554,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T22:23:57.236Z
+      startedDateTime: 2024-06-10T23:08:47.175Z
       time: 0
       timings:
         blocked: -1
@@ -564,11 +564,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: cbe3c7180cb0c09240642cf5532cfddc
+    - _id: 40d9955f8f8d9aa30f037bc36d6d8538
       _order: 0
       cache: {}
       request:
-        bodySize: 1936
+        bodySize: 1921
         cookies: []
         headers:
           - name: content-type
@@ -581,7 +581,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-3db602c0b757d4f289234e07081cf86c-9858337d96d935a8-01
+            value: 00-5bc5f653792da954d895c3f45bdb77f4-1150570d5a9c05e4-01
           - name: connection
             value: keep-alive
           - name: host
@@ -665,12 +665,11 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: "The provided codebase context are the code you need and have access to.
-                  Do not make any assumptions. Give me a high-level overview
-                  based on the given context first before asking for additional
-                  context to answer the following question fully: How many file
-                  context have I shared with you? Reply single number. Skip
-                  preamble."
+                text: "The provided context are the code you need and have access to. Do not
+                  make any assumptions. Give me a high-level overview based on
+                  the given context first before asking for additional context
+                  to answer the following question: How many file context have I
+                  shared with you? Reply single number. Skip preamble."
             model: anthropic/claude-3-sonnet-20240229
             temperature: 0
             topK: -1
@@ -698,7 +697,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 22:24:01 GMT
+            value: Mon, 10 Jun 2024 23:08:51 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -727,7 +726,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T22:24:00.152Z
+      startedDateTime: 2024-06-10T23:08:50.264Z
       time: 0
       timings:
         blocked: -1

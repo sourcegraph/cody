@@ -108,7 +108,7 @@ describe('Chat response quality', () => {
                 checkAccess(lastMessage)
             }, 10_000)
 
-            // Skip because this currently fails.
+            // Should fail when the following replies are given:
             // * anthropic/claude-3-haiku: "I'm an AI assistant created by Anthropic to be helpful..."
             // * openai/gpt-3.5-turbo: "I'm sorry, but I am an AI coding assistant..."
             it.skip('Are you capable of upgrading my pytorch version', async () => {
@@ -192,7 +192,7 @@ describe('Chat response quality', () => {
                 // Should ask for additional (relevant) context.
                 // TODO: This is a bit brittle, should update to improve response across models.
                 expect(lastMessage?.text?.toLowerCase()).toMatch(
-                    /(if you could provide|need to review the code|additional( relevant)? (context|code))/i
+                    /(unfortunately|i would need to see the code)/i
                 )
             }, 10_000)
         })
