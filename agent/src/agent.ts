@@ -756,6 +756,17 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         })
                     }
                 }
+
+                for (const uri of uris) {
+                    const document = this.workspace.getDocument(vscode.Uri.parse(uri))
+                    if (document) {
+                        documents.push({
+                            uri: document.uri.toString(),
+                            content: document.content ?? undefined,
+                            selection: document.protocolDocument?.selection ?? undefined,
+                        })
+                    }
+                }
                 return { documents }
             }
         )
