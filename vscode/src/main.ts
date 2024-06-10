@@ -109,15 +109,13 @@ export async function start(
 
     const configWatcher = await BaseConfigWatcher.create(getFullConfig, disposables)
 
-    disposables.push(
-        configWatcher.onChange(async config => {
-            platform.onConfigurationChange?.(config)
-            if (config.chatPreInstruction.length > 0) {
-                PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
-            }
-            registerModelsFromVSCodeConfiguration()
-        })
-    )
+    configWatcher.onChange(async config => {
+        platform.onConfigurationChange?.(config)
+        if (config.chatPreInstruction.length > 0) {
+            PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
+        }
+        registerModelsFromVSCodeConfiguration()
+    }, disposables)
 
     const { disposable } = await register(context, configWatcher, platform)
     disposables.push(disposable)
@@ -147,27 +145,24 @@ const register = async (
     disposables.push(manageDisplayPathEnvInfoForExtension())
 
     // Init local storage
-    disposables.push(
-        await configWatcher.initAndOnChange(async config => {
-            await localStorage.setConfig(config)
-        })
-    )
+    await configWatcher.initAndOnChange(async config => {
+        await localStorage.setConfig(config)
+    }, disposables)
+
     // Ensure Git API is available
     disposables.push(await initVSCodeGitApi())
 
     // Telemetry
-    disposables.push(
-        await configWatcher.initAndOnChange(async config => {
-            await configureEventsInfra(config, isExtensionModeDevOrTest, authProvider)
-        })
-    )
+    await configWatcher.initAndOnChange(async config => {
+        await configureEventsInfra(config, isExtensionModeDevOrTest, authProvider)
+    }, disposables)
 
     // TODO(beyang): can remove PromptMixin?
     if (initialConfig.chatPreInstruction.length > 0) {
         PromptMixin.addCustom(newPromptMixin(initialConfig.chatPreInstruction))
     }
 
-    disposables.push(...registerParserListeners())
+    registerParserListeners(disposables)
 
     // Enable tracking for pasting chat responses into editor text
     disposables.push(
@@ -185,13 +180,11 @@ const register = async (
 
     await exposeOpenCtxClient(context.secrets, initialConfig)
 
-    disposables.push(
-        await configWatcher.initAndOnChange(async config => {
-            graphqlClient.onConfigurationChange(config)
-            // githubClient.onConfigurationChange({ authToken: config.experimentalGithubAccessToken })
-            await featureFlagProvider.syncAuthStatus()
-        })
-    )
+    await configWatcher.initAndOnChange(async config => {
+        graphqlClient.onConfigurationChange(config)
+        // githubClient.onConfigurationChange({ authToken: config.experimentalGithubAccessToken })
+        await featureFlagProvider.syncAuthStatus()
+    }, disposables)
 
     // Initialize external services
     const {
@@ -204,12 +197,11 @@ const register = async (
         onConfigurationChange: externalServicesOnDidConfigurationChange,
         symfRunner,
     } = await configureExternalServices(context, initialConfig, platform, authProvider)
-    disposables.push(
-        configWatcher.onChange(async config => {
-            externalServicesOnDidConfigurationChange(config)
-            symfRunner?.setSourcegraphAuth(config.serverEndpoint, config.accessToken)
-        })
-    )
+    configWatcher.onChange(async config => {
+        externalServicesOnDidConfigurationChange(config)
+        symfRunner?.setSourcegraphAuth(config.serverEndpoint, config.accessToken)
+    }, disposables)
+
     if (symfRunner) {
         disposables.push(symfRunner)
     }
@@ -231,12 +223,10 @@ const register = async (
 
     // Initialize enterprise context
     const enterpriseContextFactory = new EnterpriseContextFactory(completionsClient)
-    disposables.push(
-        enterpriseContextFactory,
-        configWatcher.onChange(async _config => {
-            enterpriseContextFactory.clientConfigurationDidChange()
-        })
-    )
+    disposables.push(enterpriseContextFactory)
+    configWatcher.onChange(async () => {
+        enterpriseContextFactory.clientConfigurationDidChange()
+    }, disposables)
 
     // Initialize context provider
     const editor = new VSCodeEditor()
@@ -253,13 +243,11 @@ const register = async (
         .init(repoNameResolver.getRepoNamesFromWorkspaceUri)
         .then(() => contextProvider.init())
 
-    disposables.push(
-        configWatcher.onChange(async config => {
-            await contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri)
-            await contextProvider.onConfigurationChange(config)
-            await localEmbeddings?.setAccessToken(config.serverEndpoint, config.accessToken)
-        })
-    )
+    configWatcher.onChange(async config => {
+        await contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri)
+        await contextProvider.onConfigurationChange(config)
+        await localEmbeddings?.setAccessToken(config.serverEndpoint, config.accessToken)
+    }, disposables)
 
     const { chatManager, editorManager } = registerChat(
         {
@@ -317,18 +305,16 @@ const register = async (
         disposables.push(new SupercompletionProvider({ statusBar, chat: chatClient }))
     }
 
-    disposables.push(
-        configWatcher.onChange(async _config => {
-            setupAutocomplete()
-        })
-    )
+    configWatcher.onChange(async () => {
+        setupAutocomplete()
+    }, disposables)
 
     // Sync initial auth status
     const initAuthStatus = authProvider.getAuthStatus()
     await syncModels(initAuthStatus)
     await chatManager.syncAuthStatus(initAuthStatus)
     editorManager.syncAuthStatus(initAuthStatus)
-    disposables.push(await configWatcher.initAndOnChange(() => ModelsService.onConfigChange()))
+    await configWatcher.initAndOnChange(() => ModelsService.onConfigChange(), disposables)
     statusBar.syncAuthStatus(initAuthStatus)
     sourceControl.syncAuthStatus(initAuthStatus)
 
@@ -569,11 +555,9 @@ const register = async (
         new CharactersLogger(),
         upstreamHealthProvider
     )
-    disposables.push(
-        await configWatcher.initAndOnChange(async config => {
-            upstreamHealthProvider.onConfigurationChange(config)
-        })
-    )
+    await configWatcher.initAndOnChange(async config => {
+        upstreamHealthProvider.onConfigurationChange(config)
+    }, disposables)
 
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
 
@@ -687,12 +671,10 @@ const register = async (
 }
 
 // Registers listeners to trigger parsing of visible documents
-function registerParserListeners(): vscode.Disposable[] {
-    const disposables: vscode.Disposable[] = []
+function registerParserListeners(disposables: vscode.Disposable[]) {
     void parseAllVisibleDocuments()
     disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
     disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
-    return disposables
 }
 
 interface RegisterChatOptions {

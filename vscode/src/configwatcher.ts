@@ -9,12 +9,19 @@ export interface ConfigWatcher<C> extends vscode.Disposable {
     // NOTE(beyang): should remove this
     set(c: C): void
 
-    onChange(callback: (config: C) => Promise<void>): vscode.Disposable
+    /*
+     * Register a callback that is called only when Cody's configuration is changed.
+     * Appends to the disposable array methods that unregister the callback
+     */
+    onChange(callback: (config: C) => Promise<void>, disposables: vscode.Disposable[]): void
 
     /**
      * Same behavior as onChange, but fires the callback once immediately for initialization.
      */
-    initAndOnChange(callback: (config: C) => Promise<void>): Promise<vscode.Disposable>
+    initAndOnChange(
+        callback: (config: C) => Promise<void>,
+        disposables: vscode.Disposable[]
+    ): Promise<void>
 }
 
 export class BaseConfigWatcher<C> implements ConfigWatcher<C> {
@@ -68,12 +75,15 @@ export class BaseConfigWatcher<C> implements ConfigWatcher<C> {
         return this.currentConfig
     }
 
-    async initAndOnChange(callback: (config: C) => Promise<void>): Promise<vscode.Disposable> {
+    async initAndOnChange(
+        callback: (config: C) => Promise<void>,
+        disposables: vscode.Disposable[]
+    ): Promise<void> {
         await callback(this.currentConfig)
-        return this.onChange(callback)
+        this.onChange(callback, disposables)
     }
 
-    onChange(callback: (config: C) => Promise<void>): vscode.Disposable {
-        return this.configChangeEvent.event(callback)
+    public onChange(callback: (config: C) => Promise<void>, disposables: vscode.Disposable[]): void {
+        disposables.push(this.configChangeEvent.event(callback))
     }
 }
