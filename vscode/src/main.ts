@@ -62,7 +62,6 @@ import { CodyProExpirationNotifications } from './notifications/cody-pro-expirat
 import { showSetupNotification } from './notifications/setup-notification'
 import { initVSCodeGitApi } from './repository/git-extension-api'
 import { repoNameResolver } from './repository/repo-name-resolver'
-import { SearchViewProvider } from './search/SearchViewProvider'
 import { AuthProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
@@ -319,12 +318,6 @@ const register = async (
 
     const statusBar = createStatusBar()
     const sourceControl = new CodySourceControl(chatClient)
-
-    if (symfRunner) {
-        const searchViewProvider = new SearchViewProvider(symfRunner)
-        disposables.push(searchViewProvider)
-        searchViewProvider.initialize()
-    }
 
     if (localEmbeddings) {
         // kick-off embeddings initialization
