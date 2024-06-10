@@ -94,7 +94,7 @@ describe('Chat response quality', () => {
 
             // Skip because this currently fails.
             // * anthropic/claude-3-haiku: "I don't have access to any code you've written. I'm Claude, an AI assistant..."
-            it.skip('@zoekt describe my code', async () => {
+            it('@zoekt describe my code', async () => {
                 const lastMessage = await sendMessage(client, modelString, '@zoekt describe my code', {
                     addEnhancedContext: true,
                     contextFiles: [],
@@ -104,7 +104,7 @@ describe('Chat response quality', () => {
 
             // Skip because this currently fails.
             // * openai/gpt-3.5-turbo: "I cannot directly assess the cleanliness of your codebase as an AI assistant"
-            it.skip('Is my codebase clean?', async () => {
+            it('Is my codebase clean?', async () => {
                 const lastMessage = await sendMessage(client, modelString, 'is my code base clean?', {
                     addEnhancedContext: true,
                     contextFiles: [],
@@ -152,7 +152,7 @@ describe('Chat response quality', () => {
 
             // Skip because this currently fails.
             // * openai/gpt-3.5-turbo: "The project likely uses the MIT license because..."
-            it.skip('Why does this project use the MIT license?', async () => {
+            it('Why does this project use the MIT license?', async () => {
                 const lastMessage = await sendMessage(
                     client,
                     modelString,
@@ -185,7 +185,7 @@ describe('Chat response quality', () => {
 
             // Skip because this currently fails.
             // * anthropic/claude-3-haiku: "'Certainly! The `agent.go` ..."
-            it.skip('Explain the logic in src/agent.go', async () => {
+            it('Explain the logic in src/agent.go', async () => {
                 const contextFiles = [readmeItem, limitItem]
                 const lastMessage = await sendMessage(
                     client,
@@ -197,7 +197,8 @@ describe('Chat response quality', () => {
                 // Check it doesn't hallucinate
                 expect(lastMessage?.text).not.includes('Certainly!')
                 expect(lastMessage?.text).not.includes("Sure, let's")
-                checkFilesExist(lastMessage, ['agent.go'], contextFiles)
+                // Should ask for additional (relevant) context.
+                expect(lastMessage?.text).toMatch(/additional( relevant)? context/i)
             }, 10_000)
         })
     }

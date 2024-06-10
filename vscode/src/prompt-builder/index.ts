@@ -3,6 +3,7 @@ import {
     type ContextItem,
     type Message,
     type ModelContextWindow,
+    PromptMixin,
     TokenCounter,
     contextFiltersProvider,
     isCodyIgnoredFile,
@@ -42,6 +43,14 @@ export class PromptBuilder {
     }
 
     public build(): Message[] {
+        if (this.contextItems.length > 0) {
+            this.buildContextMessages()
+        }
+
+        return this.prefixMessages.concat([...this.reverseMessages].reverse())
+    }
+
+    private buildContextMessages(): void {
         for (const item of this.contextItems) {
             // Create context messages for each context item, where
             // assistant messages come first because the transcript is in reversed order.
@@ -50,7 +59,8 @@ export class PromptBuilder {
             messagePair && this.reverseMessages.push(...messagePair)
         }
 
-        return this.prefixMessages.concat([...this.reverseMessages].reverse())
+        // Apply prompt mixin to the first human message in the reverseMessages.
+        this.reverseMessages[0] = PromptMixin.mixInto(this.reverseMessages[0])
     }
 
     public tryAddToPrefix(messages: Message[]): boolean {

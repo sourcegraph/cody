@@ -60,9 +60,6 @@ log:
           size: 154
           text: |+
             event: completion
-            data: {"completion":"Yes","stopReason":""}
-
-            event: completion
             data: {"completion":"Yes","stopReason":"end_turn"}
 
             event: done
@@ -110,11 +107,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: aa5a490815f3b012a231fac93bac2881
+    - _id: c13de76c951e67de1fd7f3c23b5fbd85
       _order: 0
       cache: {}
       request:
-        bodySize: 3364
+        bodySize: 3605
         cookies: []
         headers:
           - name: content-type
@@ -127,7 +124,7 @@ log:
           - name: user-agent
             value: enterpriseClient / v1
           - name: traceparent
-            value: 00-7d15437aa1ec215ec24d5a3df74ff329-7e53116b613d91e6-01
+            value: 00-2a4302f765a6b89193c55db80c1b13f4-cbcac3ac40c0441c-01
           - name: connection
             value: keep-alive
           - name: host
@@ -228,7 +225,10 @@ log:
 
                   </INSTRUCTIONS7390>
               - speaker: assistant
-                text: <CODE5711>
+                text: "The provided codebase context are the code you need and have access to.
+                  Do not make any assumptions. Give me a high-level overview
+                  based on the given context first before asking for additional
+                  context to answer the following question fully: <CODE5711>"
             model: anthropic/claude-3-opus-20240229
             stopSequences:
               - </CODE5711>
@@ -243,154 +243,14 @@ log:
             value: v1
         url: https://demo.sourcegraph.com/.api/completions/stream?client-name=enterpriseclient&client-version=v1
       response:
-        bodySize: 3845
+        bodySize: 5398
         content:
           mimeType: text/event-stream
-          size: 3845
+          size: 5398
           text: >+
             event: completion
 
-            data: {"completion":"//","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Recor","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now`","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` metho","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n//","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monot","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotoni","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp in","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp in millis","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp in milliseconds","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp in milliseconds.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp in milliseconds.","stopReason":"stop_sequence"}
+            data: {"completion":"/**\n * Records the start time using `performance.now()`.\n * This can be used to measure the duration of an operation by comparing it to the end time.\n */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -400,7 +260,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 03 Jun 2024 08:21:51 GMT
+            value: Mon, 10 Jun 2024 19:05:23 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -429,7 +289,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-03T08:21:48.468Z
+      startedDateTime: 2024-06-10T19:05:21.157Z
       time: 0
       timings:
         blocked: -1

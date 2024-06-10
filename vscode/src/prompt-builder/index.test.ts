@@ -381,7 +381,7 @@ describe('PromptBuilder', () => {
               foo\`\`\`
               Ok.
               Hi!
-              Hi!"
+              The provided codebase context are the code you need and have access to. Do not make any assumptions. Give me a high-level overview based on the given context first before asking for additional context to answer the following question fully: Hi!"
             `)
         })
     })

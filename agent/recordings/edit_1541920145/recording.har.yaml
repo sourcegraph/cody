@@ -153,11 +153,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 5c6544452ca1c26d15ca25b163fa9752
+    - _id: 1acfaa86ba1586bc18ac2e4188eed7f4
       _order: 0
       cache: {}
       request:
-        bodySize: 2515
+        bodySize: 2756
         cookies: []
         headers:
           - name: content-type
@@ -170,7 +170,7 @@ log:
           - name: user-agent
             value: edit / v1
           - name: traceparent
-            value: 00-e92beb093ba643a17030b9457af81462-31f84e76c2997d13-01
+            value: 00-f3628f91285d9a60405a733629dc5c83-d50d45797315791f-01
           - name: connection
             value: keep-alive
           - name: host
@@ -252,7 +252,10 @@ log:
 
                   </INSTRUCTIONS7390>
               - speaker: assistant
-                text: <CODE5711>
+                text: "The provided codebase context are the code you need and have access to.
+                  Do not make any assumptions. Give me a high-level overview
+                  based on the given context first before asking for additional
+                  context to answer the following question fully: <CODE5711>"
             model: anthropic/claude-3-opus-20240229
             stopSequences:
               - </CODE5711>
@@ -268,14 +271,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=edit&client-version=v1
       response:
-        bodySize: 16282
+        bodySize: 8083
         content:
           mimeType: text/event-stream
-          size: 16282
+          size: 8083
           text: >+
             event: completion
 
-            data: {"completion":"export default function ChatColumn({\n\tmessages,\n\tsetChatID,\n\tisLoading,\n}: ChatColumnProps) {\ninterface ChatColumnProps {\n  messages: ChatMessage[];\n  setChatID: (chatID: string) =\u003e void;\n  isLoading: boolean;\n}\n\ninterface ChatMessage {\n  chatID: string;\n  text: string;\n}","stopReason":"stop_sequence"}
+            data: {"completion":"export default function ChatColumn({\n\tmessages,\n\tsetChatID,\n\tisLoading,\n}: {\n\tmessages: Message[];\n\tsetChatID: (chatID: string) =\u003e void;\n\tisLoading: boolean;\n}) {","stopReason":"stop_sequence"}
 
 
             event: done
@@ -285,7 +288,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 03 Jun 2024 07:43:39 GMT
+            value: Mon, 10 Jun 2024 19:04:39 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -314,7 +317,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-03T07:43:36.121Z
+      startedDateTime: 2024-06-10T19:04:37.182Z
       time: 0
       timings:
         blocked: -1
@@ -324,11 +327,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: fa263b4c0c914112a377b1c976114f9f
+    - _id: bf580e5ddd0e669bd87cb344894e8b71
       _order: 0
       cache: {}
       request:
-        bodySize: 2805
+        bodySize: 3046
         cookies: []
         headers:
           - name: content-type
@@ -341,7 +344,7 @@ log:
           - name: user-agent
             value: edit / v1
           - name: traceparent
-            value: 00-ed67dbddac8a7a66bdde83f8de7d919e-b08353a6d9e7156e-01
+            value: 00-1b90eddf32e3f675a8a317030442d13c-f9b3fcaa41ce6978-01
           - name: connection
             value: keep-alive
           - name: host
@@ -413,13 +416,19 @@ log:
 
                   </INSTRUCTIONS7390>
               - speaker: assistant
-                text: |-
+                text: >-
+                  The provided codebase context are the code you need and have
+                  access to. Do not make any assumptions. Give me a high-level
+                  overview based on the given context first before asking for
+                  additional context to answer the following question fully:
                   <PRECEDINGCODE3493>import React = require("react");
+
 
                   interface HeadingProps {
                       text: string;
                       level?: number;
                   }
+
 
                   </PRECEDINGCODE3493><CODE5711>
             model: anthropic/claude-3-opus-20240229
@@ -437,14 +446,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=edit&client-version=v1
       response:
-        bodySize: 11806
+        bodySize: 116456
         content:
           mimeType: text/event-stream
-          size: 11806
+          size: 116456
           text: >+
             event: completion
 
-            data: {"completion":"export const Heading: React.FC\u003cHeadingProps\u003e = ({ text, level = 1 }) =\u003e {\n  const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;\n\n  return \u003cHeadingTag\u003e{text}\u003c/HeadingTag\u003e;\n};\n","stopReason":"stop_sequence"}
+            data: {"completion":"/* Based on the provided code, we have:\n- An import of the React module\n- An interface `HeadingProps` that defines the expected props for a Heading component:\n  - `text` prop of type string \n  - optional `level` prop of type number\nTo create the Heading component:\n1. Define a functional component named `Heading` that accepts `props` of type `HeadingProps`  \n2. Determine the heading level based on the `level` prop, defaulting to `1` if not provided\n3. Render the appropriate heading element (`\u003ch1\u003e` to `\u003ch6\u003e`) based on the level, with the `text` prop as the content\n4. Export the `Heading` component using a named export\n*/\n\nexport const Heading: React.FC\u003cHeadingProps\u003e = ({ text, level = 1 }) =\u003e {\n  const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;\n\n  return \u003cHeadingTag\u003e{text}\u003c/HeadingTag\u003e;\n};\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -454,7 +463,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 03 Jun 2024 07:43:44 GMT
+            value: Mon, 10 Jun 2024 19:04:44 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -483,7 +492,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-03T07:43:41.643Z
+      startedDateTime: 2024-06-10T19:04:41.060Z
       time: 0
       timings:
         blocked: -1
