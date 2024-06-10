@@ -9,24 +9,30 @@ import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credenti
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 
+interface SGParams {
+    serverEndpoint: string
+    accessToken: string
+}
+
 class SG {
     sgStartProcess: ChildProcess | undefined
     constructor(private params: { logsPath: string; sourcegraphDir: string }) {}
-    private static serverStarted(process: ChildProcess): Promise<void> {
+    private static serverStarted(process: ChildProcess): Promise<SGParams> {
         return new Promise((resolve, reject) => {
             process.stdout?.on('data', data => {
+                // TODO: parse out the URL, use GQL to get an access token
                 console.log({ data: data.toString() })
             })
             setTimeout(() => reject(new Error('timeout')), 2_000)
         })
     }
-    public async start(): Promise<void> {
+    public async start(): Promise<SGParams> {
         this.sgStartProcess = spawn('sg', ['start'], { cwd: this.params.sourcegraphDir })
         await fspromises.rm(this.params.logsPath, { force: true })
         // We intentionally use writeFileSync because that seems to work best with `tail -f`
         this.sgStartProcess.stderr?.on('data', data => writeFileSync(this.params.logsPath, data))
         this.sgStartProcess.stdout?.on('data', data => writeFileSync(this.params.logsPath, data))
-        await SG.serverStarted(this.sgStartProcess)
+        return await SG.serverStarted(this.sgStartProcess)
     }
     public stop(): void {
         this.sgStartProcess?.kill()
@@ -46,10 +52,10 @@ describe('E2E-local', () => {
     })
 
     beforeAll(async () => {
-        await sg.start()
+        const params = await sg.start()
         ModelsService.setModels(getDotComDefaultModels())
         await workspace.beforeAll()
-        await client.beforeAll()
+        await client.beforeAll(params)
         await client.request('command/execute', { command: 'cody.search.index-update' })
     })
 

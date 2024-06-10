@@ -818,8 +818,8 @@ ${patch}`
         }
     }
 
-    public async beforeAll() {
-        const info = await this.initialize()
+    public async beforeAll(additionalConfig?: Partial<ExtensionConfiguration>) {
+        const info = await this.initialize(additionalConfig)
         if (!info.authStatus?.isLoggedIn) {
             throw new Error('Could not log in')
         }
