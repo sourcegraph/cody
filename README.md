@@ -39,8 +39,8 @@ See [cody.dev](https://about.sourcegraph.com/cody?utm_source=github.com&utm_medi
 - **Autocomplete:** Cody makes single-line and multi-line suggestions as you type, speeding up your coding and shortcutting the need for you to hunt down function and variable names as you type.
 - **Inline Chat:** Ask Cody to fix or refactor code from anywhere in a file.
 - **Commands:** Cody has quick commands for common actions. Simply highlight a code snippet and run a command, like “Document code,” “Explain code,” or “Generate Unit Tests.”
-- **Swappable LLMs:** Support for Anthropic Claude, Claude 2, and OpenAI GPT-4/3.5, with more coming soon.
-  - **Free LLM usage included** (currently Anthropic Claude 2/OpenAI GPT-4) for individual devs on both personal and work code, subject to reasonable per-user rate limits ([more info](#usage)).
+- **Swappable LLMs:** Support for Anthropic Claude 3, OpenAI GPT-4/GPT-4o, Google Gemini, and Mixtral models, with more being added regularly.
+  - **Free LLM usage included** (currently Anthropic Claude 3 Sonnet) for individual devs on both personal and work code, subject to reasonable per-user rate limits ([more info](#usage)).
 
 ## Demos
 
