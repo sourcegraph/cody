@@ -34,10 +34,9 @@ import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type FixupTaskID, type FixupTelemetryMetadata } from './FixupTask'
 import { DiffOperation, computeDecoratedLineDiff } from './decorated-line-diff'
 import { type Diff, computeDiff } from './diff'
-import { computeLineDiff } from './line-diff'
 import { trackRejection } from './rejection-tracker'
 import type { FixupActor, FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
-import { CodyTaskState, expandRangeToInsertedText, getMinimumDistanceToRangeBoundary } from './utils'
+import { CodyTaskState, getMinimumDistanceToRangeBoundary } from './utils'
 
 // const addedDecoration = vscode.window.createTextEditorDecorationType({
 //     backgroundColor: new vscode.ThemeColor('diffEditor.insertedLineBackground'),
@@ -591,49 +590,7 @@ export class FixupController
             // TODO: Re-add completion code, omitted for now for debugging
             return
         }
-
-        // In progress insertion, apply the partial replacement and adjust the range
-        const replacement = task.inProgressReplacement
-        if (replacement === undefined) {
-            throw new Error('Task applied with no replacement text')
-        }
-
-        // Avoid adding any undo stops when streaming. We want the completed edit to be undone as a single unit, once finished.
-        const applyEditOptions = {
-            undoStopBefore: false,
-            undoStopAfter: false,
-        }
-
-        const current = document.getText(task.selectionRange)
-        const diff = computeLineDiff(current, replacement)
-        const startLine = task.selectionRange.start.line
-        // Insert updated text at selection range
-        let editOk: boolean
-        for (const change of diff) {
-            console.log('Applying change', change)
-            const linesAdded = change.removed ? -change.count! : change.count!
-            const endLine = startLine + linesAdded
-            const range = new vscode.Range(
-                new vscode.Position(startLine, 0),
-                new vscode.Position(endLine, 0)
-            )
-            if (edit instanceof vscode.WorkspaceEdit) {
-                edit.replace(document.uri, range, change.value)
-                editOk = await vscode.workspace.applyEdit(edit)
-            } else {
-                editOk = await edit(editBuilder => {
-                    editBuilder.replace(range, change.value)
-                }, applyEditOptions)
-            }
-        }
-
-        // For testing
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        console.log(editOk!)
-        if (editOk!) {
-            // Expand the selection range to accompany the edit
-            task.selectionRange = expandRangeToInsertedText(task.selectionRange, replacement)
-        }
+        return
     }
 
     private async applyTask(task: FixupTask): Promise<void> {
@@ -770,13 +727,16 @@ export class FixupController
         )
 
         for (const change of decoratedDiff) {
-            await edit(editBuilder => {
-                if (change.type === DiffOperation.LINE_DELETED) {
-                    editBuilder.delete(change.range)
-                } else if (change.type === DiffOperation.LINE_INSERTED) {
-                    editBuilder.insert(change.range.start, change.text)
-                }
-            }, options)
+            await edit(
+                editBuilder => {
+                    if (change.type === DiffOperation.LINE_DELETED) {
+                        editBuilder.delete(change.range)
+                    } else if (change.type === DiffOperation.LINE_INSERTED) {
+                        editBuilder.insert(change.range.start, change.text)
+                    }
+                },
+                { undoStopAfter: false, undoStopBefore: false }
+            )
         }
 
         return true
