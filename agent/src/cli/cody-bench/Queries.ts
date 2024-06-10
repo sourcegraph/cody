@@ -18,7 +18,11 @@ type QueryName = 'context'
 export class Queries {
     private queryDirectoryExists: boolean | undefined
     private cache: CompiledQuery[] = []
-    constructor(private queriesDirectory: string) {}
+    constructor(private queriesDirectory: string) {
+        if (!queriesDirectory) {
+            throw new Error('--queries-directory is not defined')
+        }
+    }
     public async loadQuery(
         parser: WrappedParser,
         language: SupportedLanguage,

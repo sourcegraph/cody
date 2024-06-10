@@ -133,7 +133,7 @@ export class EvaluationDocument {
                 if (!item.range.isSingleLine) {
                     out.push(` ${item.range.end.line}:${item.range.end.character}`)
                 }
-                if (this.options.fixture.strategy === BenchStrategy.BFG) {
+                if (this.options.fixture.strategy === BenchStrategy.Autocomplete) {
                     out.push(' AUTOCOMPLETE')
                 } else if (this.options.fixture.strategy === BenchStrategy.Fix) {
                     out.push(' FIX')
