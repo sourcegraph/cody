@@ -740,7 +740,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerAuthenticatedRequest(
             'testing/workspaceDocuments',
             async (params: GetDocumentsParams): Promise<GetDocumentsResult> => {
-                const uris = params.uris ?? this.workspace.allDocuments().map(doc => doc.uri.toString())
+                const uris = params?.uris ?? this.workspace.allDocuments().map(doc => doc.uri.toString())
 
                 const documents: ProtocolTextDocument[] = uris
                     .map(uri => {
