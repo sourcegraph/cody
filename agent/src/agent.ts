@@ -622,7 +622,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('testing/awaitPendingPromises', async () => {
-            if (!vscode_shim.isTesting) {
+            if (!(vscode_shim.isTesting || vscode_shim.isIntegrationTesting)) {
                 throw new Error(
                     'testing/awaitPendingPromises can only be called from tests. ' +
                         'To fix this problem, set the environment variable CODY_SHIM_TESTING=true.'
