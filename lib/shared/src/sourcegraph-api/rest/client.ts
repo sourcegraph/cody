@@ -25,12 +25,7 @@ export class RestClient {
     constructor(
         private endpointUrl: string,
         private accessToken: string
-    ) {
-        // Enforce that the endpointUrl doesn't end in a trailing slash.
-        if (endpointUrl.endsWith('/')) {
-            this.endpointUrl = endpointUrl.substring(0, endpointUrl.length - 1)
-        }
-    }
+    ) {}
 
     // Make an authenticated HTTP request to the Sourcegraph instance.
     // "name" is a developer-friendly term to label the request's trace span.

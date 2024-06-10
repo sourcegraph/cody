@@ -31,10 +31,11 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
     if (useServerDefinedModels()) {
         const serverSideModels = await fetchServerSideModels(authStatus.endpoint || '')
         ModelsService.setModels(serverSideModels)
-        // NOTE: We intentionally don't call `registerModelsFromVSCodeConfiguration()` here,
-        // because the setting doesn't make sense. In a world where all the LLM model configuration
-        // is managed server-side, there isn't any point in adding models on the client. (Since
-        // the server wouldn't recognize and reject them.)
+        // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't entirely make sense in
+        // a world where LLM models are managed server-side. However, this is how Cody can be extended
+        // to use locally running LLMs such as Ollama. (Though some more testing is needed.)
+        // See: https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
+        registerModelsFromVSCodeConfiguration()
         return
     }
 
