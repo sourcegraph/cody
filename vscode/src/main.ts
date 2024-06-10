@@ -54,7 +54,7 @@ import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
 import { logDebug, logError } from './log'
 import { MinionOrchestrator } from './minion/MinionOrchestrator'
 import { PoorMansBash } from './minion/environment'
-import { getChatModelsFromConfiguration, syncModels } from './models/sync'
+import { registerModelsFromVSCodeConfiguration, syncModels } from './models/sync'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
 import { initVSCodeGitApi } from './repository/git-extension-api'
@@ -106,14 +106,14 @@ export async function start(
     )
     disposables.push(disposable)
 
-    // Re-initialize when configuration
+    // Re-initialize when configuration changes.
     disposables.push(
         vscode.workspace.onDidChangeConfiguration(async event => {
             if (event.affectsConfiguration('cody')) {
                 const config = await getFullConfig()
                 await onConfigurationChange(config)
                 platform.onConfigurationChange?.(config)
-                getChatModelsFromConfiguration()
+                registerModelsFromVSCodeConfiguration()
             }
         })
     )
@@ -320,7 +320,9 @@ const register = async (
 
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
-        syncModels(authStatus)
+        // Reset the available models based on the auth change.
+        await syncModels(authStatus)
+
         // Chat Manager uses Simple Context Provider
         await chatManager.syncAuthStatus(authStatus)
         editorManager.syncAuthStatus(authStatus)
@@ -345,9 +347,9 @@ const register = async (
         sourceControl.syncAuthStatus(authStatus)
     })
 
-    // Sync initial auth status
+    // Sync the initial auth status.
     const initAuthStatus = authProvider.getAuthStatus()
-    syncModels(initAuthStatus)
+    await syncModels(initAuthStatus)
     await chatManager.syncAuthStatus(initAuthStatus)
     editorManager.syncAuthStatus(initAuthStatus)
     ModelsService.onConfigChange()
