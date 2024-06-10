@@ -18,8 +18,6 @@ import { telemetryService } from '../services/telemetry'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 
-import { type Change, diffLines } from 'diff'
-import { UNICODE_SPACE } from '../commands/GhostHintDecorator'
 import { PersistenceTracker } from '../common/persistence-tracker'
 import { lines } from '../completions/text-processing'
 import { sleep } from '../completions/utils'
@@ -34,21 +32,22 @@ import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type FixupTaskID, type FixupTelemetryMetadata } from './FixupTask'
+import { DiffOperation, computeDecoratedLineDiff } from './decorated-line-diff'
 import { type Diff, computeDiff } from './diff'
 import { computeLineDiff } from './line-diff'
 import { trackRejection } from './rejection-tracker'
 import type { FixupActor, FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
 import { CodyTaskState, expandRangeToInsertedText, getMinimumDistanceToRangeBoundary } from './utils'
 
-const addedDecoration = vscode.window.createTextEditorDecorationType({
-    backgroundColor: new vscode.ThemeColor('diffEditor.insertedLineBackground'),
-    isWholeLine: true,
-})
+// const addedDecoration = vscode.window.createTextEditorDecorationType({
+//     backgroundColor: new vscode.ThemeColor('diffEditor.insertedLineBackground'),
+//     isWholeLine: true,
+// })
 
-const removedDecoration = vscode.window.createTextEditorDecorationType({
-    backgroundColor: new vscode.ThemeColor('diffEditor.removedLineBackground'),
-    isWholeLine: true,
-})
+// const removedDecoration = vscode.window.createTextEditorDecorationType({
+//     backgroundColor: new vscode.ThemeColor('diffEditor.removedLineBackground'),
+//     isWholeLine: true,
+// })
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
@@ -670,9 +669,7 @@ export class FixupController
             if (!applicableDiff) {
                 return
             }
-            const lineDiff = diffLines(task.original, task.replacement!)
-            console.log('Got line diff:', lineDiff)
-            editOk = await this.replaceEditByLines(edit, lineDiff, task, applyEditOptions, visibleEditor)
+            editOk = await this.replaceEditByLines(edit, task, applyEditOptions, visibleEditor)
         } else {
             editOk = await this.insertEdit(edit, document, task, applyEditOptions)
         }
@@ -749,7 +746,6 @@ export class FixupController
 
     private async replaceEditByLines(
         edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit,
-        changes: Change[],
         task: FixupTask,
         options?: { undoStopBefore: boolean; undoStopAfter: boolean },
         editor?: vscode.TextEditor
@@ -766,88 +762,22 @@ export class FixupController
             return false
         }
 
-        const deleted: vscode.DecorationOptions[] = []
-        const added: vscode.Range[] = []
-        const linesToDeleteOnSave: vscode.Range[] = []
+        const decoratedDiff = computeDecoratedLineDiff(
+            task.original,
+            task.replacement!,
+            task.selectionRange.start.line,
+            editor.document
+        )
 
-        let startLine = task.selectionRange.start.line
-        for (const change of changes) {
-            const count = change.count || 0
-            if (change.removed) {
-                // We have removals, for each line removed, we need to
-                // remove the contents of the line, but not delete the line,
-                // and then insert a decoration into the now-empty line.
-                // This lets us preserve the deleted code without breaking the existing code.
-                for (let i = 0; i < count; i++) {
-                    const startLineItem = editor.document.lineAt(startLine)
-                    // Clear the line
-                    await edit(editBuilder => {
-                        editBuilder.replace(startLineItem.range, '')
-                    }, options)
-
-                    linesToDeleteOnSave.push(startLineItem.rangeIncludingLineBreak)
-                    // Inject fake code via a decoration
-                    const padding = startLineItem.firstNonWhitespaceCharacterIndex
-                    deleted.push({
-                        ...removedDecoration,
-                        range: startLineItem.range,
-                        renderOptions: {
-                            after: {
-                                contentText: UNICODE_SPACE.repeat(padding) + startLineItem.text.trim(),
-                            },
-                        },
-                    })
-
-                    // Increment and move to the next line
-                    startLine++
-                }
-                continue
-            }
-
-            if (change.added) {
-                // Insert on line below
-                const insertionPosition = new vscode.Position(startLine, 0)
-                await edit(editBuilder => {
-                    editBuilder.insert(new vscode.Position(startLine, 0), change.value)
-                }, options)
-                added.push(new vscode.Range(insertionPosition, insertionPosition))
-                startLine = startLine + count
-                continue
-            }
-
-            startLine = startLine + count
-        }
-
-        const decorate = () => {
-            editor.setDecorations(addedDecoration, added)
-            editor.setDecorations(removedDecoration, deleted)
-        }
-        decorate()
-
-        // Temporary, need to do this elsehwere to clean up
-        vscode.window.onDidChangeVisibleTextEditors(editors => {
-            const isVisible = editors.find(
-                visibleEditor => visibleEditor.document.uri.toString() === editor.document.uri.toString()
-            )
-            if (isVisible) {
-                decorate()
-            }
-        })
-
-        // Temporary, need to do this elsewhere to clean up
-        vscode.workspace.onDidSaveTextDocument(async document => {
-            if (document.uri !== editor.document.uri) {
-                // Not the current doc, noop
-                return
-            }
-            editor.setDecorations(addedDecoration, [])
-            editor.setDecorations(removedDecoration, [])
+        for (const change of decoratedDiff) {
             await edit(editBuilder => {
-                for (const lineToDelete of linesToDeleteOnSave) {
-                    editBuilder.delete(lineToDelete)
+                if (change.type === DiffOperation.LINE_DELETED) {
+                    editBuilder.delete(change.range)
+                } else if (change.type === DiffOperation.LINE_INSERTED) {
+                    editBuilder.insert(change.range.start, change.text)
                 }
-            })
-        })
+            }, options)
+        }
 
         return true
     }
