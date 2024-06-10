@@ -3,7 +3,7 @@ import {
     type EditModel,
     type EventSource,
     FILE_CONTEXT_MENTION_PROVIDER,
-    ModelProvider,
+    ModelsService,
     PromptString,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     displayLineRange,
@@ -101,7 +101,7 @@ export const getInput = async (
     let activeModelItem = modelItems.find(item => item.model === initialValues.initialModel)
 
     const getContextWindowOnModelChange = (model: EditModel) => {
-        const latestContextWindow = ModelProvider.getContextWindowByID(model)
+        const latestContextWindow = ModelsService.getContextWindowByID(model)
         return latestContextWindow.input + (latestContextWindow.context?.user ?? 0)
     }
     let activeModelContextWindow = getContextWindowOnModelChange(activeModel)
@@ -323,7 +323,10 @@ export const getInput = async (
                     return
                 }
 
-                const mentionTrigger = scanForMentionTriggerInUserTextInput(value)
+                const mentionTrigger = scanForMentionTriggerInUserTextInput({
+                    textBeforeCursor: value,
+                    includeWhitespace: false,
+                })
                 const mentionQuery = mentionTrigger
                     ? parseMentionQuery(mentionTrigger.matchingString, null)
                     : undefined

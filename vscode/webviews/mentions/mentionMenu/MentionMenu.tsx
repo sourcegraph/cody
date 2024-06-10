@@ -1,6 +1,7 @@
 import type { MenuRenderFn } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import {
     type ContextItem,
+    type ContextItemOpenCtx,
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionQuery,
@@ -13,6 +14,7 @@ import {
     FILE_RANGE_TOOLTIP_LABEL,
     NO_SYMBOL_MATCHES_HELP_LABEL,
 } from '../../../src/chat/context/constants'
+import RemoteFileProvider from '../../../src/context/openctx/remoteFileSearch'
 import RemoteRepositorySearch from '../../../src/context/openctx/remoteRepositorySearch'
 import type { UserAccountInfo } from '../../Chat'
 import {
@@ -28,6 +30,7 @@ import {
     type MentionMenuOption,
     createMentionMenuOption,
 } from '../../promptEditor/plugins/atMentions/atMentions'
+import type { setEditorQuery } from '../../promptEditor/plugins/atMentions/atMentions'
 import { contextItemID } from '../../promptEditor/plugins/atMentions/util'
 import styles from './MentionMenu.module.css'
 import { MentionMenuContextItemContent, MentionMenuProviderItemContent } from './MentionMenuItem'
@@ -53,7 +56,7 @@ export const MentionMenu: FunctionComponent<
         userInfo?: UserAccountInfo
         params: MentionMenuParams
         updateMentionMenuParams: (update: Partial<Pick<MentionMenuParams, 'parentItem'>>) => void
-        setEditorQuery: (query: string) => void
+        setEditorQuery: setEditorQuery
         data: MentionMenuData
 
         /** For use in storybooks only. */
@@ -113,38 +116,113 @@ export const MentionMenu: FunctionComponent<
             }
 
             if (params.query !== '') {
-                setEditorQuery('')
+                // Remove provider search input only and keep the rest of the query.
+                setEditorQuery(currentText => {
+                    const mentionStartIndex = currentText.indexOf(mentionQuery.text)
+
+                    if (mentionStartIndex !== -1) {
+                        const mentionEndIndex = mentionStartIndex + mentionQuery.text.length
+                        return (
+                            currentText.slice(0, mentionStartIndex) + currentText.slice(mentionEndIndex)
+                        )
+                    }
+
+                    return ''
+                })
             }
             updateMentionMenuParams({ parentItem: provider })
             setValue(null)
         },
-        [data.providers, params.query, setEditorQuery, updateMentionMenuParams]
+        [data.providers, params.query, setEditorQuery, updateMentionMenuParams, mentionQuery]
     )
 
-    const onCommandSelect = useCallback(
+    const onInitialContextItemSelect = useCallback(
         (value: string): void => {
-            const item = data.items?.find(item => commandRowValue(item) === value)
+            const item = data.initialContextItems?.find(item => commandRowValue(item) === value)
             if (!item) {
                 throw new Error(`No item found with value ${value}`)
             }
+
             selectOptionAndCleanUp(createMentionMenuOption(item))
         },
-        [data.items, selectOptionAndCleanUp]
+        [data.initialContextItems, selectOptionAndCleanUp]
+    )
+
+    const onCommandSelect = useCallback(
+        (commandSelected: string): void => {
+            const item = data.items?.find(item => commandRowValue(item) === commandSelected)
+            if (!item) {
+                throw new Error(`No item found with value ${commandSelected}`)
+            }
+
+            // HACK: The OpenCtx interface do not support building multi-step selection for mentions.
+            // For the remote file search provider, we first need the user to search for the repo from the list and then
+            // put in the query to search for files. Below we are doing a hack to not set the repo item as a mention
+            // but instead keep the same provider selected and put the full repo name in the query. The provider will then
+            // return files instead of repos if the repo name is in the query.
+            if (item.provider === 'openctx') {
+                const openCtxItem = item as ContextItemOpenCtx
+                if (
+                    openCtxItem.providerUri === RemoteFileProvider.providerUri &&
+                    openCtxItem.mention?.data?.repoName &&
+                    !openCtxItem.mention?.data?.filePath
+                ) {
+                    // Do not set the selected item as mention if it is repo item from the remote file search provider.
+                    // Rather keep the provider in place and update the query with repo name so that the provider can
+                    // start showing the files instead.
+
+                    updateMentionMenuParams({
+                        parentItem: {
+                            id: RemoteFileProvider.providerUri,
+                            title: 'Sourcegraph Files',
+                            queryLabel: 'Enter file path to search.',
+                            emptyLabel: `No files found in ${openCtxItem.mention.data.repoName} repository`,
+                        },
+                    })
+                    setEditorQuery(() => `@${openCtxItem.mention?.data?.repoName}:`)
+                    setValue(null)
+                    return
+                }
+            }
+
+            selectOptionAndCleanUp(createMentionMenuOption(item))
+        },
+        [data.items, selectOptionAndCleanUp, setEditorQuery, updateMentionMenuParams]
     )
 
     // We use `cmdk` Command as a controlled component, so we need to supply its `value`. We track
     // `value` in state, but when the options change, our state `value` may refer to a row that no
     // longer exists in the list. In that case, we want the first row to be selected.
-    const firstRow = data.providers.at(0) ?? data.items?.at(0)
+    const firstRow = data.initialContextItems?.at(0) ?? data.providers.at(0) ?? data.items?.at(0)
     const valueRow = useMemo(
         () =>
+            data.initialContextItems?.find(item => commandRowValue(item) === value) ??
             data.providers.find(provider => commandRowValue(provider) === value) ??
             data.items?.find(item => commandRowValue(item) === value),
-        [data.providers, data.items, value]
+        [data.providers, data.items, data.initialContextItems, value]
     )
     const effectiveValueRow = valueRow ?? firstRow
 
     const heading = getItemsHeading(params.parentItem, mentionQuery)
+
+    const providers = data.providers
+        .filter(
+            provider =>
+                (provider.id !== RemoteRepositorySearch.providerUri &&
+                    provider.id !== RemoteFileProvider.providerUri) ||
+                !userInfo?.isDotComUser
+        )
+        .map(provider => (
+            // show remote repositories search provider only if the user is connected to a non-dotcom instance.
+            <CommandItem
+                key={commandRowValue(provider)}
+                value={commandRowValue(provider)}
+                onSelect={onProviderSelect}
+                className={styles.item}
+            >
+                <MentionMenuProviderItemContent provider={provider} />
+            </CommandItem>
+        ))
 
     return (
         <Command
@@ -157,50 +235,44 @@ export const MentionMenu: FunctionComponent<
             ref={ref}
         >
             <CommandList>
-                {data.providers.length > 0 && (
-                    <CommandGroup>
-                        {data.providers
-                            .filter(
-                                provider =>
-                                    provider.id !== RemoteRepositorySearch.providerUri ||
-                                    (userInfo && !userInfo.isDotComUser)
-                            )
-                            .map(provider => (
-                                // show remote repositories search provider  only if the user is connected to a non-dotcom instance.
-                                <CommandItem
-                                    key={commandRowValue(provider)}
-                                    value={commandRowValue(provider)}
-                                    onSelect={onProviderSelect}
-                                    className={styles.item}
-                                >
-                                    <MentionMenuProviderItemContent provider={provider} />
-                                </CommandItem>
-                            ))}
-                    </CommandGroup>
-                )}
-
-                <CommandGroup heading={heading}>
-                    {heading && params.parentItem && <CommandSeparator />}
-                    {data.items ? (
-                        data.items.length > 0 ? (
-                            data.items.map(item => (
+                {!params.parentItem &&
+                    data.initialContextItems &&
+                    data.initialContextItems.length > 0 && (
+                        <CommandGroup>
+                            {data.initialContextItems.map(item => (
                                 <CommandItem
                                     key={commandRowValue(item)}
                                     value={commandRowValue(item)}
-                                    disabled={item.isIgnored}
-                                    onSelect={onCommandSelect}
+                                    onSelect={onInitialContextItemSelect}
                                     className={clsx(styles.item, styles.contextItem)}
                                 >
                                     <MentionMenuContextItemContent query={mentionQuery} item={item} />
                                 </CommandItem>
-                            ))
-                        ) : (
-                            <CommandEmpty>{getEmptyLabel(params.parentItem, mentionQuery)}</CommandEmpty>
-                        )
-                    ) : (
-                        <CommandLoading>Loading...</CommandLoading>
+                            ))}
+                        </CommandGroup>
                     )}
-                </CommandGroup>
+
+                {providers.length > 0 && <CommandGroup>{providers}</CommandGroup>}
+
+                {(heading || (data.items && data.items.length > 0)) && (
+                    <CommandGroup heading={heading}>
+                        {heading && <CommandSeparator />}
+                        {data.items?.map(item => (
+                            <CommandItem
+                                key={commandRowValue(item)}
+                                value={commandRowValue(item)}
+                                disabled={item.isIgnored}
+                                onSelect={onCommandSelect}
+                                className={clsx(styles.item, styles.contextItem)}
+                            >
+                                <MentionMenuContextItemContent query={mentionQuery} item={item} />
+                            </CommandItem>
+                        ))}
+                    </CommandGroup>
+                )}
+
+                {data.items === undefined && <CommandLoading>Loading...</CommandLoading>}
+                <CommandEmpty>{getEmptyLabel(params.parentItem, mentionQuery)}</CommandEmpty>
             </CommandList>
         </Command>
     )

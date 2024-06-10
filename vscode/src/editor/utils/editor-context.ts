@@ -309,9 +309,11 @@ async function resolveContextItem(
     editor: Editor,
     input: PromptString
 ): Promise<ContextItemWithContent[]> {
-    const resolvedItems = item.provider
+    const resolvedItems: ContextItemWithContent[] = item.provider
         ? await resolveContextMentionProviderContextItem(item, input)
-        : [await resolveFileOrSymbolContextItem(item, editor)]
+        : item.type === 'file' || item.type === 'symbol'
+          ? [await resolveFileOrSymbolContextItem(item, editor)]
+          : []
     return resolvedItems.map(resolvedItem => ({
         ...resolvedItem,
         size: resolvedItem.size ?? TokenCounter.countTokens(resolvedItem.content),
@@ -344,7 +346,7 @@ async function resolveContextMentionProviderContextItem(
     const items = await openCtxClient.items({ message: input.toString(), mention }, item.providerUri)
 
     return items
-        .map((item): ContextItemWithContent | null =>
+        .map((item): (ContextItemWithContent & { providerUri: string }) | null =>
             item.ai?.content
                 ? {
                       type: 'openctx',
@@ -360,7 +362,7 @@ async function resolveContextMentionProviderContextItem(
 }
 
 async function resolveFileOrSymbolContextItem(
-    contextItem: ContextItem,
+    contextItem: ContextItemFile | ContextItemSymbol,
     editor: Editor
 ): Promise<ContextItemWithContent> {
     const content =

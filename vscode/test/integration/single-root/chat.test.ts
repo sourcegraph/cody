@@ -37,7 +37,7 @@ suite('Chat', function () {
             getPs()`hello from the human`,
             'user',
             [],
-            undefined,
+            null,
             false,
             new AbortController().signal
         )
@@ -58,7 +58,7 @@ suite('Chat', function () {
             getPs()`hello from the human`,
             'user',
             [],
-            undefined,
+            null,
             false,
             new AbortController().signal
         )

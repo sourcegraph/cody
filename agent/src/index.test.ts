@@ -6,8 +6,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 
 import {
     DOTCOM_URL,
-    ModelProvider,
     ModelUsage,
+    ModelsService,
     getDotComDefaultModels,
     isWindows,
 } from '@sourcegraph/cody-shared'
@@ -37,7 +37,7 @@ describe('Agent', () => {
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
-        ModelProvider.setProviders(getDotComDefaultModels())
+        ModelsService.setModels(getDotComDefaultModels())
         await workspace.beforeAll()
 
         // Init a repo in the workspace to make the parent-dirs repo-name resolver work for Cody Context Filters tests.
@@ -961,34 +961,28 @@ describe('Agent', () => {
             const obtained = await demoEnterpriseClient.documentCode(uri)
             expect(obtained).toMatchInlineSnapshot(
                 `
-                  "import { expect } from 'vitest'
-                  import { it } from 'vitest'
-                  import { describe } from 'vitest'
+              "import { expect } from 'vitest'
+              import { it } from 'vitest'
+              import { describe } from 'vitest'
 
-                  /**
-                   * Test block for example functionality
-                   *
-                   * This test block contains three test cases:
-                   * - "does 1": Verifies that true is equal to true
-                   * - "does 2": Verifies that true is equal to true
-                   * - "does something else": Currently incomplete test case that will error due to incorrect usage of \`performance.now\`
-                   */
-                  describe('test block', () => {
-                      it('does 1', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does 2', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does something else', () => {
-                          // This line will error due to incorrect usage of \`performance.now\`
-                          const startTime = performance.now(/* CURSOR */)
-                      })
+              describe('test block', () => {
+                  it('does 1', () => {
+                      expect(true).toBe(true)
                   })
-                  "
-                `
+
+                  it('does 2', () => {
+                      expect(true).toBe(true)
+                  })
+
+                  it('does something else', () => {
+                      // This line will error due to incorrect usage of \`performance.now\`
+                      // Record the start time using the Performance API's \`now\` method.
+                      // This captures a high resolution monotonic timestamp in milliseconds.
+                      const startTime = performance.now(/* CURSOR */)
+                  })
+              })
+              "
+            `
             )
         })
 

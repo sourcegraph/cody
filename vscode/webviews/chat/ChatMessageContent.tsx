@@ -1,6 +1,6 @@
 import { type Guardrails, isError } from '@sourcegraph/cody-shared'
 import type React from 'react'
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 
 import {
     CheckCodeBlockIcon,
@@ -21,6 +21,7 @@ export interface CodeBlockActionsProps {
 
 interface ChatMessageContentProps {
     displayMarkdown: string
+    isMessageLoading: boolean
 
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
@@ -35,7 +36,7 @@ function createButtons(
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 ): HTMLElement {
     const container = document.createElement('div')
-    container.className = styles.container
+    container.className = styles.buttonsContainer
     if (!copyButtonOnSubmit) {
         return container
     }
@@ -118,6 +119,9 @@ function createCodeBlockActionButton(
             setTimeout(() => {
                 button.innerHTML = iconSvg
             }, 5000)
+
+            // Log for `chat assistant response code buttons` e2e test.
+            console.log('Code: Copy to Clipboard', text)
         })
     }
 
@@ -234,6 +238,7 @@ class GuardrailsStatusController {
  */
 export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps> = ({
     displayMarkdown,
+    isMessageLoading,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
     guardrails,
@@ -241,10 +246,20 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
 }) => {
     const rootRef = useRef<HTMLDivElement>(null)
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: needs to run when `displayMarkdown` changes or else the buttons won't show up.
     useEffect(() => {
-        const preElements = rootRef.current?.querySelectorAll('pre')
+        if (!rootRef.current) {
+            return
+        }
+
+        const preElements = rootRef.current.querySelectorAll('pre')
         if (!preElements?.length || !copyButtonOnSubmit) {
             return
+        }
+
+        const existingButtons = rootRef.current.querySelectorAll(`.${styles.buttonsContainer}`)
+        for (const existingButton of existingButtons) {
+            existingButton.remove()
         }
 
         for (const preElement of preElements) {
@@ -256,43 +271,36 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                     container.classList.add(styles.attributionContainer)
                     buttons.append(container)
 
-                    const g = new GuardrailsStatusController(container)
-                    g.setPending()
+                    if (!isMessageLoading) {
+                        const g = new GuardrailsStatusController(container)
+                        g.setPending()
 
-                    guardrails
-                        .searchAttribution(preText)
-                        .then(attribution => {
-                            if (isError(attribution)) {
-                                g.setUnavailable(attribution)
-                            } else if (attribution.repositories.length === 0) {
-                                g.setSuccess()
-                            } else {
-                                g.setFailure(
-                                    attribution.repositories.map(r => r.name),
-                                    attribution.limitHit
-                                )
-                            }
-                        })
-                        .catch(error => {
-                            g.setUnavailable(error)
-                            return
-                        })
+                        guardrails
+                            .searchAttribution(preText)
+                            .then(attribution => {
+                                if (isError(attribution)) {
+                                    g.setUnavailable(attribution)
+                                } else if (attribution.repositories.length === 0) {
+                                    g.setSuccess()
+                                } else {
+                                    g.setFailure(
+                                        attribution.repositories.map(r => r.name),
+                                        attribution.limitHit
+                                    )
+                                }
+                            })
+                            .catch(error => {
+                                g.setUnavailable(error)
+                                return
+                            })
+                    }
                 }
 
                 // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
                 preElement.parentNode.insertBefore(buttons, preElement.nextSibling)
-
-                // capture copy events (right click or keydown) on code block
-                preElement.addEventListener('copy', () => {
-                    if (copyButtonOnSubmit) {
-                        copyButtonOnSubmit(preText, 'Keydown')
-                    }
-                })
             }
         }
-    }, [copyButtonOnSubmit, insertButtonOnSubmit, guardrails])
-
-    usePreserveSelectionOnUpdate(rootRef, [displayMarkdown])
+    }, [copyButtonOnSubmit, insertButtonOnSubmit, guardrails, displayMarkdown, isMessageLoading])
 
     return (
         <div ref={rootRef}>
@@ -301,55 +309,4 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
             </MarkdownFromCody>
         </div>
     )
-}
-
-function usePreserveSelectionOnUpdate(
-    elementRef: React.RefObject<HTMLDivElement>,
-    deps: React.DependencyList
-) {
-    // Restore prior selection from before the `displayMarkdown` changed and we updated the DOM
-    // below.
-    type SerializedSelection = {
-        anchorNode: NonNullable<Selection['anchorNode']>
-        anchorOffset: NonNullable<Selection['anchorOffset']>
-        focusNode: NonNullable<Selection['focusNode']>
-        focusOffset: NonNullable<Selection['focusOffset']>
-    }
-    const lastSelection = useRef<SerializedSelection | null>(null)
-    const s = window.getSelection()
-    lastSelection.current =
-        s?.anchorNode && s.focusNode
-            ? {
-                  anchorNode: s.anchorNode,
-                  anchorOffset: s.anchorOffset,
-                  focusNode: s.focusNode,
-                  focusOffset: s.focusOffset,
-              }
-            : null
-    // biome-ignore lint/correctness/useExhaustiveDependencies: elementRef is a ref, and its value is stable.
-    useLayoutEffect(() => {
-        if (!lastSelection.current) {
-            return
-        }
-        if (
-            !elementRef.current?.contains(lastSelection.current.anchorNode) &&
-            !elementRef.current?.contains(lastSelection.current.focusNode)
-        ) {
-            // Don't restore selections that are outside of `elementRef`.
-            return
-        }
-        try {
-            window
-                .getSelection()
-                ?.setBaseAndExtent(
-                    lastSelection.current.anchorNode,
-                    lastSelection.current.anchorOffset,
-                    lastSelection.current.focusNode,
-                    lastSelection.current.focusOffset
-                )
-        } catch (error) {
-            console.error(error)
-            lastSelection.current = null
-        }
-    }, deps)
 }

@@ -66,14 +66,6 @@ export const CodyCommandMenuItems: MenuCommandAccessor[] = [
         mode: 'ask',
     },
     {
-        key: 'search',
-        prompt: 'Start a new natural language search',
-        description: 'Search Code (Beta)',
-        icon: 'search',
-        command: { command: 'cody.symf.search' },
-        keybinding: '',
-    },
-    {
         key: 'commit',
         description: 'Generate Commit Message (Experimental)',
         icon: 'git-commit',

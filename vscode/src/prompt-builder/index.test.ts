@@ -1,6 +1,7 @@
+import * as path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { ContextItem, ContextMessage, Message } from '@sourcegraph/cody-shared'
+import type { ContextItem, Message } from '@sourcegraph/cody-shared'
 import {
     type ChatMessage,
     ContextItemSource,
@@ -26,8 +27,7 @@ describe('PromptBuilder', () => {
             content: 'foobar',
             size: 100,
         }
-        const transcript: ContextMessage[] = [{ speaker: 'human', file, text: ps`` }]
-        expect(() => builder.tryAddContext('enhanced', transcript.reverse())).rejects.toThrowError()
+        expect(() => builder.tryAddContext('enhanced', [file])).rejects.toThrowError()
     })
 
     it('throws an error when trying to add User Context before chat input', () => {
@@ -39,8 +39,7 @@ describe('PromptBuilder', () => {
             content: 'foobar',
             size: 100,
         }
-        const transcript: ContextMessage[] = [{ speaker: 'human', file, text: ps`` }]
-        expect(() => builder.tryAddContext('user', transcript.reverse())).rejects.toThrowError()
+        expect(() => builder.tryAddContext('user', [file])).rejects.toThrowError()
     })
 
     describe('tryAddToPrefix', () => {
@@ -170,10 +169,6 @@ describe('PromptBuilder', () => {
             content: 'foo',
         }
 
-        function generateContextTranscript(contextItems: ContextItem[]): ContextMessage[] {
-            return contextItems.map(file => ({ speaker: 'human', file, text: ps`` }))
-        }
-
         it('should not allow context prompt to exceed context window', async () => {
             const builder = new PromptBuilder({ input: 10, output: 100 })
             builder.tryAddToPrefix(preamble)
@@ -208,13 +203,12 @@ describe('PromptBuilder', () => {
                 source: ContextItemSource.User,
             }
 
-            // Context should onlt be added once even when provided twice.
-            const contextTranscript = generateContextTranscript([file, file])
-            await builder.tryAddContext('user', contextTranscript.reverse())
+            // Context should only be added once even when provided twice.
+            await builder.tryAddContext('user', [file, file])
             expect(builder.contextItems.length).toBe(1)
         })
 
-        it('should not contains non-unique context (context with overlapping ranges)', async () => {
+        it('should not contain non-unique context (context with overlapping ranges)', async () => {
             const builder = new PromptBuilder({ input: 100, output: 100 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
@@ -225,19 +219,18 @@ describe('PromptBuilder', () => {
                 source: ContextItemSource.User,
             }
 
-            const outterRange: ContextItem = {
+            const outerRange: ContextItem = {
                 ...fileWithSameUri,
                 range: { start: { line: 0, character: 0 }, end: { line: 10, character: 1 } },
                 source: ContextItemSource.User,
             }
-            const contextTranscript = generateContextTranscript([innerRange, outterRange])
-            await builder.tryAddContext('user', contextTranscript.reverse())
+            await builder.tryAddContext('user', [innerRange, outerRange])
             expect(builder.contextItems.length).toBe(1)
-            expect(builder.contextItems).toStrictEqual([outterRange])
+            expect(builder.contextItems).toStrictEqual([outerRange])
         })
 
-        it('should not contains context that is too large', async () => {
-            const builder = new PromptBuilder({ input: 10, output: 10 })
+        it('should not contain context that is too large', async () => {
+            const builder = new PromptBuilder({ input: 50, output: 50 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
 
@@ -247,7 +240,7 @@ describe('PromptBuilder', () => {
                 source: ContextItemSource.Embeddings,
             }
 
-            const outterRange: ContextItem = {
+            const outerRange: ContextItem = {
                 ...fileWithSameUri,
                 size: 100,
                 content: 'This is a file that exceeds the token limit',
@@ -256,17 +249,21 @@ describe('PromptBuilder', () => {
                 isTooLarge: true,
             }
 
-            const contextTranscript = generateContextTranscript([innerRange, outterRange, innerRange])
-            const { limitReached, ignored } = await builder.tryAddContext('enhanced', contextTranscript)
-            // Outter range should be ignored because it exceeds the token limit,
+            const { limitReached, ignored } = await builder.tryAddContext('enhanced', [
+                innerRange,
+                outerRange,
+                innerRange,
+            ])
+
+            // Outer range should be ignored because it exceeds the token limit,
             // and should not be added to the final context items list.
             expect(limitReached).toBeTruthy()
-            expect(ignored).toEqual([outterRange])
+            expect(ignored).toEqual([outerRange])
             expect(builder.contextItems).toStrictEqual([innerRange])
         })
 
         it('should remove context with overlapping ranges when full file is provided', async () => {
-            const builder = new PromptBuilder({ input: 10, output: 10 })
+            const builder = new PromptBuilder({ input: 50, output: 50 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
 
@@ -284,14 +281,17 @@ describe('PromptBuilder', () => {
                 isTooLarge: true,
             }
 
-            const contextTranscript = generateContextTranscript([partialFile, fullFile, partialFile])
-            const { limitReached } = await builder.tryAddContext('user', contextTranscript)
+            const { limitReached } = await builder.tryAddContext('user', [
+                partialFile,
+                fullFile,
+                partialFile,
+            ])
             expect(limitReached).toBeFalsy()
             expect(builder.contextItems).toStrictEqual([fullFile])
         })
 
         it('should not remove user-added with overlapping ranges even when full file is provided', async () => {
-            const builder = new PromptBuilder({ input: 10, output: 10 })
+            const builder = new PromptBuilder({ input: 50, output: 50 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
 
@@ -309,14 +309,17 @@ describe('PromptBuilder', () => {
                 isTooLarge: true,
             }
 
-            const contextTranscript = generateContextTranscript([selection, fullFile, selection])
-            const { limitReached } = await builder.tryAddContext('user', contextTranscript)
+            const { limitReached } = await builder.tryAddContext('user', [
+                selection,
+                fullFile,
+                selection,
+            ])
             expect(limitReached).toBeFalsy()
             expect(builder.contextItems).toStrictEqual([selection, fullFile])
         })
 
         it('should deduplicate context from different token usage types', async () => {
-            const builder = new PromptBuilder({ input: 10, output: 10 })
+            const builder = new PromptBuilder({ input: 50, output: 50 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
 
@@ -334,24 +337,67 @@ describe('PromptBuilder', () => {
                 isTooLarge: true,
             }
 
-            const userContext = generateContextTranscript([selection])
-            const user = await builder.tryAddContext('user', userContext)
+            const user = await builder.tryAddContext('user', [selection])
             expect(builder.contextItems).toStrictEqual([selection])
             expect(user.limitReached).toBeFalsy()
             expect(user.added).toStrictEqual([selection])
 
-            const historyContext = generateContextTranscript([fullFile])
-            const history = await builder.tryAddContext('history', historyContext)
+            const history = await builder.tryAddContext('history', [fullFile])
             expect(history.limitReached).toBeFalsy()
             expect(history.added).toStrictEqual([fullFile])
 
-            const enhancedContext = generateContextTranscript([selection, fullFile])
-            const enhanced = await builder.tryAddContext('enhanced', enhancedContext)
+            const enhanced = await builder.tryAddContext('enhanced', [selection, fullFile])
             expect(enhanced.limitReached).toBeFalsy()
             expect(enhanced.added).toStrictEqual([])
 
             // The final context items should only contain the selection and full file.
             expect(builder.contextItems).toStrictEqual([selection, fullFile])
         })
+
+        it('preserves context items content', async () => {
+            const builder = new PromptBuilder({ input: 100, output: 100 })
+            builder.tryAddToPrefix(preamble)
+            builder.tryAddMessages([...chatTranscript].reverse())
+
+            const file: ContextItem = {
+                ...fileWithSameUri,
+                range: { start: { line: 0, character: 0 }, end: { line: 1, character: 1 } },
+                source: ContextItemSource.User,
+            }
+
+            // Context should only be added once even when provided twice.
+            await builder.tryAddContext('user', [file, file])
+            const promptContent = builder
+                .build()
+                .map(item => item.text)
+                .join('\n')
+
+            expect(builder.contextItems.length).toBe(1)
+            const filePath = convertFileNameByPlatform('foo/bar.go')
+            expect(promptContent).toMatchInlineSnapshot(`
+              "preamble
+              Codebase context from file ${filePath}:
+              \`\`\`go
+              foo\`\`\`
+              Ok.
+              Hi!
+              Hi!"
+            `)
+        })
     })
 })
+
+/**
+ * Converts a file name to use the appropriate platform-specific path separators.
+ *
+ * On Windows, the file name will be prefixed with a backslash (\), while on other platforms it will remain unchanged.
+ *
+ * @param fileName - The file name to convert.
+ * @returns The converted file name with the appropriate path separators.
+ */
+function convertFileNameByPlatform(fileName: string): string {
+    const newFileName = fileName.replaceAll(path.posix.sep, path.sep)
+    const isWindows = path.sep !== path.posix.sep
+    // Example: foo/bar.go -> \foo\bar.go in Windows
+    return isWindows ? `${path.sep}${newFileName}` : newFileName
+}

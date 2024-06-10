@@ -5,138 +5,6 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: 6b16de44d8593d71e60f081f3b00edfd
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 934
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - name: user-agent
-            value: customCommandsClient / v1
-          - name: traceparent
-            value: 00-88ce13f1b073c5f44bc0c8e6535c2351-b12c0720295b9531-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 429
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >-
-                  Codebase context from file path src/example3.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Codebase context from file path src/example2.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  My selected code from @src/example1.ts:1-3:
-                  ```
-                  export function example(): string {
-                      return 'example'
-                  }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: Give me the names of the files I have shared with you so far. Format the
-                  response as a bulleted list. Only include the raw filename, no
-                  extra formatting like quotes.
-            model: anthropic/claude-3-sonnet-20240229
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-          - name: client-name
-            value: customcommandsclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=customcommandsclient&client-version=v1
-      response:
-        bodySize: 4004
-        content:
-          mimeType: text/event-stream
-          size: 4004
-          text: >+
-            event: completion
-
-            data: {"completion":"Here are the filenames you have shared so far as a bulleted list:\n\n- example3.ts\n- example2.ts\n- example1.ts","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 28 May 2024 11:58:22 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-28T11:58:20.910Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: c56d91c05ad7f8b4cd8d5de07644dd60
       _order: 0
       cache: {}
@@ -313,7 +181,7 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: >
+                text: >-
                   Codebase context from file path src/animal.ts: /*
                   SELECTION_START */
 
@@ -563,11 +431,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 00df907f1bc7f6fee188940967111e78
+    - _id: 12e8efe3cf27710253140ac42d6a20d9
       _order: 0
       cache: {}
       request:
-        bodySize: 2341
+        bodySize: 938
         cookies: []
         headers:
           - name: content-type
@@ -580,7 +448,139 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-a438f363cba6c5446cc3ca06bc245036-23f31ea016b637de-01
+            value: 00-470b8769b52a8b61829f00e140d714ee-6e41197a383fc5d7-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 429
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example3.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example2.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  My selected code from @src/example1.ts:1-3:
+                  ```
+                  export function example(): string {
+                      return 'example'
+                  }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: Give me the names of the files I have shared with you so far. Format the
+                  response as a bulleted list. Only include the raw filename, no
+                  extra formatting like quotes.
+            model: anthropic/claude-3-sonnet-20240229
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+          - name: client-name
+            value: customcommandsclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=customcommandsclient&client-version=v1
+      response:
+        bodySize: 4032
+        content:
+          mimeType: text/event-stream
+          size: 4032
+          text: >+
+            event: completion
+
+            data: {"completion":"Here are the filenames you have shared so far as a bulleted list:\n\n- example3.ts\n- example2.ts\n- example1.ts","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 04 Jun 2024 10:17:18 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-06-04T10:17:16.975Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 1ef0040bc821eab17c35aa9d9392d589
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2343
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: user-agent
+            value: customCommandsClient / v1
+          - name: traceparent
+            value: 00-b555dd7028c89b413498c15299bf9d0b-960e8ecb245d54c2-01
           - name: connection
             value: keep-alive
           - name: host
@@ -616,7 +616,7 @@ log:
 
                   - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
               - speaker: human
-                text: >-
+                text: >
                   Codebase context from file path src/animal.ts: /*
                   SELECTION_START */
 
@@ -673,14 +673,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 4136
+        bodySize: 6291
         content:
           mimeType: text/event-stream
-          size: 4136
+          size: 6291
           text: >+
             event: completion
 
-            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void\n}\n","stopReason":"stop_sequence"}
+            data: {"completion":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void {\n        console.log(this.name);\n    }\n}","stopReason":"stop_sequence"}
 
 
             event: done
@@ -690,7 +690,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 28 May 2024 11:58:27 GMT
+            value: Thu, 06 Jun 2024 08:01:40 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -719,7 +719,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-28T11:58:26.307Z
+      startedDateTime: 2024-06-06T08:01:38.826Z
       time: 0
       timings:
         blocked: -1

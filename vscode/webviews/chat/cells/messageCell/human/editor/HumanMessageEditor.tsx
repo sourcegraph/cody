@@ -1,4 +1,4 @@
-import type { ContextItem } from '@sourcegraph/cody-shared'
+import type { SerializedPromptEditorState, SerializedPromptEditorValue } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import {
     type FocusEventHandler,
@@ -11,11 +11,11 @@ import {
 } from 'react'
 import type { UserAccountInfo } from '../../../../../Chat'
 import {
-    PromptEditor,
-    type PromptEditorRefAPI,
-    type SerializedPromptEditorState,
-    type SerializedPromptEditorValue,
-} from '../../../../../promptEditor/PromptEditor'
+    type ClientActionListener,
+    useClientActionListener,
+    useClientState,
+} from '../../../../../client/clientState'
+import { PromptEditor, type PromptEditorRefAPI } from '../../../../../promptEditor/PromptEditor'
 import styles from './HumanMessageEditor.module.css'
 import type { SubmitButtonDisabled } from './toolbar/SubmitButton'
 import { Toolbar } from './toolbar/Toolbar'
@@ -25,7 +25,6 @@ import { Toolbar } from './toolbar/Toolbar'
  */
 export const HumanMessageEditor: FunctionComponent<{
     userInfo: UserAccountInfo
-    userContextFromSelection?: ContextItem[]
 
     initialEditorState: SerializedPromptEditorState | undefined
     placeholder: string
@@ -36,16 +35,13 @@ export const HumanMessageEditor: FunctionComponent<{
     /** Whether this editor is for a message that has been sent already. */
     isSent: boolean
 
-    /** Whether this editor is for a message whose assistant response is in progress. */
-    isPendingResponse: boolean
-
     /** Whether this editor is for a followup message to a still-in-progress assistant response. */
     isPendingPriorResponse: boolean
 
     disabled?: boolean
 
     onChange?: (editorState: SerializedPromptEditorValue) => void
-    onSubmit: (editorValue: SerializedPromptEditorValue, addEnhancedContext: boolean) => void
+    onSubmit: (editorValue: SerializedPromptEditorValue) => void
 
     isEditorInitiallyFocused?: boolean
     className?: string
@@ -56,12 +52,10 @@ export const HumanMessageEditor: FunctionComponent<{
     __storybook__focus?: boolean
 }> = ({
     userInfo,
-    userContextFromSelection,
     initialEditorState,
     placeholder,
     isFirstMessage,
     isSent,
-    isPendingResponse,
     isPendingPriorResponse,
     disabled = false,
     onChange,
@@ -91,27 +85,23 @@ export const HumanMessageEditor: FunctionComponent<{
           ? 'emptyEditorValue'
           : false
 
-    const onSubmitClick = useCallback(
-        (addEnhancedContext: boolean) => {
-            if (submitDisabled) {
-                return
-            }
+    const onSubmitClick = useCallback(() => {
+        if (submitDisabled) {
+            return
+        }
 
-            if (!editorRef.current) {
-                throw new Error('No editorRef')
-            }
-            onSubmit(editorRef.current.getSerializedValue(), addEnhancedContext)
-        },
-        [submitDisabled, onSubmit]
-    )
+        if (!editorRef.current) {
+            throw new Error('No editorRef')
+        }
+        onSubmit(editorRef.current.getSerializedValue())
+    }, [submitDisabled, onSubmit])
 
     const onEditorEnterKey = useCallback(
         (event: KeyboardEvent | null): void => {
             // Submit input on Enter press (without shift) when input is not empty.
             if (event && !event.shiftKey && !event.isComposing && !isEmptyEditorValue) {
                 event.preventDefault()
-                const addEnhancedContext = !event.altKey
-                onSubmitClick(addEnhancedContext)
+                onSubmitClick()
                 return
             }
         },
@@ -178,16 +168,35 @@ export const HumanMessageEditor: FunctionComponent<{
     }, [])
 
     // Set up the message listener for adding new context from user's editor to chat from the "Cody
-    // > Add Selection to Cody Chat" command.
+    // > Add Selection to Cody Chat" command. Only add to the last human input.
+    useClientActionListener(
+        useCallback<ClientActionListener>(
+            ({ addContextItemsToLastHumanInput }) => {
+                if (isSent) {
+                    return
+                }
+                if (!addContextItemsToLastHumanInput || addContextItemsToLastHumanInput.length === 0) {
+                    return
+                }
+                const editor = editorRef.current
+                if (editor) {
+                    editor.addMentions(addContextItemsToLastHumanInput)
+                    editor.setFocus(true)
+                }
+            },
+            [isSent]
+        )
+    )
+
+    const initialContext = useClientState().initialContext
     useEffect(() => {
-        if (!userContextFromSelection || userContextFromSelection.length === 0) {
-            return
+        if (initialContext && !isSent && isFirstMessage) {
+            const editor = editorRef.current
+            if (editor) {
+                editor.setInitialContextMentions(initialContext)
+            }
         }
-        const editor = editorRef.current
-        if (editor) {
-            editor?.addContextItemAsToken(userContextFromSelection)
-        }
-    }, [userContextFromSelection])
+    }, [initialContext, isSent, isFirstMessage])
 
     const focusEditor = useCallback(() => editorRef.current?.setFocus(true), [])
 
@@ -231,13 +240,12 @@ export const HumanMessageEditor: FunctionComponent<{
                 <Toolbar
                     userInfo={userInfo}
                     isEditorFocused={focused}
-                    isPendingResponse={isPendingResponse}
                     onMentionClick={onMentionClick}
                     onSubmitClick={onSubmitClick}
                     submitDisabled={submitDisabled}
                     onGapClick={onGapClick}
                     focusEditor={focusEditor}
-                    hidden={!focused && isSent && !isPendingResponse}
+                    hidden={!focused && isSent}
                     className={styles.toolbar}
                 />
             )}

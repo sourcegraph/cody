@@ -2,19 +2,14 @@ import { clsx } from 'clsx'
 import type React from 'react'
 import { useCallback, useEffect } from 'react'
 
-import type {
-    AuthStatus,
-    ChatMessage,
-    ContextItem,
-    Guardrails,
-    TelemetryService,
-} from '@sourcegraph/cody-shared'
+import type { AuthStatus, ChatMessage, Guardrails, TelemetryService } from '@sourcegraph/cody-shared'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import styles from './Chat.module.css'
+import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
 import { useTelemetryRecorder } from './utils/telemetry'
 
@@ -27,7 +22,6 @@ interface ChatboxProps {
     isTranscriptError: boolean
     userInfo: UserAccountInfo
     guardrails?: Guardrails
-    userContextFromSelection?: ContextItem[]
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -40,7 +34,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     chatEnabled = true,
     userInfo,
     guardrails,
-    userContextFromSelection,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -146,7 +139,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         const onFocus = (): void => {
             // This works because for some reason Electron maintains the Selection but not the
             // focus.
-            const focusNode = window.getSelection()?.focusNode
+            const sel = window.getSelection()
+            const focusNode = sel?.focusNode
             const focusElement = focusNode instanceof Element ? focusNode : focusNode?.parentElement
             const focusEditor = focusElement?.closest<HTMLElement>('[data-lexical-editor="true"]')
             if (focusEditor) {
@@ -175,10 +169,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 isTranscriptError={isTranscriptError}
                 userInfo={userInfo}
                 chatEnabled={chatEnabled}
-                userContextFromSelection={userContextFromSelection}
                 postMessage={postMessage}
                 guardrails={guardrails}
             />
+            {transcript.length === 0 && <WelcomeMessage />}
             <ScrollDown onClick={focusLastHumanMessageEditor} />
         </div>
     )

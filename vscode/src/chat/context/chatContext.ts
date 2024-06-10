@@ -1,6 +1,8 @@
+import type { Mention } from '@openctx/client'
 import {
     type ContextItem,
     type ContextItemOpenCtx,
+    type ContextItemRepository,
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionQuery,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
@@ -9,6 +11,7 @@ import {
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import { getContextFileFromUri } from '../../commands/context/file-path'
+import RemoteRepositorySearch from '../../context/openctx/remoteRepositorySearch'
 import {
     getFileContextFiles,
     getOpenTabsContextFile,
@@ -44,10 +47,11 @@ export async function getChatContextItemsForMention(
             // If a range is provided, that means user is trying to mention a specific line range.
             // We will get the content of the file for that range to display file size warning if needed.
             if (mentionQuery.range && files.length > 0) {
-                return getContextFileFromUri(
+                const item = await getContextFileFromUri(
                     files[0].uri,
                     new vscode.Range(mentionQuery.range.start.line, 0, mentionQuery.range.end.line, 0)
                 )
+                return item ? [item] : []
             }
 
             return files
@@ -66,20 +70,44 @@ export async function getChatContextItemsForMention(
                 mentionQuery.provider
             )
 
-            return items.map(
-                (item): ContextItemOpenCtx => ({
-                    type: 'openctx',
-                    title: item.title,
-                    providerUri: item.providerUri,
-                    uri: URI.parse(item.uri),
-                    provider: 'openctx',
-                    mention: {
-                        uri: item.uri,
-                        data: item.data,
-                        description: item.description,
-                    },
-                })
+            return items.map((item): ContextItemOpenCtx | ContextItemRepository =>
+                contextItemMentionFromOpenCtxItem(item)
             )
         }
     }
+}
+
+export function contextItemMentionFromOpenCtxItem(
+    item: Mention & { providerUri: string }
+): ContextItemOpenCtx | ContextItemRepository {
+    // HACK: The OpenCtx protocol does not support returning isIgnored
+    // and it does not make sense to expect providers to return disabled
+    // items. That is why we are using `item.data?.ignored`. We only need
+    // this for our internal Sourcegraph Repositories provider.
+    const isIgnored = item.data?.isIgnored as boolean | undefined
+
+    return item.providerUri === RemoteRepositorySearch.providerUri
+        ? ({
+              type: 'repository',
+              uri: URI.parse(item.uri),
+              isIgnored,
+              title: item.title,
+              repoName: item.title,
+              repoID: item.data!.repoId as string,
+              provider: 'openctx',
+              content: null,
+          } satisfies ContextItemRepository)
+        : ({
+              type: 'openctx',
+              uri: URI.parse(item.uri),
+              isIgnored,
+              title: item.title,
+              providerUri: item.providerUri,
+              provider: 'openctx',
+              mention: {
+                  uri: item.uri,
+                  data: item.data,
+                  description: item.description,
+              },
+          } satisfies ContextItemOpenCtx)
 }

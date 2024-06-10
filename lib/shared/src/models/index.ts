@@ -4,21 +4,14 @@ import type { ModelContextWindow, ModelUsage } from './types'
 import { getModelInfo } from './utils'
 
 /**
- * ModelProvider manages available chat and edit models.
- * It stores a set of available providers and methods to add,
- * retrieve and select between them.
+ * Model describes an LLM model and its capabilities.
  */
-export class ModelProvider {
+export class Model {
     /**
      * Whether the model is the default model for new chats and edits. The user can change their
      * default model.
      */
     public default = false
-
-    /**
-     * Whether the model is the server-set initial default for new users.
-     */
-    public initialDefault? = false
 
     // Whether the model is only available to Pro users
     public codyProOnly = false
@@ -34,6 +27,9 @@ export class ModelProvider {
         /**
          * The model id that includes the provider name & the model name,
          * e.g. "anthropic/claude-3-sonnet-20240229"
+         *
+         * TODO(PRIME-282): Replace this with a `ModelRef` instance and introduce a separate
+         * "modelId" that is distinct from the "modelName". (e.g. "claude-3-sonnet" vs. "claude-3-sonnet-20240229")
          */
         public readonly model: string,
         /**
@@ -49,7 +45,7 @@ export class ModelProvider {
             output: CHAT_OUTPUT_TOKEN_BUDGET,
         },
         /**
-         * The configuration for the model.
+         * The client-specific configuration for the model.
          */
         public readonly config?: {
             /**
@@ -67,63 +63,81 @@ export class ModelProvider {
         this.provider = provider
         this.title = title
     }
+}
+
+/**
+ * ModelsService is the component responsible for keeping track of which models
+ * are supported on the backend, which ones are available based on the user's
+ * preferences, etc.
+ *
+ * TODO(PRIME-228): Update this type to be able to fetch the models from the
+ *      Sourcegraph backend instead of being hard-coded.
+ * TODO(PRIME-283): Enable Cody Enterprise users to select which LLM model to
+ *      used in the UI. (By having the relevant code paths just pull the models
+ *      from this type.)
+ */
+export class ModelsService {
+    // Unused. Only to work around the linter complaining about a static-only class.
+    // When we are fetching data from the Sourcegraph backend, and relying on the
+    // current user's credentials, we'll need to turn this into a proper singleton
+    // with an initialization step on startup.
+    protected ModelsService() {}
 
     /**
      * Get all the providers currently available to the user
      */
-    private static get providers(): ModelProvider[] {
-        return ModelProvider.primaryProviders.concat(ModelProvider.localProviders)
+    private static get models(): Model[] {
+        return ModelsService.primaryModels.concat(ModelsService.localModels)
     }
     /**
-     * Providers available on the user's Sourcegraph instance
+     * Models available on the user's Sourcegraph instance.
      */
-    private static primaryProviders: ModelProvider[] = []
+    private static primaryModels: Model[] = []
     /**
-     * Providers available from user's local instances, e.g. Ollama
+     * Models available from user's local instances, e.g. Ollama.
      */
-    private static localProviders: ModelProvider[] = []
+    private static localModels: Model[] = []
 
-    public static async onConfigChange(enableOllamaModels: boolean): Promise<void> {
-        // Only fetch local models if user has enabled the config
-        ModelProvider.localProviders = enableOllamaModels ? await fetchLocalOllamaModels() : []
-    }
-
-    /**
-     * Sets the primary model providers.
-     * NOTE: private instances can only support 1 provider atm
-     */
-    public static setProviders(providers: ModelProvider[]): void {
-        ModelProvider.primaryProviders = providers
+    public static async onConfigChange(): Promise<void> {
+        try {
+            ModelsService.localModels = await fetchLocalOllamaModels()
+        } catch {
+            ModelsService.localModels = []
+        }
     }
 
     /**
-     * Add new providers as primary model providers.
+     * Sets the primary models available to the user.
+     * NOTE: private instances can only support 1 provider ATM.
      */
-    public static addProviders(providers: ModelProvider[]): void {
-        const set = new Set(ModelProvider.primaryProviders)
+    public static setModels(providers: Model[]): void {
+        ModelsService.primaryModels = providers
+    }
+
+    /**
+     * Add new models for use.
+     */
+    public static addModels(providers: Model[]): void {
+        const set = new Set(ModelsService.primaryModels)
         for (const provider of providers) {
             set.add(provider)
         }
-        ModelProvider.primaryProviders = Array.from(set)
+        ModelsService.primaryModels = Array.from(set)
     }
 
     /**
-     * Get the list of the primary models providers with local models.
+     * Get the list of the primary model, augmented with any local ones.
      * If currentModel is provided, sets it as the default model.
      */
-    public static getProviders(
-        type: ModelUsage,
-        isCodyProUser: boolean,
-        currentModel?: string
-    ): ModelProvider[] {
-        const availableModels = ModelProvider.providers.filter(m => m.usage.includes(type))
+    public static getModels(type: ModelUsage, isCodyProUser: boolean, currentModel?: string): Model[] {
+        const availableModels = ModelsService.models.filter(m => m.usage.includes(type))
 
         const currentDefault = currentModel
             ? availableModels.find(m => m.model === currentModel)
             : undefined
         const canUseCurrentDefault = currentDefault?.codyProOnly ? isCodyProUser : !!currentDefault
 
-        return ModelProvider.providers
+        return ModelsService.models
             .filter(m => m.usage.includes(type))
             ?.map(model => ({
                 ...model,
@@ -136,32 +150,26 @@ export class ModelProvider {
      * Finds the model provider with the given model ID and returns its Context Window.
      */
     public static getContextWindowByID(modelID: string): ModelContextWindow {
-        const model = ModelProvider.providers.find(m => m.model === modelID)
+        const model = ModelsService.models.find(m => m.model === modelID)
         return model
             ? model.contextWindow
             : { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET }
     }
 
-    public static getProviderByModel(modelID: string): ModelProvider | undefined {
-        return ModelProvider.providers.find(m => m.model === modelID)
+    public static getModelByID(modelID: string): Model | undefined {
+        return ModelsService.models.find(m => m.model === modelID)
     }
 
-    public static getProviderByModelSubstringOrError(modelSubstring: string): ModelProvider {
-        const models = ModelProvider.providers.filter(m => m.model.includes(modelSubstring))
+    public static getModelByIDSubstringOrError(modelSubstring: string): Model {
+        const models = ModelsService.models.filter(m => m.model.includes(modelSubstring))
         if (models.length === 1) {
             return models[0]
         }
-        if (models.length === 0) {
-            throw new Error(
-                `No model found for substring ${modelSubstring}. Available models: ${ModelProvider.providers
-                    .map(m => m.model)
-                    .join(', ')}`
-            )
-        }
-        throw new Error(
-            `Multiple models found for substring ${modelSubstring}: ${models
-                .map(m => m.model)
-                .join(', ')}`
-        )
+        const errorMessage =
+            models.length > 1
+                ? `Multiple models found for substring ${modelSubstring}.`
+                : `No models found for substring ${modelSubstring}.`
+        const modelsList = ModelsService.models.map(m => m.model).join(', ')
+        throw new Error(`${errorMessage} Available models: ${modelsList}`)
     }
 }

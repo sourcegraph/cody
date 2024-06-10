@@ -6,22 +6,17 @@
 import http from 'node:http'
 import https from 'node:https'
 
-import { agent } from '@sourcegraph/cody-shared'
+import { agent, getSerializedParams } from '@sourcegraph/cody-shared'
 import {
     type CompletionCallbacks,
     type CompletionParameters,
     RateLimitError,
-    type SerializedCompletionParameters,
     SourcegraphCompletionsClient,
     addClientInfoParams,
-    contextFiltersProvider,
     customUserAgent,
     getTraceparentHeaders,
-    googleChatClient,
-    groqChatClient,
     isError,
     logError,
-    ollamaChatClient,
     onAbort,
     parseEvents,
     recordErrorToSpan,
@@ -61,30 +56,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 }
             }
 
-            // TODO - Centralize this logic in a single place
-            const [provider] = params.model?.split('/') ?? []
-            if (provider === 'ollama') {
-                await ollamaChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
-                return
-            }
-            if (provider === 'google') {
-                await googleChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
-                return
-            }
-            if (provider === 'groq') {
-                await groqChatClient(params, cb, this.completionsEndpoint, this.logger, signal)
-                return
-            }
-
-            const serializedParams: SerializedCompletionParameters = {
-                ...params,
-                messages: await Promise.all(
-                    params.messages.map(async m => ({
-                        ...m,
-                        text: await m.text?.toFilteredString(contextFiltersProvider),
-                    }))
-                ),
-            }
+            const serializedParams = await getSerializedParams(params)
 
             const log = this.logger?.startCompletion(params, url.toString())
 

@@ -11,6 +11,7 @@ const meta: Meta<typeof ContextCell> = {
     decorators: [VSCodeStandaloneComponent],
     args: {
         __storybook__initialOpen: true,
+        isForFirstMessage: true,
     },
 }
 
@@ -20,7 +21,7 @@ type Story = StoryObj<typeof ContextCell>
 
 export const Default: Story = {
     args: {
-        contextFiles: [
+        contextItems: [
             { type: 'file', uri: URI.file('/foo/bar.go') },
             { type: 'file', uri: URI.file('/foo/qux.go') },
             { type: 'file', uri: URI.file('/this/is/a/very/very/very/very/long/file/path.ts') },
@@ -56,5 +57,12 @@ export const Default: Story = {
                 range: { start: { line: 1, character: 2 }, end: { line: 5, character: 0 } },
             },
         ],
+    },
+}
+
+export const Followup: Story = {
+    args: {
+        contextItems: [{ type: 'file', uri: URI.file('/foo/bar.go') }],
+        isForFirstMessage: false,
     },
 }

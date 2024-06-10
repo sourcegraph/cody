@@ -123,7 +123,6 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
             editor: Locator
             toolbar: {
                 mention: Locator
-                enhancedContext: Locator
                 modelSelector: Locator
                 submit: Locator
             }
@@ -133,11 +132,8 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
                 editor: row.locator('[data-lexical-editor="true"]'),
                 toolbar: {
                     mention: toolbar.getByRole('button', { name: 'Add context' }),
-                    enhancedContext: toolbar.getByRole('button', {
-                        name: 'Configure automatic code context',
-                    }),
                     modelSelector: toolbar.getByRole('combobox', { name: 'Select a model' }),
-                    submit: toolbar.getByRole('button', { name: 'Send with automatic code context' }),
+                    submit: toolbar.getByRole('button', { name: 'Send' }),
                 },
             }
         }
@@ -147,7 +143,6 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
         const humanRow0 = humanMessageRowParts(nthHumanMessageRow(0))
         await humanRow0.editor.blur()
         await expect(humanRow0.toolbar.mention).toBeVisible()
-        await expect(humanRow0.toolbar.enhancedContext).toBeVisible()
         await expect(humanRow0.toolbar.modelSelector).toBeVisible()
         await expect(humanRow0.toolbar.submit).toBeVisible()
 
@@ -163,7 +158,6 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
         // Ensure the toolbar hides when the first input isn't focused.
         await expect(humanRow0.editor).not.toBeFocused()
         await expect(humanRow0.toolbar.mention).not.toBeVisible()
-        await expect(humanRow0.toolbar.enhancedContext).not.toBeVisible()
         await expect(humanRow0.toolbar.modelSelector).not.toBeVisible()
         await expect(humanRow0.toolbar.submit).not.toBeVisible()
 
@@ -172,28 +166,21 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
         // focus, it hides the toolbar, but that should not interfere with clicking among toolbar items.
         await humanRow0.editor.focus()
         await expect(humanRow0.toolbar.mention).toBeVisible()
-        await expect(humanRow0.toolbar.enhancedContext).toBeVisible()
         await expect(humanRow0.toolbar.modelSelector).toBeVisible()
         await expect(humanRow0.toolbar.submit).toBeVisible()
         await expect(chatPanel.getByText('Optimized for Accuracy')).not.toBeVisible()
-        await expect(chatPanel.getByText('Automatic code context')).not.toBeVisible()
         // Open the model selector toolbar popover.
         await humanRow0.toolbar.modelSelector.click()
         await expect(chatPanel.getByText('Optimized for Accuracy')).toBeVisible()
-        await expect(chatPanel.getByText('Automatic code context')).not.toBeVisible()
-        // Now click to the enhanced context toolbar popover. All toolbar items should still be visible, and the new popover should be open.
-        await humanRow0.toolbar.enhancedContext.click()
-        await expect(chatPanel.getByText('Optimized for Accuracy')).not.toBeVisible()
-        await expect(chatPanel.getByText('Automatic code context')).toBeVisible()
         await expect(humanRow0.toolbar.mention).toBeVisible()
-        await expect(humanRow0.toolbar.enhancedContext).toBeVisible()
         await expect(humanRow0.toolbar.modelSelector).toBeVisible()
         await expect(humanRow0.toolbar.submit).toBeVisible()
+        // Close the model selector.
+        await humanRow0.toolbar.modelSelector.click()
 
         // Now focus on the last input. The first row should be minimized.
         await lastChatInput.click()
         await expect(humanRow0.toolbar.mention).not.toBeVisible()
-        await expect(humanRow0.toolbar.enhancedContext).not.toBeVisible()
         await expect(humanRow0.toolbar.modelSelector).not.toBeVisible()
         await expect(humanRow0.toolbar.submit).not.toBeVisible()
     }

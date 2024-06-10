@@ -1,11 +1,27 @@
-import { type AuthStatus, type EditModel, ModelProvider, ModelUsage } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    type EditModel,
+    type Model,
+    ModelUsage,
+    ModelsService,
+} from '@sourcegraph/cody-shared'
 import type { EditIntent } from '../types'
 
-export function getEditModelsForUser(authStatus: AuthStatus): ModelProvider[] {
-    return ModelProvider.getProviders(ModelUsage.Edit, !authStatus.userCanUpgrade)
+export function getEditModelsForUser(authStatus: AuthStatus): Model[] {
+    return ModelsService.getModels(ModelUsage.Edit, !authStatus.userCanUpgrade)
 }
 
-export function getOverridenModelForIntent(intent: EditIntent, currentModel: EditModel): EditModel {
+export function getOverridenModelForIntent(
+    intent: EditIntent,
+    currentModel: EditModel,
+    authStatus: AuthStatus
+): EditModel {
+    if (!authStatus.isDotCom) {
+        // We do not want to override the model if the user is connected to an enterprise instance.
+        // We cannot assume what models will be available here.
+        return currentModel
+    }
+
     switch (intent) {
         case 'fix':
             // Fix is a case where we want to ensure that users do not end up with a broken edit model.

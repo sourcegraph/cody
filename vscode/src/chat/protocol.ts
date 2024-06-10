@@ -2,12 +2,13 @@ import type { URI } from 'vscode-uri'
 
 import type {
     AuthStatus,
+    ClientStateForWebview,
     ConfigurationWithAccessToken,
     ContextItem,
     ContextMentionProviderMetadata,
     EnhancedContextContextT,
     MentionQuery,
-    ModelProvider,
+    Model,
     RangeData,
     SearchPanelFile,
     SerializedChatMessage,
@@ -163,7 +164,6 @@ export type ExtensionMessage =
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; view: View }
     | { type: 'errors'; errors: string }
-    | { type: 'notice'; notice: { key: string } }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
     /**
      * Context files returned from a @-mention search
@@ -172,11 +172,9 @@ export type ExtensionMessage =
           type: 'userContextFiles'
           userContextFiles?: ContextItem[] | undefined | null
       }
-    /**
-     * Send Context Files to chat view as input context (@-mentions)
-     */
-    | { type: 'chat-input-context'; items: ContextItem[] }
-    | { type: 'chatModels'; models: ModelProvider[] }
+    | { type: 'clientState'; value: ClientStateForWebview }
+    | { type: 'clientAction'; addContextItemsToLastHumanInput: ContextItem[] }
+    | { type: 'chatModels'; models: Model[] }
     | {
           type: 'update-search-results'
           results: SearchPanelFile[]
@@ -244,10 +242,7 @@ export interface ExtensionTranscriptMessage {
  * The subset of configuration that is visible to the webview.
  */
 export interface ConfigurationSubsetForWebview
-    extends Pick<
-        ConfigurationWithAccessToken,
-        'experimentalGuardrails' | 'experimentalNoodle' | 'experimentalURLContext' | 'serverEndpoint'
-    > {}
+    extends Pick<ConfigurationWithAccessToken, 'experimentalNoodle' | 'serverEndpoint'> {}
 
 /**
  * URLs for the Sourcegraph instance and app.

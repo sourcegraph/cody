@@ -1,27 +1,25 @@
 import {
     type ChatMessage,
+    ContextItemSource,
     type Guardrails,
+    contextItemsFromPromptEditorValue,
+    filterContextItemsFromPromptEditorValue,
     ps,
     reformatBotMessageForChat,
+    serializedPromptEditorStateFromChatMessage,
 } from '@sourcegraph/cody-shared'
-import { type FunctionComponent, useMemo } from 'react'
+import { type FunctionComponent, type RefObject, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
 import { chatModelIconComponent } from '../../../../components/ChatModelIcon'
+import type { PromptEditorRefAPI } from '../../../../promptEditor/PromptEditor'
 import { ChatMessageContent, type CodeBlockActionsProps } from '../../../ChatMessageContent'
 import { ErrorItem, RequestErrorItem } from '../../../ErrorItem'
+import { type Interaction, editHumanMessage } from '../../../Transcript'
 import { FeedbackButtons } from '../../../components/FeedbackButtons'
 import { LoadingDots } from '../../../components/LoadingDots'
 import { useChatModelByID } from '../../../models/chatModelContext'
 import { BaseMessageCell, MESSAGE_CELL_AVATAR_SIZE } from '../BaseMessageCell'
 import { ContextFocusActions } from './ContextFocusActions'
-
-export interface PriorHumanMessageInfo {
-    hasExplicitMentions: boolean
-    addEnhancedContext: boolean
-
-    rerunWithEnhancedContext: (withEnhancedContext: boolean) => void
-    appendAtMention: () => void
-}
 
 /**
  * A component that displays a chat message from the assistant.
@@ -89,6 +87,7 @@ export const AssistantMessageCell: FunctionComponent<{
                     {displayMarkdown ? (
                         <ChatMessageContent
                             displayMarkdown={displayMarkdown}
+                            isMessageLoading={isLoading}
                             copyButtonOnSubmit={copyButtonOnSubmit}
                             insertButtonOnSubmit={insertButtonOnSubmit}
                             guardrails={guardrails}
@@ -96,20 +95,22 @@ export const AssistantMessageCell: FunctionComponent<{
                     ) : (
                         isLoading && <LoadingDots />
                     )}
-                    {humanMessage && (
-                        <ContextFocusActions
-                            humanMessage={humanMessage}
-                            className="tw-mt-3 tw-text-muted-foreground tw-text-sm"
-                        />
-                    )}
                 </>
             }
             footer={
-                <>
-                    {showFeedbackButtons && feedbackButtonsOnSubmit && (
-                        <FeedbackButtons feedbackButtonsOnSubmit={feedbackButtonsOnSubmit} />
-                    )}
-                </>
+                ((showFeedbackButtons && feedbackButtonsOnSubmit) || humanMessage) && (
+                    <div className="tw-flex tw-items-center tw-py-3 tw-divide-x tw-transition tw-divide-muted tw-opacity-65 hover:tw-opacity-100">
+                        {showFeedbackButtons && feedbackButtonsOnSubmit && (
+                            <FeedbackButtons
+                                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                                className="tw-pr-4"
+                            />
+                        )}
+                        {humanMessage && !isLoading && (
+                            <ContextFocusActions humanMessage={humanMessage} className="tw-pl-5" />
+                        )}
+                    </div>
+                )
             }
         />
     )
@@ -117,3 +118,62 @@ export const AssistantMessageCell: FunctionComponent<{
 
 export const NON_HUMAN_CELL_AVATAR_SIZE =
     MESSAGE_CELL_AVATAR_SIZE * 0.83 /* make them "look" the same size as the human avatar icons */
+
+export interface HumanMessageInitialContextInfo {
+    repositories: boolean
+    files: boolean
+}
+
+export interface PriorHumanMessageInfo {
+    hasInitialContext: HumanMessageInitialContextInfo
+    rerunWithDifferentContext: (withInitialContext: HumanMessageInitialContextInfo) => void
+
+    hasExplicitMentions: boolean
+    appendAtMention: () => void
+}
+
+export function makeHumanMessageInfo(
+    { humanMessage, assistantMessage }: Interaction,
+    humanEditorRef: RefObject<PromptEditorRefAPI>
+): PriorHumanMessageInfo {
+    if (assistantMessage === null) {
+        throw new Error('unreachable')
+    }
+
+    const editorValue = serializedPromptEditorStateFromChatMessage(humanMessage)
+    const contextItems = contextItemsFromPromptEditorValue(editorValue)
+
+    return {
+        hasInitialContext: {
+            repositories: Boolean(
+                contextItems.some(item => item.type === 'repository' || item.type === 'tree')
+            ),
+            files: Boolean(
+                contextItems.some(
+                    item => item.type === 'file' && item.source === ContextItemSource.Initial
+                )
+            ),
+        },
+        rerunWithDifferentContext: withInitialContext => {
+            const editorValue = humanEditorRef.current?.getSerializedValue()
+            if (editorValue) {
+                const newEditorValue = filterContextItemsFromPromptEditorValue(
+                    editorValue,
+                    item =>
+                        ((item.type === 'repository' || item.type === 'tree') &&
+                            withInitialContext.repositories) ||
+                        (item.type === 'file' && withInitialContext.files)
+                )
+                editHumanMessage(assistantMessage.index - 1, newEditorValue)
+            }
+        },
+        hasExplicitMentions: Boolean(contextItems.some(item => item.source === ContextItemSource.User)),
+        appendAtMention: () => {
+            if (humanEditorRef.current?.getSerializedValue().text.trim().endsWith('@')) {
+                humanEditorRef.current?.setFocus(true, { moveCursorToEnd: true })
+            } else {
+                humanEditorRef.current?.appendText('@', true)
+            }
+        },
+    }
+}

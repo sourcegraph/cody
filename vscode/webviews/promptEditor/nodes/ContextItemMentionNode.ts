@@ -1,16 +1,12 @@
-import type { SerializedLexicalNode, Spread } from 'lexical'
-import styles from './ContextItemMentionNode.module.css'
-
 import {
+    CONTEXT_ITEM_MENTION_NODE_TYPE,
     type ContextItem,
-    type ContextItemFile,
-    type ContextItemGithubIssue,
-    type ContextItemGithubPullRequest,
-    type ContextItemOpenCtx,
-    type ContextItemPackage,
-    type ContextItemSymbol,
+    type SerializedContextItem,
+    type SerializedContextItemMentionNode,
     displayLineRange,
     displayPath,
+    displayPathBasename,
+    serializeContextItem,
     webviewOpenURIForContextItem,
 } from '@sourcegraph/cody-shared'
 import {
@@ -19,51 +15,13 @@ import {
     type DOMConversionOutput,
     type DOMExportOutput,
     type EditorConfig,
-    type LexicalNode,
     type NodeKey,
-    type SerializedTextNode,
     TextNode,
 } from 'lexical'
 import { URI } from 'vscode-uri'
+import styles from './ContextItemMentionNode.module.css'
 
 export const MENTION_CLASS_NAME = styles.contextItemMentionNode
-
-/**
- * The subset of {@link ContextItem} fields that we need to store to identify and display context
- * item mentions.
- */
-export type SerializedContextItem = { uri: string; title?: string; content?: undefined } & (
-    | Omit<ContextItemFile, 'uri' | 'content'>
-    | Omit<ContextItemSymbol, 'uri' | 'content'>
-    | Omit<ContextItemPackage, 'uri' | 'content'>
-    | Omit<ContextItemGithubIssue, 'uri' | 'content'>
-    | Omit<ContextItemGithubPullRequest, 'uri' | 'content'>
-    | Omit<ContextItemOpenCtx, 'uri' | 'content'>
-)
-
-export function serializeContextItem(
-    contextItem: ContextItem | SerializedContextItem
-): SerializedContextItem {
-    // Make sure we only bring over the fields on the context item that we need, or else we
-    // could accidentally include tons of data (including the entire contents of files).
-    return {
-        ...contextItem,
-        uri: contextItem.uri.toString(),
-
-        // Don't include the `content` (if it's present) because it's quite large, and we don't need
-        // to serialize it here. It can be hydrated on demand.
-        content: undefined,
-    }
-}
-
-export function deserializeContextItem(contextItem: SerializedContextItem): ContextItem {
-    return { ...contextItem, uri: URI.parse(contextItem.uri) }
-}
-
-export type SerializedContextItemMentionNode = Spread<
-    { contextItem: SerializedContextItem },
-    SerializedTextNode
->
 
 function convertContextItemMentionElement(domNode: HTMLElement): DOMConversionOutput | null {
     const data = domNode.getAttribute(DOM_DATA_ATTR)
@@ -84,12 +42,17 @@ function convertContextItemMentionElement(domNode: HTMLElement): DOMConversionOu
 const DOM_DATA_ATTR = 'data-lexical-context-item-mention'
 
 export class ContextItemMentionNode extends TextNode {
-    static getType(): string {
-        return 'contextItemMention'
+    static getType(): typeof CONTEXT_ITEM_MENTION_NODE_TYPE {
+        return CONTEXT_ITEM_MENTION_NODE_TYPE
     }
 
     static clone(node: ContextItemMentionNode): ContextItemMentionNode {
-        return new ContextItemMentionNode(node.contextItem, node.__text, node.__key)
+        return new ContextItemMentionNode(
+            node.contextItem,
+            node.__text,
+            node.__key,
+            node.isFromInitialContext
+        )
     }
     static importJSON(serializedNode: SerializedContextItemMentionNode): ContextItemMentionNode {
         const node = $createContextItemMentionNode(serializedNode.contextItem)
@@ -98,6 +61,7 @@ export class ContextItemMentionNode extends TextNode {
         node.setDetail(serializedNode.detail)
         node.setMode(serializedNode.mode)
         node.setStyle(serializedNode.style)
+        node.isFromInitialContext = serializedNode.isFromInitialContext
         return node
     }
 
@@ -106,7 +70,8 @@ export class ContextItemMentionNode extends TextNode {
     constructor(
         contextItemWithAllFields: ContextItem | SerializedContextItem,
         text?: string,
-        key?: NodeKey
+        key?: NodeKey,
+        public isFromInitialContext = false
     ) {
         // Make sure we only bring over the fields on the context item that we need, or else we
         // could accidentally include tons of data (including the entire contents of files).
@@ -121,6 +86,7 @@ export class ContextItemMentionNode extends TextNode {
         return {
             ...super.exportJSON(),
             contextItem: this.contextItem,
+            isFromInitialContext: this.isFromInitialContext,
             type: ContextItemMentionNode.getType(),
             version: 1,
         }
@@ -129,9 +95,18 @@ export class ContextItemMentionNode extends TextNode {
     private static CLASS_NAMES = `context-item-mention-node ${styles.contextItemMentionNode}`
 
     createDOM(config: EditorConfig): HTMLElement {
-        const element = super.createDOM(config)
-        element.className = ContextItemMentionNode.CLASS_NAMES
-        return element
+        const dom = super.createDOM(config)
+        dom.className = ContextItemMentionNode.CLASS_NAMES
+
+        if (this.contextItem.type === 'repository') {
+            dom.title = `Repository: ${this.contextItem.repoName ?? this.contextItem.title ?? 'unknown'}`
+        } else if (this.contextItem.type === 'tree') {
+            dom.title = this.contextItem.title || 'Local workspace'
+        } else if (this.contextItem.type === 'file') {
+            dom.title = displayPath(URI.parse(this.contextItem.uri))
+        }
+
+        return dom
     }
 
     exportDOM(): DOMExportOutput {
@@ -189,49 +164,44 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
     switch (contextItem.type) {
         case 'file':
             if (contextItem.provider && contextItem.title) {
-                return `@${contextItem.title}`
+                return contextItem.title
             }
-            return `@${decodeURIComponent(displayPath(URI.parse(contextItem.uri)))}${rangeText}`
+
+            return `@${decodeURIComponent(displayPathBasename(URI.parse(contextItem.uri)))}${rangeText}`
+
+        case 'repository':
+            return `@${trimCommonRepoNamePrefixes(contextItem.repoName) ?? 'unknown repository'}`
+
+        case 'tree':
+            return `@${contextItem.name ?? 'unknown folder'}`
 
         case 'symbol':
-            return `@${displayPath(URI.parse(contextItem.uri))}${rangeText}#${contextItem.symbolName}`
+            return `@${contextItem.symbolName}`
 
-        case 'package':
-            return `@${contextItem.ecosystem}:${contextItem.name}`
-
-        case 'github_pull_request':
-            return `@github:pull:${contextItem.owner}/${contextItem.repoName}/${contextItem.pullNumber}`
-
-        case 'github_issue':
-            return `@github:issue:${contextItem.owner}/${contextItem.repoName}/${contextItem.issueNumber}`
         case 'openctx':
-            return `@${contextItem.title}`
+            return `@${contextItem.mention?.data?.mentionLabel || contextItem.title}`
     }
     // @ts-ignore
     throw new Error(`unrecognized context item type ${contextItem.type}`)
 }
 
+function trimCommonRepoNamePrefixes(repoName: string): string {
+    return repoName.replace(/^(github|gitlab)\.com\//, '')
+}
+
 export function $createContextItemMentionNode(
-    contextItem: ContextItem | SerializedContextItem
+    contextItem: ContextItem | SerializedContextItem,
+    { isFromInitialContext }: { isFromInitialContext: boolean } = { isFromInitialContext: false }
 ): ContextItemMentionNode {
-    const node = new ContextItemMentionNode(contextItem)
+    const node = new ContextItemMentionNode(contextItem, undefined, undefined, isFromInitialContext)
     node.setMode('token').toggleDirectionless()
-    contextItem.type === 'file' &&
-        (contextItem.isTooLarge || contextItem.isIgnored) &&
+    if (contextItem.type === 'file' && (contextItem.isTooLarge || contextItem.isIgnored)) {
         node.setStyle('color: var(--vscode-list-errorForeground)')
+    }
+    if (contextItem.type === 'repository' || contextItem.type === 'tree') {
+        node.setStyle('font-weight: bold')
+    }
     return $applyNodeReplacement(node)
-}
-
-export function $isContextItemMentionNode(
-    node: LexicalNode | null | undefined
-): node is ContextItemMentionNode {
-    return node instanceof ContextItemMentionNode
-}
-
-export function isSerializedContextItemMentionNode(
-    node: SerializedLexicalNode | null | undefined
-): node is SerializedContextItemMentionNode {
-    return Boolean(node && node.type === ContextItemMentionNode.getType())
 }
 
 export function $createContextItemTextNode(contextItem: ContextItem | SerializedContextItem): TextNode {

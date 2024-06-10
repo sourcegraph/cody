@@ -18,11 +18,13 @@ import {
     type Guardrails,
     type MentionQuery,
     type Message,
-    ModelProvider,
+    type Model,
     ModelUsage,
+    ModelsService,
     PromptString,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
+    type SerializedPromptEditorState,
     Typewriter,
     allMentionProvidersMetadata,
     hydrateAfterPostMessage,
@@ -77,6 +79,7 @@ import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { gitCommitIdFromGitExtension } from '../../repository/git-extension-api'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import type { MessageErrorType } from '../MessageProvider'
+import { startClientStateBroadcaster } from '../clientStateBroadcaster'
 import { getChatContextItemsForMention } from '../context/chatContext'
 import type {
     ChatSubmitType,
@@ -107,7 +110,7 @@ interface SimpleChatPanelProviderOptions {
     editor: VSCodeEditor
     treeView: TreeViewProvider
     featureFlagProvider: FeatureFlagProvider
-    models: ModelProvider[]
+    models: Model[]
     guardrails: Guardrails
 }
 
@@ -217,7 +220,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
         this.codebaseStatusProvider = new CodebaseStatusProvider(
             this.editor,
-            this.config.experimentalSymfContext ? this.symf : null,
+            this.symf,
             enterpriseContext ? enterpriseContext.getCodebaseRepoIdMapper() : null
         )
         this.disposables.push(this.contextStatusAggregator.addProvider(this.codebaseStatusProvider))
@@ -244,6 +247,13 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 })
             )
         }
+
+        this.disposables.push(
+            startClientStateBroadcaster({
+                remoteSearch: this.remoteSearch,
+                postMessage: (message: ExtensionMessage) => this.postMessage(message),
+            })
+        )
     }
 
     /**
@@ -264,7 +274,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     PromptString.unsafe_fromUserQuery(message.text),
                     message.submitType,
                     message.contextFiles ?? [],
-                    message.editorState,
+                    message.editorState as SerializedPromptEditorState,
                     message.addEnhancedContext ?? false,
                     this.startNewSubmitOrEditOperation(),
                     'chat'
@@ -277,7 +287,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     PromptString.unsafe_fromUserQuery(message.text),
                     message.index ?? undefined,
                     message.contextFiles ?? [],
-                    message.editorState,
+                    message.editorState as SerializedPromptEditorState,
                     message.addEnhancedContext || false
                 )
                 break
@@ -385,9 +395,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         return {
             uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
             serverEndpoint: config.serverEndpoint,
-            experimentalGuardrails: config.experimentalGuardrails,
             experimentalNoodle: config.experimentalNoodle,
-            experimentalURLContext: config.experimentalURLContext,
         }
     }
 
@@ -452,8 +460,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         requestID: string,
         inputText: PromptString,
         submitType: ChatSubmitType,
-        userContextFiles: ContextItem[],
-        editorState: ChatMessage['editorState'],
+        mentions: ContextItem[],
+        editorState: SerializedPromptEditorState | null,
         addEnhancedContext: boolean,
         abortSignal: AbortSignal,
         source?: EventSource,
@@ -472,12 +480,50 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 addEnhancedContext,
             }
             telemetryService.log('CodyVSCodeExtension:chat-question:submitted', sharedProperties)
+            const mentionsInInitialContext = mentions.filter(
+                item => item.source !== ContextItemSource.User
+            )
+            const mentionsByUser = mentions.filter(item => item.source === ContextItemSource.User)
             telemetryRecorder.recordEvent('cody.chat-question', 'submitted', {
                 metadata: {
                     // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
                     // See https://github.com/sourcegraph/sourcegraph/pull/59524
                     recordsPrivateMetadataTranscript: authStatus.endpoint && authStatus.isDotCom ? 1 : 0,
                     addEnhancedContext: addEnhancedContext ? 1 : 0,
+
+                    // All mentions
+                    mentionsTotal: mentions.length,
+                    mentionsOfRepository: mentions.filter(item => item.type === 'repository').length,
+                    mentionsOfTree: mentions.filter(item => item.type === 'tree').length,
+                    mentionsOfWorkspaceRootTree: mentions.filter(
+                        item => item.type === 'tree' && item.isWorkspaceRoot
+                    ).length,
+                    mentionsOfFile: mentions.filter(item => item.type === 'file').length,
+
+                    // Initial context mentions
+                    mentionsInInitialContext: mentionsInInitialContext.length,
+                    mentionsInInitialContextOfRepository: mentionsInInitialContext.filter(
+                        item => item.type === 'repository'
+                    ).length,
+                    mentionsInInitialContextOfTree: mentionsInInitialContext.filter(
+                        item => item.type === 'tree'
+                    ).length,
+                    mentionsInInitialContextOfWorkspaceRootTree: mentionsInInitialContext.filter(
+                        item => item.type === 'tree' && item.isWorkspaceRoot
+                    ).length,
+                    mentionsInInitialContextOfFile: mentionsInInitialContext.filter(
+                        item => item.type === 'file'
+                    ).length,
+
+                    // Explicit mentions by user
+                    mentionsByUser: mentionsByUser.length,
+                    mentionsByUserOfRepository: mentionsByUser.filter(item => item.type === 'repository')
+                        .length,
+                    mentionsByUserOfTree: mentionsByUser.filter(item => item.type === 'tree').length,
+                    mentionsByUserOfWorkspaceRootTree: mentionsByUser.filter(
+                        item => item.type === 'tree' && item.isWorkspaceRoot
+                    ).length,
+                    mentionsByUserOfFile: mentionsByUser.filter(item => item.type === 'file').length,
                 },
                 privateMetadata: {
                     ...sharedProperties,
@@ -518,23 +564,33 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
                 const userContextItems: ContextItemWithContent[] = await resolveContextItems(
                     this.editor,
-                    [...userContextFiles, ...selectionContext],
+                    [...mentions, ...selectionContext],
                     inputText
                 )
                 abortSignal.throwIfAborted()
 
+                /**
+                 * Whether the input has repository or tree mentions that need large-corpus
+                 * context-fetching (embeddings, symf, and/or context search).
+                 */
+                const corpusMentions = mentions.filter(
+                    item => item.type === 'repository' || item.type === 'tree'
+                )
+                const hasCorpusMentions = corpusMentions.length > 0
+
                 span.setAttribute('strategy', this.config.useContext)
                 const prompter = new DefaultPrompter(
                     userContextItems,
-                    addEnhancedContext
+                    addEnhancedContext || hasCorpusMentions
                         ? async text =>
                               getEnhancedContext({
                                   strategy: this.config.useContext,
                                   editor: this.editor,
-                                  text,
+                                  input: { text, mentions },
+                                  addEnhancedContext,
                                   providers: {
                                       localEmbeddings: this.localEmbeddings,
-                                      symf: this.config.experimentalSymfContext ? this.symf : null,
+                                      symf: this.symf,
                                       remoteSearch: this.remoteSearch,
                                   },
                                   contextRanking: this.contextRanking,
@@ -620,7 +676,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         text: PromptString,
         index: number | undefined,
         contextFiles: ContextItem[],
-        editorState: ChatMessage['editorState'],
+        editorState: SerializedPromptEditorState | null,
         addEnhancedContext = true
     ): Promise<void> {
         const abortSignal = this.startNewSubmitOrEditOperation()
@@ -670,11 +726,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.allMentionProvidersMetadataQueryCancellation = cancellation
 
         try {
-            const config = await this.getConfigForWebview()
-            if (cancellation.token.isCancellationRequested) {
-                return
-            }
-            const providers = await allMentionProvidersMetadata(config)
+            const providers = await allMentionProvidersMetadata()
             if (cancellation.token.isCancellationRequested) {
                 return
             }
@@ -762,15 +814,20 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         const userContextSize = context?.user ?? input
 
         void this.postMessage({
-            type: 'chat-input-context',
-            items: contextItem.map(f => ({
-                ...f,
-                // Remove content to avoid sending large data to the webview
-                content: undefined,
-                isTooLarge: f.size ? f.size > userContextSize : undefined,
-                source: ContextItemSource.User,
-                range: f.range,
-            })),
+            type: 'clientAction',
+            addContextItemsToLastHumanInput: contextItem
+                ? [
+                      {
+                          ...contextItem,
+                          type: 'file',
+                          // Remove content to avoid sending large data to the webview
+                          content: undefined,
+                          isTooLarge: contextItem.size ? contextItem.size > userContextSize : undefined,
+                          source: ContextItemSource.User,
+                          range: contextItem.range,
+                      } satisfies ContextItem,
+                  ]
+                : [],
         })
 
         // Reveal the webview panel if it is hidden
@@ -885,7 +942,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         if (!authStatus?.isLoggedIn) {
             return
         }
-        const models = ModelProvider.getProviders(
+        const models = ModelsService.getModels(
             ModelUsage.Chat,
             authStatus.isDotCom && !authStatus.userCanUpgrade,
             this.chatModel.modelID
@@ -1164,8 +1221,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             (await this.repoPicker?.getDefaultRepos()) || [],
             RepoInclusion.Manual
         )
-
-        vscode.commands.executeCommand('setContext', 'cody.hasNewChatOpened', true)
     }
 
     // Attempts to restore the chat to the given sessionID, if it exists in
@@ -1215,8 +1270,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         this.chatModel = new SimpleChatModel(this.chatModel.modelID)
         this.postViewTranscript()
-
-        vscode.commands.executeCommand('setContext', 'cody.hasNewChatOpened', true)
     }
 
     // #endregion
@@ -1361,16 +1414,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     // =======================================================================
     // #region other public accessors and mutators
     // =======================================================================
-
-    public setChatTitle(title: string): void {
-        const isDefaultChatTitle = title === 'New Chat'
-        // Skip storing default chat title
-        if (!isDefaultChatTitle) {
-            this.chatModel.setCustomChatTitle(title)
-        }
-
-        this.postChatTitle()
-    }
 
     // Convenience function for tests
     public getViewTranscript(): readonly ChatMessage[] {

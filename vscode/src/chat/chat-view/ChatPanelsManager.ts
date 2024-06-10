@@ -7,8 +7,8 @@ import {
     type ConfigurationWithAccessToken,
     type FeatureFlagProvider,
     type Guardrails,
-    ModelProvider,
     ModelUsage,
+    ModelsService,
     featureFlagProvider,
 } from '@sourcegraph/cody-shared'
 
@@ -33,11 +33,7 @@ type ChatID = string
 
 export type ChatPanelConfig = Pick<
     ConfigurationWithAccessToken,
-    | 'experimentalGuardrails'
-    | 'experimentalSymfContext'
-    | 'internalUnstable'
-    | 'useContext'
-    | 'experimentalChatContextRanker'
+    'internalUnstable' | 'useContext' | 'experimentalChatContextRanker'
 >
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
@@ -230,7 +226,7 @@ export class ChatPanelsManager implements vscode.Disposable {
 
         const isConsumer = authStatus.isDotCom
         const isCodyProUser = !authStatus.userCanUpgrade
-        const models = ModelProvider.getProviders(ModelUsage.Chat, isCodyProUser)
+        const models = ModelsService.getModels(ModelUsage.Chat, isCodyProUser)
 
         return new SimpleChatPanelProvider({
             ...this.options,
@@ -246,10 +242,6 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     private updateChatPanelContext(): void {
-        const panels = this.panelProviders.some(p => p.webviewPanel?.title === 'New Chat')
-        const current = this.activePanelProvider?.webviewPanel?.title === 'New Chat'
-        vscode.commands.executeCommand('setContext', 'cody.hasNewChatOpened', panels || current)
-
         const hasChatPanels = this.panelProviders.length > 0
         vscode.commands.executeCommand('setContext', 'cody.hasChatPanelsOpened', hasChatPanels)
     }
@@ -272,30 +264,6 @@ export class ChatPanelsManager implements vscode.Disposable {
     private async updateTreeViewHistory(): Promise<void> {
         this.updateChatPanelContext()
         await this.treeViewProvider.updateTree(this.options.authProvider.getAuthStatus())
-    }
-
-    public async editChatHistory(chatID: string, label: string): Promise<void> {
-        await vscode.window
-            .showInputBox({
-                prompt: 'Enter new chat name',
-                value: label,
-            })
-            .then(async title => {
-                const authProvider = this.options.authProvider
-                const authStatus = authProvider.getAuthStatus()
-
-                const history = chatHistory.getChat(authStatus, chatID)
-                if (title && history) {
-                    history.chatTitle = title
-                    await chatHistory.saveChat(authStatus, history)
-                    await this.updateTreeViewHistory()
-                    const chatIDUTC = new Date(chatID).toUTCString()
-                    const provider =
-                        this.panelProviders.find(p => p.sessionID === chatID) ||
-                        this.panelProviders.find(p => p.sessionID === chatIDUTC)
-                    provider?.setChatTitle(title)
-                }
-            })
     }
 
     public async clearHistory(chatID?: string): Promise<void> {

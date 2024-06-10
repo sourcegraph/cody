@@ -1,3 +1,7 @@
-import type { GeminiModelConfig } from './google'
+export { useCustomChatClient } from './clients'
 
-export type CompletionsModelConfig = GeminiModelConfig
+export type CompletionsModelConfig = {
+    model: string
+    key: string
+    endpoint?: string
+}

@@ -11,7 +11,6 @@ import remarkGFM from 'remark-gfm'
  * - file: local file scheme
  * - vscode: VS Code URL scheme (open in editor)
  * - command:cody. VS Code command scheme for cody (run command)
- *  - e.g. command:cody.welcome: VS Code command scheme exception we add to support directly linking to the welcome guide from within the chat.
  * {@link CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID}
  */
 const ALLOWED_URI_REGEXP = /^((https?|file|vscode):\/\/[^\s#$./?].\S*$|(command:_?cody.*))/i
@@ -82,7 +81,7 @@ function markdownPluginProps(): Pick<
     'rehypePlugins' | 'remarkPlugins'
 > {
     if (_markdownPluginProps) {
-        //return _markdownPluginProps
+        return _markdownPluginProps
     }
 
     _markdownPluginProps = {
@@ -102,13 +101,23 @@ function markdownPluginProps(): Pick<
                 } satisfies RehypeSanitizeOptions,
             ],
             [
-                rehypeHighlight,
+                // HACK(sqs): Need to use rehype-highlight@^6.0.0 to avoid a memory leak
+                // (https://github.com/remarkjs/react-markdown/issues/791), but the types are
+                // slightly off.
+                rehypeHighlight as any,
                 {
                     detect: true,
                     languages: Object.fromEntries(
                         Object.entries(all).filter(([language]) => LANGUAGES.includes(language))
                     ),
-                } satisfies RehypeHighlightOptions,
+
+                    // `ignoreMissing: true` is required to avoid errors when trying to highlight
+                    // partial code blocks received from the LLM that have (e.g.) "```p" for
+                    // "```python". This is only needed on rehype-highlight@^6.0.0, which we needed
+                    // to downgrade to in order to avoid a memory leak
+                    // (https://github.com/remarkjs/react-markdown/issues/791).
+                    ignoreMissing: true,
+                } satisfies RehypeHighlightOptions & { ignoreMissing: boolean },
             ],
         ],
         remarkPlugins: [remarkGFM],

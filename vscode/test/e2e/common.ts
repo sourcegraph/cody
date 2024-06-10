@@ -68,15 +68,19 @@ export async function focusChatInputAtEnd(chatInput: Locator): Promise<void> {
     await chatInput.press('End')
 }
 
+export function chatMessageRows(chatPanel: FrameLocator): Locator {
+    return chatPanel.locator('[role="row"]')
+}
+
 /**
- * Gets the chat context cell. If {@link counts} is specified, then validates that the context
- * exactly matches the specified file and line counts.
+ * Gets the chat context cell.
  */
-export function getContextCell(
-    chatPanel: FrameLocator,
-    counts?: { files: number; lines: number }
-): Locator {
+export function getContextCell(chatPanel: FrameLocator): Locator {
     return chatPanel.locator('details', { hasText: 'Context' })
+}
+
+export function contextCellItems(contextCell: Locator): Locator {
+    return contextCell.locator('[data-testid="context-item"]')
 }
 
 export async function expectContextCellCounts(
@@ -86,14 +90,57 @@ export async function expectContextCellCounts(
     const summary = contextCell.locator('summary', { hasText: 'Context' })
     await expect(summary).toHaveAttribute(
         'title',
-        `${counts.files} file${counts.files === 1 ? '' : 's'}`,
+        `${counts.files} item${counts.files === 1 ? '' : 's'}`,
         { timeout: counts.timeout }
     )
 }
 
-export function atMentionMenuItem(chatPanel: FrameLocator, text: string | RegExp): Locator {
+export function atMentionMenuMessage(chatPanel: FrameLocator, text: string | RegExp): Locator {
     // Can't just use getByRole because the [cmdk-group-heading] is the aria-labelledby of the
     // [cmdk-group-items], which Playwright deems hidden when it is empty (because its height is 0),
     // but we still want to be able to get the label for testing even when the list below is empty.
     return chatPanel.locator(':is([cmdk-group-heading], [cmdk-empty])', { hasText: text })
+}
+
+export function chatInputMentions(chatInput: Locator): Locator {
+    return chatInput.locator('.context-item-mention-node')
+}
+
+export async function openMentionsForProvider(
+    frame: FrameLocator,
+    chatInput: Locator,
+    provider: string
+): Promise<void> {
+    await chatInput.press('@')
+    await frame.getByRole('option', { name: provider }).click()
+}
+
+export function mentionMenuItems(chatFrame: FrameLocator): Locator {
+    return chatFrame.locator('[cmdk-list] [role="option"]')
+}
+
+export async function selectMentionMenuItem(chatFrame: FrameLocator, title: string): Promise<void> {
+    const item = chatFrame.locator('[cmdk-list] [role="option"]', { hasText: title })
+    await item.click()
+}
+
+export async function openFileInEditorTab(page: Page, filename: string): Promise<void> {
+    await sidebarExplorer(page).click()
+    await page.getByRole('treeitem', { name: filename }).locator('a').dblclick()
+    await clickEditorTab(page, filename)
+}
+export async function clickEditorTab(page: Page, title: string): Promise<void> {
+    await page.getByRole('tab', { name: title }).click()
+}
+
+export async function selectLineRangeInEditorTab(
+    page: Page,
+    startLine: number,
+    endLine: number
+): Promise<void> {
+    const lineNumbers = page.locator('div[class*="line-numbers"]')
+    await lineNumbers.getByText(startLine.toString(), { exact: true }).click()
+    await lineNumbers.getByText(endLine.toString(), { exact: true }).click({
+        modifiers: ['Shift'],
+    })
 }

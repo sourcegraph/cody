@@ -1,6 +1,7 @@
-import type { ContextItem, ModelProvider } from '@sourcegraph/cody-shared'
+import type { ContextItem, Model } from '@sourcegraph/cody-shared'
+import { pluralize } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { BrainIcon } from 'lucide-react'
+import { BrainIcon, MessagesSquareIcon } from 'lucide-react'
 import type React from 'react'
 import { FileLink } from '../../../components/FileLink'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../components/shadcn/ui/tooltip'
@@ -16,30 +17,34 @@ import styles from './ContextCell.module.css'
  * A component displaying the context for a human message.
  */
 export const ContextCell: React.FunctionComponent<{
-    contextFiles: ContextItem[] | undefined
-    model?: ModelProvider['model']
+    contextItems: ContextItem[] | undefined
+    model?: Model['model']
+    isForFirstMessage: boolean
     className?: string
 
     /** For use in storybooks only. */
     __storybook__initialOpen?: boolean
-}> = ({ contextFiles, model, className, __storybook__initialOpen }) => {
-    const usedContext = []
-    const excludedAtContext = []
-    if (contextFiles) {
-        for (const f of contextFiles) {
-            if (f.isTooLarge || f.isIgnored) {
-                excludedAtContext.push(f)
+}> = ({ contextItems, model, isForFirstMessage, className, __storybook__initialOpen }) => {
+    const usedContext: ContextItem[] = []
+    const excludedAtContext: ContextItem[] = []
+    if (contextItems) {
+        for (const item of contextItems) {
+            if (item.isTooLarge || item.isIgnored) {
+                excludedAtContext.push(item)
             } else {
-                usedContext.push(f)
+                usedContext.push(item)
             }
         }
     }
 
-    const fileCount = new Set(usedContext.map(file => file.uri.toString())).size
-    let fileCountLabel = `${fileCount} file${fileCount > 1 ? 's' : ''}`
+    const itemCount = usedContext.length
+    let contextItemCountLabel = `${itemCount} ${!isForFirstMessage ? 'new ' : ''}${pluralize(
+        'item',
+        itemCount
+    )}`
     if (excludedAtContext.length) {
         const excludedAtUnit = excludedAtContext.length === 1 ? 'mention' : 'mentions'
-        fileCountLabel = `${fileCountLabel} — ${excludedAtContext.length} ${excludedAtUnit} excluded`
+        contextItemCountLabel = `${contextItemCountLabel} — ${excludedAtContext.length} ${excludedAtUnit} excluded`
     }
 
     function logContextOpening() {
@@ -47,13 +52,13 @@ export const ContextCell: React.FunctionComponent<{
             command: 'event',
             eventName: 'CodyVSCodeExtension:chat:context:opened',
             properties: {
-                fileCount,
+                fileCount: new Set(usedContext.map(file => file.uri.toString())).size,
                 excludedAtContext: excludedAtContext.length,
             },
         })
     }
 
-    return contextFiles === undefined || contextFiles.length !== 0 ? (
+    return contextItems === undefined || contextItems.length !== 0 ? (
         <Cell
             style="context"
             gutterIcon={
@@ -66,7 +71,7 @@ export const ContextCell: React.FunctionComponent<{
             contentClassName="tw-flex tw-flex-col tw-gap-4"
             data-testid="context"
         >
-            {contextFiles === undefined ? (
+            {contextItems === undefined ? (
                 <LoadingDots />
             ) : (
                 <details className={styles.details} open={__storybook__initialOpen}>
@@ -74,16 +79,16 @@ export const ContextCell: React.FunctionComponent<{
                         className={styles.summary}
                         onClick={logContextOpening}
                         onKeyUp={logContextOpening}
-                        title={fileCountLabel}
+                        title={contextItemCountLabel}
                     >
                         <h4 className={styles.heading}>
-                            Context <span className={styles.stats}>&mdash; {fileCountLabel}</span>
+                            Context <span className={styles.stats}>&mdash; {contextItemCountLabel}</span>
                         </h4>
                     </summary>
                     <ul className={styles.list}>
-                        {contextFiles?.map((item, i) => (
+                        {contextItems?.map((item, i) => (
                             // biome-ignore lint/suspicious/noArrayIndexKey: stable order
-                            <li key={i}>
+                            <li key={i} data-testid="context-item">
                                 <FileLink
                                     uri={item.uri}
                                     repoName={item.repoName}
@@ -91,17 +96,21 @@ export const ContextCell: React.FunctionComponent<{
                                     source={item.source}
                                     range={item.range}
                                     title={item.title}
-                                    isTooLarge={
-                                        item.type === 'file' && item.isTooLarge && item.source === 'user'
-                                    }
-                                    isIgnored={
-                                        item.type === 'file' && item.isIgnored && item.source === 'user'
-                                    }
+                                    isTooLarge={item.isTooLarge}
+                                    isIgnored={item.isIgnored}
                                     className={clsx(styles.contextItem, MENTION_CLASS_NAME)}
                                     linkClassName={styles.contextItemLink}
                                 />
                             </li>
                         ))}
+                        {!isForFirstMessage && (
+                            <span
+                                className={clsx(styles.contextItem, 'tw-flex tw-items-center tw-gap-2')}
+                            >
+                                <MessagesSquareIcon size={12} className="tw-ml-1" /> Prior messages and
+                                context in this conversation
+                            </span>
+                        )}
                         <li>
                             <Tooltip>
                                 <TooltipTrigger asChild>

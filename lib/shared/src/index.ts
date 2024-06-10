@@ -1,9 +1,11 @@
 // Add anything else here that needs to be used outside of this library.
 
-export { ModelProvider } from './models'
+export { Model, ModelsService } from './models'
 export {
-    type ChatModel,
     type EditModel,
+    type EditProvider,
+    type ChatModel,
+    type ChatProvider,
     ModelUsage,
     type ModelContextWindow,
 } from './models/types'
@@ -65,11 +67,10 @@ export {
     type ContextItemWithContent,
     type ContextItemSymbol,
     type ContextFileType,
-    type ContextItemPackage,
-    type ContextItemGithubIssue,
-    type ContextItemGithubPullRequest,
     type ContextMessage,
     type SymbolKind,
+    type ContextItemTree,
+    type ContextItemRepository,
 } from './codebase-context/messages'
 export type {
     CodyCommand,
@@ -90,6 +91,7 @@ export {
     toRangeData,
     displayLineRange,
     displayRange,
+    isMultiLineRange,
 } from './common/range'
 export * from './common/abortController'
 export {
@@ -98,7 +100,6 @@ export {
     markdownCodeBlockLanguageIDForFilename,
     extensionForLanguage,
 } from './common/languages'
-export { escapeHTML } from './common/markdown'
 export {
     posixFilePaths,
     pathFunctionsForURI,
@@ -228,6 +229,7 @@ export {
     type ContextFilters,
     type CodyContextFilterItem,
     type RepoListResponse,
+    type RepoSearchResponse,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
@@ -255,8 +257,9 @@ export { testFileUri } from './test/path-helpers'
 export * from './tracing'
 export {
     convertGitCloneURLToCodebaseName,
-    isError,
     createSubscriber,
+    isError,
+    nextTick,
 } from './utils'
 export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
 export * from './auth/types'
@@ -268,7 +271,6 @@ export {
     scanForMentionTriggerInUserTextInput,
 } from './mentions/query'
 export {
-    type ContextMentionProvider,
     type ContextItemProps,
     allMentionProvidersMetadata,
     openCtxMentionProviders,
@@ -291,12 +293,11 @@ export * from './sourcegraph-api/utils'
 export * from './token'
 export * from './token/constants'
 export * from './configuration'
-export * from './mentions/providers/packageMentions'
-export * from './mentions/providers/sourcegraphSearch'
-export { GITHUB_CONTEXT_MENTION_PROVIDER } from './mentions/providers/githubMentions'
-export { URL_CONTEXT_MENTION_PROVIDER } from './mentions/providers/urlMentions'
-export * from './githubClient'
 export {
     setOpenCtxClient,
     openCtx,
 } from './context/openctx/api'
+export { type ClientStateForWebview } from './clientState'
+export * from './lexicalEditor/editorState'
+export * from './lexicalEditor/nodes'
+export { getSerializedParams } from './sourcegraph-api/completions/utils'

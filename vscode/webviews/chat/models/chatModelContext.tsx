@@ -1,10 +1,10 @@
-import type { ModelProvider } from '@sourcegraph/cody-shared'
+import type { Model } from '@sourcegraph/cody-shared'
 import { createContext, useContext } from 'react'
 
 /** React context data for the chat model choice. */
 export interface ChatModelContext {
-    chatModels?: ModelProvider[]
-    onCurrentChatModelChange?: (model: ModelProvider) => void
+    chatModels?: Model[]
+    onCurrentChatModelChange?: (model: Model) => void
 }
 
 const context = createContext<ChatModelContext>({})
@@ -17,7 +17,7 @@ export function useChatModelContext(): ChatModelContext {
 
 export function useChatModelByID(
     model: string | undefined
-): Pick<ModelProvider, 'model' | 'title' | 'provider'> | undefined {
+): Pick<Model, 'model' | 'title' | 'provider'> | undefined {
     const { chatModels } = useChatModelContext()
     return (
         chatModels?.find(m => m.model === model) ??
@@ -31,7 +31,7 @@ export function useChatModelByID(
     )
 }
 
-export function useCurrentChatModel(): ModelProvider | undefined {
+export function useCurrentChatModel(): Model | undefined {
     const { chatModels } = useChatModelContext()
     return chatModels?.find(model => model.default) ?? chatModels?.[0]
 }

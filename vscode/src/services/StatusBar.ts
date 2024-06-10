@@ -57,11 +57,13 @@ interface StatusBarItem extends vscode.QuickPickItem {
     onSelect: () => Promise<void>
 }
 
+const STATUS_BAR_INTERACTION_COMMAND = 'cody.status-bar.interacted'
+
 export function createStatusBar(): CodyStatusBar {
     const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
     statusBarItem.text = DEFAULT_TEXT
     statusBarItem.tooltip = DEFAULT_TOOLTIP
-    statusBarItem.command = 'cody.status-bar.interacted'
+    statusBarItem.command = STATUS_BAR_INTERACTION_COMMAND
     statusBarItem.show()
 
     let isCodyIgnoredType: null | CodyIgnoreType = null
@@ -95,7 +97,7 @@ export function createStatusBar(): CodyStatusBar {
     }
 
     let authStatus: AuthStatus | undefined
-    const command = vscode.commands.registerCommand(statusBarItem.command, async () => {
+    const command = vscode.commands.registerCommand(STATUS_BAR_INTERACTION_COMMAND, async () => {
         telemetryService.log(
             'CodyVSCodeExtension:statusBarIcon:clicked',
             { loggedIn: Boolean(authStatus?.isLoggedIn) },
@@ -107,7 +109,7 @@ export function createStatusBar(): CodyStatusBar {
 
         if (!authStatus?.isLoggedIn) {
             // Bring up the sidebar view
-            void vscode.commands.executeCommand('cody.focus')
+            void vscode.commands.executeCommand('cody.chat.focus')
             return
         }
 
@@ -228,29 +230,6 @@ export function createStatusBar(): CodyStatusBar {
                     const enablement = await getGhostHintEnablement()
                     return enablement.Document || enablement.EditOrChat || enablement.Generate
                 }
-            ),
-            await createFeatureToggle(
-                'Search Context',
-                'Beta',
-                'Enable using the natural language search index as an Enhanced Context chat source',
-                'cody.experimental.symfContext',
-                c => c.experimentalSymfContext,
-                false
-            ),
-            await createFeatureToggle(
-                'Ollama for Chat',
-                'Experimental',
-                'Use local Ollama models for chat and commands when available',
-                'cody.experimental.ollamaChat',
-                c => c.experimentalOllamaChat,
-                false,
-                [
-                    {
-                        iconPath: new vscode.ThemeIcon('book'),
-                        tooltip: 'Learn more about using local models',
-                        onClick: () => vscode.commands.executeCommand('cody.statusBar.ollamaDocs'),
-                    } as vscode.QuickInputButton,
-                ]
             ),
             { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
             {

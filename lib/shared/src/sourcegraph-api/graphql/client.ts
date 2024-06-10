@@ -26,6 +26,8 @@ import {
     CURRENT_USER_ID_QUERY,
     CURRENT_USER_INFO_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
+    FILE_CONTENTS_QUERY,
+    FILE_MATCH_SEARCH_QUERY,
     GET_FEATURE_FLAGS_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
@@ -132,7 +134,7 @@ interface CodyLLMSiteConfigurationProviderResponse {
     } | null
 }
 
-export interface PackageListResponse {
+interface PackageListResponse {
     packageRepoReferences: {
         nodes: {
             id: string
@@ -162,6 +164,37 @@ export interface RepoSearchResponse {
             endCursor: string | null
         }
     }
+}
+interface FileMatchSearchResponse {
+    search: {
+        results: {
+            results: {
+                __typename: string
+                repository: {
+                    name: string
+                }
+                file: {
+                    url: string
+                    path: string
+                    commit: {
+                        oid: string
+                    }
+                }
+            }[]
+        }
+    }
+}
+
+interface FileContentsResponse {
+    repository: {
+        commit: {
+            file: {
+                path: string
+                url: string
+                content: string
+            } | null
+        } | null
+    } | null
 }
 
 interface RepositoryIdResponse {
@@ -225,7 +258,7 @@ export interface ContextSearchResult {
     content: string
 }
 
-export interface ContextFiltersResponse {
+interface ContextFiltersResponse {
     site: {
         codyContextFilters: {
             raw: ContextFilters | null
@@ -606,6 +639,24 @@ export class SourcegraphGraphQLAPIClient {
         }).then(response => extractDataOrError(response, data => data))
     }
 
+    public async searchFileMatches(query?: string): Promise<FileMatchSearchResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<FileMatchSearchResponse>>(FILE_MATCH_SEARCH_QUERY, {
+            query,
+        }).then(response => extractDataOrError(response, data => data))
+    }
+
+    public async getFileContents(
+        repoName: string,
+        filePath: string,
+        rev?: string
+    ): Promise<FileContentsResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<FileContentsResponse>>(FILE_CONTENTS_QUERY, {
+            repoName,
+            filePath,
+            rev,
+        }).then(response => extractDataOrError(response, data => data))
+    }
+
     public async getRepoId(repoName: string): Promise<string | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<RepositoryIdResponse>>(REPOSITORY_ID_QUERY, {
             name: repoName,
@@ -637,11 +688,11 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async contextSearch(
-        repos: Set<string>,
+        repoIDs: string[],
         query: string
     ): Promise<ContextSearchResult[] | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<ContextSearchResponse>>(CONTEXT_SEARCH_QUERY, {
-            repos: [...repos],
+            repos: repoIDs,
             query,
             codeResultsCount: 15,
             textResultsCount: 5,

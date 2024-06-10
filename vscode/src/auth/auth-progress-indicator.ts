@@ -25,7 +25,3 @@ export function closeAuthProgressIndicator(): void {
     runningAuthProgressIndicator?.()
     runningAuthProgressIndicator = null
 }
-
-export function isAuthProgressInProgress(): boolean {
-    return runningAuthProgressIndicator !== null
-}

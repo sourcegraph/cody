@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
 import { FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER } from './api'
-import { URL_CONTEXT_MENTION_PROVIDER } from './providers/urlMentions'
 import {
     type MentionQuery,
     type MentionTrigger,
@@ -67,37 +66,36 @@ describe('parseMentionQuery', () => {
             maybeHasRangeSuffix: false,
         })
     })
-
-    test('url query', () => {
-        expect(parseMentionQuery('https://example.com/p', null)).toEqual<MentionQuery>({
-            // Not interpreted as URL because there is no (longer any) support for trigger prefixes
-            // for custom providers.
-            provider: FILE_CONTEXT_MENTION_PROVIDER.id,
-            text: 'https://example.com/p',
-            maybeHasRangeSuffix: false,
-        })
-        expect(
-            parseMentionQuery('https://example.com/p', URL_CONTEXT_MENTION_PROVIDER)
-        ).toEqual<MentionQuery>({
-            provider: URL_CONTEXT_MENTION_PROVIDER.id,
-            text: 'https://example.com/p',
-        })
-    })
 })
 
 describe('scanForMentionTriggerInUserTextInput', () => {
     test('null if no @-mention is found', () =>
-        expect(scanForMentionTriggerInUserTextInput('Hello world')).toBeNull())
+        expect(
+            scanForMentionTriggerInUserTextInput({
+                textBeforeCursor: 'Hello world',
+                includeWhitespace: false,
+            })
+        ).toBeNull())
 
     test('@-mention file', () =>
-        expect(scanForMentionTriggerInUserTextInput('Hello @abc')).toEqual<MentionTrigger | null>({
+        expect(
+            scanForMentionTriggerInUserTextInput({
+                textBeforeCursor: 'Hello @abc',
+                includeWhitespace: false,
+            })
+        ).toEqual<MentionTrigger | null>({
             leadOffset: 6,
             matchingString: 'abc',
             replaceableString: '@abc',
         }))
 
     test('@-mention symbol', () =>
-        expect(scanForMentionTriggerInUserTextInput('Hello @#abc')).toEqual<MentionTrigger | null>({
+        expect(
+            scanForMentionTriggerInUserTextInput({
+                textBeforeCursor: 'Hello @#abc',
+                includeWhitespace: false,
+            })
+        ).toEqual<MentionTrigger | null>({
             leadOffset: 6,
             matchingString: '#abc',
             replaceableString: '@#abc',
@@ -105,7 +103,10 @@ describe('scanForMentionTriggerInUserTextInput', () => {
 
     test('@-mention URL', () =>
         expect(
-            scanForMentionTriggerInUserTextInput('Hello @https://example.com/p')
+            scanForMentionTriggerInUserTextInput({
+                textBeforeCursor: 'Hello @https://example.com/p',
+                includeWhitespace: false,
+            })
         ).toEqual<MentionTrigger | null>({
             leadOffset: 6,
             matchingString: 'https://example.com/p',
@@ -114,21 +115,36 @@ describe('scanForMentionTriggerInUserTextInput', () => {
 
     describe('special chars', () => {
         test('dotfile', () =>
-            expect(scanForMentionTriggerInUserTextInput('Hello @.abc')).toEqual<MentionTrigger | null>({
+            expect(
+                scanForMentionTriggerInUserTextInput({
+                    textBeforeCursor: 'Hello @.abc',
+                    includeWhitespace: false,
+                })
+            ).toEqual<MentionTrigger | null>({
                 leadOffset: 6,
                 matchingString: '.abc',
                 replaceableString: '@.abc',
             }))
 
         test('forward slash', () =>
-            expect(scanForMentionTriggerInUserTextInput('Hello @a/b')).toEqual<MentionTrigger | null>({
+            expect(
+                scanForMentionTriggerInUserTextInput({
+                    textBeforeCursor: 'Hello @a/b',
+                    includeWhitespace: false,
+                })
+            ).toEqual<MentionTrigger | null>({
                 leadOffset: 6,
                 matchingString: 'a/b',
                 replaceableString: '@a/b',
             }))
 
         test('backslash', () =>
-            expect(scanForMentionTriggerInUserTextInput('Hello @a\\b')).toEqual<MentionTrigger | null>({
+            expect(
+                scanForMentionTriggerInUserTextInput({
+                    textBeforeCursor: 'Hello @a\\b',
+                    includeWhitespace: false,
+                })
+            ).toEqual<MentionTrigger | null>({
                 leadOffset: 6,
                 matchingString: 'a\\b',
                 replaceableString: '@a\\b',
@@ -136,7 +152,10 @@ describe('scanForMentionTriggerInUserTextInput', () => {
 
         test('hyphen', () =>
             expect(
-                scanForMentionTriggerInUserTextInput('Hello @a-b.txt')
+                scanForMentionTriggerInUserTextInput({
+                    textBeforeCursor: 'Hello @a-b.txt',
+                    includeWhitespace: false,
+                })
             ).toEqual<MentionTrigger | null>({
                 leadOffset: 6,
                 matchingString: 'a-b.txt',
@@ -145,10 +164,28 @@ describe('scanForMentionTriggerInUserTextInput', () => {
     })
 
     test('with range', () => {
-        expect(scanForMentionTriggerInUserTextInput('a @b/c:12-34')).toEqual<MentionTrigger>({
+        expect(
+            scanForMentionTriggerInUserTextInput({
+                textBeforeCursor: 'a @b/c:12-34',
+                includeWhitespace: false,
+            })
+        ).toEqual<MentionTrigger>({
             leadOffset: 2,
             matchingString: 'b/c:12-34',
             replaceableString: '@b/c:12-34',
+        })
+    })
+
+    test('with spaces', () => {
+        expect(
+            scanForMentionTriggerInUserTextInput({
+                textBeforeCursor: 'Hello @google-docs Cody architecture ',
+                includeWhitespace: true,
+            })
+        ).toEqual<MentionTrigger>({
+            leadOffset: 6,
+            matchingString: 'google-docs Cody architecture ',
+            replaceableString: '@google-docs Cody architecture ',
         })
     })
 })

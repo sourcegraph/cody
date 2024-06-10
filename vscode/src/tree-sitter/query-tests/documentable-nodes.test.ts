@@ -89,4 +89,59 @@ describe('getDocumentableNode', () => {
             sourcesPath: 'test-data/documentable-node.java',
         })
     })
+
+    it('kotlin', async () => {
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.kotlin)
+
+        await annotateAndMatchSnapshot({
+            parser,
+            language,
+            captures: queryWrapper(queries.getDocumentableNode),
+            sourcesPath: 'test-data/documentable-node.kt',
+        })
+    })
+
+    it('rust', async () => {
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.rust)
+
+        await annotateAndMatchSnapshot({
+            parser,
+            language,
+            captures: queryWrapper(queries.getDocumentableNode),
+            sourcesPath: 'test-data/documentable-node.rs',
+        })
+    })
+
+    it('php', async () => {
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.php)
+
+        await annotateAndMatchSnapshot({
+            parser,
+            language,
+            captures: queryWrapper(queries.getDocumentableNode),
+            sourcesPath: 'test-data/documentable-node.php',
+        })
+    })
+
+    it('c', async () => {
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.c)
+
+        await annotateAndMatchSnapshot({
+            parser,
+            language,
+            captures: queryWrapper(queries.getDocumentableNode),
+            sourcesPath: 'test-data/documentable-node.c',
+        })
+    })
+
+    it('cpp', async () => {
+        const { language, parser, queries } = await initTreeSitterSDK(SupportedLanguage.cpp)
+
+        await annotateAndMatchSnapshot({
+            parser,
+            language,
+            captures: queryWrapper(queries.getDocumentableNode),
+            sourcesPath: 'test-data/documentable-node.cpp',
+        })
+    })
 })

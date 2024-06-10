@@ -180,9 +180,11 @@ export function params(
         triggerKind,
         selectedCompletionInfo,
         providerConfig,
+        firstCompletionTimeout:
+            configuration?.autocompleteFirstCompletionTimeout ??
+            DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
         requestManager: new RequestManager(),
         contextMixer: new ContextMixer(new DefaultContextStrategyFactory('none')),
-        smartThrottleService: null,
         completionIntent: getCompletionIntent({
             document,
             position,

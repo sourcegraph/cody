@@ -1,4 +1,4 @@
-.container {
+.buttons-container {
     display: flex;
     align-items: center;
     border-style: solid;
@@ -81,7 +81,6 @@
 
 .content {
     word-break: break-word;
-    line-height: 150%;
     text-wrap: wrap;
 }
 

@@ -43,12 +43,6 @@ Cody Pro users can now select the LLM they want to use for chat and experiment t
 
 Administrators for Sourcegraph Enterprise instances can choose betweeen Claude and ChatGPT models to set for their teams as well.
 
-## Cody Natural Language Search (Beta)
-
-Cody builds a Search index of your local files to make it easier to find what you’re looking for. Use a natural language query like “password hashing” or "connection retries" to quickly find and open the files that match your search.
-
-<img src="https://storage.googleapis.com/sourcegraph-assets/blog/vs-code-onboarding-walkthrough-dec-2023-natural-language.gif" width="480" alt="Natural Language Search">
-
 ## Usage
 
 This extension works for all Cody plans, including Cody Free, Cody Pro, and Cody Enterprise.

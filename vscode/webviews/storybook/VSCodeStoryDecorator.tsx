@@ -1,7 +1,7 @@
 import type { Decorator } from '@storybook/react'
 
 import {
-    type ModelProvider,
+    type Model,
     getDotComDefaultModels,
     isWindows,
     setDisplayPathEnvInfo,
@@ -12,6 +12,7 @@ import { URI } from 'vscode-uri'
 import '../../node_modules/@vscode/codicons/dist/codicon.css'
 import { AppWrapper } from '../AppWrapper'
 import { type ChatModelContext, ChatModelContextProvider } from '../chat/models/chatModelContext'
+import { ClientStateContextProvider } from '../client/clientState'
 import { WithContextProviders } from '../mentions/providers'
 import { WithChatContextClient } from '../promptEditor/plugins/atMentions/chatContextClient'
 import { dummyChatContextClient } from '../promptEditor/plugins/atMentions/fixtures'
@@ -22,6 +23,26 @@ setDisplayPathEnvInfo({
     isWindows: isWindows(),
     workspaceFolders: [isWindows() ? URI.file('C:\\') : URI.file('/')],
 })
+
+export enum Theme {
+    DarkPlus = 'dark-plus',
+    DarkModern = 'dark-modern',
+    DarkHighContrast = 'dark-high-contrast',
+    LightPlus = 'light-plus',
+    LightModern = 'light-modern',
+    LightHighContrast = 'light-high-contrast',
+    Red = 'red',
+}
+
+const themeClassnames = {
+    [Theme.DarkPlus]: 'vscode-dark',
+    [Theme.DarkModern]: 'vscode-dark',
+    [Theme.DarkHighContrast]: 'vscode-high-contrast',
+    [Theme.LightPlus]: 'vscode-light',
+    [Theme.LightModern]: 'vscode-light',
+    [Theme.LightHighContrast]: 'vscode-high-contrast-light',
+    [Theme.Red]: 'vscode-dark',
+} satisfies Record<Theme, string>
 
 /**
  * A decorator that displays a story as though it's in a VS Code webview panel, with VS Code theme
@@ -56,25 +77,35 @@ export const VSCodeViewport: (style?: CSSProperties | undefined) => Decorator = 
  * A customizable decorator for components with VS Code theme colors applied.
  */
 export function VSCodeDecorator(className: string | undefined, style?: CSSProperties): Decorator {
-    document.body.dataset.vscodeThemeKind = 'vscode-dark'
-    return story => (
-        <div className={clsx(styles.container, className)} style={style}>
-            <AppWrapper>
-                <WithChatContextClient value={dummyChatContextClient}>
-                    <ChatModelContextProvider value={useDummyChatModelContext()}>
-                        <TelemetryRecorderContext.Provider value={telemetryRecorder}>
-                            {story()}
-                        </TelemetryRecorderContext.Provider>
-                    </ChatModelContextProvider>
-                </WithChatContextClient>
-            </AppWrapper>
-        </div>
-    )
+    return (story, parameters) => {
+        const { theme } = parameters.globals
+        const themeClassname = themeClassnames[theme as Theme] || themeClassnames[Theme.DarkModern]
+
+        // Set [data-vscode-theme-kind] and className for the selected theme
+        document.body.dataset.vscodeThemeKind = themeClassname
+        document.body.className = themeClassname
+
+        return (
+            <div className={clsx(styles.container, className)} style={style}>
+                <AppWrapper>
+                    <WithChatContextClient value={dummyChatContextClient}>
+                        <ChatModelContextProvider value={useDummyChatModelContext()}>
+                            <TelemetryRecorderContext.Provider value={telemetryRecorder}>
+                                <ClientStateContextProvider value={{ initialContext: [] }}>
+                                    {story()}
+                                </ClientStateContextProvider>
+                            </TelemetryRecorderContext.Provider>
+                        </ChatModelContextProvider>
+                    </WithChatContextClient>
+                </AppWrapper>
+            </div>
+        )
+    }
 }
 
 function useDummyChatModelContext(): ChatModelContext {
     const [chatModels, setChatModels] = useState(getDotComDefaultModels())
-    const onCurrentChatModelChange = (value: ModelProvider): void => {
+    const onCurrentChatModelChange = (value: Model): void => {
         setChatModels(chatModels =>
             chatModels.map(model => ({ ...model, default: model.model === value.model }))
         )
