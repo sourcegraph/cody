@@ -18,7 +18,7 @@ import { telemetryService } from '../../services/telemetry'
 
 import type { CommandResult } from '../../CommandResult'
 import type { ChatCommandResult, EditCommandResult } from '../../CommandResult'
-import { sortContextFiles } from '../../chat/chat-view/agentContextSorting'
+import { sortContextItems } from '../../chat/chat-view/agentContextSorting'
 import { getEditor } from '../../editor/active-editor'
 import { getCommandContextFiles } from '../context'
 import { executeChat } from '../execute/ask'
@@ -175,7 +175,7 @@ export class CommandRunner implements vscode.Disposable {
             userContextFiles.push(...commandContext)
         }
 
-        sortContextFiles(userContextFiles)
+        sortContextItems(userContextFiles)
 
         return userContextFiles
     }
