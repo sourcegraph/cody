@@ -221,7 +221,7 @@ interface FormatEventPayload {
     formatter?: string
 }
 
-function logCompletionSuggestedEvent(params: SuggestedEventPayload): void {
+function logCompletionSuggestedEvent(isDotComUser: boolean, params: SuggestedEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(
@@ -229,7 +229,10 @@ function logCompletionSuggestedEvent(params: SuggestedEventPayload): void {
         'suggested',
         {
             version: 0,
-            metadata,
+            metadata: {
+                ...metadata,
+                recordsPrivateMetadataTranscript: isDotComUser ? 1 : 0,
+            },
             privateMetadata,
         },
         params
@@ -684,7 +687,7 @@ export function accepted(
 
     completionEvent.acceptedAt = performance.now()
 
-    logSuggestionEvents()
+    logSuggestionEvents(isDotComUser)
     logCompletionAcceptedEvent({
         ...getSharedParams(completionEvent),
         acceptedItem: completionItemToItemInfo(completion, isDotComUser),
@@ -770,8 +773,8 @@ export function noResponse(id: CompletionLogID): void {
  * This callback should be triggered whenever VS Code tries to highlight a new completion and it's
  * used to measure how long previous completions were visible.
  */
-export function flushActiveSuggestionRequests(): void {
-    logSuggestionEvents()
+export function flushActiveSuggestionRequests(isDotComUser: boolean): void {
+    logSuggestionEvents(isDotComUser)
 }
 
 function getInlineContextItemToLog(
@@ -793,7 +796,7 @@ function getInlineContextItemToLog(
     }
 }
 
-function logSuggestionEvents(): void {
+function logSuggestionEvents(isDotComUser: boolean): void {
     const now = performance.now()
     // biome-ignore lint/complexity/noForEach: LRUCache#forEach has different typing than #entries, so just keeping it for now
     activeSuggestionRequests.forEach(completionEvent => {
@@ -832,7 +835,7 @@ function logSuggestionEvents(): void {
             }
         }
 
-        logCompletionSuggestedEvent({
+        logCompletionSuggestedEvent(isDotComUser, {
             ...getSharedParams(completionEvent),
             latency,
             displayDuration,
