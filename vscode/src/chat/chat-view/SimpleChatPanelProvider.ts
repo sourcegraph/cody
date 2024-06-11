@@ -98,7 +98,7 @@ import { getChatPanelTitle, openFile } from './chat-helpers'
 import { getEnhancedContext } from './context'
 import { DefaultPrompter } from './prompt'
 
-interface SimpleChatPanelProviderOptions {
+export interface SimpleChatPanelProviderOptions {
     config: ChatPanelConfig
     extensionUri: vscode.Uri
     authProvider: AuthProvider
@@ -1421,7 +1421,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 }
 
-function newChatModelFromSerializedChatTranscript(
+export function newChatModelFromSerializedChatTranscript(
     json: SerializedChatTranscript,
     modelID: string
 ): SimpleChatModel {
@@ -1441,6 +1441,6 @@ function newChatModelFromSerializedChatTranscript(
     )
 }
 
-function isAbortErrorOrSocketHangUp(error: unknown): error is Error {
+export function isAbortErrorOrSocketHangUp(error: unknown): error is Error {
     return Boolean(isAbortError(error) || (error && (error as any).message === 'socket hang up'))
 }
