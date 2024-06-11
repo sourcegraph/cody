@@ -27,7 +27,7 @@ import type { ExtensionClient } from '../extension-client'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { AuthProvider } from '../services/AuthProvider'
 import { isInTutorial } from '../tutorial/helpers'
-import { FixupDecorator } from './FixupDecorator'
+import type { FixupDecorator } from './FixupDecorator'
 import { FixupDecoratorExperimental } from './FixupDecoratorExperimental'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import type { FixupFile } from './FixupFile'
@@ -708,7 +708,7 @@ export class FixupController
             undoStopAfter: true,
         }
         this.setTaskState(task, CodyTaskState.Formatting)
-        await new Promise((resolve, reject) => {
+        const formatOk = await new Promise<boolean>((resolve, reject) => {
             task.formattingResolver = resolve
             this.formatEdit(
                 visibleEditor ? visibleEditor.edit.bind(this) : new vscode.WorkspaceEdit(),
@@ -722,6 +722,11 @@ export class FixupController
                     task.formattingResolver = null
                 })
         })
+
+        if (formatOk) {
+            task.replacement = document.getText(task.selectionRange)
+            this.decorator.didFormatTask(task)
+        }
 
         // TODO: Try to update diff decorations
 
@@ -830,11 +835,6 @@ export class FixupController
             // Skip formatting in tutorial files,
             // This is an additional enhancement that doesn't add much value to the tutorial
             // and makes the tutorial UX more error-prone
-            return false
-        }
-
-        if (task.id) {
-            // force disable format
             return false
         }
 

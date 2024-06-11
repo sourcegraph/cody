@@ -94,14 +94,29 @@ export class FixupDecoratorExperimental implements vscode.Disposable {
     }
 
     public async didApplyTask(task: FixupTask): Promise<void> {
-        console.log('CALLED DID APPLY')
+        const taskOutput = computeTaskOutput(task)
+        await this.updateTaskPlaceholders(task, taskOutput)
+        this.updateTaskDecorations(task, taskOutput)
+    }
+
+    public async didFormatTask(task: FixupTask): Promise<void> {
+        if (task.id) {
+            return
+        }
+        const filePlaceholders = this.tasksWithPlaceholders.get(task.fixupFile)
+        const taskPlaceholders = filePlaceholders?.get(task)
+        if (taskPlaceholders) {
+            // Remove existing placeholders before applying them again, this is so we don't
+            // get duplicate placeholder lines if the formatting changed the code
+            filePlaceholders?.delete(task)
+            await this.removePlaceholders(task.fixupFile, taskPlaceholders.values())
+        }
         const taskOutput = computeTaskOutput(task)
         await this.updateTaskPlaceholders(task, taskOutput)
         this.updateTaskDecorations(task, taskOutput)
     }
 
     public async didCompleteTask(task: FixupTask): Promise<void> {
-        console.log('CALLED DID COMPLETE')
         await this.updateTaskPlaceholders(task, null)
         this.updateTaskDecorations(task, null)
     }
@@ -117,11 +132,9 @@ export class FixupDecoratorExperimental implements vscode.Disposable {
 
         if (isEmpty) {
             const placeholders = filePlaceholders?.get(task)
-            console.log('GOT')
             if (placeholders) {
                 // There were old placeholder lines; remove them.
                 filePlaceholders?.delete(task)
-                console.log('REMOVED')
                 await this.removePlaceholders(task.fixupFile, placeholders.values())
             }
             return
