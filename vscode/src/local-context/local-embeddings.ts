@@ -36,7 +36,7 @@ export async function createLocalEmbeddingsController(
         config.testingModelConfig ||
         ((await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyUseSourcegraphEmbeddings))
             ? (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEmbeddingsGenerateMetadata))
-                ? metadataGenModelConfig
+                ? sourcegraphMetadataModelConfig
                 : sourcegraphModelConfig
             : openaiModelConfig)
     const autoIndexingEnabled = await featureFlagProvider.evaluateFeatureFlag(
@@ -90,6 +90,14 @@ const sourcegraphModelConfig: EmbeddingsModelConfig = {
     indexPath: getIndexLibraryPath('st-v1'),
 }
 
+const sourcegraphMetadataModelConfig: EmbeddingsModelConfig = {
+    model: 'sourcegraph/st-multi-qa-mpnet-metadata',
+    dimension: 768,
+    provider: 'sourcegraph',
+    endpoint: CODY_GATEWAY_PROD_ENDPOINT,
+    indexPath: getIndexLibraryPath('st-metadata'),
+}
+
 const openaiModelConfig: EmbeddingsModelConfig = {
     model: 'openai/text-embedding-ada-002',
     dimension: 1536,
@@ -98,9 +106,6 @@ const openaiModelConfig: EmbeddingsModelConfig = {
     // empty prefix to keep backwards compatibility
     indexPath: getIndexLibraryPath(''),
 }
-
-const metadataGenModelConfig: EmbeddingsModelConfig = sourcegraphModelConfig
-metadataGenModelConfig.model = 'sourcegraph/st-multi-qa-mpnet-metadata'
 
 export class LocalEmbeddingsController
     implements LocalEmbeddingsFetcher, ContextStatusProvider, vscode.Disposable
