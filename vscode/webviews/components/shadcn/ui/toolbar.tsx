@@ -36,7 +36,7 @@ const buttonVariants = cva('tw-border-none tw-flex tw-items-center focus-visible
 
 type IconComponent = ComponentType<{ width?: number | string; height?: number | string }>
 
-export interface ToolbarButtonProps
+interface ToolbarButtonProps
     extends ButtonHTMLAttributes<HTMLButtonElement>,
         VariantProps<typeof buttonVariants> {
     tooltip?: string

@@ -1,7 +1,7 @@
 import { LRUCache } from 'lru-cache'
 import winkUtils from 'wink-nlp-utils'
 
-export const MAX_STEM_CACHE_SIZE = 30000
+const MAX_STEM_CACHE_SIZE = 30000
 
 export interface JaccardMatch {
     score: number

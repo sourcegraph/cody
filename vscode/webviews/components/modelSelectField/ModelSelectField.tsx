@@ -1,11 +1,12 @@
 import { type Model, ModelUIGroup } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { BookOpenIcon, ExternalLinkIcon } from 'lucide-react'
+import { BookOpenIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
+import { useTelemetryRecorder } from '../../utils/telemetry'
 import { chatModelIconComponent } from '../ChatModelIcon'
-import { Command, CommandGroup, CommandItem, CommandList } from '../shadcn/ui/command'
+import { Command, CommandGroup, CommandItem, CommandLink, CommandList } from '../shadcn/ui/command'
 import { ToolbarPopoverItem } from '../shadcn/ui/toolbar'
 import { cn } from '../shadcn/utils'
 import styles from './ModelSelectField.module.css'
@@ -40,6 +41,8 @@ export const ModelSelectField: React.FunctionComponent<{
     className,
     __storybook__open,
 }) => {
+    const telemetryRecorder = useTelemetryRecorder()
+
     const usableModels = useMemo(() => models.filter(m => !m.deprecated), [models])
     const selectedModel = usableModels.find(m => m.default) ?? usableModels[0]
 
@@ -49,6 +52,18 @@ export const ModelSelectField: React.FunctionComponent<{
 
     const onModelSelect = useCallback(
         (model: Model): void => {
+            telemetryRecorder.recordEvent('cody.modelSelector', 'select', {
+                metadata: {
+                    modelIsCodyProOnly: model.codyProOnly ? 1 : 0,
+                    isCodyProUser: isCodyProUser ? 1 : 0,
+                },
+                privateMetadata: {
+                    modelId: model.model,
+                    modelProvider: model.provider,
+                    modelTitle: model.title,
+                },
+            })
+
             if (showCodyProBadge && model.codyProOnly) {
                 getVSCodeAPI().postMessage({
                     command: 'links',
@@ -68,21 +83,31 @@ export const ModelSelectField: React.FunctionComponent<{
             })
             parentOnModelSelect(model)
         },
-        [showCodyProBadge, parentOnModelSelect]
+        [telemetryRecorder.recordEvent, showCodyProBadge, parentOnModelSelect, isCodyProUser]
     )
 
     const readOnly = !userInfo.isDotComUser
 
-    const onOpenChange = useCallback((open: boolean): void => {
-        if (open) {
-            // Trigger `CodyVSCodeExtension:openLLMDropdown:clicked` only when dropdown is about to be opened.
-            getVSCodeAPI().postMessage({
-                command: 'event',
-                eventName: 'CodyVSCodeExtension:openLLMDropdown:clicked',
-                properties: undefined,
-            })
-        }
-    }, [])
+    const onOpenChange = useCallback(
+        (open: boolean): void => {
+            if (open) {
+                // Trigger `CodyVSCodeExtension:openLLMDropdown:clicked` only when dropdown is about to be opened.
+                getVSCodeAPI().postMessage({
+                    command: 'event',
+                    eventName: 'CodyVSCodeExtension:openLLMDropdown:clicked',
+                    properties: undefined,
+                })
+
+                telemetryRecorder.recordEvent('cody.modelSelector', 'open', {
+                    metadata: {
+                        isCodyProUser: isCodyProUser ? 1 : 0,
+                        totalModels: usableModels.length,
+                    },
+                })
+            }
+        },
+        [telemetryRecorder.recordEvent, isCodyProUser, usableModels.length]
+    )
 
     const options = useMemo<SelectListOption[]>(
         () =>
@@ -167,7 +192,7 @@ export const ModelSelectField: React.FunctionComponent<{
             iconEnd={readOnly ? undefined : 'chevron'}
             className={cn('tw-justify-between', className)}
             disabled={readOnly}
-            defaultOpen={__storybook__open}
+            __storybook__open={__storybook__open}
             tooltip={readOnly ? undefined : 'Select a model'}
             aria-label="Select a model"
             popoverContent={close => (
@@ -191,47 +216,27 @@ export const ModelSelectField: React.FunctionComponent<{
                                 ))}
                             </CommandGroup>
                         ))}
-                        <CommandGroup>
-                            <CommandItem
-                                onSelect={() => {
-                                    // TODO: When cmdk supports links, use that instead. This
-                                    // workaround is only needed because the link's native onClick
-                                    // is not being fired because cmdk traps it. See
-                                    // https://github.com/pacocoursey/cmdk/issues/258.
-
-                                    const link = document.querySelector<HTMLAnchorElement>(
-                                        `[cmdk-list] a[href=${JSON.stringify(DOCS_URL)}]`
-                                    )
-                                    if (link) {
-                                        // This workaround successfully opens an external link in VS
-                                        // Code webviews (which block `window.open` and plain click
-                                        // MouseEvents) and in browsers.
-                                        link.focus()
-                                        try {
-                                            link.dispatchEvent(
-                                                new MouseEvent('click', {
-                                                    button: 0,
-                                                    ctrlKey: true,
-                                                    metaKey: true,
-                                                })
-                                            )
-                                        } catch (error) {
-                                            console.error(error)
-                                        }
-                                    }
-                                }}
-                            >
-                                <a
-                                    href={DOCS_URL}
+                        <CommandGroup heading="Enterprise Model Options">
+                            {ENTERPRISE_MODEL_OPTIONS.map(({ id, url, title }) => (
+                                <CommandLink
+                                    key={id}
+                                    href={url}
                                     target="_blank"
                                     rel="noreferrer"
+                                    onSelect={() => {
+                                        telemetryRecorder.recordEvent(
+                                            'cody.modelSelector',
+                                            'clickEnterpriseModelOption',
+                                            { metadata: { [id]: 1 } }
+                                        )
+                                    }}
                                     className={styles.modelTitleWithIcon}
                                 >
                                     <span className={styles.modelIcon}>
                                         {/* wider than normal to fit in with provider icons */}
-                                        <BookOpenIcon size={16} strokeWidth={2} />{' '}
+                                        <BuildingIcon size={16} strokeWidth={2} />{' '}
                                     </span>
-                                    <span className={styles.modelName}>Documentation</span>
+                                    <span className={styles.modelName}>{title}</span>
                                     <span className={styles.rightIcon}>
                                         <ExternalLinkIcon
                                             size={16}
@@ -239,8 +244,29 @@ export const ModelSelectField: React.FunctionComponent<{
                                             className="tw-opacity-80"
                                         />
                                     </span>
-                                </a>
-                            </CommandItem>
+                                </CommandLink>
+                            ))}
+                        </CommandGroup>
+                        <CommandGroup>
+                            <CommandLink
+                                href="https://sourcegraph.com/docs/cody/clients/install-vscode#supported-llm-models"
+                                target="_blank"
+                                rel="noreferrer"
+                                className={styles.modelTitleWithIcon}
+                            >
+                                <span className={styles.modelIcon}>
+                                    {/* wider than normal to fit in with provider icons */}
+                                    <BookOpenIcon size={16} strokeWidth={2} />{' '}
+                                </span>
+                                <span className={styles.modelName}>Documentation</span>
+                                <span className={styles.rightIcon}>
+                                    <ExternalLinkIcon
+                                        size={16}
+                                        strokeWidth={1.25}
+                                        className="tw-opacity-80"
+                                    />
+                                </span>
+                            </CommandLink>
                         </CommandGroup>
                     </CommandList>
                 </Command>
@@ -261,7 +287,31 @@ export const ModelSelectField: React.FunctionComponent<{
     )
 }
 
-const DOCS_URL = 'https://sourcegraph.com/docs/cody/clients/install-vscode#supported-llm-models'
+const ENTERPRISE_MODEL_DOCS_PAGE =
+    'https://sourcegraph.com/docs/cody/clients/enable-cody-enterprise?utm_source=cody.modelSelector'
+
+const ENTERPRISE_MODEL_OPTIONS: { id: string; url: string; title: string }[] = [
+    {
+        id: 'anthropic-account',
+        url: `${ENTERPRISE_MODEL_DOCS_PAGE}#use-your-organizations-anthropic-account`,
+        title: 'Anthropic account',
+    },
+    {
+        id: 'openai-account',
+        url: `${ENTERPRISE_MODEL_DOCS_PAGE}#use-your-organizations-openai-account`,
+        title: 'OpenAI account',
+    },
+    {
+        id: 'amazon-bedrock',
+        url: `${ENTERPRISE_MODEL_DOCS_PAGE}#use-amazon-bedrock-aws`,
+        title: 'Amazon Bedrock',
+    },
+    {
+        id: 'azure-openai-service',
+        url: `${ENTERPRISE_MODEL_DOCS_PAGE}#use-azure-openai-service`,
+        title: 'Azure OpenAI Service',
+    },
+]
 
 const GROUP_ORDER = [
     ModelUIGroup.Accuracy,

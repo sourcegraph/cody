@@ -98,25 +98,28 @@ export class ModelsService {
      */
     private static localModels: Model[] = []
 
-    public static async onConfigChange(enableOllamaModels: boolean): Promise<void> {
-        // Only fetch local models if user has enabled the config.
-        ModelsService.localModels = enableOllamaModels ? await fetchLocalOllamaModels() : []
+    public static async onConfigChange(): Promise<void> {
+        try {
+            ModelsService.localModels = await fetchLocalOllamaModels()
+        } catch {
+            ModelsService.localModels = []
+        }
     }
 
     /**
      * Sets the primary models available to the user.
      * NOTE: private instances can only support 1 provider ATM.
      */
-    public static setModels(providers: Model[]): void {
-        ModelsService.primaryModels = providers
+    public static setModels(models: Model[]): void {
+        ModelsService.primaryModels = models
     }
 
     /**
      * Add new models for use.
      */
-    public static addModels(providers: Model[]): void {
+    public static addModels(models: Model[]): void {
         const set = new Set(ModelsService.primaryModels)
-        for (const provider of providers) {
+        for (const provider of models) {
             set.add(provider)
         }
         ModelsService.primaryModels = Array.from(set)

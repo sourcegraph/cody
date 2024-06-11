@@ -479,7 +479,7 @@ export class AuthProvider implements AuthStatusProvider {
         this.endpointHistory = localStorage.getEndpointHistory() || []
     }
 
-    // Store endpoint in local storage, token in secret storage, and update endpoint history
+    // Store endpoint in local storage, token in secret storage, and update endpoint history.
     private async storeAuthInfo(
         endpoint: string | null | undefined,
         token: string | null | undefined
