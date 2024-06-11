@@ -108,6 +108,84 @@ export class ChatSidePanelController implements vscode.WebviewViewProvider {
     }
 }
 
+/**
+ * Replaces the other SimpleChatPanelProvider
+ */
+export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
+    private chatController?: ChatController
+
+    constructor(private options: SimpleChatPanelProviderOptions) {}
+
+    /**
+     * Revives the chat panel when the extension is reactivated.
+     */
+    public async revive(webviewPanel: vscode.WebviewPanel): Promise<void> {
+        logDebug('SimpleChatPanelProvider:revive', 'registering webview panel')
+        await this.registerWebviewPanel(webviewPanel)
+    }
+
+    /**
+     * Registers the given webview panel by setting up its options, icon, and handlers.
+     * Also stores the panel reference and disposes it when closed.
+     */
+    private async registerWebviewPanel(panel: vscode.WebviewPanel): Promise<vscode.WebviewPanel> {
+        logDebug('SimpleChatPanelProvider:registerWebviewPanel', 'registering webview panel')
+        if (this.webviewPanel || this.webview) {
+            throw new Error('Webview or webview panel already registered')
+        }
+
+        const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
+        panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'resources', 'active-chat-icon.svg')
+
+        // Reset the webview options to ensure localResourceRoots is up-to-date
+        panel.webview.options = {
+            enableScripts: true,
+            localResourceRoots: [webviewPath],
+            enableCommandUris: true,
+        }
+
+        await addWebviewViewHTML(this.extensionUri, panel)
+
+        // Register webview
+        this._webviewPanel = panel
+        this._webview = panel.webview
+        this.postContextStatus()
+
+        // Dispose panel when the panel is closed
+        panel.onDidDispose(() => {
+            this.cancelSubmitOrEditOperation()
+            this._webviewPanel = undefined
+            this._webview = undefined
+            panel.dispose()
+        })
+
+        this.disposables.push(
+            panel.webview.onDidReceiveMessage(message =>
+                this.onDidReceiveMessage(
+                    hydrateAfterPostMessage(message, uri => vscode.Uri.from(uri as any))
+                )
+            )
+        )
+
+        // Used for keeping sidebar chat view closed when webview panel is enabled
+        await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, true)
+
+        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+        void this.postMessage({
+            type: 'setConfigFeatures',
+            configFeatures: {
+                chat: configFeatures.chat,
+                attribution: configFeatures.attribution,
+            },
+        })
+
+        return panel
+    }
+}
+
+/**
+ * A controller for a chat webview, whether in the sidebar or in a panel.
+ */
 export class ChatController implements vscode.Disposable, ChatSession {
     private chatModel: SimpleChatModel
 
@@ -172,6 +250,8 @@ export class ChatController implements vscode.Disposable, ChatSession {
         this.chatModel = new SimpleChatModel(chatModel.get(authProvider, models))
         this.guardrails = guardrails
 
+        // TODO(beyang)
+        //
         // if (TestSupport.instance) {
         //     TestSupport.instance.chatPanelProvider.set(this)
         // }
@@ -234,6 +314,8 @@ export class ChatController implements vscode.Disposable, ChatSession {
      */
     private async initialize() {
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
+        // TODO(beyang)
+        //
         // panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'resources', 'active-chat-icon.svg')
 
         // Reset the webview options to ensure localResourceRoots is up-to-date
@@ -247,6 +329,8 @@ export class ChatController implements vscode.Disposable, ChatSession {
 
         this.postContextStatus()
 
+        // TODO(beyang)
+        //
         // // Dispose panel when the panel is closed
         // panel.onDidDispose(() => {
         //     this.cancelSubmitOrEditOperation()
@@ -339,6 +423,8 @@ export class ChatController implements vscode.Disposable, ChatSession {
             case 'links':
                 void openExternalLinks(message.value)
                 break
+            // TODO(beyang)
+            //
             // case 'openFile':
             //     await openFile(message.uri, message.range ?? undefined, this.webviewPanel?.viewColumn)
             //     break
@@ -850,7 +936,7 @@ export class ChatController implements vscode.Disposable, ChatSession {
                 : [],
         })
 
-        // TODO(beyang): add back:
+        // TODO(beyang):
         //
         // // Reveal the webview panel if it is hidden
         // this.webviewPanel?.reveal()
@@ -999,6 +1085,8 @@ export class ChatController implements vscode.Disposable, ChatSession {
     }
 
     private postChatTitle(): void {
+        // TODO(beyang)
+        //
         // if (this.webviewPanel) {
         //     this.webviewPanel.title = this.chatModel.getChatTitle()
         // }
@@ -1309,6 +1397,8 @@ export class ChatController implements vscode.Disposable, ChatSession {
     //     return this._webview
     // }
 
+    // TODO(beyang)
+    //
     // /**
     //  * Creates the webview panel for the Cody chat interface if it doesn't already exist.
     //  */
@@ -1363,128 +1453,3 @@ export class ChatController implements vscode.Disposable, ChatSession {
         return this.chatModel.getMessages().map(prepareChatMessage)
     }
 }
-
-// class ChatController {
-//     public static async create(webview: vscode.Webview, options: SimpleChatPanelProviderOptions) {
-//         const c = new ChatController(webview, options)
-//         await c.initalize()
-//         return c
-//     }
-
-//     private chatModel: SimpleChatModel
-
-//     private config: ChatPanelConfig
-//     private readonly authProvider: AuthProvider
-//     private readonly chatClient: ChatClient
-//     private readonly codebaseStatusProvider: CodebaseStatusProvider
-//     private readonly localEmbeddings: LocalEmbeddingsController | null
-//     private readonly contextRanking: ContextRankingController | null
-//     private readonly symf: SymfRunner | null
-//     private readonly contextStatusAggregator = new ContextStatusAggregator()
-//     private readonly editor: VSCodeEditor
-//     private readonly treeView: TreeViewProvider
-//     private readonly guardrails: Guardrails
-//     private readonly remoteSearch: RemoteSearch | null
-//     private readonly repoPicker: RemoteRepoPicker | null
-
-//     private history = new ChatHistoryManager()
-//     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
-//     private allMentionProvidersMetadataQueryCancellation?: vscode.CancellationTokenSource
-
-//     private extensionUri: vscode.Uri
-
-//     private disposables: vscode.Disposable[] = []
-//     public dispose(): void {
-//         vscode.Disposable.from(...this.disposables).dispose()
-//         this.disposables = []
-//     }
-
-//     constructor(
-//         private webview: vscode.Webview,
-//         {
-//             config,
-//             extensionUri,
-//             authProvider,
-//             chatClient,
-//             localEmbeddings,
-//             contextRanking,
-//             symf,
-//             editor,
-//             treeView,
-//             models,
-//             guardrails,
-//             enterpriseContext,
-//         }: SimpleChatPanelProviderOptions
-//     ) {
-//         this.config = config
-//         this.extensionUri = extensionUri
-//         this.authProvider = authProvider
-//         this.chatClient = chatClient
-//         this.localEmbeddings = localEmbeddings
-//         this.contextRanking = contextRanking
-//         this.symf = symf
-//         this.repoPicker = enterpriseContext?.repoPicker || null
-//         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
-//         this.editor = editor
-//         this.treeView = treeView
-//         this.chatModel = new SimpleChatModel(chatModel.get(authProvider, models))
-//         this.guardrails = guardrails
-
-//         // Advise local embeddings to start up if necessary.
-//         void this.localEmbeddings?.start()
-
-//         // Start the context Ranking module
-//         void this.contextRanking?.start()
-
-//         // Push context status to the webview when it changes.
-//         this.disposables.push(
-//             this.contextStatusAggregator.onDidChangeStatus(() => this.postContextStatus())
-//         )
-//         this.disposables.push(this.contextStatusAggregator)
-//         if (this.localEmbeddings) {
-//             this.disposables.push(this.contextStatusAggregator.addProvider(this.localEmbeddings))
-//         }
-//         this.codebaseStatusProvider = new CodebaseStatusProvider(
-//             this.editor,
-//             this.symf,
-//             enterpriseContext ? enterpriseContext.getCodebaseRepoIdMapper() : null
-//         )
-//         this.disposables.push(this.contextStatusAggregator.addProvider(this.codebaseStatusProvider))
-
-//         if (this.remoteSearch) {
-//             this.disposables.push(
-//                 // Display enhanced context status from the remote search provider
-//                 this.contextStatusAggregator.addProvider(this.remoteSearch),
-
-//                 // When the codebase has a remote ID, include it automatically
-//                 this.codebaseStatusProvider.onDidChangeStatus(async () => {
-//                     const codebase = await this.codebaseStatusProvider.currentCodebase()
-//                     if (codebase?.remote && codebase.remoteRepoId) {
-//                         this.remoteSearch?.setRepos(
-//                             [
-//                                 {
-//                                     name: codebase.remote,
-//                                     id: codebase.remoteRepoId,
-//                                 },
-//                             ],
-//                             RepoInclusion.Automatic
-//                         )
-//                     }
-//                 })
-//             )
-//         }
-
-//         this.disposables.push(
-//             startClientStateBroadcaster({
-//                 remoteSearch: this.remoteSearch,
-//                 postMessage: (message: ExtensionMessage) => this.postMessage(message),
-//             })
-//         )
-//     }
-
-//     private async initalize() {
-//         await addWebviewViewHTML(this.extensionUri, panel)
-
-//         this.webview.html = '<div>hello world 2</div>'
-//     }
-// }

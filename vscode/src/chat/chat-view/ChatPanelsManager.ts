@@ -99,6 +99,7 @@ export class ChatPanelsManager implements vscode.Disposable {
             )
         )
 
+        // HACK: something in `createSidePanel` depends on waiting for something to initialize
         new Promise(resolve => setTimeout(resolve, 10_000)).then(() => {
             console.log('ChatPanelsManager: initializing')
             const sidebarWebviewProvider = this.createSidePanel()
