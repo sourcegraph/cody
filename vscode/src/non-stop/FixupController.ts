@@ -746,10 +746,10 @@ export class FixupController
     public async replaceEdit(
         edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit,
         diff: Diff,
-        task: FixupTask
+        task: FixupTask,
+        options?: { undoStopBefore: boolean; undoStopAfter: boolean }
     ): Promise<boolean> {
         logDebug('FixupController:edit', 'replacing ')
-        let editOk: boolean
 
         if (edit instanceof vscode.WorkspaceEdit) {
             for (const diffEdit of diff.edits) {
@@ -762,31 +762,20 @@ export class FixupController
                     diffEdit.text
                 )
             }
-            editOk = await vscode.workspace.applyEdit(edit)
-        } else {
-            editOk = await edit(
-                editBuilder => {
-                    for (const diffEdit of diff.edits) {
-                        editBuilder.replace(
-                            new vscode.Range(
-                                new vscode.Position(
-                                    diffEdit.range.start.line,
-                                    diffEdit.range.start.character
-                                ),
-                                new vscode.Position(
-                                    diffEdit.range.end.line,
-                                    diffEdit.range.end.character
-                                )
-                            ),
-                            diffEdit.text
-                        )
-                    }
-                },
-                { undoStopAfter: false, undoStopBefore: false }
-            )
+            return vscode.workspace.applyEdit(edit)
         }
 
-        return editOk
+        return edit(editBuilder => {
+            for (const diffEdit of diff.edits) {
+                editBuilder.replace(
+                    new vscode.Range(
+                        new vscode.Position(diffEdit.range.start.line, diffEdit.range.start.character),
+                        new vscode.Position(diffEdit.range.end.line, diffEdit.range.end.character)
+                    ),
+                    diffEdit.text
+                )
+            }
+        }, options)
     }
 
     // Insert edit returned by Cody at task selection range
@@ -798,6 +787,7 @@ export class FixupController
     ): Promise<boolean> {
         logDebug('FixupController:edit', 'inserting')
         const text = task.replacement
+        // If we have specified a dedicated insertion point - use that.
         // Otherwise fall back to using the start of the selection range.
         const insertionPoint = task.insertionPoint || task.selectionRange.start
         if (!text) {
