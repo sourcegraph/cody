@@ -26,10 +26,7 @@ describe('DefaultPrompter', () => {
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
 
-        const { prompt, context } = await new DefaultPrompter([], () => Promise.resolve([])).makePrompt(
-            chat,
-            0
-        )
+        const { prompt, context } = await new DefaultPrompter([]).makePrompt(chat, 0)
 
         expect(prompt).toEqual<Message[]>([
             {
@@ -64,10 +61,7 @@ describe('DefaultPrompter', () => {
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
 
-        const { prompt, context } = await new DefaultPrompter([], () => Promise.resolve([])).makePrompt(
-            chat,
-            0
-        )
+        const { prompt, context } = await new DefaultPrompter([]).makePrompt(chat, 0)
 
         expect(prompt).toEqual<Message[]>([
             {

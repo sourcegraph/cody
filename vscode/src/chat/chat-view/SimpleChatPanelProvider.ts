@@ -595,7 +595,8 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                                   },
                                   contextRanking: this.contextRanking,
                               })
-                        : undefined
+                        : undefined,
+                    command !== undefined
                 )
                 const sendTelemetry = (contextSummary: any, privateContextStats?: any): void => {
                     const properties = {

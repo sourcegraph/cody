@@ -9,7 +9,7 @@
   "icon": "resources/cody.png",
   "description": "AI coding assistant that uses search and codebase context to help you write code faster. Cody brings autocomplete, chat, and commands to VS Code, so you can generate code, write unit tests, create docs, and explain complex code using AI. Choose from the latest LLMs, including GPT-4o and Claude 3.",
   "scripts": {
-    "postinstall": "pnpm download-wasm",
+    "postinstall": "pnpm download-wasm && playwright install",
     "dev": "pnpm run -s dev:desktop",
     "dev:insiders": "pnpm run -s dev:desktop:insiders",
     "start:dev:desktop": "NODE_ENV=development code --extensionDevelopmentPath=$PWD --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --inspect-extensions=9333 --new-window . --goto ./src/completions/inline-completion-item-provider.ts:16:5",
@@ -1375,7 +1375,7 @@
   },
   "devDependencies": {
     "@google-cloud/pubsub": "^3.7.3",
-    "@playwright/test": "1.39.0",
+    "@playwright/test": "1.44.1",
     "@pollyjs/adapter-node-http": "^6.0.6",
     "@pollyjs/core": "^6.0.6",
     "@pollyjs/persister": "^6.0.6",
@@ -1415,7 +1415,7 @@
     "ovsx": "^0.8.2",
     "pako": "^2.1.0",
     "path-browserify": "^1.0.1",
-    "playwright": "1.39.0",
+    "playwright": "1.44.1",
     "postcss": "^8.4.38",
     "progress": "^2.0.3",
     "react-head": "^3.4.2",
