@@ -82,6 +82,9 @@ export class ChatManager implements vscode.Disposable {
             vscode.commands.registerCommand('cody.chat.history.clear', () => this.clearHistory()),
             vscode.commands.registerCommand('cody.chat.history.delete', item => this.clearHistory(item)),
             vscode.commands.registerCommand('cody.chat.panel.new', () => this.createNewWebviewPanel()),
+            vscode.commands.registerCommand('cody.chat.panel.new.sidebar', () =>
+                this.createNewWebviewPanel()
+            ),
             vscode.commands.registerCommand('cody.chat.panel.restore', (id, chat) =>
                 this.restorePanel(id, chat)
             ),

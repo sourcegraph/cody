@@ -237,6 +237,12 @@
           "when": "!cody.activated"
         },
         {
+          "type": "webview",
+          "id": "cody.asdf",
+          "name": "ASDF",
+          "when": "cody.activated"
+        },
+        {
           "id": "cody.commands.tree.view",
           "name": "Commands",
           "when": "cody.activated && !cody.currentFileIgnored"
@@ -443,6 +449,14 @@
         "command": "cody.chat.panel.new",
         "category": "Cody",
         "title": "New Chat",
+        "enablement": "cody.activated",
+        "group": "Cody",
+        "icon": "$(new-comment-icon)"
+      },
+      {
+        "command": "cody.chat.panel.new.sidebar",
+        "category": "Cody",
+        "title": "New Chat (sidebar)",
         "enablement": "cody.activated",
         "group": "Cody",
         "icon": "$(new-comment-icon)"
