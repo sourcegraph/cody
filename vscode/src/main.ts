@@ -22,7 +22,6 @@ import type { CommandResult } from './CommandResult'
 import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
-import { ChatSidePanelController } from './chat/chat-view/ChatSidePanelController'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
@@ -763,13 +762,6 @@ function registerChat(
             configWatcher.set(newConfig)
         })
     )
-
-    // Create sidepanel webview
-    // TODO(beyang): handle disposable, save in the proper place
-    const sidebarWebviewProvider = new ChatSidePanelController()
-    vscode.window.registerWebviewViewProvider('cody.asdf', sidebarWebviewProvider, {
-        webviewOptions: { retainContextWhenHidden: true },
-    })
 
     if (localEmbeddings) {
         // kick-off embeddings initialization

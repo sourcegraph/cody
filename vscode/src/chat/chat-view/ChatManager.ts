@@ -12,7 +12,6 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
-import type { View } from '../../../webviews/NavBar'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
@@ -107,17 +106,6 @@ export class ChatManager implements vscode.Disposable {
 
     public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
         await this.chatPanelsManager.syncAuthStatus(authStatus)
-    }
-
-    public async setWebviewView(view: View): Promise<void> {
-        // Chat panel is only used for chat view
-        // Request to open chat panel for login view/unAuth users, will be sent to sidebar view
-        if (!this.options.authProvider.getAuthStatus()?.isLoggedIn || view !== 'chat') {
-            return vscode.commands.executeCommand('cody.chat.focus')
-        }
-
-        const chatProvider = await this.chatPanelsManager.getNewChatPanel()
-        await chatProvider?.setWebviewView(view)
     }
 
     /**
@@ -316,4 +304,29 @@ export async function addWebviewViewHTML(
     view.webview.html = decoded
         .replaceAll('./', `${resources.toString()}/`)
         .replaceAll('{cspSource}', view.webview.cspSource)
+}
+
+/**
+ * Set HTML for webview (panel) & webview view (sidebar)
+ */
+export async function addWebviewViewHTML_new(
+    extensionUri: vscode.Uri,
+    webview: vscode.Webview
+): Promise<void> {
+    if (isRunningInsideAgent()) {
+        return
+    }
+    const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
+    // Create Webview using vscode/index.html
+    const root = vscode.Uri.joinPath(webviewPath, 'index.html')
+    const bytes = await vscode.workspace.fs.readFile(root)
+    const decoded = new TextDecoder('utf-8').decode(bytes)
+    const resources = webview.asWebviewUri(webviewPath)
+
+    // This replace variables from the vscode/dist/index.html with webview info
+    // 1. Update URIs to load styles and scripts into webview (eg. path that starts with ./)
+    // 2. Update URIs for content security policy to only allow specific scripts to be run
+    webview.html = decoded
+        .replaceAll('./', `${resources.toString()}/`)
+        .replaceAll('{cspSource}', webview.cspSource)
 }

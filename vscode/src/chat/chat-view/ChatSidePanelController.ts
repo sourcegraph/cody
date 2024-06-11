@@ -34,7 +34,6 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
-import type { View } from '../../../webviews/NavBar'
 import { getFullConfig } from '../../configuration'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import { logDebug } from '../../log'
@@ -66,8 +65,7 @@ import type {
     LocalEnv,
     WebviewMessage,
 } from '../protocol'
-import { CodyChatPanelViewType } from './ChatManager'
-import type { ChatViewProviderWebview } from './ChatPanelsManager'
+import { CodyChatPanelViewType, addWebviewViewHTML_new } from './ChatManager'
 import { InitDoer } from './InitDoer'
 import { prepareChatMessage } from './SimpleChatModel'
 import {
@@ -76,7 +74,6 @@ import {
     isAbortErrorOrSocketHangUp,
     newChatModelFromSerializedChatTranscript,
 } from './SimpleChatPanelProvider'
-import { getChatPanelTitle, openFile } from './chat-helpers'
 import { getEnhancedContext } from './context'
 import { DefaultPrompter } from './prompt'
 
@@ -91,11 +88,9 @@ import type { SymfRunner } from '../../local-context/symf'
 import { chatModel } from '../../models'
 import type { AuthProvider } from '../../services/AuthProvider'
 import type { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
-import { TestSupport } from '../../test-support'
 import { startClientStateBroadcaster } from '../clientStateBroadcaster'
 import type { ExtensionMessage } from '../protocol'
 import { ChatHistoryManager } from './ChatHistoryManager'
-import { addWebviewViewHTML } from './ChatManager'
 import type { ChatPanelConfig } from './ChatPanelsManager'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { SimpleChatModel } from './SimpleChatModel'
@@ -233,9 +228,52 @@ export class ChatController implements vscode.Disposable, ChatSession {
         )
     }
 
+    /**
+     * Registers the given webview panel by setting up its options, icon, and handlers.
+     * Also stores the panel reference and disposes it when closed.
+     */
     private async initialize() {
-        // TODO(beyang): initialize the webview
-        // NEXT
+        const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
+        // panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'resources', 'active-chat-icon.svg')
+
+        // Reset the webview options to ensure localResourceRoots is up-to-date
+        this.webview.options = {
+            enableScripts: true,
+            localResourceRoots: [webviewPath],
+            enableCommandUris: true,
+        }
+
+        await addWebviewViewHTML_new(this.extensionUri, this.webview)
+
+        this.postContextStatus()
+
+        // // Dispose panel when the panel is closed
+        // panel.onDidDispose(() => {
+        //     this.cancelSubmitOrEditOperation()
+        //     this._webviewPanel = undefined
+        //     this._webview = undefined
+        //     panel.dispose()
+        // })
+
+        this.disposables.push(
+            this.webview.onDidReceiveMessage(message =>
+                this.onDidReceiveMessage(
+                    hydrateAfterPostMessage(message, uri => vscode.Uri.from(uri as any))
+                )
+            )
+        )
+
+        // Used for keeping sidebar chat view closed when webview panel is enabled
+        await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, true)
+
+        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+        void this.postMessage({
+            type: 'setConfigFeatures',
+            configFeatures: {
+                chat: configFeatures.chat,
+                attribution: configFeatures.attribution,
+            },
+        })
     }
 
     /**
@@ -1307,92 +1345,13 @@ export class ChatController implements vscode.Disposable, ChatSession {
     //     return this.registerWebviewPanel(panel)
     // }
 
-    /**
-     * Revives the chat panel when the extension is reactivated.
-     */
-    public async revive(webviewPanel: vscode.WebviewPanel): Promise<void> {
-        logDebug('SimpleChatPanelProvider:revive', 'registering webview panel')
-        await this.registerWebviewPanel(webviewPanel)
-    }
-
-    /**
-     * Registers the given webview panel by setting up its options, icon, and handlers.
-     * Also stores the panel reference and disposes it when closed.
-     */
-    private async registerWebviewPanel(panel: vscode.WebviewPanel): Promise<vscode.WebviewPanel> {
-        logDebug('SimpleChatPanelProvider:registerWebviewPanel', 'registering webview panel')
-        if (this.webviewPanel || this.webview) {
-            throw new Error('Webview or webview panel already registered')
-        }
-
-        const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
-        panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'resources', 'active-chat-icon.svg')
-
-        // Reset the webview options to ensure localResourceRoots is up-to-date
-        panel.webview.options = {
-            enableScripts: true,
-            localResourceRoots: [webviewPath],
-            enableCommandUris: true,
-        }
-
-        await addWebviewViewHTML(this.extensionUri, panel)
-
-        // Register webview
-        this._webviewPanel = panel
-        this._webview = panel.webview
-        this.postContextStatus()
-
-        // Dispose panel when the panel is closed
-        panel.onDidDispose(() => {
-            this.cancelSubmitOrEditOperation()
-            this._webviewPanel = undefined
-            this._webview = undefined
-            panel.dispose()
-        })
-
-        this.disposables.push(
-            panel.webview.onDidReceiveMessage(message =>
-                this.onDidReceiveMessage(
-                    hydrateAfterPostMessage(message, uri => vscode.Uri.from(uri as any))
-                )
-            )
-        )
-
-        // Used for keeping sidebar chat view closed when webview panel is enabled
-        await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, true)
-
-        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
-        void this.postMessage({
-            type: 'setConfigFeatures',
-            configFeatures: {
-                chat: configFeatures.chat,
-                attribution: configFeatures.attribution,
-            },
-        })
-
-        return panel
-    }
-
-    public async setWebviewView(view: View): Promise<void> {
-        if (view !== 'chat') {
-            // Only chat view is supported in the webview panel.
-            // When a different view is requested,
-            // Set context to notifiy the webview panel to close.
-            // This should close the webview panel and open the login view in the sidebar.
-            await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, false)
-            await vscode.commands.executeCommand('setContext', 'cody.activated', false)
-            return
-        }
-        if (!this.webviewPanel) {
-            await this.createWebviewPanel()
-        }
-        this.webviewPanel?.reveal()
-
-        await this.postMessage({
-            type: 'view',
-            view: view,
-        })
-    }
+    // /**
+    //  * Revives the chat panel when the extension is reactivated.
+    //  */
+    // public async revive(webviewPanel: vscode.WebviewPanel): Promise<void> {
+    //     logDebug('SimpleChatPanelProvider:revive', 'registering webview panel')
+    //     await this.registerWebviewPanel(webviewPanel)
+    // }
 
     // #endregion
     // =======================================================================

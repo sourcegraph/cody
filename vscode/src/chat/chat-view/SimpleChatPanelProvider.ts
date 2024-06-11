@@ -42,7 +42,6 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
-import type { View } from '../../../webviews/NavBar'
 import { getFullConfig } from '../../configuration'
 import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
 import { resolveContextItems } from '../../editor/utils/editor-context'
@@ -1387,27 +1386,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         })
 
         return panel
-    }
-
-    public async setWebviewView(view: View): Promise<void> {
-        if (view !== 'chat') {
-            // Only chat view is supported in the webview panel.
-            // When a different view is requested,
-            // Set context to notifiy the webview panel to close.
-            // This should close the webview panel and open the login view in the sidebar.
-            await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, false)
-            await vscode.commands.executeCommand('setContext', 'cody.activated', false)
-            return
-        }
-        if (!this.webviewPanel) {
-            await this.createWebviewPanel()
-        }
-        this.webviewPanel?.reveal()
-
-        await this.postMessage({
-            type: 'view',
-            view: view,
-        })
     }
 
     // #endregion

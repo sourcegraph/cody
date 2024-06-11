@@ -26,6 +26,7 @@ import type { EnterpriseContextFactory } from '../../context/enterprise-context-
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType } from './ChatManager'
+import { ChatSidePanelController } from './ChatSidePanelController'
 import type { SidebarViewOptions } from './SidebarViewController'
 import { SimpleChatPanelProvider } from './SimpleChatPanelProvider'
 
@@ -97,6 +98,14 @@ export class ChatPanelsManager implements vscode.Disposable {
                 this.supportTreeViewProvider
             )
         )
+
+        new Promise(resolve => setTimeout(resolve, 10_000)).then(() => {
+            console.log('ChatPanelsManager: initializing')
+            const sidebarWebviewProvider = this.createSidePanel()
+            vscode.window.registerWebviewViewProvider('cody.asdf', sidebarWebviewProvider, {
+                webviewOptions: { retainContextWhenHidden: true },
+            })
+        })
     }
 
     public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
@@ -215,6 +224,27 @@ export class ChatPanelsManager implements vscode.Disposable {
         this.selectTreeItem(sessionID)
 
         return provider
+    }
+
+    private createSidePanel(): ChatSidePanelController {
+        const authProvider = this.options.authProvider
+        const authStatus = authProvider.getAuthStatus()
+
+        const isConsumer = authStatus.isDotCom
+        const isCodyProUser = !authStatus.userCanUpgrade
+        const models = ModelsService.getModels(ModelUsage.Chat, isCodyProUser)
+
+        return new ChatSidePanelController({
+            ...this.options,
+            config: this.options.contextProvider.config,
+            chatClient: this.chatClient,
+            localEmbeddings: isConsumer ? this.localEmbeddings : null,
+            contextRanking: isConsumer ? this.contextRanking : null,
+            symf: isConsumer ? this.symf : null,
+            enterpriseContext: isConsumer ? null : this.enterpriseContext,
+            models,
+            guardrails: this.guardrails,
+        })
     }
 
     /**
