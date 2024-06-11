@@ -16,6 +16,7 @@ import {
     useClientState,
 } from '../../../../../client/clientState'
 import { PromptEditor, type PromptEditorRefAPI } from '../../../../../promptEditor/PromptEditor'
+import { useTelemetryRecorder } from '../../../../../utils/telemetry'
 import styles from './HumanMessageEditor.module.css'
 import type { SubmitButtonDisabled } from './toolbar/SubmitButton'
 import { Toolbar } from './toolbar/Toolbar'
@@ -59,12 +60,14 @@ export const HumanMessageEditor: FunctionComponent<{
     isPendingPriorResponse,
     disabled = false,
     onChange,
-    onSubmit,
+    onSubmit: parentOnSubmit,
     isEditorInitiallyFocused,
     className,
     editorRef: parentEditorRef,
     __storybook__focus,
 }) => {
+    const telemetryRecorder = useTelemetryRecorder()
+
     const editorRef = useRef<PromptEditorRefAPI>(null)
     useImperativeHandle(parentEditorRef, (): PromptEditorRefAPI | null => editorRef.current, [])
 
@@ -93,8 +96,19 @@ export const HumanMessageEditor: FunctionComponent<{
         if (!editorRef.current) {
             throw new Error('No editorRef')
         }
-        onSubmit(editorRef.current.getSerializedValue())
-    }, [submitDisabled, onSubmit])
+
+        const value = editorRef.current.getSerializedValue()
+        parentOnSubmit(value)
+
+        telemetryRecorder.recordEvent('cody.humanMessageEditor', 'submit', {
+            metadata: {
+                isFirstMessage: isFirstMessage ? 1 : 0,
+                isEdit: isSent ? 1 : 0,
+                messageLength: value.text.length,
+                contextItems: value.contextItems.length,
+            },
+        })
+    }, [submitDisabled, parentOnSubmit, telemetryRecorder.recordEvent, isFirstMessage, isSent])
 
     const onEditorEnterKey = useCallback(
         (event: KeyboardEvent | null): void => {
@@ -165,7 +179,17 @@ export const HumanMessageEditor: FunctionComponent<{
             throw new Error('No editorRef')
         }
         editorRef.current.appendText('@', true)
-    }, [])
+
+        const value = editorRef.current.getSerializedValue()
+        telemetryRecorder.recordEvent('cody.humanMessageEditor.toolbar.mention', 'click', {
+            metadata: {
+                isFirstMessage: isFirstMessage ? 1 : 0,
+                isEdit: isSent ? 1 : 0,
+                messageLength: value.text.length,
+                contextItems: value.contextItems.length,
+            },
+        })
+    }, [telemetryRecorder.recordEvent, isFirstMessage, isSent])
 
     // Set up the message listener for adding new context from user's editor to chat from the "Cody
     // > Add Selection to Cody Chat" command. Only add to the last human input.
