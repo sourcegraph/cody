@@ -256,7 +256,7 @@ export const MentionMenu: FunctionComponent<
 
                 {(heading || (data.items && data.items.length > 0)) && (
                     <CommandGroup heading={heading}>
-                        {heading && <CommandSeparator />}
+                        {heading && data.items && data.items.length > 0 && <CommandSeparator />}
                         {data.items?.map(item => (
                             <CommandItem
                                 key={commandRowValue(item)}
@@ -294,12 +294,17 @@ function getEmptyLabel(
     parentItem: ContextMentionProviderMetadata | null,
     mentionQuery: MentionQuery
 ): string {
+    if (!mentionQuery.text) {
+        return 'Search...'
+    }
+
     if (!parentItem) {
         return FILE_CONTEXT_MENTION_PROVIDER.emptyLabel!
     }
     if (parentItem.id === SYMBOL_CONTEXT_MENTION_PROVIDER.id && mentionQuery.text.length < 3) {
         return SYMBOL_CONTEXT_MENTION_PROVIDER.emptyLabel! + NO_SYMBOL_MATCHES_HELP_LABEL
     }
+
     return parentItem.emptyLabel ?? 'No results'
 }
 

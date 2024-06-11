@@ -2,9 +2,11 @@ import * as vscode from 'vscode'
 
 import {
     type AuthStatus,
+    type ChatClient,
     ConfigFeaturesSingleton,
     type ConfigurationWithAccessToken,
     type DefaultCodyCommands,
+    type Guardrails,
     ModelsService,
     PromptString,
     contextFiltersProvider,
@@ -42,7 +44,8 @@ import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { createInlineCompletionItemFromMultipleProviders } from './completions/create-multi-model-inline-completion-provider'
-import { getConfiguration, getFullConfig } from './configuration'
+import { getFullConfig } from './configuration'
+import { BaseConfigWatcher, type ConfigWatcher } from './configwatcher'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
 import { exposeOpenCtxClient } from './context/openctx'
 import { EditManager } from './edit/manager'
@@ -51,6 +54,9 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
+import type { ContextRankingController } from './local-context/context-ranking'
+import type { LocalEmbeddingsController } from './local-context/local-embeddings'
+import type { SymfRunner } from './local-context/symf'
 import { logDebug, logError } from './log'
 import { MinionOrchestrator } from './minion/MinionOrchestrator'
 import { PoorMansBash } from './minion/environment'
@@ -99,24 +105,15 @@ export async function start(
 
     const disposables: vscode.Disposable[] = []
 
-    const { disposable, onConfigurationChange } = await register(
-        context,
-        await getFullConfig(),
-        platform
-    )
-    disposables.push(disposable)
+    const configWatcher = await BaseConfigWatcher.create(getFullConfig, disposables)
 
-    // Re-initialize when configuration changes.
-    disposables.push(
-        vscode.workspace.onDidChangeConfiguration(async event => {
-            if (event.affectsConfiguration('cody')) {
-                const config = await getFullConfig()
-                await onConfigurationChange(config)
-                platform.onConfigurationChange?.(config)
-                registerModelsFromVSCodeConfiguration()
-            }
-        })
-    )
+    configWatcher.onChange(async config => {
+        platform.onConfigurationChange?.(config)
+        registerModelsFromVSCodeConfiguration()
+    }, disposables)
+
+    const { disposable } = await register(context, configWatcher, platform)
+    disposables.push(disposable)
 
     return vscode.Disposable.from(...disposables)
 }
@@ -124,39 +121,38 @@ export async function start(
 // Registers commands and webview given the config.
 const register = async (
     context: vscode.ExtensionContext,
-    initialConfig: ConfigurationWithAccessToken,
+    configWatcher: ConfigWatcher<ConfigurationWithAccessToken>,
     platform: PlatformContext
 ): Promise<{
     disposable: vscode.Disposable
-    onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => Promise<void>
 }> => {
-    setClientNameVersion(platform.extensionClient.clientName, platform.extensionClient.clientVersion)
-    const authProvider = AuthProvider.create(initialConfig)
-    await localStorage.setConfig(initialConfig)
-
     const disposables: vscode.Disposable[] = []
-    // Initialize `displayPath` first because it might be used to display paths in error messages
-    // from the subsequent initialization.
-    disposables.push(manageDisplayPathEnvInfoForExtension())
-
-    disposables.push(await initVSCodeGitApi())
-
+    const initialConfig = configWatcher.get()
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
 
-    await configureEventsInfra(initialConfig, isExtensionModeDevOrTest, authProvider)
+    setClientNameVersion(platform.extensionClient.clientName, platform.extensionClient.clientVersion)
+    const authProvider = AuthProvider.create(initialConfig)
 
-    const editor = new VSCodeEditor()
+    // Initialize `displayPath` first because it might be used to display paths in error messages
+    // from the subsequent initialization.
+    disposables.push(manageDisplayPathEnvInfoForExtension())
 
-    // Could we use the `initialConfig` instead?
-    const workspaceConfig = vscode.workspace.getConfiguration()
-    const config = getConfiguration(workspaceConfig)
+    // Init local storage
+    await configWatcher.initAndOnChange(async config => {
+        await localStorage.setConfig(config)
+    }, disposables)
 
-    void parseAllVisibleDocuments()
+    // Ensure Git API is available
+    disposables.push(await initVSCodeGitApi())
 
-    disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
-    disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
+    // Telemetry
+    await configWatcher.initAndOnChange(async config => {
+        await configureEventsInfra(config, isExtensionModeDevOrTest, authProvider)
+    }, disposables)
+
+    registerParserListeners(disposables)
 
     // Enable tracking for pasting chat responses into editor text
     disposables.push(
@@ -174,9 +170,13 @@ const register = async (
 
     await exposeOpenCtxClient(context.secrets, initialConfig)
 
-    graphqlClient.onConfigurationChange(initialConfig)
-    void featureFlagProvider.syncAuthStatus()
+    await configWatcher.initAndOnChange(async config => {
+        graphqlClient.onConfigurationChange(config)
+        // githubClient.onConfigurationChange({ authToken: config.experimentalGithubAccessToken })
+        await featureFlagProvider.syncAuthStatus()
+    }, disposables)
 
+    // Initialize external services
     const {
         chatClient,
         completionsClient,
@@ -187,19 +187,20 @@ const register = async (
         onConfigurationChange: externalServicesOnDidConfigurationChange,
         symfRunner,
     } = await configureExternalServices(context, initialConfig, platform, authProvider)
+    configWatcher.onChange(async config => {
+        externalServicesOnDidConfigurationChange(config)
+        symfRunner?.setSourcegraphAuth(config.serverEndpoint, config.accessToken)
+    }, disposables)
 
     if (symfRunner) {
         disposables.push(symfRunner)
     }
 
-    //
-    // Minion stuff
-    //
-    if (config.experimentalMinionAnthropicKey) {
+    // Initialize Minion
+    if (initialConfig.experimentalMinionAnthropicKey) {
         const minionOrchestrator = new MinionOrchestrator(context.extensionUri, authProvider, symfRunner)
         disposables.push(minionOrchestrator)
         disposables.push(
-            // Minion
             vscode.commands.registerCommand('cody.minion.panel.new', () =>
                 minionOrchestrator.createNewMinionPanel()
             ),
@@ -210,9 +211,15 @@ const register = async (
         )
     }
 
+    // Initialize enterprise context
     const enterpriseContextFactory = new EnterpriseContextFactory(completionsClient)
     disposables.push(enterpriseContextFactory)
+    configWatcher.onChange(async () => {
+        enterpriseContextFactory.clientConfigurationDidChange()
+    }, disposables)
 
+    // Initialize context provider
+    const editor = new VSCodeEditor()
     const contextProvider = new ContextProvider(
         initialConfig,
         editor,
@@ -220,103 +227,38 @@ const register = async (
         localEmbeddings,
         enterpriseContextFactory.createRemoteSearch()
     )
-    disposables.push(contextFiltersProvider)
     disposables.push(contextProvider)
+    disposables.push(contextFiltersProvider)
     await contextFiltersProvider
         .init(repoNameResolver.getRepoNamesFromWorkspaceUri)
         .then(() => contextProvider.init())
 
-    // Shared configuration that is required for chat views to send and receive messages
-    const messageProviderOptions: MessageProviderOptions = {
-        chat: chatClient,
-        guardrails,
-        editor,
-        authProvider,
-        contextProvider,
-    }
+    configWatcher.onChange(async config => {
+        await contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri)
+        await contextProvider.onConfigurationChange(config)
+        await localEmbeddings?.setAccessToken(config.serverEndpoint, config.accessToken)
+    }, disposables)
 
-    const chatManager = new ChatManager(
+    const { chatManager, editorManager } = registerChat(
         {
-            ...messageProviderOptions,
-            extensionUri: context.extensionUri,
-            config,
-            startTokenReceiver: platform.startTokenReceiver,
+            context,
+            configWatcher,
+            platform,
+            chatClient,
+            guardrails,
+            editor,
+            authProvider,
+            contextProvider,
+            enterpriseContextFactory,
+            localEmbeddings,
+            contextRanking,
+            symfRunner,
         },
-        chatClient,
-        enterpriseContextFactory,
-        localEmbeddings || null,
-        contextRanking || null,
-        symfRunner || null,
-        guardrails
+        disposables
     )
 
-    const ghostHintDecorator = new GhostHintDecorator(authProvider)
-    const editorManager = new EditManager({
-        chat: chatClient,
-        editor,
-        ghostHintDecorator,
-        authProvider,
-        extensionClient: platform.extensionClient,
-    })
-    disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider({ contextProvider }))
-
-    let oldConfig = JSON.stringify(initialConfig)
-    async function onConfigurationChange(newConfig: ConfigurationWithAccessToken): Promise<void> {
-        if (oldConfig === JSON.stringify(newConfig)) {
-            return Promise.resolve()
-        }
-
-        ModelsService.onConfigChange()
-
-        const promises: Promise<void>[] = []
-        oldConfig = JSON.stringify(newConfig)
-
-        promises.push(featureFlagProvider.syncAuthStatus())
-        graphqlClient.onConfigurationChange(newConfig)
-        upstreamHealthProvider.onConfigurationChange(newConfig)
-        promises.push(
-            contextFiltersProvider
-                .init(repoNameResolver.getRepoNamesFromWorkspaceUri)
-                .then(() => contextProvider.onConfigurationChange(newConfig))
-        )
-        externalServicesOnDidConfigurationChange(newConfig)
-        promises.push(configureEventsInfra(newConfig, isExtensionModeDevOrTest, authProvider))
-        platform.onConfigurationChange?.(newConfig)
-        symfRunner?.setSourcegraphAuth(newConfig.serverEndpoint, newConfig.accessToken)
-        enterpriseContextFactory.clientConfigurationDidChange()
-        promises.push(
-            localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken) ??
-                Promise.resolve()
-        )
-        promises.push(setupAutocomplete())
-        promises.push(localStorage.setConfig(newConfig))
-        await Promise.all(promises)
-    }
-
-    // Register tree views
-    disposables.push(
-        chatManager,
-        vscode.window.registerWebviewViewProvider('cody.chat', chatManager.sidebarViewController, {
-            webviewOptions: { retainContextWhenHidden: true },
-        }),
-        // Update external services when configurationChangeEvent is fired by chatProvider
-        contextProvider.configurationChangeEvent.event(async () => {
-            const newConfig = await getFullConfig()
-            await onConfigurationChange(newConfig)
-        })
-    )
-
-    const statusBar = createStatusBar()
     const sourceControl = new CodySourceControl(chatClient)
-
-    if (localEmbeddings) {
-        // kick-off embeddings initialization
-        localEmbeddings.start()
-    }
-
-    if (config.experimentalSupercompletions) {
-        disposables.push(new SupercompletionProvider({ statusBar, chat: chatClient }))
-    }
+    const statusBar = createStatusBar()
 
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
@@ -328,9 +270,10 @@ const register = async (
         editorManager.syncAuthStatus(authStatus)
         // Update context provider first it will also update the configuration
         await contextProvider.syncAuthStatus()
+
         const parallelPromises: Promise<void>[] = []
-        parallelPromises.push(featureFlagProvider.syncAuthStatus())
         // feature flag provider
+        parallelPromises.push(featureFlagProvider.syncAuthStatus())
         // Symf
         if (symfRunner && authStatus.isLoggedIn) {
             parallelPromises.push(
@@ -343,16 +286,25 @@ const register = async (
         }
         parallelPromises.push(setupAutocomplete())
         await Promise.all(parallelPromises)
+
         statusBar.syncAuthStatus(authStatus)
         sourceControl.syncAuthStatus(authStatus)
     })
 
-    // Sync the initial auth status.
+    if (initialConfig.experimentalSupercompletions) {
+        disposables.push(new SupercompletionProvider({ statusBar, chat: chatClient }))
+    }
+
+    configWatcher.onChange(async () => {
+        setupAutocomplete()
+    }, disposables)
+
+    // Sync initial auth status
     const initAuthStatus = authProvider.getAuthStatus()
     await syncModels(initAuthStatus)
     await chatManager.syncAuthStatus(initAuthStatus)
     editorManager.syncAuthStatus(initAuthStatus)
-    ModelsService.onConfigChange()
+    await configWatcher.initAndOnChange(() => ModelsService.onConfigChange(), disposables)
     statusBar.syncAuthStatus(initAuthStatus)
     sourceControl.syncAuthStatus(initAuthStatus)
 
@@ -529,7 +481,7 @@ const register = async (
                 if (uri.path === '/app-done') {
                     // This is an old re-entrypoint from App that is a no-op now.
                 } else {
-                    await authProvider.tokenCallbackHandler(uri, config.customHeaders)
+                    await authProvider.tokenCallbackHandler(uri, initialConfig.customHeaders)
                 }
             },
         }),
@@ -591,8 +543,11 @@ const register = async (
         vscode.commands.registerCommand('cody.debug.enable.all', () => enableVerboseDebugMode()),
         vscode.commands.registerCommand('cody.debug.reportIssue', () => openCodyIssueReporter()),
         new CharactersLogger(),
-        upstreamHealthProvider.onConfigurationChange(initialConfig)
+        upstreamHealthProvider
     )
+    await configWatcher.initAndOnChange(async config => {
+        upstreamHealthProvider.onConfigurationChange(config)
+    }, disposables)
 
     let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
 
@@ -702,8 +657,108 @@ const register = async (
 
     return {
         disposable: vscode.Disposable.from(...disposables),
-        onConfigurationChange,
     }
+}
+
+// Registers listeners to trigger parsing of visible documents
+function registerParserListeners(disposables: vscode.Disposable[]) {
+    void parseAllVisibleDocuments()
+    disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
+    disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
+}
+
+interface RegisterChatOptions {
+    context: vscode.ExtensionContext
+    configWatcher: ConfigWatcher<ConfigurationWithAccessToken>
+    platform: PlatformContext
+    chatClient: ChatClient
+    guardrails: Guardrails
+    editor: VSCodeEditor
+    authProvider: AuthProvider
+    contextProvider: ContextProvider
+    enterpriseContextFactory: EnterpriseContextFactory
+    localEmbeddings?: LocalEmbeddingsController
+    contextRanking?: ContextRankingController
+    symfRunner?: SymfRunner
+}
+
+function registerChat(
+    {
+        context,
+        configWatcher,
+        platform,
+        chatClient,
+        guardrails,
+        editor,
+        authProvider,
+        contextProvider,
+        enterpriseContextFactory,
+        localEmbeddings,
+        contextRanking,
+        symfRunner,
+    }: RegisterChatOptions,
+    disposables: vscode.Disposable[]
+): {
+    chatManager: ChatManager
+    editorManager: EditManager
+} {
+    const initialConfig = configWatcher.get()
+
+    // Shared configuration that is required for chat views to send and receive messages
+    const messageProviderOptions: MessageProviderOptions = {
+        chat: chatClient,
+        guardrails,
+        editor,
+        authProvider,
+        contextProvider,
+    }
+    const chatManager = new ChatManager(
+        {
+            ...messageProviderOptions,
+            extensionUri: context.extensionUri,
+            config: initialConfig,
+            startTokenReceiver: platform.startTokenReceiver,
+        },
+        chatClient,
+        enterpriseContextFactory,
+        localEmbeddings || null,
+        contextRanking || null,
+        symfRunner || null,
+        guardrails
+    )
+
+    const ghostHintDecorator = new GhostHintDecorator(authProvider)
+    const editorManager = new EditManager({
+        chat: chatClient,
+        editor,
+        ghostHintDecorator,
+        authProvider,
+        extensionClient: platform.extensionClient,
+    })
+    disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider({ contextProvider }))
+
+    // Register tree views
+    disposables.push(
+        chatManager,
+        vscode.window.registerWebviewViewProvider('cody.chat', chatManager.sidebarViewController, {
+            webviewOptions: { retainContextWhenHidden: true },
+        }),
+
+        // NOTE(beyang): it was necessary to keep this, as it is the vector through which
+        // auth status propagates to the LLM client and guardrails after sign in. Without this,
+        // the auth status does not propagate.
+        contextProvider.configurationChangeEvent.event(async () => {
+            const newConfig = await getFullConfig()
+            configWatcher.set(newConfig)
+        })
+    )
+
+    if (localEmbeddings) {
+        // kick-off embeddings initialization
+        localEmbeddings.start()
+    }
+
+    return { chatManager, editorManager }
 }
 
 /**
