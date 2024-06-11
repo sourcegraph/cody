@@ -48,7 +48,7 @@ export class TestClass {
     constructor(private shouldGreet: boolean) {}
 
     /**
-     * Logs 'Hello World!' if \`shouldGreet\` is true.
+     * Logs 'Hello World!' to the console if the \`shouldGreet\` property is true.
      */
     public functionName() {
         if (this.shouldGreet) {
@@ -87,8 +87,10 @@ describe('test block', () => {
     it('does something else', () => {
         // This line will error due to incorrect usage of \`performance.now\`
         /**
-         * Retrieves the current timestamp in milliseconds since the page was loaded.
-         * This can be used to measure the duration of a specific operation.
+         * Retrieves the current time in milliseconds relative to an arbitrary time in the past.
+         * This can be used to measure elapsed time or for performance profiling.
+         *
+         * @returns {number} The current time in milliseconds.
          */
         const startTime = performance.now(/* CURSOR */)
     })

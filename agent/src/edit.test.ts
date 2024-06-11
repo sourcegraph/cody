@@ -66,11 +66,17 @@ describe('Edit', () => {
           	messages,
           	setChatID,
           	isLoading,
-          }: {
-          	messages: Message[];
-          	setChatID: (chatID: string) => void;
-          	isLoading: boolean;
-          }) {
+          }: ChatColumnProps) {
+          interface ChatColumnProps {
+            messages: ChatMessage[];
+            setChatID: (chatID: string) => void;
+            isLoading: boolean;
+          }
+
+          interface ChatMessage {
+            chatID: string;
+            text: string;
+          }
           	useEffect(() => {
           		if (!isLoading) {
           			setChatID(messages[0].chatID);
@@ -113,6 +119,7 @@ describe('Edit', () => {
 
           export const Heading: React.FC<HeadingProps> = ({ text, level = 1 }) => {
             const HeadingTag = \`h\${level}\` as keyof JSX.IntrinsicElements;
+
             return <HeadingTag>{text}</HeadingTag>;
           };
 

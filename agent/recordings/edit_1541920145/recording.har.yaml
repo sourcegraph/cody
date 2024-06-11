@@ -170,7 +170,7 @@ log:
           - name: user-agent
             value: edit / v1
           - name: traceparent
-            value: 00-e167d7ee18b7706ad6b9f25e37fe81f3-f6f85e2f31ed15e1-01
+            value: 00-e92beb093ba643a17030b9457af81462-31f84e76c2997d13-01
           - name: connection
             value: keep-alive
           - name: host
@@ -268,14 +268,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=edit&client-version=v1
       response:
-        bodySize: 8083
+        bodySize: 16282
         content:
           mimeType: text/event-stream
-          size: 8083
+          size: 16282
           text: >+
             event: completion
 
-            data: {"completion":"export default function ChatColumn({\n\tmessages,\n\tsetChatID,\n\tisLoading,\n}: {\n\tmessages: Message[];\n\tsetChatID: (chatID: string) =\u003e void;\n\tisLoading: boolean;\n}) {","stopReason":"stop_sequence"}
+            data: {"completion":"export default function ChatColumn({\n\tmessages,\n\tsetChatID,\n\tisLoading,\n}: ChatColumnProps) {\ninterface ChatColumnProps {\n  messages: ChatMessage[];\n  setChatID: (chatID: string) =\u003e void;\n  isLoading: boolean;\n}\n\ninterface ChatMessage {\n  chatID: string;\n  text: string;\n}","stopReason":"stop_sequence"}
 
 
             event: done
@@ -285,7 +285,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 22:12:28 GMT
+            value: Mon, 03 Jun 2024 07:43:39 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -314,7 +314,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T22:12:25.385Z
+      startedDateTime: 2024-06-03T07:43:36.121Z
       time: 0
       timings:
         blocked: -1
@@ -341,7 +341,7 @@ log:
           - name: user-agent
             value: edit / v1
           - name: traceparent
-            value: 00-8613097df3e52aebadae9fb0ab0687ea-d9a859be517bfe47-01
+            value: 00-ed67dbddac8a7a66bdde83f8de7d919e-b08353a6d9e7156e-01
           - name: connection
             value: keep-alive
           - name: host
@@ -437,14 +437,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=edit&client-version=v1
       response:
-        bodySize: 11770
+        bodySize: 11806
         content:
           mimeType: text/event-stream
-          size: 11770
+          size: 11806
           text: >+
             event: completion
 
-            data: {"completion":"export const Heading: React.FC\u003cHeadingProps\u003e = ({ text, level = 1 }) =\u003e {\n  const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;\n  return \u003cHeadingTag\u003e{text}\u003c/HeadingTag\u003e;\n};\n","stopReason":"stop_sequence"}
+            data: {"completion":"export const Heading: React.FC\u003cHeadingProps\u003e = ({ text, level = 1 }) =\u003e {\n  const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;\n\n  return \u003cHeadingTag\u003e{text}\u003c/HeadingTag\u003e;\n};\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -454,7 +454,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 22:12:32 GMT
+            value: Mon, 03 Jun 2024 07:43:44 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -483,7 +483,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T22:12:29.455Z
+      startedDateTime: 2024-06-03T07:43:41.643Z
       time: 0
       timings:
         blocked: -1

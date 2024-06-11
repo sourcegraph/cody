@@ -60,6 +60,9 @@ log:
           size: 154
           text: |+
             event: completion
+            data: {"completion":"Yes","stopReason":""}
+
+            event: completion
             data: {"completion":"Yes","stopReason":"end_turn"}
 
             event: done
@@ -124,7 +127,7 @@ log:
           - name: user-agent
             value: enterpriseClient / v1
           - name: traceparent
-            value: 00-d53d4f29654a406a28a9c131718cbe78-7831842510f5e8dc-01
+            value: 00-7d15437aa1ec215ec24d5a3df74ff329-7e53116b613d91e6-01
           - name: connection
             value: keep-alive
           - name: host
@@ -240,14 +243,154 @@ log:
             value: v1
         url: https://demo.sourcegraph.com/.api/completions/stream?client-name=enterpriseclient&client-version=v1
       response:
-        bodySize: 1627
+        bodySize: 3845
         content:
           mimeType: text/event-stream
-          size: 1627
+          size: 3845
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * The start time of the operation, in milliseconds.\n */","stopReason":"stop_sequence"}
+            data: {"completion":"//","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Recor","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using the","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using the Performance","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using the Performance API","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using the Performance API's","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using the Performance API's `","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using the Performance API's `now","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using the Performance API's `now`","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using the Performance API's `now` metho","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using the Performance API's `now` method.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using the Performance API's `now` method.\n//","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monot","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotoni","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp in","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp in millis","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp in milliseconds","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp in milliseconds.","stopReason":""}
+
+
+            event: completion
+
+            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp in milliseconds.","stopReason":"stop_sequence"}
 
 
             event: done
@@ -257,7 +400,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 22:12:37 GMT
+            value: Mon, 03 Jun 2024 08:21:51 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -286,7 +429,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T22:12:35.276Z
+      startedDateTime: 2024-06-03T08:21:48.468Z
       time: 0
       timings:
         blocked: -1
