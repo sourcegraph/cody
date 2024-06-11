@@ -108,6 +108,7 @@ export class FixupController
                     // This helps ensure that the codelens doesn't stay around unnecessarily and become an annoyance.
                     for (const task of this.tasks.values()) {
                         if (task.fixupFile.uri.fsPath.endsWith(uri.fsPath)) {
+                            task.setOutputURI(uri)
                             this.accept(task)
                         }
                     }
@@ -122,6 +123,13 @@ export class FixupController
         if (!task || task.state !== CodyTaskState.Applied) {
             return
         }
+        this._disposables.push(
+            vscode.languages.onDidChangeDiagnostics(event => {
+                if (event.uris.includes(task.getOutputURI())) {
+                    this.attemptFixImports(task)
+                }
+            })
+        )
         this.setTaskState(task, CodyTaskState.Finished)
         this.discard(task)
     }
@@ -598,38 +606,7 @@ export class FixupController
 
             // Add the missing undo stop after this change.
             // Now when the user hits 'undo', the entire format and edit will be undone at once
-            const formatEditOptions = {
-                undoStopBefore: false,
-                undoStopAfter: true,
-            }
-            this.setTaskState(task, CodyTaskState.Formatting)
-            await new Promise((resolve, reject) => {
-                task.formattingResolver = resolve
-
-                this.formatEdit(
-                    visibleEditor ? visibleEditor.edit.bind(this) : new vscode.WorkspaceEdit(),
-                    document,
-                    task,
-                    formatEditOptions
-                )
-                    .then(resolve)
-                    .catch(reject)
-                    .finally(() => {
-                        task.formattingResolver = null
-                    })
-            })
-
-            // TODO: See if we can discard a FixupFile now.
-            this.setTaskState(task, CodyTaskState.Applied)
-            this.logTaskCompletion(task, document, editOk)
-
-            // Inform the user about the change if it happened in the background
-            // TODO: This will show a new notification for each unique file name.
-            // Consider only ever showing 1 notification that opens a UI to display all fixups.
-            if (!visibleEditor) {
-                await this.notifyTaskComplete(task)
-            }
-            return
+            return await this.formatTask(task, visibleEditor, document, { editOk, testOnly: false })
         }
 
         // In progress insertion, apply the partial replacement and adjust the range
@@ -701,36 +678,7 @@ export class FixupController
 
         // Add the missing undo stop after this change.
         // Now when the user hits 'undo', the entire format and edit will be undone at once
-        const formatEditOptions = {
-            undoStopBefore: false,
-            undoStopAfter: true,
-        }
-        this.setTaskState(task, CodyTaskState.Formatting)
-        await new Promise((resolve, reject) => {
-            task.formattingResolver = resolve
-            this.formatEdit(
-                visibleEditor ? visibleEditor.edit.bind(this) : new vscode.WorkspaceEdit(),
-                document,
-                task,
-                formatEditOptions
-            )
-                .then(resolve)
-                .catch(reject)
-                .finally(() => {
-                    task.formattingResolver = null
-                })
-        })
-
-        // TODO: See if we can discard a FixupFile now.
-        this.setTaskState(task, CodyTaskState.Applied)
-        this.logTaskCompletion(task, document, editOk)
-
-        // Inform the user about the change if it happened in the background
-        // TODO: This will show a new notification for each unique file name.
-        // Consider only ever showing 1 notification that opens a UI to display all fixups.
-        if (!visibleEditor && task.intent !== 'test') {
-            await this.notifyTaskComplete(task)
-        }
+        await this.formatTask(task, visibleEditor, document, { editOk })
     }
 
     // Replace edit returned by Cody at task selection range
@@ -806,6 +754,52 @@ export class FixupController
         }, options)
     }
 
+    private async formatTask(
+        task: FixupTask,
+        visibleEditor: vscode.TextEditor | undefined,
+        document: vscode.TextDocument,
+        options: Partial<FormatEditOptions>
+    ): Promise<void> {
+        const defaultOptions: FormatEditOptions = {
+            undoStopBefore: false,
+            undoStopAfter: true,
+            testOnly: false,
+            // default is false so users must override
+            editOk: false,
+        }
+        const opts = { ...defaultOptions, ...options }
+        this.setTaskState(task, CodyTaskState.Formatting)
+        await new Promise((resolve, reject) => {
+            task.formattingResolver = resolve
+            this.formatEdit(
+                visibleEditor ? visibleEditor.edit.bind(this) : new vscode.WorkspaceEdit(),
+                document,
+                task,
+                opts
+            )
+                .then(resolve)
+                .catch(reject)
+                .finally(() => {
+                    task.formattingResolver = null
+                })
+        })
+
+        if (task.attemptFixImports) {
+            await this.askToFixImports(task)
+        }
+
+        // TODO: See if we can discard a FixupFile now.
+        this.setTaskState(task, CodyTaskState.Applied)
+        this.logTaskCompletion(task, document, opts.editOk)
+
+        // Inform the user about the change if it happened in the background
+        // TODO: This will show a new notification for each unique file name.
+        // Consider only ever showing 1 notification that opens a UI to display all fixups.
+        if (!visibleEditor && (!opts.testOnly || task.intent !== 'test')) {
+            await this.notifyTaskComplete(task)
+        }
+    }
+
     private async formatEdit(
         edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit,
         document: vscode.TextDocument,
@@ -875,6 +869,95 @@ export class FixupController
                 editBuilder.replace(change.range, change.newText)
             }
         }, options)
+    }
+
+    private getMissingImports(task: FixupTask): ImportError[] {
+        const IMPORT_ERROR_REGEXES = [
+            // Matches typescript and rust-analyzer errors
+            /can(?:'?t|not) find .*?['`"]?(\w+)["'`]/i,
+            // Matches go-pls errors
+            /undefined: ['`"]?(\w+)['`"]?/i,
+            // Matches Java errors
+            /['`"]?(\w+)['`"]can(?:'?t|not) be resolved/i,
+        ]
+
+        const missingImport = (error: vscode.Diagnostic): ImportError | undefined => {
+            for (const re of IMPORT_ERROR_REGEXES) {
+                const match = error.message.match(re)
+                if (match) {
+                    return {
+                        ...error,
+                        missingImport: match[1],
+                    }
+                }
+            }
+            return undefined
+        }
+
+        const uri = task.getOutputURI()
+        const diagnostics = vscode.languages.getDiagnostics(uri)
+        return diagnostics.map(missingImport).filter(Boolean) as ImportError[]
+    }
+
+    // If we detect import errors in the output code, open a modal which asks the
+    // user if we should try to fix them after the task is accepted. The reason we
+    // can't do it immediately is we rely on external language servers which don't
+    // usually provide code actions until the file exists on dis
+    private async askToFixImports(task: FixupTask): Promise<void> {
+        const missingImports = this.getMissingImports(task)
+        if (missingImports.length === 0) {
+            return
+        }
+
+        vscode.window
+            .showInformationMessage(
+                `Psst! It looks like some imports didn't get generated correctly, such as ${missingImports
+                    .slice(0, 3)
+                    .map(({ missingImport }) => missingImport)
+                    .join(', ')}. Would you like to try fixing them after the file has saved?`,
+                'Fix Imports'
+            )
+            .then(async result => {
+                task.attemptFixImports = result === 'Fix Imports'
+            })
+    }
+
+    private async attemptFixImports(task: FixupTask): Promise<void> {
+        const IMPORT_QUICKFIX_REGEXES = [/^add import/i, /^import/i]
+
+        // Determines if a quick fix is something like "Add import" and has an edit action
+        const isImportFix = (action: vscode.CodeAction): action is HasWorkspaceEdit =>
+            !!IMPORT_QUICKFIX_REGEXES.some(re => action.title.match(re))
+
+        async function applyQuickFix(action: HasWorkspaceEdit) {
+            await vscode.workspace.applyEdit(action.edit)
+        }
+
+        const importFixes = new Map<string, HasWorkspaceEdit>()
+
+        for (const missing of this.getMissingImports(task)) {
+            if (!importFixes.has(missing.missingImport)) {
+                const { range } = missing
+                // Get the quick fixes for the current diagnostic
+                const codeActions = await vscode.commands.executeCommand<vscode.CodeAction[]>(
+                    'vscode.executeCodeActionProvider',
+                    task.getOutputURI(),
+                    range,
+                    vscode.CodeActionKind.QuickFix.value
+                )
+
+                for (const action of codeActions) {
+                    if (isImportFix(action)) {
+                        importFixes.set(missing.missingImport, action)
+                        break
+                    }
+                }
+            }
+        }
+
+        for (const fix of importFixes.values()) {
+            await applyQuickFix(fix)
+        }
     }
 
     // Notify users of task completion when the edited file is not visible
@@ -1195,4 +1278,19 @@ export class FixupController
         }
         this._disposables = []
     }
+}
+
+interface HasWorkspaceEdit extends vscode.CodeAction {
+    edit: vscode.WorkspaceEdit
+}
+
+interface ImportError extends vscode.Diagnostic {
+    missingImport: string
+}
+
+interface FormatEditOptions {
+    undoStopBefore: boolean
+    undoStopAfter: boolean
+    testOnly: boolean
+    editOk: boolean
 }

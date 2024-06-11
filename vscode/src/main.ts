@@ -421,6 +421,71 @@ const register = async (
         vscode.commands.registerCommand('cody.command.unit-tests', a => executeTestEditCommand(a)),
         vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a)),
         vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a)),
+        // vscode.commands.registerCommand('cody.command.fix-imports', async () => {
+        //     const IMPORT_ERROR_REGEXES = [
+        //         // Matches typescript and rust-analyzer errors
+        //         /can(?:'?t|not) find .*?['`"]?(\w+)["'`]/i,
+        //         // Matches go-pls errors
+        //         /undefined: ['`"]?(\w+)['`"]?/i,
+        //         // Matches Java errors
+        //         /['`"]?(\w+)['`"]can(?:'?t|not) be resolved/i,
+        //     ]
+
+        //     const IMPORT_QUICKFIX_REGEXES = [/^add import/i, /^import/i]
+
+        //     interface HasWorkspaceEdit extends vscode.CodeAction {
+        //         edit: vscode.WorkspaceEdit
+        //     }
+        //     // Determines if a quick fix is something like "Add import" and has an edit action
+        //     const isImportFix = (action: vscode.CodeAction): action is HasWorkspaceEdit =>
+        //         !!IMPORT_QUICKFIX_REGEXES.some(re => action.title.match(re))
+
+        //     const missingImport = ({ message }: vscode.Diagnostic): string | undefined => {
+        //         for (const re of IMPORT_ERROR_REGEXES) {
+        //             const match = message.match(re)
+        //             if (match) {
+        //                 return match[1]
+        //             }
+        //         }
+        //         return undefined
+        //     }
+
+        //     async function applyQuickFix(action: HasWorkspaceEdit) {
+        //         await vscode.workspace.applyEdit(action.edit)
+        //     }
+
+        //     const editor = getEditor()
+        //     if (!editor || !editor.active) {
+        //         return
+        //     }
+        //     const importFixes = new Map<string, HasWorkspaceEdit>()
+
+        //     const document = editor.active.document
+        //     const diagnostics = vscode.languages.getDiagnostics(document.uri)
+        //     for (const diagnostic of diagnostics) {
+        //         const missing = missingImport(diagnostic)
+        //         if (missing && !importFixes.has(missing)) {
+        //             const { range } = diagnostic
+        //             // Get the quick fixes for the current diagnostic
+        //             const codeActions = await vscode.commands.executeCommand<vscode.CodeAction[]>(
+        //                 'vscode.executeCodeActionProvider',
+        //                 document.uri,
+        //                 range,
+        //                 vscode.CodeActionKind.QuickFix.value
+        //             )
+
+        //             for (const action of codeActions) {
+        //                 if (isImportFix(action)) {
+        //                     importFixes.set(missing, action)
+        //                     break
+        //                 }
+        //             }
+        //         }
+        //     }
+        //     for (const fix of importFixes.values()) {
+        //         await applyQuickFix(fix)
+        //     }
+        // }),
         sourceControl // Generate Commit Message command
     )
 

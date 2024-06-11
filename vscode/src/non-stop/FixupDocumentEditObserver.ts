@@ -40,7 +40,7 @@ function updateEdits(edits: Edit[], changes: TextChange[]): void {
  * Observes text document changes and updates the regions with active fixups.
  * Notifies the fixup controller when text being edited by a fixup changes.
  * Fixups must track ranges of interest within documents that are being worked
- * on. Ranges of interest include the region of text we sent to the LLM, and the
+ * on. Ranges of interest include the region of text we sent to the LLM,
  * and the decorations indicating where edits will appear.
  */
 export class FixupDocumentEditObserver {

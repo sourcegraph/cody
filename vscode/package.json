@@ -272,6 +272,13 @@
     ],
     "commands": [
       {
+        "command": "cody.command.fix-imports",
+        "title": "Fix imports",
+        "category": "Cody",
+        "group": "Cody",
+        "icon": "$(book)"
+      },
+      {
         "command": "cody.welcome",
         "title": "Getting Started Guide",
         "category": "Cody",
