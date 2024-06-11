@@ -136,6 +136,18 @@ export const MentionMenu: FunctionComponent<
         [data.providers, params.query, setEditorQuery, updateMentionMenuParams, mentionQuery]
     )
 
+    const onInitialContextItemSelect = useCallback(
+        (value: string): void => {
+            const item = data.initialContextItems?.find(item => commandRowValue(item) === value)
+            if (!item) {
+                throw new Error(`No item found with value ${value}`)
+            }
+
+            selectOptionAndCleanUp(createMentionMenuOption(item))
+        },
+        [data.initialContextItems, selectOptionAndCleanUp]
+    )
+
     const onCommandSelect = useCallback(
         (commandSelected: string): void => {
             const item = data.items?.find(item => commandRowValue(item) === commandSelected)
@@ -181,12 +193,13 @@ export const MentionMenu: FunctionComponent<
     // We use `cmdk` Command as a controlled component, so we need to supply its `value`. We track
     // `value` in state, but when the options change, our state `value` may refer to a row that no
     // longer exists in the list. In that case, we want the first row to be selected.
-    const firstRow = data.providers.at(0) ?? data.items?.at(0)
+    const firstRow = data.initialContextItems?.at(0) ?? data.providers.at(0) ?? data.items?.at(0)
     const valueRow = useMemo(
         () =>
+            data.initialContextItems?.find(item => commandRowValue(item) === value) ??
             data.providers.find(provider => commandRowValue(provider) === value) ??
             data.items?.find(item => commandRowValue(item) === value),
-        [data.providers, data.items, value]
+        [data.providers, data.items, data.initialContextItems, value]
     )
     const effectiveValueRow = valueRow ?? firstRow
 
@@ -222,11 +235,28 @@ export const MentionMenu: FunctionComponent<
             ref={ref}
         >
             <CommandList>
+                {!params.parentItem &&
+                    data.initialContextItems &&
+                    data.initialContextItems.length > 0 && (
+                        <CommandGroup>
+                            {data.initialContextItems.map(item => (
+                                <CommandItem
+                                    key={commandRowValue(item)}
+                                    value={commandRowValue(item)}
+                                    onSelect={onInitialContextItemSelect}
+                                    className={clsx(styles.item, styles.contextItem)}
+                                >
+                                    <MentionMenuContextItemContent query={mentionQuery} item={item} />
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    )}
+
                 {providers.length > 0 && <CommandGroup>{providers}</CommandGroup>}
 
                 {(heading || (data.items && data.items.length > 0)) && (
                     <CommandGroup heading={heading}>
-                        {heading && <CommandSeparator />}
+                        {heading && data.items && data.items.length > 0 && <CommandSeparator />}
                         {data.items?.map(item => (
                             <CommandItem
                                 key={commandRowValue(item)}
@@ -264,12 +294,17 @@ function getEmptyLabel(
     parentItem: ContextMentionProviderMetadata | null,
     mentionQuery: MentionQuery
 ): string {
+    if (!mentionQuery.text) {
+        return 'Search...'
+    }
+
     if (!parentItem) {
         return FILE_CONTEXT_MENTION_PROVIDER.emptyLabel!
     }
     if (parentItem.id === SYMBOL_CONTEXT_MENTION_PROVIDER.id && mentionQuery.text.length < 3) {
         return SYMBOL_CONTEXT_MENTION_PROVIDER.emptyLabel! + NO_SYMBOL_MATCHES_HELP_LABEL
     }
+
     return parentItem.emptyLabel ?? 'No results'
 }
 

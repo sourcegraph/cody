@@ -6,6 +6,7 @@ import { type WrappedParser, createParser } from '../../../../vscode/src/tree-si
 
 import { EvaluationDocument, type EvaluationDocumentParams } from './EvaluationDocument'
 import type { Queries } from './Queries'
+import { BenchStrategy } from './cody-bench'
 
 export type AutocompleteMatchKind =
     | 'if_statement'
@@ -53,7 +54,12 @@ export class AutocompleteMatcher {
         this.originalTree = this.parser.parse(text)
         this.originalTreeIsFreeOfErrrors = !this.originalTree.rootNode.hasError()
         const result: AutocompleteMatch[] = []
-        const document = new EvaluationDocument(this.params, text, vscode.Uri.file(this.params.filepath))
+        const document = new EvaluationDocument(
+            this.params,
+            text,
+            vscode.Uri.file(this.params.filepath),
+            { fixture: { name: 'autocomplete-matcher', strategy: BenchStrategy.BFG } }
+        )
         for (const queryMatch of query.matches(this.originalTree.rootNode)) {
             for (const capture of queryMatch.captures) {
                 if (capture.name === 'if_statement') {
