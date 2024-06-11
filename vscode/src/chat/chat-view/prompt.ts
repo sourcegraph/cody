@@ -84,7 +84,10 @@ export class DefaultPrompter {
             async function tryAddContext(type: PromptContextType, items: ContextItem[]): Promise<void> {
                 const processed = await promptBuilder.tryAddContext(type, items)
                 context.used.push(...processed.added)
-                context.excluded.push(...processed.ignored)
+                // Only display the ignored context from the last human message.
+                if (type === 'user') {
+                    context.excluded.push(...processed.ignored)
+                }
             }
 
             // Add new user-specified context, e.g. @-mentions, active selection, etc.

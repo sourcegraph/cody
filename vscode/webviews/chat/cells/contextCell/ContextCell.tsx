@@ -38,12 +38,9 @@ export const ContextCell: React.FunctionComponent<{
     }
 
     const itemCount = usedContext.length
-    let contextItemCountLabel = `${itemCount} ${!isForFirstMessage ? 'new ' : ''}${pluralize(
-        'item',
-        itemCount
-    )}`
+    let contextItemCountLabel = `${itemCount} ${pluralize('item', itemCount)}`
     if (excludedAtContext.length) {
-        const excludedAtUnit = excludedAtContext.length === 1 ? 'item' : 'items'
+        const excludedAtUnit = pluralize('item', excludedAtContext.length)
         contextItemCountLabel = `${contextItemCountLabel} — ${excludedAtContext.length} ${excludedAtUnit} excluded`
     }
 
