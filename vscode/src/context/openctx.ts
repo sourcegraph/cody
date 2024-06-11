@@ -40,7 +40,7 @@ export async function exposeOpenCtxClient(
                 secrets,
                 features: {},
                 providers,
-            }).controller.client
+            }).controller
         )
     } catch (error) {
         logDebug('openctx', `Failed to load OpenCtx client: ${error}`)
