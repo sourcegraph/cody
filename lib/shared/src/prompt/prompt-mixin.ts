@@ -18,9 +18,7 @@ export class PromptMixin {
     public static mixInto(humanMessage: ChatMessage): ChatMessage {
         // Default Mixin is added at the end so that it cannot be overriden by other mixins.
         const mixins = PromptString.join(
-            [...PromptMixin.mixins, PromptMixin.defaultMixin].map(
-                mixin => mixin.prompt
-            ),
+            [...PromptMixin.mixins, PromptMixin.defaultMixin].map(mixin => mixin.prompt),
             ps`\n\n`
         )
         if (mixins) {

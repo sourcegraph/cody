@@ -5,6 +5,7 @@ import {
     type CodyCommand,
     ConfigFeaturesSingleton,
     type ContextItem,
+    DefaultChatCommands,
     type EventSource,
     PromptString,
 } from '@sourcegraph/cody-shared'
@@ -133,6 +134,7 @@ export class CommandRunner implements vscode.Disposable {
                 contextFiles,
                 addEnhancedContext: this.command.context?.codebase ?? false,
                 source: 'custom-commands',
+                command: DefaultChatCommands.Custom,
             }),
         }
     }
