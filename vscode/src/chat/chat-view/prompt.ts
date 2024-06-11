@@ -9,6 +9,7 @@ import {
     isDefined,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { PromptMixin } from '@sourcegraph/cody-shared/src/prompt/prompt-mixin'
 import { logDebug } from '../../log'
 import { PromptBuilder } from '../../prompt-builder'
 import type { SimpleChatModel } from './SimpleChatModel'
@@ -29,7 +30,12 @@ interface PromptInfo {
 export class DefaultPrompter {
     constructor(
         private explicitContext: ContextItemWithContent[],
-        private getEnhancedContext?: (query: PromptString) => Promise<ContextItem[]>
+        private getEnhancedContext?: (query: PromptString) => Promise<ContextItem[]>,
+        /**
+         * Whether the current message is from a default command.
+         * We will apply context assist prompt for non-command chat messages.
+         */
+        private isCommand = false
     ) {}
     // Constructs the raw prompt to send to the LLM, with message order reversed, so we can construct
     // an array with the most important messages (which appear most important first in the reverse-prompt.
@@ -48,13 +54,26 @@ export class DefaultPrompter {
             // Add preamble messages
             const preambleMessages = getSimplePreamble(chat.modelID, codyApiVersion, preInstruction)
             if (!promptBuilder.tryAddToPrefix(preambleMessages)) {
-                throw new Error(
-                    `Preamble length exceeded context window size ${chat.contextWindow.input}`
-                )
+                throw new Error(`Preamble length exceeded context window ${chat.contextWindow.input}`)
             }
 
             // Add existing chat transcript messages
             const reverseTranscript = [...chat.getDehydratedMessages()].reverse()
+            const historyItems = reverseTranscript.flatMap(m => m?.contextFiles).filter(isDefined)
+
+            // Apply the context preamble via the prompt mixin to the last open-ended human message that is not a command.
+            // The context preamble provides additional instructions on how Cody should respond using the attached context items,
+            // allowing Cody to provide more contextually relevant responses.
+            //
+            // Adding the preamble before the final build step ensures it is included in the final prompt but not displayed in the UI.
+            // It also allows adding the preamble only when there is context to display, without wasting tokens on the same preamble repeatedly.
+            if (
+                !this.isCommand &&
+                Boolean(this.explicitContext.length || historyItems.length || this.getEnhancedContext)
+            ) {
+                reverseTranscript[0] = PromptMixin.mixInto(reverseTranscript[0])
+            }
+
             const transcriptLimitReached = promptBuilder.tryAddMessages(reverseTranscript)
             if (transcriptLimitReached) {
                 logDebug(
@@ -97,7 +116,6 @@ export class DefaultPrompter {
             }
 
             // If there's room left, add context from previous messages (both user-defined and enhanced).
-            const historyItems = reverseTranscript.flatMap(m => m?.contextFiles).filter(isDefined)
             const historyContext = await promptBuilder.tryAddContext('history', historyItems.reverse())
             ignoredContext.transcript += historyContext.ignored.length
 
