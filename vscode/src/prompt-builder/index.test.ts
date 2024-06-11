@@ -4,9 +4,9 @@ import type { ContextItem, Message } from '@sourcegraph/cody-shared'
 import {
     type ChatMessage,
     ContextItemSource,
-    PromptString,
     contextFiltersProvider,
     ps,
+    displayPath,
 } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 import { PromptBuilder } from './index'
@@ -375,7 +375,7 @@ describe('PromptBuilder', () => {
             expect(builder.contextItems.length).toBe(1)
             expect(promptContent).toMatchInlineSnapshot(`
               "preamble
-              Codebase context from file ${PromptString.fromDisplayPath(file.uri)}:
+              Codebase context from file ${displayPath(file.uri)}:
               \`\`\`go
               foo\`\`\`
               Ok.
