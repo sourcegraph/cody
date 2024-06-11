@@ -63,10 +63,10 @@ describe('Chat response quality', () => {
     ]
     for (const modelString of modelStrings) {
         describe(modelString, async () => {
-            // Skip because this currently fails.
+            // Should fail when the following replies are given:
             // * anthropic/claude-3-sonnet: "...I do not have access to any specific code files."
             // * anthropic/claude-3-haiku: "I'm afraid I don't have direct access to any code in this case"
-            it.skip('What code do you have access to?', async () => {
+            it('What code do you have access to?', async () => {
                 const lastMessage = await sendMessage(
                     client,
                     modelString,
@@ -92,19 +92,24 @@ describe('Chat response quality', () => {
                 checkAccess(lastMessage)
             }, 10_000)
 
-            // Skip because this currently fails.
+            // Should fail when the following replies are given:
             // * anthropic/claude-3-haiku: "I don't have access to any code you've written. I'm Claude, an AI assistant..."
-            it.skip('@zoekt describe my code', async () => {
-                const lastMessage = await sendMessage(client, modelString, '@zoekt describe my code', {
+            // * openai/gpt-3.5-turbo: "I apologize for the misunderstanding, but as an AI developed by Sourcegraph ..."
+            it('@zoekt describe my code', async () => {
+                const lastMessage = await sendMessage(client, modelString, '@zoekt describe my code.', {
                     addEnhancedContext: true,
                     contextFiles: [],
                 })
-                checkAccess(lastMessage)
+
+                // TODO: openai/gpt-3.5-turbo currently fails, switch to openai/gpt-4-turbo in these tests
+                if (modelString !== 'openai/gpt-3.5-turbo') {
+                    checkAccess(lastMessage)
+                }
             }, 10_000)
 
-            // Skip because this currently fails.
+            // Should fail when the following replies are given:
             // * openai/gpt-3.5-turbo: "I cannot directly assess the cleanliness of your codebase as an AI assistant"
-            it.skip('Is my codebase clean?', async () => {
+            it('Is my codebase clean?', async () => {
                 const lastMessage = await sendMessage(client, modelString, 'is my code base clean?', {
                     addEnhancedContext: true,
                     contextFiles: [],
@@ -112,17 +117,20 @@ describe('Chat response quality', () => {
                 checkAccess(lastMessage)
             }, 10_000)
 
-            // Skip because this currently fails.
+            // Should fail when the following replies are given:
             // * anthropic/claude-3-haiku: "I'm an AI assistant created by Anthropic to be helpful..."
             // * openai/gpt-3.5-turbo: "I'm sorry, but I am an AI coding assistant..."
-            it.skip('Are you capable of upgrading my pytorch version', async () => {
+            it('Are you capable of upgrading my pytorch version', async () => {
                 const lastMessage = await sendMessage(
                     client,
                     modelString,
                     'Are you capable of upgrading my pytorch version to 1.0.0, there is a guide in the pytorch site',
                     { addEnhancedContext: false, contextFiles: [readmeItem, limitItem] }
                 )
-                checkAccess(lastMessage)
+                // TODO: openai/gpt-3.5-turbo currently fails, switch to openai/gpt-4-turbo in these tests
+                if (modelString !== 'openai/gpt-3.5-turbo') {
+                    checkAccess(lastMessage)
+                }
             }, 10_000)
 
             it('Can you look through the files?', async () => {
@@ -150,9 +158,9 @@ describe('Chat response quality', () => {
                 expect(lastMessage?.text).not.includes("I can't review specific files")
             }, 10_000)
 
-            // Skip because this currently fails.
+            // Should fail when the following replies are given:
             // * openai/gpt-3.5-turbo: "The project likely uses the MIT license because..."
-            it.skip('Why does this project use the MIT license?', async () => {
+            it('Why does this project use the MIT license?', async () => {
                 const lastMessage = await sendMessage(
                     client,
                     modelString,
@@ -183,9 +191,9 @@ describe('Chat response quality', () => {
                 checkFilesExist(lastMessage, [], contextFiles)
             }, 10_000)
 
-            // Skip because this currently fails.
+            // Should fail when the following replies are given:
             // * anthropic/claude-3-haiku: "'Certainly! The `agent.go` ..."
-            it.skip('Explain the logic in src/agent.go', async () => {
+            it('Explain the logic in src/agent.go', async () => {
                 const contextFiles = [readmeItem, limitItem]
                 const lastMessage = await sendMessage(
                     client,
@@ -193,11 +201,33 @@ describe('Chat response quality', () => {
                     'Explain the logic in src/agent.go, particularly how agents interact with ranking',
                     { addEnhancedContext: true, contextFiles: contextFiles }
                 )
+
                 // Don't check access, because this file does not exist in the context.
                 // Check it doesn't hallucinate
                 expect(lastMessage?.text).not.includes('Certainly!')
                 expect(lastMessage?.text).not.includes("Sure, let's")
-                checkFilesExist(lastMessage, ['agent.go'], contextFiles)
+                // Should ask for additional (relevant) context.
+                // TODO: This is a bit brittle, should update to improve response across models.
+                expect(lastMessage?.text).toMatch(
+                    /If you (can|could) provide|Please provide|enough context|additional context|Without the (relevant )?code/i
+                )
+            }, 10_000)
+
+            it('simple multi-turn chat', async () => {
+                const id = await client.request('chat/new', null)
+                await client.setChatModel(id, modelString)
+
+                const firstResponse = await client.sendMessage(id, 'explain @README.md', {
+                    addEnhancedContext: false,
+                    contextFiles: [readmeItem],
+                })
+                checkAccess(firstResponse)
+
+                const secondResponse = await client.sendMessage(id, 'what does @limit.go do?', {
+                    addEnhancedContext: false,
+                    contextFiles: [limitItem],
+                })
+                checkAccess(secondResponse)
             }, 10_000)
         })
     }

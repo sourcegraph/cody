@@ -4,7 +4,6 @@ import {
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionQuery,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
-    URL_CONTEXT_MENTION_PROVIDER,
     displayLineRange,
     displayPath,
     displayPathBasename,
@@ -110,7 +109,7 @@ export const MentionMenuProviderItemContent: FunctionComponent<{
     )
 }
 
-export const iconForProvider: Record<
+const iconForProvider: Record<
     string,
     React.ComponentType<{
         size?: string | number
@@ -119,7 +118,6 @@ export const iconForProvider: Record<
 > = {
     [FILE_CONTEXT_MENTION_PROVIDER.id]: FileIcon,
     [SYMBOL_CONTEXT_MENTION_PROVIDER.id]: SquareFunctionIcon,
-    [URL_CONTEXT_MENTION_PROVIDER.id]: LinkIcon,
     // todo(tim): OpenCtx providers should be able to specify an icon string, so
     // we don't have to hardcode these URLs and other people can have their own
     // GitHub provider etc.

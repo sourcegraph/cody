@@ -354,7 +354,7 @@ describe('Agent', () => {
             expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
                 `
               "\`\`\`typescript
-              class Dog implements Animal {
+              export class Dog implements Animal {
                   name: string;
                   isMammal: boolean = true;
 

@@ -5,6 +5,7 @@ import {
     type CodyCommand,
     ConfigFeaturesSingleton,
     type ContextItem,
+    DefaultChatCommands,
     type EventSource,
     PromptString,
 } from '@sourcegraph/cody-shared'
@@ -18,7 +19,6 @@ import { telemetryService } from '../../services/telemetry'
 
 import type { CommandResult } from '../../CommandResult'
 import type { ChatCommandResult, EditCommandResult } from '../../CommandResult'
-import { sortContextFiles } from '../../chat/chat-view/agentContextSorting'
 import { getEditor } from '../../editor/active-editor'
 import { getCommandContextFiles } from '../context'
 import { executeChat } from '../execute/ask'
@@ -133,6 +133,7 @@ export class CommandRunner implements vscode.Disposable {
                 contextFiles,
                 addEnhancedContext: this.command.context?.codebase ?? false,
                 source: 'custom-commands',
+                command: DefaultChatCommands.Custom,
             }),
         }
     }
@@ -174,9 +175,6 @@ export class CommandRunner implements vscode.Disposable {
             const commandContext = await getCommandContextFiles(contextConfig)
             userContextFiles.push(...commandContext)
         }
-
-        sortContextFiles(userContextFiles)
-
         return userContextFiles
     }
 

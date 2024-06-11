@@ -55,17 +55,11 @@ export interface Configuration {
     /**
      * Experimental
      */
-    experimentalGuardrails: boolean
-    experimentalSymfContext: boolean
     experimentalTracing: boolean
-    experimentalSimpleChatContext: boolean
     experimentalChatContextRanker: boolean | undefined
-    experimentalOllamaChat: boolean
     experimentalSupercompletions: boolean
-    experimentalGithubAccessToken: string
     experimentalCommitMessage: boolean
     experimentalNoodle: boolean
-    experimentalURLContext: boolean
     experimentalMinionAnthropicKey: string | undefined
 
     /**
@@ -88,6 +82,7 @@ export interface Configuration {
     isRunningInsideAgent?: boolean
     agentIDE?: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
     autocompleteTimeouts: AutocompleteTimeouts
+    autocompleteFirstCompletionTimeout: number
 
     testingModelConfig: EmbeddingsModelConfig | undefined
 }

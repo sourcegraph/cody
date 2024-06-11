@@ -45,6 +45,14 @@ export class PromptBuilder {
     }
 
     public build(): Message[] {
+        if (this.contextItems.length > 0) {
+            this.buildContextMessages()
+        }
+
+        return this.prefixMessages.concat([...this.reverseMessages].reverse())
+    }
+
+    private buildContextMessages(): void {
         for (const item of this.contextItems) {
             // Create context messages for each context item, where
             // assistant messages come first because the transcript is in reversed order.
@@ -52,8 +60,6 @@ export class PromptBuilder {
             const messagePair = contextMessage && [ASSISTANT_MESSAGE, contextMessage]
             messagePair && this.reverseMessages.push(...messagePair)
         }
-
-        return this.prefixMessages.concat([...this.reverseMessages].reverse())
     }
 
     public tryAddToPrefix(messages: Message[]): boolean {
