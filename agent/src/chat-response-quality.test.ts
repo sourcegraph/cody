@@ -202,7 +202,6 @@ describe('Chat response quality', () => {
                     { addEnhancedContext: true, contextFiles: contextFiles }
                 )
 
-                console.log(lastMessage)
                 // Don't check access, because this file does not exist in the context.
                 // Check it doesn't hallucinate
                 expect(lastMessage?.text).not.includes('Certainly!')
@@ -237,7 +236,6 @@ const accessCheck =
     /I (don't|do not) (?:actually )?have (?:direct )?access|your actual codebase|can't browse external repositories|not able to access external information|unable to browse through|directly access|direct access|snippet you provided is incomplete|As an AI/i
 
 function checkAccess(lastMessage: SerializedChatMessage | undefined) {
-    console.log(lastMessage)
     expect(lastMessage?.speaker).toBe('assistant')
     expect(lastMessage?.text).not.toBeUndefined()
     expect(lastMessage?.text ?? '').not.toMatch(accessCheck)
@@ -248,7 +246,6 @@ function checkFilesExist(
     questionFiles: string[],
     contextFiles: ContextItem[]
 ) {
-    console.log(lastMessage)
     const filenameRegex = /\b(\w+\.(go|js|md|ts))\b/g
     const files = lastMessage?.text?.match(filenameRegex) ?? []
     const contextFilePaths = new Set(contextFiles.map(file => file.uri.path))
