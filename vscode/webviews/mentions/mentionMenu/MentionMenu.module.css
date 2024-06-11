@@ -16,6 +16,10 @@
     display: none;
 }
 
+.container [cmdk-empty] {
+    padding: 0.325rem 0.5rem;
+}
+
 .item {
     line-height: 1.2;
 
