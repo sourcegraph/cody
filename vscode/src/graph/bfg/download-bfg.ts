@@ -13,7 +13,7 @@ import { captureException } from '../../services/sentry/sentry'
 
 // Available releases: https://github.com/sourcegraph/bfg/releases
 // Do not include 'v' in this string.
-const defaultBfgVersion = '5.4.3547'
+const defaultBfgVersion = '5.4.6040'
 
 // We use this Promise to only have one downloadBfg running at once.
 let serializeBfgDownload: Promise<string | null> = Promise.resolve(null)
