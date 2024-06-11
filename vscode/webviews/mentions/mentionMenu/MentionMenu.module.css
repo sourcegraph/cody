@@ -7,11 +7,15 @@
 /* Hide scroll bar. */
 .container [cmdk-list] {
     scrollbar-width: none;
+
     /* Exactly so that the initial menu exact-fits all items on my machine */
+
     --cmdk-list-max-height: 323px;
+
     height: min(var(--cmdk-list-max-height), calc(var(--cmdk-list-height) + 2px));
     max-height: var(--cmdk-list-max-height);
 }
+
 .container [cmdk-list]::-webkit-scrollbar {
     display: none;
 }
