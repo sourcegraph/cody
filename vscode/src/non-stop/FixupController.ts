@@ -784,9 +784,7 @@ export class FixupController
                 })
         })
 
-        if (task.attemptFixImports) {
-            await this.askToFixImports(task)
-        }
+        await this.askToFixImports(task)
 
         // TODO: See if we can discard a FixupFile now.
         this.setTaskState(task, CodyTaskState.Applied)
@@ -871,6 +869,8 @@ export class FixupController
         }, options)
     }
 
+    // Extracts the set of diagnostics from the task output file
+    // that seem to be missing imports
     private getMissingImports(task: FixupTask): ImportError[] {
         const IMPORT_ERROR_REGEXES = [
             // Matches typescript and rust-analyzer errors
@@ -902,19 +902,28 @@ export class FixupController
     // If we detect import errors in the output code, open a modal which asks the
     // user if we should try to fix them after the task is accepted. The reason we
     // can't do it immediately is we rely on external language servers which don't
-    // usually provide code actions until the file exists on dis
+    // usually provide code actions until the file exists on disk
     private async askToFixImports(task: FixupTask): Promise<void> {
         const missingImports = this.getMissingImports(task)
         if (missingImports.length === 0) {
             return
         }
 
+        // Pretty print a snippet of the imports with an `and`
+        let [{ missingImport: importSnippet }] = missingImports
+
+        const importsSlice = missingImports
+            .map(i => i.missingImport)
+            .slice(0, Math.min(missingImports.length, 3))
+
+        if (importsSlice.length > 1) {
+            const [first, ...rest] = importsSlice.reverse()
+            importSnippet = `${rest.reverse().join(', ')} and ${first}`
+        }
+
         vscode.window
             .showInformationMessage(
-                `Psst! It looks like some imports didn't get generated correctly, such as ${missingImports
-                    .slice(0, 3)
-                    .map(({ missingImport }) => missingImport)
-                    .join(', ')}. Would you like to try fixing them after the file has saved?`,
+                `Psst! It looks like some imports didn't get generated correctly, such as ${importSnippet}. Would you like to try fixing them after the file has saved?`,
                 'Fix Imports'
             )
             .then(async result => {
