@@ -54,19 +54,22 @@ export class DefaultPrompter {
             // Add preamble messages
             const preambleMessages = getSimplePreamble(chat.modelID, codyApiVersion, preInstruction)
             if (!promptBuilder.tryAddToPrefix(preambleMessages)) {
-                throw new Error(
-                    `Preamble length exceeded context window size ${chat.contextWindow.input}`
-                )
+                throw new Error(`Preamble length exceeded context window ${chat.contextWindow.input}`)
             }
 
             // Add existing chat transcript messages
             const reverseTranscript = [...chat.getDehydratedMessages()].reverse()
             const historyItems = reverseTranscript.flatMap(m => m?.contextFiles).filter(isDefined)
 
-            // HACK: Add assist prompt for non-command chat messages with context items available.
+            // Apply the context preamble via the prompt mixin to the last open-ended human message that is not a command.
+            // The context preamble provides additional instructions on how Cody should respond using the attached context items,
+            // allowing Cody to provide more contextually relevant responses.
+            //
+            // Adding the preamble before the final build step ensures it is included in the final prompt but not displayed in the UI.
+            // It also allows adding the preamble only when there is context to display, without wasting tokens on the same preamble repeatedly.
             if (
                 !this.isCommand &&
-                Boolean(this.getEnhancedContext || this.explicitContext?.length || historyItems?.length)
+                Boolean(this.explicitContext.length || historyItems.length || this.getEnhancedContext)
             ) {
                 reverseTranscript[0] = PromptMixin.mixInto(reverseTranscript[0])
             }
