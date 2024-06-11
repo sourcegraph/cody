@@ -1165,7 +1165,9 @@ export class ConfigFeaturesSingleton {
     }
 }
 
-async function verifyResponseCode(response: BrowserOrNodeResponse): Promise<BrowserOrNodeResponse> {
+export async function verifyResponseCode(
+    response: BrowserOrNodeResponse
+): Promise<BrowserOrNodeResponse> {
     if (!response.ok) {
         const body = await response.text()
         throw new Error(`HTTP status code ${response.status}${body ? `: ${body}` : ''}`)

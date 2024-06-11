@@ -22,10 +22,14 @@ export async function getAccessToken(): Promise<string | null> {
 interface SecretStorage extends vscode.SecretStorage {
     get(key: string): Promise<string | undefined>
     store(key: string, value: string): Promise<void>
-    storeToken(endpoint: string, value: string): Promise<void>
-    deleteToken(endpoint: string): Promise<void>
     delete(key: string): Promise<void>
     onDidChange(callback: (event: { key: string }) => Promise<void>): vscode.Disposable
+
+    // Shorthand for persisting the user's Cody Access token based on
+    // the Sourcegraph instance endpoint it is associated with.
+    storeToken(endpoint: string, value: string): Promise<void>
+    getToken(endpoint: string): Promise<string | undefined>
+    deleteToken(endpoint: string): Promise<void>
 }
 
 export class VSCodeSecretStorage implements SecretStorage {
@@ -89,6 +93,10 @@ export class VSCodeSecretStorage implements SecretStorage {
         } catch (error) {
             logError('VSCodeSecretStorage:store:failed', key, { verbose: error })
         }
+    }
+
+    public async getToken(endpoint: string): Promise<string | undefined> {
+        return this.get(endpoint)
     }
 
     public async storeToken(endpoint: string, value: string): Promise<void> {
@@ -160,6 +168,10 @@ class InMemorySecretStorage implements SecretStorage {
         }
 
         return Promise.resolve()
+    }
+
+    public async getToken(endpoint: string): Promise<string | undefined> {
+        return this.get(endpoint)
     }
 
     public async storeToken(endpoint: string, value: string): Promise<void> {
