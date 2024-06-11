@@ -5,7 +5,7 @@ import java.awt.Font
 import java.awt.FontMetrics
 import java.awt.Graphics2D
 
-class LensHotkey(group: LensWidgetGroup, private val text: String) : LensLabel(group, text) {
+class LensHotkey(group: LensWidgetGroup, text: String) : LensLabel(group, text) {
 
   private val hotkeyHighlightColor = JBColor(0xDDDDDD, 0x252629)
 
@@ -15,7 +15,6 @@ class LensHotkey(group: LensWidgetGroup, private val text: String) : LensLabel(g
     return fontMetrics.stringWidth(text) + 8
   }
 
-  @Suppress("UseJBColor")
   override fun paint(g: Graphics2D, x: Float, y: Float) {
     // Resize font and get new metrics
     val originalFont = g.font

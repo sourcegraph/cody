@@ -13,7 +13,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import java.awt.Point
 import java.nio.file.FileSystems
-import java.util.Locale
+import java.util.*
 import kotlin.math.max
 import kotlin.math.min
 

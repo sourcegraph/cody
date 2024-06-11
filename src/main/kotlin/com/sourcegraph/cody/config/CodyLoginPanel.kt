@@ -33,7 +33,7 @@ class CodyLoginPanel(
 
   private var authUI = CodyAuthCredentialsUi(executorFactory, isAccountUnique)
 
-  private val progressIcon = AnimatedIcon.Default()
+  private val progressIcon = AnimatedIcon.Default.INSTANCE
   private val progressExtension = ExtendableTextComponent.Extension { progressIcon }
 
   var footer: Panel.() -> Unit

@@ -17,7 +17,7 @@ public interface Icons {
   }
 
   interface StatusBar {
-    Icon CompletionInProgress = new AnimatedIcon.Default();
+    Icon CompletionInProgress = AnimatedIcon.Default.INSTANCE;
     Icon CodyAvailable = IconLoader.getIcon("/icons/codyLogoMonochromatic.svg", Icons.class);
     Icon CodyAutocompleteDisabled =
         IconLoader.getIcon("/icons/cody-logo-heavy-slash.svg", Icons.class);

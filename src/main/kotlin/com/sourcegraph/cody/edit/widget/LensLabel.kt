@@ -6,8 +6,7 @@ import com.intellij.util.ui.UIUtil
 import java.awt.FontMetrics
 import java.awt.Graphics2D
 
-@Suppress("UseJBColor")
-open class LensLabel(group: LensWidgetGroup, private val text: String) : LensWidget(group) {
+open class LensLabel(group: LensWidgetGroup, val text: String) : LensWidget(group) {
 
   override fun calcWidthInPixels(fontMetrics: FontMetrics): Int = fontMetrics.stringWidth(text)
 

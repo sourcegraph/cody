@@ -56,10 +56,11 @@ Few tips and tricks regarding versioning of the tooling:
 - Use `node` version `18` (newer versions causes hard to diagnose errors with `ERR_INVALID_THIS`).
 - If you changed `pnpm` or `node` version after running gradle you need to kill gradle daemon with `./gradlew --stop`.
   Otherwise you won't see effects of your changes.
-- Running `./gradlew -PplatformRuntimeVersion=X.Y :runIde` for the first time might fail due to missing IntelliJ installation. You
+- Running `./gradlew -PplatformRuntimeVersion=X.Y :runIde` for the first time might fail due to missing IntelliJ
+  installation. You
   can fix it by running `./gradlew -PplatformVersion=X.Y :runIde` once - even if compilation fails it fixes your caches.
-- IF you get error 134 while building different things with jetbrains its because java process doesn't have enough memory to build so you might need to get into your activity monitor to close other processes.
-
+- IF you get error 134 while building different things with jetbrains its because java process doesn't have enough
+  memory to build so you might need to get into your activity monitor to close other processes.
 
 ## Using Nightly channel releases
 
@@ -116,7 +117,6 @@ After doing that:
 
 ## Publishing a New Release
 
-
 ```mermaid
 graph TD;
     Title["JetBrains plugin release"] --> stable;
@@ -169,7 +169,8 @@ Wait for the `Release to Marketplace` GitHub workflow to complete.
 ### 2. For Stable releases, wait for Marketplace approval
 
 It can take up to 48hr for stable releases to get approved by the JetBrains Marketplace team.
-It's possible to expedite this process by posting a message in the `#marketplace` channel in the [JetBrains Slack workspace](https://plugins.jetbrains.com/slack/).
+It's possible to expedite this process by posting a message in the `#marketplace` channel in
+the [JetBrains Slack workspace](https://plugins.jetbrains.com/slack/).
 
 ### 3. Publish a New Release on GitHub
 
@@ -406,13 +407,30 @@ Chrome Tracing can be used to get CPU and memory profiles of Agent and the TypeS
 
 1. Set `CODY_AGENT_DEBUG_INSPECT=true` in your run configuration/environment.
 2. Launch the target.
-3. Open DevTools however you're accustomed to do that, for example, `chrome://inspect` and click "inspect" next to the debuggee.
+3. Open DevTools however you're accustomed to do that, for example, `chrome://inspect` and click "inspect" next to the
+   debuggee.
 4. Use the Performance tab to record CPU, memory profiles, etc.
 
 ## Known Issues
 
 - Force-stopping the target often corrupts IntelliJ's project indexes,
   requiring an extra restart of the debugged target to fix them.
-  - Workaround is to exit the target gracefully by quitting each time,
-    using the menus or hotkeys, rather than force-stopping it.
+    - Workaround is to exit the target gracefully by quitting each time,
+      using the menus or hotkeys, rather than force-stopping it.
 
+# Integration Testing
+
+Run the integration tests at the command line with:
+
+```
+./gradlew integrationTest
+```
+
+You need to import valid access tokens
+using [export-cody-http-recording-tokens.sh](https://github.com/sourcegraph/cody/blob/main/agent/scripts/export-cody-http-recording-tokens.sh)
+script also used for a Cody agent
+tests.
+
+You can run and debug the integration tests, including the Agent node
+process, with the instructions above by making new run configurations
+for the test.

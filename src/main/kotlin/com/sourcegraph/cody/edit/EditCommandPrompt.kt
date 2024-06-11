@@ -33,6 +33,7 @@ import com.sourcegraph.cody.edit.EditUtil.namedButton
 import com.sourcegraph.cody.edit.EditUtil.namedLabel
 import com.sourcegraph.cody.edit.EditUtil.namedPanel
 import com.sourcegraph.cody.edit.sessions.EditCodeSession
+import com.sourcegraph.cody.edit.sessions.FixupSession
 import com.sourcegraph.cody.edit.widget.LensAction
 import com.sourcegraph.cody.ui.FrameMover
 import java.awt.BorderLayout
@@ -85,8 +86,6 @@ class EditCommandPrompt(
 
   private val offset = editor.caretModel.primaryCaret.offset
 
-  private val escapeKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0)
-
   private var connection: MessageBusConnection? = null
 
   private val isDisposed: AtomicBoolean = AtomicBoolean(false)
@@ -102,6 +101,8 @@ class EditCommandPrompt(
         // Others: Control+Enter
         KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK)
       }
+
+  private val escapeKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0)
 
   private val okButton =
       namedButton("ok-button").apply {
@@ -545,28 +546,39 @@ class EditCommandPrompt(
 
   @RequiresEdt
   fun performOKAction() {
-    val text = instructionsField.text
-    if (text.isBlank()) {
-      clearActivePrompt()
-      return
-    }
-    val activeSession = controller.getActiveSession()
-    promptHistory.add(text)
-    if (editor.project == null) {
-      val msg = "Null project for new edit session"
-      controller.getActiveSession()?.showErrorGroup(msg)
-      logger.warn(msg)
-      return
-    }
-
-    activeSession?.let { session ->
-      session.afterSessionFinished {
-        startEditCodeSession(text, if (session.isInserted) "insert" else "edit")
+    try {
+      val text = instructionsField.text
+      if (text.isBlank()) {
+        clearActivePrompt()
+        return
       }
-      session.undo()
-    } ?: run { startEditCodeSession(text) }
+      val activeSession = controller.getActiveSession()
+      promptHistory.add(text)
+      if (editor.project == null) {
+        val msg = "Null project for new edit session"
+        controller.getActiveSession()?.showErrorGroup(msg)
+        logger.warn(msg)
+        return
+      }
 
-    clearActivePrompt()
+      activeSession?.let { session ->
+        session.afterSessionFinished {
+          startEditCodeSession(text, if (session.isInserted) "insert" else "edit")
+        }
+        session.undo()
+      } ?: run { startEditCodeSession(text) }
+    } finally {
+      clearActivePrompt()
+    }
+  }
+
+  private fun validateProject(session: FixupSession?): Boolean {
+    return if (editor.project == null) {
+      // TODO move these to Cody bundle
+      session?.showErrorGroup("Error initiating Code Edit: Could not find current Project")
+      logger.warn("Project was null when trying to add an edit session")
+      false
+    } else true
   }
 
   private fun startEditCodeSession(text: String, mode: String = "edit") {

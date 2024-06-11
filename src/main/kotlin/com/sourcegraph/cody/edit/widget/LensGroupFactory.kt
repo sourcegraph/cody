@@ -48,6 +48,7 @@ class LensGroupFactory(val session: FixupSession) {
       addAction(this, "Dismiss", FixupSession.ACTION_DISMISS)
       addSeparator(this)
       addAction(this, "Open Log", "cody.openLogAction")
+      registerWidgets()
       isErrorGroup = true
     }
   }

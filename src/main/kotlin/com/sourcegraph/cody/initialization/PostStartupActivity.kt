@@ -38,7 +38,11 @@ class PostStartupActivity : StartupActivity.DumbAware {
       // Scheduling because this task takes ~2s to run
       CheckUpdatesTask(project).queue()
     }
-    if (ConfigUtil.isCodyEnabled()) CodyAgentService.getInstance(project).startAgent(project)
+    // For integration tests we do not want to start agent immediately as we would like to first do
+    // some setup
+    if (ConfigUtil.isCodyEnabled() && !ConfigUtil.isIntegrationTestModeEnabled()) {
+      CodyAgentService.getInstance(project).startAgent(project)
+    }
     CodyStatusService.resetApplication(project)
     EndOfTrialNotificationScheduler.createAndStart(project)
 

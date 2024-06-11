@@ -16,11 +16,12 @@ import java.awt.Graphics2D
 import java.awt.event.MouseEvent
 import java.awt.geom.Rectangle2D
 import java.util.concurrent.atomic.AtomicReference
+import org.jetbrains.annotations.VisibleForTesting
 
 class LensAction(
     val group: LensWidgetGroup,
     private val text: String,
-    private val actionId: String
+    @VisibleForTesting val actionId: String
 ) : LensWidget(group) {
 
   private val highlight =

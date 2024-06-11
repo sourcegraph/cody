@@ -3,7 +3,7 @@ package com.sourcegraph.cody.agent
 import java.util.concurrent.CopyOnWriteArrayList
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.until
-import org.hamcrest.CoreMatchers.hasItems
+import org.hamcrest.Matchers.hasItems
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThat
 import org.junit.Test

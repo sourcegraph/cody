@@ -20,7 +20,7 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
             // Notify JCEF about the config changes
             javaToJSBridge?.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project))
 
-            if (ConfigUtil.isCodyEnabled() && context.accountChanged()) {
+            if (ConfigUtil.isCodyEnabled() && context.accountSwitched()) {
               CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) {
                 removeAllChatSessions()
               }

@@ -23,6 +23,7 @@ import com.sourcegraph.cody.agent.protocol.IgnorePolicySpec
 import com.sourcegraph.cody.agent.protocol.IgnoreTestParams
 import com.sourcegraph.cody.agent.protocol.IgnoreTestResponse
 import com.sourcegraph.cody.agent.protocol.InlineEditParams
+import com.sourcegraph.cody.agent.protocol.NetworkRequest
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
 import com.sourcegraph.cody.agent.protocol.RemoteRepoHasParams
 import com.sourcegraph.cody.agent.protocol.RemoteRepoHasResponse
@@ -149,4 +150,7 @@ interface CodyAgentServer {
 
   @JsonRequest("testing/ignore/overridePolicy")
   fun testingIgnoreOverridePolicy(params: IgnorePolicySpec?): CompletableFuture<Unit>
+
+  @JsonRequest("testing/requestErrors")
+  fun testingRequestErrors(): CompletableFuture<List<NetworkRequest>>
 }

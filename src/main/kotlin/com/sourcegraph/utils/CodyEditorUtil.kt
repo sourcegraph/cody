@@ -27,6 +27,7 @@ import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.ex.temp.TempFileSystem
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.withScheme
@@ -34,7 +35,7 @@ import com.sourcegraph.cody.agent.protocol.Range
 import com.sourcegraph.config.ConfigUtil
 import java.net.URI
 import java.net.URISyntaxException
-import java.util.Optional
+import java.util.*
 import kotlin.io.path.createDirectories
 import kotlin.io.path.createFile
 import kotlin.io.path.exists
@@ -199,8 +200,13 @@ object CodyEditorUtil {
   fun findFileOrScratch(project: Project, uriString: String): VirtualFile? {
     try {
       val uri = URI.create(uriString)
-      val fixedUri = if (uriString.startsWith("untitled")) uri.withScheme("file") else uri
-      return LocalFileSystem.getInstance().refreshAndFindFileByNioFile(fixedUri.toPath())
+
+      if (ConfigUtil.isIntegrationTestModeEnabled()) {
+        return TempFileSystem.getInstance().refreshAndFindFileByPath(uri.path)
+      } else {
+        val fixedUri = if (uriString.startsWith("untitled")) uri.withScheme("file") else uri
+        return LocalFileSystem.getInstance().refreshAndFindFileByNioFile(fixedUri.toPath())
+      }
     } catch (e: URISyntaxException) {
       // Let's try scratch files
       val fileName = uriString.substringAfterLast(':').trimStart('/', '\\')

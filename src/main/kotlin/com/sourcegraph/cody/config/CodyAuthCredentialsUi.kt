@@ -47,7 +47,7 @@ class CodyAuthCredentialsUi(
     row {
       val progressLabel =
           JBLabel("Logging in, check your browser").apply {
-            icon = AnimatedIcon.Default()
+            icon = AnimatedIcon.Default.INSTANCE
             foreground = getInactiveTextColor()
           }
       cell(progressLabel)
