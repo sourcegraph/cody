@@ -227,7 +227,7 @@ export const HumanMessageEditor: FunctionComponent<{
     useEffect(() => {
         if (initialContext && !isSent && isFirstMessage) {
             const editor = editorRef.current
-            if (editor) {
+            if (editor && initialContext.length > 0) {
                 editor.setInitialContextMentions(initialContext)
             }
         }

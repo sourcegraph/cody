@@ -482,7 +482,7 @@ export class SourcegraphGraphQLAPIClient {
     public async getRepositoryFiles(repositories: string[], query: string): Promise<FuzzyFindFile[] | Error> {
         return this.fetchSourcegraphAPI<APIResponse<FuzzyFindFilesResponse>>(
             FUZZY_FILES_QUERY,
-            { query: `type:path count:100 repo:^(${repositories.map(escapeRegExp).join('|')})$ ${query}` }
+            { query: `type:path count:100 ${repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''} ${query}` }
         ).then(response =>
             extractDataOrError(
                 response,

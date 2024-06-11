@@ -22,6 +22,7 @@ import {
     ChatModelContextProvider,
 } from '@sourcegraph/vscode-cody/webviews/chat/models/chatModelContext'
 import { type VSCodeWrapper, setVSCodeWrapper } from '@sourcegraph/vscode-cody/webviews/utils/VSCodeApi'
+import { WithContextProviders } from '@sourcegraph/vscode-cody/webviews/mentions/providers'
 import { ChatContextClientContext } from '@sourcegraph/vscode-cody/webviews/promptEditor/plugins/atMentions/chatContextClient'
 import { createWebviewTelemetryRecorder, createWebviewTelemetryService, TelemetryRecorderContext } from '@sourcegraph/vscode-cody/webviews/utils/telemetry'
 import { ClientStateContextProvider, useClientActionDispatcher, } from '@sourcegraph/vscode-cody/webviews/client/clientState'
@@ -62,6 +63,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
 
     const onMessageCallbacksRef = useRef<((message: ExtensionMessage) => void)[]>([])
 
+    const isClientInitialized = useRef(false)
     const [client, setClient] = useState<AgentClient | Error | null>(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
@@ -122,6 +124,12 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
 
     useEffect(() => {
         ;(async () => {
+            if (isClientInitialized.current) {
+                return
+            }
+
+            isClientInitialized.current = true
+
             try {
                 const client = await createAgentClient({
                     serverEndpoint: serverEndpoint,
@@ -129,7 +137,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                     workspaceRootUri: '',
                 })
 
-                client.rpc.sendRequest('webview/receiveMessage', {
+                await client.rpc.sendRequest('webview/receiveMessage', {
                     id: client.webviewPanelID,
                     message: {
                         command: 'context/choose-remote-search-repo',
@@ -274,15 +282,17 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                         <TelemetryRecorderContext.Provider value={telemetryRecorder}>
                             <ChatModelContextProvider value={chatModelContext}>
                                 <ClientStateContextProvider value={clientState}>
-                                    <Chat
-                                        chatEnabled={true}
-                                        userInfo={userAccountInfo}
-                                        messageInProgress={messageInProgress}
-                                        transcript={transcript}
-                                        vscodeAPI={vscodeAPI}
-                                        telemetryService={telemetryService}
-                                        isTranscriptError={isTranscriptError}
-                                    />
+                                    <WithContextProviders>
+                                        <Chat
+                                            chatEnabled={true}
+                                            userInfo={userAccountInfo}
+                                            messageInProgress={messageInProgress}
+                                            transcript={transcript}
+                                            vscodeAPI={vscodeAPI}
+                                            telemetryService={telemetryService}
+                                            isTranscriptError={isTranscriptError}
+                                        />
+                                    </WithContextProviders>
                                 </ClientStateContextProvider>
                             </ChatModelContextProvider>
                         </TelemetryRecorderContext.Provider>
