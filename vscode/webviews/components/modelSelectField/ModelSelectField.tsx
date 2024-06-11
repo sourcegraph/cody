@@ -201,13 +201,13 @@ export const ModelSelectField: React.FunctionComponent<{
                                     href={url}
                                     target="_blank"
                                     rel="noreferrer"
-                                    onClick={() =>
+                                    onSelect={() => {
                                         telemetryRecorder.recordEvent(
                                             'cody.modelSelector',
                                             'clickEnterpriseModelOption',
                                             { metadata: { [id]: 1 } }
                                         )
-                                    }
+                                    }}
                                     className={styles.modelTitleWithIcon}
                                 >
                                     <span className={styles.modelIcon}>
