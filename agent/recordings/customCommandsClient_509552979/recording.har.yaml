@@ -428,11 +428,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 9ba7bc6e9c3b5e410df6653c7fc87fad
+    - _id: 7ccac57b09a67c7b6828cbcff6a44f50
       _order: 0
       cache: {}
       request:
-        bodySize: 1162
+        bodySize: 1092
         cookies: []
         headers:
           - name: content-type
@@ -445,7 +445,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-0f2121547578a68f46c86679d47035cf-beaeb5b57f84d19c-01
+            value: 00-4f374e370d8aee2cd01575250fdf9fa4-6817f9fe59bc4167-01
           - name: connection
             value: keep-alive
           - name: host
@@ -488,13 +488,12 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: "The provided context are the code you need and have access to. Do not
-                  make any assumptions. Just give me a high-level overview based
-                  on the given context only if you need additional context to
-                  answer the following question: Give me the names of the files
-                  I have shared with you so far. Format the response as a
-                  bulleted list. Only include the raw filename, no extra
-                  formatting like quotes."
+                text: "The provided codebase context are the code you need and have access to.
+                  Do not make any assumptions. Ask for additional context if you
+                  need it. Question: Give me the names of the files I have
+                  shared with you so far. Format the response as a bulleted
+                  list. Only include the raw filename, no extra formatting like
+                  quotes."
             model: anthropic/claude-3-sonnet-20240229
             temperature: 0
             topK: -1
@@ -508,14 +507,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 4020
+        bodySize: 5039
         content:
           mimeType: text/event-stream
-          size: 4020
+          size: 5039
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided context, here are the filenames you have shared:\n\n- example1.ts\n- example2.ts\n- example3.ts","stopReason":"end_turn"}
+            data: {"completion":"Here are the filenames you have shared so far as a bulleted list:\n\n- src/example3.ts\n- src/example2.ts\n- src/example1.ts","stopReason":"end_turn"}
 
 
             event: done
@@ -525,7 +524,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 23:15:30 GMT
+            value: Tue, 11 Jun 2024 03:18:50 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -554,7 +553,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T23:15:29.244Z
+      startedDateTime: 2024-06-11T03:18:49.458Z
       time: 0
       timings:
         blocked: -1
@@ -564,11 +563,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 6f56bdb7285e03cab063dd1884062033
+    - _id: f343a620c46c1b5aabe92fddc8b2b526
       _order: 0
       cache: {}
       request:
-        bodySize: 1919
+        bodySize: 1849
         cookies: []
         headers:
           - name: content-type
@@ -581,7 +580,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-3579b46de0e2f026a4c198e244ca8401-fd859a411c825d19-01
+            value: 00-212774c03a5ac9bac5998bbd5864c54f-1a77f4a0084498c3-01
           - name: connection
             value: keep-alive
           - name: host
@@ -665,11 +664,10 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: "The provided context are the code you need and have access to. Do not
-                  make any assumptions. Just give me a high-level overview based
-                  on the given context only if you need additional context to
-                  answer the following question: How many file context have I
-                  shared with you? Reply single number. Skip preamble."
+                text: "The provided codebase context are the code you need and have access to.
+                  Do not make any assumptions. Ask for additional context if you
+                  need it. Question: How many file context have I shared with
+                  you? Reply single number. Skip preamble."
             model: anthropic/claude-3-sonnet-20240229
             temperature: 0
             topK: -1
@@ -689,7 +687,7 @@ log:
           size: 150
           text: |+
             event: completion
-            data: {"completion":"6","stopReason":"end_turn"}
+            data: {"completion":"7","stopReason":"end_turn"}
 
             event: done
             data: {}
@@ -697,7 +695,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Jun 2024 23:15:32 GMT
+            value: Tue, 11 Jun 2024 03:18:52 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -726,7 +724,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-10T23:15:30.953Z
+      startedDateTime: 2024-06-11T03:18:51.033Z
       time: 0
       timings:
         blocked: -1

@@ -363,7 +363,7 @@ describe('Agent', () => {
                   }
 
                   makeAnimalSound(): string {
-                      return "Woof!";
+                      return "Woof";
                   }
               }
               \`\`\`"

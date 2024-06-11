@@ -1,7 +1,7 @@
 import type { ChatMessage } from '../chat/transcript/messages'
 import { PromptString, ps } from './prompt-string'
 
-export const CONTEXT_ASSIST_PROMPT = ps`The provided context are the code you need and have access to. Do not make any assumptions. Just give me a high-level overview based on the given context only if you need additional context to answer the following question:`
+const CONTEXT_PREAMBLE = ps`The provided codebase context are the code you need and have access to. Do not make any assumptions. Ask for additional context if you need it. Question:`
 
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.
@@ -10,7 +10,7 @@ export const CONTEXT_ASSIST_PROMPT = ps`The provided context are the code you ne
 export class PromptMixin {
     private static mixins: PromptMixin[] = []
     // The prompt that instructs Cody to identify itself and avoid hallucinations.
-    private static defaultMixin: PromptMixin = new PromptMixin(CONTEXT_ASSIST_PROMPT)
+    private static defaultMixin: PromptMixin = new PromptMixin(CONTEXT_PREAMBLE)
 
     /**
      * Prepends all mixins to `humanMessage`. Modifies and returns `humanMessage`.
