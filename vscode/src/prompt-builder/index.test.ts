@@ -5,8 +5,8 @@ import {
     type ChatMessage,
     ContextItemSource,
     contextFiltersProvider,
-    ps,
     displayPath,
+    ps,
 } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 import { PromptBuilder } from './index'
