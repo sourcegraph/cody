@@ -212,6 +212,23 @@ describe('Chat response quality', () => {
                     /If you (can|could) provide|Please provide|enough context|additional context|Without the (relevant )?code/i
                 )
             }, 10_000)
+
+            it('simple multi-turn chat', async () => {
+                const id = await client.request('chat/new', null)
+                await client.setChatModel(id, modelString)
+
+                const firstResponse = await client.sendMessage(id, 'explain @README.md', {
+                    addEnhancedContext: false,
+                    contextFiles: [readmeItem],
+                })
+                checkAccess(firstResponse)
+
+                const secondResponse = await client.sendMessage(id, 'what does @limit.go do?', {
+                    addEnhancedContext: false,
+                    contextFiles: [limitItem],
+                })
+                checkAccess(secondResponse)
+            }, 10_000)
         })
     }
 

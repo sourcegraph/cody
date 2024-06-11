@@ -13279,6 +13279,1610 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: fab8c8d98faa0ba22b4036740b9678e1
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 5515
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: user-agent
+            value: chat-response-quality / v1
+          - name: traceparent
+            value: 00-324b68acf5573cf9081b4b9efe68aa06-ca53c166ca47883a-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 431
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >-
+                  Codebase context from file README.md:
+
+                  ```markdown
+
+                      "Zoekt, en gij zult spinazie eten" - Jan Eertink
+
+                      ("seek, and ye shall eat spinach" - My primary school teacher)
+
+                  This is a fast text search engine, intended for use with source
+
+                  code. (Pronunciation: roughly as you would pronounce "zooked" in English)
+
+
+                  **Note:** This is a [Sourcegraph](https://github.com/sourcegraph/zoekt) fork
+
+                  of [github.com/google/zoekt](https://github.com/google/zoekt). It is now the
+
+                  main maintained source of Zoekt.
+
+
+                  # INSTRUCTIONS
+
+
+                  ## Downloading
+
+                      go get github.com/sourcegraph/zoekt/
+
+                  ## Indexing
+
+
+                  ### Directory
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-index
+                      $GOPATH/bin/zoekt-index .
+
+                  ### Git repository
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-git-index
+                      $GOPATH/bin/zoekt-git-index -branches master,stable-1.4 -prefix origin/ .
+
+                  ### Repo repositories
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-{repo-index,mirror-gitiles}
+                      zoekt-mirror-gitiles -dest ~/repos/ https://gfiber.googlesource.com
+                      zoekt-repo-index /n        -name gfiber /n        -base_url https://gfiber.googlesource.com/ /n        -manifest_repo ~/repos/gfiber.googlesource.com/manifests.git /n        -repo_cache ~/repos /n        -manifest_rev_prefix=refs/heads/ --rev_prefix= /n        master:default_unrestricted.xml
+
+                  ## Searching
+
+
+                  ### Web interface
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-webserver
+                      $GOPATH/bin/zoekt-webserver -listen :6070
+
+                  ### JSON API
+
+
+                  You can retrieve search results as JSON by sending a GET request to zoekt-webserver.
+
+                      curl --get /n        --url "http://localhost:6070/search" /n        --data-urlencode "q=ngram f:READ" /n        --data-urlencode "num=50" /n        --data-urlencode "format=json"
+
+                  The response data is a JSON object. You can refer to [web.ApiSearchResult](https://sourcegraph.com/github.com/sourcegraph/zoekt@6b1df4f8a3d7b34f13ba0cafd8e1a9b3fc728cf0/-/blob/web/api.go?L23:6&subtree=true) to learn about the structure of the object.
+
+
+                  ### CLI
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt
+                      $GOPATH/bin/zoekt 'ngram f:READ'
+
+                  ## Installation
+
+                  A more organized installation on a Linux server should use a systemd unit file,
+
+                  eg.
+
+                      [Unit]
+                      Description=zoekt webserver
+
+                      [Service]
+                      ExecStart=/zoekt/bin/zoekt-webserver -index /zoekt/index -listen :443  --ssl_cert /zoekt/etc/cert.pem   --ssl_key /zoekt/etc/key.pem
+                      Restart=always
+
+                      [Install]
+                      WantedBy=default.target
+
+
+                  # SEARCH SERVICE
+
+
+                  Zoekt comes with a small service management program:
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-indexserver
+
+                      cat << EOF > config.json
+                      [{"GithubUser": "username"},
+                       {"GithubOrg": "org"},
+                       {"GitilesURL": "https://gerrit.googlesource.com", "Name": "zoekt" }
+                      ]
+                      EOF
+
+                      $GOPATH/bin/zoekt-indexserver -mirror_config config.json
+
+                  This will mirror all repos under 'github.com/username', 'github.com/org', as
+
+                  well as the 'zoekt' repository. It will index the repositories.
+
+
+                  It takes care of fetching and indexing new data and cleaning up logfiles.
+
+
+                  The webserver can be started from a standard service management framework, such
+
+                  as systemd.
+
+
+
+                  # SYMBOL SEARCH
+
+
+                  It is recommended to install [Universal
+
+                  ctags](https://github.com/universal-ctags/ctags) to improve
+
+                  ranking. See [here](doc/ctags.md) for more information.
+
+
+
+                  # ACKNOWLEDGEMENTS
+
+
+                  Thanks to Han-Wen Nienhuys for creating Zoekt. Thanks to Alexander Neubeck for
+
+                  coming up with this idea, and helping Han-Wen Nienhuys flesh it out.
+
+
+
+                  # FORK DETAILS
+
+
+                  Originally this fork contained some changes that do not make sense to upstream
+
+                  and or have not yet been upstreamed. However, this is now the defacto source
+
+                  for Zoekt. This section will remain for historical reasons and contains
+
+                  outdated information. It can be removed once the dust settles on moving from
+
+                  google/zoekt to sourcegraph/zoekt. Differences:
+
+
+                  - [zoekt-sourcegraph-indexserver](cmd/zoekt-sourcegraph-indexserver/main.go)
+                    is a Sourcegraph specific command which indexes all enabled repositories on
+                    Sourcegraph, as well as keeping the indexes up to date.
+                  - We have exposed the API via
+                    [keegancsmith/rpc](https://github.com/keegancsmith/rpc) (a fork of `net/rpc`
+                    which supports cancellation).
+                  - Query primitive `BranchesRepos` to efficiently specify a set of repositories to
+                    search.
+                  - Allow empty shard directories on startup. Needed when starting a fresh
+                    instance which hasn't indexed anything yet.
+                  - We can return symbol/ctag data in results. Additionally we can run symbol regex queries.
+
+                  - We search shards in order of repo name and ignore shard ranking.
+
+                  - Other minor changes.
+
+
+                  Assuming you have the gerrit upstream configured, a useful way to see what we
+
+                  changed is:
+
+
+                  ``` shellsession
+
+                  $ git diff gerrit/master -- ':(exclude)vendor/' ':(exclude)Gopkg*'
+
+                  ```
+
+
+                  # DISCLAIMER
+
+
+                  This is not an official Google product
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: "The provided codebase context are the code you need and have access to.
+                  Do not make any assumptions. Ask for additional context if you
+                  need it. Question: explain @README.md"
+            model: anthropic/claude-3-sonnet-20240229
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+          - name: client-name
+            value: chat-response-quality
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=chat-response-quality&client-version=v1
+      response:
+        bodySize: 312256
+        content:
+          mimeType: text/event-stream
+          size: 312256
+          text: >+
+            event: completion
+
+            data: {"completion":"The file `README.md` appears to be the main documentation file for the Zoekt project. It provides information about:\n\n1. **Project Overview**: Zoekt is a fast text search engine intended for searching source code. It gives the pronunciation and meaning of the name \"Zoekt\".\n\n2. **Instructions**: This section covers how to download, index, and search the code using different methods like directories, Git repositories, and repo repositories. It also provides instructions for running the web interface, using the JSON API, and the command-line interface.\n\n3. **Installation**: It suggests using a systemd unit file for a more organized installation on a Linux server.\n\n4. **Search Service**: Zoekt comes with a service management program called `zoekt-indexserver` that can mirror and index repositories from various sources like GitHub and Gitiles.\n\n5. **Symbol Search**: It recommends installing Universal ctags for improved symbol search and ranking.\n\n6. **Acknowledgements**: It thanks the creators and contributors of Zoekt.\n\n7. **Fork Details**: This section explains the differences between this fork (`sourcegraph/zoekt`) and the original Google repository (`google/zoekt`). It mentions changes like the `zoekt-sourcegraph-indexserver` command, exposing the API via `keegancsmith/rpc`, support for querying repositories efficiently, and other minor changes.\n\n8. **Disclaimer**: It states that this is not an official Google product.\n\nThe `README.md` file serves as a comprehensive guide for understanding, installing, and using the Zoekt search engine, with a focus on the specific changes and features present in the Sourcegraph fork.","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 11 Jun 2024 19:36:36 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-06-11T19:36:34.728Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 6bfa94f7eb7d51cec1056ca685044570
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 11842
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: user-agent
+            value: chat-response-quality / v1
+          - name: traceparent
+            value: 00-a69dca8765e04bcaef7ad458a2ad2050-d37ebe96f1e0c28c-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 431
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >-
+                  Codebase context from file README.md:
+
+                  ```markdown
+
+                      "Zoekt, en gij zult spinazie eten" - Jan Eertink
+
+                      ("seek, and ye shall eat spinach" - My primary school teacher)
+
+                  This is a fast text search engine, intended for use with source
+
+                  code. (Pronunciation: roughly as you would pronounce "zooked" in English)
+
+
+                  **Note:** This is a [Sourcegraph](https://github.com/sourcegraph/zoekt) fork
+
+                  of [github.com/google/zoekt](https://github.com/google/zoekt). It is now the
+
+                  main maintained source of Zoekt.
+
+
+                  # INSTRUCTIONS
+
+
+                  ## Downloading
+
+                      go get github.com/sourcegraph/zoekt/
+
+                  ## Indexing
+
+
+                  ### Directory
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-index
+                      $GOPATH/bin/zoekt-index .
+
+                  ### Git repository
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-git-index
+                      $GOPATH/bin/zoekt-git-index -branches master,stable-1.4 -prefix origin/ .
+
+                  ### Repo repositories
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-{repo-index,mirror-gitiles}
+                      zoekt-mirror-gitiles -dest ~/repos/ https://gfiber.googlesource.com
+                      zoekt-repo-index /n        -name gfiber /n        -base_url https://gfiber.googlesource.com/ /n        -manifest_repo ~/repos/gfiber.googlesource.com/manifests.git /n        -repo_cache ~/repos /n        -manifest_rev_prefix=refs/heads/ --rev_prefix= /n        master:default_unrestricted.xml
+
+                  ## Searching
+
+
+                  ### Web interface
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-webserver
+                      $GOPATH/bin/zoekt-webserver -listen :6070
+
+                  ### JSON API
+
+
+                  You can retrieve search results as JSON by sending a GET request to zoekt-webserver.
+
+                      curl --get /n        --url "http://localhost:6070/search" /n        --data-urlencode "q=ngram f:READ" /n        --data-urlencode "num=50" /n        --data-urlencode "format=json"
+
+                  The response data is a JSON object. You can refer to [web.ApiSearchResult](https://sourcegraph.com/github.com/sourcegraph/zoekt@6b1df4f8a3d7b34f13ba0cafd8e1a9b3fc728cf0/-/blob/web/api.go?L23:6&subtree=true) to learn about the structure of the object.
+
+
+                  ### CLI
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt
+                      $GOPATH/bin/zoekt 'ngram f:READ'
+
+                  ## Installation
+
+                  A more organized installation on a Linux server should use a systemd unit file,
+
+                  eg.
+
+                      [Unit]
+                      Description=zoekt webserver
+
+                      [Service]
+                      ExecStart=/zoekt/bin/zoekt-webserver -index /zoekt/index -listen :443  --ssl_cert /zoekt/etc/cert.pem   --ssl_key /zoekt/etc/key.pem
+                      Restart=always
+
+                      [Install]
+                      WantedBy=default.target
+
+
+                  # SEARCH SERVICE
+
+
+                  Zoekt comes with a small service management program:
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-indexserver
+
+                      cat << EOF > config.json
+                      [{"GithubUser": "username"},
+                       {"GithubOrg": "org"},
+                       {"GitilesURL": "https://gerrit.googlesource.com", "Name": "zoekt" }
+                      ]
+                      EOF
+
+                      $GOPATH/bin/zoekt-indexserver -mirror_config config.json
+
+                  This will mirror all repos under 'github.com/username', 'github.com/org', as
+
+                  well as the 'zoekt' repository. It will index the repositories.
+
+
+                  It takes care of fetching and indexing new data and cleaning up logfiles.
+
+
+                  The webserver can be started from a standard service management framework, such
+
+                  as systemd.
+
+
+
+                  # SYMBOL SEARCH
+
+
+                  It is recommended to install [Universal
+
+                  ctags](https://github.com/universal-ctags/ctags) to improve
+
+                  ranking. See [here](doc/ctags.md) for more information.
+
+
+
+                  # ACKNOWLEDGEMENTS
+
+
+                  Thanks to Han-Wen Nienhuys for creating Zoekt. Thanks to Alexander Neubeck for
+
+                  coming up with this idea, and helping Han-Wen Nienhuys flesh it out.
+
+
+
+                  # FORK DETAILS
+
+
+                  Originally this fork contained some changes that do not make sense to upstream
+
+                  and or have not yet been upstreamed. However, this is now the defacto source
+
+                  for Zoekt. This section will remain for historical reasons and contains
+
+                  outdated information. It can be removed once the dust settles on moving from
+
+                  google/zoekt to sourcegraph/zoekt. Differences:
+
+
+                  - [zoekt-sourcegraph-indexserver](cmd/zoekt-sourcegraph-indexserver/main.go)
+                    is a Sourcegraph specific command which indexes all enabled repositories on
+                    Sourcegraph, as well as keeping the indexes up to date.
+                  - We have exposed the API via
+                    [keegancsmith/rpc](https://github.com/keegancsmith/rpc) (a fork of `net/rpc`
+                    which supports cancellation).
+                  - Query primitive `BranchesRepos` to efficiently specify a set of repositories to
+                    search.
+                  - Allow empty shard directories on startup. Needed when starting a fresh
+                    instance which hasn't indexed anything yet.
+                  - We can return symbol/ctag data in results. Additionally we can run symbol regex queries.
+
+                  - We search shards in order of repo name and ignore shard ranking.
+
+                  - Other minor changes.
+
+
+                  Assuming you have the gerrit upstream configured, a useful way to see what we
+
+                  changed is:
+
+
+                  ``` shellsession
+
+                  $ git diff gerrit/master -- ':(exclude)vendor/' ':(exclude)Gopkg*'
+
+                  ```
+
+
+                  # DISCLAIMER
+
+
+                  This is not an official Google product
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file limit.go:
+
+                  ```go
+
+                  package zoekt
+
+
+                  import "log"
+
+
+                  // SortAndTruncateFiles is a convenience around SortFiles and
+
+                  // DisplayTruncator. Given an aggregated files it will sort and then truncate
+
+                  // based on the search options.
+
+                  func SortAndTruncateFiles(files []FileMatch, opts *SearchOptions) []FileMatch {
+                  	SortFiles(files)
+                  	truncator, _ := NewDisplayTruncator(opts)
+                  	files, _ = truncator(files)
+                  	return files
+                  }
+
+
+                  // DisplayTruncator is a stateful function which enforces Document and Match
+
+                  // display limits by truncating and mutating before. hasMore is true until the
+
+                  // limits are exhausted. Once hasMore is false each subsequent call will
+
+                  // return an empty after and hasMore false.
+
+                  type DisplayTruncator func(before []FileMatch) (after []FileMatch, hasMore bool)
+
+
+                  // NewDisplayTruncator will return a DisplayTruncator which enforces the limits in
+
+                  // opts. If there are no limits to enforce, hasLimits is false and there is no
+
+                  // need to call DisplayTruncator.
+
+                  func NewDisplayTruncator(opts *SearchOptions) (_ DisplayTruncator, hasLimits bool) {
+                  	docLimit := opts.MaxDocDisplayCount
+                  	docLimited := docLimit > 0
+
+                  	matchLimit := opts.MaxMatchDisplayCount
+                  	matchLimited := matchLimit > 0
+
+                  	done := false
+
+                  	if !docLimited && !matchLimited {
+                  		return func(fm []FileMatch) ([]FileMatch, bool) {
+                  			return fm, true
+                  		}, false
+                  	}
+
+                  	return func(fm []FileMatch) ([]FileMatch, bool) {
+                  		if done {
+                  			return nil, false
+                  		}
+
+                  		if docLimited {
+                  			if len(fm) >= docLimit {
+                  				done = true
+                  				fm = fm[:docLimit]
+                  			}
+                  			docLimit -= len(fm)
+                  		}
+
+                  		if matchLimited {
+                  			fm, matchLimit = limitMatches(fm, matchLimit, opts.ChunkMatches)
+                  			if matchLimit <= 0 {
+                  				done = true
+                  			}
+                  		}
+
+                  		return fm, !done
+                  	}, true
+                  }
+
+
+                  func limitMatches(files []FileMatch, limit int, chunkMatches bool) ([]FileMatch, int) {
+                  	var limiter func(file *FileMatch, limit int) int
+                  	if chunkMatches {
+                  		limiter = limitChunkMatches
+                  	} else {
+                  		limiter = limitLineMatches
+                  	}
+                  	for i := range files {
+                  		limit = limiter(&files[i], limit)
+                  		if limit <= 0 {
+                  			return files[:i+1], 0
+                  		}
+                  	}
+                  	return files, limit
+                  }
+
+
+                  // Limit the number of ChunkMatches in the given FileMatch, returning the
+
+                  // remaining limit, if any.
+
+                  func limitChunkMatches(file *FileMatch, limit int) int {
+                  	for i := range file.ChunkMatches {
+                  		cm := &file.ChunkMatches[i]
+                  		if len(cm.Ranges) > limit {
+                  			// We potentially need to effect the limit upon 3 different fields:
+                  			// Ranges, SymbolInfo, and Content.
+
+                  			// Content is the most complicated: we need to remove the last N
+                  			// lines from it, where N is the difference between the line number
+                  			// of the end of the old last Range and that of the new last Range.
+                  			// This calculation is correct in the presence of both context lines
+                  			// and multiline Ranges, taking into account that Content never has
+                  			// a trailing newline.
+                  			n := cm.Ranges[len(cm.Ranges)-1].End.LineNumber - cm.Ranges[limit-1].End.LineNumber
+                  			if n > 0 {
+                  				for b := len(cm.Content) - 1; b >= 0; b-- {
+                  					if cm.Content[b] == '/n' {
+                  						n -= 1
+                  					}
+                  					if n == 0 {
+                  						cm.Content = cm.Content[:b]
+                  						break
+                  					}
+                  				}
+                  				if n > 0 {
+                  					// Should be impossible.
+                  					log.Panicf("Failed to find enough newlines when truncating Content, %d left over, %d ranges", n, len(cm.Ranges))
+                  				}
+                  			}
+
+                  			cm.Ranges = cm.Ranges[:limit]
+                  			if cm.SymbolInfo != nil {
+                  				// When non-nil, SymbolInfo is specified to have the same length
+                  				// as Ranges.
+                  				cm.SymbolInfo = cm.SymbolInfo[:limit]
+                  			}
+                  		}
+                  		if len(cm.Ranges) == limit {
+                  			file.ChunkMatches = file.ChunkMatches[:i+1]
+                  			limit = 0
+                  			break
+                  		}
+                  		limit -= len(cm.Ranges)
+                  	}
+                  	return limit
+                  }
+
+
+                  // Limit the number of LineMatches in the given FileMatch, returning the
+
+                  // remaining limit, if any.
+
+                  func limitLineMatches(file *FileMatch, limit int) int {
+                  	for i := range file.LineMatches {
+                  		lm := &file.LineMatches[i]
+                  		if len(lm.LineFragments) > limit {
+                  			lm.LineFragments = lm.LineFragments[:limit]
+                  		}
+                  		if len(lm.LineFragments) == limit {
+                  			file.LineMatches = file.LineMatches[:i+1]
+                  			limit = 0
+                  			break
+                  		}
+                  		limit -= len(lm.LineFragments)
+                  	}
+                  	return limit
+                  }
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: explain @README.md
+              - speaker: assistant
+                text: >-
+                  The file `README.md` appears to be the main documentation file
+                  for the Zoekt project. It provides information about:
+
+
+                  1. **Project Overview**: Zoekt is a fast text search engine intended for searching source code. It gives the pronunciation and meaning of the name "Zoekt".
+
+
+                  2. **Instructions**: This section covers how to download, index, and search the code using different methods like directories, Git repositories, and repo repositories. It also provides instructions for running the web interface, using the JSON API, and the command-line interface.
+
+
+                  3. **Installation**: It suggests using a systemd unit file for a more organized installation on a Linux server.
+
+
+                  4. **Search Service**: Zoekt comes with a service management program called `zoekt-indexserver` that can mirror and index repositories from various sources like GitHub and Gitiles.
+
+
+                  5. **Symbol Search**: It recommends installing Universal ctags for improved symbol search and ranking.
+
+
+                  6. **Acknowledgements**: It thanks the creators and contributors of Zoekt.
+
+
+                  7. **Fork Details**: This section explains the differences between this fork (`sourcegraph/zoekt`) and the original Google repository (`google/zoekt`). It mentions changes like the `zoekt-sourcegraph-indexserver` command, exposing the API via `keegancsmith/rpc`, support for querying repositories efficiently, and other minor changes.
+
+
+                  8. **Disclaimer**: It states that this is not an official Google product.
+
+
+                  The `README.md` file serves as a comprehensive guide for understanding, installing, and using the Zoekt search engine, with a focus on the specific changes and features present in the Sourcegraph fork.
+              - speaker: human
+                text: "The provided codebase context are the code you need and have access to.
+                  Do not make any assumptions. Ask for additional context if you
+                  need it. Question: what does @limit.go do?"
+            model: anthropic/claude-3-sonnet-20240229
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+          - name: client-name
+            value: chat-response-quality
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=chat-response-quality&client-version=v1
+      response:
+        bodySize: 516306
+        content:
+          mimeType: text/event-stream
+          size: 516306
+          text: >+
+            event: completion
+
+            data: {"completion":"The `limit.go` file contains utility functions to limit the number of search results returned, based on the specified options in the `SearchOptions` struct.\n\nHere's a breakdown of what the code does:\n\n1. `SortAndTruncateFiles` is a convenience function that sorts the `FileMatch` slice and then truncates it based on the `SearchOptions`.\n\n2. `DisplayTruncator` is a type alias for a function that takes a slice of `FileMatch` and returns a (potentially truncated) slice of `FileMatch` and a boolean indicating if there are more results to be displayed.\n\n3. `NewDisplayTruncator` returns a `DisplayTruncator` function based on the `SearchOptions`. It checks if there are limits set for the maximum number of documents (`MaxDocDisplayCount`) and the maximum number of matches (`MaxMatchDisplayCount`). If there are no limits, it returns a function that doesn't perform any truncation.\n\n4. The `DisplayTruncator` function returned by `NewDisplayTruncator` does the following:\n   - If the `docLimit` (maximum number of documents) is reached, it truncates the `FileMatch` slice to that limit.\n   - If the `matchLimit` (maximum number of matches) is reached, it calls `limitMatches` to truncate the matches in each `FileMatch`.\n   - It keeps track of whether the limits have been exhausted and returns an empty slice when that happens.\n\n5. `limitMatches` is a helper function that calls either `limitChunkMatches` or `limitLineMatches` based on the `ChunkMatches` option in `SearchOptions`.\n\n6. `limitChunkMatches` truncates the `ChunkMatches` in a `FileMatch` to the specified `limit`. It also updates the `Content` and `SymbolInfo` fields accordingly.\n\n7. `limitLineMatches` truncates the `LineMatches` in a `FileMatch` to the specified `limit`.\n\nThe code provides a way to limit the search results based on the configured options, ensuring that the number of documents and matches returned does not exceed the specified limits. This can be useful for controlling the amount of data returned and improving performance.","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 11 Jun 2024 19:36:45 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-06-11T19:36:43.797Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 68702e73d9477acb047dc1717a98edd9
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 5514
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: user-agent
+            value: chat-response-quality / v1
+          - name: traceparent
+            value: 00-81e34ffbcb6f4929d207cf31688abce3-23eae934eacce785-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 431
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >-
+                  Codebase context from file README.md:
+
+                  ```markdown
+
+                      "Zoekt, en gij zult spinazie eten" - Jan Eertink
+
+                      ("seek, and ye shall eat spinach" - My primary school teacher)
+
+                  This is a fast text search engine, intended for use with source
+
+                  code. (Pronunciation: roughly as you would pronounce "zooked" in English)
+
+
+                  **Note:** This is a [Sourcegraph](https://github.com/sourcegraph/zoekt) fork
+
+                  of [github.com/google/zoekt](https://github.com/google/zoekt). It is now the
+
+                  main maintained source of Zoekt.
+
+
+                  # INSTRUCTIONS
+
+
+                  ## Downloading
+
+                      go get github.com/sourcegraph/zoekt/
+
+                  ## Indexing
+
+
+                  ### Directory
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-index
+                      $GOPATH/bin/zoekt-index .
+
+                  ### Git repository
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-git-index
+                      $GOPATH/bin/zoekt-git-index -branches master,stable-1.4 -prefix origin/ .
+
+                  ### Repo repositories
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-{repo-index,mirror-gitiles}
+                      zoekt-mirror-gitiles -dest ~/repos/ https://gfiber.googlesource.com
+                      zoekt-repo-index /n        -name gfiber /n        -base_url https://gfiber.googlesource.com/ /n        -manifest_repo ~/repos/gfiber.googlesource.com/manifests.git /n        -repo_cache ~/repos /n        -manifest_rev_prefix=refs/heads/ --rev_prefix= /n        master:default_unrestricted.xml
+
+                  ## Searching
+
+
+                  ### Web interface
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-webserver
+                      $GOPATH/bin/zoekt-webserver -listen :6070
+
+                  ### JSON API
+
+
+                  You can retrieve search results as JSON by sending a GET request to zoekt-webserver.
+
+                      curl --get /n        --url "http://localhost:6070/search" /n        --data-urlencode "q=ngram f:READ" /n        --data-urlencode "num=50" /n        --data-urlencode "format=json"
+
+                  The response data is a JSON object. You can refer to [web.ApiSearchResult](https://sourcegraph.com/github.com/sourcegraph/zoekt@6b1df4f8a3d7b34f13ba0cafd8e1a9b3fc728cf0/-/blob/web/api.go?L23:6&subtree=true) to learn about the structure of the object.
+
+
+                  ### CLI
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt
+                      $GOPATH/bin/zoekt 'ngram f:READ'
+
+                  ## Installation
+
+                  A more organized installation on a Linux server should use a systemd unit file,
+
+                  eg.
+
+                      [Unit]
+                      Description=zoekt webserver
+
+                      [Service]
+                      ExecStart=/zoekt/bin/zoekt-webserver -index /zoekt/index -listen :443  --ssl_cert /zoekt/etc/cert.pem   --ssl_key /zoekt/etc/key.pem
+                      Restart=always
+
+                      [Install]
+                      WantedBy=default.target
+
+
+                  # SEARCH SERVICE
+
+
+                  Zoekt comes with a small service management program:
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-indexserver
+
+                      cat << EOF > config.json
+                      [{"GithubUser": "username"},
+                       {"GithubOrg": "org"},
+                       {"GitilesURL": "https://gerrit.googlesource.com", "Name": "zoekt" }
+                      ]
+                      EOF
+
+                      $GOPATH/bin/zoekt-indexserver -mirror_config config.json
+
+                  This will mirror all repos under 'github.com/username', 'github.com/org', as
+
+                  well as the 'zoekt' repository. It will index the repositories.
+
+
+                  It takes care of fetching and indexing new data and cleaning up logfiles.
+
+
+                  The webserver can be started from a standard service management framework, such
+
+                  as systemd.
+
+
+
+                  # SYMBOL SEARCH
+
+
+                  It is recommended to install [Universal
+
+                  ctags](https://github.com/universal-ctags/ctags) to improve
+
+                  ranking. See [here](doc/ctags.md) for more information.
+
+
+
+                  # ACKNOWLEDGEMENTS
+
+
+                  Thanks to Han-Wen Nienhuys for creating Zoekt. Thanks to Alexander Neubeck for
+
+                  coming up with this idea, and helping Han-Wen Nienhuys flesh it out.
+
+
+
+                  # FORK DETAILS
+
+
+                  Originally this fork contained some changes that do not make sense to upstream
+
+                  and or have not yet been upstreamed. However, this is now the defacto source
+
+                  for Zoekt. This section will remain for historical reasons and contains
+
+                  outdated information. It can be removed once the dust settles on moving from
+
+                  google/zoekt to sourcegraph/zoekt. Differences:
+
+
+                  - [zoekt-sourcegraph-indexserver](cmd/zoekt-sourcegraph-indexserver/main.go)
+                    is a Sourcegraph specific command which indexes all enabled repositories on
+                    Sourcegraph, as well as keeping the indexes up to date.
+                  - We have exposed the API via
+                    [keegancsmith/rpc](https://github.com/keegancsmith/rpc) (a fork of `net/rpc`
+                    which supports cancellation).
+                  - Query primitive `BranchesRepos` to efficiently specify a set of repositories to
+                    search.
+                  - Allow empty shard directories on startup. Needed when starting a fresh
+                    instance which hasn't indexed anything yet.
+                  - We can return symbol/ctag data in results. Additionally we can run symbol regex queries.
+
+                  - We search shards in order of repo name and ignore shard ranking.
+
+                  - Other minor changes.
+
+
+                  Assuming you have the gerrit upstream configured, a useful way to see what we
+
+                  changed is:
+
+
+                  ``` shellsession
+
+                  $ git diff gerrit/master -- ':(exclude)vendor/' ':(exclude)Gopkg*'
+
+                  ```
+
+
+                  # DISCLAIMER
+
+
+                  This is not an official Google product
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: "The provided codebase context are the code you need and have access to.
+                  Do not make any assumptions. Ask for additional context if you
+                  need it. Question: explain @README.md"
+            model: anthropic/claude-3-haiku-20240307
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+          - name: client-name
+            value: chat-response-quality
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=chat-response-quality&client-version=v1
+      response:
+        bodySize: 485770
+        content:
+          mimeType: text/event-stream
+          size: 485770
+          text: >+
+            event: completion
+
+            data: {"completion":"Certainly! The provided codebase context is the contents of a README.md file, which typically contains important information about the project, including instructions for usage, installation, and other relevant details.\n\nHere's a summary of the key points from the README.md file:\n\n1. **Introduction**: The file starts with a quote and a brief description of Zoekt, which is a fast text search engine intended for use with source code.\n\n2. **Note**: This is a Sourcegraph fork of the original Zoekt project from Google, and it is now the main maintained source of Zoekt.\n\n3. **Instructions**:\n   - **Downloading**: The project can be downloaded using the `go get` command.\n   - **Indexing**: The README.md file provides instructions for indexing directories and Git repositories using the `zoekt-index` and `zoekt-git-index` commands.\n   - **Searching**: The file explains how to use the web interface, JSON API, and command-line interface to perform searches.\n   - **Installation**: A systemd unit file is provided as an example for a more organized installation on a Linux server.\n\n4. **Search Service**: The README.md file describes a search service management program called `zoekt-indexserver`, which can be used to mirror and index repositories from GitHub and Gitiles.\n\n5. **Symbol Search**: The file recommends installing Universal ctags to improve the ranking of search results.\n\n6. **Acknowledgements**: The README.md file acknowledges the original creator of Zoekt, Han-Wen Nienhuys, and the person who came up with the idea, Alexander Neubeck.\n\n7. **Fork Details**: This section explains the differences between the Sourcegraph fork and the original Google repository, such as the addition of a Sourcegraph-specific indexing command, support for cancellation in the API, and other minor changes.\n\n8. **Disclaimer**: The file ends with a disclaimer that this is not an official Google product.\n\nOverall, the README.md file provides a comprehensive overview of the Zoekt project, its features, and instructions for setting it up and using it.","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 11 Jun 2024 19:36:46 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-06-11T19:36:45.269Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: f7a6536b75f660df34c913c1334e4e72
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 12253
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: user-agent
+            value: chat-response-quality / v1
+          - name: traceparent
+            value: 00-4566a02354d25e93cc7465bb2baf0166-ebc72be4e75b230a-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 431
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >-
+                  Codebase context from file README.md:
+
+                  ```markdown
+
+                      "Zoekt, en gij zult spinazie eten" - Jan Eertink
+
+                      ("seek, and ye shall eat spinach" - My primary school teacher)
+
+                  This is a fast text search engine, intended for use with source
+
+                  code. (Pronunciation: roughly as you would pronounce "zooked" in English)
+
+
+                  **Note:** This is a [Sourcegraph](https://github.com/sourcegraph/zoekt) fork
+
+                  of [github.com/google/zoekt](https://github.com/google/zoekt). It is now the
+
+                  main maintained source of Zoekt.
+
+
+                  # INSTRUCTIONS
+
+
+                  ## Downloading
+
+                      go get github.com/sourcegraph/zoekt/
+
+                  ## Indexing
+
+
+                  ### Directory
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-index
+                      $GOPATH/bin/zoekt-index .
+
+                  ### Git repository
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-git-index
+                      $GOPATH/bin/zoekt-git-index -branches master,stable-1.4 -prefix origin/ .
+
+                  ### Repo repositories
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-{repo-index,mirror-gitiles}
+                      zoekt-mirror-gitiles -dest ~/repos/ https://gfiber.googlesource.com
+                      zoekt-repo-index /n        -name gfiber /n        -base_url https://gfiber.googlesource.com/ /n        -manifest_repo ~/repos/gfiber.googlesource.com/manifests.git /n        -repo_cache ~/repos /n        -manifest_rev_prefix=refs/heads/ --rev_prefix= /n        master:default_unrestricted.xml
+
+                  ## Searching
+
+
+                  ### Web interface
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-webserver
+                      $GOPATH/bin/zoekt-webserver -listen :6070
+
+                  ### JSON API
+
+
+                  You can retrieve search results as JSON by sending a GET request to zoekt-webserver.
+
+                      curl --get /n        --url "http://localhost:6070/search" /n        --data-urlencode "q=ngram f:READ" /n        --data-urlencode "num=50" /n        --data-urlencode "format=json"
+
+                  The response data is a JSON object. You can refer to [web.ApiSearchResult](https://sourcegraph.com/github.com/sourcegraph/zoekt@6b1df4f8a3d7b34f13ba0cafd8e1a9b3fc728cf0/-/blob/web/api.go?L23:6&subtree=true) to learn about the structure of the object.
+
+
+                  ### CLI
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt
+                      $GOPATH/bin/zoekt 'ngram f:READ'
+
+                  ## Installation
+
+                  A more organized installation on a Linux server should use a systemd unit file,
+
+                  eg.
+
+                      [Unit]
+                      Description=zoekt webserver
+
+                      [Service]
+                      ExecStart=/zoekt/bin/zoekt-webserver -index /zoekt/index -listen :443  --ssl_cert /zoekt/etc/cert.pem   --ssl_key /zoekt/etc/key.pem
+                      Restart=always
+
+                      [Install]
+                      WantedBy=default.target
+
+
+                  # SEARCH SERVICE
+
+
+                  Zoekt comes with a small service management program:
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-indexserver
+
+                      cat << EOF > config.json
+                      [{"GithubUser": "username"},
+                       {"GithubOrg": "org"},
+                       {"GitilesURL": "https://gerrit.googlesource.com", "Name": "zoekt" }
+                      ]
+                      EOF
+
+                      $GOPATH/bin/zoekt-indexserver -mirror_config config.json
+
+                  This will mirror all repos under 'github.com/username', 'github.com/org', as
+
+                  well as the 'zoekt' repository. It will index the repositories.
+
+
+                  It takes care of fetching and indexing new data and cleaning up logfiles.
+
+
+                  The webserver can be started from a standard service management framework, such
+
+                  as systemd.
+
+
+
+                  # SYMBOL SEARCH
+
+
+                  It is recommended to install [Universal
+
+                  ctags](https://github.com/universal-ctags/ctags) to improve
+
+                  ranking. See [here](doc/ctags.md) for more information.
+
+
+
+                  # ACKNOWLEDGEMENTS
+
+
+                  Thanks to Han-Wen Nienhuys for creating Zoekt. Thanks to Alexander Neubeck for
+
+                  coming up with this idea, and helping Han-Wen Nienhuys flesh it out.
+
+
+
+                  # FORK DETAILS
+
+
+                  Originally this fork contained some changes that do not make sense to upstream
+
+                  and or have not yet been upstreamed. However, this is now the defacto source
+
+                  for Zoekt. This section will remain for historical reasons and contains
+
+                  outdated information. It can be removed once the dust settles on moving from
+
+                  google/zoekt to sourcegraph/zoekt. Differences:
+
+
+                  - [zoekt-sourcegraph-indexserver](cmd/zoekt-sourcegraph-indexserver/main.go)
+                    is a Sourcegraph specific command which indexes all enabled repositories on
+                    Sourcegraph, as well as keeping the indexes up to date.
+                  - We have exposed the API via
+                    [keegancsmith/rpc](https://github.com/keegancsmith/rpc) (a fork of `net/rpc`
+                    which supports cancellation).
+                  - Query primitive `BranchesRepos` to efficiently specify a set of repositories to
+                    search.
+                  - Allow empty shard directories on startup. Needed when starting a fresh
+                    instance which hasn't indexed anything yet.
+                  - We can return symbol/ctag data in results. Additionally we can run symbol regex queries.
+
+                  - We search shards in order of repo name and ignore shard ranking.
+
+                  - Other minor changes.
+
+
+                  Assuming you have the gerrit upstream configured, a useful way to see what we
+
+                  changed is:
+
+
+                  ``` shellsession
+
+                  $ git diff gerrit/master -- ':(exclude)vendor/' ':(exclude)Gopkg*'
+
+                  ```
+
+
+                  # DISCLAIMER
+
+
+                  This is not an official Google product
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file limit.go:
+
+                  ```go
+
+                  package zoekt
+
+
+                  import "log"
+
+
+                  // SortAndTruncateFiles is a convenience around SortFiles and
+
+                  // DisplayTruncator. Given an aggregated files it will sort and then truncate
+
+                  // based on the search options.
+
+                  func SortAndTruncateFiles(files []FileMatch, opts *SearchOptions) []FileMatch {
+                  	SortFiles(files)
+                  	truncator, _ := NewDisplayTruncator(opts)
+                  	files, _ = truncator(files)
+                  	return files
+                  }
+
+
+                  // DisplayTruncator is a stateful function which enforces Document and Match
+
+                  // display limits by truncating and mutating before. hasMore is true until the
+
+                  // limits are exhausted. Once hasMore is false each subsequent call will
+
+                  // return an empty after and hasMore false.
+
+                  type DisplayTruncator func(before []FileMatch) (after []FileMatch, hasMore bool)
+
+
+                  // NewDisplayTruncator will return a DisplayTruncator which enforces the limits in
+
+                  // opts. If there are no limits to enforce, hasLimits is false and there is no
+
+                  // need to call DisplayTruncator.
+
+                  func NewDisplayTruncator(opts *SearchOptions) (_ DisplayTruncator, hasLimits bool) {
+                  	docLimit := opts.MaxDocDisplayCount
+                  	docLimited := docLimit > 0
+
+                  	matchLimit := opts.MaxMatchDisplayCount
+                  	matchLimited := matchLimit > 0
+
+                  	done := false
+
+                  	if !docLimited && !matchLimited {
+                  		return func(fm []FileMatch) ([]FileMatch, bool) {
+                  			return fm, true
+                  		}, false
+                  	}
+
+                  	return func(fm []FileMatch) ([]FileMatch, bool) {
+                  		if done {
+                  			return nil, false
+                  		}
+
+                  		if docLimited {
+                  			if len(fm) >= docLimit {
+                  				done = true
+                  				fm = fm[:docLimit]
+                  			}
+                  			docLimit -= len(fm)
+                  		}
+
+                  		if matchLimited {
+                  			fm, matchLimit = limitMatches(fm, matchLimit, opts.ChunkMatches)
+                  			if matchLimit <= 0 {
+                  				done = true
+                  			}
+                  		}
+
+                  		return fm, !done
+                  	}, true
+                  }
+
+
+                  func limitMatches(files []FileMatch, limit int, chunkMatches bool) ([]FileMatch, int) {
+                  	var limiter func(file *FileMatch, limit int) int
+                  	if chunkMatches {
+                  		limiter = limitChunkMatches
+                  	} else {
+                  		limiter = limitLineMatches
+                  	}
+                  	for i := range files {
+                  		limit = limiter(&files[i], limit)
+                  		if limit <= 0 {
+                  			return files[:i+1], 0
+                  		}
+                  	}
+                  	return files, limit
+                  }
+
+
+                  // Limit the number of ChunkMatches in the given FileMatch, returning the
+
+                  // remaining limit, if any.
+
+                  func limitChunkMatches(file *FileMatch, limit int) int {
+                  	for i := range file.ChunkMatches {
+                  		cm := &file.ChunkMatches[i]
+                  		if len(cm.Ranges) > limit {
+                  			// We potentially need to effect the limit upon 3 different fields:
+                  			// Ranges, SymbolInfo, and Content.
+
+                  			// Content is the most complicated: we need to remove the last N
+                  			// lines from it, where N is the difference between the line number
+                  			// of the end of the old last Range and that of the new last Range.
+                  			// This calculation is correct in the presence of both context lines
+                  			// and multiline Ranges, taking into account that Content never has
+                  			// a trailing newline.
+                  			n := cm.Ranges[len(cm.Ranges)-1].End.LineNumber - cm.Ranges[limit-1].End.LineNumber
+                  			if n > 0 {
+                  				for b := len(cm.Content) - 1; b >= 0; b-- {
+                  					if cm.Content[b] == '/n' {
+                  						n -= 1
+                  					}
+                  					if n == 0 {
+                  						cm.Content = cm.Content[:b]
+                  						break
+                  					}
+                  				}
+                  				if n > 0 {
+                  					// Should be impossible.
+                  					log.Panicf("Failed to find enough newlines when truncating Content, %d left over, %d ranges", n, len(cm.Ranges))
+                  				}
+                  			}
+
+                  			cm.Ranges = cm.Ranges[:limit]
+                  			if cm.SymbolInfo != nil {
+                  				// When non-nil, SymbolInfo is specified to have the same length
+                  				// as Ranges.
+                  				cm.SymbolInfo = cm.SymbolInfo[:limit]
+                  			}
+                  		}
+                  		if len(cm.Ranges) == limit {
+                  			file.ChunkMatches = file.ChunkMatches[:i+1]
+                  			limit = 0
+                  			break
+                  		}
+                  		limit -= len(cm.Ranges)
+                  	}
+                  	return limit
+                  }
+
+
+                  // Limit the number of LineMatches in the given FileMatch, returning the
+
+                  // remaining limit, if any.
+
+                  func limitLineMatches(file *FileMatch, limit int) int {
+                  	for i := range file.LineMatches {
+                  		lm := &file.LineMatches[i]
+                  		if len(lm.LineFragments) > limit {
+                  			lm.LineFragments = lm.LineFragments[:limit]
+                  		}
+                  		if len(lm.LineFragments) == limit {
+                  			file.LineMatches = file.LineMatches[:i+1]
+                  			limit = 0
+                  			break
+                  		}
+                  		limit -= len(lm.LineFragments)
+                  	}
+                  	return limit
+                  }
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: explain @README.md
+              - speaker: assistant
+                text: >-
+                  Certainly! The provided codebase context is the contents of a
+                  README.md file, which typically contains important information
+                  about the project, including instructions for usage,
+                  installation, and other relevant details.
+
+
+                  Here's a summary of the key points from the README.md file:
+
+
+                  1. **Introduction**: The file starts with a quote and a brief description of Zoekt, which is a fast text search engine intended for use with source code.
+
+
+                  2. **Note**: This is a Sourcegraph fork of the original Zoekt project from Google, and it is now the main maintained source of Zoekt.
+
+
+                  3. **Instructions**:
+                     - **Downloading**: The project can be downloaded using the `go get` command.
+                     - **Indexing**: The README.md file provides instructions for indexing directories and Git repositories using the `zoekt-index` and `zoekt-git-index` commands.
+                     - **Searching**: The file explains how to use the web interface, JSON API, and command-line interface to perform searches.
+                     - **Installation**: A systemd unit file is provided as an example for a more organized installation on a Linux server.
+
+                  4. **Search Service**: The README.md file describes a search service management program called `zoekt-indexserver`, which can be used to mirror and index repositories from GitHub and Gitiles.
+
+
+                  5. **Symbol Search**: The file recommends installing Universal ctags to improve the ranking of search results.
+
+
+                  6. **Acknowledgements**: The README.md file acknowledges the original creator of Zoekt, Han-Wen Nienhuys, and the person who came up with the idea, Alexander Neubeck.
+
+
+                  7. **Fork Details**: This section explains the differences between the Sourcegraph fork and the original Google repository, such as the addition of a Sourcegraph-specific indexing command, support for cancellation in the API, and other minor changes.
+
+
+                  8. **Disclaimer**: The file ends with a disclaimer that this is not an official Google product.
+
+
+                  Overall, the README.md file provides a comprehensive overview of the Zoekt project, its features, and instructions for setting it up and using it.
+              - speaker: human
+                text: "The provided codebase context are the code you need and have access to.
+                  Do not make any assumptions. Ask for additional context if you
+                  need it. Question: what does @limit.go do?"
+            model: anthropic/claude-3-haiku-20240307
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+          - name: client-name
+            value: chat-response-quality
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=chat-response-quality&client-version=v1
+      response:
+        bodySize: 632265
+        content:
+          mimeType: text/event-stream
+          size: 632265
+          text: >+
+            event: completion
+
+            data: {"completion":"Okay, got it. Let me take a closer look at the `limit.go` file.\n\nBased on the contents of the `limit.go` file, it appears to contain functions related to sorting, truncating, and limiting the display of search results in the Zoekt project.\n\nThe main functions are:\n\n1. `SortAndTruncateFiles(files []FileMatch, opts *SearchOptions) []FileMatch`:\n   - This function sorts the given `FileMatch` slices and then truncates them based on the `SearchOptions` provided.\n   - It calls `SortFiles()` to sort the `FileMatch` slices and then uses `NewDisplayTruncator()` to create a `DisplayTruncator` function that enforces the display limits specified in the `SearchOptions`.\n\n2. `NewDisplayTruncator(opts *SearchOptions) (DisplayTruncator, bool)`:\n   - This function creates a `DisplayTruncator` function that enforces the document and match display limits specified in the `SearchOptions`.\n   - The `DisplayTruncator` function is a stateful function that returns a truncated slice of `FileMatch` and a boolean indicating whether there are more results to display.\n\n3. `limitMatches(files []FileMatch, limit int, chunkMatches bool) ([]FileMatch, int)`:\n   - This function limits the number of matches (either chunk matches or line matches) in the `FileMatch` slices based on the provided `limit`.\n   - It calls either `limitChunkMatches()` or `limitLineMatches()` depending on the value of the `chunkMatches` flag.\n\n4. `limitChunkMatches(file *FileMatch, limit int) int`:\n   - This function limits the number of `ChunkMatches` in a given `FileMatch` based on the provided `limit`.\n   - It truncates the `Ranges`, `SymbolInfo`, and `Content` fields of the `ChunkMatches` to fit the `limit`.\n\n5. `limitLineMatches(file *FileMatch, limit int) int`:\n   - This function limits the number of `LineMatches` in a given `FileMatch` based on the provided `limit`.\n   - It truncates the `LineFragments` field of the `LineMatches` to fit the `limit`.\n\nIn summary, the `limit.go` file contains functions that are responsible for sorting, truncating, and limiting the display of search results in the Zoekt project, based on the provided `SearchOptions`.","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 11 Jun 2024 19:36:51 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-06-11T19:36:50.346Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: e6a812765bb6104bd687e106dd016f55
       _order: 0
       cache: {}
@@ -19019,6 +20623,786 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-06-11T14:21:35.607Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 05f37fd2b05573ca9372202de6c49109
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 5609
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: user-agent
+            value: chat-response-quality / v1
+          - name: traceparent
+            value: 00-daed2592af7c6c4764087223fe7cf86a-160a4590ab3006e2-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 417
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >-
+                  Codebase context from file README.md:
+
+                  ```markdown
+
+                      "Zoekt, en gij zult spinazie eten" - Jan Eertink
+
+                      ("seek, and ye shall eat spinach" - My primary school teacher)
+
+                  This is a fast text search engine, intended for use with source
+
+                  code. (Pronunciation: roughly as you would pronounce "zooked" in English)
+
+
+                  **Note:** This is a [Sourcegraph](https://github.com/sourcegraph/zoekt) fork
+
+                  of [github.com/google/zoekt](https://github.com/google/zoekt). It is now the
+
+                  main maintained source of Zoekt.
+
+
+                  # INSTRUCTIONS
+
+
+                  ## Downloading
+
+                      go get github.com/sourcegraph/zoekt/
+
+                  ## Indexing
+
+
+                  ### Directory
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-index
+                      $GOPATH/bin/zoekt-index .
+
+                  ### Git repository
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-git-index
+                      $GOPATH/bin/zoekt-git-index -branches master,stable-1.4 -prefix origin/ .
+
+                  ### Repo repositories
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-{repo-index,mirror-gitiles}
+                      zoekt-mirror-gitiles -dest ~/repos/ https://gfiber.googlesource.com
+                      zoekt-repo-index /n        -name gfiber /n        -base_url https://gfiber.googlesource.com/ /n        -manifest_repo ~/repos/gfiber.googlesource.com/manifests.git /n        -repo_cache ~/repos /n        -manifest_rev_prefix=refs/heads/ --rev_prefix= /n        master:default_unrestricted.xml
+
+                  ## Searching
+
+
+                  ### Web interface
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-webserver
+                      $GOPATH/bin/zoekt-webserver -listen :6070
+
+                  ### JSON API
+
+
+                  You can retrieve search results as JSON by sending a GET request to zoekt-webserver.
+
+                      curl --get /n        --url "http://localhost:6070/search" /n        --data-urlencode "q=ngram f:READ" /n        --data-urlencode "num=50" /n        --data-urlencode "format=json"
+
+                  The response data is a JSON object. You can refer to [web.ApiSearchResult](https://sourcegraph.com/github.com/sourcegraph/zoekt@6b1df4f8a3d7b34f13ba0cafd8e1a9b3fc728cf0/-/blob/web/api.go?L23:6&subtree=true) to learn about the structure of the object.
+
+
+                  ### CLI
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt
+                      $GOPATH/bin/zoekt 'ngram f:READ'
+
+                  ## Installation
+
+                  A more organized installation on a Linux server should use a systemd unit file,
+
+                  eg.
+
+                      [Unit]
+                      Description=zoekt webserver
+
+                      [Service]
+                      ExecStart=/zoekt/bin/zoekt-webserver -index /zoekt/index -listen :443  --ssl_cert /zoekt/etc/cert.pem   --ssl_key /zoekt/etc/key.pem
+                      Restart=always
+
+                      [Install]
+                      WantedBy=default.target
+
+
+                  # SEARCH SERVICE
+
+
+                  Zoekt comes with a small service management program:
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-indexserver
+
+                      cat << EOF > config.json
+                      [{"GithubUser": "username"},
+                       {"GithubOrg": "org"},
+                       {"GitilesURL": "https://gerrit.googlesource.com", "Name": "zoekt" }
+                      ]
+                      EOF
+
+                      $GOPATH/bin/zoekt-indexserver -mirror_config config.json
+
+                  This will mirror all repos under 'github.com/username', 'github.com/org', as
+
+                  well as the 'zoekt' repository. It will index the repositories.
+
+
+                  It takes care of fetching and indexing new data and cleaning up logfiles.
+
+
+                  The webserver can be started from a standard service management framework, such
+
+                  as systemd.
+
+
+
+                  # SYMBOL SEARCH
+
+
+                  It is recommended to install [Universal
+
+                  ctags](https://github.com/universal-ctags/ctags) to improve
+
+                  ranking. See [here](doc/ctags.md) for more information.
+
+
+
+                  # ACKNOWLEDGEMENTS
+
+
+                  Thanks to Han-Wen Nienhuys for creating Zoekt. Thanks to Alexander Neubeck for
+
+                  coming up with this idea, and helping Han-Wen Nienhuys flesh it out.
+
+
+
+                  # FORK DETAILS
+
+
+                  Originally this fork contained some changes that do not make sense to upstream
+
+                  and or have not yet been upstreamed. However, this is now the defacto source
+
+                  for Zoekt. This section will remain for historical reasons and contains
+
+                  outdated information. It can be removed once the dust settles on moving from
+
+                  google/zoekt to sourcegraph/zoekt. Differences:
+
+
+                  - [zoekt-sourcegraph-indexserver](cmd/zoekt-sourcegraph-indexserver/main.go)
+                    is a Sourcegraph specific command which indexes all enabled repositories on
+                    Sourcegraph, as well as keeping the indexes up to date.
+                  - We have exposed the API via
+                    [keegancsmith/rpc](https://github.com/keegancsmith/rpc) (a fork of `net/rpc`
+                    which supports cancellation).
+                  - Query primitive `BranchesRepos` to efficiently specify a set of repositories to
+                    search.
+                  - Allow empty shard directories on startup. Needed when starting a fresh
+                    instance which hasn't indexed anything yet.
+                  - We can return symbol/ctag data in results. Additionally we can run symbol regex queries.
+
+                  - We search shards in order of repo name and ignore shard ranking.
+
+                  - Other minor changes.
+
+
+                  Assuming you have the gerrit upstream configured, a useful way to see what we
+
+                  changed is:
+
+
+                  ``` shellsession
+
+                  $ git diff gerrit/master -- ':(exclude)vendor/' ':(exclude)Gopkg*'
+
+                  ```
+
+
+                  # DISCLAIMER
+
+
+                  This is not an official Google product
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: "The provided codebase context are the code you need and have access to.
+                  Do not make any assumptions. Ask for additional context if you
+                  need it. Question: explain @README.md"
+              - speaker: assistant
+            model: openai/gpt-3.5-turbo
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: client-name
+            value: chat-response-quality
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?client-name=chat-response-quality&client-version=v1
+      response:
+        bodySize: 34211
+        content:
+          mimeType: text/event-stream
+          size: 34211
+          text: >+
+            event: completion
+
+            data: {"completion":"The README.md file provides documentation and instructions for using Zoekt, a fast text search engine designed for source code. It includes information on downloading, indexing (for directories, Git repositories, and Repo repositories), searching using the web interface, JSON API, and CLI. It also includes installation instructions, a search service section, symbol search recommendations, acknowledgements, fork details, and a disclaimer. Additionally, it explains the differences between the Sourcegraph fork and the original Google version of Zoekt.","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 11 Jun 2024 19:36:56 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-06-11T19:36:55.669Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 2d50110e335ce40629b8adbc094abed5
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 10826
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: user-agent
+            value: chat-response-quality / v1
+          - name: traceparent
+            value: 00-043e31f7390f15c5feeaf187a724cec1-38d6a7e263fe8cea-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 417
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >-
+                  Codebase context from file README.md:
+
+                  ```markdown
+
+                      "Zoekt, en gij zult spinazie eten" - Jan Eertink
+
+                      ("seek, and ye shall eat spinach" - My primary school teacher)
+
+                  This is a fast text search engine, intended for use with source
+
+                  code. (Pronunciation: roughly as you would pronounce "zooked" in English)
+
+
+                  **Note:** This is a [Sourcegraph](https://github.com/sourcegraph/zoekt) fork
+
+                  of [github.com/google/zoekt](https://github.com/google/zoekt). It is now the
+
+                  main maintained source of Zoekt.
+
+
+                  # INSTRUCTIONS
+
+
+                  ## Downloading
+
+                      go get github.com/sourcegraph/zoekt/
+
+                  ## Indexing
+
+
+                  ### Directory
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-index
+                      $GOPATH/bin/zoekt-index .
+
+                  ### Git repository
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-git-index
+                      $GOPATH/bin/zoekt-git-index -branches master,stable-1.4 -prefix origin/ .
+
+                  ### Repo repositories
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-{repo-index,mirror-gitiles}
+                      zoekt-mirror-gitiles -dest ~/repos/ https://gfiber.googlesource.com
+                      zoekt-repo-index /n        -name gfiber /n        -base_url https://gfiber.googlesource.com/ /n        -manifest_repo ~/repos/gfiber.googlesource.com/manifests.git /n        -repo_cache ~/repos /n        -manifest_rev_prefix=refs/heads/ --rev_prefix= /n        master:default_unrestricted.xml
+
+                  ## Searching
+
+
+                  ### Web interface
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-webserver
+                      $GOPATH/bin/zoekt-webserver -listen :6070
+
+                  ### JSON API
+
+
+                  You can retrieve search results as JSON by sending a GET request to zoekt-webserver.
+
+                      curl --get /n        --url "http://localhost:6070/search" /n        --data-urlencode "q=ngram f:READ" /n        --data-urlencode "num=50" /n        --data-urlencode "format=json"
+
+                  The response data is a JSON object. You can refer to [web.ApiSearchResult](https://sourcegraph.com/github.com/sourcegraph/zoekt@6b1df4f8a3d7b34f13ba0cafd8e1a9b3fc728cf0/-/blob/web/api.go?L23:6&subtree=true) to learn about the structure of the object.
+
+
+                  ### CLI
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt
+                      $GOPATH/bin/zoekt 'ngram f:READ'
+
+                  ## Installation
+
+                  A more organized installation on a Linux server should use a systemd unit file,
+
+                  eg.
+
+                      [Unit]
+                      Description=zoekt webserver
+
+                      [Service]
+                      ExecStart=/zoekt/bin/zoekt-webserver -index /zoekt/index -listen :443  --ssl_cert /zoekt/etc/cert.pem   --ssl_key /zoekt/etc/key.pem
+                      Restart=always
+
+                      [Install]
+                      WantedBy=default.target
+
+
+                  # SEARCH SERVICE
+
+
+                  Zoekt comes with a small service management program:
+
+                      go install github.com/sourcegraph/zoekt/cmd/zoekt-indexserver
+
+                      cat << EOF > config.json
+                      [{"GithubUser": "username"},
+                       {"GithubOrg": "org"},
+                       {"GitilesURL": "https://gerrit.googlesource.com", "Name": "zoekt" }
+                      ]
+                      EOF
+
+                      $GOPATH/bin/zoekt-indexserver -mirror_config config.json
+
+                  This will mirror all repos under 'github.com/username', 'github.com/org', as
+
+                  well as the 'zoekt' repository. It will index the repositories.
+
+
+                  It takes care of fetching and indexing new data and cleaning up logfiles.
+
+
+                  The webserver can be started from a standard service management framework, such
+
+                  as systemd.
+
+
+
+                  # SYMBOL SEARCH
+
+
+                  It is recommended to install [Universal
+
+                  ctags](https://github.com/universal-ctags/ctags) to improve
+
+                  ranking. See [here](doc/ctags.md) for more information.
+
+
+
+                  # ACKNOWLEDGEMENTS
+
+
+                  Thanks to Han-Wen Nienhuys for creating Zoekt. Thanks to Alexander Neubeck for
+
+                  coming up with this idea, and helping Han-Wen Nienhuys flesh it out.
+
+
+
+                  # FORK DETAILS
+
+
+                  Originally this fork contained some changes that do not make sense to upstream
+
+                  and or have not yet been upstreamed. However, this is now the defacto source
+
+                  for Zoekt. This section will remain for historical reasons and contains
+
+                  outdated information. It can be removed once the dust settles on moving from
+
+                  google/zoekt to sourcegraph/zoekt. Differences:
+
+
+                  - [zoekt-sourcegraph-indexserver](cmd/zoekt-sourcegraph-indexserver/main.go)
+                    is a Sourcegraph specific command which indexes all enabled repositories on
+                    Sourcegraph, as well as keeping the indexes up to date.
+                  - We have exposed the API via
+                    [keegancsmith/rpc](https://github.com/keegancsmith/rpc) (a fork of `net/rpc`
+                    which supports cancellation).
+                  - Query primitive `BranchesRepos` to efficiently specify a set of repositories to
+                    search.
+                  - Allow empty shard directories on startup. Needed when starting a fresh
+                    instance which hasn't indexed anything yet.
+                  - We can return symbol/ctag data in results. Additionally we can run symbol regex queries.
+
+                  - We search shards in order of repo name and ignore shard ranking.
+
+                  - Other minor changes.
+
+
+                  Assuming you have the gerrit upstream configured, a useful way to see what we
+
+                  changed is:
+
+
+                  ``` shellsession
+
+                  $ git diff gerrit/master -- ':(exclude)vendor/' ':(exclude)Gopkg*'
+
+                  ```
+
+
+                  # DISCLAIMER
+
+
+                  This is not an official Google product
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Codebase context from file limit.go:
+
+                  ```go
+
+                  package zoekt
+
+
+                  import "log"
+
+
+                  // SortAndTruncateFiles is a convenience around SortFiles and
+
+                  // DisplayTruncator. Given an aggregated files it will sort and then truncate
+
+                  // based on the search options.
+
+                  func SortAndTruncateFiles(files []FileMatch, opts *SearchOptions) []FileMatch {
+                  	SortFiles(files)
+                  	truncator, _ := NewDisplayTruncator(opts)
+                  	files, _ = truncator(files)
+                  	return files
+                  }
+
+
+                  // DisplayTruncator is a stateful function which enforces Document and Match
+
+                  // display limits by truncating and mutating before. hasMore is true until the
+
+                  // limits are exhausted. Once hasMore is false each subsequent call will
+
+                  // return an empty after and hasMore false.
+
+                  type DisplayTruncator func(before []FileMatch) (after []FileMatch, hasMore bool)
+
+
+                  // NewDisplayTruncator will return a DisplayTruncator which enforces the limits in
+
+                  // opts. If there are no limits to enforce, hasLimits is false and there is no
+
+                  // need to call DisplayTruncator.
+
+                  func NewDisplayTruncator(opts *SearchOptions) (_ DisplayTruncator, hasLimits bool) {
+                  	docLimit := opts.MaxDocDisplayCount
+                  	docLimited := docLimit > 0
+
+                  	matchLimit := opts.MaxMatchDisplayCount
+                  	matchLimited := matchLimit > 0
+
+                  	done := false
+
+                  	if !docLimited && !matchLimited {
+                  		return func(fm []FileMatch) ([]FileMatch, bool) {
+                  			return fm, true
+                  		}, false
+                  	}
+
+                  	return func(fm []FileMatch) ([]FileMatch, bool) {
+                  		if done {
+                  			return nil, false
+                  		}
+
+                  		if docLimited {
+                  			if len(fm) >= docLimit {
+                  				done = true
+                  				fm = fm[:docLimit]
+                  			}
+                  			docLimit -= len(fm)
+                  		}
+
+                  		if matchLimited {
+                  			fm, matchLimit = limitMatches(fm, matchLimit, opts.ChunkMatches)
+                  			if matchLimit <= 0 {
+                  				done = true
+                  			}
+                  		}
+
+                  		return fm, !done
+                  	}, true
+                  }
+
+
+                  func limitMatches(files []FileMatch, limit int, chunkMatches bool) ([]FileMatch, int) {
+                  	var limiter func(file *FileMatch, limit int) int
+                  	if chunkMatches {
+                  		limiter = limitChunkMatches
+                  	} else {
+                  		limiter = limitLineMatches
+                  	}
+                  	for i := range files {
+                  		limit = limiter(&files[i], limit)
+                  		if limit <= 0 {
+                  			return files[:i+1], 0
+                  		}
+                  	}
+                  	return files, limit
+                  }
+
+
+                  // Limit the number of ChunkMatches in the given FileMatch, returning the
+
+                  // remaining limit, if any.
+
+                  func limitChunkMatches(file *FileMatch, limit int) int {
+                  	for i := range file.ChunkMatches {
+                  		cm := &file.ChunkMatches[i]
+                  		if len(cm.Ranges) > limit {
+                  			// We potentially need to effect the limit upon 3 different fields:
+                  			// Ranges, SymbolInfo, and Content.
+
+                  			// Content is the most complicated: we need to remove the last N
+                  			// lines from it, where N is the difference between the line number
+                  			// of the end of the old last Range and that of the new last Range.
+                  			// This calculation is correct in the presence of both context lines
+                  			// and multiline Ranges, taking into account that Content never has
+                  			// a trailing newline.
+                  			n := cm.Ranges[len(cm.Ranges)-1].End.LineNumber - cm.Ranges[limit-1].End.LineNumber
+                  			if n > 0 {
+                  				for b := len(cm.Content) - 1; b >= 0; b-- {
+                  					if cm.Content[b] == '/n' {
+                  						n -= 1
+                  					}
+                  					if n == 0 {
+                  						cm.Content = cm.Content[:b]
+                  						break
+                  					}
+                  				}
+                  				if n > 0 {
+                  					// Should be impossible.
+                  					log.Panicf("Failed to find enough newlines when truncating Content, %d left over, %d ranges", n, len(cm.Ranges))
+                  				}
+                  			}
+
+                  			cm.Ranges = cm.Ranges[:limit]
+                  			if cm.SymbolInfo != nil {
+                  				// When non-nil, SymbolInfo is specified to have the same length
+                  				// as Ranges.
+                  				cm.SymbolInfo = cm.SymbolInfo[:limit]
+                  			}
+                  		}
+                  		if len(cm.Ranges) == limit {
+                  			file.ChunkMatches = file.ChunkMatches[:i+1]
+                  			limit = 0
+                  			break
+                  		}
+                  		limit -= len(cm.Ranges)
+                  	}
+                  	return limit
+                  }
+
+
+                  // Limit the number of LineMatches in the given FileMatch, returning the
+
+                  // remaining limit, if any.
+
+                  func limitLineMatches(file *FileMatch, limit int) int {
+                  	for i := range file.LineMatches {
+                  		lm := &file.LineMatches[i]
+                  		if len(lm.LineFragments) > limit {
+                  			lm.LineFragments = lm.LineFragments[:limit]
+                  		}
+                  		if len(lm.LineFragments) == limit {
+                  			file.LineMatches = file.LineMatches[:i+1]
+                  			limit = 0
+                  			break
+                  		}
+                  		limit -= len(lm.LineFragments)
+                  	}
+                  	return limit
+                  }
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: explain @README.md
+              - speaker: assistant
+                text: The README.md file provides documentation and instructions for using
+                  Zoekt, a fast text search engine designed for source code. It
+                  includes information on downloading, indexing (for
+                  directories, Git repositories, and Repo repositories),
+                  searching using the web interface, JSON API, and CLI. It also
+                  includes installation instructions, a search service section,
+                  symbol search recommendations, acknowledgements, fork details,
+                  and a disclaimer. Additionally, it explains the differences
+                  between the Sourcegraph fork and the original Google version
+                  of Zoekt.
+              - speaker: human
+                text: "The provided codebase context are the code you need and have access to.
+                  Do not make any assumptions. Ask for additional context if you
+                  need it. Question: what does @limit.go do?"
+              - speaker: assistant
+            model: openai/gpt-3.5-turbo
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: client-name
+            value: chat-response-quality
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?client-name=chat-response-quality&client-version=v1
+      response:
+        bodySize: 43246
+        content:
+          mimeType: text/event-stream
+          size: 43246
+          text: >+
+            event: completion
+
+            data: {"completion":"The limit.go file in the codebase defines functions related to sorting and truncating files based on search options in Zoekt. It includes functions like SortAndTruncateFiles, DisplayTruncator, NewDisplayTruncator, limitMatches, limitChunkMatches, and limitLineMatches. These functions handle sorting and truncating file matches, enforcing limits on displayed documents and matches, and manipulating chunk and line matches within file matches. The primary purpose of the code in limit.go is to control the display limits and ensure that search results are truncated appropriately based on specified limits in the search options.","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 11 Jun 2024 19:36:58 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-06-11T19:36:58.083Z
       time: 0
       timings:
         blocked: -1
