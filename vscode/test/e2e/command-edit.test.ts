@@ -2,7 +2,7 @@ import { expect } from '@playwright/test'
 
 import * as mockServer from '../fixtures/mock-server'
 
-import { sidebarExplorer, sidebarSignin } from './common'
+import { openFileInEditorTab, sidebarExplorer, sidebarSignin } from './common'
 import { type DotcomUrlOverride, type ExpectedEvents, test as baseTest } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
@@ -162,21 +162,22 @@ test('edit (fixup) input - range selection', async ({ page, sidebar }) => {
     expect(updatedRangeItem).toBeVisible()
 })
 
-test('edit (fixup) input - model selection', async ({ page, sidebar }) => {
+test('edit (fixup) input - model selection', async ({ page, nap, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
     // Open the Explorer view from the sidebar
     await sidebarExplorer(page).click()
-    await page.getByRole('treeitem', { name: 'buzz.ts' }).locator('a').dblclick()
-    await page.getByRole('tab', { name: 'buzz.ts' }).hover()
+    await openFileInEditorTab(page, 'buzz.ts')
 
     // Open the Edit input
     await page.getByRole('button', { name: 'Cody Commands' }).click()
     await page.getByRole('option', { name: 'Edit code' }).click()
 
     // Check the correct range item is auto-selected
+    await nap()
     const modelItem = page.getByText('Claude 3 Sonnet')
+    await nap()
     expect(modelItem).toBeVisible()
 
     // Open the model input and check it has the correct item selected

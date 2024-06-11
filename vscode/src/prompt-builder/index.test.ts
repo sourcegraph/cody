@@ -1,4 +1,3 @@
-import * as path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { ContextItem, Message } from '@sourcegraph/cody-shared'
@@ -6,6 +5,7 @@ import {
     type ChatMessage,
     ContextItemSource,
     contextFiltersProvider,
+    displayPath,
     ps,
 } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
@@ -373,10 +373,9 @@ describe('PromptBuilder', () => {
                 .join('\n')
 
             expect(builder.contextItems.length).toBe(1)
-            const filePath = convertFileNameByPlatform('foo/bar.go')
             expect(promptContent).toMatchInlineSnapshot(`
               "preamble
-              Codebase context from file ${filePath}:
+              Codebase context from file ${displayPath(file.uri)}:
               \`\`\`go
               foo\`\`\`
               Ok.
@@ -386,18 +385,3 @@ describe('PromptBuilder', () => {
         })
     })
 })
-
-/**
- * Converts a file name to use the appropriate platform-specific path separators.
- *
- * On Windows, the file name will be prefixed with a backslash (\), while on other platforms it will remain unchanged.
- *
- * @param fileName - The file name to convert.
- * @returns The converted file name with the appropriate path separators.
- */
-function convertFileNameByPlatform(fileName: string): string {
-    const newFileName = fileName.replaceAll(path.posix.sep, path.sep)
-    const isWindows = path.sep !== path.posix.sep
-    // Example: foo/bar.go -> \foo\bar.go in Windows
-    return isWindows ? `${path.sep}${newFileName}` : newFileName
-}
