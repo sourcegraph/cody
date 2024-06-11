@@ -109,6 +109,8 @@ export class ContextItemMentionNode extends TextNode {
                     ? 'File is too large. Select a smaller range of lines from the file.'
                     : 'File is too large. Try adding the file again with a smaller range of lines.'
                 : displayPath(URI.parse(this.contextItem.uri))
+        } else if (this.contextItem.type === 'openctx') {
+            dom.title = this.contextItem.uri
         }
 
         return dom

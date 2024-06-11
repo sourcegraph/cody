@@ -1,12 +1,19 @@
 import type { Item, Mention, Provider } from '@openctx/client'
-import { graphqlClient, isDefined, isError } from '@sourcegraph/cody-shared'
+import {
+    contextFiltersProvider,
+    displayPathBasename,
+    graphqlClient,
+    isDefined,
+    isError,
+} from '@sourcegraph/cody-shared'
+import { URI } from 'vscode-uri'
 
 const RemoteFileProvider: Provider & { providerUri: string } = {
     providerUri: 'internal-remote-file-search',
 
     meta() {
         return {
-            name: 'Sourcegraph Files',
+            name: 'Remote Files',
             mentions: {},
         }
     },
@@ -43,18 +50,22 @@ async function getRepoMentions(query?: string): Promise<Mention[]> {
 
     const repositories = dataOrError.repositories.nodes
 
-    return repositories.map(repo => ({
-        uri: repo.url,
-        title: repo.name,
-        description: ' ',
-        data: {
-            repoName: repo.name,
-        },
-    }))
+    return repositories.map(
+        repo =>
+            ({
+                uri: repo.url,
+                title: repo.name,
+                description: ' ',
+                data: {
+                    repoName: repo.name,
+                    isIgnored: contextFiltersProvider.isRepoNameIgnored(repo.name),
+                },
+            }) satisfies Mention
+    )
 }
 
 async function getFileMentions(repoName: string, filePath?: string): Promise<Mention[]> {
-    const query = `repo:${repoName} type:file count:10` + (filePath ? ` file:${filePath}` : '')
+    const query = `repo:${repoName} type:file count:10` + ` file:${filePath || '.*'}`
 
     const dataOrError = await graphqlClient.searchFileMatches(query)
 
@@ -70,12 +81,14 @@ async function getFileMentions(repoName: string, filePath?: string): Promise<Men
 
             const url = `${graphqlClient.endpoint.replace(/\/$/, '')}${result.file.url}`
 
+            const basename = displayPathBasename(URI.parse(result.file.path))
+
             return {
                 uri: url,
-                title: result.file.path,
-                description: result.repository.name,
+                title: basename,
+                description: result.file.path,
                 data: {
-                    mentionLabel: `${result.repository.name}:${result.file.path}`,
+                    mentionLabel: basename,
                     repoName: result.repository.name,
                     rev: result.file.commit.oid,
                     filePath: result.file.path,

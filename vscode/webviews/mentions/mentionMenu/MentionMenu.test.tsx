@@ -304,6 +304,13 @@ function expectMenu(container: HTMLElement, expectedRows: string[]): void {
             ':is([role=option], [role=progressbar], [cmdk-group-heading], [cmdk-empty])'
         )
     )
+
+    /*
+    if (expectedRows.includes('>provider p1') && expectedRows.includes('#Loading...')) {
+        expect(container).toBe('')
+    }
+    */
+
     expect.soft(actualRows).toHaveLength(expectedRows.length)
     for (let i = 0; i < Math.max(expectedRows.length, actualRows.length); i++) {
         const { row: expectedRow, isSelected: expectedRowIsSelected } = parseExpectedRow(
