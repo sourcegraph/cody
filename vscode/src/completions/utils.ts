@@ -30,58 +30,31 @@ export function forkSignal(signal: AbortSignal): AbortController {
 }
 
 export async function* zipGenerators<T>(generators: AsyncGenerator<T>[]): AsyncGenerator<T[]> {
-    // Create a copy of the generators array to avoid modifying the original
-    const activeGenerators = generators.slice();
+    while (true) {
+        const res = await Promise.all(generators.map(generator => generator.next()))
 
-    // Loop until there are no more active generators
-    while (activeGenerators.length > 0) {
-        // Get the next value from each active generator
-        const nextValues = await Promise.all(activeGenerators.map(async (generator) => {
-            try {
-                const { value, done } = await generator.next();
-                // Return the value if the generator is not done, otherwise return undefined
-                return done ? undefined : value;
-            } catch (error) {
-                // Log the error and remove the generator from the active list
-                console.error(`Error in generator: ${error}`);
-                activeGenerators.splice(activeGenerators.indexOf(generator), 1);
-                return undefined;
-            }
-        }));
-
-        // Filter out the undefined values from the next values
-        const validValues = nextValues.filter((value) => value !== undefined);
-        // If there are valid values, yield them as an array
-        if (validValues.length > 0) {
-            yield validValues;
-        } else {
-            // If there are no valid values, return from the generator
-            return;
+        if (res.every(r => r.done)) {
+            return
         }
+
+        yield res.map(r => r.value)
     }
 }
-
 
 export async function* generatorWithErrorObserver<T>(
     generator: AsyncGenerator<T>,
     errorObserver: (error: unknown) => void
 ): AsyncGenerator<T> {
     try {
-        // Iterate through the generator until it is done
         while (true) {
             try {
-                // Get the next value from the generator
                 const res = await generator.next()
-                // If the generator is done, return
                 if (res.done) {
                     return
                 }
-                // Yield the value from the generator
                 yield res.value
             } catch (error: unknown) {
-                // Call the error observer with the error
                 errorObserver(error)
-                // Rethrow the error
                 throw error
             }
         }

@@ -41,12 +41,13 @@ function computeTaskOutput(task: FixupTask): ComputedOutput | null {
 
     const diff = diffLines(task.original, task.replacement)
     for (const change of diff) {
-        const lines = change.value.split('\n').filter(Boolean)
+        const trimmedChange = change.value.trimEnd()
+        const lines = trimmedChange.split('\n')
+
         if (change.removed) {
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i]
-                // Get leading whitespace for line
-                const padding = (line.match(/^\s*/)?.[0] || '').length
+                const padding = (line.match(/^\s*/)?.[0] || '').length // Get leading whitespace for line
                 const insertionLine = new vscode.Position(startLine, 0)
                 decorations.removed.push({
                     range: new vscode.Range(insertionLine, insertionLine),
@@ -67,7 +68,7 @@ function computeTaskOutput(task: FixupTask): ComputedOutput | null {
             }
         } else {
             // unchanged line
-            startLine += lines.length
+            startLine += change.count!
         }
     }
 
