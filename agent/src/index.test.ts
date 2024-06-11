@@ -675,33 +675,23 @@ describe('Agent', () => {
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "The code snippet \`@src/animal.ts:1-6\` defines an interface named \`Animal\` in TypeScript. An interface is a structure that serves as a blueprint or contract for objects in TypeScript. It specifies the properties and methods that an object must have to be considered an instance of that interface.
+              "The code \`@src/animal.ts:1-6\` defines an interface called \`Animal\` in TypeScript. An interface is a structural contract that defines the shape of an object. It specifies the properties and methods that an object must have to conform to that interface.
 
               The \`Animal\` interface has three members:
 
-              1. \`name\`: This is a property of type \`string\`. It represents the name of the animal.
-              2. \`makeAnimalSound()\`: This is a method that is expected to return a \`string\`. It represents the sound that the animal makes.
-              3. \`isMammal\`: This is a property of type \`boolean\`. It indicates whether the animal is a mammal or not.
+              1. \`name: string\`: This is a property that represents the name of the animal. It specifies that any object conforming to the \`Animal\` interface must have a \`name\` property, and its value must be a string.
 
-              The purpose of this code is to provide a contract or structure for defining objects that represent animals. Any object that needs to be considered an animal must have the properties and methods specified in this interface.
+              2. \`makeAnimalSound(): string\`: This is a method that represents the sound made by the animal. It specifies that any object conforming to the \`Animal\` interface must have a \`makeAnimalSound\` method, which doesn't take any input but returns a string representing the sound the animal makes.
 
-              The code itself does not take any direct input or produce any output. It simply defines the shape or structure of an object that represents an animal.
+              3. \`isMammal: boolean\`: This is a property that indicates whether the animal is a mammal or not. It specifies that any object conforming to the \`Animal\` interface must have an \`isMammal\` property, and its value must be a boolean (either \`true\` or \`false\`).
 
-              To use this interface, you would create an object that implements the \`Animal\` interface by providing values for the \`name\` and \`isMammal\` properties, and a function implementation for the \`makeAnimalSound()\` method.
+              The purpose of this code is to define a contract or a blueprint for objects representing animals. It doesn't take any input or produce any output directly. Instead, it serves as a guide for creating objects that represent animals and ensures that those objects have the necessary properties and methods defined in the \`Animal\` interface.
 
-              For example:
+              To achieve its purpose, the code uses the \`interface\` keyword in TypeScript to define the structure of the \`Animal\` interface. It lists the required properties (\`name\` and \`isMammal\`) and methods (\`makeAnimalSound\`) that an object must have to conform to this interface.
 
-              \`\`\`typescript
-              const dog: Animal = {
-                name: 'Buddy',
-                makeAnimalSound: () => 'Woof!',
-                isMammal: true
-              };
-              \`\`\`
+              The logic and algorithm behind this code are straightforward. It simply declares the structure of the \`Animal\` interface, but it doesn't include any implementation details or functionality. The implementation of the actual animal objects and their behavior would be defined elsewhere in the codebase, using classes or object literals that conform to the \`Animal\` interface.
 
-              In this example, \`dog\` is an object that conforms to the \`Animal\` interface. It has a \`name\` property with the value \`'Buddy'\`, a \`makeAnimalSound()\` method that returns the string \`'Woof!'\`, and an \`isMammal\` property set to \`true\`.
-
-              The code does not involve any complex logic or data transformations. It is simply a structural definition that serves as a contract for creating objects that represent animals."
+              This code doesn't involve any complex logic flows or data transformations. It's a declarative definition of the structure of an object representing an animal, which can be used throughout the codebase to ensure consistency and type safety when working with animal-related objects."
             `,
                 explainPollyError
             )
@@ -719,63 +709,68 @@ describe('Agent', () => {
                 const lastMessage = await client.firstNonEmptyTranscript(id)
                 expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                     `
-                  "To generate unit tests for the \`Animal\` interface, we can use the Vitest framework, which is already being used in the provided code context (\`src/example.test.ts\`).
+                  "Based on the provided codebase context, the test framework being used is Vitest, which is a Vite-native test runner.
 
-                  No new imports are needed - using existing libs.
-
-                  The test suite should cover the following aspects of the \`Animal\` interface:
-
-                  1. Validate the properties (\`name\` and \`isMammal\`) with different input values.
-                  2. Test the \`makeAnimalSound\` method with different implementations of the \`Animal\` interface.
-
-                  Here's a possible test suite:
+                  To generate a suite of unit tests for the \`Animal\` interface, I would import the following libraries:
 
                   \`\`\`typescript
-                  import { describe, it, expect } from 'vitest'
+                  import { describe, expect, it } from 'vitest'
+                  \`\`\`
 
-                  // Import the implementations of the Animal interface
-                  import { Dog, Cat } from './animals'
+                  Here's a summary of the test coverage and limitations:
+
+                  - The tests will cover the properties and methods defined in the \`Animal\` interface.
+                  - Since \`Animal\` is an interface, the tests will need to be written against a concrete implementation of the interface.
+                  - The tests will not cover any additional functionality or edge cases not defined in the interface.
+
+                  Here's the full completed code for the new unit tests, including all necessary imports:
+
+                  \`\`\`typescript
+                  import { describe, expect, it } from 'vitest'
+                  import { Animal } from './animal'
+
+                  // Assume a concrete implementation of the Animal interface
+                  class Dog implements Animal {
+                    name: string
+                    isMammal: boolean
+
+                    constructor(name: string) {
+                      this.name = name
+                      this.isMammal = true
+                    }
+
+                    makeAnimalSound(): string {
+                      return 'Woof!'
+                    }
+                  }
 
                   describe('Animal', () => {
-                    describe('Dog', () => {
-                      const dog = new Dog('Buddy', true)
+                    let animal: Animal
 
-                      it('should have the correct name', () => {
-                        expect(dog.name).toBe('Buddy')
-                      })
-
-                      it('should be a mammal', () => {
-                        expect(dog.isMammal).toBe(true)
-                      })
-
-                      it('should make the correct sound', () => {
-                        expect(dog.makeAnimalSound()).toBe('Woof!')
-                      })
+                    beforeEach(() => {
+                      animal = new Dog('Buddy')
                     })
 
-                    describe('Cat', () => {
-                      const cat = new Cat('Missy', true)
+                    it('should have a name property', () => {
+                      expect(animal).toHaveProperty('name')
+                    })
 
-                      it('should have the correct name', () => {
-                        expect(cat.name).toBe('Missy')
-                      })
+                    it('should have a makeAnimalSound method', () => {
+                      expect(animal).toHaveProperty('makeAnimalSound')
+                      expect(typeof animal.makeAnimalSound).toBe('function')
+                    })
 
-                      it('should be a mammal', () => {
-                        expect(cat.isMammal).toBe(true)
-                      })
+                    it('should have an isMammal property', () => {
+                      expect(animal).toHaveProperty('isMammal')
+                    })
 
-                      it('should make the correct sound', () => {
-                        expect(cat.makeAnimalSound()).toBe('Meow!')
-                      })
+                    it('should make the correct animal sound', () => {
+                      expect(animal.makeAnimalSound()).toBe('Woof!')
                     })
                   })
                   \`\`\`
 
-                  This test suite covers the basic functionality of the \`Animal\` interface by testing the properties and the \`makeAnimalSound\` method with two different implementations (\`Dog\` and \`Cat\`). It validates the expected behavior with assertions using the \`expect\` function from Vitest.
-
-                  Note: The implementations of \`Dog\` and \`Cat\` classes are not provided in the shared code context, so I've assumed their existence for the purpose of this example. You may need to adjust the import statements and class instantiation based on your actual implementation.
-
-                  The test coverage is reasonably comprehensive, but it may not cover all edge cases or complex scenarios. Additionally, if there are any dependencies or mocks required for the \`Animal\` interface or its implementations, those would need to be set up in the test suite as well."
+                  This suite of tests covers the properties and methods defined in the \`Animal\` interface. It assumes a concrete implementation of the interface (in this case, a \`Dog\` class) to test against. The tests cover the existence of the required properties and methods, as well as the expected behavior of the \`makeAnimalSound\` method."
                 `,
                     explainPollyError
                 )
@@ -790,19 +785,19 @@ describe('Agent', () => {
 
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "The provided code snippet defines an interface called \`Animal\` with three properties: \`name\` (a string), \`makeAnimalSound\` (a function that returns a string), and \`isMammal\` (a boolean). Here are a few potential areas for improvement:
+              "Based on the provided code snippet, which defines an interface \`Animal\` with properties \`name\` and \`isMammal\`, and a method \`makeAnimalSound()\`, here are a few potential areas for improvement:
 
-              1. **Use descriptive property names**: The \`makeAnimalSound\` property could be renamed to something more descriptive, such as \`produceSound\` or \`vocalizeSound\`. This would make the code more readable and self-documenting.
+              1. **Consider using more descriptive naming for the method \`makeAnimalSound()\`**: The method name could be more explicit about its purpose. For example, \`produceSound()\` or \`emitSound()\` might better convey the intended behavior.
 
-              2. **Consider using a more specific return type for the \`makeAnimalSound\` function**: Instead of returning a string, the function could return a specific type of sound (e.g., \`'bark'\`, \`'meow'\`, \`'moo'\`). This would allow for better type checking and enable the implementation of more specific behaviors based on the sound type.
+              2. **Add method return type annotation for \`makeAnimalSound()\`**: While TypeScript can infer the return type of the method from the implementation, explicitly annotating the return type in the interface definition can improve code readability and maintainability.
 
-              3. **Separate interface properties into groups**: The properties could be grouped based on their purpose or type. For example, the \`name\` and \`isMammal\` properties could be grouped together as they represent the animal's characteristics, while the \`makeAnimalSound\` property could be in a separate group for behavior-related properties.
+              3. **Consider adding a description or documentation for the interface and its members**: Adding comments or docstrings to describe the purpose and expected behavior of the interface and its properties/methods can greatly improve code understanding and maintainability, especially for larger codebases or when working in a team.
 
-              4. **Add documentation**: While interfaces are generally self-documenting, it would be beneficial to add brief comments or descriptions to explain the purpose of each property and any assumptions or constraints. This would make the code more maintainable and easier for other developers to understand.
+              4. **Consider adding type constraints or validation for the \`name\` property**: Depending on the requirements of your application, you might want to add constraints or validation rules for the \`name\` property. For example, you could specify a minimum or maximum length, disallow certain characters, or enforce a specific formatting pattern.
 
-              5. **Consider using a more specific name for the interface**: Depending on the context and usage of this interface, a more specific name like \`Mammal\` or \`Vertebrate\` could be more appropriate if the interface is intended to represent a specific subset of animals.
+              5. **Consider separating concerns by creating separate interfaces for different animal types**: If you have different types of animals with specific behaviors or properties, you could create separate interfaces for each animal type, and then have a base \`Animal\` interface that other interfaces extend or implement. This can improve code organization, reusability, and maintainability.
 
-              Overall, while the provided code snippet is relatively simple and follows basic interface design principles, there are some opportunities to enhance its readability, maintainability, and extensibility by addressing the suggested areas for improvement."
+              Overall, while the provided code snippet follows a sound design principle of using an interface to define the structure of an \`Animal\` object, there are some opportunities to enhance code readability, maintainability, and potentially add more specific constraints or validations based on your application's requirements."
             `,
                 explainPollyError
             )

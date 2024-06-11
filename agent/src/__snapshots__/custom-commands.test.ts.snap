@@ -1,7 +1,7 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`Custom Commands > commands/custom, chat command, open tabs context 1`] = `
-"Here are the filenames you have shared so far as a bulleted list:
+"Here are the names of the files you have shared with me so far as a bulleted list:
 
 - example3.ts
 - example2.ts
