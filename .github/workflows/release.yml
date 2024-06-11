@@ -12,9 +12,9 @@ jobs:
           node-version: 20
       - uses: actions/setup-java@v4
         with:
-          distribution: "temurin"
-          java-version: 11
-          cache: "gradle"
+          distribution: temurin
+          java-version: 17
+          cache: gradle
       # See note about QEMU and binfmt requirement here https://github.com/vercel/pkg#targets
       - name: Set up QEMU
         id: qemu
