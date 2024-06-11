@@ -41,11 +41,11 @@ function computeTaskOutput(task: FixupTask): ComputedOutput | null {
 
     const diff = diffLines(task.original, task.replacement)
     for (const change of diff) {
-        const trimmedChange = change.value.trimEnd()
-        const lines = trimmedChange.split('\n')
+        const count = change.count || 0
+        const lines = change.value.split('\n')
 
         if (change.removed) {
-            for (let i = 0; i < lines.length; i++) {
+            for (let i = 0; i < count; i++) {
                 const line = lines[i]
                 const padding = (line.match(/^\s*/)?.[0] || '').length // Get leading whitespace for line
                 const insertionLine = new vscode.Position(startLine, 0)
@@ -59,7 +59,7 @@ function computeTaskOutput(task: FixupTask): ComputedOutput | null {
                 startLine++
             }
         } else if (change.added) {
-            for (let i = 0; i < lines.length; i++) {
+            for (let i = 0; i < count; i++) {
                 const insertionLine = new vscode.Position(startLine, 0)
                 decorations.added.push({
                     range: new vscode.Range(insertionLine, insertionLine),
@@ -68,7 +68,7 @@ function computeTaskOutput(task: FixupTask): ComputedOutput | null {
             }
         } else {
             // unchanged line
-            startLine += change.count!
+            startLine += count
         }
     }
 
@@ -203,7 +203,6 @@ export class FixupDecoratorExperimental implements vscode.Disposable {
         file: FixupFile,
         tasksWithPlaceholders: IterableIterator<PlaceholderLines>
     ): Promise<void> {
-        console.log('APPLYING PLACEHOLDERS...')
         const editors = vscode.window.visibleTextEditors.filter(
             editor => editor.document.uri === file.uri
         )
@@ -236,7 +235,6 @@ export class FixupDecoratorExperimental implements vscode.Disposable {
                 editBuilder => {
                     for (const line of placeholderLines) {
                         const fullLine = editor.document.lineAt(line)
-                        console.log('Removing line:', line)
                         editBuilder.delete(fullLine.rangeIncludingLineBreak)
                     }
                 },
