@@ -28,12 +28,12 @@ import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { AuthProvider } from '../services/AuthProvider'
 import { isInTutorial } from '../tutorial/helpers'
 import { FixupDecorator } from './FixupDecorator'
+import { FixupDecoratorExperimental } from './FixupDecoratorExperimental'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type FixupTaskID, type FixupTelemetryMetadata } from './FixupTask'
-import { addedDecoration, computeDiffDecorations, removedDecoration } from './decorated-line-diff'
 import { type Diff, computeDiff } from './diff'
 import { trackRejection } from './rejection-tracker'
 import type { FixupActor, FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
@@ -48,7 +48,7 @@ export class FixupController
     private readonly editObserver: FixupDocumentEditObserver
     // TODO: Make the fixup scheduler use a cooldown timer with a longer delay
     private readonly scheduler = new FixupScheduler(10)
-    private readonly decorator = new FixupDecorator()
+    private readonly decorator: FixupDecorator | FixupDecoratorExperimental
     private readonly controlApplicator
     private readonly persistenceTracker = new PersistenceTracker(vscode.workspace, {
         onPresent: ({ metadata, ...event }) => {
@@ -78,6 +78,7 @@ export class FixupController
         private readonly authProvider: AuthProvider,
         client: ExtensionClient
     ) {
+        this.decorator = new FixupDecoratorExperimental()
         this.controlApplicator = client.createFixupControlApplicator(this)
         // Observe file renaming and deletion
         this.files = new FixupFileObserver()
@@ -695,7 +696,7 @@ export class FixupController
             if (!applicableDiff) {
                 return
             }
-            editOk = await this.replaceEdit(edit, applicableDiff, task, applyEditOptions, visibleEditor)
+            editOk = await this.replaceEdit(edit, applicableDiff, task)
         } else {
             editOk = await this.insertEdit(edit, document, task, applyEditOptions)
         }
@@ -740,9 +741,7 @@ export class FixupController
     public async replaceEdit(
         edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit,
         diff: Diff,
-        task: FixupTask,
-        options?: { undoStopBefore: boolean; undoStopAfter: boolean },
-        editor?: vscode.TextEditor
+        task: FixupTask
     ): Promise<boolean> {
         logDebug('FixupController:edit', 'replacing ')
         let editOk: boolean
@@ -780,25 +779,6 @@ export class FixupController
                 },
                 { undoStopAfter: false, undoStopBefore: false }
             )
-        }
-
-        if (editor && !(edit instanceof vscode.WorkspaceEdit)) {
-            const { decorations, placeholderLines } = computeDiffDecorations(
-                task.original,
-                task.replacement!,
-                task.selectionRange.start.line
-            )
-            for (const line of placeholderLines) {
-                await edit(
-                    editBuilder => {
-                        editBuilder.insert(line, '\n')
-                    },
-                    { undoStopAfter: false, undoStopBefore: false }
-                )
-            }
-
-            editor.setDecorations(addedDecoration, decorations.added)
-            editor.setDecorations(removedDecoration, decorations.removed)
         }
 
         return editOk
@@ -1075,7 +1055,7 @@ export class FixupController
                 // the change and wants to take control.  This helps ensure that the
                 // codelens doesn't stay around unnecessarily and become an annoyance.
                 // Note: This will also apply if the user attempts to undo the applied change.
-                this.accept(task)
+                // this.accept(task)
                 return
             }
         }
@@ -1217,7 +1197,7 @@ export class FixupController
         // TODO: Improve the diff handling so that decorations more accurately reflect the edits.
         if (task.state === CodyTaskState.Applied) {
             this.updateDiffs() // Flush any diff updates first, so they aren't scheduled after the completion.
-            this.decorator.didCompleteTask(task)
+            this.decorator.didApplyTask(task)
         }
     }
 

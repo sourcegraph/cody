@@ -76,6 +76,10 @@ export class FixupDecorator implements vscode.Disposable {
         this.updateTaskDecorations(task, task.diff)
     }
 
+    public didApplyTask(task: FixupTask): void {
+        // noop
+    }
+
     public didCompleteTask(task: FixupTask): void {
         this.updateTaskDecorations(task, undefined)
     }
