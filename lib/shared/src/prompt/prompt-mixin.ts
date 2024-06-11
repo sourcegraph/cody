@@ -1,6 +1,9 @@
 import type { ChatMessage } from '../chat/transcript/messages'
 import { PromptString, ps } from './prompt-string'
 
+/**
+ * The preamble we add to the start of every human message that has context items.
+ */
 const CONTEXT_PREAMBLE = ps`The provided codebase context are the code you need and have access to. Do not make any assumptions. Ask for additional context if you need it. Question:`
 
 /**
