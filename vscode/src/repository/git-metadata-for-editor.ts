@@ -5,22 +5,15 @@ import { repoNameResolver } from '../repository/repo-name-resolver'
 import { gitCommitIdFromGitExtension } from './git-extension-api'
 
 export interface GitIdentifiersForFile {
-    fileName: vscode.Uri
-    remote?: string
+    gitUrl?: string
     commit?: string
 }
 
-export interface GitIdentifiersForRepo {
-    remote?: string
-    commit?: string
-}
-
-class GitMetadataForCurrentEditor implements vscode.Disposable {
-    private disposables: vscode.Disposable[] = []
+class GitMetadataForCurrentEditor {
     private gitIdentifiersForFile: GitIdentifiersForFile | undefined = undefined
 
     constructor() {
-        this.disposables.push(vscode.window.onDidChangeActiveTextEditor(() => this.updateStatus()))
+        vscode.window.onDidChangeActiveTextEditor(() => this.updateStatus())
     }
 
     public getGitIdentifiersForFile(): GitIdentifiersForFile | undefined {
@@ -30,28 +23,20 @@ class GitMetadataForCurrentEditor implements vscode.Disposable {
         return this.gitIdentifiersForFile
     }
 
-    public dispose(): void {
-        for (const d of this.disposables) {
-            d.dispose()
-        }
-        this.disposables = []
-    }
-
     private async updateStatus() {
         let newGitIdentifiersForFile: GitIdentifiersForFile | undefined = undefined
 
         const config = getConfiguration()
         const currentFile = getEditor()?.active?.document?.uri
-        const remote =
+        const gitUrl =
             config.codebase ||
             (currentFile
-                ? (await repoNameResolver.getRepoNamesFromWorkspaceUri(currentFile))[0]
+                ? (await repoNameResolver.getRepoRemoteUrlsFromWorkspaceUri(currentFile))[0]
                 : config.codebase)
         if (currentFile) {
             const commit = gitCommitIdFromGitExtension(currentFile)
             newGitIdentifiersForFile = {
-                fileName: currentFile,
-                remote: remote,
+                gitUrl: gitUrl,
                 commit: commit,
             }
         }

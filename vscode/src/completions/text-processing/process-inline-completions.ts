@@ -1,11 +1,7 @@
 import { type Position, Range, type TextDocument } from 'vscode'
 import type { Tree } from 'web-tree-sitter'
 
-import {
-    type AutocompleteContextSnippet,
-    type DocumentContext,
-    dedupeWith,
-} from '@sourcegraph/cody-shared'
+import { type DocumentContext, dedupeWith } from '@sourcegraph/cody-shared'
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { getNodeAtCursorAndParents } from '../../tree-sitter/ast-getters'
@@ -20,29 +16,6 @@ interface ProcessInlineCompletionsParams {
     document: TextDocument
     position: Position
     docContext: DocumentContext
-}
-
-export interface InlineCompletionItemRetrievedContext {
-    content: string
-    filePath: string
-    startLine: number
-    endLine: number
-}
-
-export interface InlineContextItemsParams {
-    context: AutocompleteContextSnippet[]
-    gitUrl: string | undefined
-    commit: string | undefined
-}
-
-export interface InlineCompletionItemContext {
-    gitUrl: string
-    commit?: string
-    prefix: string
-    suffix: string
-    triggerLine: number
-    triggerCharacter: number
-    context: InlineCompletionItemRetrievedContext[]
 }
 
 export interface InlineCompletionItemWithAnalytics extends ItemPostProcessingInfo, InlineCompletionItem {

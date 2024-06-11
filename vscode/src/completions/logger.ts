@@ -3,6 +3,7 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
+    type AutocompleteContextSnippet,
     type BillingCategory,
     type BillingProduct,
     FeatureFlag,
@@ -31,11 +32,7 @@ import type { ContextSummary } from './context/context-mixer'
 import type { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import type { RequestParams } from './request-manager'
 import * as statistics from './statistics'
-import type {
-    InlineCompletionItemContext,
-    InlineCompletionItemWithAnalytics,
-    InlineContextItemsParams,
-} from './text-processing/process-inline-completions'
+import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
 import type { InlineCompletionItem } from './types'
 
@@ -55,6 +52,29 @@ declare const CompletionLogID: unique symbol
 // for a suggestion request.
 export type CompletionItemID = string & { _opaque: typeof CompletionItemID }
 declare const CompletionItemID: unique symbol
+
+export interface InlineCompletionItemRetrievedContext {
+    content: string
+    filePath: string
+    startLine: number
+    endLine: number
+}
+
+export interface InlineContextItemsParams {
+    context: AutocompleteContextSnippet[]
+    gitUrl: string | undefined
+    commit: string | undefined
+}
+
+export interface InlineCompletionItemContext {
+    gitUrl: string
+    commit?: string
+    prefix: string
+    suffix: string
+    triggerLine: number
+    triggerCharacter: number
+    context: InlineCompletionItemRetrievedContext[]
+}
 
 interface InteractionIDPayload {
     /**
@@ -761,8 +781,7 @@ function getInlineContextItemToLog(
         return undefined
     }
     const MAX_CONTEXT_ITEMS = 15
-    const MAX_CHARACTERS = 4000
-    // Add basic truncation to 1000 tokens.
+    const MAX_CHARACTERS = 20_000
     return {
         ...inlineCompletionItemContext,
         prefix: inlineCompletionItemContext.prefix.slice(-MAX_CHARACTERS),

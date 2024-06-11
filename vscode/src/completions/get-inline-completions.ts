@@ -209,10 +209,10 @@ async function doGetInlineCompletions(
 
     const gitIdentifiersForFile =
         isDotComUser === true ? gitMetadataForCurrentEditor.getGitIdentifiersForFile() : undefined
-    if (gitIdentifiersForFile?.remote) {
+    if (gitIdentifiersForFile?.gitUrl) {
         const repoMetadataInstance = RepoMetadatafromGitApi.getInstance()
         // Calling this so that it precomputes the `gitRepoUrl` and store in its cache for query later.
-        repoMetadataInstance.getRepoMetadataUsingGitUrl(gitIdentifiersForFile.remote)
+        repoMetadataInstance.getRepoMetadataUsingGitUrl(gitIdentifiersForFile.gitUrl)
     }
 
     // If we have a suffix in the same line as the cursor and the suffix contains any word
@@ -397,7 +397,7 @@ async function doGetInlineCompletions(
 
     const inlineContextParams = {
         context: contextResult?.context,
-        gitUrl: gitIdentifiersForFile?.remote,
+        gitUrl: gitIdentifiersForFile?.gitUrl,
         commit: gitIdentifiersForFile?.commit,
     }
     CompletionLogger.loaded(logId, requestParams, completions, source, isDotComUser, inlineContextParams)
