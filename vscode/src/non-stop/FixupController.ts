@@ -33,21 +33,11 @@ import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type FixupTaskID, type FixupTelemetryMetadata } from './FixupTask'
-import { DiffOperation, computeDecoratedLineDiff } from './decorated-line-diff'
+import { addedDecoration, computeDiffDecorations, removedDecoration } from './decorated-line-diff'
 import { type Diff, computeDiff } from './diff'
 import { trackRejection } from './rejection-tracker'
 import type { FixupActor, FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
-import { CodyTaskState, getMinimumDistanceToRangeBoundary } from './utils'
-
-// const addedDecoration = vscode.window.createTextEditorDecorationType({
-//     backgroundColor: new vscode.ThemeColor('diffEditor.insertedLineBackground'),
-//     isWholeLine: true,
-// })
-
-// const removedDecoration = vscode.window.createTextEditorDecorationType({
-//     backgroundColor: new vscode.ThemeColor('diffEditor.removedLineBackground'),
-//     isWholeLine: true,
-// })
+import { CodyTaskState, expandRangeToInsertedText, getMinimumDistanceToRangeBoundary } from './utils'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
@@ -705,7 +695,7 @@ export class FixupController
             if (!applicableDiff) {
                 return
             }
-            editOk = await this.replaceEditByLines(edit, task, applyEditOptions, visibleEditor)
+            editOk = await this.replaceEdit(edit, applicableDiff, task, applyEditOptions, visibleEditor)
         } else {
             editOk = await this.insertEdit(edit, document, task, applyEditOptions)
         }
@@ -732,6 +722,8 @@ export class FixupController
                 })
         })
 
+        // TODO: Try to update diff decorations
+
         // TODO: See if we can discard a FixupFile now.
         this.setTaskState(task, CodyTaskState.Applied)
         this.logTaskCompletion(task, document, editOk)
@@ -749,9 +741,11 @@ export class FixupController
         edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit,
         diff: Diff,
         task: FixupTask,
-        options?: { undoStopBefore: boolean; undoStopAfter: boolean }
+        options?: { undoStopBefore: boolean; undoStopAfter: boolean },
+        editor?: vscode.TextEditor
     ): Promise<boolean> {
         logDebug('FixupController:edit', 'replacing ')
+        let editOk: boolean
 
         if (edit instanceof vscode.WorkspaceEdit) {
             for (const diffEdit of diff.edits) {
@@ -764,61 +758,50 @@ export class FixupController
                     diffEdit.text
                 )
             }
-            return vscode.workspace.applyEdit(edit)
-        }
-
-        return edit(editBuilder => {
-            for (const diffEdit of diff.edits) {
-                editBuilder.replace(
-                    new vscode.Range(
-                        new vscode.Position(diffEdit.range.start.line, diffEdit.range.start.character),
-                        new vscode.Position(diffEdit.range.end.line, diffEdit.range.end.character)
-                    ),
-                    diffEdit.text
-                )
-            }
-        }, options)
-    }
-
-    private async replaceEditByLines(
-        edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit,
-        task: FixupTask,
-        options?: { undoStopBefore: boolean; undoStopAfter: boolean },
-        editor?: vscode.TextEditor
-    ): Promise<boolean> {
-        logDebug('FixupController:edit', 'replacing ')
-
-        if (!editor) {
-            // TODO:
-            return false
-        }
-
-        if (edit instanceof vscode.WorkspaceEdit) {
-            // TODO:
-            return false
-        }
-
-        const decoratedDiff = computeDecoratedLineDiff(
-            task.original,
-            task.replacement!,
-            task.selectionRange.start.line,
-            editor.document
-        )
-
-        for (const change of decoratedDiff) {
-            await edit(
+            editOk = await vscode.workspace.applyEdit(edit)
+        } else {
+            editOk = await edit(
                 editBuilder => {
-                    if (change.type === DiffOperation.LINE_DELETED) {
-                        editBuilder.delete(change.range)
-                    } else if (change.type === DiffOperation.LINE_INSERTED) {
-                        editBuilder.insert(change.range.start, change.text)
+                    for (const diffEdit of diff.edits) {
+                        editBuilder.replace(
+                            new vscode.Range(
+                                new vscode.Position(
+                                    diffEdit.range.start.line,
+                                    diffEdit.range.start.character
+                                ),
+                                new vscode.Position(
+                                    diffEdit.range.end.line,
+                                    diffEdit.range.end.character
+                                )
+                            ),
+                            diffEdit.text
+                        )
                     }
                 },
                 { undoStopAfter: false, undoStopBefore: false }
             )
         }
 
-        return true
+        if (editor && !(edit instanceof vscode.WorkspaceEdit)) {
+            const { decorations, placeholderLines } = computeDiffDecorations(
+                task.original,
+                task.replacement!,
+                task.selectionRange.start.line
+            )
+            for (const line of placeholderLines) {
+                await edit(
+                    editBuilder => {
+                        editBuilder.insert(line, '\n')
+                    },
+                    { undoStopAfter: false, undoStopBefore: false }
+                )
+            }
+
+            editor.setDecorations(addedDecoration, decorations.added)
+            editor.setDecorations(removedDecoration, decorations.removed)
+        }
+
+        return editOk
     }
 
     // Insert edit returned by Cody at task selection range
@@ -867,6 +850,11 @@ export class FixupController
             // Skip formatting in tutorial files,
             // This is an additional enhancement that doesn't add much value to the tutorial
             // and makes the tutorial UX more error-prone
+            return false
+        }
+
+        if (task.id) {
+            // force disable format
             return false
         }
 

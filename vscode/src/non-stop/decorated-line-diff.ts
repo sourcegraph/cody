@@ -1,76 +1,65 @@
 import { diffLines } from 'diff'
 import * as vscode from 'vscode'
+import { UNICODE_SPACE } from '../commands/GhostHintDecorator'
 
-export enum DiffOperation {
-    LINE_INSERTED = 0,
-    LINE_DELETED = 1,
-    LINE_DECORATION_INSERTED = 2,
+export const addedDecoration = vscode.window.createTextEditorDecorationType({
+    backgroundColor: new vscode.ThemeColor('diffEditor.insertedLineBackground'),
+    isWholeLine: true,
+})
+
+export const removedDecoration = vscode.window.createTextEditorDecorationType({
+    backgroundColor: new vscode.ThemeColor('diffEditor.removedLineBackground'),
+    isWholeLine: true,
+})
+
+interface Decorations {
+    added: vscode.DecorationOptions[]
+    removed: vscode.DecorationOptions[]
 }
 
-interface DeletedLine {
-    type: DiffOperation.LINE_DELETED
-    range: vscode.Range
-}
-
-interface InsertedLine {
-    type: DiffOperation.LINE_INSERTED
-    range: vscode.Range
-    text: string
-    decoration?: vscode.DecorationOptions
-}
-
-interface InsertedLineViaDecoration {
-    type: DiffOperation.LINE_DECORATION_INSERTED
-    range: vscode.Range
-    text: string
-    decoration?: vscode.DecorationOptions
-}
-
-type DecoratedLineDiff = DeletedLine | InsertedLine | InsertedLineViaDecoration
-
-export function computeDecoratedLineDiff(
+export function computeDiffDecorations(
     original: string,
-    replacement: string,
-    index: number,
-    document: vscode.TextDocument
-): DecoratedLineDiff[] {
-    let startLine = index
-    const result: DecoratedLineDiff[] = []
-    const diff = diffLines(original, replacement)
+    incoming: string,
+    lineIndex: number
+): { decorations: Decorations; placeholderLines: vscode.Position[] } {
+    let startLine = lineIndex
+    const placeholderLines: vscode.Position[] = []
+    const decorations: Decorations = {
+        added: [],
+        removed: [],
+    }
 
+    const diff = diffLines(original, incoming)
     for (const change of diff) {
+        const lines = change.value.split('\n').filter(Boolean)
         if (change.removed) {
-            const removalRange = new vscode.Range(
-                new vscode.Position(startLine, 0),
-                new vscode.Position(startLine + change.count!, 0)
-            )
-            result.push(
-                {
-                    type: DiffOperation.LINE_DELETED,
-                    range: removalRange,
-                },
-                {
-                    type: DiffOperation.LINE_DECORATION_INSERTED,
-                    range: removalRange,
-                    text: document.getText(removalRange),
-                }
-            )
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i]
+                // Get leading whitespace for line
+                const padding = (line.match(/^\s*/)?.[0] || '').length
+                const insertionLine = new vscode.Position(startLine, 0)
+                decorations.removed.push({
+                    range: new vscode.Range(insertionLine, insertionLine),
+                    renderOptions: {
+                        after: { contentText: UNICODE_SPACE.repeat(padding) + line.trim() },
+                    },
+                })
+                placeholderLines.push(insertionLine)
+                startLine++
+            }
         } else if (change.added) {
-            const endLine = startLine + change.count!
-            result.push({
-                type: DiffOperation.LINE_INSERTED,
-                range: new vscode.Range(
-                    new vscode.Position(startLine, 0),
-                    new vscode.Position(endLine, 0)
-                ),
-                text: change.value,
-            })
-            startLine = endLine
+            for (let i = 0; i < lines.length; i++) {
+                const insertionLine = new vscode.Position(startLine, 0)
+                decorations.added.push({
+                    range: new vscode.Range(insertionLine, insertionLine),
+                })
+                startLine++
+            }
         } else {
             // unchanged line
-            startLine += change.count! - 1
+            startLine += lines.length
         }
     }
 
-    return result
+    return { decorations, placeholderLines }
 }
