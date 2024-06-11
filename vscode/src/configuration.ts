@@ -136,22 +136,15 @@ export function getConfiguration(
         internalUnstable: getHiddenSetting('internal.unstable', isTesting),
 
         autocompleteExperimentalGraphContext,
-        experimentalSimpleChatContext: getHiddenSetting('experimental.simpleChatContext', true),
-        experimentalSymfContext: getHiddenSetting('experimental.symfContext', true),
         experimentalCommitMessage: getHiddenSetting('experimental.commitMessage', true),
         experimentalNoodle: getHiddenSetting('experimental.noodle', false),
-        experimentalURLContext: getHiddenSetting('experimental.urlContext', false),
 
-        experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
-        experimentalOllamaChat: getHiddenSetting('experimental.ollamaChat', true),
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
         experimentalMinionAnthropicKey: getHiddenSetting('experimental.minion.anthropicKey', undefined),
 
         experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
-
-        experimentalGithubAccessToken: getHiddenSetting('experimental.github.accessToken', ''),
 
         autocompleteExperimentalHotStreak: getHiddenSetting(
             'autocomplete.experimental.hotStreak',
@@ -189,6 +182,10 @@ export function getConfiguration(
                 undefined
             ),
         },
+        autocompleteFirstCompletionTimeout: getHiddenSetting<number>(
+            'autocomplete.advanced.timeout.firstCompletion',
+            1_500
+        ),
         testingModelConfig:
             isTesting && hasValidLocalEmbeddingsConfig()
                 ? {

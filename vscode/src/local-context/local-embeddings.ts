@@ -425,7 +425,6 @@ export class LocalEmbeddingsController
             this.statusEmitter.fire(this)
         } catch (error: any) {
             logDebug('LocalEmbeddingsController', captureException(error), error)
-            await vscode.window.showErrorMessage(`Cody Embeddings — Error: ${error?.message}`)
         }
     }
 

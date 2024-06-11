@@ -141,39 +141,40 @@ export function shouldAskHumanUser(description: string): MessageParam[] {
 }
 
 export const changelogSystem = `
-Your job is to generate a patch to update a changelog file, given a description of changes that were made to a codebase.
+Your job is to propose an edit to a changelog file. You'll be given the following information:
+- changelog: the portion of the changelog to modify
+- currentDate: the current date
+- changeDescription: a description of the new change to be incorporated into the changelog
 
-When outputting a diff, use the following format that omits line numbers:
-<diff>
-@@ ... @@
- def main(args):
-     # show a greeting
--    print("Hello!")
-+    print("Goodbye!")
-     return
-</diff>
+Generate a patch to update the section you've chosen to modify. Your output should be in the following format:
+<linesToRemove>
+the lines that should be replaced, including distinctive lines preceeding and following
+</linesToRemove>
+<linesToInsert>
+the lines that should be substituted in place of the removed lines
+</linesToInsert>
 
-INPUT FORMAT:
-<description>a description of the changes</description>
-<changelog>existing contents of the changelog</changelog>
+IMPORTANT RULES:
+- Do NOT generate any hyperlinks. Do not reference an issue or pull request numbers.
+`.trim()
 
-RESPONSE_FORMAT:
-<diff>
-the diff goes here
-</diff>`.trimStart()
-
-export function changelogUser(changelog: string, description: string): MessageParam[] {
+export function changelogUser(
+    changelog: string,
+    currentDate: string,
+    description: string
+): MessageParam[] {
     return [
         {
             role: 'user',
             content: `
-<description>
-${description}
-</description>
 <changelog>
 ${changelog}
 </changelog>
-`.trimStart(),
+<currentDate>${currentDate}</currentDate>
+<changeDescription>
+${description}
+</changeDescription>
+`.trim(),
         },
     ]
 }

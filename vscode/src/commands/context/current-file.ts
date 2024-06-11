@@ -1,16 +1,13 @@
 import {
     type ContextItem,
     ContextItemSource,
-    TokenCounter,
     contextFiltersProvider,
     logError,
-    toRangeData,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import * as vscode from 'vscode'
 import { getEditor } from '../../editor/active-editor'
 
-export async function getContextFileFromCurrentFile(): Promise<ContextItem[]> {
+export async function getContextFileFromCurrentFile(): Promise<ContextItem | null> {
     return wrapInActiveSpan('commands.context.file', async span => {
         try {
             const editor = getEditor()
@@ -20,36 +17,17 @@ export async function getContextFileFromCurrentFile(): Promise<ContextItem[]> {
             }
 
             if (await contextFiltersProvider.isUriIgnored(document.uri)) {
-                return []
+                return null
             }
 
-            const selection = new vscode.Selection(
-                0,
-                0,
-                document.lineCount - 1,
-                document.lineAt(document.lineCount - 1).text.length
-            )
-
-            const content = document.getText(selection)
-            const size = TokenCounter.countTokens(content)
-
-            if (!content.trim()) {
-                throw new Error('No content')
+            return {
+                type: 'file',
+                uri: document.uri,
+                source: ContextItemSource.Editor,
             }
-
-            return [
-                {
-                    type: 'file',
-                    uri: document.uri,
-                    content,
-                    source: ContextItemSource.Editor,
-                    range: toRangeData(selection),
-                    size,
-                } satisfies ContextItem,
-            ]
         } catch (error) {
             logError('getContextFileFromCurrentFile', 'failed', { verbose: error })
-            return []
+            return null
         }
     })
 }

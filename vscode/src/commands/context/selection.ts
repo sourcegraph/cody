@@ -2,6 +2,7 @@ import {
     type ContextItem,
     TokenCounter,
     contextFiltersProvider,
+    isCodyIgnoredFile,
     logError,
     toRangeData,
     wrapInActiveSpan,
@@ -18,7 +19,9 @@ import { type Position, Selection } from 'vscode'
  * When no selection is made, try getting the smart selection based on the cursor position.
  * If no smart selection is found, use the visible range of the editor instead.
  */
-export async function getContextFileFromCursor(newCursorPosition?: Position): Promise<ContextItem[]> {
+export async function getContextFileFromCursor(
+    newCursorPosition?: Position
+): Promise<ContextItem | null> {
     return wrapInActiveSpan('commands.context.cursor', async span => {
         try {
             const editor = getEditor()
@@ -29,7 +32,7 @@ export async function getContextFileFromCursor(newCursorPosition?: Position): Pr
             }
 
             if (await contextFiltersProvider.isUriIgnored(document.uri)) {
-                return []
+                return null
             }
 
             // Use user current selection if any
@@ -45,19 +48,17 @@ export async function getContextFileFromCursor(newCursorPosition?: Position): Pr
             const content = document.getText(selection)
             const size = TokenCounter.countTokens(content)
 
-            return [
-                {
-                    type: 'file',
-                    uri: document.uri,
-                    content,
-                    source: ContextItemSource.Selection,
-                    range: toRangeData(selection),
-                    size,
-                } satisfies ContextItemFile,
-            ]
+            return {
+                type: 'file',
+                uri: document.uri,
+                content,
+                source: ContextItemSource.Selection,
+                range: toRangeData(selection),
+                size,
+            }
         } catch (error) {
             logError('getContextFileFromCursor', 'failed', { verbose: error })
-            return []
+            return null
         }
     })
 }
@@ -75,7 +76,10 @@ export async function getContextFileFromSelection(): Promise<ContextItem[]> {
                 return []
             }
 
-            if (await contextFiltersProvider.isUriIgnored(document.uri)) {
+            if (
+                (await contextFiltersProvider.isUriIgnored(document.uri)) ||
+                isCodyIgnoredFile(document.uri)
+            ) {
                 return []
             }
 

@@ -21,7 +21,7 @@ const INITIAL_PING_DELAY_MS = 10 * 1000 // 10 seconds
  *
  * You can query it to get aggregates of the most recent pings.
  */
-export class UpstreamHealthProvider implements vscode.Disposable {
+class UpstreamHealthProvider implements vscode.Disposable {
     private lastUpstreamLatency?: number
     private lastGatewayLatency?: number
 
@@ -47,7 +47,7 @@ export class UpstreamHealthProvider implements vscode.Disposable {
 
     public onConfigurationChange(
         newConfig: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'customHeaders' | 'accessToken'>
-    ): this {
+    ) {
         this.config = newConfig
         this.lastUpstreamLatency = undefined
         this.lastGatewayLatency = undefined
@@ -59,8 +59,6 @@ export class UpstreamHealthProvider implements vscode.Disposable {
             clearTimeout(this.nextTimeoutId)
         }
         this.nextTimeoutId = setTimeout(this.measure.bind(this), INITIAL_PING_DELAY_MS)
-
-        return this
     }
 
     private async measure() {

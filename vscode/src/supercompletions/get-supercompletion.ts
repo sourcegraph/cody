@@ -14,7 +14,8 @@ import { ASSISTANT_EXAMPLE, HUMAN_EXAMPLE, MODEL, PROMPT, SYSTEM } from './promp
 import type { RecentEditsRetriever } from './recent-edits/recent-edits-retriever'
 import { fixIndentation } from './utils/fix-indentation'
 import { fuzzyFindLocation } from './utils/fuzzy-find-location'
-export interface SuperCompletionsParams {
+
+interface SuperCompletionsParams {
     document: vscode.TextDocument
     abortSignal: AbortSignal
 

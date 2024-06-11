@@ -24,6 +24,7 @@ import {
     PromptString,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
+    type SerializedPromptEditorState,
     Typewriter,
     allMentionProvidersMetadata,
     hydrateAfterPostMessage,
@@ -219,7 +220,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         }
         this.codebaseStatusProvider = new CodebaseStatusProvider(
             this.editor,
-            this.config.experimentalSymfContext ? this.symf : null,
+            this.symf,
             enterpriseContext ? enterpriseContext.getCodebaseRepoIdMapper() : null
         )
         this.disposables.push(this.contextStatusAggregator.addProvider(this.codebaseStatusProvider))
@@ -273,7 +274,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     PromptString.unsafe_fromUserQuery(message.text),
                     message.submitType,
                     message.contextFiles ?? [],
-                    message.editorState,
+                    message.editorState as SerializedPromptEditorState,
                     message.addEnhancedContext ?? false,
                     this.startNewSubmitOrEditOperation(),
                     'chat'
@@ -286,7 +287,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     PromptString.unsafe_fromUserQuery(message.text),
                     message.index ?? undefined,
                     message.contextFiles ?? [],
-                    message.editorState,
+                    message.editorState as SerializedPromptEditorState,
                     message.addEnhancedContext || false
                 )
                 break
@@ -394,9 +395,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         return {
             uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
             serverEndpoint: config.serverEndpoint,
-            experimentalGuardrails: config.experimentalGuardrails,
             experimentalNoodle: config.experimentalNoodle,
-            experimentalURLContext: config.experimentalURLContext,
         }
     }
 
@@ -462,7 +461,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         inputText: PromptString,
         submitType: ChatSubmitType,
         mentions: ContextItem[],
-        editorState: ChatMessage['editorState'],
+        editorState: SerializedPromptEditorState | null,
         addEnhancedContext: boolean,
         abortSignal: AbortSignal,
         source?: EventSource,
@@ -591,7 +590,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                                   addEnhancedContext,
                                   providers: {
                                       localEmbeddings: this.localEmbeddings,
-                                      symf: this.config.experimentalSymfContext ? this.symf : null,
+                                      symf: this.symf,
                                       remoteSearch: this.remoteSearch,
                                   },
                                   contextRanking: this.contextRanking,
@@ -677,7 +676,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         text: PromptString,
         index: number | undefined,
         contextFiles: ContextItem[],
-        editorState: ChatMessage['editorState'],
+        editorState: SerializedPromptEditorState | null,
         addEnhancedContext = true
     ): Promise<void> {
         const abortSignal = this.startNewSubmitOrEditOperation()
@@ -727,11 +726,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         this.allMentionProvidersMetadataQueryCancellation = cancellation
 
         try {
-            const config = await this.getConfigForWebview()
-            if (cancellation.token.isCancellationRequested) {
-                return
-            }
-            const providers = await allMentionProvidersMetadata(config)
+            const providers = await allMentionProvidersMetadata()
             if (cancellation.token.isCancellationRequested) {
                 return
             }
@@ -820,15 +815,19 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         void this.postMessage({
             type: 'clientAction',
-            addContextItemsToLastHumanInput: contextItem.map(f => ({
-                ...f,
-                type: 'file',
-                // Remove content to avoid sending large data to the webview
-                content: undefined,
-                isTooLarge: f.size ? f.size > userContextSize : undefined,
-                source: ContextItemSource.User,
-                range: f.range,
-            })),
+            addContextItemsToLastHumanInput: contextItem
+                ? [
+                      {
+                          ...contextItem,
+                          type: 'file',
+                          // Remove content to avoid sending large data to the webview
+                          content: undefined,
+                          isTooLarge: contextItem.size ? contextItem.size > userContextSize : undefined,
+                          source: ContextItemSource.User,
+                          range: contextItem.range,
+                      } satisfies ContextItem,
+                  ]
+                : [],
         })
 
         // Reveal the webview panel if it is hidden
@@ -1222,8 +1221,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             (await this.repoPicker?.getDefaultRepos()) || [],
             RepoInclusion.Manual
         )
-
-        vscode.commands.executeCommand('setContext', 'cody.hasNewChatOpened', true)
     }
 
     // Attempts to restore the chat to the given sessionID, if it exists in
@@ -1273,8 +1270,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         this.chatModel = new SimpleChatModel(this.chatModel.modelID)
         this.postViewTranscript()
-
-        vscode.commands.executeCommand('setContext', 'cody.hasNewChatOpened', true)
     }
 
     // #endregion

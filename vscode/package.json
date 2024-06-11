@@ -24,14 +24,14 @@
     "check:manifest": "ts-node-transpile-only ./scripts/validate-package-json.ts",
     "_build:desktop": "pnpm run -s _build:esbuild:desktop && pnpm run -s _build:webviews --mode production",
     "_build:web": "pnpm run -s _build:esbuild:web && pnpm run -s _build:webviews --mode production",
-    "build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src\" \"pnpm run -s _build:webviews --mode development\"",
-    "build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src\" \"pnpm run -s _build:webviews --mode development\"",
+    "build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop\" \"pnpm run -s _build:webviews --mode development\"",
+    "build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web\" \"pnpm run -s _build:webviews --mode development\"",
     "watch:build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
     "watch:build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
     "_build:esbuild:desktop": "pnpm download-wasm && pnpm run -s _build:esbuild:node && pnpm run -s _build:esbuild:uninstall",
-    "_build:esbuild:node": "esbuild ./src/extension.node.ts --bundle --outfile=dist/extension.node.js --external:vscode --external:typescript --format=cjs --platform=node --sourcemap",
-    "_build:esbuild:web": "esbuild ./src/extension.web.ts --platform=browser --bundle --outfile=dist/extension.web.js --alias:path=path-browserify --external:typescript --alias:node:path=path-browserify --alias:node:os=os-browserify --external:vscode --external:node:fs/promises --define:process='{\"env\":{}}' --define:window=self --format=cjs --sourcemap",
-    "_build:esbuild:uninstall": "esbuild ./src/uninstall/post-uninstall.ts --bundle --outfile=dist/post-uninstall.js --external:typescript --format=cjs --platform=node --sourcemap",
+    "_build:esbuild:node": "esbuild ./src/extension.node.ts --bundle --outfile=dist/extension.node.js --external:vscode --external:typescript --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:lexical=./build/lexical-package-fix --format=cjs --platform=node --sourcemap",
+    "_build:esbuild:web": "esbuild ./src/extension.web.ts --platform=browser --bundle --outfile=dist/extension.web.js --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:path=path-browserify --external:typescript --alias:node:path=path-browserify --alias:node:os=os-browserify --external:vscode --external:node:fs/promises --define:process='{\"env\":{}}' --define:window=self --format=cjs --sourcemap",
+    "_build:esbuild:uninstall": "esbuild ./src/uninstall/post-uninstall.ts --bundle --outfile=dist/post-uninstall.js --external:typescript --format=cjs --platform=node --sourcemap --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:lexical=./build/lexical-package-fix",
     "_build:webviews": "vite -c webviews/vite.config.ts build",
     "release": "ts-node-transpile-only ./scripts/release.ts",
     "download-wasm": "ts-node-transpile-only ./scripts/download-wasm-modules.ts",
@@ -45,7 +45,9 @@
     "vscode:prepublish": "pnpm -s run build",
     "vscode:uninstall": "node ./dist/post-uninstall.js",
     "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts",
-    "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts"
+    "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts",
+    "version-bump:minor": "RELEASE_TYPE=minor ts-node-transpile-only ./scripts/version-bump.ts",
+    "version-bump:dry-run": "RELEASE_TYPE=prerelease ts-node-transpile-only ./scripts/version-bump.ts"
   },
   "categories": ["Programming Languages", "Machine Learning", "Snippets", "Education"],
   "keywords": [
@@ -119,7 +121,7 @@
           {
             "id": "chat",
             "title": "Cody Chat",
-            "description": "Answer questions about general programming topics, or specific to your codebase, with Cody chat.\n[Open Chat](command:cody.walkthrough.showChat)",
+            "description": "Answer questions about general programming topics, or specific to your codebase, with Cody chat.\n[Open Chat](command:cody.chat.panel.new)",
             "media": {
               "markdown": "walkthroughs/chat.md"
             }
@@ -386,7 +388,7 @@
         "icon": "$(gear)"
       },
       {
-        "command": "cody.focus",
+        "command": "cody.chat.focus",
         "category": "Cody",
         "title": "Sign In"
       },
@@ -411,12 +413,6 @@
         "title": "Show Rate Limit Modal",
         "group": "Cody",
         "enablement": "cody.activated"
-      },
-      {
-        "command": "cody.guardrails.debug",
-        "category": "Cody",
-        "title": "Guardrails Debug Attribution",
-        "enablement": "config.cody.experimental.guardrails && editorHasSelection"
       },
       {
         "command": "cody.menu.commands",
@@ -583,14 +579,6 @@
         "title": "Copy Cody Extension Version"
       },
       {
-        "command": "cody.symf.search",
-        "category": "Cody",
-        "group": "Search",
-        "icon": "$(search)",
-        "title": "Natural Language Search Code (Beta)",
-        "enablement": "cody.activated && workspaceFolderCount > 0"
-      },
-      {
         "command": "cody.test.set-context-filters",
         "title": "[Internal] Set Context Filters Overwrite",
         "enablement": "cody.activated && cody.devOrTest"
@@ -749,13 +737,9 @@
           "when": "false"
         },
         {
-          "command": "cody.focus",
+          "command": "cody.chat.focus",
           "title": "Cody: Sign In",
           "when": "!cody.activated"
-        },
-        {
-          "command": "cody.guardrails.debug",
-          "when": "config.cody.experimental.guardrails && editorHasSelection"
         },
         {
           "command": "cody.show-page",
@@ -833,13 +817,8 @@
           "group": "custom-commands"
         },
         {
-          "command": "cody.focus",
+          "command": "cody.chat.focus",
           "when": "!cody.activated",
-          "group": "other"
-        },
-        {
-          "command": "cody.guardrails.debug",
-          "when": "cody.activated && config.cody.experimental.guardrails && editorHasSelection",
           "group": "other"
         }
       ],
@@ -1026,18 +1005,6 @@
           "markdownDescription": "Adds code lenses to current file for quick access to Cody commands.",
           "default": false
         },
-        "cody.experimental.guardrails": {
-          "order": 9,
-          "type": "boolean",
-          "markdownDescription": "Experimental feature for internal use.",
-          "default": false
-        },
-        "cody.experimental.localSymbols": {
-          "order": 9,
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Experimental feature for internal use."
-        },
         "cody.chat.preInstruction": {
           "order": 6,
           "type": "string",
@@ -1063,30 +1030,6 @@
           "type": "boolean",
           "markdownDescription": "Enable hints for Cody commands such as \"Opt+K to Edit\" or \"Opt+D to Document\"",
           "default": true
-        },
-        "cody.experimental.simpleChatContext": {
-          "order": 99,
-          "type": "boolean",
-          "markdownDescription": "Uses the new simplifed chat context fetcher",
-          "default": true
-        },
-        "cody.experimental.ollamaChat": {
-          "order": 99,
-          "type": "boolean",
-          "markdownDescription": "Enable local Ollama models for chat and commands",
-          "default": false
-        },
-        "cody.experimental.symfContext": {
-          "order": 99,
-          "type": "boolean",
-          "markdownDescription": "Enable symf code search context for chat",
-          "default": true
-        },
-        "cody.experimental.symf.path": {
-          "order": 99,
-          "type": "string",
-          "markdownDescription": "Path to symf binary",
-          "default": ""
         },
         "cody.experimental.tracing": {
           "order": 99,
@@ -1347,6 +1290,13 @@
           "fontCharacter": "\\004A"
         }
       }
+    }
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "Cody only uses providers (configured in `openctx.providers`) from trusted workspaces because providers may execute arbitrary code.",
+      "restrictedConfigurations": ["openctx.providers"]
     }
   },
   "dependencies": {

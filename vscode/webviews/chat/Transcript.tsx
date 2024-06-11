@@ -1,8 +1,13 @@
-import type { ChatMessage, Guardrails } from '@sourcegraph/cody-shared'
+import {
+    type ChatMessage,
+    type Guardrails,
+    type SerializedPromptEditorValue,
+    deserializeContextItem,
+} from '@sourcegraph/cody-shared'
 import { type ComponentProps, type FunctionComponent, useCallback, useMemo, useRef } from 'react'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
-import type { PromptEditorRefAPI, SerializedPromptEditorValue } from '../promptEditor/PromptEditor'
+import type { PromptEditorRefAPI } from '../promptEditor/PromptEditor'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 import styles from './Transcript.module.css'
@@ -148,6 +153,7 @@ const TranscriptInteraction: FunctionComponent<
                     key={`${humanMessage.index}-context`}
                     contextItems={humanMessage.contextFiles}
                     model={assistantMessage?.model}
+                    isForFirstMessage={humanMessage.index === 0}
                 />
             )}
             {assistantMessage && !isContextLoading && (
@@ -185,7 +191,7 @@ export function editHumanMessage(
         index: messageIndexInTranscript,
         text: editorValue.text,
         editorState: editorValue.editorState,
-        contextFiles: editorValue.contextItems,
+        contextFiles: editorValue.contextItems.map(deserializeContextItem),
     })
     focusLastHumanMessageEditor()
 }
@@ -196,6 +202,6 @@ function onFollowupSubmit(editorValue: SerializedPromptEditorValue): void {
         submitType: 'user',
         text: editorValue.text,
         editorState: editorValue.editorState,
-        contextFiles: editorValue.contextItems,
+        contextFiles: editorValue.contextItems.map(deserializeContextItem),
     })
 }

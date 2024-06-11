@@ -1,7 +1,7 @@
 import { LRUCache } from 'lru-cache'
 import winkUtils from 'wink-nlp-utils'
 
-export const MAX_STEM_CACHE_SIZE = 30000
+const MAX_STEM_CACHE_SIZE = 30000
 
 export interface JaccardMatch {
     score: number
@@ -173,7 +173,7 @@ function jaccardSimilarity(left: number, right: number, intersection: number): n
 
 export function getWordOccurrences(s: string): WordOccurrences {
     const frequencyCounter: WordOccurrences = new Map()
-    const words = winkUtils.string.tokenize0(s)
+    const words = winkUtils.string.tokenize0(s).flatMap(breakCamelAndSnakeCaseWithCache)
 
     const filteredWords = winkUtils.tokens.removeWords(words)
     for (const word of filteredWords) {
@@ -242,3 +242,45 @@ function stemWithCache(word: string): string {
     return stem
 }
 const stemmerCache = new LRUCache<string, string>({ max: MAX_STEM_CACHE_SIZE })
+
+// Uses a heuristics to break camelCase and snake_case compound words into their
+// constituent words. This is helpful since programming languages tend to use
+// either of those two patterns quite often.
+//
+// If we do not take this into account, symbols that have a similar meaning
+// might fall into different stems and thus not be detected by our ranker.
+//
+// E.g.: "bestJaccardMatch" and "JaccardSimilarityRetriever" have an overlapping
+// meaning but only if we break these words.
+//
+// Note: kebab-case is skipped here since our tokenizer already handles this.
+function breakCamelAndSnakeCase(word: string): string[] {
+    const camelCaseRegex = /([a-z])([A-Z])/g
+    const snakeKebabRegex = /[_]/g
+
+    // Break camelCase words
+    let brokenWord = word
+    while (camelCaseRegex.test(brokenWord)) {
+        brokenWord = brokenWord.replace(camelCaseRegex, '$1 $2')
+    }
+    // Break snake_case and kebab-case words
+    brokenWord = brokenWord.replace(snakeKebabRegex, ' ')
+
+    if (word === brokenWord) {
+        return [word]
+    }
+    const array = brokenWord.split(' ')
+    // Add the original un-split symbol to not loose signal for exact overlap
+    array.push(word)
+    return array
+}
+
+function breakCamelAndSnakeCaseWithCache(word: string): string[] {
+    let broken = breakCamelAndSnakeCaseCache.get(word)
+    if (!broken) {
+        broken = breakCamelAndSnakeCase(word)
+        breakCamelAndSnakeCaseCache.set(word, broken)
+    }
+    return broken
+}
+const breakCamelAndSnakeCaseCache = new LRUCache<string, string[]>({ max: MAX_STEM_CACHE_SIZE })

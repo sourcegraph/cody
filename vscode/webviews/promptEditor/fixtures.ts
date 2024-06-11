@@ -1,8 +1,8 @@
+import { STATE_VERSION_CURRENT, type SerializedPromptEditorState } from '@sourcegraph/cody-shared'
 import type { SerializedLexicalNode } from 'lexical'
-import type { SerializedPromptEditorState } from './PromptEditor'
 
 export const FILE_MENTION_EDITOR_STATE_FIXTURE: SerializedPromptEditorState = {
-    v: 'lexical-v0',
+    v: STATE_VERSION_CURRENT,
     lexicalEditorState: {
         root: {
             children: [

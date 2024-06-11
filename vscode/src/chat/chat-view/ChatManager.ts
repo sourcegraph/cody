@@ -7,6 +7,8 @@ import {
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
     type ChatClient,
     type Guardrails,
+    STATE_VERSION_CURRENT,
+    lexicalEditorStateFromPromptString,
 } from '@sourcegraph/cody-shared'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
@@ -108,7 +110,7 @@ export class ChatManager implements vscode.Disposable {
         // Chat panel is only used for chat view
         // Request to open chat panel for login view/unAuth users, will be sent to sidebar view
         if (!this.options.authProvider.getAuthStatus()?.isLoggedIn || view !== 'chat') {
-            return vscode.commands.executeCommand('cody.focus')
+            return vscode.commands.executeCommand('cody.chat.focus')
         }
 
         const chatProvider = await this.chatPanelsManager.getNewChatPanel()
@@ -122,19 +124,23 @@ export class ChatManager implements vscode.Disposable {
         text,
         submitType,
         contextFiles,
-        editorState,
         addEnhancedContext,
         source = DEFAULT_EVENT_SOURCE,
         command,
     }: ExecuteChatArguments): Promise<ChatSession | undefined> {
         const provider = await this.chatPanelsManager.getNewChatPanel()
         const abortSignal = provider.startNewSubmitOrEditOperation()
+        const editorState = lexicalEditorStateFromPromptString(text)
         await provider.handleUserMessageSubmission(
             uuid.v4(),
             text,
             submitType,
             contextFiles ?? [],
-            editorState,
+            {
+                lexicalEditorState: editorState,
+                v: STATE_VERSION_CURRENT,
+                minReaderV: STATE_VERSION_CURRENT,
+            },
             addEnhancedContext ?? true,
             abortSignal,
             source,
@@ -219,18 +225,6 @@ export class ChatManager implements vscode.Disposable {
             await this.restorePanel(chatID, panel.title)
             panel.dispose()
         }
-    }
-
-    public async triggerNotice(notice: { key: string }): Promise<void> {
-        const provider = await this.chatPanelsManager.getActiveChatPanel()
-        provider.webviewPanel?.onDidChangeViewState(e => {
-            if (e.webviewPanel.visible) {
-                void provider?.webview?.postMessage({
-                    type: 'notice',
-                    notice,
-                })
-            }
-        })
     }
 
     /**

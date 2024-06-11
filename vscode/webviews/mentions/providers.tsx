@@ -3,7 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 /** React context data for the available context providers. */
-export interface ContextProviderContext {
+interface ContextProviderContext {
     providers: ContextMentionProviderMetadata[]
     reload: () => void
 }

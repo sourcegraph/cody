@@ -40,7 +40,7 @@ describe('rewrite-query', () => {
 
     check(ps`ocean`, expanded =>
         expect(expanded).toMatchInlineSnapshot(
-            `"aquatic fish marine maritime nautical ocean sea sealife surf swell tide underwater water wave"`
+            `"aquatic marine marine_data maritime ocean ocean_data oceanographer oceanographic oceanographic_data oceanography oceanologic oceanology science scientist sea"`
         )
     )
 
@@ -50,21 +50,37 @@ describe('rewrite-query', () => {
         )
     )
 
+    check(
+        ps`type Zoekt struct {
+\tClient zoekt.Searcher
+
+\t// DisableCache when true prevents caching of Client.List. Useful in
+\t// tests.
+\tDisableCache bool
+
+\tmu       sync.RWMute
+`,
+        expanded =>
+            expect(expanded).toMatchInlineSnapshot(
+                `"cache cached caching mutex search search_engine searcher sync synchronization test testing zoekt"`
+            )
+    )
+
     check(ps`Where is authentication router defined?`, expanded =>
         expect(expanded).toMatchInlineSnapshot(
-            `"auth authentication authorization config configuration route router routing"`
+            `"auth auth-related authentication define defined definition definition-site login route-related router routing security"`
         )
     )
 
     check(ps`parse file with tree-sitter`, expanded =>
         expect(expanded).toMatchInlineSnapshot(
-            `"file files parse parser parsing sitter tree tree-sitter treesitter"`
+            `"file files parse parser parsing sitter tree tree-parser tree-sitter treesitter"`
         )
     )
 
     check(ps`scan tokens in C++`, expanded =>
         expect(expanded).toMatchInlineSnapshot(
-            `"analyze c++ cplusplus cpp cxx lex lexer lexical parse scan scanner token tokenizer"`
+            `"c++ cplusplus cpp cxx lexeme lexer lexical_element lexical_unit scanner token tokenizer"`
         )
     )
 
@@ -79,7 +95,7 @@ describe('rewrite-query', () => {
         ps`C'est ou la logique pour recloner les dépôts?`,
         expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                `"algorithm clone cloning config configuration git logic reasoning repo repository settings vcs version-control"`
+                `"algorithm clone git logic process reclone replication repo repository workflow"`
             ),
         { restrictRewrite: true }
     )
@@ -88,7 +104,7 @@ describe('rewrite-query', () => {
         ps`Explain how the context window limit is calculated. how much budget is given to @-mentions vs. search context?`,
         expanded =>
             expect(expanded).toMatchInlineSnapshot(
-                `"@-mentions allocation budget budget-allocation budget_allocation context context window context-window context_window limit mentions search context search-context search_context window"`
+                `"@-mentions allocation budget context context-window context_window limit mentions resource search search-context window"`
             ),
         { restrictRewrite: true }
     )

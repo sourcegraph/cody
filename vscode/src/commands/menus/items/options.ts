@@ -3,7 +3,6 @@ import type { CommandMenuItem } from '../types'
 
 const ASK_QUESTION_COMMAND = CodyCommandMenuItems[0]
 const EDIT_COMMAND = CodyCommandMenuItems[1]
-const SEARCH_COMMAND = CodyCommandMenuItems.find(i => i.key === 'search')
 
 // Common Menu Options
 const chatOption: CommandMenuItem = {
@@ -22,15 +21,6 @@ const editOption: CommandMenuItem = {
     alwaysShow: true,
     type: 'default',
     command: ASK_QUESTION_COMMAND.command.command,
-}
-
-const searchOption: CommandMenuItem = {
-    label: `$(${SEARCH_COMMAND?.icon}) ${SEARCH_COMMAND?.description}`,
-    description: 'Start a new natural language search with this text',
-    key: SEARCH_COMMAND?.key,
-    alwaysShow: true,
-    type: 'default',
-    command: SEARCH_COMMAND?.command.command,
 }
 
 const configOption: CommandMenuItem = {
@@ -53,5 +43,4 @@ export const CommandMenuOption = {
     edit: editOption,
     config: configOption,
     add: addOption,
-    search: searchOption,
 }

@@ -1,7 +1,7 @@
 import type { ContextItem, Model } from '@sourcegraph/cody-shared'
 import { pluralize } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { BrainIcon } from 'lucide-react'
+import { BrainIcon, MessagesSquareIcon } from 'lucide-react'
 import type React from 'react'
 import { FileLink } from '../../../components/FileLink'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../components/shadcn/ui/tooltip'
@@ -19,11 +19,12 @@ import styles from './ContextCell.module.css'
 export const ContextCell: React.FunctionComponent<{
     contextItems: ContextItem[] | undefined
     model?: Model['model']
+    isForFirstMessage: boolean
     className?: string
 
     /** For use in storybooks only. */
     __storybook__initialOpen?: boolean
-}> = ({ contextItems, model, className, __storybook__initialOpen }) => {
+}> = ({ contextItems, model, isForFirstMessage, className, __storybook__initialOpen }) => {
     const usedContext: ContextItem[] = []
     const excludedAtContext: ContextItem[] = []
     if (contextItems) {
@@ -37,7 +38,10 @@ export const ContextCell: React.FunctionComponent<{
     }
 
     const itemCount = usedContext.length
-    let contextItemCountLabel = `${itemCount} ${pluralize('item', itemCount)}`
+    let contextItemCountLabel = `${itemCount} ${!isForFirstMessage ? 'new ' : ''}${pluralize(
+        'item',
+        itemCount
+    )}`
     if (excludedAtContext.length) {
         const excludedAtUnit = excludedAtContext.length === 1 ? 'mention' : 'mentions'
         contextItemCountLabel = `${contextItemCountLabel} — ${excludedAtContext.length} ${excludedAtUnit} excluded`
@@ -84,7 +88,7 @@ export const ContextCell: React.FunctionComponent<{
                     <ul className={styles.list}>
                         {contextItems?.map((item, i) => (
                             // biome-ignore lint/suspicious/noArrayIndexKey: stable order
-                            <li key={i}>
+                            <li key={i} data-testid="context-item">
                                 <FileLink
                                     uri={item.uri}
                                     repoName={item.repoName}
@@ -92,17 +96,21 @@ export const ContextCell: React.FunctionComponent<{
                                     source={item.source}
                                     range={item.range}
                                     title={item.title}
-                                    isTooLarge={
-                                        item.type === 'file' && item.isTooLarge && item.source === 'user'
-                                    }
-                                    isIgnored={
-                                        item.type === 'file' && item.isIgnored && item.source === 'user'
-                                    }
+                                    isTooLarge={item.isTooLarge}
+                                    isIgnored={item.isIgnored}
                                     className={clsx(styles.contextItem, MENTION_CLASS_NAME)}
                                     linkClassName={styles.contextItemLink}
                                 />
                             </li>
                         ))}
+                        {!isForFirstMessage && (
+                            <span
+                                className={clsx(styles.contextItem, 'tw-flex tw-items-center tw-gap-2')}
+                            >
+                                <MessagesSquareIcon size={12} className="tw-ml-1" /> Prior messages and
+                                context in this conversation
+                            </span>
+                        )}
                         <li>
                             <Tooltip>
                                 <TooltipTrigger asChild>

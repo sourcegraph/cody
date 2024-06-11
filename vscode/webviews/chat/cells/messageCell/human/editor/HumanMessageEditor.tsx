@@ -1,3 +1,4 @@
+import type { SerializedPromptEditorState, SerializedPromptEditorValue } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import {
     type FocusEventHandler,
@@ -14,12 +15,7 @@ import {
     useClientActionListener,
     useClientState,
 } from '../../../../../client/clientState'
-import {
-    PromptEditor,
-    type PromptEditorRefAPI,
-    type SerializedPromptEditorState,
-    type SerializedPromptEditorValue,
-} from '../../../../../promptEditor/PromptEditor'
+import { PromptEditor, type PromptEditorRefAPI } from '../../../../../promptEditor/PromptEditor'
 import styles from './HumanMessageEditor.module.css'
 import type { SubmitButtonDisabled } from './toolbar/SubmitButton'
 import { Toolbar } from './toolbar/Toolbar'
