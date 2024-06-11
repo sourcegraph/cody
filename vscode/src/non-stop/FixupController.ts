@@ -838,11 +838,6 @@ export class FixupController
             return false
         }
 
-        if (task.id) {
-            // skip format for now
-            return false
-        }
-
         // Expand the range to include full lines to reduce the likelihood of formatting issues
         const rangeToFormat = new vscode.Range(
             task.selectionRange.start.line,

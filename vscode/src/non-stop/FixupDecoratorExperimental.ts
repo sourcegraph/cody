@@ -101,9 +101,6 @@ export class FixupDecoratorExperimental implements vscode.Disposable {
     }
 
     public async didFormatTask(task: FixupTask): Promise<void> {
-        if (task.id) {
-            return
-        }
         const filePlaceholders = this.tasksWithPlaceholders.get(task.fixupFile)
         const taskPlaceholders = filePlaceholders?.get(task)
         if (taskPlaceholders) {
@@ -225,7 +222,6 @@ export class FixupDecoratorExperimental implements vscode.Disposable {
         file: FixupFile,
         placeholderLines: IterableIterator<number>
     ): Promise<void> {
-        console.log('REMOVING PLACEHOLDERS...')
         const editors = vscode.window.visibleTextEditors.filter(
             editor => editor.document.uri === file.uri
         )
