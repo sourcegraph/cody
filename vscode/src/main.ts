@@ -292,7 +292,7 @@ const register = async (
         sourceControl.syncAuthStatus(authStatus)
 
         // Set the default prompt mixin on auth status change.
-        await PromptMixin.enableContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
+        await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
     })
 
     if (initialConfig.experimentalSupercompletions) {
@@ -311,7 +311,7 @@ const register = async (
     await configWatcher.initAndOnChange(() => ModelsService.onConfigChange(), disposables)
     statusBar.syncAuthStatus(initAuthStatus)
     sourceControl.syncAuthStatus(initAuthStatus)
-    await PromptMixin.enableContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
+    await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)

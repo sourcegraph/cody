@@ -42,7 +42,7 @@ export class PromptMixin {
      * If the feature flag is enabled, set the context preamble as the default mixin.
      * If the feature flag is disabled or an error occurs, the default mixin will be an empty prompt.
      */
-    public static async enableContextPreamble(isExtensionModeDevOrTest = false): Promise<void> {
+    public static async updateContextPreamble(isExtensionModeDevOrTest = false): Promise<void> {
         try {
             const enabled =
                 isExtensionModeDevOrTest ||
