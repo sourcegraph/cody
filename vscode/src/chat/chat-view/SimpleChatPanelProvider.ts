@@ -252,6 +252,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             startClientStateBroadcaster({
                 remoteSearch: this.remoteSearch,
                 postMessage: (message: ExtensionMessage) => this.postMessage(message),
+                chatModel: this.chatModel,
             })
         )
     }
