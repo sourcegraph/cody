@@ -125,7 +125,6 @@ export class FixupController
             return
         }
         this.setTaskState(task, CodyTaskState.Finished)
-        this.discard(task)
     }
 
     public cancel(task: FixupTask): void {
@@ -133,6 +132,7 @@ export class FixupController
             task,
             task.state === CodyTaskState.Error ? CodyTaskState.Error : CodyTaskState.Finished
         )
+        // TODO: This may cause dupliccate discards if a finished item is cancelled, debug
         this.discard(task)
     }
 
@@ -893,10 +893,10 @@ export class FixupController
     }
 
     private discard(task: FixupTask): void {
+        this.clearPlaceholderInsertions(task)
         this.controlApplicator.didDeleteTask(task)
         this.decorator.didCompleteTask(task)
         this.tasks.delete(task.id)
-        this.clearPlaceholderInsertions(task)
     }
 
     private async clearPlaceholderInsertions(task: FixupTask): Promise<void> {
@@ -909,19 +909,6 @@ export class FixupController
             // Nothing to clear
             return
         }
-
-        const placeholderLinesForDeletion = placeholderLines.map(line => {
-            return {
-                ...line,
-                // Expand the range to the start of the next line, so that it includes any line break characters
-                range: new vscode.Range(
-                    line.range.start.line,
-                    line.range.start.character,
-                    line.range.end.line + 1,
-                    0
-                ),
-            }
-        })
 
         let edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit
         let document: vscode.TextDocument
@@ -938,6 +925,16 @@ export class FixupController
             document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
             edit = new vscode.WorkspaceEdit()
         }
+
+        const placeholderLinesForDeletion = placeholderLines.map(line => {
+            return {
+                ...line,
+                // Expand the range to the start of the next line, so that it includes any line break characters
+                range: document.lineAt(line.range.start.line).rangeIncludingLineBreak,
+            }
+        })
+
+        console.log('placeholder lines to be deleted', placeholderLinesForDeletion)
 
         if (edit instanceof vscode.WorkspaceEdit) {
             for (const line of placeholderLinesForDeletion) {

@@ -43,6 +43,11 @@ export async function getFormattedReplacement(
         return
     }
 
+    // if (currentText.length) {
+    //     // Disable formattign for now
+    //     return
+    // }
+
     // Expand the range to include full lines to reduce the likelihood of formatting issues
     const fullRangeToFormat = new vscode.Range(
         rangeToFormat.start.line,
