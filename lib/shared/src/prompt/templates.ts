@@ -49,7 +49,7 @@ export function populateTerminalOutputContextTemplate(output: string): string {
     return COMMAND_OUTPUT_TEMPLATE + output
 }
 
-const SELECTED_CODE_CONTEXT_TEMPLATE = ps`My selected code from @{filePath}{codebase}:\n\`\`\`\n{code}\`\`\``
+const SELECTED_CODE_CONTEXT_TEMPLATE = ps`My selected code from codebase file {filePath}{codebase}:\n\`\`\`\n{code}\`\`\``
 
 export function populateCurrentSelectedCodeContextTemplate(
     code: PromptString,
