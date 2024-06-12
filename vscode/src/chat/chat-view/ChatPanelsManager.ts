@@ -149,6 +149,8 @@ export class ChatPanelsManager implements vscode.Disposable {
         await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, authStatus.isLoggedIn)
         await this.updateTreeViewHistory()
         this.supportTreeViewProvider.syncAuthStatus(authStatus)
+
+        this.sidebarProvider.syncAuthStatus()
     }
 
     public async getNewChatPanel(): Promise<SimpleChatPanelProvider> {

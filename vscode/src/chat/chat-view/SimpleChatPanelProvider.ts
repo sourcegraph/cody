@@ -516,6 +516,24 @@ export class SimpleChatPanelProvider
     // #region top-level view action handlers
     // =======================================================================
 
+    public syncAuthStatus(): void {
+        // Run this async because this method may be called during initialization
+        // and awaiting on this.postMessage may result in a deadlock
+        const runAsync = async () => {
+            const authStatus = this.authProvider.getAuthStatus()
+            const configForWebview = await this.getConfigForWebview()
+            const workspaceFolderUris =
+                vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
+            await this.postMessage({
+                type: 'config',
+                config: configForWebview,
+                authStatus,
+                workspaceFolderUris,
+            })
+        }
+        void runAsync()
+    }
+
     // When the webview sends the 'ready' message, respond by posting the view config
     private async handleReady(): Promise<void> {
         const authStatus = this.authProvider.getAuthStatus()
