@@ -123,13 +123,9 @@ export class FixupController
         if (!task || task.state !== CodyTaskState.Applied) {
             return
         }
-        this._disposables.push(
-            vscode.languages.onDidChangeDiagnostics(event => {
-                if (event.uris.includes(task.getOutputURI())) {
-                    this.attemptFixImports(task)
-                }
-            })
-        )
+        if (task.attemptFixImports) {
+            this._disposables.push(new FixupImports(task))
+        }
         this.setTaskState(task, CodyTaskState.Finished)
         this.discard(task)
     }
@@ -784,7 +780,7 @@ export class FixupController
                 })
         })
 
-        await this.askToFixImports(task)
+        await askToFixImports(task)
 
         // TODO: See if we can discard a FixupFile now.
         this.setTaskState(task, CodyTaskState.Applied)
@@ -867,106 +863,6 @@ export class FixupController
                 editBuilder.replace(change.range, change.newText)
             }
         }, options)
-    }
-
-    // Extracts the set of diagnostics from the task output file
-    // that seem to be missing imports
-    private getMissingImports(task: FixupTask): ImportError[] {
-        const IMPORT_ERROR_REGEXES = [
-            // Matches typescript and rust-analyzer errors
-            /can(?:'?t|not) find .*?['`"]?(\w+)["'`]/i,
-            // Matches go-pls errors
-            /undefined: ['`"]?(\w+)['`"]?/i,
-            // Matches Java errors
-            /['`"]?(\w+)['`"]can(?:'?t|not) be resolved/i,
-        ]
-
-        const missingImport = (error: vscode.Diagnostic): ImportError | undefined => {
-            for (const re of IMPORT_ERROR_REGEXES) {
-                const match = error.message.match(re)
-                if (match) {
-                    return {
-                        ...error,
-                        missingImport: match[1],
-                    }
-                }
-            }
-            return undefined
-        }
-
-        const uri = task.getOutputURI()
-        const diagnostics = vscode.languages.getDiagnostics(uri)
-        return diagnostics.map(missingImport).filter(Boolean) as ImportError[]
-    }
-
-    // If we detect import errors in the output code, open a modal which asks the
-    // user if we should try to fix them after the task is accepted. The reason we
-    // can't do it immediately is we rely on external language servers which don't
-    // usually provide code actions until the file exists on disk
-    private async askToFixImports(task: FixupTask): Promise<void> {
-        const missingImports = this.getMissingImports(task)
-        if (missingImports.length === 0) {
-            return
-        }
-
-        // Pretty print a snippet of the imports with an `and`
-        let [{ missingImport: importSnippet }] = missingImports
-
-        const importsSlice = missingImports
-            .map(i => i.missingImport)
-            .slice(0, Math.min(missingImports.length, 3))
-
-        if (importsSlice.length > 1) {
-            const [first, ...rest] = importsSlice.reverse()
-            importSnippet = `${rest.reverse().join(', ')} and ${first}`
-        }
-
-        vscode.window
-            .showInformationMessage(
-                `Psst! It looks like some imports didn't get generated correctly, such as ${importSnippet}. Would you like to try fixing them after the file has saved?`,
-                'Fix Imports'
-            )
-            .then(async result => {
-                task.attemptFixImports = result === 'Fix Imports'
-            })
-    }
-
-    private async attemptFixImports(task: FixupTask): Promise<void> {
-        const IMPORT_QUICKFIX_REGEXES = [/^add import/i, /^import/i]
-
-        // Determines if a quick fix is something like "Add import" and has an edit action
-        const isImportFix = (action: vscode.CodeAction): action is HasWorkspaceEdit =>
-            !!IMPORT_QUICKFIX_REGEXES.some(re => action.title.match(re))
-
-        async function applyQuickFix(action: HasWorkspaceEdit) {
-            await vscode.workspace.applyEdit(action.edit)
-        }
-
-        const importFixes = new Map<string, HasWorkspaceEdit>()
-
-        for (const missing of this.getMissingImports(task)) {
-            if (!importFixes.has(missing.missingImport)) {
-                const { range } = missing
-                // Get the quick fixes for the current diagnostic
-                const codeActions = await vscode.commands.executeCommand<vscode.CodeAction[]>(
-                    'vscode.executeCodeActionProvider',
-                    task.getOutputURI(),
-                    range,
-                    vscode.CodeActionKind.QuickFix.value
-                )
-
-                for (const action of codeActions) {
-                    if (isImportFix(action)) {
-                        importFixes.set(missing.missingImport, action)
-                        break
-                    }
-                }
-            }
-        }
-
-        for (const fix of importFixes.values()) {
-            await applyQuickFix(fix)
-        }
     }
 
     // Notify users of task completion when the edited file is not visible
@@ -1302,4 +1198,163 @@ interface FormatEditOptions {
     undoStopAfter: boolean
     testOnly: boolean
     editOk: boolean
+}
+
+class FixupImports {
+    private disposables: vscode.Disposable[] = []
+    private timeout = 10000
+    private timeoutId: NodeJS.Timeout | undefined
+    private uri: vscode.Uri
+
+    constructor(public readonly task: FixupTask) {
+        this.uri = task.getOutputURI()
+
+        this.disposables.push(
+            vscode.languages.onDidChangeDiagnostics(event => {
+                if (event.uris.includes(this.uri)) {
+                    this.resetTimeout()
+                    attemptFixImports(this.uri)
+                }
+            })
+        )
+        this.resetTimeout()
+    }
+
+    resetTimeout() {
+        if (this.timeoutId) {
+            clearTimeout(this.timeoutId)
+        }
+        this.timeoutId = setTimeout(this.dispose, this.timeout)
+    }
+
+    dispose = () => {
+        vscode.Disposable.from(...this.disposables).dispose()
+    }
+}
+
+// Extracts the set of diagnostics from the task output file
+// that seem to be missing imports
+function getMissingImports(file: vscode.Uri): ImportError[] {
+    const IMPORT_ERROR_REGEXES = [
+        // Matches typescript and rust-analyzer import errors but not module errors
+        /can(?:'?t|not) find (?!module).*?['`"]?(\w+)["'`]/i,
+        // Matches go-pls errors
+        /undefined: ['`"]?(\w+)['`"]?/i,
+        // Matches Java errors
+        /['`"]?(\w+)['`"]can(?:'?t|not) be resolved/i,
+    ]
+
+    const missingImport = (error: vscode.Diagnostic): ImportError | undefined => {
+        for (const re of IMPORT_ERROR_REGEXES) {
+            const match = error.message.match(re)
+            if (match) {
+                return {
+                    ...error,
+                    missingImport: match[1],
+                }
+            }
+        }
+        return undefined
+    }
+
+    const diagnostics = vscode.languages.getDiagnostics(file)
+    return diagnostics.map(missingImport).filter(Boolean) as ImportError[]
+}
+
+export async function attemptFixAllImports(file: vscode.Uri): Promise<void> {
+    const REGEX = /^add all missing imports/i
+
+    for (const missing of getMissingImports(file)) {
+        const { range } = missing
+        // Get the quick fixes for the current diagnostic
+        const codeActions = await vscode.commands.executeCommand<vscode.CodeAction[]>(
+            'vscode.executeCodeActionProvider',
+            file,
+            range,
+            vscode.CodeActionKind.QuickFix.value
+        )
+
+        for (const action of codeActions) {
+            if (action.title.match(REGEX) && action.command) {
+                // Resolve the code action
+                const { command, arguments: args } = action.command
+                if (args?.length === 1) {
+                    const [arg] = args
+                    arg.action.combinedResponse = true
+                    await vscode.commands.executeCommand(command, arg) // ...(args || []))
+                }
+                return
+            }
+        }
+    }
+}
+
+async function attemptFixImports(file: vscode.Uri): Promise<void> {
+    const IMPORT_QUICKFIX_REGEXES = [/^update import/i, /^add import/i, /^import/i]
+
+    // Determines if a quick fix is something like "Add import" and has an edit action
+    const isImportFix = (action: vscode.CodeAction): action is HasWorkspaceEdit =>
+        !!IMPORT_QUICKFIX_REGEXES.some(re => action.title.match(re))
+
+    async function applyQuickFix(action: HasWorkspaceEdit) {
+        await vscode.workspace.applyEdit(action.edit)
+    }
+
+    const importFixes = new Map<string, HasWorkspaceEdit>()
+
+    for (const missing of getMissingImports(file)) {
+        if (!importFixes.has(missing.missingImport)) {
+            const { range } = missing
+            // Get the quick fixes for the current diagnostic
+            const codeActions = await vscode.commands.executeCommand<vscode.CodeAction[]>(
+                'vscode.executeCodeActionProvider',
+                file,
+                range,
+                vscode.CodeActionKind.QuickFix.value
+            )
+
+            for (const action of codeActions) {
+                if (isImportFix(action)) {
+                    importFixes.set(missing.missingImport, action)
+                    break
+                }
+            }
+        }
+    }
+
+    for (const fix of importFixes.values()) {
+        await applyQuickFix(fix)
+    }
+}
+
+// If we detect import errors in the output code, open a modal which asks the
+// user if we should try to fix them after the task is accepted. The reason we
+// can't do it immediately is we rely on external language servers which don't
+// usually provide code actions until the file exists on disk
+async function askToFixImports(task: FixupTask): Promise<void> {
+    const missingImports = getMissingImports(task.getOutputURI())
+    if (missingImports.length === 0) {
+        return
+    }
+
+    // Pretty print a snippet of the imports with an `and`
+    let [{ missingImport: importSnippet }] = missingImports
+
+    const importsSlice = missingImports
+        .map(i => i.missingImport)
+        .slice(0, Math.min(missingImports.length, 3))
+
+    if (importsSlice.length > 1) {
+        const [first, ...rest] = importsSlice.reverse()
+        importSnippet = `${rest.reverse().join(', ')} and ${first}`
+    }
+
+    vscode.window
+        .showInformationMessage(
+            `Psst! It looks like some imports didn't get generated correctly, such as ${importSnippet}. Would you like to try fixing them after the file has saved?`,
+            'Fix Imports'
+        )
+        .then(async result => {
+            task.attemptFixImports = result === 'Fix Imports'
+        })
 }
