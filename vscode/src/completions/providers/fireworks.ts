@@ -68,6 +68,9 @@ const PROVIDER_IDENTIFIER = 'fireworks'
 const EOT_STARCODER = '<|endoftext|>'
 const EOT_LLAMA_CODE = ' <EOT>'
 
+// Fireworks hosted fine tuned model on py, tsx, jsx and starcoder-hybrid on other langs.
+export const FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID = 'fim-fine-tuned-model-hybrid'
+
 // Fireworks hosted model identifier strings
 export const FIREWORKS_FIM_FINE_TUNED_MODEL_1 = 'fim-fine-tuned-model-variant-1'
 export const FIREWORKS_FIM_FINE_TUNED_MODEL_2 = 'fim-fine-tuned-model-variant-2'
@@ -75,6 +78,7 @@ export const FIREWORKS_FIM_FINE_TUNED_MODEL_3 = 'fim-fine-tuned-model-variant-3'
 export const FIREWORKS_FIM_FINE_TUNED_MODEL_4 = 'fim-fine-tuned-model-variant-4'
 
 const FIREWORKS_FIM_FINE_TUNED_MODEL_FAMILY = [
+    FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID,
     FIREWORKS_FIM_FINE_TUNED_MODEL_1,
     FIREWORKS_FIM_FINE_TUNED_MODEL_2,
     FIREWORKS_FIM_FINE_TUNED_MODEL_3,
@@ -93,6 +97,10 @@ const MODEL_MAP = {
 
     // Fireworks model identifiers
     'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
+
+    // Fine-tuned model hybrid identifier
+    [FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID]:
+        'fireworks/accounts/sourcegraph/models/finetuned-fim-lang-all-model-mixtral-8x7b',
 
     // Fine-tuned model mapping
     [FIREWORKS_FIM_FINE_TUNED_MODEL_1]: FIREWORKS_FIM_FINE_TUNED_MODEL_1,
@@ -124,6 +132,8 @@ function getMaxContextTokens(model: FireworksModel): number {
         case 'llama-code-13b':
             // Llama 2 on Fireworks supports up to 4k tokens. We're constraining it here to better
             // compare the results
+            return 2048
+        case FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID:
             return 2048
         case FIREWORKS_FIM_FINE_TUNED_MODEL_1:
         case FIREWORKS_FIM_FINE_TUNED_MODEL_2:
@@ -157,7 +167,7 @@ class FireworksProvider extends Provider {
     ) {
         super(options)
         this.timeouts = timeouts
-        this.model = model
+        this.model = this.adjustModelIdentifierForFinetunedHybrid(model, options.document.languageId)
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
         this.client = client
         this.authStatus = authStatus
@@ -183,6 +193,24 @@ class FireworksProvider extends Provider {
         ) {
             this.fastPathAccessToken = config.autocompleteExperimentalFireworksOptions?.token
             this.fireworksConfig = config.autocompleteExperimentalFireworksOptions
+        }
+    }
+
+    private adjustModelIdentifierForFinetunedHybrid(
+        model: FireworksModel,
+        langaugeId: string
+    ): FireworksModel {
+        switch (model) {
+            case FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID: {
+                // The fine-tuned hybrid model is only deployed for TypeScript, JavaScript, and Python.
+                // For other languages, we use the current production model.
+                if (['typescriptreact', 'javascriptreact', 'python'].includes(langaugeId)) {
+                    return FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID
+                }
+                return 'starcoder-hybrid'
+            }
+            default:
+                return model
         }
     }
 
@@ -366,6 +394,10 @@ class FireworksProvider extends Provider {
         }
         if (isLlamaCode(this.model)) {
             return content.replace(EOT_LLAMA_CODE, '')
+        }
+        if (FIREWORKS_FIM_FINE_TUNED_MODEL_FAMILY.includes(this.model)) {
+            // Finetuned models use the same tokens as the Starcoder family.
+            return content.replace(EOT_STARCODER, '')
         }
         return content
     }
