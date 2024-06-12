@@ -1,10 +1,8 @@
-import { type ChildProcess, spawn } from 'node:child_process'
-import { writeFileSync } from 'node:fs'
-import fspromises from 'node:fs/promises'
 // The goal of this file is to document the steps to run Cody with all services locally.
 import path from 'node:path'
+import process from 'node:process'
 import { ModelsService, getDotComDefaultModels } from '@sourcegraph/cody-shared'
-import { afterAll, beforeAll, describe, it } from 'vitest'
+import { afterAll, beforeAll, describe, it, expect } from 'vitest'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
@@ -15,27 +13,26 @@ interface SGParams {
 }
 
 class SG {
-    sgStartProcess: ChildProcess | undefined
-    constructor(private params: { logsPath: string; sourcegraphDir: string }) {}
-    private static serverStarted(process: ChildProcess): Promise<SGParams> {
+    public async connect(): Promise<SGParams> {
         return new Promise((resolve, reject) => {
-            process.stdout?.on('data', data => {
-                // TODO: parse out the URL, use GQL to get an access token
-                console.log({ data: data.toString() })
-            })
-            setTimeout(() => reject(new Error('timeout')), 2_000)
+            const endpoint = process.env.LOCAL_SG_ENDPOINT ?? 'https://sourcegraph.test:3443'
+            const accessToken = process.env.LOCAL_SG_ACCESS_TOKEN ?? ''
+
+            if (endpoint == '') {
+                reject("must define an endpoint")
+            }
+
+            if (accessToken == '') {
+                reject("must define an access token")
+            }
+
+            const params: SGParams = {
+                serverEndpoint: endpoint,
+                accessToken: accessToken
+            }
+
+            resolve(params)
         })
-    }
-    public async start(): Promise<SGParams> {
-        this.sgStartProcess = spawn('sg', ['start'], { cwd: this.params.sourcegraphDir })
-        await fspromises.rm(this.params.logsPath, { force: true })
-        // We intentionally use writeFileSync because that seems to work best with `tail -f`
-        this.sgStartProcess.stderr?.on('data', data => writeFileSync(this.params.logsPath, data))
-        this.sgStartProcess.stdout?.on('data', data => writeFileSync(this.params.logsPath, data))
-        return await SG.serverStarted(this.sgStartProcess)
-    }
-    public stop(): void {
-        this.sgStartProcess?.kill()
     }
 }
 
@@ -46,13 +43,11 @@ describe('E2E-local', () => {
         name: path.basename(__filename),
         credentials: TESTING_CREDENTIALS.dotcom,
     })
-    const sg = new SG({
-        logsPath: path.join(process.cwd(), 'dist', 'sg-logs.txt'),
-        sourcegraphDir: path.join(path.dirname(process.cwd()), 'sourcegraph'),
-    })
+    const sg = new SG()
 
     beforeAll(async () => {
-        const params = await sg.start()
+        console.error("before all")
+        const params = await sg.connect()
         ModelsService.setModels(getDotComDefaultModels())
         await workspace.beforeAll()
         await client.beforeAll(params)
@@ -62,11 +57,21 @@ describe('E2E-local', () => {
     afterAll(async () => {
         await workspace.afterAll()
         await client.afterAll()
-        console.log('killing sg start')
-        sg.stop()
     })
 
     it('editCommands/code (basic function)', async () => {
-        console.log(path.basename(__filename))
+        const animalUri = workspace.file('src', 'animal.ts')
+
+        await client.openFile(animalUri)
+        const freshChatID = await client.request('chat/new', null)
+        const id = await client.request('commands/explain', null)
+
+        // Assert that the server is not using IDs between `chat/new` and
+        // `chat/explain`. In VS Code, we try to reuse empty webview panels,
+        // which is undesireable for agent clients.
+        expect(id).not.toStrictEqual(freshChatID)
+
+        const lastMessage = await client.firstNonEmptyTranscript(id)
+        console.log(lastMessage)
     })
 })
