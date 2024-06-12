@@ -4,7 +4,7 @@
     outline: none;
 }
 
-.container [cmdk-empty] {
+.container [cmdk-empty], .container [cmdk-loading] {
     padding: 0.325rem 0.5rem;
 }
 

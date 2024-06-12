@@ -133,6 +133,6 @@ const iconForProvider: Record<
     'https://openctx.org/npm/@openctx/provider-devdocs': LibraryBigIcon,
     'https://openctx.org/npm/@openctx/provider-sourcegraph-search': SourcegraphLogo,
     [RemoteRepositorySearch.providerUri]: FolderGitIcon,
-    [RemoteFileProvider.providerUri]: FileIcon,
+    [RemoteFileProvider.providerUri]: FolderGitIcon,
     [WebProvider.providerUri]: LinkIcon,
 }
