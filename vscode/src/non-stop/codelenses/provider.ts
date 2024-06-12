@@ -291,7 +291,7 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
         const tempDocUri = vscode.Uri.parse(`cody-fixup:${task.fixupFile.uri.fsPath}#${diffId}`)
         const doc = await vscode.workspace.openTextDocument(tempDocUri)
         const edit = new vscode.WorkspaceEdit()
-        edit.replace(tempDocUri, task.selectionRange, diff.originalText)
+        edit.replace(tempDocUri, task.selectionRange, task.original)
         await vscode.workspace.applyEdit(edit)
         await doc.save()
 

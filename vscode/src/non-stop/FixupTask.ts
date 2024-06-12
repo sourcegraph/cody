@@ -11,7 +11,7 @@ import {
 import type { EditIntent, EditMode } from '../edit/types'
 
 import type { FixupFile } from './FixupFile'
-import type { Diff } from './diff'
+import type { Edit } from './line-diff'
 import { CodyTaskState } from './utils'
 
 export type FixupTaskID = string
@@ -47,7 +47,7 @@ export class FixupTask {
      * If text has been received from the LLM and a diff has been computed,
      * it is cached here. Diffs are recomputed lazily and may be stale.
      */
-    public diff: Diff | undefined
+    public diff: Edit[] | undefined
     /** The number of times we've submitted this to the LLM. */
     public spinCount = 0
     /**

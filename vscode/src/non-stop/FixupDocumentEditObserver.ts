@@ -1,40 +1,8 @@
 import * as vscode from 'vscode'
 
-import { type RangeData, toRangeData } from '@sourcegraph/cody-shared'
-import type { Edit, Position } from './diff'
 import type { FixupActor, FixupFileCollection, FixupTextChanged } from './roles'
 import { type TextChange, updateFixedRange, updateRangeMultipleChanges } from './tracked-range'
 import { CodyTaskState } from './utils'
-
-// This does some thunking to manage the two range types: diff ranges, and
-// text change ranges.
-function updateDiffRange(range: RangeData, changes: TextChange[]): RangeData {
-    return toRangeData(
-        updateRangeMultipleChanges(toVsCodeRange(range), changes, { supportRangeAffix: true })
-    )
-}
-
-function toVsCodeRange(range: RangeData): vscode.Range {
-    return new vscode.Range(toVsCodePosition(range.start), toVsCodePosition(range.end))
-}
-
-function toVsCodePosition(position: Position): vscode.Position {
-    return new vscode.Position(position.line, position.character)
-}
-
-// Updates the ranges in a diff.
-function updateRanges(ranges: RangeData[], changes: TextChange[]): void {
-    for (let i = 0; i < ranges.length; i++) {
-        ranges[i] = updateDiffRange(ranges[i], changes)
-    }
-}
-
-// Updates the range in an edit.
-function updateEdits(edits: Edit[], changes: TextChange[]): void {
-    for (const [i, edit] of edits.entries()) {
-        edits[i].range = updateDiffRange(edit.range, changes)
-    }
-}
 
 /**
  * Observes text document changes and updates the regions with active fixups.
@@ -78,14 +46,6 @@ export class FixupDocumentEditObserver {
             const updatedRange = updateRangeMultipleChanges(task.selectionRange, changes, {
                 supportRangeAffix: true,
             })
-            if (task.diff) {
-                updateRanges(task.diff.conflicts, changes)
-                updateEdits(task.diff.edits, changes)
-                updateRanges(task.diff.highlights, changes)
-                // Note, we may not notify the decorator of range changes here
-                // if the gross range has not changed. That is OK because
-                // VScode moves decorations and we can reproduce them lazily.
-            }
             if (!updatedRange.isEqual(task.selectionRange)) {
                 task.selectionRange = updatedRange
                 this.provider_.rangeDidChange(task)

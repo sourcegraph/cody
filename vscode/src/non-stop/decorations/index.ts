@@ -5,7 +5,6 @@ import type { FixupTask } from '../FixupTask'
 import {
     type ComputedOutput,
     type Decorations,
-    type PlaceholderLines,
     computeFinalDecorations,
     computeOngoingDecorations,
 } from './compute-decorations'
@@ -18,19 +17,14 @@ import {
 
 export class FixupDecoratorExperimental implements vscode.Disposable {
     private tasksWithDecorations: Map<FixupFile, Map<FixupTask, Decorations>> = new Map()
-    private tasksWithPlaceholders: Map<FixupFile, Map<FixupTask, PlaceholderLines>> = new Map()
 
     public dispose(): void {}
 
-    public async didChangeVisibleTextEditors(
-        file: FixupFile,
-        editors: vscode.TextEditor[]
-    ): Promise<void> {
-        await this.applyPlaceholders(file, this.tasksWithPlaceholders.get(file)?.values() || [].values())
+    public async didChangeVisibleTextEditors(file: FixupFile): Promise<void> {
         this.applyDecorations(file, this.tasksWithDecorations.get(file)?.values() || [].values())
     }
 
-    public didUpdateDiff(task: FixupTask): void {
+    public didUpdateInProgressReplacement(task: FixupTask): void {
         const previouslyComputed = this.tasksWithDecorations.get(task.fixupFile)?.get(task)
         const taskOutput = computeOngoingDecorations(task, previouslyComputed)
 
@@ -46,57 +40,18 @@ export class FixupDecoratorExperimental implements vscode.Disposable {
         this.updateTaskDecorations(task, taskOutput)
     }
 
-    public async didApplyTask(task: FixupTask): Promise<void> {
+    public didUpdateDiff(task: FixupTask): void {
         const taskOutput = computeFinalDecorations(task)
-        await this.updateTaskPlaceholders(task, taskOutput)
         this.updateTaskDecorations(task, taskOutput)
     }
 
-    public async didFormatTask(task: FixupTask): Promise<void> {
-        const filePlaceholders = this.tasksWithPlaceholders.get(task.fixupFile)
-        const taskPlaceholders = filePlaceholders?.get(task)
-        if (taskPlaceholders) {
-            // Remove existing placeholders before applying them again, this is so we don't
-            // get duplicate placeholder lines if the formatting changed the code
-            filePlaceholders?.delete(task)
-            await this.removePlaceholders(task.fixupFile, taskPlaceholders.values())
-        }
+    public async didApplyTask(task: FixupTask): Promise<void> {
         const taskOutput = computeFinalDecorations(task)
-        await this.updateTaskPlaceholders(task, taskOutput)
         this.updateTaskDecorations(task, taskOutput)
     }
 
     public async didCompleteTask(task: FixupTask): Promise<void> {
-        await this.updateTaskPlaceholders(task, null)
         this.updateTaskDecorations(task, null)
-    }
-
-    private async updateTaskPlaceholders(task: FixupTask, output: ComputedOutput | null): Promise<void> {
-        const isEmpty = !output || (output.placeholderLines || []).length === 0
-
-        let filePlaceholders = this.tasksWithPlaceholders.get(task.fixupFile)
-        if (!filePlaceholders && isEmpty) {
-            // The file has no placeholder lines, do nothing
-            return
-        }
-
-        if (isEmpty) {
-            const placeholders = filePlaceholders?.get(task)
-            if (placeholders) {
-                // There were old placeholder lines; remove them.
-                filePlaceholders?.delete(task)
-                await this.removePlaceholders(task.fixupFile, placeholders.values())
-            }
-            return
-        }
-
-        if (!filePlaceholders) {
-            // Create the map to hold this file's decorations.
-            filePlaceholders = new Map()
-            this.tasksWithPlaceholders.set(task.fixupFile, filePlaceholders)
-        }
-        filePlaceholders.set(task, output.placeholderLines || [])
-        await this.applyPlaceholders(task.fixupFile, filePlaceholders.values())
     }
 
     private updateTaskDecorations(task: FixupTask, output: ComputedOutput | null): void {
@@ -157,49 +112,6 @@ export class FixupDecoratorExperimental implements vscode.Disposable {
             editor.setDecorations(UNVISITED_LINE_DECORATION, unvisitedLinesDecorations)
             editor.setDecorations(INSERTED_CODE_DECORATION, addedDecorations)
             editor.setDecorations(REMOVED_CODE_DECORATION, removedDecorations)
-        }
-    }
-
-    private async applyPlaceholders(
-        file: FixupFile,
-        tasksWithPlaceholders: IterableIterator<PlaceholderLines>
-    ): Promise<void> {
-        const editors = vscode.window.visibleTextEditors.filter(
-            editor => editor.document.uri === file.uri
-        )
-
-        for (const editor of editors) {
-            for (const placeholders of tasksWithPlaceholders) {
-                for (const line of placeholders) {
-                    await editor.edit(
-                        editBuilder => {
-                            editBuilder.insert(new vscode.Position(line, 0), '\n')
-                        },
-                        { undoStopAfter: false, undoStopBefore: false }
-                    )
-                }
-            }
-        }
-    }
-
-    private async removePlaceholders(
-        file: FixupFile,
-        placeholderLines: IterableIterator<number>
-    ): Promise<void> {
-        const editors = vscode.window.visibleTextEditors.filter(
-            editor => editor.document.uri === file.uri
-        )
-
-        for (const editor of editors) {
-            await editor.edit(
-                editBuilder => {
-                    for (const line of placeholderLines) {
-                        const fullLine = editor.document.lineAt(line)
-                        editBuilder.delete(fullLine.rangeIncludingLineBreak)
-                    }
-                },
-                { undoStopAfter: false, undoStopBefore: false }
-            )
         }
     }
 }

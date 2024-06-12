@@ -1,4 +1,3 @@
-import { diffLines } from 'diff'
 import * as vscode from 'vscode'
 import type { FixupTask } from '../FixupTask'
 import { getLastFullLine } from './utils'
@@ -12,81 +11,36 @@ export interface Decorations {
     currentLine?: vscode.DecorationOptions
 }
 
-export type PlaceholderLines = number[]
-
 export interface ComputedOutput {
     decorations: Decorations
-    placeholderLines?: PlaceholderLines
-    diff?: Edit[]
 }
 
-export interface Edit {
-    text: string
-    range: vscode.Range
-}
-
-export function computeFinalDecorations(
-    task: FixupTask,
-    document?: vscode.TextDocument
-): ComputedOutput | null {
-    if (!task.replacement) {
+export function computeFinalDecorations(task: FixupTask): ComputedOutput | null {
+    if (!task.diff) {
         return null
     }
 
-    let startLine = task.selectionRange.start.line
-    const replacementDiff: Edit[] = []
-    const placeholderLines: PlaceholderLines = []
     const decorations: Decorations = {
         linesAdded: [],
         linesRemoved: [],
         unvisitedLines: [],
     }
 
-    const diff = diffLines(task.original, task.replacement)
-    for (const change of diff) {
-        const count = change.count || 0
-        const lines = change.value.split('\n')
-
-        if (change.removed) {
-            for (let i = 0; i < count; i++) {
-                const line = lines[i]
-                const padding = (line.match(/^\s*/)?.[0] || '').length // Get leading whitespace for line
-                const insertionLine = new vscode.Position(startLine, 0)
-                decorations.linesRemoved.push({
-                    range: new vscode.Range(insertionLine, insertionLine),
-                    renderOptions: {
-                        after: { contentText: UNICODE_SPACE.repeat(padding) + line.trim() },
-                    },
-                })
-                placeholderLines.push(startLine)
-                if (document) {
-                    const lineToReplace = document.lineAt(startLine)
-                    replacementDiff.push({
-                        text: '\n',
-                        range: lineToReplace.rangeIncludingLineBreak,
-                    })
-                }
-                startLine++
-            }
-        } else if (change.added) {
-            for (let i = 0; i < count; i++) {
-                const insertionLine = new vscode.Position(startLine, 0)
-                decorations.linesAdded.push({
-                    range: new vscode.Range(insertionLine, insertionLine),
-                })
-                replacementDiff.push({
-                    text: lines[i],
-                    range: new vscode.Range(insertionLine, insertionLine),
-                })
-                startLine++
-            }
-        } else {
-            startLine += count
+    for (const edit of task.diff) {
+        if (edit.type === 'deletion') {
+            const padding = (edit.oldText.match(/^\s*/)?.[0] || '').length // Get leading whitespace for line
+            decorations.linesRemoved.push({
+                range: edit.range,
+                renderOptions: {
+                    after: { contentText: UNICODE_SPACE.repeat(padding) + edit.oldText.trim() },
+                },
+            })
+        } else if (edit.type === 'insertion') {
+            decorations.linesAdded.push({ range: edit.range })
         }
     }
 
-    console.log('Got replacement', replacementDiff)
-    return { decorations, placeholderLines }
+    return { decorations }
 }
 
 function getRemainingLinesFromRange(range: vscode.Range, index: number) {

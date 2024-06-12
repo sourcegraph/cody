@@ -27,15 +27,14 @@ import type { ExtensionClient } from '../extension-client'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { AuthProvider } from '../services/AuthProvider'
 import { isInTutorial } from '../tutorial/helpers'
-import { FixupDecorator } from './FixupDecorator'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type FixupTaskID, type FixupTelemetryMetadata } from './FixupTask'
-import type { FixupDecoratorExperimental } from './decorations'
-import { computeFinalDecorations } from './decorations/compute-decorations'
-import { type Diff, computeDiff } from './diff'
+import { FixupDecoratorExperimental } from './decorations'
+import { getFormattedReplacement } from './formatter'
+import { type Edit, computeDiff2 } from './line-diff'
 import { trackRejection } from './rejection-tracker'
 import type { FixupActor, FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
 import { CodyTaskState, expandRangeToInsertedText, getMinimumDistanceToRangeBoundary } from './utils'
@@ -49,7 +48,7 @@ export class FixupController
     private readonly editObserver: FixupDocumentEditObserver
     // TODO: Make the fixup scheduler use a cooldown timer with a longer delay
     private readonly scheduler = new FixupScheduler(10)
-    private readonly decorator: FixupDecorator | FixupDecoratorExperimental
+    private readonly decorator: FixupDecoratorExperimental
     private readonly controlApplicator
     private readonly persistenceTracker = new PersistenceTracker(vscode.workspace, {
         onPresent: ({ metadata, ...event }) => {
@@ -79,7 +78,7 @@ export class FixupController
         private readonly authProvider: AuthProvider,
         client: ExtensionClient
     ) {
-        this.decorator = new FixupDecorator()
+        this.decorator = new FixupDecoratorExperimental()
         this.controlApplicator = client.createFixupControlApplicator(this)
         // Observe file renaming and deletion
         this.files = new FixupFileObserver()
@@ -389,56 +388,16 @@ export class FixupController
     // up-to-date, it is synchronously recomputed. If the diff is not clean,
     // will return undefined. This may update the task with the newly computed
     // diff.
-    private applicableDiffOrRespin(task: FixupTask, document: vscode.TextDocument): Diff | undefined {
+    private applicableDiffOrRespin(task: FixupTask): Edit[] | undefined {
         if (task.state !== CodyTaskState.Applying && task.state !== CodyTaskState.Applied) {
             // We haven't received a response from the LLM yet, so there is
             // no diff.
             console.warn('no response cached from LLM so no applicable diff')
             return undefined
         }
-        const bufferText = document.getText(task.selectionRange)
-        let diff = task.diff
-        if (task.replacement !== undefined && bufferText !== diff?.bufferText) {
-            // The buffer changed since we last computed the diff.
-            task.diff = diff = computeDiff(
-                task.original,
-                task.replacement,
-                bufferText,
-                task.selectionRange.start
-            )
-            this.didUpdateDiff(task)
-        }
-        if (!diff?.clean) {
-            this.scheduleRespin(task)
-            return undefined
-        }
+        const diff = computeDiff2(task)
+        task.diff = diff
         return diff
-    }
-
-    // Schedule a re-spin for diffs with conflicts.
-    private scheduleRespin(task: FixupTask): void {
-        const MAX_SPIN_COUNT_PER_TASK = 5
-        if (task.spinCount >= MAX_SPIN_COUNT_PER_TASK) {
-            telemetryService.log(
-                'CodyVSCodeExtension:fixup:respin',
-                {
-                    count: task.spinCount,
-                },
-                {
-                    hasV2Event: true,
-                }
-            )
-            telemetryRecorder.recordEvent('cody.fixup.respin', 'scheduled', {
-                metadata: { spinCount: task.spinCount },
-            })
-            this.error(
-                task.id,
-                new Error(`Cody tried ${task.spinCount} times but failed to edit the file`)
-            )
-            return
-        }
-        void vscode.window.showInformationMessage('Cody will rewrite to include your changes')
-        void vscode.commands.executeCommand('cody.command.start-edit', task)
     }
 
     private countEditInsertions(task: FixupTask): { lineCount: number; charCount: number } {
@@ -456,7 +415,8 @@ export class FixupController
 
         const countedLines = new Set<number>()
         let charCount = 0
-        for (const edit of task.diff.edits) {
+        const insertionEdits = task.diff.filter(({ type }) => type === 'insertion')
+        for (const edit of insertionEdits) {
             charCount += edit.text.length
             for (let line = edit.range.start.line; line <= edit.range.end.line; line++) {
                 countedLines.add(line)
@@ -603,7 +563,7 @@ export class FixupController
             // Now when the user hits 'undo', the entire format and edit will be undone at once
             const formatEditOptions = {
                 undoStopBefore: false,
-                undoStopAfter: true,
+                undoStopAfter: false,
             }
             this.setTaskState(task, CodyTaskState.Formatting)
             await new Promise((resolve, reject) => {
@@ -685,51 +645,67 @@ export class FixupController
             edit = new vscode.WorkspaceEdit()
         }
 
-        // Always ensure that any scheduled diffs have ran before applying edits
-        this.updateDiffs()
-
         // We will format this code once applied, so we avoid placing an undo stop after this edit to avoid cluttering the undo stack.
         const applyEditOptions = { undoStopBefore: true, undoStopAfter: false }
 
         let editOk: boolean
         if (task.mode === 'edit') {
-            const applicableDiff = this.applicableDiffOrRespin(task, document)
+            const applicableDiff = this.applicableDiffOrRespin(task)
             if (!applicableDiff) {
                 return
             }
-            editOk = await this.replaceEdit(edit, applicableDiff, task, undefined, document)
+            // TODO: Use applyEdit options here?
+            editOk = await this.replaceEdit(edit, applicableDiff, task, undefined)
         } else {
             editOk = await this.insertEdit(edit, document, task, applyEditOptions)
         }
 
+        if (editOk) {
+            // TODO: This isn't great, we need some way to update the replacement to account for injected
+            // placeholders, this is that for now.
+            task.replacement = document.getText(task.selectionRange)
+        }
+
         // Add the missing undo stop after this change.
         // Now when the user hits 'undo', the entire format and edit will be undone at once
-        const formatEditOptions = {
-            undoStopBefore: false,
-            undoStopAfter: true,
-        }
+        // const formatEditOptions = {
+        //     undoStopBefore: false,
+        //     undoStopAfter: true,
+        // }
         this.setTaskState(task, CodyTaskState.Formatting)
-        const formatOk = await new Promise<boolean>((resolve, reject) => {
-            task.formattingResolver = resolve
-            this.formatEdit(
-                visibleEditor ? visibleEditor.edit.bind(this) : new vscode.WorkspaceEdit(),
-                document,
-                task,
-                formatEditOptions
-            )
-                .then(resolve)
-                .catch(reject)
-                .finally(() => {
-                    task.formattingResolver = null
-                })
-        })
 
-        if (formatOk) {
-            task.replacement = document.getText(task.selectionRange)
-            this.decorator.didFormatTask(task)
+        console.log('Applied:\n', task.replacement)
+        const formattedReplacement = await getFormattedReplacement(
+            document,
+            task.replacement || '',
+            task.selectionRange
+        )
+        console.log('Formatted:\n', formattedReplacement)
+        if (formattedReplacement && task.replacement !== formattedReplacement) {
+            // Received formatted text, we need to re-apply the diff again
+            // This lets us recalculate the decorations and ensure they correctly match
+
+            // Update the replacement to be the formatted output
+            task.replacement = formattedReplacement
+
+            // Undo the original applied changes
+            if (edit instanceof vscode.WorkspaceEdit) {
+                edit.replace(document.uri, task.selectionRange, task.original)
+                await vscode.workspace.applyEdit(edit)
+            } else {
+                await edit(
+                    editBuilder => {
+                        editBuilder.replace(task.selectionRange, task.original)
+                    },
+                    { undoStopAfter: false, undoStopBefore: false }
+                )
+            }
+
+            // Re-apply the changes using the new replacemnt
+            task.diff = computeDiff2(task)
+            await this.replaceEdit(edit, task.diff!, task)
+            this.decorator.didUpdateDiff(task)
         }
-
-        // TODO: Try to update diff decorations
 
         // TODO: See if we can discard a FixupFile now.
         this.setTaskState(task, CodyTaskState.Applied)
@@ -746,43 +722,39 @@ export class FixupController
     // Replace edit returned by Cody at task selection range
     public async replaceEdit(
         edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit,
-        diff: Diff,
+        diff: Edit[],
         task: FixupTask,
-        options?: { undoStopBefore: boolean; undoStopAfter: boolean },
-        document?: vscode.TextDocument
+        options?: { undoStopBefore: boolean; undoStopAfter: boolean }
     ): Promise<boolean> {
         logDebug('FixupController:edit', 'replacing ')
 
         if (edit instanceof vscode.WorkspaceEdit) {
-            for (const diffEdit of diff.edits) {
+            for (const { range, text } of diff) {
                 edit.replace(
                     task.fixupFile.uri,
                     new vscode.Range(
-                        new vscode.Position(diffEdit.range.start.line, diffEdit.range.start.character),
-                        new vscode.Position(diffEdit.range.end.line, diffEdit.range.end.character)
+                        new vscode.Position(range.start.line, range.start.character),
+                        new vscode.Position(range.end.line, range.end.character)
                     ),
-                    diffEdit.text
+                    text
                 )
             }
             return vscode.workspace.applyEdit(edit)
         }
 
-        const diffNew = computeFinalDecorations(task, document)?.diff
-        if (!diffNew) {
-            return false
+        // TODO: Move this inside the edit
+        // Will likely break stuff due to editBuilder requiring you not to
+        // predict ranges?
+        for (const { range, text } of diff) {
+            await edit(
+                editBuilder => {
+                    editBuilder.replace(range, text)
+                },
+                { undoStopAfter: false, undoStopBefore: false }
+            )
         }
 
-        return edit(editBuilder => {
-            for (const diffEdit of diffNew) {
-                editBuilder.replace(
-                    new vscode.Range(
-                        new vscode.Position(diffEdit.range.start.line, diffEdit.range.start.character),
-                        new vscode.Position(diffEdit.range.end.line, diffEdit.range.end.character)
-                    ),
-                    diffEdit.text
-                )
-            }
-        }, options)
+        return true
     }
 
     // Insert edit returned by Cody at task selection range
@@ -921,10 +893,67 @@ export class FixupController
     }
 
     private discard(task: FixupTask): void {
-        this.needsDiffUpdate_.delete(task)
         this.controlApplicator.didDeleteTask(task)
         this.decorator.didCompleteTask(task)
         this.tasks.delete(task.id)
+        this.clearPlaceholderInsertions(task)
+    }
+
+    private async clearPlaceholderInsertions(task: FixupTask): Promise<void> {
+        if (!task.diff) {
+            return
+        }
+
+        const placeholderLines = task.diff.filter(({ type }) => type === 'deletion')
+        if (placeholderLines.length === 0) {
+            // Nothing to clear
+            return
+        }
+
+        const placeholderLinesForDeletion = placeholderLines.map(line => {
+            return {
+                ...line,
+                // Expand the range to the start of the next line, so that it includes any line break characters
+                range: new vscode.Range(
+                    line.range.start.line,
+                    line.range.start.character,
+                    line.range.end.line + 1,
+                    0
+                ),
+            }
+        })
+
+        let edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit
+        let document: vscode.TextDocument
+
+        const visibleEditor = vscode.window.visibleTextEditors.find(
+            editor => editor.document.uri === task.fixupFile.uri
+        )
+
+        if (visibleEditor) {
+            document = visibleEditor.document
+            edit = visibleEditor.edit.bind(this)
+        } else {
+            // Perform the edit in the background
+            document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
+            edit = new vscode.WorkspaceEdit()
+        }
+
+        if (edit instanceof vscode.WorkspaceEdit) {
+            for (const line of placeholderLinesForDeletion) {
+                edit.delete(document.uri, line.range)
+            }
+            await vscode.workspace.applyEdit(edit)
+        } else {
+            await edit(
+                editBuilder => {
+                    for (const line of placeholderLinesForDeletion) {
+                        editBuilder.delete(line.range)
+                    }
+                },
+                { undoStopAfter: false, undoStopBefore: false }
+            )
+        }
     }
 
     public async didReceiveFixupInsertion(
@@ -983,6 +1012,7 @@ export class FixupController
         switch (state) {
             case 'streaming':
                 task.inProgressReplacement = text
+                this.decorator.didUpdateInProgressReplacement(task)
                 break
             case 'complete':
                 task.inProgressReplacement = undefined
@@ -1052,19 +1082,9 @@ export class FixupController
                 // the change and wants to take control.  This helps ensure that the
                 // codelens doesn't stay around unnecessarily and become an annoyance.
                 // Note: This will also apply if the user attempts to undo the applied change.
-                // this.accept(task)
+                this.accept(task)
                 return
             }
-        }
-
-        if (task.state === CodyTaskState.Finished) {
-            this.needsDiffUpdate_.delete(task)
-        }
-        if (this.needsDiffUpdate_.size === 0) {
-            void this.scheduler.scheduleIdle(() => this.updateDiffs())
-        }
-        if (task.mode === 'edit' && !this.needsDiffUpdate_.has(task)) {
-            this.needsDiffUpdate_.add(task)
         }
     }
 
@@ -1075,14 +1095,6 @@ export class FixupController
         // updates any text decorations and we can recompute them, lazily,
         // if the diff is dirtied.
     }
-
-    // Tasks where the text of the buffer, or the text provided by Cody, has
-    // changed and we need to update diffs.
-    private needsDiffUpdate_: Set<FixupTask> = new Set()
-
-    // Files where the editor wasn't visible and we have delayed computing diffs
-    // for tasks.
-    private needsEditor_: Set<FixupFile> = new Set()
 
     private didChangeVisibleTextEditors(editors: readonly vscode.TextEditor[]): void {
         const editorsByFile = new Map<FixupFile, vscode.TextEditor[]>()
@@ -1097,72 +1109,13 @@ export class FixupController
                 editorsByFile.set(file, [])
             }
             editorsByFile.get(file)?.push(editor)
-            // If we were waiting for an editor to get text to diff against,
-            // start that process now.
-            if (this.needsEditor_.has(file)) {
-                this.needsEditor_.delete(file)
-                for (const task of this.tasksForFile(file)) {
-                    if (this.needsDiffUpdate_.size === 0) {
-                        void this.scheduler.scheduleIdle(() => this.updateDiffs())
-                    }
-                    this.needsDiffUpdate_.add(task)
-                }
-            }
         }
         // Apply any decorations we have to the visible editors.
-        for (const [file, editors] of editorsByFile.entries()) {
-            this.decorator.didChangeVisibleTextEditors(file, editors)
+        for (const file of editorsByFile.keys()) {
+            this.decorator.didChangeVisibleTextEditors(file)
         }
 
         this.controlApplicator.visibleFilesWithTasksMaybeChanged([...editorsByFile.keys()])
-    }
-
-    private updateDiffs(): void {
-        while (this.needsDiffUpdate_.size) {
-            const task = this.needsDiffUpdate_.keys().next().value as FixupTask
-            this.needsDiffUpdate_.delete(task)
-            const editor = vscode.window.visibleTextEditors.find(
-                editor => editor.document.uri === task.fixupFile.uri
-            )
-            if (!editor) {
-                this.needsEditor_.add(task.fixupFile)
-                continue
-            }
-            // TODO: When Cody doesn't suggest any output something has gone
-            // wrong; we should clean up. But updateDiffs also gets called to
-            // process streaming output, so this isn't the place to detect or
-            // recover from empty replacements.
-            const botText = task.inProgressReplacement || task.replacement
-            if (!botText) {
-                continue
-            }
-            const bufferText = editor.document.getText(task.selectionRange)
-
-            // Add new line at the end of bot text when running insert mode
-            const newLine = task.mode === 'edit' ? '' : '\n'
-            task.diff = computeDiff(
-                task.original,
-                `${botText}${newLine}`,
-                bufferText,
-                task.selectionRange.start
-            )
-            this.didUpdateDiff(task)
-        }
-    }
-
-    private didUpdateDiff(task: FixupTask): void {
-        if (!task.diff) {
-            // Once we have a diff, we never go back to not having a diff.
-            // If adding that transition, you must un-apply old highlights for
-            // this task.
-            throw new Error('unreachable')
-        }
-        this.decorator.didUpdateDiff(task)
-        if (!task.diff.clean) {
-            // TODO: If this isn't an in-progress diff, then schedule
-            // a re-spin or notify failure
-            return
-        }
     }
 
     private setTaskState(task: FixupTask, state: CodyTaskState): void {
@@ -1193,7 +1146,6 @@ export class FixupController
         // currently do not always show the correct positions for edits.
         // TODO: Improve the diff handling so that decorations more accurately reflect the edits.
         if (task.state === CodyTaskState.Applied) {
-            this.updateDiffs() // Flush any diff updates first, so they aren't scheduled after the completion.
             this.decorator.didApplyTask(task)
         }
     }
