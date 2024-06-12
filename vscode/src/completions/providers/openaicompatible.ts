@@ -38,7 +38,7 @@ import {
     standardContextSizeHints,
 } from './provider'
 
-export interface OpenAICompatibleOptions {
+interface OpenAICompatibleOptions {
     model: OpenAICompatibleModel
     maxContextTokens?: number
     client: CodeCompletionsClient

@@ -82,3 +82,29 @@ export const WithInitialContext: StoryObj<typeof meta> = {
         isFirstMessage: true,
     },
 }
+
+export const WithInitialContextFileTooLarge: StoryObj<typeof meta> = {
+    render: props => (
+        <ClientStateContextProvider
+            value={{
+                initialContext: [
+                    {
+                        type: 'repository',
+                        uri: URI.parse('https://example.com/foo/myrepo'),
+                        title: 'foo/myrepo',
+                        repoName: 'foo/myrepo',
+                        repoID: 'abcd',
+                        content: null,
+                    },
+                    { type: 'file', isTooLarge: true, uri: URI.file('/large_file.js') },
+                ],
+            }}
+        >
+            <HumanMessageCell {...props} />
+        </ClientStateContextProvider>
+    ),
+    args: {
+        message: { speaker: 'human', text: ps`` },
+        isFirstMessage: true,
+    },
+}

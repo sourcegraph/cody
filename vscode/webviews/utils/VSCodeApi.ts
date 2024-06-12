@@ -6,7 +6,7 @@ import type { ExtensionMessage, WebviewMessage } from '../../src/chat/protocol'
 
 declare const acquireVsCodeApi: () => VSCodeApi
 
-export interface VSCodeApi {
+interface VSCodeApi {
     getState: () => unknown
     setState: (newState: unknown) => unknown
     postMessage: (message: unknown) => void

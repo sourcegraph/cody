@@ -164,7 +164,6 @@ export type ExtensionMessage =
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; view: View }
     | { type: 'errors'; errors: string }
-    | { type: 'notice'; notice: { key: string } }
     | { type: 'transcript-errors'; isTranscriptError: boolean }
     /**
      * Context files returned from a @-mention search
@@ -243,10 +242,7 @@ export interface ExtensionTranscriptMessage {
  * The subset of configuration that is visible to the webview.
  */
 export interface ConfigurationSubsetForWebview
-    extends Pick<
-        ConfigurationWithAccessToken,
-        'experimentalGuardrails' | 'experimentalNoodle' | 'experimentalURLContext' | 'serverEndpoint'
-    > {}
+    extends Pick<ConfigurationWithAccessToken, 'experimentalNoodle' | 'serverEndpoint'> {}
 
 /**
  * URLs for the Sourcegraph instance and app.

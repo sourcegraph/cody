@@ -6,7 +6,6 @@ import {
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
-    URL_CONTEXT_MENTION_PROVIDER,
 } from '@sourcegraph/cody-shared'
 import { VSCodeDecorator } from '../../storybook/VSCodeStoryDecorator'
 import { MentionMenu } from './MentionMenu'
@@ -95,12 +94,6 @@ export const Default: StoryObj<typeof MentionMenu> = {
                     type: 'symbol',
                     kind: 'method',
                     uri: URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`),
-                },
-                {
-                    type: 'file',
-                    uri: URI.parse('https://example.com/foo'),
-                    title: 'Foo - Example',
-                    provider: URL_CONTEXT_MENTION_PROVIDER.id,
                 },
             ],
             [

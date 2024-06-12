@@ -230,63 +230,63 @@ export class MockServer {
         let chatRateLimitPro: boolean | undefined
         app.post('/.api/completions/stream', (req, res) => {
             if (chatRateLimited) {
-                res.setHeader('retry-after', new Date().toString())
-                res.setHeader('x-ratelimit-limit', '12345')
-                if (chatRateLimitPro !== undefined) {
-                    res.setHeader('x-is-cody-pro-user', `${chatRateLimitPro}`)
-                }
-                res.sendStatus(429)
-                return
+                res.set({
+                    'retry-after': new Date().toString(),
+                    'x-ratelimit-limit': '12345',
+                    ...(chatRateLimitPro !== undefined && { 'x-is-cody-pro-user': `${chatRateLimitPro}` })
+                });
+                res.sendStatus(429);
+                return;
             }
 
-            // TODO: Filter streaming response
-            // TODO: Handle multiple messages
-            // Ideas from Dom - see if we could put something in the test request itself where we tell it what to respond with
-            // or have a method on the server to send a set response the next time it sees a trigger word in the request.
-            const request = req as MockRequest
-            let lastHumanMessageIndex = request.body.messages.findLastIndex(
-                msg => msg?.speaker === 'human'
-            )
-            if (lastHumanMessageIndex < 0) {
-                lastHumanMessageIndex = request.body.messages.length - 2
+            const request = req as MockRequest;
+            const messages = request.body.messages;
+            const lastHumanMessageIndex = messages.findLastIndex(msg => msg?.speaker === 'human');
+            const lastMessageIndex = lastHumanMessageIndex >= 0 ? lastHumanMessageIndex : messages.length - 2;
+            // NOTE: This could starts with the CONTEXT_PREAMBLE added by PromptMixin when context is added.
+            const lastHumanMessageText = messages[lastMessageIndex].text
+
+            let response = responses.chat;
+
+            // Use a switch statement for faster response selection
+            switch (true) {
+                case lastHumanMessageText.startsWith('Lorem ipsum'):
+                    response = responses.lorem;
+                    break;
+                case lastHumanMessageText.includes('documentation comment'):
+                    response = responses.document;
+                    break;
+                case lastHumanMessageText.includes(FIXUP_PROMPT_TAG) || lastHumanMessageText.includes(NON_STOP_FIXUP_PROMPT_TAG):
+                    response = responses.fixup;
+                    break;
+                case lastHumanMessageText.includes('show me a code snippet'):
+                    response = responses.chatWithSnippet;
+                    break;
+                case lastHumanMessageText.endsWith('delay'):
+                    handleDelayedResponse(res);
+                    return;
             }
-            let response = responses.chat
-            // Long chat response
-            if (request.body.messages[lastHumanMessageIndex].text.startsWith('Lorem ipsum')) {
-                response = responses.lorem
-            }
-            // Doc command
-            if (request.body.messages[lastHumanMessageIndex].text.includes('documentation comment')) {
-                response = responses.document
-            } else if (
-                // Edit command
-                request.body.messages[lastHumanMessageIndex].text.includes(FIXUP_PROMPT_TAG) ||
-                request.body.messages[lastHumanMessageIndex].text.includes(NON_STOP_FIXUP_PROMPT_TAG)
-            ) {
-                response = responses.fixup
-            }
-            if (request.body.messages[lastHumanMessageIndex].text.includes('show me a code snippet')) {
-                response = responses.chatWithSnippet
-            }
-            // Delay by 400ms to allow the client to perform a small action before receiving the response.
-            // e.g. clicking on a file or move the cursor around.
-            if (request.body.messages[lastHumanMessageIndex].text.startsWith('delay')) {
-                const r1 = responses.chatWithSnippet
-                const r2 = r1 + '\n\nDone'
-                res.write(`event: completion\ndata: {"completion": ${JSON.stringify(r1)}}\n\n`)
+
+            function handleDelayedResponse(res: express.Response): void {
+                const r1 = responses.chatWithSnippet;
+                const r2 = r1 + '\n\nDone';
+                res.write(`event: completion\ndata: {"completion": ${JSON.stringify(r1)}}\n\n`);
                 setTimeout(() => {
-                    res.write(`event: completion\ndata: {"completion": ${JSON.stringify(r2)}}\n\n`)
-                    res.write('event: done\ndata: {}\n\n')
-                    res.end() // End the response after sending the events
-                }, 400)
-                return
+                    res.write(`event: completion\ndata: {"completion": ${JSON.stringify(r2)}}\n\n`);
+                    res.write('event: done\ndata: {}\n\n');
+                    res.end();
+                }, 400);
             }
-            res.send(
-                `event: completion\ndata: {"completion": ${JSON.stringify(
-                    response
-                )}}\n\nevent: done\ndata: {}\n\n`
-            )
+
+            function sendCompletionResponse(res: express.Response, response: string): void {
+                res.send(
+                    `event: completion\ndata: {"completion": ${JSON.stringify(response)}}\n\nevent: done\ndata: {}\n\n`
+                );
+            }
+
+            sendCompletionResponse(res, response);
         })
+
         app.post('/.test/completions/triggerRateLimit', (req, res) => {
             chatRateLimited = true
             chatRateLimitPro = undefined

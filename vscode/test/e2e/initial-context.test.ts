@@ -35,9 +35,12 @@ testWithGitRemote('initial context - enterprise repo', async ({ page, sidebar, s
 testWithGitRemote('initial context - file', async ({ page, sidebar, server }) => {
     mockEnterpriseRepoMapping(server, 'host.example/user/myrepo')
 
+    await sidebarSignin(page, sidebar)
+
     await openFileInEditorTab(page, 'main.c')
 
-    await sidebarSignin(page, sidebar)
+    await page.getByRole('tab', { name: /Cody*/ }).click()
+
     const [, lastChatInput] = await createEmptyChatPanel(page)
 
     await expect(chatInputMentions(lastChatInput)).toHaveText(['@host.example/user/myrepo', '@main.c'])

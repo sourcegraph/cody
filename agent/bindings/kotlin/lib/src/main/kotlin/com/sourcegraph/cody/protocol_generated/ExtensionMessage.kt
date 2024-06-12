@@ -19,7 +19,6 @@ sealed class ExtensionMessage {
           "transcript" -> context.deserialize<TranscriptExtensionMessage>(element, TranscriptExtensionMessage::class.java)
           "view" -> context.deserialize<ViewExtensionMessage>(element, ViewExtensionMessage::class.java)
           "errors" -> context.deserialize<ErrorsExtensionMessage>(element, ErrorsExtensionMessage::class.java)
-          "notice" -> context.deserialize<NoticeExtensionMessage>(element, NoticeExtensionMessage::class.java)
           "transcript-errors" -> context.deserialize<`transcript-errorsExtensionMessage`>(element, `transcript-errorsExtensionMessage`::class.java)
           "userContextFiles" -> context.deserialize<UserContextFilesExtensionMessage>(element, UserContextFilesExtensionMessage::class.java)
           "clientState" -> context.deserialize<ClientStateExtensionMessage>(element, ClientStateExtensionMessage::class.java)
@@ -100,16 +99,6 @@ data class ErrorsExtensionMessage(
 
   enum class TypeEnum {
     @SerializedName("errors") Errors,
-  }
-}
-
-data class NoticeExtensionMessage(
-  val type: TypeEnum, // Oneof: notice
-  val notice: NoticeParams,
-) : ExtensionMessage() {
-
-  enum class TypeEnum {
-    @SerializedName("notice") Notice,
   }
 }
 

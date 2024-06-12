@@ -1,5 +1,6 @@
 import fspromises from 'node:fs/promises'
 import { globalAgent } from 'node:https'
+
 /**
  * Registers local root certificates onto the global HTTPS agent.
  *
@@ -10,21 +11,32 @@ import { globalAgent } from 'node:https'
  * This allows HTTPS requests made via the global agent to trust these root certs.
  */
 export function registerLocalCertificates() {
-    // Deduplicates and installs mac root certs onto the global agent
-    // This is a no op for non-mac environments
-    require('mac-ca').addToGlobalAgent({ excludeBundled: false })
-    // Installs windows root certs onto the global agent
-    // This is a no op for non-windows environments
-    require('win-ca/fallback').inject('+')
-    // Installs linux root certs onto the global agent
-    // This is a no op for non-linux environments
+    // Deduplicates and installs macOS root certs onto the global agent. This is a no-op for
+    // non-macOS environments
+    try {
+        require('mac-ca').addToGlobalAgent({ excludeBundled: false })
+    } catch (e) {
+        console.warn('Error installing macOS certs', e)
+    }
+
+    // Installs Windows root certs onto the global agent. This is a no-op for non-Windows
+    // environments.
+    try {
+        require('win-ca/fallback').inject('+')
+    } catch (e) {
+        console.warn('Error installing Windows certs', e)
+    }
+
+    // Installs Linux root certs onto the global agent. This is a no-op for non-Linux environments.
     try {
         addLinuxCerts()
     } catch (e) {
-        console.warn('Error installing linux certs', e)
+        console.warn('Error installing Linux certs', e)
     }
 }
+
 const linuxPossibleCertPaths = ['/etc/ssl/certs/ca-certificates.crt', '/etc/ssl/certs/ca-bundle.crt']
+
 function addLinuxCerts() {
     if (process.platform !== 'linux') {
         return
@@ -38,9 +50,10 @@ function addLinuxCerts() {
     }
     loadLinuxCerts()
         .then(certs => cas.push(...certs))
-        .catch(err => console.warn('Error loading linux certs', err))
+        .catch(err => console.warn('Error loading Linux certs', err))
     globalAgent.options.ca = cas
 }
+
 async function loadLinuxCerts() {
     const certs = new Set()
     for (const path of linuxPossibleCertPaths) {
@@ -59,4 +72,3 @@ async function loadLinuxCerts() {
     }
     return Array.from(certs)
 }
-//# sourceMappingURL=certs.js.map

@@ -136,7 +136,6 @@ export async function showCommandMenu(
                     quickPick.items = [
                         CommandMenuOption.chat,
                         CommandMenuOption.edit,
-                        CommandMenuOption.search,
                         ...items.filter(i => i.key !== 'ask' && i.key !== 'edit'),
                     ]
                 } else {

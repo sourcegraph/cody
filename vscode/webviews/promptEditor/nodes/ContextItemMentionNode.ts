@@ -1,6 +1,7 @@
 import {
     CONTEXT_ITEM_MENTION_NODE_TYPE,
     type ContextItem,
+    ContextItemSource,
     type SerializedContextItem,
     type SerializedContextItemMentionNode,
     displayLineRange,
@@ -15,7 +16,6 @@ import {
     type DOMConversionOutput,
     type DOMExportOutput,
     type EditorConfig,
-    type LexicalNode,
     type NodeKey,
     TextNode,
 } from 'lexical'
@@ -104,7 +104,13 @@ export class ContextItemMentionNode extends TextNode {
         } else if (this.contextItem.type === 'tree') {
             dom.title = this.contextItem.title || 'Local workspace'
         } else if (this.contextItem.type === 'file') {
-            dom.title = displayPath(URI.parse(this.contextItem.uri))
+            dom.title = this.contextItem.isTooLarge
+                ? this.contextItem.source === ContextItemSource.Initial
+                    ? 'File is too large. Select a smaller range of lines from the file.'
+                    : 'File is too large. Try adding the file again with a smaller range of lines.'
+                : displayPath(URI.parse(this.contextItem.uri))
+        } else if (this.contextItem.type === 'openctx') {
+            dom.title = this.contextItem.uri
         }
 
         return dom
@@ -197,18 +203,12 @@ export function $createContextItemMentionNode(
     const node = new ContextItemMentionNode(contextItem, undefined, undefined, isFromInitialContext)
     node.setMode('token').toggleDirectionless()
     if (contextItem.type === 'file' && (contextItem.isTooLarge || contextItem.isIgnored)) {
-        node.setStyle('color: var(--vscode-list-errorForeground)')
+        node.setStyle('text-decoration: line-through; color: var(--vscode-editorWarning-foreground)')
     }
     if (contextItem.type === 'repository' || contextItem.type === 'tree') {
         node.setStyle('font-weight: bold')
     }
     return $applyNodeReplacement(node)
-}
-
-export function $isContextItemMentionNode(
-    node: LexicalNode | null | undefined
-): node is ContextItemMentionNode {
-    return node instanceof ContextItemMentionNode
 }
 
 export function $createContextItemTextNode(contextItem: ContextItem | SerializedContextItem): TextNode {

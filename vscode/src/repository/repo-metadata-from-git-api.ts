@@ -1,4 +1,4 @@
-export interface RepoMetaData {
+interface RepoMetaData {
     owner: string
     repoName: string
     isPublic: boolean

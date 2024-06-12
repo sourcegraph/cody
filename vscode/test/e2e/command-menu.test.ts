@@ -61,7 +61,6 @@ test.extend<ExpectedEvents>({
     // Verify all the alwaysShow items are visible
     await expect(page.getByLabel(`comment New Chat, ${menu.chat.description}`)).toBeVisible()
     await expect(page.getByLabel(`wand Edit Code, ${menu.edit.description}`)).toBeVisible()
-    await expect(page.getByLabel(`search Search Code (Beta), ${menu.search.description}`)).toBeVisible()
 
     // this will fail if more than 1 New Chat item in the menu is found
     await page.getByLabel('Start a new chat').locator('a').click()

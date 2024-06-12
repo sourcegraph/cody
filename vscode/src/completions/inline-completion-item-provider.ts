@@ -60,9 +60,9 @@ interface AutocompleteResult extends vscode.InlineCompletionList {
 
 interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
+    firstCompletionTimeout: number
     statusBar: CodyStatusBar
     tracer?: ProvideInlineCompletionItemsTracer | null
-    triggerNotice: ((notice: { key: string }) => void) | null
     isRunningInsideAgent?: boolean
 
     authStatus: AuthStatus
@@ -379,6 +379,7 @@ export class InlineCompletionItemProvider
                         this.unstable_handleDidPartiallyAcceptCompletionItem.bind(this),
                     completeSuggestWidgetSelection: takeSuggestWidgetSelectionIntoAccount,
                     artificialDelay,
+                    firstCompletionTimeout: this.config.firstCompletionTimeout,
                     completionIntent,
                     lastAcceptedCompletionItem: this.lastAcceptedCompletionItem,
                     isDotComUser: this.config.isDotComUser,
@@ -553,11 +554,6 @@ export class InlineCompletionItemProvider
             // seeing this. Consider removing this check in future, because existing
             // users would have had the key set above.
             return
-        }
-
-        // Trigger external notice (chat sidebar)
-        if (this.config.triggerNotice) {
-            this.config.triggerNotice({ key: 'onboarding-autocomplete' })
         }
 
         // Show inline decoration.

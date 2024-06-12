@@ -33,11 +33,7 @@ type ChatID = string
 
 export type ChatPanelConfig = Pick<
     ConfigurationWithAccessToken,
-    | 'experimentalGuardrails'
-    | 'experimentalSymfContext'
-    | 'internalUnstable'
-    | 'useContext'
-    | 'experimentalChatContextRanker'
+    'internalUnstable' | 'useContext' | 'experimentalChatContextRanker'
 >
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
@@ -246,10 +242,6 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     private updateChatPanelContext(): void {
-        const panels = this.panelProviders.some(p => p.webviewPanel?.title === 'New Chat')
-        const current = this.activePanelProvider?.webviewPanel?.title === 'New Chat'
-        vscode.commands.executeCommand('setContext', 'cody.hasNewChatOpened', panels || current)
-
         const hasChatPanels = this.panelProviders.length > 0
         vscode.commands.executeCommand('setContext', 'cody.hasChatPanelsOpened', hasChatPanels)
     }

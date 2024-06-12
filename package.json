@@ -48,7 +48,7 @@
     "esbuild": "^0.18.20",
     "happy-dom": "^14.3.10",
     "jsdom": "^22.1.0",
-    "knip": "^3.13.2",
+    "knip": "^5.18.1",
     "storybook": "^8.0.5",
     "stylelint": "^15.11.0",
     "stylelint-config-standard": "^34.0.0",

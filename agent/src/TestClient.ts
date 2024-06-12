@@ -71,7 +71,7 @@ interface ProgressEndMessage {
     message: Record<string, never>
 }
 
-export function getAgentDir(): string {
+function getAgentDir(): string {
     const cwd = process.cwd()
     return path.basename(cwd) === 'agent' ? cwd : path.join(cwd, 'agent')
 }

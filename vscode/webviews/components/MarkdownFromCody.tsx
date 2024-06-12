@@ -11,7 +11,6 @@ import remarkGFM from 'remark-gfm'
  * - file: local file scheme
  * - vscode: VS Code URL scheme (open in editor)
  * - command:cody. VS Code command scheme for cody (run command)
- *  - e.g. command:cody.welcome: VS Code command scheme exception we add to support directly linking to the welcome guide from within the chat.
  * {@link CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID}
  */
 const ALLOWED_URI_REGEXP = /^((https?|file|vscode):\/\/[^\s#$./?].\S*$|(command:_?cody.*))/i

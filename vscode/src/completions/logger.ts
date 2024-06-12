@@ -38,7 +38,7 @@ import type { InlineCompletionItem } from './types'
 // point in the document. A single completion can be suggested multiple times.
 //
 // Note: This ID is only used by our downstream services and should not be used by the clients.
-export type CompletionAnalyticsID = string & { _opaque: typeof CompletionAnalyticsID }
+type CompletionAnalyticsID = string & { _opaque: typeof CompletionAnalyticsID }
 declare const CompletionAnalyticsID: unique symbol
 
 // A completion log ID is a unique identifier for a suggestion lifecycle (starting with the key
@@ -234,7 +234,7 @@ function logCompletionPartiallyAcceptedEvent(params: PartiallyAcceptedEventPaylo
         params
     )
 }
-export function logCompletionPersistencePresentEvent(params: PersistencePresentEventPayload): void {
+function logCompletionPersistencePresentEvent(params: PersistencePresentEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(
@@ -248,7 +248,7 @@ export function logCompletionPersistencePresentEvent(params: PersistencePresentE
         params
     )
 }
-export function logCompletionPersistenceRemovedEvent(params: PersistenceRemovedEventPayload): void {
+function logCompletionPersistenceRemovedEvent(params: PersistenceRemovedEventPayload): void {
     // Use automatic splitting for now - make this manual as needed
     const { metadata, privateMetadata } = splitSafeMetadata(params)
     writeCompletionEvent(

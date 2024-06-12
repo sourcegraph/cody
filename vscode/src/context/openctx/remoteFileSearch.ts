@@ -1,12 +1,19 @@
 import type { Item, Mention, Provider } from '@openctx/client'
-import { graphqlClient, isDefined, isError } from '@sourcegraph/cody-shared'
+import {
+    contextFiltersProvider,
+    displayPathBasename,
+    graphqlClient,
+    isDefined,
+    isError,
+} from '@sourcegraph/cody-shared'
+import { URI } from 'vscode-uri'
 
 const RemoteFileProvider: Provider & { providerUri: string } = {
     providerUri: 'internal-remote-file-search',
 
     meta() {
         return {
-            name: 'Sourcegraph Files',
+            name: 'Remote Files',
             mentions: {},
         }
     },
@@ -34,7 +41,7 @@ const RemoteFileProvider: Provider & { providerUri: string } = {
     },
 }
 
-export async function getRepoMentions(query?: string): Promise<Mention[]> {
+async function getRepoMentions(query?: string): Promise<Mention[]> {
     const dataOrError = await graphqlClient.searchRepos(10, undefined, query)
 
     if (isError(dataOrError) || dataOrError === null) {
@@ -43,18 +50,22 @@ export async function getRepoMentions(query?: string): Promise<Mention[]> {
 
     const repositories = dataOrError.repositories.nodes
 
-    return repositories.map(repo => ({
-        uri: repo.url,
-        title: repo.name,
-        description: ' ',
-        data: {
-            repoName: repo.name,
-        },
-    }))
+    return repositories.map(
+        repo =>
+            ({
+                uri: repo.url,
+                title: repo.name,
+                description: ' ',
+                data: {
+                    repoName: repo.name,
+                    isIgnored: contextFiltersProvider.isRepoNameIgnored(repo.name),
+                },
+            }) satisfies Mention
+    )
 }
 
-export async function getFileMentions(repoName: string, filePath?: string): Promise<Mention[]> {
-    const query = `repo:${repoName} type:file count:10` + (filePath ? ` file:${filePath}` : '')
+async function getFileMentions(repoName: string, filePath?: string): Promise<Mention[]> {
+    const query = `repo:${repoName} type:file count:10` + ` file:${filePath || '.*'}`
 
     const dataOrError = await graphqlClient.searchFileMatches(query)
 
@@ -70,12 +81,14 @@ export async function getFileMentions(repoName: string, filePath?: string): Prom
 
             const url = `${graphqlClient.endpoint.replace(/\/$/, '')}${result.file.url}`
 
+            const basename = displayPathBasename(URI.parse(result.file.path))
+
             return {
                 uri: url,
-                title: result.file.path,
-                description: result.repository.name,
+                title: basename,
+                description: result.file.path,
                 data: {
-                    mentionLabel: `${result.repository.name}:${result.file.path}`,
+                    mentionLabel: basename,
                     repoName: result.repository.name,
                     rev: result.file.commit.oid,
                     filePath: result.file.path,
@@ -84,7 +97,8 @@ export async function getFileMentions(repoName: string, filePath?: string): Prom
         })
         .filter(isDefined)
 }
-export async function getFileItem(repoName: string, filePath: string, rev = 'HEAD'): Promise<Item[]> {
+
+async function getFileItem(repoName: string, filePath: string, rev = 'HEAD'): Promise<Item[]> {
     const dataOrError = await graphqlClient.getFileContents(repoName, filePath, rev)
 
     if (isError(dataOrError)) {

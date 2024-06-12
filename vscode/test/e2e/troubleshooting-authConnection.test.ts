@@ -30,7 +30,7 @@ test.extend<ExpectedEvents>({
         'CodyVSCodeExtension:troubleshoot:reloadAuth',
         'CodyVSCodeExtension:Auth:connected',
     ],
-})('allow retrying on connection issues', async ({ page, getCodySidebar }) => {
+})('allow retrying on connection issues', async ({ page, nap, getCodySidebar }) => {
     // After Cody has loaded we prevent the server from accepting connections. On reloading
     // Cody this will now cause a connection issue when checking the currentUser.
     // After "fixing" the server Cody should be able to connect again.
@@ -51,5 +51,6 @@ test.extend<ExpectedEvents>({
     assert.equal(res.status, 200)
     const sidebar = await getCodySidebar()
     await sidebar.getByRole('button', { name: 'Retry Connection' }).click()
+    await nap()
     expectAuthenticated(page)
 })

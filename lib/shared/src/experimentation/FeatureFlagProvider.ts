@@ -65,6 +65,9 @@ export enum FeatureFlag {
 
     /** Automatically start indexing using embeddings. */
     CodyEmbeddingsAutoIndexing = 'cody-embeddings-auto-indexing',
+
+    /** Enable Context Preamble for open-end chat questions. */
+    CodyChatContextPreamble = 'cody-chat-context-preamble',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

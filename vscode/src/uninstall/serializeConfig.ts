@@ -42,7 +42,7 @@ function writeSnapshot(directory: string, filename: string, content: any) {
     fs.writeFileSync(filePath, JSON.stringify(content, null, 2))
 }
 
-export interface UninstallerConfig {
+interface UninstallerConfig {
     config?: ConfigurationWithAccessToken
     authStatus?: AuthStatus
     extensionDetails: ExtensionDetails
