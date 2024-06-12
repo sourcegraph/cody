@@ -281,6 +281,8 @@ const register = async (
 
         // Set the default prompt mixin on auth status change.
         await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
+
+        configWatcher.set(await getFullConfig())
     })
 
     if (initialConfig.experimentalSupercompletions) {

@@ -266,6 +266,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
             const preText = preElement.textContent
             if (preText?.trim() && preElement.parentNode) {
                 const buttons = createButtons(preText, copyButtonOnSubmit, insertButtonOnSubmit)
+                console.log('# guardrails', guardrails)
                 if (guardrails) {
                     const container = document.createElement('div')
                     container.classList.add(styles.attributionContainer)
