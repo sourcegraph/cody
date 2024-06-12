@@ -291,7 +291,7 @@ describe('PromptBuilder', () => {
         })
 
         it('should not remove user-added with overlapping ranges even when full file is provided', async () => {
-            const builder = new PromptBuilder({ input: 50, output: 50 })
+            const builder = new PromptBuilder({ input: 55, output: 50 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
 
@@ -319,7 +319,7 @@ describe('PromptBuilder', () => {
         })
 
         it('should deduplicate context from different token usage types', async () => {
-            const builder = new PromptBuilder({ input: 50, output: 50 })
+            const builder = new PromptBuilder({ input: 55, output: 50 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
 
