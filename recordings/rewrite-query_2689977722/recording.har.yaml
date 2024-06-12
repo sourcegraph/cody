@@ -71,7 +71,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Sat, 08 Jun 2024 18:57:37 GMT
+            value: Wed, 12 Jun 2024 20:48:37 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -100,7 +100,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-08T18:57:36.628Z
+      startedDateTime: 2024-06-12T20:48:36.682Z
       time: 0
       timings:
         blocked: -1
@@ -185,7 +185,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Sat, 08 Jun 2024 18:57:38 GMT
+            value: Wed, 12 Jun 2024 20:48:38 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -214,7 +214,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-08T18:57:38.011Z
+      startedDateTime: 2024-06-12T20:48:38.244Z
       time: 0
       timings:
         blocked: -1
@@ -291,7 +291,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Sat, 08 Jun 2024 18:57:40 GMT
+            value: Wed, 12 Jun 2024 20:48:40 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -320,7 +320,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-08T18:57:39.517Z
+      startedDateTime: 2024-06-12T20:48:39.691Z
       time: 0
       timings:
         blocked: -1
@@ -397,7 +397,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Sat, 08 Jun 2024 18:57:41 GMT
+            value: Wed, 12 Jun 2024 20:48:41 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -426,7 +426,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-08T18:57:40.886Z
+      startedDateTime: 2024-06-12T20:48:41.068Z
       time: 0
       timings:
         blocked: -1
@@ -504,7 +504,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Sat, 08 Jun 2024 18:57:42 GMT
+            value: Wed, 12 Jun 2024 20:48:43 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -533,7 +533,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-08T18:57:42.004Z
+      startedDateTime: 2024-06-12T20:48:42.490Z
       time: 0
       timings:
         blocked: -1
@@ -615,7 +615,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Sat, 08 Jun 2024 18:57:44 GMT
+            value: Wed, 12 Jun 2024 20:48:45 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -644,7 +644,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-08T18:57:43.599Z
+      startedDateTime: 2024-06-12T20:48:44.378Z
       time: 0
       timings:
         blocked: -1

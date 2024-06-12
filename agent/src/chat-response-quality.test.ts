@@ -209,7 +209,7 @@ describe('Chat response quality', () => {
                 // Should ask for additional (relevant) context.
                 // TODO: This is a bit brittle, should update to improve response across models.
                 expect(lastMessage?.text).toMatch(
-                    /If you (can|could) provide|Please provide|enough context|additional context|Without the (relevant )?code/i
+                    /If you (can|could) provide|Please provide|enough context|additional context|Without the (relevant|exact )?code/i
                 )
             }, 10_000)
 
