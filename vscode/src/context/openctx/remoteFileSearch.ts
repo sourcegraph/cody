@@ -97,6 +97,7 @@ async function getFileMentions(repoName: string, filePath?: string): Promise<Men
         })
         .filter(isDefined)
 }
+
 async function getFileItem(repoName: string, filePath: string, rev = 'HEAD'): Promise<Item[]> {
     const dataOrError = await graphqlClient.getFileContents(repoName, filePath, rev)
 

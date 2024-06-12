@@ -180,21 +180,12 @@ export const MentionMenu: FunctionComponent<
                         },
                     })
 
-                    setEditorQuery(currentText => {
-                        const replaceText = `@${mentionQuery.text}`
-                        const mentionStartIndex = currentText.indexOf(replaceText)
-
-                        if (mentionStartIndex !== -1) {
-                            const mentionEndIndex = mentionStartIndex + replaceText.length
-                            return (
-                                currentText.slice(0, mentionStartIndex) +
-                                `@${openCtxItem.mention?.data?.repoName}:` +
-                                currentText.slice(mentionEndIndex)
-                            )
-                        }
-
-                        return currentText
-                    })
+                    setEditorQuery(currentText =>
+                        currentText.replace(
+                            `@${mentionQuery.text}`,
+                            `@${openCtxItem.mention?.data?.repoName}:`
+                        )
+                    )
 
                     setValue(null)
                     return
