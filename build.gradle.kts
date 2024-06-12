@@ -51,10 +51,9 @@ val skippedFailureLevels =
 plugins {
   id("java")
   id("jvm-test-suite")
-  // Dependencies are locked at this version to work with JDK 11 on CI.
-  id("org.jetbrains.kotlin.jvm") version "1.9.22"
+  id("org.jetbrains.kotlin.jvm") version "1.9.24"
   id("org.jetbrains.intellij") version "1.17.3"
-  id("org.jetbrains.changelog") version "1.3.1"
+  id("org.jetbrains.changelog") version "2.2.0"
   id("com.diffplug.spotless") version "6.25.0"
 }
 
@@ -85,11 +84,11 @@ dependencies {
   // ActionUpdateThread.jar contains copy of the
   // com.intellij.openapi.actionSystem.ActionUpdateThread class
   compileOnly(files("libs/ActionUpdateThread.jar"))
-  implementation("org.commonmark:commonmark:0.21.0")
-  implementation("org.commonmark:commonmark-ext-gfm-tables:0.21.0")
-  implementation("org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.21.0")
-  implementation("com.googlecode.java-diff-utils:diffutils:1.3.0")
-  testImplementation("org.awaitility:awaitility-kotlin:4.2.0")
+  implementation("org.commonmark:commonmark:0.22.0")
+  implementation("org.commonmark:commonmark-ext-gfm-tables:0.22.0")
+  implementation("org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.23.1")
+  implementation("io.github.java-diff-utils:java-diff-utils:4.12")
+  testImplementation("org.awaitility:awaitility-kotlin:4.2.1")
   testImplementation("org.mockito:mockito-core:5.12.0")
   testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
   testImplementation("org.jetbrains.kotlin:kotlin-test-junit:2.0.0")

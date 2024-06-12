@@ -1,5 +1,8 @@
 package com.sourcegraph.cody.autocomplete
 
+import com.github.difflib.DiffUtils
+import com.github.difflib.patch.DeltaType
+import com.github.difflib.patch.Patch
 import com.intellij.codeInsight.hint.HintManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
@@ -65,9 +68,6 @@ import com.sourcegraph.utils.CodyEditorUtil.isCommandExcluded
 import com.sourcegraph.utils.CodyEditorUtil.isEditorValidForAutocomplete
 import com.sourcegraph.utils.CodyEditorUtil.isImplicitAutocompleteEnabledForEditor
 import com.sourcegraph.utils.CodyFormatter
-import difflib.Delta
-import difflib.DiffUtils
-import difflib.Patch
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
@@ -376,7 +376,7 @@ class CodyAutocompleteManager {
     // The diff algorithm returns a list of "deltas" that give us the minimal number of additions we
     // need to make to the document.
     val patch = diff(originalText, defaultItem.insertText)
-    if (!patch.deltas.all { delta -> delta.type == Delta.TYPE.INSERT }) {
+    if (!patch.deltas.all { delta -> delta.type == DeltaType.INSERT }) {
       if (triggerKind == InlineCompletionTriggerKind.INVOKE ||
           UserLevelConfig.isVerboseLoggingEnabled()) {
         logger.warn("Skipping autocomplete with non-insert deltas: $patch")

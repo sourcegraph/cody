@@ -1,6 +1,6 @@
 package com.sourcegraph.cody.autocomplete;
 
-import difflib.Patch;
+import com.github.difflib.patch.Patch;
 import junit.framework.TestCase;
 
 public class AutocompleteDiffTest extends TestCase {
