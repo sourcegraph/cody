@@ -5,6 +5,8 @@ import { FIXTURE_TRANSCRIPT, FIXTURE_USER_ACCOUNT_INFO, transcriptFixture } from
 
 import {
     type ChatMessage,
+    type ContextItem,
+    ContextItemSource,
     PromptString,
     RateLimitError,
     errorToChatError,
@@ -266,4 +268,106 @@ export const StreamingThenFinish: StoryObj<typeof meta> = {
             </>
         )
     },
+}
+
+export const MultiTurnWithContext: StoryObj<typeof meta> = {
+    args: {
+        transcript: [
+            {
+                speaker: 'human',
+                text: ps`@story @initial_1.ts You have a context window of 5 files.`,
+                contextFiles: createTranscriptContextFiles(
+                    1,
+                    ContextItemSource.Initial,
+                    2,
+                    ContextItemSource.Embeddings
+                ),
+            },
+            { speaker: 'assistant', text: ps`Getting close!` },
+            {
+                speaker: 'human',
+                text: ps`@story What's in @user_1.ts?'`,
+                contextFiles: createTranscriptContextFiles(
+                    1,
+                    ContextItemSource.User,
+                    3,
+                    ContextItemSource.Embeddings,
+                    1,
+                    ContextItemSource.Initial
+                ),
+            },
+            {
+                speaker: 'assistant',
+                text: ps`A typescript interface called User 1.`,
+            },
+            {
+                speaker: 'human',
+                text: ps`Explan how User 1 works in @user_2.ts file.`,
+                contextFiles: createTranscriptContextFiles(
+                    2,
+                    ContextItemSource.User,
+                    3,
+                    ContextItemSource.Embeddings,
+                    1,
+                    ContextItemSource.Initial
+                ),
+            },
+            {
+                speaker: 'assistant',
+                text: ps`User 1 is an interface in user_2.ts. It also shows up in embeddings_2.ts`,
+            },
+            {
+                speaker: 'human',
+                text: ps`Summarize embeddings_2. Then tell me where in the @story codebase are the User 1 interface is used?`,
+                contextFiles: createTranscriptContextFiles(
+                    2,
+                    ContextItemSource.User,
+                    5,
+                    ContextItemSource.Embeddings,
+                    1,
+                    ContextItemSource.Initial
+                ),
+            },
+            {
+                speaker: 'assistant',
+                text: ps`I no longer have access to embeddings_2.ts :(`,
+            },
+            {
+                speaker: 'human',
+                text: ps`@story Give me 50 embeddings results and then tell me how they work with the User interface.`,
+                contextFiles: createTranscriptContextFiles(
+                    50,
+                    ContextItemSource.Embeddings,
+                    2,
+                    ContextItemSource.User,
+                    1,
+                    ContextItemSource.Initial
+                ),
+            },
+            {
+                speaker: 'assistant',
+                text: ps`No more User interface for me to see.`,
+            },
+        ],
+        messageInProgress: { speaker: 'assistant', model: 'my-llm' },
+    },
+}
+
+function createTranscriptContextFiles(...args: (number | ContextItemSource)[]): ContextItem[] {
+    const contextFiles: ContextItem[] = []
+
+    for (let i = 0; i < args.length; i += 2) {
+        const count = args[i] as number
+        const source = args[i + 1] as ContextItemSource
+        for (let j = count; j > 0; j--) {
+            contextFiles.push({
+                type: 'file',
+                uri: URI.file(`/${source}_${j}.ts`),
+                source,
+                size: 1,
+                isTooLarge: contextFiles.length >= 5,
+            })
+        }
+    }
+    return contextFiles
 }
