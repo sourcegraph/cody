@@ -112,12 +112,14 @@ export class ChatSidePanelController implements vscode.WebviewViewProvider {
  * Replaces the other SimpleChatPanelProvider
  */
 export class SimpleChatPanelProvider___NEW implements vscode.Disposable, ChatSession {
-    private chatController?: ChatController
+    private chatController: ChatController
 
-    constructor(private options: SimpleChatPanelProviderOptions) {}
+    constructor(options: SimpleChatPanelProviderOptions) {
+        this.chatController = new ChatController(options)
+    }
 
     dispose() {
-        this.chatController?.dispose()
+        this.chatController.dispose()
     }
 
     get webviewPanel(): vscode.WebviewPanel | undefined {
@@ -125,7 +127,7 @@ export class SimpleChatPanelProvider___NEW implements vscode.Disposable, ChatSes
     }
 
     public get sessionID(): string {
-        return this.chatController?.sessionID || 
+        return this.chatController.sessionID
     }
 
     /**
@@ -172,19 +174,19 @@ export class SimpleChatPanelProvider___NEW implements vscode.Disposable, ChatSes
     //     return this.registerWebviewPanel(panel)
     // }
 
-    private _webviewPanel?: vscode.WebviewPanel
+    private _webviewPanel: vscode.WebviewPanel | undefined = undefined
 
     /**
      * Registers the given webview panel by setting up its options, icon, and handlers.
      * Also stores the panel reference and disposes it when closed.
      */
     private async registerWebviewPanel(panel: vscode.WebviewPanel): Promise<vscode.WebviewPanel> {
-        if (this._webviewPanel || this.chatController) {
+        if (this._webviewPanel) {
             throw new Error('Webview or webview panel already registered')
         }
 
         this._webviewPanel = panel
-        this.chatController = new ChatController(panel.webview, this.options)
+        this.chatController.init(panel.webview)
 
         return panel
     }
@@ -224,26 +226,24 @@ export class ChatController implements vscode.Disposable, ChatSession {
 
     public static async create(webview: vscode.Webview, options: SimpleChatPanelProviderOptions) {
         const c = new ChatController(options)
-        await c.initialize(webview)
+        await c.init(webview)
         return c
     }
 
-    constructor(
-        {
-            config,
-            extensionUri,
-            authProvider,
-            chatClient,
-            localEmbeddings,
-            contextRanking,
-            symf,
-            editor,
-            treeView,
-            models,
-            guardrails,
-            enterpriseContext,
-        }: SimpleChatPanelProviderOptions
-    ) {
+    constructor({
+        config,
+        extensionUri,
+        authProvider,
+        chatClient,
+        localEmbeddings,
+        contextRanking,
+        symf,
+        editor,
+        treeView,
+        models,
+        guardrails,
+        enterpriseContext,
+    }: SimpleChatPanelProviderOptions) {
         this.config = config
         this.extensionUri = extensionUri
         this.authProvider = authProvider
@@ -320,7 +320,7 @@ export class ChatController implements vscode.Disposable, ChatSession {
      * Registers the given webview panel by setting up its options, icon, and handlers.
      * Also stores the panel reference and disposes it when closed.
      */
-    private async initialize(webview: vscode.Webview) {
+    public async init(webview: vscode.Webview) {
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         // TODO(beyang)
         //
