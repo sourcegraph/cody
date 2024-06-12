@@ -1,7 +1,7 @@
 @file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
-package com.sourcegraph.cody.protocol_generated
+package com.sourcegraph.cody.protocol_generated;
 
-import com.google.gson.annotations.SerializedName
+import com.google.gson.annotations.SerializedName;
 
 data class ClientCapabilities(
   val completions: CompletionsEnum? = null, // Oneof: none
