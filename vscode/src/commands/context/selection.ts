@@ -12,6 +12,7 @@ import { getEditor } from '../../editor/active-editor'
 import { getSmartSelection } from '../../editor/utils'
 
 import { type Position, Selection } from 'vscode'
+import type { URI } from 'vscode-uri'
 
 /**
  * Gets context file content from the cursor position in the active editor.
@@ -64,26 +65,24 @@ export async function getContextFileFromCursor(
 }
 
 /**
- * Gets context file content from the current selection in the active editor if any.
+ * Gets the context items for the current selection in the active editor.
+ *
+ * If the file is ignored or if no selection, an empty array is returned.
+ *
+ * @returns An array of context items for the current selection.
  */
 export async function getContextFileFromSelection(): Promise<ContextItem[]> {
     return wrapInActiveSpan('commands.context.selection', async span => {
+        const editor = getEditor()?.active
+        const document = editor?.document
+        const selection = editor?.selection
+
+        if (!document || selection?.isEmpty || (await shouldIgnore(document.uri))) {
+            return []
+        }
+
         try {
-            const editor = getEditor()?.active
-            const document = editor?.document
-            const selection = editor?.selection
-            if (!document || !selection) {
-                return []
-            }
-
-            if (
-                (await contextFiltersProvider.isUriIgnored(document.uri)) ||
-                isCodyIgnoredFile(document.uri)
-            ) {
-                return []
-            }
-
-            const content = editor.document.getText(selection)
+            const content = document.getText(selection)
             return [
                 {
                     type: 'file',
@@ -95,8 +94,47 @@ export async function getContextFileFromSelection(): Promise<ContextItem[]> {
                 } satisfies ContextItemFile,
             ]
         } catch (error) {
-            logError('getContextFileFromCursor', 'failed', { verbose: error })
+            logError('getContextFileFromSelection', 'failed', { verbose: error })
             return []
         }
     })
+}
+
+/**
+ * Gets the context items for the current selection in the active editor, or the entire file if there is no selection.
+ *
+ * The context items include the file URI, content, source (selection or file), range, and token count.
+ * If the file is ignored, an empty array is returned.
+ *
+ * @returns An array of context items for the current selection or file.
+ */
+export async function getSelectionOrFileContext(): Promise<ContextItem[]> {
+    return wrapInActiveSpan('commands.context.selection_file', async span => {
+        const editor = getEditor()?.active
+        const document = editor?.document
+        const selection = editor?.selection
+
+        if (!document || !selection || (await shouldIgnore(document.uri))) {
+            return []
+        }
+
+        // If the selection is empty, use the entire file content
+        const range = selection.start.isEqual(selection.end) ? undefined : selection
+        const content = editor.document.getText(range)
+
+        return [
+            {
+                type: 'file',
+                uri: document.uri,
+                content,
+                source: ContextItemSource.Selection,
+                range: range && toRangeData(range),
+                size: TokenCounter.countTokens(content),
+            } satisfies ContextItemFile,
+        ]
+    })
+}
+
+async function shouldIgnore(uri: URI): Promise<boolean> {
+    return Boolean((await contextFiltersProvider.isUriIgnored(uri)) || isCodyIgnoredFile(uri))
 }

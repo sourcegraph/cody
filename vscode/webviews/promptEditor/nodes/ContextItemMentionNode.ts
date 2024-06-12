@@ -196,7 +196,7 @@ export function $createContextItemMentionNode(
     const node = new ContextItemMentionNode(contextItem, undefined, undefined, isFromInitialContext)
     node.setMode('token').toggleDirectionless()
     if (contextItem.type === 'file' && (contextItem.isTooLarge || contextItem.isIgnored)) {
-        node.setStyle('color: var(--vscode-list-errorForeground)')
+        node.setStyle('text-decoration: line-through; color: var(--vscode-list-errorForeground)')
     }
     if (contextItem.type === 'repository' || contextItem.type === 'tree') {
         node.setStyle('font-weight: bold')
