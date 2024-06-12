@@ -107,7 +107,9 @@ class CodyStatusService(val project: Project) : Disposable {
 
     @JvmStatic
     fun resetApplication(project: Project) {
-      getInstance(project).onCodyAutocompleteStatusReset()
+      if (!project.isDisposed) {
+        getInstance(project).onCodyAutocompleteStatusReset()
+      }
     }
   }
 }

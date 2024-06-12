@@ -138,7 +138,9 @@ class CodyAgentService(private val project: Project) : Disposable {
       }
 
       agent.client.onDebugMessage = Consumer { message ->
-        CodyConsole.getInstance(project).addMessage(message)
+        if (!project.isDisposed) {
+          CodyConsole.getInstance(project).addMessage(message)
+        }
       }
 
       if (!project.isDisposed) {

@@ -22,7 +22,10 @@ import com.sourcegraph.cody.agent.WebviewMessage
 import com.sourcegraph.cody.agent.protocol.Repo
 import com.sourcegraph.cody.chat.ChatSession
 import com.sourcegraph.cody.config.CodyAuthenticationManager
-import com.sourcegraph.cody.context.*
+import com.sourcegraph.cody.context.ChatEnhancedContextStateProvider
+import com.sourcegraph.cody.context.EnterpriseEnhancedContextStateController
+import com.sourcegraph.cody.context.RemoteRepo
+import com.sourcegraph.cody.context.RepoInclusion
 import com.sourcegraph.cody.history.HistoryService
 import com.sourcegraph.cody.history.state.EnhancedContextState
 import com.sourcegraph.common.CodyBundle
@@ -35,7 +38,11 @@ import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.util.concurrent.atomic.AtomicBoolean
-import javax.swing.*
+import javax.swing.AbstractAction
+import javax.swing.BorderFactory
+import javax.swing.JComponent
+import javax.swing.JPanel
+import javax.swing.KeyStroke
 import javax.swing.event.TreeExpansionEvent
 import javax.swing.event.TreeExpansionListener
 import javax.swing.tree.DefaultTreeModel
@@ -444,7 +451,10 @@ class ConsumerEnhancedContextPanel(project: Project, chatSession: ChatSession) :
 
   override fun updateFromSavedState(state: EnhancedContextState) {
     ApplicationManager.getApplication().invokeLater {
-      enhancedContextNode.isChecked = state.isEnabled ?: true
+      if (project.isDisposed) {
+        return@invokeLater
+      }
+      enhancedContextNode.isChecked = state.isEnabled
     }
   }
 
