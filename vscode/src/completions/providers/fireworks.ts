@@ -202,7 +202,7 @@ class FireworksProvider extends Provider {
     ): FireworksModel {
         switch (model) {
             case FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID: {
-                // The fine-tuned hybrid model is only deployed for TypeScript, JavaScript, and Python.
+                // The fine-tuned hybrid model is only deployed for TypeScriptReact, JavaScriptReact, and Python.
                 // For other languages, we use the current production model.
                 if (['typescriptreact', 'javascriptreact', 'python'].includes(langaugeId)) {
                     return FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID
