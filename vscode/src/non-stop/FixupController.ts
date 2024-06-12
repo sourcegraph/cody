@@ -27,13 +27,14 @@ import type { ExtensionClient } from '../extension-client'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { AuthProvider } from '../services/AuthProvider'
 import { isInTutorial } from '../tutorial/helpers'
-import type { FixupDecorator } from './FixupDecorator'
-import { FixupDecoratorExperimental } from './FixupDecoratorExperimental'
+import { FixupDecorator } from './FixupDecorator'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type FixupTaskID, type FixupTelemetryMetadata } from './FixupTask'
+import type { FixupDecoratorExperimental } from './decorations'
+import { computeFinalDecorations } from './decorations/compute-decorations'
 import { type Diff, computeDiff } from './diff'
 import { trackRejection } from './rejection-tracker'
 import type { FixupActor, FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
@@ -78,7 +79,7 @@ export class FixupController
         private readonly authProvider: AuthProvider,
         client: ExtensionClient
     ) {
-        this.decorator = new FixupDecoratorExperimental()
+        this.decorator = new FixupDecorator()
         this.controlApplicator = client.createFixupControlApplicator(this)
         // Observe file renaming and deletion
         this.files = new FixupFileObserver()
@@ -696,7 +697,7 @@ export class FixupController
             if (!applicableDiff) {
                 return
             }
-            editOk = await this.replaceEdit(edit, applicableDiff, task)
+            editOk = await this.replaceEdit(edit, applicableDiff, task, undefined, document)
         } else {
             editOk = await this.insertEdit(edit, document, task, applyEditOptions)
         }
@@ -747,7 +748,8 @@ export class FixupController
         edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit,
         diff: Diff,
         task: FixupTask,
-        options?: { undoStopBefore: boolean; undoStopAfter: boolean }
+        options?: { undoStopBefore: boolean; undoStopAfter: boolean },
+        document?: vscode.TextDocument
     ): Promise<boolean> {
         logDebug('FixupController:edit', 'replacing ')
 
@@ -765,8 +767,13 @@ export class FixupController
             return vscode.workspace.applyEdit(edit)
         }
 
+        const diffNew = computeFinalDecorations(task, document)?.diff
+        if (!diffNew) {
+            return false
+        }
+
         return edit(editBuilder => {
-            for (const diffEdit of diff.edits) {
+            for (const diffEdit of diffNew) {
                 editBuilder.replace(
                     new vscode.Range(
                         new vscode.Position(diffEdit.range.start.line, diffEdit.range.start.character),

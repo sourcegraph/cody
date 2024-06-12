@@ -1,79 +1,20 @@
 import * as vscode from 'vscode'
 
-import { diffLines } from 'diff'
-import type { FixupFile } from './FixupFile'
-import type { FixupTask } from './FixupTask'
-
-const INSERTED_CODE_DECORATION = vscode.window.createTextEditorDecorationType({
-    backgroundColor: new vscode.ThemeColor('diffEditor.insertedLineBackground'),
-    isWholeLine: true,
-})
-
-const REMOVED_CODE_DECORATION = vscode.window.createTextEditorDecorationType({
-    backgroundColor: new vscode.ThemeColor('diffEditor.removedLineBackground'),
-    isWholeLine: true,
-})
-
-const UNICODE_SPACE = '\u00a0'
-
-interface Decorations {
-    added: vscode.DecorationOptions[]
-    removed: vscode.DecorationOptions[]
-}
-type PlaceholderLines = number[]
-
-interface ComputedOutput {
-    decorations: Decorations
-    placeholderLines: PlaceholderLines
-}
-
-function computeTaskOutput(task: FixupTask): ComputedOutput | null {
-    if (!task.replacement) {
-        return null
-    }
-
-    let startLine = task.selectionRange.start.line
-    const placeholderLines: PlaceholderLines = []
-    const decorations: Decorations = {
-        added: [],
-        removed: [],
-    }
-
-    const diff = diffLines(task.original, task.replacement)
-    for (const change of diff) {
-        const count = change.count || 0
-        const lines = change.value.split('\n')
-
-        if (change.removed) {
-            for (let i = 0; i < count; i++) {
-                const line = lines[i]
-                const padding = (line.match(/^\s*/)?.[0] || '').length // Get leading whitespace for line
-                const insertionLine = new vscode.Position(startLine, 0)
-                decorations.removed.push({
-                    range: new vscode.Range(insertionLine, insertionLine),
-                    renderOptions: {
-                        after: { contentText: UNICODE_SPACE.repeat(padding) + line.trim() },
-                    },
-                })
-                placeholderLines.push(startLine)
-                startLine++
-            }
-        } else if (change.added) {
-            for (let i = 0; i < count; i++) {
-                const insertionLine = new vscode.Position(startLine, 0)
-                decorations.added.push({
-                    range: new vscode.Range(insertionLine, insertionLine),
-                })
-                startLine++
-            }
-        } else {
-            // unchanged line
-            startLine += count
-        }
-    }
-
-    return { decorations, placeholderLines }
-}
+import type { FixupFile } from '../FixupFile'
+import type { FixupTask } from '../FixupTask'
+import {
+    type ComputedOutput,
+    type Decorations,
+    type PlaceholderLines,
+    computeFinalDecorations,
+    computeOngoingDecorations,
+} from './compute-decorations'
+import {
+    CURRENT_LINE_DECORATION,
+    INSERTED_CODE_DECORATION,
+    REMOVED_CODE_DECORATION,
+    UNVISITED_LINE_DECORATION,
+} from './constants'
 
 export class FixupDecoratorExperimental implements vscode.Disposable {
     private tasksWithDecorations: Map<FixupFile, Map<FixupTask, Decorations>> = new Map()
@@ -90,12 +31,23 @@ export class FixupDecoratorExperimental implements vscode.Disposable {
     }
 
     public didUpdateDiff(task: FixupTask): void {
-        // this.updateTaskPlaceholders(task, taskOutput)
-        // this.updateTaskDecorations(task, task.diff)
+        const previouslyComputed = this.tasksWithDecorations.get(task.fixupFile)?.get(task)
+        const taskOutput = computeOngoingDecorations(task, previouslyComputed)
+
+        if (
+            previouslyComputed &&
+            taskOutput &&
+            previouslyComputed.currentLine === taskOutput?.decorations.currentLine
+        ) {
+            // The current line has not changed, so we can skip updating the decorations.
+            return
+        }
+
+        this.updateTaskDecorations(task, taskOutput)
     }
 
     public async didApplyTask(task: FixupTask): Promise<void> {
-        const taskOutput = computeTaskOutput(task)
+        const taskOutput = computeFinalDecorations(task)
         await this.updateTaskPlaceholders(task, taskOutput)
         this.updateTaskDecorations(task, taskOutput)
     }
@@ -109,7 +61,7 @@ export class FixupDecoratorExperimental implements vscode.Disposable {
             filePlaceholders?.delete(task)
             await this.removePlaceholders(task.fixupFile, taskPlaceholders.values())
         }
-        const taskOutput = computeTaskOutput(task)
+        const taskOutput = computeFinalDecorations(task)
         await this.updateTaskPlaceholders(task, taskOutput)
         this.updateTaskDecorations(task, taskOutput)
     }
@@ -120,7 +72,7 @@ export class FixupDecoratorExperimental implements vscode.Disposable {
     }
 
     private async updateTaskPlaceholders(task: FixupTask, output: ComputedOutput | null): Promise<void> {
-        const isEmpty = !output || output.placeholderLines.length === 0
+        const isEmpty = !output || (output.placeholderLines || []).length === 0
 
         let filePlaceholders = this.tasksWithPlaceholders.get(task.fixupFile)
         if (!filePlaceholders && isEmpty) {
@@ -143,13 +95,17 @@ export class FixupDecoratorExperimental implements vscode.Disposable {
             filePlaceholders = new Map()
             this.tasksWithPlaceholders.set(task.fixupFile, filePlaceholders)
         }
-        filePlaceholders.set(task, output.placeholderLines)
+        filePlaceholders.set(task, output.placeholderLines || [])
         await this.applyPlaceholders(task.fixupFile, filePlaceholders.values())
     }
 
     private updateTaskDecorations(task: FixupTask, output: ComputedOutput | null): void {
         const isEmpty =
-            !output || (output.decorations.added.length === 0 && output.decorations.removed.length === 0)
+            !output ||
+            (output.decorations.linesAdded.length === 0 &&
+                output.decorations.linesRemoved.length === 0 &&
+                output.decorations.unvisitedLines.length === 0 &&
+                !output.decorations.currentLine)
 
         let fileDecorations = this.tasksWithDecorations.get(task.fixupFile)
         if (!fileDecorations && isEmpty) {
@@ -180,17 +136,25 @@ export class FixupDecoratorExperimental implements vscode.Disposable {
         file: FixupFile,
         tasksWithDecorations: IterableIterator<Decorations>
     ): void {
+        const currentLineDecorations = []
+        const unvisitedLinesDecorations = []
         const addedDecorations = []
         const removedDecorations = []
         for (const decorations of tasksWithDecorations) {
-            addedDecorations.push(...decorations.added)
-            removedDecorations.push(...decorations.removed)
+            if (decorations.currentLine) {
+                currentLineDecorations.push(decorations.currentLine)
+            }
+            unvisitedLinesDecorations.push(...decorations.unvisitedLines)
+            addedDecorations.push(...decorations.linesAdded)
+            removedDecorations.push(...decorations.linesRemoved)
         }
 
         const editors = vscode.window.visibleTextEditors.filter(
             editor => editor.document.uri === file.uri
         )
         for (const editor of editors) {
+            editor.setDecorations(CURRENT_LINE_DECORATION, currentLineDecorations)
+            editor.setDecorations(UNVISITED_LINE_DECORATION, unvisitedLinesDecorations)
             editor.setDecorations(INSERTED_CODE_DECORATION, addedDecorations)
             editor.setDecorations(REMOVED_CODE_DECORATION, removedDecorations)
         }
