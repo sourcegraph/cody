@@ -61,7 +61,7 @@ export async function allMentionProvidersMetadata(): Promise<ContextMentionProvi
     return items
 }
 
-export async function openCtxMentionProviders(): Promise<ContextMentionProviderMetadata[]> {
+async function openCtxMentionProviders(): Promise<ContextMentionProviderMetadata[]> {
     const client = openCtx.client
     if (!client) {
         return []

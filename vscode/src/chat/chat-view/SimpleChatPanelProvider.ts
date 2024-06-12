@@ -252,6 +252,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             startClientStateBroadcaster({
                 remoteSearch: this.remoteSearch,
                 postMessage: (message: ExtensionMessage) => this.postMessage(message),
+                chatModel: this.chatModel,
             })
         )
     }
@@ -1065,7 +1066,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
             prompt,
             {
                 update: content => {
-                    abortSignal.throwIfAborted()
                     measureFirstToken()
                     span.addEvent('update')
                     this.postViewTranscript({
@@ -1075,7 +1075,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                     })
                 },
                 close: content => {
-                    abortSignal.throwIfAborted()
                     measureFirstToken()
                     recordExposedExperimentsToSpan(span)
                     span.end()
@@ -1083,7 +1082,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 },
                 error: (partialResponse, error) => {
                     if (isAbortErrorOrSocketHangUp(error)) {
-                        throw error
+                        abortSignal.throwIfAborted()
                     }
                     this.postError(error, 'transcript')
                     try {
