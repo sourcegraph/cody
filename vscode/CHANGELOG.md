@@ -6,6 +6,14 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+### Fixed
+
+### Changed
+
+## 1.22.0
+
+### Added
+
 - Chat & Commands: New models available for Cody Pro users:
   - Google Gemini 1.5 Pro [#4360](https://github.com/sourcegraph/cody/pull/4360)
   - Google Gemini 1.5 Flash [#4360](https://github.com/sourcegraph/cody/pull/4360)
