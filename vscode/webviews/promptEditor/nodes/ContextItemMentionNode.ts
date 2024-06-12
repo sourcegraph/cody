@@ -1,6 +1,7 @@
 import {
     CONTEXT_ITEM_MENTION_NODE_TYPE,
     type ContextItem,
+    ContextItemSource,
     type SerializedContextItem,
     type SerializedContextItemMentionNode,
     displayLineRange,
@@ -104,7 +105,9 @@ export class ContextItemMentionNode extends TextNode {
             dom.title = this.contextItem.title || 'Local workspace'
         } else if (this.contextItem.type === 'file') {
             dom.title = this.contextItem.isTooLarge
-                ? 'This file is too large. Try readding it with line range.'
+                ? this.contextItem.source === ContextItemSource.Initial
+                    ? 'File is too large. Select a smaller range of lines from the file.'
+                    : 'File is too large. Try adding the file again with a smaller range of lines.'
                 : displayPath(URI.parse(this.contextItem.uri))
         }
 
