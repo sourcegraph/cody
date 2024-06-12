@@ -231,7 +231,6 @@ const register = async (
     const { chatManager, editorManager } = registerChat(
         {
             context,
-            configWatcher,
             platform,
             chatClient,
             guardrails,
@@ -244,6 +243,7 @@ const register = async (
         },
         disposables
     )
+    disposables.push(chatManager)
 
     const sourceControl = new CodySourceControl(chatClient)
     const statusBar = createStatusBar()
@@ -662,7 +662,6 @@ function registerParserListeners(disposables: vscode.Disposable[]) {
 
 interface RegisterChatOptions {
     context: vscode.ExtensionContext
-    configWatcher: ConfigWatcher<ConfigurationWithAccessToken>
     platform: PlatformContext
     chatClient: ChatClient
     guardrails: Guardrails
@@ -677,7 +676,6 @@ interface RegisterChatOptions {
 function registerChat(
     {
         context,
-        configWatcher,
         platform,
         chatClient,
         guardrails,
@@ -693,8 +691,6 @@ function registerChat(
     chatManager: ChatManager
     editorManager: EditManager
 } {
-    const initialConfig = configWatcher.get()
-
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
         chat: chatClient,
@@ -706,7 +702,6 @@ function registerChat(
         {
             ...messageProviderOptions,
             extensionUri: context.extensionUri,
-            config: initialConfig,
             startTokenReceiver: platform.startTokenReceiver,
         },
         chatClient,
@@ -726,22 +721,6 @@ function registerChat(
         extensionClient: platform.extensionClient,
     })
     disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider())
-
-    // Register tree views
-    disposables.push(
-        chatManager,
-        vscode.window.registerWebviewViewProvider('cody.chat', chatManager.sidebarViewController, {
-            webviewOptions: { retainContextWhenHidden: true },
-        })
-
-        // // NOTE(beyang): it was necessary to keep this, as it is the vector through which
-        // // auth status propagates to the LLM client and guardrails after sign in. Without this,
-        // // the auth status does not propagate.
-        // contextProvider.configurationChangeEvent.event(async () => {
-        //     const newConfig = await getFullConfig()
-        //     configWatcher.set(newConfig)
-        // })
-    )
 
     if (localEmbeddings) {
         // kick-off embeddings initialization
