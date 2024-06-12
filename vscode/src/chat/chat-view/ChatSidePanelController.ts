@@ -111,10 +111,22 @@ export class ChatSidePanelController implements vscode.WebviewViewProvider {
 /**
  * Replaces the other SimpleChatPanelProvider
  */
-export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
+export class SimpleChatPanelProvider___NEW implements vscode.Disposable, ChatSession {
     private chatController?: ChatController
 
     constructor(private options: SimpleChatPanelProviderOptions) {}
+
+    dispose() {
+        this.chatController?.dispose()
+    }
+
+    get webviewPanel(): vscode.WebviewPanel | undefined {
+        return this._webviewPanel
+    }
+
+    public get sessionID(): string {
+        return this.chatController?.sessionID || 
+    }
 
     /**
      * Revives the chat panel when the extension is reactivated.
@@ -124,60 +136,55 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
         await this.registerWebviewPanel(webviewPanel)
     }
 
+    // /**
+    //  * Creates the webview panel for the Cody chat interface if it doesn't already exist.
+    //  */
+    // public async createWebviewPanel(
+    //     activePanelViewColumn?: vscode.ViewColumn,
+    //     _chatId?: string,
+    //     lastQuestion?: string
+    // ): Promise<vscode.WebviewPanel> {
+    //     // Checks if the webview panel already exists and is visible.
+    //     // If so, returns early to avoid creating a duplicate.
+    //     if (this.webviewPanel) {
+    //         return this.webviewPanel
+    //     }
+
+    //     const viewType = CodyChatPanelViewType
+    //     const panelTitle =
+    //         this.history.getChat(this.authProvider.getAuthStatus(), this.chatModel.sessionID)
+    //             ?.chatTitle || getChatPanelTitle(lastQuestion)
+    //     const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
+    //     const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
+    //     const panel = vscode.window.createWebviewPanel(
+    //         viewType,
+    //         panelTitle,
+    //         { viewColumn, preserveFocus: true },
+    //         {
+    //             enableScripts: true,
+    //             retainContextWhenHidden: true,
+    //             enableFindWidget: true,
+    //             localResourceRoots: [webviewPath],
+    //             enableCommandUris: true,
+    //         }
+    //     )
+
+    //     return this.registerWebviewPanel(panel)
+    // }
+
+    private _webviewPanel?: vscode.WebviewPanel
+
     /**
      * Registers the given webview panel by setting up its options, icon, and handlers.
      * Also stores the panel reference and disposes it when closed.
      */
     private async registerWebviewPanel(panel: vscode.WebviewPanel): Promise<vscode.WebviewPanel> {
-        logDebug('SimpleChatPanelProvider:registerWebviewPanel', 'registering webview panel')
-        if (this.webviewPanel || this.webview) {
+        if (this._webviewPanel || this.chatController) {
             throw new Error('Webview or webview panel already registered')
         }
 
-        const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
-        panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'resources', 'active-chat-icon.svg')
-
-        // Reset the webview options to ensure localResourceRoots is up-to-date
-        panel.webview.options = {
-            enableScripts: true,
-            localResourceRoots: [webviewPath],
-            enableCommandUris: true,
-        }
-
-        await addWebviewViewHTML(this.extensionUri, panel)
-
-        // Register webview
         this._webviewPanel = panel
-        this._webview = panel.webview
-        this.postContextStatus()
-
-        // Dispose panel when the panel is closed
-        panel.onDidDispose(() => {
-            this.cancelSubmitOrEditOperation()
-            this._webviewPanel = undefined
-            this._webview = undefined
-            panel.dispose()
-        })
-
-        this.disposables.push(
-            panel.webview.onDidReceiveMessage(message =>
-                this.onDidReceiveMessage(
-                    hydrateAfterPostMessage(message, uri => vscode.Uri.from(uri as any))
-                )
-            )
-        )
-
-        // Used for keeping sidebar chat view closed when webview panel is enabled
-        await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, true)
-
-        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
-        void this.postMessage({
-            type: 'setConfigFeatures',
-            configFeatures: {
-                chat: configFeatures.chat,
-                attribution: configFeatures.attribution,
-            },
-        })
+        this.chatController = new ChatController(panel.webview, this.options)
 
         return panel
     }
@@ -207,6 +214,8 @@ export class ChatController implements vscode.Disposable, ChatSession {
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
     private allMentionProvidersMetadataQueryCancellation?: vscode.CancellationTokenSource
 
+    private webview?: vscode.Webview
+
     private disposables: vscode.Disposable[] = []
     public dispose(): void {
         vscode.Disposable.from(...this.disposables).dispose()
@@ -214,13 +223,12 @@ export class ChatController implements vscode.Disposable, ChatSession {
     }
 
     public static async create(webview: vscode.Webview, options: SimpleChatPanelProviderOptions) {
-        const c = new ChatController(webview, options)
-        await c.initialize()
+        const c = new ChatController(options)
+        await c.initialize(webview)
         return c
     }
 
     constructor(
-        private webview: vscode.Webview,
         {
             config,
             extensionUri,
@@ -312,11 +320,13 @@ export class ChatController implements vscode.Disposable, ChatSession {
      * Registers the given webview panel by setting up its options, icon, and handlers.
      * Also stores the panel reference and disposes it when closed.
      */
-    private async initialize() {
+    private async initialize(webview: vscode.Webview) {
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         // TODO(beyang)
         //
         // panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'resources', 'active-chat-icon.svg')
+
+        this.webview = webview
 
         // Reset the webview options to ensure localResourceRoots is up-to-date
         this.webview.options = {
