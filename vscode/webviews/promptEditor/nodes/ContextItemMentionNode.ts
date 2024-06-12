@@ -103,7 +103,9 @@ export class ContextItemMentionNode extends TextNode {
         } else if (this.contextItem.type === 'tree') {
             dom.title = this.contextItem.title || 'Local workspace'
         } else if (this.contextItem.type === 'file') {
-            dom.title = displayPath(URI.parse(this.contextItem.uri))
+            dom.title = this.contextItem.isTooLarge
+                ? 'This file is too large. Try readding it with line range.'
+                : displayPath(URI.parse(this.contextItem.uri))
         }
 
         return dom
@@ -196,7 +198,7 @@ export function $createContextItemMentionNode(
     const node = new ContextItemMentionNode(contextItem, undefined, undefined, isFromInitialContext)
     node.setMode('token').toggleDirectionless()
     if (contextItem.type === 'file' && (contextItem.isTooLarge || contextItem.isIgnored)) {
-        node.setStyle('text-decoration: line-through; color: var(--vscode-list-errorForeground)')
+        node.setStyle('text-decoration: line-through; color: var(--vscode-editorWarning-foreground)')
     }
     if (contextItem.type === 'repository' || contextItem.type === 'tree') {
         node.setStyle('font-weight: bold')
