@@ -1,5 +1,5 @@
 import type { DiscriminatedUnion, DiscriminatedUnionMember } from './BaseCodegen'
-import type { KotlinCodegen } from './KotlinCodegen'
+import { type JvmCodegen, JvmLanguage } from './JvmCodegen'
 import type { SymbolTable } from './SymbolTable'
 import { isNullOrUndefinedOrUnknownType } from './isNullOrUndefinedOrUnknownType'
 import type { scip } from './scip'
@@ -7,8 +7,9 @@ import { capitalize, typescriptKeyword, typescriptKeywordSyntax } from './utils'
 
 export class KotlinFormatter {
     constructor(
+        private readonly language: JvmLanguage,
         private readonly symtab: SymbolTable,
-        private codegen: KotlinCodegen
+        private codegen: JvmCodegen
     ) {}
     public functionName(info: scip.SymbolInformation): string {
         return info.display_name.replaceAll('$/', '').replaceAll('/', '_')
@@ -32,7 +33,10 @@ export class KotlinFormatter {
     } {
         const parameterType = jsonrpcMethod.signature.value_signature.tpe.type_ref.type_arguments[0]
         const parameterSyntax = this.jsonrpcTypeName(jsonrpcMethod, parameterType, 'parameter')
-        return { parameterType, parameterSyntax: `params: ${parameterSyntax}` }
+        if (this.language === JvmLanguage.Kotlin) {
+            return { parameterType, parameterSyntax: `params: ${parameterSyntax}` }
+        }
+        return { parameterType, parameterSyntax: `${parameterSyntax} params` }
     }
 
     public isNullish(symbol: string): boolean {

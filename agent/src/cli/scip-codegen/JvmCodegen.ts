@@ -6,7 +6,7 @@ import { BaseCodegen, type DiscriminatedUnion, type DiscriminatedUnionMember } f
 import { CodePrinter } from '../../../../vscode/src/completions/context/retrievers/tsc/CodePrinter'
 import type { ConsoleReporter } from './ConsoleReporter'
 import { type Diagnostic, Severity } from './Diagnostic'
-import { KotlinFormatter } from './KotlinFormatter'
+import { KotlinFormatter as JvmFormatter } from './JvmFormatter'
 import type { SymbolTable } from './SymbolTable'
 import type { CodegenOptions } from './command'
 import { resetOutputPath } from './resetOutputPath'
@@ -15,20 +15,30 @@ import { stringLiteralType } from './stringLiteralType'
 import { capitalize, isTypescriptKeyword, typescriptKeyword, typescriptKeywordSyntax } from './utils'
 
 interface DocumentContext {
-    f: KotlinFormatter
+    f: JvmFormatter
     p: CodePrinter
     symtab: SymbolTable
 }
 
-export class KotlinCodegen extends BaseCodegen {
-    private f: KotlinFormatter
+export enum JvmLanguage {
+    Java = 'java',
+    Kotlin = 'kotlin',
+}
+
+export class JvmCodegen extends BaseCodegen {
+    private f: JvmFormatter
     public queue: scip.SymbolInformation[] = []
     public generatedSymbols = new Set<string>()
     public stringLiteralConstants = new Set<string>()
 
-    constructor(options: CodegenOptions, symtab: SymbolTable, reporter: ConsoleReporter) {
+    constructor(
+        private language: JvmLanguage,
+        options: CodegenOptions,
+        symtab: SymbolTable,
+        reporter: ConsoleReporter
+    ) {
         super(options, symtab, reporter)
-        this.f = new KotlinFormatter(this.symtab, this)
+        this.f = new JvmFormatter(this.language, this.symtab, this)
     }
 
     public async run(): Promise<void> {
@@ -335,7 +345,9 @@ export class KotlinCodegen extends BaseCodegen {
         notifications: string
     ): Promise<void> {
         const { f, p, symtab } = this.startDocument()
-        p.line('@file:Suppress("FunctionName", "ClassName")')
+        if (this.language === JvmLanguage.Kotlin) {
+            p.line('@file:Suppress("FunctionName", "ClassName")')
+        }
         p.line(`package ${this.options.kotlinPackage}`)
         p.line()
         p.line('import org.eclipse.lsp4j.jsonrpc.services.JsonNotification')
@@ -365,10 +377,18 @@ export class KotlinCodegen extends BaseCodegen {
                 const resultTypeSyntax = f.jsonrpcTypeName(request, resultType, 'result')
 
                 p.line(`@JsonRequest("${request.display_name}")`)
-                p.line(
-                    `fun ${f.functionName(request)}(${parameterSyntax}): ` +
-                        `CompletableFuture<${resultTypeSyntax}>`
-                )
+                if (this.language === JvmLanguage.Kotlin) {
+                    p.line(
+                        `fun ${f.functionName(request)}(${parameterSyntax}): ` +
+                            `CompletableFuture<${resultTypeSyntax}>`
+                    )
+                } else {
+                    p.line(
+                        `public CompletableFuture<${resultTypeSyntax}> ${f.functionName(
+                            request
+                        )}(${parameterSyntax})`
+                    )
+                }
             }
 
             p.line()
