@@ -169,7 +169,7 @@ const register = async (
 
     await authProvider.init()
 
-    await exposeOpenCtxClient(context.secrets, initialConfig)
+    await exposeOpenCtxClient(context, initialConfig)
 
     await configWatcher.initAndOnChange(async config => {
         graphqlClient.onConfigurationChange(config)

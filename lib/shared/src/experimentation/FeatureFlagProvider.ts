@@ -68,6 +68,9 @@ export enum FeatureFlag {
 
     /** Enable Context Preamble for open-end chat questions. */
     CodyChatContextPreamble = 'cody-chat-context-preamble',
+
+    /** Whether to use generated metadata to power embeddings. */
+    CodyEmbeddingsGenerateMetadata = 'cody-embeddings-generate-metadata',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
