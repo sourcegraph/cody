@@ -221,9 +221,16 @@ interface FormatEventPayload {
     formatter?: string
 }
 
-function logCompletionSuggestedEvent(isDotComUser: boolean, params: SuggestedEventPayload): void {
+function logCompletionSuggestedEvent(
+    isDotComUser: boolean,
+    inlineCompletionItemContext: InlineCompletionItemContext | undefined,
+    params: SuggestedEventPayload
+): void {
     // Use automatic splitting for now - make this manual as needed
-    const { metadata, privateMetadata } = splitSafeMetadata(params)
+    const { metadata, privateMetadata } = splitSafeMetadata({
+        ...params,
+        inlineCompletionItemContext,
+    })
     writeCompletionEvent(
         null,
         'suggested',
@@ -835,14 +842,13 @@ function logSuggestionEvents(isDotComUser: boolean): void {
             }
         }
 
-        logCompletionSuggestedEvent(isDotComUser, {
+        logCompletionSuggestedEvent(isDotComUser, inlineCompletionItemContext, {
             ...getSharedParams(completionEvent),
             latency,
             displayDuration,
             read,
             accepted,
             completionsStartedSinceLastSuggestion,
-            inlineCompletionItemContext,
         })
 
         completionsStartedSinceLastSuggestion = 0
