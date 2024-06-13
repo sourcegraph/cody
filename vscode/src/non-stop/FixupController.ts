@@ -578,7 +578,7 @@ export class FixupController
                 undoStopAfter: false,
             }
             this.setTaskState(task, CodyTaskState.Formatting)
-            await new Promise((resolve, reject) => {
+            const formatOk = await new Promise((resolve, reject) => {
                 task.formattingResolver = resolve
 
                 this.formatEdit(
@@ -593,6 +593,12 @@ export class FixupController
                         task.formattingResolver = null
                     })
             })
+
+            if (formatOk) {
+                // Update the replacement to match the formatted edit.
+                // This ensures any decorations are correctly recomputed
+                task.replacement = document.getText(task.selectionRange)
+            }
 
             // TODO: See if we can discard a FixupFile now.
             this.setTaskState(task, CodyTaskState.Applied)

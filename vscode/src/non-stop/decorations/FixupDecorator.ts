@@ -94,7 +94,7 @@ export class FixupDecorator implements vscode.Disposable {
         }
 
         const editors = vscode.window.visibleTextEditors.filter(
-            editor => editor.document.uri === file.uri
+            editor => editor.document.uri.toString() === file.uri.toString()
         )
         for (const editor of editors) {
             editor.setDecorations(CURRENT_LINE_DECORATION, currentLineDecorations)
