@@ -32,7 +32,7 @@ import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type FixupTaskID, type FixupTelemetryMetadata } from './FixupTask'
-import { FixupDecoratorExperimental } from './decorations'
+import { FixupDecorator } from './decorations/FixupDecorator'
 import { getFormattedReplacement } from './formatter'
 import { type Edit, computeDiff2, makeDiffEditBuilderCompatible } from './line-diff'
 import { trackRejection } from './rejection-tracker'
@@ -48,7 +48,7 @@ export class FixupController
     private readonly editObserver: FixupDocumentEditObserver
     // TODO: Make the fixup scheduler use a cooldown timer with a longer delay
     private readonly scheduler = new FixupScheduler(10)
-    private readonly decorator: FixupDecoratorExperimental
+    private readonly decorator: FixupDecorator
     private readonly controlApplicator
     private readonly persistenceTracker = new PersistenceTracker(vscode.workspace, {
         onPresent: ({ metadata, ...event }) => {
@@ -78,7 +78,7 @@ export class FixupController
         private readonly authProvider: AuthProvider,
         client: ExtensionClient
     ) {
-        this.decorator = new FixupDecoratorExperimental()
+        this.decorator = new FixupDecorator()
         this.controlApplicator = client.createFixupControlApplicator(this)
         // Observe file renaming and deletion
         this.files = new FixupFileObserver()
@@ -162,13 +162,7 @@ export class FixupController
         }
 
         editor.revealRange(task.selectionRange)
-
-        // TODO: We should figure out why `editor.edit` often returns `null` instead of a boolean.
-        // Please do not remove this `!== false` check without fixing underlying issue, it is necessary for now
-        const editOk =
-            ((await editor.edit(editBuilder => {
-                editBuilder.replace(task.selectionRange, task.original)
-            })) as any) !== false
+        const editOk = await this.revertToOriginal(task, editor)
 
         const legacyMetadata = {
             intent: task.intent,
@@ -204,6 +198,22 @@ export class FixupController
                 },
             })
         }
+    }
+
+    private async revertToOriginal(
+        task: FixupTask,
+        editor?: vscode.TextEditor,
+        options?: { undoStopBefore: boolean; undoStopAfter: boolean }
+    ): Promise<boolean> {
+        if (editor) {
+            return editor.edit(editBuilder => {
+                editBuilder.replace(task.selectionRange, task.original)
+            }, options)
+        }
+
+        const workspaceEdit = new vscode.WorkspaceEdit()
+        workspaceEdit.replace(task.fixupFile.uri, task.selectionRange, task.original)
+        return vscode.workspace.applyEdit(workspaceEdit)
     }
 
     // Undo the specified task, then prompt for a new set of instructions near
@@ -384,20 +394,22 @@ export class FixupController
         await this.applyTask(task)
     }
 
-    // Tries to get a clean, up-to-date diff to apply. If the diff is not
-    // up-to-date, it is synchronously recomputed. If the diff is not clean,
-    // will return undefined. This may update the task with the newly computed
-    // diff.
-    private applicableDiffOrRespin(task: FixupTask): Edit[] | undefined {
+    /**
+     * Computes a new diff against the latest text of a FixupTask.
+     */
+    private applicableDiffOrRespin(task: FixupTask, document: vscode.TextDocument): Edit[] | undefined {
         if (task.state !== CodyTaskState.Applying && task.state !== CodyTaskState.Applied) {
             // We haven't received a response from the LLM yet, so there is
             // no diff.
             console.warn('no response cached from LLM so no applicable diff')
             return undefined
         }
-        const diff = computeDiff2(task)
-        task.diff = diff
-        return diff
+
+        // Update the original text, so we're always computing a diff against the latest
+        // code in the editor.
+        task.original = document.getText(task.selectionRange)
+        task.diff = computeDiff2(task)
+        return task.diff
     }
 
     private countEditInsertions(task: FixupTask): { lineCount: number; charCount: number } {
@@ -650,59 +662,47 @@ export class FixupController
 
         let editOk: boolean
         if (task.mode === 'edit') {
-            const applicableDiff = this.applicableDiffOrRespin(task)
+            const applicableDiff = this.applicableDiffOrRespin(task, document)
             if (!applicableDiff) {
                 return
             }
-            // TODO: Use applyEdit options here?
-            editOk = await this.replaceEdit(edit, applicableDiff, task, undefined)
+            editOk = await this.replaceEdit(edit, applicableDiff, task, applyEditOptions)
         } else {
             editOk = await this.insertEdit(edit, document, task, applyEditOptions)
         }
 
-        if (editOk) {
-            // TODO: This isn't great, we need some way to update the replacement to account for injected
-            // placeholders, this is that for now.
-            task.replacement = document.getText(task.selectionRange)
+        if (!editOk) {
+            console.warn('Could not apply FixupTask: ', task.id)
+            return
         }
 
-        // Add the missing undo stop after this change.
-        // Now when the user hits 'undo', the entire format and edit will be undone at once
-        // const formatEditOptions = {
-        //     undoStopBefore: false,
-        //     undoStopAfter: true,
-        // }
-        this.setTaskState(task, CodyTaskState.Formatting)
+        // Update the replacement to match the applied edit.
+        // This is primarily because the diff won't necessarilly match the actual edit from the LLM,
+        // e.g. if we inject placeholder lines, then we need to know about these in order to properly
+        // post-process the changes.
+        task.replacement = document.getText(task.selectionRange)
 
+        this.setTaskState(task, CodyTaskState.Formatting)
         const formattedReplacement = await getFormattedReplacement(
             document,
-            task.replacement || '',
+            task.replacement,
             task.selectionRange
         )
-        console.log('Formatted:\n', formattedReplacement)
         if (formattedReplacement && task.replacement !== formattedReplacement) {
-            // Received formatted text, we need to re-apply the diff again
-            // This lets us recalculate the decorations and ensure they correctly match
-
-            // Update the replacement to be the formatted output
             task.replacement = formattedReplacement
 
             // Undo the original applied changes
-            if (edit instanceof vscode.WorkspaceEdit) {
-                edit.replace(document.uri, task.selectionRange, task.original)
-                await vscode.workspace.applyEdit(edit)
-            } else {
-                await edit(
-                    editBuilder => {
-                        editBuilder.replace(task.selectionRange, task.original)
-                    },
-                    { undoStopAfter: false, undoStopBefore: false }
-                )
-            }
+            await this.revertToOriginal(task, visibleEditor, {
+                undoStopAfter: false,
+                undoStopBefore: false,
+            })
 
             // Re-apply the changes using the new replacemnt
             task.diff = computeDiff2(task)
-            await this.replaceEdit(edit, task.diff!, task)
+            await this.replaceEdit(edit, task.diff!, task, {
+                undoStopAfter: true,
+                undoStopBefore: false,
+            })
             this.decorator.didUpdateDiff(task)
         }
 
@@ -719,39 +719,27 @@ export class FixupController
     }
 
     // Replace edit returned by Cody at task selection range
-    public async replaceEdit(
+    private async replaceEdit(
         edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit,
         diff: Edit[],
         task: FixupTask,
         options?: { undoStopBefore: boolean; undoStopAfter: boolean }
     ): Promise<boolean> {
         logDebug('FixupController:edit', 'replacing ')
+        const suitableDiffForEditing = makeDiffEditBuilderCompatible(diff)
 
         if (edit instanceof vscode.WorkspaceEdit) {
-            for (const { range, text } of diff) {
-                edit.replace(
-                    task.fixupFile.uri,
-                    new vscode.Range(
-                        new vscode.Position(range.start.line, range.start.character),
-                        new vscode.Position(range.end.line, range.end.character)
-                    ),
-                    text
-                )
+            for (const { range, text } of suitableDiffForEditing) {
+                edit.replace(task.fixupFile.uri, range, text)
             }
             return vscode.workspace.applyEdit(edit)
         }
 
-        const suitableDiffForEditing = makeDiffEditBuilderCompatible(diff)
-        await edit(
-            editBuilder => {
-                for (const { range, text } of suitableDiffForEditing) {
-                    editBuilder.replace(range, text)
-                }
-            },
-            { undoStopAfter: false, undoStopBefore: false }
-        )
-
-        return true
+        return edit(editBuilder => {
+            for (const { range, text } of suitableDiffForEditing) {
+                editBuilder.replace(range, text)
+            }
+        }, options)
     }
 
     // Insert edit returned by Cody at task selection range

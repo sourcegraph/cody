@@ -15,7 +15,7 @@ import {
     UNVISITED_LINE_DECORATION,
 } from './constants'
 
-export class FixupDecoratorExperimental implements vscode.Disposable {
+export class FixupDecorator implements vscode.Disposable {
     private tasksWithDecorations: Map<FixupFile, Map<FixupTask, Decorations>> = new Map()
 
     public dispose(): void {}
@@ -27,16 +27,6 @@ export class FixupDecoratorExperimental implements vscode.Disposable {
     public didUpdateInProgressReplacement(task: FixupTask): void {
         const previouslyComputed = this.tasksWithDecorations.get(task.fixupFile)?.get(task)
         const taskOutput = computeOngoingDecorations(task, previouslyComputed)
-
-        if (
-            previouslyComputed &&
-            taskOutput &&
-            previouslyComputed.currentLine === taskOutput?.decorations.currentLine
-        ) {
-            // The current line has not changed, so we can skip updating the decorations.
-            return
-        }
-
         this.updateTaskDecorations(task, taskOutput)
     }
 

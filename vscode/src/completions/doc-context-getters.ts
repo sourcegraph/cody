@@ -10,15 +10,9 @@ export function getCurrentLinePrefixWithoutInjectedPrefix(docContext: DocumentCo
     return injectedPrefix ? currentLinePrefix.slice(0, -injectedPrefix.length) : currentLinePrefix
 }
 
-/**
- * Parameters for the `getContextRange` function.
- */
 interface GetContextRangeParams {
-    /** The prefix string before the position. */
     prefix: string
-    /** The suffix string after the position. */
     suffix: string
-    /** The position in the document. */
     position: vscode.Position
 }
 
