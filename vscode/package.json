@@ -531,7 +531,7 @@
         "group": "Chat",
         "title": "Add File to Cody Chat",
         "icon": "$(mention)",
-        "enablement": "cody.activated && (editorFocus || filesExplorerFocus) && cody.hasChatPanelsOpened"
+        "enablement": "cody.activated && resourceSet && cody.hasChatPanelsOpened"
       },
       {
         "command": "cody.chat.panel.reset",
@@ -869,7 +869,7 @@
       "editor/title": [
         {
           "command": "cody.menu.commands",
-          "when": "cody.activated && !editorReadonly && (editorFocus || activeWebviewPanelId == cody.chatPanel)",
+          "when": "cody.activated && !editorReadonly && (resourceScheme == file || activeWebviewPanelId == cody.chatPanel)",
           "group": "navigation",
           "visibility": "visible"
         },
@@ -926,7 +926,7 @@
         {
           "command": "cody.mention.file",
           "group": "0_cody",
-          "when": "cody.activated && !explorerResourceIsFolder && cody.hasChatPanelsOpened"
+          "when": "cody.activated && resourceSet && !explorerResourceIsFolder && cody.hasChatPanelsOpened"
         }
       ],
       "scm/title": [
