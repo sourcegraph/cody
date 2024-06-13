@@ -1306,7 +1306,7 @@
     "@lexical/react": "^0.15.0",
     "@lexical/text": "^0.15.0",
     "@mdi/js": "^7.2.96",
-    "@openctx/vscode-lib": "^0.0.8",
+    "@openctx/vscode-lib": "^0.0.9",
     "@opentelemetry/api": "^1.7.0",
     "@opentelemetry/core": "^1.18.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",
