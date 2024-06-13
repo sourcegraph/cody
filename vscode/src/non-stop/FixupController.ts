@@ -6,8 +6,6 @@ import {
     type EventSource,
     type PromptString,
     displayPathBasename,
-    getEditorInsertSpaces,
-    getEditorTabSize,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 
@@ -20,8 +18,8 @@ import { countCode } from '../services/utils/code-count'
 
 import { PersistenceTracker } from '../common/persistence-tracker'
 import { lines } from '../completions/text-processing'
-import { sleep } from '../completions/utils'
 import { getInput } from '../edit/input/get-input'
+import { isStreamedIntent } from '../edit/utils/edit-intent'
 import { getOverridenModelForIntent } from '../edit/utils/edit-models'
 import type { ExtensionClient } from '../extension-client'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
@@ -33,7 +31,8 @@ import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type FixupTaskID, type FixupTelemetryMetadata } from './FixupTask'
 import { FixupDecorator } from './decorations/FixupDecorator'
-import { getFormattedReplacement } from './formatter'
+import { getFormattedReplacement } from './formatting/get-formatted-replacement'
+import { getFormattingChangesForRange } from './formatting/get-formatting-changes'
 import { type Edit, computeDiff2, makeDiffEditBuilderCompatible } from './line-diff'
 import { trackRejection } from './rejection-tracker'
 import type { FixupActor, FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
@@ -162,7 +161,7 @@ export class FixupController
         }
 
         editor.revealRange(task.selectionRange)
-        const editOk = await this.revertToOriginal(task, editor)
+        const editOk = await this.revertToOriginal(task, editor.edit)
 
         const legacyMetadata = {
             intent: task.intent,
@@ -202,18 +201,16 @@ export class FixupController
 
     private async revertToOriginal(
         task: FixupTask,
-        editor?: vscode.TextEditor,
+        edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit,
         options?: { undoStopBefore: boolean; undoStopAfter: boolean }
     ): Promise<boolean> {
-        if (editor) {
-            return editor.edit(editBuilder => {
-                editBuilder.replace(task.selectionRange, task.original)
-            }, options)
+        if (edit instanceof vscode.WorkspaceEdit) {
+            edit.replace(task.fixupFile.uri, task.selectionRange, task.original)
+            return vscode.workspace.applyEdit(edit)
         }
-
-        const workspaceEdit = new vscode.WorkspaceEdit()
-        workspaceEdit.replace(task.fixupFile.uri, task.selectionRange, task.original)
-        return vscode.workspace.applyEdit(workspaceEdit)
+        return edit(editBuilder => {
+            editBuilder.replace(task.selectionRange, task.original)
+        }, options)
     }
 
     // Undo the specified task, then prompt for a new set of instructions near
@@ -571,12 +568,6 @@ export class FixupController
                 }, applyEditOptions)
             }
 
-            // Add the missing undo stop after this change.
-            // Now when the user hits 'undo', the entire format and edit will be undone at once
-            const formatEditOptions = {
-                undoStopBefore: false,
-                undoStopAfter: false,
-            }
             this.setTaskState(task, CodyTaskState.Formatting)
             const formatOk = await new Promise((resolve, reject) => {
                 task.formattingResolver = resolve
@@ -584,8 +575,7 @@ export class FixupController
                 this.formatEdit(
                     visibleEditor ? visibleEditor.edit.bind(this) : new vscode.WorkspaceEdit(),
                     document,
-                    task,
-                    formatEditOptions
+                    task
                 )
                     .then(resolve)
                     .catch(reject)
@@ -693,26 +683,8 @@ export class FixupController
         task.replacement = document.getText(task.selectionRange)
 
         this.setTaskState(task, CodyTaskState.Formatting)
-        const formattedReplacement = await getFormattedReplacement(
-            document,
-            task.replacement,
-            task.selectionRange
-        )
-        if (formattedReplacement && task.replacement !== formattedReplacement) {
-            task.replacement = formattedReplacement
-
-            // Undo the original applied changes
-            await this.revertToOriginal(task, visibleEditor, {
-                undoStopAfter: false,
-                undoStopBefore: false,
-            })
-
-            // Re-apply the changes using the new replacemnt
-            task.diff = computeDiff2(task)
-            await this.replaceEdit(edit, task.diff!, task, {
-                undoStopAfter: true,
-                undoStopBefore: false,
-            })
+        const formatOk = await this.formatEdit(edit, document, task)
+        if (formatOk) {
             this.decorator.didUpdateDiff(task)
         }
 
@@ -792,8 +764,7 @@ export class FixupController
     private async formatEdit(
         edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit,
         document: vscode.TextDocument,
-        task: FixupTask,
-        options?: { undoStopBefore: boolean; undoStopAfter: boolean }
+        task: FixupTask
     ): Promise<boolean> {
         if (isInTutorial(document)) {
             // Skip formatting in tutorial files,
@@ -810,54 +781,59 @@ export class FixupController
             Number.MAX_VALUE
         )
 
-        if (!rangeToFormat) {
-            return false
-        }
-
-        /**
-         * Maximum amount of time to spend formatting.
-         * If the formatter takes longer than this then we will skip formatting completely.
-         */
-        const formattingTimeout = 1000
-        const formattingChanges =
-            (await Promise.race([
-                vscode.commands.executeCommand<vscode.TextEdit[]>(
-                    'vscode.executeFormatDocumentProvider',
-                    document.uri,
-                    {
-                        tabSize: getEditorTabSize(document.uri, vscode.workspace, vscode.window),
-                        insertSpaces: getEditorInsertSpaces(
-                            document.uri,
-                            vscode.workspace,
-                            vscode.window
-                        ),
-                    }
-                ),
-                sleep(formattingTimeout),
-            ])) || []
-
-        const formattingChangesInRange = formattingChanges.filter(change =>
-            rangeToFormat.contains(change.range)
-        )
-
+        const formattingChangesInRange = await getFormattingChangesForRange(document, rangeToFormat)
         if (formattingChangesInRange.length === 0) {
             return false
         }
 
         logDebug('FixupController:edit', 'formatting')
 
-        if (edit instanceof vscode.WorkspaceEdit) {
-            for (const change of formattingChangesInRange) {
-                edit.replace(task.fixupFile.uri, change.range, change.newText)
-            }
-            return vscode.workspace.applyEdit(edit)
+        if (isStreamedIntent(task.intent)) {
+            // We don't need to worry about re-computing a diff here, we know there have been no deletions
+            return this.replaceEdit(edit, formattingChangesInRange, task, {
+                undoStopAfter: true,
+                undoStopBefore: false,
+            })
         }
 
-        return edit(editBuilder => {
-            for (const change of formattingChangesInRange) {
-                editBuilder.replace(change.range, change.newText)
-            }
-        }, options)
+        if (!task.replacement) {
+            return false
+        }
+
+        // We're not formatting a streamed edit, which means we may have deletions to handle
+        // We need to ensure that we produce the formatted string, and then treat this as if the
+        // text came from the LLM, recompute the diff and then re-apply the edit.
+        // This ensures we will get a correct diff, including any placeholder lines that are reserved
+        // for decorations.
+        const formattedReplacement = await getFormattedReplacement(
+            document,
+            task.replacement || '',
+            task.selectionRange,
+            formattingChangesInRange
+        )
+
+        if (!formattedReplacement || task.replacement === formattedReplacement) {
+            // No actual change here, do nothing
+            return false
+        }
+
+        task.replacement = formattedReplacement
+
+        // Undo the original applied changes
+        const revertOk = await this.revertToOriginal(task, edit, {
+            undoStopAfter: false,
+            undoStopBefore: false,
+        })
+        if (!revertOk) {
+            return false
+        }
+
+        // Re-apply the changes using the new replacemnt
+        task.diff = computeDiff2(task)
+        return this.replaceEdit(edit, task.diff!, task, {
+            undoStopAfter: true,
+            undoStopBefore: false,
+        })
     }
 
     // Notify users of task completion when the edited file is not visible
