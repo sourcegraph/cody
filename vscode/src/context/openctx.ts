@@ -6,7 +6,7 @@ import RemoteRepositorySearch from './openctx/remoteRepositorySearch'
 import WebProvider from './openctx/web'
 
 export async function exposeOpenCtxClient(
-    secrets: vscode.SecretStorage,
+    context: Pick<vscode.ExtensionContext, 'extension' | 'secrets'>,
     config: ConfigurationWithAccessToken
 ) {
     logDebug('openctx', 'OpenCtx is enabled in Cody')
@@ -36,11 +36,12 @@ export async function exposeOpenCtxClient(
 
         setOpenCtxClient(
             createController({
+                extensionId: context.extension.id,
+                secrets: context.secrets,
                 outputChannel,
-                secrets,
                 features: {},
                 providers,
-            }).controller.client
+            }).controller
         )
     } catch (error) {
         logDebug('openctx', `Failed to load OpenCtx client: ${error}`)
