@@ -8,7 +8,7 @@ import { isInTutorial } from '../tutorial/helpers'
  * Maximum amount of time to spend formatting.
  * If the formatter takes longer than this then we will skip formatting completely.
  */
-const FORMATTING_TIMEOUT = 5000 // TOOD: set to 1000
+const FORMATTING_TIMEOUT = 1000
 
 async function getFormattingChangesForRange(
     document: vscode.TextDocument,
@@ -43,11 +43,6 @@ export async function getFormattedReplacement(
         return
     }
 
-    // if (currentText.length) {
-    //     // Disable formattign for now
-    //     return
-    // }
-
     // Expand the range to include full lines to reduce the likelihood of formatting issues
     const fullRangeToFormat = new vscode.Range(
         rangeToFormat.start.line,
@@ -57,7 +52,6 @@ export async function getFormattedReplacement(
     )
 
     const formattingChangesInRange = await formatter(document, rangeToFormat)
-    console.log('Formatting changes', formattingChangesInRange)
     if (formattingChangesInRange.length === 0) {
         return
     }
@@ -66,30 +60,22 @@ export async function getFormattedReplacement(
 
     let formattedReplacement = currentText
     let offsetAdjustment = 0
+    const taskOffset = document.offsetAt(fullRangeToFormat.start)
 
-    // Apply each formatting change to the original text
     for (const change of formattingChangesInRange) {
         // Convert the range start and end positions to offsets relative to the selection range
-        const startOffset =
-            document.offsetAt(change.range.start) -
-            document.offsetAt(fullRangeToFormat.start) +
-            offsetAdjustment
-        const endOffset =
-            document.offsetAt(change.range.end) -
-            document.offsetAt(fullRangeToFormat.start) +
-            offsetAdjustment
-
-        const prefix = formattedReplacement.substring(0, startOffset)
-        const suffix = formattedReplacement.substring(endOffset)
+        const startOffset = document.offsetAt(change.range.start) - taskOffset + offsetAdjustment
+        const endOffset = document.offsetAt(change.range.end) - taskOffset + offsetAdjustment
 
         // Replace the text within the range with the new text
-        formattedReplacement = prefix + change.newText + suffix
+        formattedReplacement =
+            formattedReplacement.substring(0, startOffset) +
+            change.newText +
+            formattedReplacement.substring(endOffset)
 
-        console.log('\nCurrent replacement:\n', formattedReplacement)
         // Adjust the offset for subsequent changes
         offsetAdjustment += change.newText.length - (endOffset - startOffset)
     }
 
-    console.log('\nFinal formatted replacement:\n', formattedReplacement)
     return formattedReplacement
 }

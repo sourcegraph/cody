@@ -34,7 +34,7 @@ import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type FixupTaskID, type FixupTelemetryMetadata } from './FixupTask'
 import { FixupDecoratorExperimental } from './decorations'
 import { getFormattedReplacement } from './formatter'
-import { type Edit, computeDiff2 } from './line-diff'
+import { type Edit, computeDiff2, makeDiffEditBuilderCompatible } from './line-diff'
 import { trackRejection } from './rejection-tracker'
 import type { FixupActor, FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
 import { CodyTaskState, expandRangeToInsertedText, getMinimumDistanceToRangeBoundary } from './utils'
@@ -674,7 +674,6 @@ export class FixupController
         // }
         this.setTaskState(task, CodyTaskState.Formatting)
 
-        console.log('Applied:\n', task.replacement)
         const formattedReplacement = await getFormattedReplacement(
             document,
             task.replacement || '',
@@ -742,17 +741,15 @@ export class FixupController
             return vscode.workspace.applyEdit(edit)
         }
 
-        // TODO: Move this inside the edit
-        // Will likely break stuff due to editBuilder requiring you not to
-        // predict ranges?
-        for (const { range, text } of diff) {
-            await edit(
-                editBuilder => {
+        const suitableDiffForEditing = makeDiffEditBuilderCompatible(diff)
+        await edit(
+            editBuilder => {
+                for (const { range, text } of suitableDiffForEditing) {
                     editBuilder.replace(range, text)
-                },
-                { undoStopAfter: false, undoStopBefore: false }
-            )
-        }
+                }
+            },
+            { undoStopAfter: false, undoStopBefore: false }
+        )
 
         return true
     }
@@ -933,8 +930,6 @@ export class FixupController
                 range: document.lineAt(line.range.start.line).rangeIncludingLineBreak,
             }
         })
-
-        console.log('placeholder lines to be deleted', placeholderLinesForDeletion)
 
         if (edit instanceof vscode.WorkspaceEdit) {
             for (const line of placeholderLinesForDeletion) {

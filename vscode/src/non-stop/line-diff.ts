@@ -59,3 +59,31 @@ export function computeDiff2(task: FixupTask): Edit[] | undefined {
 
     return applicableDiff
 }
+
+/**
+ * The VS Code `editBuilder` does not expect to be provided with optimistic ranges.
+ * For example, a second insertion should not assume (in it's range) that the first insertion was successful.
+ * Subsequent insertions must use a range that assumes no other insertions were made.
+ */
+export function makeDiffEditBuilderCompatible(diff: Edit[]): Edit[] {
+    let linesInserted = 0
+    const suitableEdit = []
+
+    for (const edit of diff) {
+        suitableEdit.push({
+            ...edit,
+            range: new vscode.Range(
+                edit.range.start.line - linesInserted,
+                edit.range.start.character,
+                edit.range.end.line - linesInserted,
+                edit.range.end.character
+            ),
+        })
+
+        if (edit.type === 'insertion') {
+            linesInserted++
+        }
+    }
+
+    return suitableEdit
+}
