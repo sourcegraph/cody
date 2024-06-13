@@ -634,6 +634,10 @@ export class FixupController
             // Expand the selection range to accompany the edit
             task.selectionRange = expandRangeToInsertedText(task.selectionRange, replacement)
         }
+
+        // Streamed tasks are applied as they are received, so we must call this after each edit is applied,
+        // as well as when the edit finally reaches the "applied" state - when the LLM is finished
+        this.decorator.didApplyTask(task)
     }
 
     private async applyTask(task: FixupTask): Promise<void> {

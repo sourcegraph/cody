@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import type { FixupFile } from '../FixupFile'
 import type { FixupTask } from '../FixupTask'
 import {
-    type ComputedOutput,
     type Decorations,
     computeFinalDecorations,
     computeOngoingDecorations,
@@ -41,16 +40,16 @@ export class FixupDecorator implements vscode.Disposable {
     }
 
     public async didCompleteTask(task: FixupTask): Promise<void> {
-        this.updateTaskDecorations(task, null)
+        this.updateTaskDecorations(task, undefined)
     }
 
-    private updateTaskDecorations(task: FixupTask, output: ComputedOutput | null): void {
+    private updateTaskDecorations(task: FixupTask, decorations?: Decorations): void {
         const isEmpty =
-            !output ||
-            (output.decorations.linesAdded.length === 0 &&
-                output.decorations.linesRemoved.length === 0 &&
-                output.decorations.unvisitedLines.length === 0 &&
-                !output.decorations.currentLine)
+            !decorations ||
+            (decorations.linesAdded.length === 0 &&
+                decorations.linesRemoved.length === 0 &&
+                decorations.unvisitedLines.length === 0 &&
+                !decorations.currentLine)
 
         let fileDecorations = this.tasksWithDecorations.get(task.fixupFile)
         if (!fileDecorations && isEmpty) {
@@ -73,7 +72,7 @@ export class FixupDecorator implements vscode.Disposable {
             this.tasksWithDecorations.set(task.fixupFile, fileDecorations)
         }
 
-        fileDecorations.set(task, output.decorations)
+        fileDecorations.set(task, decorations)
         this.applyDecorations(task.fixupFile, fileDecorations.values())
     }
 

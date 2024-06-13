@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { isStreamedIntent } from '../../edit/utils/edit-intent'
 import type { FixupTask } from '../FixupTask'
 import { getLastFullLine } from './utils'
 
@@ -15,15 +16,29 @@ export interface ComputedOutput {
     decorations: Decorations
 }
 
-export function computeFinalDecorations(task: FixupTask): ComputedOutput | null {
-    if (!task.diff) {
-        return null
-    }
-
+export function computeFinalDecorations(task: FixupTask): Decorations | undefined {
     const decorations: Decorations = {
         linesAdded: [],
         linesRemoved: [],
         unvisitedLines: [],
+    }
+
+    if (isStreamedIntent(task.intent)) {
+        // We don't calculate a diff for the streamed intent, instead we just need
+        // to decorate all inserted lines.
+        const insertionPoint = task.insertionPoint || task.selectionRange.start
+        const replacement = task.inProgressReplacement || task.replacement || ''
+        const replacementLines = replacement.split('\n')
+        const totalLines = replacementLines.length
+        for (let i = 0; i < totalLines; i++) {
+            const line = new vscode.Position(insertionPoint.line + i, 0)
+            decorations.linesAdded.push({ range: new vscode.Range(line, line) })
+        }
+        return decorations
+    }
+
+    if (!task.diff) {
+        return
     }
 
     for (const edit of task.diff) {
@@ -40,7 +55,7 @@ export function computeFinalDecorations(task: FixupTask): ComputedOutput | null 
         }
     }
 
-    return { decorations }
+    return decorations
 }
 
 function getRemainingLinesFromRange(range: vscode.Range, index: number) {
@@ -56,9 +71,15 @@ function getRemainingLinesFromRange(range: vscode.Range, index: number) {
 export function computeOngoingDecorations(
     task: FixupTask,
     prevComputed?: Decorations
-): ComputedOutput | null {
+): Decorations | undefined {
     if (task.replacement || !task.inProgressReplacement) {
-        return null
+        return
+    }
+
+    if (isStreamedIntent(task.intent)) {
+        // We don't provide ongoing decorations for streamed edits, only applied decorations
+        // as the incoming changes are immediately applied.
+        return
     }
 
     const currentLine = prevComputed?.currentLine || {
@@ -78,7 +99,7 @@ export function computeOngoingDecorations(
     // Given the in-progress replacement,
     const latestFullLine = getLastFullLine(task.inProgressReplacement)
     if (!latestFullLine) {
-        return { decorations }
+        return decorations
     }
 
     const nextLineIndex = currentLineIndex + 1
@@ -104,5 +125,5 @@ export function computeOngoingDecorations(
         }))
     }
 
-    return { decorations }
+    return decorations
 }

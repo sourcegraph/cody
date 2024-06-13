@@ -12,11 +12,9 @@ describe('computeOngoingDecorations', () => {
             selectionRange: new vscode.Range(0, 0, 1, 0),
         } as FixupTask
 
-        const computed = computeOngoingDecorations(mockTask)
-        expect(computed?.decorations.currentLine).toStrictEqual({ range: new vscode.Range(0, 0, 0, 0) })
-        expect(computed?.decorations.unvisitedLines).toStrictEqual([
-            { range: new vscode.Range(1, 0, 1, 0) },
-        ])
+        const decorations = computeOngoingDecorations(mockTask)
+        expect(decorations?.currentLine).toStrictEqual({ range: new vscode.Range(0, 0, 0, 0) })
+        expect(decorations?.unvisitedLines).toStrictEqual([{ range: new vscode.Range(1, 0, 1, 0) }])
     })
 
     it('marks the first line as active when full line receivedt', () => {
@@ -26,11 +24,9 @@ describe('computeOngoingDecorations', () => {
             selectionRange: new vscode.Range(0, 0, 1, 0),
         } as FixupTask
 
-        const computed = computeOngoingDecorations(mockTask)
-        expect(computed?.decorations.currentLine).toStrictEqual({ range: new vscode.Range(0, 0, 0, 0) })
-        expect(computed?.decorations.unvisitedLines).toStrictEqual([
-            { range: new vscode.Range(1, 0, 1, 0) },
-        ])
+        const decorations = computeOngoingDecorations(mockTask)
+        expect(decorations?.currentLine).toStrictEqual({ range: new vscode.Range(0, 0, 0, 0) })
+        expect(decorations?.unvisitedLines).toStrictEqual([{ range: new vscode.Range(1, 0, 1, 0) }])
     })
 
     it('marks the first line as active when unknown line received', () => {
@@ -40,11 +36,9 @@ describe('computeOngoingDecorations', () => {
             selectionRange: new vscode.Range(0, 0, 1, 0),
         } as FixupTask
 
-        const computed = computeOngoingDecorations(mockTask)
-        expect(computed?.decorations.currentLine).toStrictEqual({ range: new vscode.Range(0, 0, 0, 0) })
-        expect(computed?.decorations.unvisitedLines).toStrictEqual([
-            { range: new vscode.Range(1, 0, 1, 0) },
-        ])
+        const decorations = computeOngoingDecorations(mockTask)
+        expect(decorations?.currentLine).toStrictEqual({ range: new vscode.Range(0, 0, 0, 0) })
+        expect(decorations?.unvisitedLines).toStrictEqual([{ range: new vscode.Range(1, 0, 1, 0) }])
     })
 
     it('marks the second line as active when second line received, and updates unvisited lines', () => {
@@ -54,9 +48,9 @@ describe('computeOngoingDecorations', () => {
             selectionRange: new vscode.Range(0, 0, 1, 0),
         } as FixupTask
 
-        const computed = computeOngoingDecorations(mockTask)
-        expect(computed?.decorations.currentLine).toStrictEqual({ range: new vscode.Range(1, 0, 1, 0) })
-        expect(computed?.decorations.unvisitedLines).toStrictEqual([])
+        const decorations = computeOngoingDecorations(mockTask)
+        expect(decorations?.currentLine).toStrictEqual({ range: new vscode.Range(1, 0, 1, 0) })
+        expect(decorations?.unvisitedLines).toStrictEqual([])
     })
 
     it('marks the second line as active when second line received, and updates unvisited lines', () => {
@@ -66,24 +60,22 @@ describe('computeOngoingDecorations', () => {
             inProgressReplacement: 'Hel',
             selectionRange: new vscode.Range(0, 0, 1, 0),
         } as FixupTask
-        const computed = computeOngoingDecorations(mockTask)
-        expect(computed?.decorations.currentLine).toStrictEqual({ range: new vscode.Range(0, 0, 0, 0) })
-        expect(computed?.decorations.unvisitedLines).toStrictEqual([
-            { range: new vscode.Range(1, 0, 1, 0) },
-        ])
+        const decorations = computeOngoingDecorations(mockTask)
+        expect(decorations?.currentLine).toStrictEqual({
+            range: new vscode.Range(0, 0, 0, 0),
+        })
+        expect(decorations?.unvisitedLines).toStrictEqual([{ range: new vscode.Range(1, 0, 1, 0) }])
 
         // Full first line replacement, partial second line
         mockTask.inProgressReplacement = 'Hello\nWor'
-        const computed2 = computeOngoingDecorations(mockTask, computed?.decorations)
-        expect(computed2?.decorations.currentLine).toStrictEqual({ range: new vscode.Range(0, 0, 0, 0) })
-        expect(computed2?.decorations.unvisitedLines).toStrictEqual([
-            { range: new vscode.Range(1, 0, 1, 0) },
-        ])
+        const decorations2 = computeOngoingDecorations(mockTask, decorations)
+        expect(decorations2?.currentLine).toStrictEqual({ range: new vscode.Range(0, 0, 0, 0) })
+        expect(decorations2?.unvisitedLines).toStrictEqual([{ range: new vscode.Range(1, 0, 1, 0) }])
 
         // Full second line replacement
         mockTask.inProgressReplacement = 'Hello\nWorld\n'
-        const computed3 = computeOngoingDecorations(mockTask, computed2?.decorations)
-        expect(computed3?.decorations.currentLine).toStrictEqual({ range: new vscode.Range(1, 0, 1, 0) })
-        expect(computed3?.decorations.unvisitedLines).toStrictEqual([])
+        const decorations3 = computeOngoingDecorations(mockTask, decorations2)
+        expect(decorations3?.currentLine).toStrictEqual({ range: new vscode.Range(1, 0, 1, 0) })
+        expect(decorations3?.unvisitedLines).toStrictEqual([])
     })
 })

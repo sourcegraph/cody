@@ -29,3 +29,11 @@ export function getEditIntent(
 
     return proposedIntent || DEFAULT_EDIT_INTENT
 }
+
+/**
+ * Determines if the provided `intent` is suitable for streaming directly
+ * into the document.
+ */
+export function isStreamedIntent(intent: EditIntent): boolean {
+    return intent === 'add' || intent === 'test'
+}
