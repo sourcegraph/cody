@@ -531,7 +531,7 @@
         "group": "Chat",
         "title": "Add File to Cody Chat",
         "icon": "$(mention)",
-        "enablement": "cody.activated && resourceScheme == file && cody.hasChatPanelsOpened"
+        "enablement": "cody.activated && resourceSet && cody.hasChatPanelsOpened"
       },
       {
         "command": "cody.chat.panel.reset",
@@ -926,7 +926,7 @@
         {
           "command": "cody.mention.file",
           "group": "0_cody",
-          "when": "cody.activated && resourceScheme == file && cody.hasChatPanelsOpened"
+          "when": "cody.activated && resourceSet && !explorerResourceIsFolder && cody.hasChatPanelsOpened"
         }
       ],
       "scm/title": [
