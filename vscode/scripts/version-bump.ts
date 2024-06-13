@@ -11,6 +11,9 @@ import { version } from '../package.json'
  *  pnpm run version-bump:dry-run for testing the script without committing the changes
  */
 
+// Execute a command to create a new branch off origin/main
+execSync('git checkout main && git pull origin main', { stdio: 'inherit' })
+
 const releaseType = (process.env.RELEASE_TYPE || '').toLowerCase() as semver.ReleaseType
 const isDryRun = releaseType === 'prerelease'
 
@@ -34,6 +37,8 @@ if (!nextVersion || !semver.valid(nextVersion)) {
     )
     process.exit(1)
 }
+
+execSync(`git checkout -b release-${releaseType}-v${version}`, { stdio: 'inherit' })
 
 process.stdout.write(`Updating files to the next version: ${nextVersion}\n`)
 

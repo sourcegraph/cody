@@ -13,7 +13,6 @@ import {
     contextFiltersProvider,
     featureFlagProvider,
     graphqlClient,
-    newPromptMixin,
     setClientNameVersion,
     setLogger,
     telemetryRecorder,
@@ -111,9 +110,6 @@ export async function start(
 
     configWatcher.onChange(async config => {
         platform.onConfigurationChange?.(config)
-        if (config.chatPreInstruction.length > 0) {
-            PromptMixin.addCustom(newPromptMixin(config.chatPreInstruction))
-        }
         registerModelsFromVSCodeConfiguration()
     }, disposables)
 
@@ -156,11 +152,6 @@ const register = async (
     await configWatcher.initAndOnChange(async config => {
         await configureEventsInfra(config, isExtensionModeDevOrTest, authProvider)
     }, disposables)
-
-    // TODO(beyang): can remove PromptMixin?
-    if (initialConfig.chatPreInstruction.length > 0) {
-        PromptMixin.addCustom(newPromptMixin(initialConfig.chatPreInstruction))
-    }
 
     registerParserListeners(disposables)
 
@@ -299,6 +290,9 @@ const register = async (
 
         statusBar.syncAuthStatus(authStatus)
         sourceControl.syncAuthStatus(authStatus)
+
+        // Set the default prompt mixin on auth status change.
+        await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
     })
 
     if (initialConfig.experimentalSupercompletions) {
@@ -317,6 +311,7 @@ const register = async (
     await configWatcher.initAndOnChange(() => ModelsService.onConfigChange(), disposables)
     statusBar.syncAuthStatus(initAuthStatus)
     sourceControl.syncAuthStatus(initAuthStatus)
+    await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)

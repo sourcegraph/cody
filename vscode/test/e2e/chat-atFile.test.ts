@@ -348,7 +348,7 @@ test.extend<ExpectedEvents>({
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
     ],
-})('@-mention symbol in chat', async ({ page, sidebar }) => {
+})('@-mention symbol in chat', async ({ page, nap, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     // Open chat.
@@ -363,6 +363,7 @@ test.extend<ExpectedEvents>({
     await expect(page.getByRole('button', { name: langServerLoadingState })).not.toBeVisible()
 
     // Go back to the Cody chat tab
+    await nap()
     await page.getByRole('tab', { name: 'New Chat' }).click()
 
     // Symbol empty state shows tooltip to search for a symbol
@@ -387,7 +388,7 @@ test.extend<ExpectedEvents>({
 
     // Close file.
     const pinnedTab = page.getByRole('tab', { name: 'buzz.ts', exact: true })
-    await pinnedTab.getByRole('button', { name: /^Close/ }).click()
+    await pinnedTab.getByRole('button', { name: /^Close/ }).click({ force: true })
 
     // @-file with the correct line range shows up in the chat view and it opens on click
     const contextCell = getContextCell(chatPanelFrame)
@@ -414,6 +415,5 @@ test.extend<ExpectedEvents>({
     await lastChatInput.press('x')
     await selectLineRangeInEditorTab(page, 7, 10)
     await executeCommandInPalette(page, 'Cody: Add Selection to Cody Chat')
-
     await expect(chatInputMentions(lastChatInput)).toHaveText(['@buzz.ts:2-5', '@buzz.ts:7-10'])
 })
