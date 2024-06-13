@@ -46,10 +46,6 @@ describe('Chat response quality', () => {
                 stdio: 'inherit',
             }
         )
-
-        await client.request('command/execute', {
-            command: 'cody.search.index-update',
-        })
     }, 20_000)
 
     beforeEach(async () => {
