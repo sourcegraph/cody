@@ -13,6 +13,7 @@
 
 [data-cody-web-chat] {
     height: 100%;
+    overflow: auto;
     background-color: var(--vscode-editor-background);
     font-size: var(--vscode-font-size);
     font-family: var(--vscode-font-family);

@@ -329,6 +329,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
     ) {
         super(params.conn)
         vscode_shim.setAgent(this)
+
         this.registerRequest('initialize', async clientInfo => {
             vscode.languages.registerFoldingRangeProvider(
                 '*',
@@ -1079,7 +1080,23 @@ export class Agent extends MessageHandler implements ExtensionClient {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
             const localHistory = await chatHistory.getLocalHistory(authStatus)
 
-            console.log('CHAT/EXPORT', localHistory)
+            if (localHistory != null) {
+                return Object.entries(localHistory?.chat)
+                    .filter(([chatID, chatTranscript]) => chatTranscript.interactions.length > 0)
+                    .map(([chatID, chatTranscript]) => ({
+                        chatID: chatID,
+                        transcript: chatTranscript,
+                    }))
+            }
+
+            return []
+        })
+
+        this.registerAuthenticatedRequest('chat/delete', async (params) => {
+            await vscode.commands.executeCommand<AuthStatus>('cody.chat.history.delete', { id: params.chatID })
+
+            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+            const localHistory = await chatHistory.getLocalHistory(authStatus)
 
             if (localHistory != null) {
                 return Object.entries(localHistory?.chat)

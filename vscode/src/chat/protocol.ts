@@ -22,6 +22,7 @@ import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import type { View } from '../../webviews/NavBar'
 import type { Repo } from '../context/repo-fetcher'
+import type { ChatHistoryUpdate } from './chat-view/ChatHistoryManager';
 
 /**
  * DO NOT USE DIRECTLY - ALWAYS USE a TelemetryRecorder from
@@ -173,6 +174,7 @@ export type ExtensionMessage =
           userContextFiles?: ContextItem[] | undefined | null
       }
     | { type: 'clientState'; value: ClientStateForWebview }
+    | { type: 'chatHistory'; value: ChatHistoryUpdate }
     | { type: 'clientAction'; addContextItemsToLastHumanInput: ContextItem[] }
     | { type: 'chatModels'; models: Model[] }
     | {

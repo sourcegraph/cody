@@ -269,6 +269,12 @@ export class SimpleChatPanelProvider
                 chatModel: this.chatModel,
             })
         )
+
+        this.disposables.push(
+            chatHistory.onDidChatHistoryChange(chatHistory => {
+                this.postMessage({ type: 'chatHistory', value: chatHistory })
+            })
+        )
     }
 
     /**

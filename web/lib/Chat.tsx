@@ -1,5 +1,5 @@
 import { URI } from 'vscode-uri'
-import { type FC, useCallback, useEffect, useMemo, useState, useRef } from 'react'
+import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
     type ChatMessage,
@@ -10,27 +10,27 @@ import {
     ContextItem,
     PromptString,
     setDisplayPathEnvInfo,
-    hydrateAfterPostMessage,
-    SourcegraphGraphQLAPIClient,
     ContextItemSource,
 } from '@sourcegraph/cody-shared'
 
-import type { ExtensionMessage } from '@sourcegraph/vscode-cody/src/chat/protocol'
 import { Chat, type UserAccountInfo } from '@sourcegraph/vscode-cody/webviews/Chat'
 import {
     type ChatModelContext,
     ChatModelContextProvider,
 } from '@sourcegraph/vscode-cody/webviews/chat/models/chatModelContext'
-import { type VSCodeWrapper, setVSCodeWrapper } from '@sourcegraph/vscode-cody/webviews/utils/VSCodeApi'
+import {
+    createWebviewTelemetryRecorder,
+    createWebviewTelemetryService,
+    TelemetryRecorderContext
+} from '@sourcegraph/vscode-cody/webviews/utils/telemetry'
 import { WithContextProviders } from '@sourcegraph/vscode-cody/webviews/mentions/providers'
 import { ChatContextClientContext } from '@sourcegraph/vscode-cody/webviews/promptEditor/plugins/atMentions/chatContextClient'
-import { createWebviewTelemetryRecorder, createWebviewTelemetryService, TelemetryRecorderContext } from '@sourcegraph/vscode-cody/webviews/utils/telemetry'
 import { ClientStateContextProvider, useClientActionDispatcher, } from '@sourcegraph/vscode-cody/webviews/client/clientState'
 
+import { useWebAgentClient } from './Provider';
 import { debouncePromise } from './agent/utils/debounce-promise'
-import { type AgentClient, createAgentClient } from './agent/client'
 
-import './cody-web-chat.css'
+import './styles.css'
 
 // Internal API mock call in order to set up web version of
 // the cody agent properly (completely mock data)
@@ -45,8 +45,6 @@ interface RepositoryMetadata {
 }
 
 export interface CodyWebChatProps {
-    accessToken: string
-    serverEndpoint: string
     repositories: RepositoryMetadata[]
     className?: string
 }
@@ -54,17 +52,17 @@ export interface CodyWebChatProps {
 // NOTE: This code is copied from the VS Code webview's App component and implements a subset of the
 // functionality for the experimental web chat prototype.
 export const CodyWebChat: FC<CodyWebChatProps> = props => {
+    const { repositories, className } = props
+
     const {
-        repositories,
-        accessToken,
-        serverEndpoint,
-        className
-    } = props
+        activeWebviewPanelID,
+        vscodeAPI,
+        client,
+        graphQLClient
+    } = useWebAgentClient()
 
-    const onMessageCallbacksRef = useRef<((message: ExtensionMessage) => void)[]>([])
+    const rootElementRef = useRef<HTMLDivElement>(null)
 
-    const isClientInitialized = useRef(false)
-    const [client, setClient] = useState<AgentClient | Error | null>(null)
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
@@ -77,18 +75,9 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
 
     const dispatchClientAction = useClientActionDispatcher()
 
-    const graphQlClient = useMemo(() => {
-        return new SourcegraphGraphQLAPIClient({
-            accessToken,
-            serverEndpoint,
-            customHeaders: {},
-            telemetryLevel: 'off'
-        })
-    }, [])
-
     const getRepositoryFiles = useMemo(
-        () => debouncePromise(graphQlClient.getRepositoryFiles.bind(graphQlClient), 1500),
-        [graphQlClient]
+        () => debouncePromise(graphQLClient.getRepositoryFiles.bind(graphQLClient), 1500),
+        [graphQLClient]
     )
 
     const suggestionsSource = useMemo(() => {
@@ -120,86 +109,29 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                 }))
             }
         }
-    }, [graphQlClient])
+    }, [graphQLClient])
 
     useEffect(() => {
         ;(async () => {
-            if (isClientInitialized.current) {
+            if (!client || isErrorLike(client)) {
                 return
             }
 
-            isClientInitialized.current = true
-
             try {
-                const client = await createAgentClient({
-                    serverEndpoint: serverEndpoint,
-                    accessToken: accessToken ?? '',
-                    workspaceRootUri: '',
-                })
-
                 await client.rpc.sendRequest('webview/receiveMessage', {
-                    id: client.webviewPanelID,
+                    id: activeWebviewPanelID.current,
                     message: {
                         command: 'context/choose-remote-search-repo',
                         explicitRepos: repositories
                     }
                 })
-
-                setClient(client)
             } catch (error) {
                 console.error(error)
-                setClient(() => error as Error)
             }
         })()
-    }, [])
-
-    const vscodeAPI = useMemo<VSCodeWrapper>(() => {
-        if (client && !isErrorLike(client)) {
-            client.rpc.onNotification(
-                'webview/postMessage',
-                ({ id, message }: { id: string; message: ExtensionMessage }) => {
-                    if (client.webviewPanelID === id) {
-                        for (const callback of onMessageCallbacksRef.current) {
-                            callback(hydrateAfterPostMessage(message, uri => URI.from(uri as any)))
-                        }
-                    }
-                }
-            )
-        }
-
-        return {
-            postMessage: message => {
-                if (client && !isErrorLike(client)) {
-                    void client.rpc.sendRequest('webview/receiveMessage', {
-                        id: client.webviewPanelID,
-                        message,
-                    })
-                }
-            },
-            onMessage: callback => {
-                if (client && !isErrorLike(client)) {
-                    onMessageCallbacksRef.current.push(callback)
-                    return () => {
-                        // Remove callback from onMessageCallbacks.
-                        const index = onMessageCallbacksRef.current.indexOf(callback)
-                        if (index >= 0) {
-                            onMessageCallbacksRef.current.splice(index, 1)
-                        }
-                    }
-                }
-                return () => {}
-            },
-            getState: () => {
-                throw new Error('not implemented')
-            },
-            setState: () => {
-                throw new Error('not implemented')
-            },
-        }
-    }, [client])
+    }, [client, repositories, activeWebviewPanelID]);
 
     useEffect(() => {
-        setVSCodeWrapper(vscodeAPI)
         vscodeAPI.onMessage(message => {
             switch (message.type) {
                 case 'transcript': {
@@ -273,7 +205,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
     )
 
     return (
-        <div className={className} data-cody-web-chat={true}>
+        <div className={className} data-cody-web-chat={true} ref={rootElementRef}>
             {client && userAccountInfo && chatModels ? (
                 isErrorLike(client) ? (
                     <p>Error: {client.message}</p>
@@ -291,6 +223,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                                             vscodeAPI={vscodeAPI}
                                             telemetryService={telemetryService}
                                             isTranscriptError={isTranscriptError}
+                                            scrollableParent={rootElementRef.current}
                                         />
                                     </WithContextProviders>
                                 </ClientStateContextProvider>
