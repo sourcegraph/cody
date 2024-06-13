@@ -22,6 +22,7 @@ interface ChatboxProps {
     isTranscriptError: boolean
     userInfo: UserAccountInfo
     guardrails?: Guardrails
+    scrollableParent?: HTMLElement | null
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -34,6 +35,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     chatEnabled = true,
     userInfo,
     guardrails,
+    scrollableParent
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -173,7 +175,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 guardrails={guardrails}
             />
             {transcript.length === 0 && <WelcomeMessage />}
-            <ScrollDown onClick={focusLastHumanMessageEditor} />
+            <ScrollDown scrollableParent={scrollableParent} onClick={focusLastHumanMessageEditor} />
         </div>
     )
 }

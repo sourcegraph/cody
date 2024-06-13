@@ -5,7 +5,7 @@ import {
     createMessageConnection,
     type MessageConnection,
 } from 'vscode-jsonrpc/browser'
-import type { ChatExportResult, ServerInfo } from '@sourcegraph/vscode-cody/src/jsonrpc/agent-protocol'
+import type { ServerInfo } from '@sourcegraph/vscode-cody/src/jsonrpc/agent-protocol'
 
 // Inline Agent web worker since we're building cody/web package
 // in the cody repository and ship it via published npm package
@@ -20,7 +20,6 @@ import AgentWorker from './worker.ts?worker&inline'
 // TODO(sqs): dedupe with agentClient.ts in [experimental Cody CLI](https://github.com/sourcegraph/cody/pull/3418)
 export interface AgentClient {
     serverInfo: ServerInfo
-    webviewPanelID: string
     rpc: MessageConnection
     dispose(): void
 }
@@ -40,18 +39,24 @@ export async function createAgentClient({
     debug = true,
     trace = false,
 }: AgentClientOptions): Promise<AgentClient> {
+
+    // Run agent worker and set up a transport bridge between
+    // main thread and web-worker thread via json-rpc protocol
     const worker = new AgentWorker() as Worker
     const rpc = createMessageConnection(
         new BrowserMessageReader(worker),
         new BrowserMessageWriter(worker),
         console
     )
+
     if (trace) {
         rpc.trace(Trace.Verbose, { log: (...args) => console.debug('agent: debug:', ...args) })
     }
+
     rpc.onClose(() => {
         console.error('agent: connection closed')
     })
+
     rpc.listen()
 
     rpc.onNotification('debug/message', message => {
@@ -65,6 +70,7 @@ export async function createAgentClient({
         }
     })
 
+    // Initialize
     const serverInfo: ServerInfo = await rpc.sendRequest('initialize', {
         name: 'cody-web',
         version: '0.0.1',
@@ -76,41 +82,16 @@ export async function createAgentClient({
             customConfiguration: {
                 'cody.experimental.noodle': true,
                 'cody.autocomplete.enabled': false,
+                'cody.experimental.urlContext': true,
             },
         },
     })
-    rpc.sendNotification('initialized', null)
 
-    const chatHistory = await rpc.sendRequest<ChatExportResult[]>('chat/export', null)
-
-    if (chatHistory.length === 0) {
-        const webviewPanelID: string = await rpc.sendRequest('chat/new', null)
-
-        return {
-            rpc,
-            serverInfo,
-            webviewPanelID,
-            dispose(): void {
-                rpc.end()
-                worker.terminate()
-            },
-        }
-    }
-
-    // Restore last active chat
-    const lastAvailableChat = chatHistory[chatHistory.length - 1]
-
-    const webviewPanelID: string = await rpc.sendRequest('chat/restore', {
-        chatID: lastAvailableChat.chatID,
-        messages: lastAvailableChat.transcript.interactions.map(interaction => {
-            return [interaction.humanMessage, interaction.assistantMessage].filter(message => message)
-        }).flat()
-    })
+    await rpc.sendNotification('initialized', null)
 
     return {
-        serverInfo,
         rpc,
-        webviewPanelID,
+        serverInfo,
         dispose(): void {
             rpc.end()
             worker.terminate()

@@ -63,6 +63,9 @@ export type ClientRequests = {
 
     'chat/models': [{ modelUsage: ModelUsage }, { models: Model[] }]
     'chat/export': [null, ChatExportResult[]]
+
+    // Deletes chat by its ID and returns newly updated chat list
+    'chat/delete': [{ chatID: string }, ChatExportResult[]]
     'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] | undefined | null }]
 
     // High-level wrapper around webview/receiveMessage and webview/postMessage
