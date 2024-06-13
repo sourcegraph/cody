@@ -40,11 +40,13 @@ function languageOption(value: string): CodegenLanguage {
     switch (value) {
         case 'kotlin':
             return CodegenLanguage.Kotlin
+        case 'java':
+            return CodegenLanguage.Java
         case 'markdown':
             return CodegenLanguage.Markdown
         default:
             throw new InvalidOptionArgumentError(
-                `Invalid language. Valid options are ${CodegenLanguage.Kotlin}.`
+                `Invalid language. Valid options are ${CodegenLanguage.Kotlin}, ${CodegenLanguage.Java}, ${CodegenLanguage.Markdown}.`
             )
     }
 }
