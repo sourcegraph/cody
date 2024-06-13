@@ -88,7 +88,7 @@ import type {
     LocalEnv,
     WebviewMessage,
 } from '../protocol'
-import { ChatHistoryManager } from './ChatHistoryManager'
+import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType, addWebviewViewHTML } from './ChatManager'
 import type { ChatPanelConfig, ChatViewProviderWebview } from './ChatPanelsManager'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
@@ -163,7 +163,6 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     private readonly remoteSearch: RemoteSearch | null
     private readonly repoPicker: RemoteRepoPicker | null
 
-    private history = new ChatHistoryManager()
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
     private allMentionProvidersMetadataQueryCancellation?: vscode.CancellationTokenSource
 
@@ -261,6 +260,12 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
                 remoteSearch: this.remoteSearch,
                 postMessage: (message: ExtensionMessage) => this.postMessage(message),
                 chatModel: this.chatModel,
+            })
+        )
+
+        this.disposables.push(
+            chatHistory.onDidChatHistoryChange(chatHistory => {
+                this.postMessage({ type: 'chatHistory', value: chatHistory })
             })
         )
     }
@@ -1236,7 +1241,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     // current in-progress completion. If the chat does not exist, then this
     // is a no-op.
     public async restoreSession(sessionID: string): Promise<void> {
-        const oldTranscript = await this.history.getChat(this.authProvider.getAuthStatus(), sessionID)
+        const oldTranscript = await chatHistory.getChat(this.authProvider.getAuthStatus(), sessionID)
         if (!oldTranscript) {
             return this.newSession()
         }
@@ -1255,7 +1260,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
     }
 
     private async saveSession(): Promise<void> {
-        const allHistory = await this.history.saveChat(
+        const allHistory = await chatHistory.saveChat(
             this.authProvider.getAuthStatus(),
             this.chatModel.toSerializedChatTranscript()
         )
@@ -1311,7 +1316,7 @@ export class SimpleChatPanelProvider implements vscode.Disposable, ChatSession {
 
         const viewType = CodyChatPanelViewType
         const panelTitle =
-            (await this.history.getChat(this.authProvider.getAuthStatus(), this.chatModel.sessionID))
+            (await chatHistory.getChat(this.authProvider.getAuthStatus(), this.chatModel.sessionID))
                 ?.chatTitle || getChatPanelTitle(lastQuestion)
         const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
