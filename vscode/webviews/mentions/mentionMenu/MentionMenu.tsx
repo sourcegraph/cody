@@ -174,12 +174,19 @@ export const MentionMenu: FunctionComponent<
                     updateMentionMenuParams({
                         parentItem: {
                             id: RemoteFileProvider.providerUri,
-                            title: 'Sourcegraph Files',
-                            queryLabel: 'Enter file path to search.',
-                            emptyLabel: `No files found in ${openCtxItem.mention.data.repoName} repository`,
+                            title: 'Remote Files',
+                            queryLabel: 'Enter file path to search',
+                            emptyLabel: `No matching files found in ${openCtxItem?.mention?.data.repoName} repository`,
                         },
                     })
-                    setEditorQuery(() => `@${openCtxItem.mention?.data?.repoName}:`)
+
+                    setEditorQuery(currentText =>
+                        currentText.replace(
+                            `@${mentionQuery.text}`,
+                            `@${openCtxItem.mention?.data?.repoName}:`
+                        )
+                    )
+
                     setValue(null)
                     return
                 }
@@ -187,7 +194,7 @@ export const MentionMenu: FunctionComponent<
 
             selectOptionAndCleanUp(createMentionMenuOption(item))
         },
-        [data.items, selectOptionAndCleanUp, setEditorQuery, updateMentionMenuParams]
+        [data.items, selectOptionAndCleanUp, updateMentionMenuParams, setEditorQuery, mentionQuery]
     )
 
     // We use `cmdk` Command as a controlled component, so we need to supply its `value`. We track
@@ -271,8 +278,11 @@ export const MentionMenu: FunctionComponent<
                     </CommandGroup>
                 )}
 
-                {data.items === undefined && <CommandLoading>Loading...</CommandLoading>}
-                <CommandEmpty>{getEmptyLabel(params.parentItem, mentionQuery)}</CommandEmpty>
+                {data.items === undefined ? (
+                    <CommandLoading>Loading...</CommandLoading>
+                ) : data.items.length === 0 ? (
+                    <CommandEmpty>{getEmptyLabel(params.parentItem, mentionQuery)}</CommandEmpty>
+                ) : null}
             </CommandList>
         </Command>
     )
