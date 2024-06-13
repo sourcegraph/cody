@@ -17,7 +17,7 @@ interface DeletionEdit {
 
 export type Edit = InsertionEdit | DeletionEdit
 
-export function computeDiff2(task: FixupTask): Edit[] | undefined {
+export function computeDiff(task: FixupTask): Edit[] | undefined {
     if (!task.replacement) {
         return
     }

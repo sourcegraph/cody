@@ -33,7 +33,7 @@ import { FixupTask, type FixupTaskID, type FixupTelemetryMetadata } from './Fixu
 import { FixupDecorator } from './decorations/FixupDecorator'
 import { getFormattedReplacement } from './formatting/get-formatted-replacement'
 import { getFormattingChangesForRange } from './formatting/get-formatting-changes'
-import { type Edit, computeDiff2, makeDiffEditBuilderCompatible } from './line-diff'
+import { type Edit, computeDiff, makeDiffEditBuilderCompatible } from './line-diff'
 import { trackRejection } from './rejection-tracker'
 import type { FixupActor, FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
 import { CodyTaskState, expandRangeToInsertedText, getMinimumDistanceToRangeBoundary } from './utils'
@@ -405,7 +405,7 @@ export class FixupController
         // Update the original text, so we're always computing a diff against the latest
         // code in the editor.
         task.original = document.getText(task.selectionRange)
-        task.diff = computeDiff2(task)
+        task.diff = computeDiff(task)
         return task.diff
     }
 
@@ -829,7 +829,7 @@ export class FixupController
         }
 
         // Re-apply the changes using the new replacemnt
-        task.diff = computeDiff2(task)
+        task.diff = computeDiff(task)
         return this.replaceEdit(edit, task.diff!, task, {
             undoStopAfter: true,
             undoStopBefore: false,
