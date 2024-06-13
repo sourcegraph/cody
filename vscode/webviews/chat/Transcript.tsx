@@ -7,6 +7,7 @@ import {
 import { type ComponentProps, type FunctionComponent, useCallback, useMemo, useRef } from 'react'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
+import { StopButton } from '../components/StopButton'
 import type { PromptEditorRefAPI } from '../promptEditor/PromptEditor'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
@@ -49,10 +50,13 @@ export const Transcript: React.FunctionComponent<{
                         i === interactions.length - 2 && interaction.assistantMessage !== null
                     }
                     priorAssistantMessageIsLoading={Boolean(
-                        interactions.at(i - 1)?.assistantMessage?.isLoading
+                        messageInProgress && interactions.at(i - 1)?.assistantMessage?.isLoading
                     )}
                 />
             ))}
+            {messageInProgress && (
+                <StopButton onClick={() => getVSCodeAPI().postMessage({ command: 'abort' })} />
+            )}
         </>
     )
 }
@@ -87,6 +91,7 @@ export function transcriptToInteractionPairs(
                           index: i + 1,
                           isLoading:
                               assistantMessage.error === undefined &&
+                              !!assistantMessageInProgress &&
                               (isLastPairInTranscript || assistantMessage.text === undefined),
                       }
                     : null,
