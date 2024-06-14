@@ -198,13 +198,13 @@ class FireworksProvider extends Provider {
 
     private adjustModelIdentifierForFinetunedHybrid(
         model: FireworksModel,
-        langaugeId: string
+        languageId: string
     ): FireworksModel {
         switch (model) {
             case FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID: {
                 // The fine-tuned hybrid model is only deployed for TypeScriptReact, JavaScriptReact, and Python.
                 // For other languages, we use the current production model.
-                if (['typescriptreact', 'javascriptreact', 'python'].includes(langaugeId)) {
+                if (['typescriptreact', 'javascriptreact', 'python'].includes(languageId)) {
                     return FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID
                 }
                 return 'starcoder-hybrid'
