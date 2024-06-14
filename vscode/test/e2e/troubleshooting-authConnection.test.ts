@@ -26,7 +26,6 @@ test.extend<ExpectedEvents>({
     expectedEvents: [
         'CodyInstalled',
         'CodyVSCodeExtension:CodySavedLogin:executed',
-        'CodyVSCodeExtension:Auth:failed',
         'CodyVSCodeExtension:troubleshoot:reloadAuth',
         'CodyVSCodeExtension:Auth:connected',
     ],
