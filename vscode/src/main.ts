@@ -250,6 +250,7 @@ const register = async (
 
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
+        console.log('##### auth status changed', authStatus)
         // Reset the available models based on the auth change.
         await syncModels(authStatus)
 
@@ -282,7 +283,12 @@ const register = async (
         // Set the default prompt mixin on auth status change.
         await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
 
-        configWatcher.set(await getFullConfig())
+        // TODO(beyang): doesn't trigger a change if nothing changed
+        const newConfig = await getFullConfig()
+        configWatcher.set(newConfig)
+        console.log('# propagating new access token', newConfig.accessToken)
+        ConfigFeaturesSingleton.getInstance().refreshConfigFeatures()
+        graphqlClient.onConfigurationChange(newConfig)
     })
 
     if (initialConfig.experimentalSupercompletions) {

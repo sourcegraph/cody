@@ -28,14 +28,29 @@ export const sidebarSignin = async (
     await expectAuthenticated(page)
 }
 
+export async function closeSidebar(page: Page): Promise<void> {
+    if (await isSidebarVisible(page)) {
+        await page.click('[aria-label="Cody"]')
+    }
+}
+
+async function isSidebarVisible(page: Page): Promise<boolean> {
+    const sidebarsVisible = await Promise.all([
+        page.getByRole('heading', { name: 'Cody: Chat' }).isVisible(),
+        page.getByRole('heading', { name: 'Cody' }).isVisible(),
+    ])
+    return sidebarsVisible[0] || sidebarsVisible[1]
+}
+
 export async function focusSidebar(page: Page): Promise<void> {
     // In case the cody sidebar isn't focused, select it.
-    if (!(await page.getByRole('heading', { name: 'Cody: Chat' }).isVisible())) {
+    while (!(await isSidebarVisible(page))) {
         await page.click('[aria-label="Cody"]')
     }
 }
 
 export async function expectAuthenticated(page: Page) {
+    await focusSidebar(page)
     await expect(page.getByText('Chat alongside your code, attach files,')).toBeVisible()
 }
 
@@ -47,6 +62,7 @@ export const sidebarExplorer = (page: Page): Locator => page.getByRole('tab', { 
  * macOS appearing to use a native menu where Windows uses a VS Code-drawn menu.
  */
 async function disableNotifications(page: Page): Promise<void> {
+    await closeSidebar(page)
     await executeCommandInPalette(page, 'notifications: toggle do not disturb')
 }
 
@@ -64,6 +80,7 @@ export function getChatPanel(page: Page): FrameLocator {
 export async function createEmptyChatPanel(
     page: Page
 ): Promise<[FrameLocator, Locator, Locator, Locator]> {
+    await focusSidebar(page)
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
     const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
     const chatInputs = getChatInputs(chatFrame)
