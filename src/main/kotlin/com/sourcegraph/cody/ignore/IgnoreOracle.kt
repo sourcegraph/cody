@@ -34,6 +34,7 @@ class IgnoreOracle(private val project: Project) {
   @Volatile private var focusedPolicy: IgnorePolicy? = null
   @Volatile private var willFocusUri: String? = null
   private val fileListeners: MutableList<FocusedFileIgnorePolicyListener> = mutableListOf()
+  private val policyAwaitTimeoutMs = System.getProperty("cody.ignore.policy.timeout", "16").toLong()
 
   init {
     // Synthesize a focus event for the current editor, if any,
@@ -129,7 +130,7 @@ class IgnoreOracle(private val project: Project) {
     val url = FileDocumentManager.getInstance().getFile(editor.document)?.url ?: return null
     val completable = policyForUri(url)
     return try {
-      completable.get(16, TimeUnit.MILLISECONDS)
+      completable.get(policyAwaitTimeoutMs, TimeUnit.MILLISECONDS)
     } catch (timedOut: TimeoutException) {
       null
     }

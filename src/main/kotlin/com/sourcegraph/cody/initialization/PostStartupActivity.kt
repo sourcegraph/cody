@@ -39,12 +39,14 @@ class PostStartupActivity : StartupActivity.DumbAware {
       CheckUpdatesTask(project).queue()
     }
     // For integration tests we do not want to start agent immediately as we would like to first do
-    // some setup
+    // some setup. Also, we do not start EndOfTrialNotificationScheduler as its timing is hard to
+    // control and can introduce unnecessary noise in the recordings
     if (ConfigUtil.isCodyEnabled() && !ConfigUtil.isIntegrationTestModeEnabled()) {
       CodyAgentService.getInstance(project).startAgent(project)
+      EndOfTrialNotificationScheduler.createAndStart(project)
     }
+
     CodyStatusService.resetApplication(project)
-    EndOfTrialNotificationScheduler.createAndStart(project)
 
     val multicaster = EditorFactory.getInstance().eventMulticaster as EditorEventMulticasterEx
     val disposable = CodyAgentService.getInstance(project)

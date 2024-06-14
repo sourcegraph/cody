@@ -14,6 +14,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.EditorTestUtil
+import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.util.messages.Topic
@@ -83,8 +84,8 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase() {
     assertTrue(File(sourcePath).exists())
     myFixture.configureByFile(projectFile)
 
-    initCaretPosition()
     initCredentialsAndAgent()
+    initCaretPosition()
   }
 
   // Ideally we should call this method only once per recording session, but since we need a
@@ -92,13 +93,13 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase() {
   // Methods there are mostly idempotent though, so calling again for every test case should not
   // change anything.
   private fun initCredentialsAndAgent() {
-    assertNotNull("SRC_ACCESS_TOKEN must be defined", System.getenv("SRC_ACCESS_TOKEN"))
+    val credentials = TestingCredentials.dotcom
     CodyPersistentAccountsHost(project)
         .addAccount(
-            SourcegraphServerPath.from(ConfigUtil.DOTCOM_URL, ""),
+            SourcegraphServerPath.from(credentials.serverEndpoint, ""),
             login = "test_user",
             displayName = "Test User",
-            token = System.getenv("SRC_ACCESS_TOKEN"),
+            token = credentials.token ?: credentials.redactedToken,
             id = "random-unique-testing-id-1337")
 
     assertNotNull(
@@ -179,7 +180,10 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase() {
   }
 
   private fun triggerAction(actionId: String) {
-    runInEdt { EditorTestUtil.executeAction(myFixture.editor, actionId) }
+    runInEdt {
+      PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+      EditorTestUtil.executeAction(myFixture.editor, actionId)
+    }
   }
 
   protected fun activeSession(): FixupSession {
@@ -188,13 +192,20 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase() {
   }
 
   protected fun assertNoInlayShown() {
-    assertFalse(
-        "Lens group inlay should NOT be displayed", myFixture.editor.inlayModel.hasBlockElements())
+    runInEdt {
+      PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+      assertFalse(
+          "Lens group inlay should NOT be displayed",
+          myFixture.editor.inlayModel.hasBlockElements())
+    }
   }
 
   protected fun assertInlayIsShown() {
-    assertTrue(
-        "Lens group inlay should be displayed", myFixture.editor.inlayModel.hasBlockElements())
+    runInEdt {
+      PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+      assertTrue(
+          "Lens group inlay should be displayed", myFixture.editor.inlayModel.hasBlockElements())
+    }
   }
 
   protected fun assertNoActiveSession() {
@@ -211,14 +222,14 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase() {
       actionId: String,
       vararg topic: Topic<CodyInlineEditActionNotifier>
   ) {
-    val futures = topic.associate { topic to subscribeToTopic(it) }
+    val futures = topic.associateWith { subscribeToTopic(it) }
     triggerAction(actionId)
     futures.forEach { (t, f) ->
       try {
         f.get()
       } catch (e: Exception) {
         assertTrue(
-            "Error while awaiting ${t[0].displayName} notification: ${e.localizedMessage}", false)
+            "Error while awaiting ${t.displayName} notification: ${e.localizedMessage}", false)
       }
     }
   }
@@ -249,8 +260,6 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase() {
   }
 
   companion object {
-    // TODO: find the lowest value this can be for production, and use it
-    // If it's too low the test may be flaky.
     const val ASYNC_WAIT_TIMEOUT_SECONDS = 10L
     var myProject: Project? = null
   }

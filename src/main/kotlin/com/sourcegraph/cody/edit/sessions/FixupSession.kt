@@ -113,7 +113,7 @@ abstract class FixupSession(
         fixupService.startNewSession(this)
         // Spend a turn to get folding ranges before showing lenses.
         ensureSelectionRange(agent, textFile)
-        showWorkingGroup()
+        runInEdt { showWorkingGroup() }
 
         makeEditingRequest(agent)
             .handle { result, error ->
@@ -238,6 +238,7 @@ abstract class FixupSession(
     lensGroup?.reset()
   }
 
+  @RequiresEdt
   private fun showWorkingGroup() {
     showLensGroup(LensGroupFactory(this).createTaskWorkingGroup())
     documentListener.setAcceptLensGroupShown(false)
@@ -273,8 +274,8 @@ abstract class FixupSession(
 
       CodyAgentService.withAgent(project) { agent ->
         agent.server.acceptEditTask(TaskIdParam(taskId!!))
+        publishProgress(CodyInlineEditActionNotifier.TOPIC_PERFORM_ACCEPT)
       }
-      publishProgress(CodyInlineEditActionNotifier.TOPIC_PERFORM_ACCEPT)
     } catch (x: Exception) {
       // Don't show error lens here; it's sort of pointless.
       logger.warn("Error sending editTask/accept for taskId", x)

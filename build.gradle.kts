@@ -215,12 +215,11 @@ fun Test.sharedIntegrationTestConfig(buildCodyDir: File, mode: String) {
       "cody.autocomplete.enableFormatting" to
           (project.property("cody.autocomplete.enableFormatting") as String? ?: "true"),
       "cody.integration.testing" to "true",
+      "cody.ignore.policy.timeout" to 500, // Increased to 500ms as CI tends to be slower
       "idea.test.execution.policy" to "com.sourcegraph.cody.test.NonEdtIdeaTestExecutionPolicy",
       "test.resources.dir" to resourcesDir.absolutePath)
 
   environment(
-      "CODY_INTEGRATION_TEST_TOKEN" to System.getenv("SRC_DOTCOM_PRO_ACCESS_TOKEN"),
-      "SRC_ACCESS_TOKEN" to System.getenv("SRC_DOTCOM_PRO_ACCESS_TOKEN"),
       "CODY_RECORDING_MODE" to mode,
       "CODY_RECORDING_NAME" to "integration-test",
       "CODY_RECORDING_DIRECTORY" to resourcesDir.resolve("recordings").absolutePath,
@@ -229,9 +228,6 @@ fun Test.sharedIntegrationTestConfig(buildCodyDir: File, mode: String) {
       "CODY_TELEMETRY_EXPORTER" to "testing",
       // Fastpass has custom bearer tokens that are difficult to record with Polly
       "CODY_DISABLE_FASTPATH" to "true",
-      // This flag is for Agent-side integration testing and interferes with ours.
-      // It seems to be sneaking in somewhere, so we explicitly set it to false.
-      //      "CODY_TESTING" to "false"
   )
 
   useJUnit()
@@ -343,6 +339,7 @@ tasks {
     copy {
       from(downloadNodeBinaries())
       into(buildCodyDir)
+      eachFile { permissions { unix("rwxrwxrwx") } }
     }
 
     return buildCodyDir
