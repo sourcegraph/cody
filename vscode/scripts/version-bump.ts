@@ -38,7 +38,7 @@ if (!nextVersion || !semver.valid(nextVersion)) {
     process.exit(1)
 }
 
-execSync(`git checkout -b release-${releaseType}-v${version}`, { stdio: 'inherit' })
+execSync(`git checkout -b release-${releaseType}-v${nextVersion}`, { stdio: 'inherit' })
 
 process.stdout.write(`Updating files to the next version: ${nextVersion}\n`)
 
