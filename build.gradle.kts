@@ -384,8 +384,6 @@ tasks {
     withType<KotlinCompile> { kotlinOptions.jvmTarget = it }
   }
 
-  wrapper { gradleVersion = properties("gradleVersion") }
-
   patchPluginXml {
     version.set(properties("pluginVersion"))
 
