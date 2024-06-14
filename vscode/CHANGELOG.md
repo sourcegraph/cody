@@ -6,9 +6,13 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+Enterprise: Expand the context window for Gemini 1.5 models. [pull/4563](https://github.com/sourcegraph/cody/pull/4563)
+
 ### Fixed
 
+- Chat: Fix hover tooltips on overflowed paths in the @-mention file picker. [pull/4553](https://github.com/sourcegraph/cody/pull/4553)
 - Custom Commands: Creating a new custom command through the menu without an existing cody.json file now creates a new cody.json file with the command added. [pull/4561](https://github.com/sourcegraph/cody/pull/4561)
+- Ollama: Fix a bug where Ollama models were not connected to the correct client. [pull/4564](https://github.com/sourcegraph/cody/pull/4564)
 
 ### Changed
 
