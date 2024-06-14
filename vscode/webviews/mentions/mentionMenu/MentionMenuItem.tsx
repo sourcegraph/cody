@@ -88,8 +88,14 @@ export const MentionMenuContextItemContent: FunctionComponent<{
         <>
             <div className={styles.row}>
                 {icon && <i className={`codicon codicon-${icon}`} title={isSymbol ? item.kind : ''} />}
-                <span className={clsx(styles.title, warning && styles.titleWithWarning)}>{title}</span>
-                {description && <span className={styles.description}>{description}</span>}
+                <span className={clsx(styles.title, warning && styles.titleWithWarning)} title={title}>
+                    {title}
+                </span>
+                {description && (
+                    <span className={styles.description} title={description}>
+                        {description}
+                    </span>
+                )}
             </div>
             {warning && <span className={styles.warning}>{warning}</span>}
         </>
