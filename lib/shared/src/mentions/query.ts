@@ -6,6 +6,11 @@ import {
     SYMBOL_CONTEXT_MENTION_PROVIDER,
 } from './api'
 
+export enum MentionQueryResolutionMode {
+    Local,
+    Remote
+}
+
 /**
  * The parsed representation of a user's (partial or complete) input of an @-mention query.
  */
@@ -31,6 +36,13 @@ export interface MentionQuery {
      * `foo.txt:1`, or `foo.txt:12-`).
      */
     maybeHasRangeSuffix?: boolean
+
+    /**
+     * Resolution strategy for fetching resources for mention context item.
+     * By default, local strategy will be applied, remote strategy is used
+     * in clients where we don't have access to the local file system (like Cody Web)
+     */
+    resolutionMode?: MentionQueryResolutionMode
 }
 
 /**

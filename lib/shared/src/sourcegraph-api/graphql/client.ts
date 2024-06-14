@@ -39,7 +39,10 @@ import {
     REPOSITORY_LIST_QUERY,
     REPOSITORY_SEARCH_QUERY,
     REPO_NAME_QUERY,
-    SEARCH_ATTRIBUTION_QUERY, FUZZY_FILES_QUERY, GET_REMOTE_FILE_QUERY,
+    SEARCH_ATTRIBUTION_QUERY,
+    FUZZY_FILES_QUERY,
+    GET_REMOTE_FILE_QUERY,
+    FUZZY_SYMBOLS_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
 
@@ -67,6 +70,15 @@ export type FuzzyFindFilesResponse = {
     } | null
 }
 
+export type FuzzyFindSymbolsResponse = {
+    __typename?: 'Query',
+    search: {
+        results: {
+            results: FuzzyFindSymbol[]
+        }
+    }
+}
+
 type FuzzyFindFile = {
     file: {
         path: string
@@ -75,6 +87,22 @@ type FuzzyFindFile = {
         byteSize: number
         isDirectory: boolean
     }
+    repository: { id: string, name: string }
+}
+
+type FuzzyFindSymbol = {
+    symbols: {
+        name: string,
+        location: {
+            range: {
+                start: { line: number }
+                end: { line: number }
+            }
+            resource: {
+                path: string
+            }
+        }
+    }[]
     repository: { id: string, name: string }
 }
 
@@ -485,10 +513,10 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async getRepositoryFiles(repositories: string[], query: string): Promise<FuzzyFindFile[] | Error> {
+    public async getRemoteFiles(repositories: string[], query: string): Promise<FuzzyFindFile[] | Error> {
         return this.fetchSourcegraphAPI<APIResponse<FuzzyFindFilesResponse>>(
             FUZZY_FILES_QUERY,
-            { query: `type:path count:100 ${repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''} ${query}` }
+            { query: `type:path count:30 ${repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''} ${query}` }
         ).then(response =>
             extractDataOrError(
                 response,
@@ -499,10 +527,24 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async getFileContent(repository: string, filePath: string): Promise<string | Error> {
+    public async getRemoteSymbols(repositories: string[], query: string): Promise<FuzzyFindSymbol[] | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<FuzzyFindSymbolsResponse>>(
+            FUZZY_SYMBOLS_QUERY,
+            { query: `type:symbol count:30 ${repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''} ${query}` }
+        ).then(response =>
+            extractDataOrError(
+                response,
+                data =>
+                    data.search?.results.results
+                    ?? new Error('no symbols found')
+            )
+        )
+    }
+
+    public async getFileContent(repository: string, filePath: string, range?: { startLine?: number, endLine?: number }): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<RemoteFileContentReponse>>(
             GET_REMOTE_FILE_QUERY,
-            { repositoryName: repository, filePath }
+            { repositoryName: repository, filePath, startLine: range?.startLine, endLine: range?.endLine }
         ).then(response =>
             extractDataOrError(
                 response,

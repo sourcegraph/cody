@@ -105,6 +105,7 @@ import { SimpleChatModel, prepareChatMessage } from './SimpleChatModel'
 import { getChatPanelTitle, openFile } from './chat-helpers'
 import { getEnhancedContext } from './context'
 import { DefaultPrompter } from './prompt'
+import { MentionQueryResolutionMode } from '@sourcegraph/cody-shared/src/mentions/query';
 
 interface SimpleChatPanelProviderOptions {
     extensionUri: vscode.Uri
@@ -944,7 +945,10 @@ export class SimpleChatPanelProvider
             const items = await getChatContextItemsForMention(
                 query,
                 cancellation.token,
-                scopedTelemetryRecorder
+                scopedTelemetryRecorder,
+                query.resolutionMode === MentionQueryResolutionMode.Remote
+                    ? this.remoteSearch?.getRepos('all')?.map(repo => repo.name)
+                    : undefined
             )
             if (cancellation.token.isCancellationRequested) {
                 return
@@ -959,6 +963,7 @@ export class SimpleChatPanelProvider
                 userContextFiles,
             })
         } catch (error) {
+            console.log('ERRORR!!')
             if (cancellation.token.isCancellationRequested) {
                 return
             }
