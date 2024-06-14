@@ -6,7 +6,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
-Enterprise: Expand context window for Gemini 1.5 models.
+Enterprise: Expand the context window for Gemini 1.5 models. [pull/4563](https://github.com/sourcegraph/cody/pull/4563)
 
 ### Fixed
 
