@@ -28,6 +28,7 @@ import {
 import RemoteFileProvider from '../../../src/context/openctx/remoteFileSearch'
 import RemoteRepositorySearch from '../../../src/context/openctx/remoteRepositorySearch'
 import WebProvider from '../../../src/context/openctx/web'
+import ConfluenceLogo from '../../icons/providers/confluence.svg?react'
 import GithubLogo from '../../icons/providers/github.svg?react'
 import GoogleLogo from '../../icons/providers/google.svg?react'
 import JiraLogo from '../../icons/providers/jira.svg?react'
@@ -128,9 +129,11 @@ const iconForProvider: Record<
     // we don't have to hardcode these URLs and other people can have their own
     // GitHub provider etc.
     'https://openctx.org/npm/@openctx/provider-github': GithubLogo,
-    'https://openctx.org/npm/@openctx/provider-jira': JiraLogo,
+    'https://openctx.org/npm/@openctx/provider-confluence': ConfluenceLogo,
+    'https://openctx.org/npm/@openctx/provider-jira-issues': JiraLogo,
     'https://openctx.org/npm/@openctx/provider-slack': SlackLogo,
-    'https://openctx.org/npm/@openctx/provider-linear': LinearLogo,
+    'https://openctx.org/npm/@openctx/provider-linear-issues': LinearLogo,
+    'https://openctx.org/npm/@openctx/provider-linear-docs': LinearLogo,
     'https://openctx.org/npm/@openctx/provider-web': LinkIcon,
     'https://openctx.org/npm/@openctx/provider-google-docs': GoogleLogo,
     'https://openctx.org/npm/@openctx/provider-sentry': SentryLogo,
