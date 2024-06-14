@@ -15,7 +15,6 @@ import {
     NO_SYMBOL_MATCHES_HELP_LABEL,
 } from '../../../src/chat/context/constants'
 import RemoteFileProvider from '../../../src/context/openctx/remoteFileSearch'
-import RemoteRepositorySearch from '../../../src/context/openctx/remoteRepositorySearch'
 import type { UserAccountInfo } from '../../Chat'
 import {
     Command,
@@ -212,15 +211,9 @@ export const MentionMenu: FunctionComponent<
 
     const heading = getItemsHeading(params.parentItem, mentionQuery)
 
+    // TODO [VK] Disable remote repositories for VSCode dotcom users
     const providers = data.providers
-        .filter(
-            provider =>
-                (provider.id !== RemoteRepositorySearch.providerUri &&
-                    provider.id !== RemoteFileProvider.providerUri) ||
-                !userInfo?.isDotComUser
-        )
         .map(provider => (
-            // show remote repositories search provider only if the user is connected to a non-dotcom instance.
             <CommandItem
                 key={commandRowValue(provider)}
                 value={commandRowValue(provider)}
