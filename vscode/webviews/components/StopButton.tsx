@@ -10,7 +10,9 @@ export const StopButton: FunctionComponent<{ onClick?: () => void }> = ({ onClic
             onClick={parentOnClick}
             className="tw-py-3 hover:tw-bg-secondary"
         >
-            <StopCircle size="1.5rem" />
+            <span className="tw-flex tw-gap-x-4">
+                <StopCircle /> ESC to Stop
+            </span>
         </Button>
     </div>
 )
