@@ -938,6 +938,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     // TODO: What is this for a real webview and does it matter?
                     cspSource: "'self' https://*.sourcegraphstatic.com",
                     forwardPostMessage: (message: WebviewMessage) => {
+                        console.log('Forwarding message to CEF WebView', message)
                         postMessageEmitter.fire(message)
                     },
                 }

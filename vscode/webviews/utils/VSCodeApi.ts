@@ -25,16 +25,27 @@ export function getVSCodeAPI(): VSCodeWrapper {
     if (!api) {
         const vsCodeApi = acquireVsCodeApi()
         api = {
-            postMessage: message => vsCodeApi.postMessage(message),
+            postMessage: message => {
+                console.log('postMessage ' + JSON.stringify(message))
+                vsCodeApi.postMessage(message)
+            },
             onMessage: callback => {
                 const listener = (event: MessageEvent<ExtensionMessage>): void => {
+                    console.log('receiveMessage ' + JSON.stringify(event.data))
                     callback(hydrateAfterPostMessage(event.data, uri => URI.from(uri as any)))
                 }
                 window.addEventListener('message', listener)
                 return () => window.removeEventListener('message', listener)
             },
-            setState: newState => vsCodeApi.setState(newState),
-            getState: () => vsCodeApi.getState(),
+            setState: newState => {
+                console.log('setState ' + JSON.stringify(newState))
+                vsCodeApi.setState(newState)
+            },
+            getState: () => {
+                const state = vsCodeApi.getState()
+                console.log('getState' + JSON.stringify(state))
+                return state
+            },
         }
     }
     return api
