@@ -31,7 +31,7 @@ export async function useCustomChatClient(
         openaicompatible: groqChatClient,
     }
 
-    const client = clientMap[model.provider]
+    const client = clientMap[model.provider.toLowerCase()]
 
     if (client) {
         await client(params, cb, completionsEndpoint, logger, signal)
