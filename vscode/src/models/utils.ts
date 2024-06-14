@@ -75,9 +75,9 @@ function applyLocalTokenLimitOverwrite(
 const modelWithExpandedWindowSubStrings = [
     'claude-3-opus',
     'claude-3-sonnet',
+    'gemini-1.5',
     'gpt-4o',
     'gpt-4-turbo',
-    'gemini-1.5',
 ]
 function isModelWithExtendedContextWindowSupport(chatModel: string): boolean {
     return modelWithExpandedWindowSubStrings.some(keyword => chatModel.toLowerCase().includes(keyword))
