@@ -211,11 +211,7 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
         if (!file) {
             return []
         }
-        const lenses = []
-        for (const task of this.controller.tasksForFile(file)) {
-            lenses.push(...(this.taskLenses.get(task) || []))
-        }
-        return lenses
+        return this.controller.tasksForFile(file).flatMap(task => this.taskLenses.get(task) || [])
     }
 
     public didUpdateTask(task: FixupTask): void {

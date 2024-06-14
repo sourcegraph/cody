@@ -103,13 +103,17 @@ export class FixupController
         const autoSaveSetting = vscode.workspace.getConfiguration('files').get<string>('autoSave')
         if (autoSaveSetting === 'off' || autoSaveSetting === 'onWindowChange') {
             this._disposables.push(
-                vscode.workspace.onDidSaveTextDocument(({ uri }) => {
+                vscode.workspace.onDidSaveTextDocument(({ uri, version }) => {
                     // If we save the document, we consider the user to have accepted any applied tasks.
                     // This helps ensure that the codelens doesn't stay around unnecessarily and become an annoyance.
                     for (const task of this.tasks.values()) {
                         if (task.fixupFile.uri.fsPath.endsWith(uri.fsPath)) {
                             task.setOutputURI(uri)
-                            this.accept(task)
+                            // However, if the user has opted to fix imports, we don't want to auto-accept the task
+                            // because the first save is by us, so that we can get LSP diagnostics
+                            if (!(task.attemptFixImports && version === 1)) {
+                                this.accept(task)
+                            }
                         }
                     }
                 })
@@ -118,13 +122,9 @@ export class FixupController
     }
 
     // FixupActor
-
     public accept(task: FixupTask): void {
         if (!task || task.state !== CodyTaskState.Applied) {
             return
-        }
-        if (task.attemptFixImports) {
-            this._disposables.push(new FixupImports(task))
         }
         this.setTaskState(task, CodyTaskState.Finished)
         this.discard(task)
@@ -599,6 +599,7 @@ export class FixupController
                     editBuilder.replace(task.selectionRange, replacement)
                 }, applyEditOptions)
             }
+            this._disposables.push(new FixupImports(task))
 
             // Add the missing undo stop after this change.
             // Now when the user hits 'undo', the entire format and edit will be undone at once
@@ -779,8 +780,6 @@ export class FixupController
                     task.formattingResolver = null
                 })
         })
-
-        await askToFixImports(task)
 
         // TODO: See if we can discard a FixupFile now.
         this.setTaskState(task, CodyTaskState.Applied)
@@ -984,17 +983,19 @@ export class FixupController
 
         // append response to new file
         const doc = await vscode.workspace.openTextDocument(newFileUri)
+        await doc.save()
+        const onDiskUri = vscode.Uri.file(doc.fileName)
         const pos = new vscode.Position(Math.max(doc.lineCount - 1, 0), 0)
         const range = new vscode.Range(pos, pos)
         task.selectionRange = range
-        task.fixupFile = this.files.replaceFile(task.fixupFile.uri, newFileUri)
+        task.fixupFile = this.files.replaceFile(task.fixupFile.uri, onDiskUri)
 
         // Set original text to empty as we are not replacing original text but appending to file
         task.original = ''
-        task.destinationFile = newFileUri
+        task.destinationFile = onDiskUri
 
         // Show the new document before streaming start
-        await vscode.window.showTextDocument(doc, {
+        await vscode.window.showTextDocument(onDiskUri, {
             selection: range,
             viewColumn: vscode.ViewColumn.Beside,
         })
@@ -1202,7 +1203,7 @@ interface FormatEditOptions {
 
 class FixupImports {
     private disposables: vscode.Disposable[] = []
-    private timeout = 10000
+    private timeout = 1000
     private timeoutId: NodeJS.Timeout | undefined
     private uri: vscode.Uri
 
@@ -1211,13 +1212,16 @@ class FixupImports {
 
         this.disposables.push(
             vscode.languages.onDidChangeDiagnostics(event => {
-                if (event.uris.includes(this.uri)) {
-                    this.resetTimeout()
-                    attemptFixImports(this.uri)
+                if (event.uris.map(String).includes(this.uri.toString())) {
+                    this.fix()
                 }
             })
         )
+    }
+
+    fix() {
         this.resetTimeout()
+        attemptFixImports(this.uri)
     }
 
     resetTimeout() {
@@ -1261,35 +1265,43 @@ function getMissingImports(file: vscode.Uri): ImportError[] {
     return diagnostics.map(missingImport).filter(Boolean) as ImportError[]
 }
 
-export async function attemptFixAllImports(file: vscode.Uri): Promise<void> {
+export async function attemptFixAllImports(file: vscode.Uri): Promise<boolean> {
     const REGEX = /^add all missing imports/i
+    const imports = getMissingImports(file)
 
-    for (const missing of getMissingImports(file)) {
+    for (const missing of imports) {
         const { range } = missing
         // Get the quick fixes for the current diagnostic
         const codeActions = await vscode.commands.executeCommand<vscode.CodeAction[]>(
             'vscode.executeCodeActionProvider',
             file,
             range,
-            vscode.CodeActionKind.QuickFix.value
+            vscode.CodeActionKind.QuickFix.value,
+            10
         )
 
         for (const action of codeActions) {
             if (action.title.match(REGEX) && action.command) {
+                if (action.edit) {
+                    await vscode.workspace.applyEdit(action.edit)
+                    return true
+                }
                 // Resolve the code action
                 const { command, arguments: args } = action.command
-                if (args?.length === 1) {
-                    const [arg] = args
-                    arg.action.combinedResponse = true
-                    await vscode.commands.executeCommand(command, arg) // ...(args || []))
-                }
-                return
+                await vscode.commands.executeCommand(command, ...(args || []))
+                return true
             }
         }
     }
+
+    return false
 }
 
 async function attemptFixImports(file: vscode.Uri): Promise<void> {
+    if (await attemptFixAllImports(file)) {
+        return
+    }
+
     const IMPORT_QUICKFIX_REGEXES = [/^update import/i, /^add import/i, /^import/i]
 
     // Determines if a quick fix is something like "Add import" and has an edit action
@@ -1325,36 +1337,4 @@ async function attemptFixImports(file: vscode.Uri): Promise<void> {
     for (const fix of importFixes.values()) {
         await applyQuickFix(fix)
     }
-}
-
-// If we detect import errors in the output code, open a modal which asks the
-// user if we should try to fix them after the task is accepted. The reason we
-// can't do it immediately is we rely on external language servers which don't
-// usually provide code actions until the file exists on disk
-async function askToFixImports(task: FixupTask): Promise<void> {
-    const missingImports = getMissingImports(task.getOutputURI())
-    if (missingImports.length === 0) {
-        return
-    }
-
-    // Pretty print a snippet of the imports with an `and`
-    let [{ missingImport: importSnippet }] = missingImports
-
-    const importsSlice = missingImports
-        .map(i => i.missingImport)
-        .slice(0, Math.min(missingImports.length, 3))
-
-    if (importsSlice.length > 1) {
-        const [first, ...rest] = importsSlice.reverse()
-        importSnippet = `${rest.reverse().join(', ')} and ${first}`
-    }
-
-    vscode.window
-        .showInformationMessage(
-            `Psst! It looks like some imports didn't get generated correctly, such as ${importSnippet}. Would you like to try fixing them after the file has saved?`,
-            'Fix Imports'
-        )
-        .then(async result => {
-            task.attemptFixImports = result === 'Fix Imports'
-        })
 }
