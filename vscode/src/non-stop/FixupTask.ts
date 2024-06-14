@@ -77,7 +77,8 @@ export class FixupTask {
         public source?: EventSource,
         /* The file to write the edit to. If not provided, the edit will be applied to the fixupFile. */
         public destinationFile?: vscode.Uri,
-        public insertionPoint?: vscode.Position,
+        /* The position where the Edit should start. Defaults to the start of the selection range. */
+        public insertionPoint: vscode.Position = selectionRange.start,
         public readonly telemetryMetadata: FixupTelemetryMetadata = {}
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')

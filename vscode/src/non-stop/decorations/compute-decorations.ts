@@ -26,12 +26,11 @@ export function computeFinalDecorations(task: FixupTask): Decorations | undefine
     if (isStreamedIntent(task.intent)) {
         // We don't calculate a diff for the streamed intent, instead we just need
         // to decorate all inserted lines.
-        const insertionPoint = task.insertionPoint || task.selectionRange.start
         const replacement = task.inProgressReplacement || task.replacement || ''
         const replacementLines = replacement.split('\n')
         const totalLines = replacementLines.length
         for (let i = 0; i < totalLines; i++) {
-            const line = new vscode.Position(insertionPoint.line + i, 0)
+            const line = new vscode.Position(task.insertionPoint.line + i, 0)
             decorations.linesAdded.push({ range: new vscode.Range(line, line) })
         }
         return decorations
