@@ -70,7 +70,7 @@ async function disableNotifications(page: Page): Promise<void> {
  * Gets the chat panel frame locator.
  */
 export function getChatPanel(page: Page): FrameLocator {
-    return page.frameLocator('iframe.webview').last().frameLocator('iframe')
+    return page.frameLocator('iframe.webview').first().frameLocator('iframe')
 }
 
 /**
@@ -82,6 +82,8 @@ export async function createEmptyChatPanel(
 ): Promise<[FrameLocator, Locator, Locator, Locator]> {
     await focusSidebar(page)
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
+
+    // Assume the last webview iframe is the newly created panel
     const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
     const chatInputs = getChatInputs(chatFrame)
 
