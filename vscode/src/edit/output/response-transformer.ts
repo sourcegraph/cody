@@ -55,5 +55,11 @@ export function responseTransformer(
         return decodedText + '\n'
     }
 
-    return decodedText.trimEnd()
+    if (task.mode === 'edit' && !isMessageInProgress) {
+        // For non-insertions, we don't want to include any whitespace at the end as it'll likely
+        // cause the diff to be more difficult to read.
+        return decodedText.trimEnd()
+    }
+
+    return decodedText
 }
