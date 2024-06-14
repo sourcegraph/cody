@@ -269,6 +269,7 @@ export * from './chat/sse-iterator'
 export {
     parseMentionQuery,
     type MentionQuery,
+    MentionQueryResolutionMode,
     scanForMentionTriggerInUserTextInput,
 } from './mentions/query'
 export {

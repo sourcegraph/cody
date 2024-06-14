@@ -3,13 +3,14 @@ import {
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionQuery,
-    parseMentionQuery,
+    MentionQueryResolutionMode,
+    parseMentionQuery
 } from '@sourcegraph/cody-shared'
 import { LRUCache } from 'lru-cache'
 import {
-    type FunctionComponent,
     type Context,
     createContext,
+    type FunctionComponent,
     useContext,
     useEffect,
     useMemo,
@@ -22,6 +23,14 @@ export interface ChatContextClient {
     getChatContextItems(query: MentionQuery): Promise<ContextItem[]>
 }
 
+interface ChatMention {
+    resolutionMode: MentionQueryResolutionMode
+}
+
+export const ChatMentionContext = createContext<ChatMention>({
+    resolutionMode: MentionQueryResolutionMode.Local
+})
+
 export const ChatContextClientContext: Context<ChatContextClient> = createContext({
     getChatContextItems(query: MentionQuery): Promise<ContextItem[]> {
         // Adapt the VS Code webview messaging API to be RPC-like for ease of use by our callers.
@@ -31,13 +40,19 @@ export const ChatContextClientContext: Context<ChatContextClient> = createContex
 
             const RESPONSE_MESSAGE_TYPE = 'userContextFiles' as const
 
-            // Clean up after a while to avoid resource exhaustion in case there is a bug
-            // somewhere.
-            const MAX_WAIT_SECONDS = 15
-            const rejectTimeout = setTimeout(() => {
-                reject(new Error(`no ${RESPONSE_MESSAGE_TYPE} response after ${MAX_WAIT_SECONDS}s`))
-                dispose()
-            }, MAX_WAIT_SECONDS * 1000)
+            let rejectTimeout: NodeJS.Timeout | undefined
+
+            // Turn off rejection timeout for remote strategy since debouncing
+            // may delay the whole package of events for more than 15 seconds.
+            if (query.resolutionMode === MentionQueryResolutionMode.Local) {
+                // Clean up after a while to avoid resource exhaustion in case there is a bug
+                // somewhere.
+                const MAX_WAIT_SECONDS = 15
+                rejectTimeout = setTimeout(() => {
+                    reject(new Error(`no ${RESPONSE_MESSAGE_TYPE} response after ${MAX_WAIT_SECONDS}s`))
+                    dispose()
+                }, MAX_WAIT_SECONDS * 1000)
+            }
 
             // Wait for the response. We assume the first message of the right type is the response to
             // our call.
@@ -63,10 +78,11 @@ export function useChatContextItems(
     query: string | null,
     provider: ContextMentionProviderMetadata | null
 ): ContextItem[] | undefined {
+    const mentionContext = useContext(ChatMentionContext)
     const unmemoizedClient = useContext(ChatContextClientContext)
     const chatContextClient = useMemo(
         () => memoizeChatContextClient(unmemoizedClient),
-        [unmemoizedClient]
+        [mentionContext, unmemoizedClient]
     )
     const [results, setResults] = useState<ContextItem[]>()
     const lastProvider = useRef<ContextMentionProviderMetadata['id'] | null>(null)
@@ -84,7 +100,11 @@ export function useChatContextItems(
 
         // If user has typed an incomplete range, fetch new chat context items only if there are no
         // results.
-        const mentionQuery = parseMentionQuery(query, provider)
+        const mentionQuery: MentionQuery = {
+            ...parseMentionQuery(query, provider),
+            resolutionMode: mentionContext.resolutionMode
+        }
+
         if (!hasResults && mentionQuery.maybeHasRangeSuffix && !mentionQuery.range) {
             return
         }
@@ -103,7 +123,7 @@ export function useChatContextItems(
             chatContextClient
                 .getChatContextItems(mentionQuery)
                 .then(mentions => {
-                    if (invalidated) {
+                    if (invalidated && mentionQuery.resolutionMode !== MentionQueryResolutionMode.Remote) {
                         return
                     }
                     setResults(mentions)

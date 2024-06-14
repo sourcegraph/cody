@@ -177,7 +177,7 @@ export interface ContextItemSymbol extends ContextItemCommon {
     kind: SymbolKind
 
     remoteSource?: {
-        commit: string
+        id: string
         repositoryName: string
     }
 }

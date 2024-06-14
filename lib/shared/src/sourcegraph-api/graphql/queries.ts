@@ -71,15 +71,45 @@ query FuzzyFiles($query: String!) {
 }
 `
 
+export const FUZZY_SYMBOLS_QUERY = `
+query FuzzySymbols($query: String!) {
+    search(patternType: regexp, query: $query) {
+        results {
+            results {
+                ... on FileMatch {
+                    __typename
+                    symbols {
+                        name
+                        location {
+                            range {
+                                start { line }
+                                end { line }
+                            }
+                             resource {
+                                path
+                             }
+                        }
+                    }
+                    repository {
+                        id
+                        name
+                    }
+                }
+            }
+        }
+    }
+}
+`
+
 export const GET_REMOTE_FILE_QUERY = `
-query GetRemoteFileQuery($repositoryName: String!, $filePath: String!) {
+query GetRemoteFileQuery($repositoryName: String!, $filePath: String!, $startLine: Int, $endLine: Int) {
   repository(name: $repositoryName) {
     id
     commit(rev: "HEAD") {
       id
       oid
       blob(path: $filePath) {
-         content
+         content(startLine:$startLine endLine:$endLine)
       }
     }
   }

@@ -29,6 +29,7 @@ import { URI } from 'vscode-uri'
 import { getOpenTabsUris } from '.'
 import { toVSCodeRange } from '../../common/range'
 import { findWorkspaceFiles } from './findWorkspaceFiles'
+import { debouncePromise } from './debounce-promise'
 
 // Some matches we don't want to ignore because they might be valid code (for example `bin/` in Dart)
 // but could also be junk (`bin/` in .NET). If a file path contains a segment matching any of these
@@ -44,7 +45,10 @@ const lowScoringPathSegments = ['bin']
  * and it throws an exception, then we lose all work we did until the cancellation and could
  * potentially swallow errors and return (and cache) incomplete data.
  */
-const throttledFindFiles = throttle(() => findWorkspaceFiles(), 10000)
+const throttledLocalFindFiles = throttle(() => findWorkspaceFiles(), 10000)
+
+const debouncedRemoteFindFiles = debouncePromise(graphqlClient.getRemoteFiles.bind(graphqlClient), 1000)
+const debouncedRemoteFindSymbols = debouncePromise(graphqlClient.getRemoteSymbols.bind(graphqlClient), 1000)
 
 /**
  * Searches all workspaces for files matching the given string. VS Code doesn't
@@ -54,13 +58,40 @@ const throttledFindFiles = throttle(() => findWorkspaceFiles(), 10000)
  */
 export async function getFileContextFiles(
     query: string,
-    maxResults: number
+    maxResults: number,
+    repositoriesNames?: string[]
 ): Promise<ContextItemFile[]> {
     if (!query.trim()) {
         return []
     }
 
-    const uris = await throttledFindFiles()
+    // TODO [VK] Support fuzzy find logic that we have for local file resolution
+    if (repositoriesNames) {
+        const filesOrError = await debouncedRemoteFindFiles(repositoriesNames, query)
+
+        if (isErrorLike(filesOrError) || filesOrError === 'skipped') {
+            console.log('SKIPPED')
+            return []
+        }
+
+        return filesOrError.map<ContextItemFile>(item => ({
+            type: 'file',
+            uri: URI.file(item.file.path),
+            source: ContextItemSource.User,
+            isIgnored: false,
+            size: item.file.byteSize,
+
+            // This will tell to agent context resolvers use remote
+            // context file resolution
+            remoteSource: {
+                id: item.repository.id,
+                repositoryName: item.repository.name
+            }
+        }))
+    }
+
+    const uris = await throttledLocalFindFiles()
+
     if (!uris) {
         return []
     }
@@ -129,11 +160,37 @@ export async function getFileContextFiles(
 
 export async function getSymbolContextFiles(
     query: string,
-    maxResults = 20
+    maxResults = 20,
+    remoteRepositoriesNames?: string[]
 ): Promise<ContextItemSymbol[]> {
     query = query.trim()
     if (query.startsWith('#')) {
         query = query.slice(1)
+    }
+
+    if (remoteRepositoriesNames) {
+        const symbolsOrError = await debouncedRemoteFindSymbols(remoteRepositoriesNames, query)
+
+        if (isErrorLike(symbolsOrError) || symbolsOrError === 'skipped') {
+            return []
+        }
+
+        return symbolsOrError.flatMap<ContextItemSymbol>(item =>
+            item.symbols.map(symbol => ({
+                type: 'symbol',
+                uri: URI.file(symbol.location.resource.path),
+                source: ContextItemSource.User,
+                symbolName: symbol.name,
+                // TODO [VK] Support other symbols kind
+                kind: 'function',
+                // This will tell to agent context resolvers use remote
+                // context file resolution
+                remoteSource: {
+                    id: item.repository.id,
+                    repositoryName: item.repository.name
+                }
+            }))
+        )
     }
 
     // doesn't support cancellation tokens :(
@@ -372,8 +429,12 @@ async function resolveFileOrSymbolContextItem(
 ): Promise<ContextItemWithContent> {
     let content = contextItem.content
 
-    if (contextItem.type === 'file' && contextItem.remoteSource) {
-        const resultOrError = await graphqlClient.getFileContent(contextItem.remoteSource.repositoryName, contextItem.uri.path)
+    if ((contextItem.type === 'file' || contextItem.type === 'symbol') && contextItem.remoteSource) {
+        const resultOrError = await graphqlClient.getFileContent(
+            contextItem.remoteSource.repositoryName,
+            contextItem.uri.path,
+            { startLine: contextItem.range?.start.line, endLine: contextItem.range?.end.line  }
+        )
 
         if (!isErrorLike(resultOrError)) {
             content = resultOrError
