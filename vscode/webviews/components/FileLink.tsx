@@ -6,6 +6,7 @@ import {
     displayLineRange,
     displayPath,
     webviewOpenURIForContextItem,
+    isRemoteFileURI,
 } from '@sourcegraph/cody-shared'
 
 import type { URI } from 'vscode-uri'
@@ -62,7 +63,7 @@ export const FileLink: React.FunctionComponent<
         href = uri.toString(uri.path.includes('@'))
         target = '_blank'
     } else {
-        const pathToDisplay = `${displayPath(uri)}`
+        const pathToDisplay = isRemoteFileURI(uri) ? uri.path : displayPath(uri)
         pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
         const openURI = webviewOpenURIForContextItem({ uri, range })
         tooltip = isIgnored ? IGNORE_WARNING : isTooLarge ? LIMIT_WARNING : pathWithRange

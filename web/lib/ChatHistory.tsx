@@ -1,4 +1,5 @@
 import { type FC, type ReactNode, useEffect, useState } from 'react';
+import type { UriComponents } from 'vscode-uri/lib/umd/uri';
 import { isErrorLike } from '@sourcegraph/cody-shared';
 import { ChatExportResult } from '@sourcegraph/vscode-cody//src/jsonrpc/agent-protocol';
 import { useWebAgentClient } from './Provider';
@@ -23,6 +24,7 @@ export const ChatHistory: FC<ChatHistoryProps> = props => {
     const {
         client,
         vscodeAPI,
+        initialContext,
         activeWebviewPanelID,
         lastActiveChatID,
         setLastActiveChatID
@@ -145,7 +147,17 @@ export const ChatHistory: FC<ChatHistoryProps> = props => {
             return
         }
 
-        activeWebviewPanelID.current = await client.rpc.sendRequest('chat/new', null)
+        activeWebviewPanelID.current = await client.rpc.sendRequest('chat/new', {
+            repositories: initialContext.repositories,
+            file: initialContext.fileURL
+                ? {
+                    scheme: 'remote-file',
+                    authority: initialContext.repositories[0].name,
+                    path: initialContext.fileURL
+                } as UriComponents
+                : undefined
+        })
+
         setLastActiveChatID(null)
         vscodeAPI.postMessage({ command: 'initialized' })
     }

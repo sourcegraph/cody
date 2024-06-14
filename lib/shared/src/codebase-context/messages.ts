@@ -158,10 +158,6 @@ export interface ContextItemOpenCtx extends ContextItemCommon {
  */
 export interface ContextItemFile extends ContextItemCommon {
     type: 'file',
-    remoteSource?: {
-        id: string
-        repositoryName: string
-    }
 }
 
 /**
@@ -175,11 +171,6 @@ export interface ContextItemSymbol extends ContextItemCommon {
 
     /** The kind of symbol, used for presentation only (not semantically meaningful). */
     kind: SymbolKind
-
-    remoteSource?: {
-        id: string
-        repositoryName: string
-    }
 }
 
 /** The valid kinds of a symbol. */

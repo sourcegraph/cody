@@ -42,23 +42,16 @@ const WEB_MENTION_RESOLUTION = {
     resolutionMode: MentionQueryResolutionMode.Remote
 }
 
-interface RepositoryMetadata {
-    id: string
-    name: string
-}
-
 export interface CodyWebChatProps {
-    repositories: RepositoryMetadata[]
     className?: string
 }
 
 // NOTE: This code is copied from the VS Code webview's App component and implements a subset of the
 // functionality for the experimental web chat prototype.
 export const CodyWebChat: FC<CodyWebChatProps> = props => {
-    const { repositories, className } = props
+    const { className } = props
 
     const {
-        activeWebviewPanelID,
         vscodeAPI,
         client
     } = useWebAgentClient()
@@ -76,26 +69,6 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
     })
 
     const dispatchClientAction = useClientActionDispatcher()
-
-    useEffect(() => {
-        ;(async () => {
-            if (!client || isErrorLike(client)) {
-                return
-            }
-
-            try {
-                await client.rpc.sendRequest('webview/receiveMessage', {
-                    id: activeWebviewPanelID.current,
-                    message: {
-                        command: 'context/choose-remote-search-repo',
-                        explicitRepos: repositories
-                    }
-                })
-            } catch (error) {
-                console.error(error)
-            }
-        })()
-    }, [client, repositories, activeWebviewPanelID]);
 
     useEffect(() => {
         vscodeAPI.onMessage(message => {
