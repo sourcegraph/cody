@@ -19,6 +19,8 @@ import { hydrateAfterPostMessage, isErrorLike, SourcegraphGraphQLAPIClient } fro
 import { createAgentClient } from './agent/client';
 import { useLocalStorage } from './utils/use-local-storage';
 import { ChatExportResult } from '@sourcegraph/vscode-cody/src/jsonrpc/agent-protocol';
+import { InitialContext } from './types';
+import { UriComponents } from 'vscode-uri/lib/umd/uri';
 
 /**
  * Local storage key for storing last active chat id, preserving
@@ -36,6 +38,7 @@ interface CodyWebChatContextData {
     client: AgentClient | Error | null
     lastActiveChatID: string | null
     activeWebviewPanelID: MutableRefObject<string>
+    initialContext: InitialContext
     vscodeAPI: VSCodeWrapper
     graphQLClient: SourcegraphGraphQLAPIClient
     setLastActiveChatID: (chatID: string|null) => void
@@ -45,6 +48,7 @@ export const CodyWebChatContext = createContext<CodyWebChatContextData>({
     client: null,
     lastActiveChatID: null,
     activeWebviewPanelID: { current: '' },
+    initialContext: { repositories: [] },
 
     // Null casting is just to avoid unnecessary null type checks in
     // consumers, CodyWebChatProvider creates graphQL vscodeAPI and graphql client
@@ -57,6 +61,7 @@ export const CodyWebChatContext = createContext<CodyWebChatContextData>({
 interface CodyWebChatProviderProps {
     serverEndpoint: string
     accessToken: string | null
+    initialContext: InitialContext
 }
 
 /**
@@ -64,7 +69,7 @@ interface CodyWebChatProviderProps {
  * agent client and maintains active web panel ID, chat history and vscodeAPI.
  */
 export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>> = props => {
-    const { serverEndpoint, accessToken, children } = props
+    const { serverEndpoint, accessToken, initialContext, children } = props
 
     // In order to avoid multiple client creation during dev runs
     // since useEffect can be fired multiple times during dev builds
@@ -96,7 +101,16 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
 
                 // In case of no chats we should create initial empty chat
                 if (chatHistory.length === 0) {
-                    activeWebviewPanelID.current = await client.rpc.sendRequest('chat/new', null)
+                    activeWebviewPanelID.current = await client.rpc.sendRequest('chat/new', {
+                        repositories: initialContext.repositories,
+                        file: initialContext.fileURL
+                            ? {
+                                scheme: 'remote-file',
+                                authority: initialContext.repositories[0].name,
+                                path: initialContext.fileURL
+                            } as UriComponents
+                            : undefined
+                    })
                 } else {
                     // Activate either last active chat by ID from local storage or
                     // set the last created chat from the history
@@ -189,7 +203,8 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
             graphQLClient,
             activeWebviewPanelID,
             lastActiveChatID,
-            setLastActiveChatID
+            setLastActiveChatID,
+            initialContext,
         }}>
             { children }
         </CodyWebChatContext.Provider>

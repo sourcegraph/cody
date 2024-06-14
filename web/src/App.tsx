@@ -2,12 +2,13 @@ import { FC } from 'react'
 
 import { CodyWebChat, ChatHistory, CodyWebChatProvider, getChatTitle } from '../lib'
 import styles from './App.module.css'
+import { Repository } from '../lib/types';
 
 let ACCESS_TOKEN = localStorage.getItem('accessToken')
 
 // Only for testing/demo purpose, in real-life usage consumer
 // should provide context repo information for Cody chat component
-const MOCK_DOT_COM_SOURCEGRAPH_REPOSITORY = [{
+const MOCK_DOT_COM_SOURCEGRAPH_REPOSITORY: Repository[] = [{
     "id": "UmVwb3NpdG9yeTozNjgwOTI1MA==",
     "name": "github.com/sourcegraph/sourcegraph"
 }]
@@ -22,7 +23,14 @@ if (!ACCESS_TOKEN) {
 
 export const App: FC = () => {
     return (
-        <CodyWebChatProvider accessToken={ACCESS_TOKEN} serverEndpoint='https://sourcegraph.com'>
+        <CodyWebChatProvider
+            accessToken={ACCESS_TOKEN}
+            serverEndpoint='https://sourcegraph.com'
+            initialContext={{
+                repositories: MOCK_DOT_COM_SOURCEGRAPH_REPOSITORY,
+                fileURL: '/internal/uploadstore/config.go'
+            }}
+        >
             <div className={styles.root}>
                 <ChatHistory>
                     { input =>

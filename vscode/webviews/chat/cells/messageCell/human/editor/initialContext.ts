@@ -29,8 +29,8 @@ export function isEditorContentOnlyInitialContext(editor: LexicalEditor): boolea
                 .every(
                     node =>
                         (node instanceof ContextItemMentionNode && node.isFromInitialContext) ||
-                        (node instanceof TextNode && node.getTextContent() === ' ')
-                ) && /\S $/.test(root.getTextContent())
+                        (node instanceof TextNode && node.getTextContent() === '')
+                )
         )
     })
 }

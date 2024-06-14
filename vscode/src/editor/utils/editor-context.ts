@@ -23,6 +23,9 @@ import {
     toRangeData,
     graphqlClient,
     isErrorLike,
+    createRemoteFileURI,
+    isRemoteFileURI,
+    parseRemoteFileURI,
 } from '@sourcegraph/cody-shared'
 
 import { URI } from 'vscode-uri'
@@ -70,23 +73,15 @@ export async function getFileContextFiles(
         const filesOrError = await debouncedRemoteFindFiles(repositoriesNames, query)
 
         if (isErrorLike(filesOrError) || filesOrError === 'skipped') {
-            console.log('SKIPPED')
             return []
         }
 
         return filesOrError.map<ContextItemFile>(item => ({
             type: 'file',
-            uri: URI.file(item.file.path),
-            source: ContextItemSource.User,
             isIgnored: false,
             size: item.file.byteSize,
-
-            // This will tell to agent context resolvers use remote
-            // context file resolution
-            remoteSource: {
-                id: item.repository.id,
-                repositoryName: item.repository.name
-            }
+            source: ContextItemSource.User,
+            uri: createRemoteFileURI(item.repository.name, item.file.path),
         }))
     }
 
@@ -178,17 +173,11 @@ export async function getSymbolContextFiles(
         return symbolsOrError.flatMap<ContextItemSymbol>(item =>
             item.symbols.map(symbol => ({
                 type: 'symbol',
-                uri: URI.file(symbol.location.resource.path),
+                uri: createRemoteFileURI(item.repository.name, symbol.location.resource.path),
                 source: ContextItemSource.User,
                 symbolName: symbol.name,
                 // TODO [VK] Support other symbols kind
                 kind: 'function',
-                // This will tell to agent context resolvers use remote
-                // context file resolution
-                remoteSource: {
-                    id: item.repository.id,
-                    repositoryName: item.repository.name
-                }
             }))
         )
     }
@@ -429,10 +418,11 @@ async function resolveFileOrSymbolContextItem(
 ): Promise<ContextItemWithContent> {
     let content = contextItem.content
 
-    if ((contextItem.type === 'file' || contextItem.type === 'symbol') && contextItem.remoteSource) {
+    if (isRemoteFileURI(contextItem.uri)) {
+        const { repository, path } = parseRemoteFileURI(contextItem.uri)
         const resultOrError = await graphqlClient.getFileContent(
-            contextItem.remoteSource.repositoryName,
-            contextItem.uri.path,
+            repository,
+            path,
             { startLine: contextItem.range?.start.line, endLine: contextItem.range?.end.line  }
         )
 
