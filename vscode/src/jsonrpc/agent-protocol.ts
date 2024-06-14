@@ -63,7 +63,7 @@ export type ClientRequests = {
     ]
 
     'chat/models': [{ modelUsage: ModelUsage }, { models: Model[] }]
-    'chat/export': [null, ChatExportResult[]]
+    'chat/export': [null | { fullHistory: boolean }, ChatExportResult[]]
 
     // Deletes chat by its ID and returns newly updated chat list
     'chat/delete': [{ chatID: string }, ChatExportResult[]]
