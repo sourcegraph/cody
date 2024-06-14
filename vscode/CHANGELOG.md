@@ -11,7 +11,7 @@ Enterprise: Expand the context window for Gemini 1.5 models. [pull/4563](https:/
 ### Fixed
 
 - Chat: Fix hover tooltips on overflowed paths in the @-mention file picker. [pull/4553](https://github.com/sourcegraph/cody/pull/4553)
-- Ollama: Fix a bug where Ollama models were not connected to the correct client. The issue was caused by model providers being capitalized, which was not taken into account when matching clients.
+- Ollama: Fix a bug where Ollama models were not connected to the correct client. [pull/4564](https://github.com/sourcegraph/cody/pull/4564)
 
 ### Changed
 
