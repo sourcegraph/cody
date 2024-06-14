@@ -4,7 +4,6 @@ import {
     type AutocompleteTimeouts,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
-    type CompletionResponse,
     type CompletionResponseGenerator,
     CompletionStopReason,
     type ConfigurationWithAccessToken,
@@ -31,6 +30,7 @@ import { getSuffixAfterFirstNewline } from '../text-processing'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
 import { SpanStatusCode } from '@opentelemetry/api'
+import type { CompletionResponseWithMetaData } from '@sourcegraph/cody-shared/src/inferenceClient/misc'
 import { logDebug } from '../../log'
 import { createRateLimitErrorFromResponse } from '../client'
 import { TriggerKind } from '../get-inline-completions'
@@ -488,7 +488,8 @@ class FireworksProvider extends Provider {
                     )
                 }
 
-                let lastResponse: CompletionResponse | undefined
+                const gatewayModel = response.headers.get('x-cody-resolved-model') || undefined
+                let lastResponse: CompletionResponseWithMetaData | undefined
                 try {
                     const iterator = createSSEIterator(response.body)
                     let chunkIndex = 0
@@ -524,6 +525,7 @@ class FireworksProvider extends Provider {
                                 (lastResponse
                                     ? lastResponse.stopReason
                                     : CompletionStopReason.StreamingChunk),
+                            gatewayModel,
                         }
 
                         span.addEvent('yield', { stopReason: lastResponse.stopReason })

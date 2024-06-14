@@ -6,6 +6,7 @@ import {
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { canUsePartialCompletion } from '../can-use-partial-completion'
+import * as CompletionLogger from '../logger'
 import { getFirstLine } from '../text-processing'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
 import {
@@ -46,7 +47,7 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
         providerOptions,
         providerSpecificPostProcess,
     } = params
-    const { hotStreak, docContext, multiline, firstCompletionTimeout } = providerOptions
+    const { hotStreak, docContext, multiline, firstCompletionTimeout, completionLogId } = providerOptions
 
     let hotStreakExtractor: undefined | HotStreakExtractor
 
@@ -88,7 +89,12 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
 
     const generatorStartTime = performance.now()
 
-    for await (const { completion, stopReason } of completionResponseGenerator) {
+    for await (const { completion, stopReason, gatewayModel } of completionResponseGenerator) {
+        /**
+         * Add the model resolved by Cody Gateway to the completion event.
+         */
+        CompletionLogger.gatewayModelResolved(completionLogId, gatewayModel)
+
         const isFirstCompletionTimeoutElapsed =
             performance.now() - generatorStartTime >= firstCompletionTimeout
         const isFullResponse = stopReason !== CompletionStopReason.StreamingChunk

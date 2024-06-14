@@ -79,8 +79,11 @@ interface SharedEventPayload extends InteractionIDPayload {
     /** Information about what provider is used. e.g. `anthropic` or `fireworks`. */
     providerIdentifier: string
 
-    /** Information about which model was used. e.g. `starcoder-7b` or `claude-instant`. */
+    /** Model used by Cody client. e.g. `starcoder-7b` or `claude-instant`. */
     providerModel: string
+
+    /** Model used by Cody Gateway. e.g. `fireworks/accounts/sourcegraph/models/starcoder-7b` */
+    gatewayModel?: string
 
     /** Language of the document being completed. */
     languageId: string
@@ -485,6 +488,13 @@ export function networkRequestStarted(
     if (event && !event.networkRequestStartedAt) {
         event.networkRequestStartedAt = performance.now()
         event.params.contextSummary = contextSummary
+    }
+}
+
+export function gatewayModelResolved(id: CompletionLogID, gatewayModel?: string): void {
+    const event = activeSuggestionRequests.get(id)
+    if (event && !event.params.gatewayModel && gatewayModel) {
+        event.params.gatewayModel = gatewayModel
     }
 }
 

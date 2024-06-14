@@ -33,6 +33,7 @@ describe('[getInlineCompletions] completion event', () => {
                     {
                         completion,
                         stopReason: 'unit-test',
+                        gatewayModel: 'sourcegraph/gateway-model',
                     },
                 ],
                 additionalParams
@@ -99,6 +100,7 @@ describe('[getInlineCompletions] completion event', () => {
                     "strategy": "none",
                     "totalChars": 0,
                   },
+                  "gatewayModel": "sourcegraph/gateway-model",
                   "id": "stable-uuid",
                   "languageId": "typescript",
                   "multiline": true,
@@ -156,6 +158,7 @@ describe('[getInlineCompletions] completion event', () => {
                     "strategy": "none",
                     "totalChars": 0,
                   },
+                  "gatewayModel": "sourcegraph/gateway-model",
                   "id": "stable-uuid",
                   "languageId": "typescript",
                   "multiline": false,

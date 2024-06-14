@@ -26,7 +26,11 @@ export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'> & { timeo
 export type SerializedCodeCompletionsParams = Omit<SerializedCompletionParameters, 'fast'> & {
     timeoutMs: number
 }
-export type CompletionResponseGenerator = AsyncGenerator<CompletionResponse>
+export type CompletionResponseWithMetaData = CompletionResponse & {
+    gatewayModel?: string | undefined
+}
+
+export type CompletionResponseGenerator = AsyncGenerator<CompletionResponseWithMetaData>
 
 export interface CodeCompletionsClient<T = CodeCompletionsParams> {
     logger: CompletionLogger | undefined

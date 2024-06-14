@@ -62,6 +62,7 @@ describe('logger', () => {
 
         CompletionLogger.start(id)
         CompletionLogger.networkRequestStarted(id, defaultContextSummary)
+        CompletionLogger.gatewayModelResolved(id, 'gateway-model')
         CompletionLogger.loaded(
             id,
             defaultRequestParams,
@@ -84,6 +85,7 @@ describe('logger', () => {
             otherCompletionProviders: [],
             providerIdentifier: 'bfl',
             providerModel: 'blazing-fast-llm',
+            gatewayModel: 'gateway-model',
             medianUpstreamLatency: undefined,
             contextSummary: {
                 retrieverStats: {},

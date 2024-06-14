@@ -15,6 +15,7 @@ import {
     testFileUri,
 } from '@sourcegraph/cody-shared'
 
+import type { CompletionResponseWithMetaData } from '@sourcegraph/cody-shared/src/inferenceClient/misc'
 import { DEFAULT_VSCODE_SETTINGS, emptyMockFeatureFlagProvider } from '../../testutils/mocks'
 import type { SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
@@ -87,7 +88,7 @@ interface ParamsResult extends InlineCompletionsParams {
  */
 export function params(
     code: string,
-    responses: CompletionResponse[] | 'never-resolve',
+    responses: CompletionResponseWithMetaData[] | 'never-resolve',
     params: Params = {}
 ): ParamsResult {
     const {
@@ -273,6 +274,7 @@ function paramsWithInlinedCompletion(
                 yield {
                     completion: lastResponse,
                     stopReason: CompletionStopReason.StreamingChunk,
+                    gatewayModel: undefined,
                 }
 
                 if (delayBetweenChunks) {
