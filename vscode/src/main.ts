@@ -75,7 +75,7 @@ import { registerSidebarCommands } from './services/SidebarCommands'
 import { createStatusBar } from './services/StatusBar'
 import { upstreamHealthProvider } from './services/UpstreamHealthProvider'
 import { setUpCodyIgnore } from './services/cody-ignore'
-import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
+import { createOrUpdateEventLogger, logPrefix, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import {
@@ -289,6 +289,19 @@ const register = async (
         console.log('# propagating new access token', newConfig.accessToken)
         ConfigFeaturesSingleton.getInstance().refreshConfigFeatures()
         graphqlClient.onConfigurationChange(newConfig)
+
+        // When logged out, user's endpoint will be set to null
+        const isLoggedOut = !authStatus.isLoggedIn && !authStatus.endpoint
+        const isAuthError = authStatus?.showNetworkError || authStatus?.showInvalidAccessTokenError
+        const eventValue = isLoggedOut
+            ? 'disconnected'
+            : authStatus.isLoggedIn && !isAuthError
+              ? 'connected'
+              : 'failed'
+        telemetryService.log(`${logPrefix(newConfig.agentIDE)}:Auth:${eventValue}`, undefined, {
+            agent: true,
+        })
+        telemetryRecorder.recordEvent('cody.auth', eventValue)
     })
 
     if (initialConfig.experimentalSupercompletions) {
