@@ -8,7 +8,7 @@ import { explainPollyError } from './explainPollyError'
 import { trimEndOfLine } from './trimEndOfLine'
 
 describe('Edit', () => {
-    const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
+    const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'edit-code'))
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
         name: 'edit',
@@ -66,6 +66,7 @@ describe('Edit', () => {
           	messages,
           	setChatID,
           	isLoading,
+          ELECTION_END */
           }: ChatColumnProps) {
           interface ChatColumnProps {
             messages: ChatMessage[];
@@ -122,7 +123,34 @@ describe('Edit', () => {
 
             return <HeadingTag>{text}</HeadingTag>;
           };
+          "
+        `,
+            explainPollyError
+        )
+    }, 20_000)
 
+    it('editCommand/code (adding/deleting code)', async () => {
+        const uri = workspace.file('src', 'trickyLogic.ts')
+        await client.openFile(uri)
+        const task = await client.request('editCommands/code', {
+            instruction: 'Convert this to use a switch statement',
+            model: ModelsService.getModelByIDSubstringOrError('anthropic/claude-3-opus').model,
+        })
+        await client.acceptEditTask(uri, task)
+        expect(client.documentText(uri)).toMatchInlineSnapshot(
+            `
+          "export function trickyLogic(a: number, b: number): number {
+              switch (true) {
+                  case a === 0:
+                      return 1
+                  case b === 2:
+                      return 1
+                  default:
+                      return a - b
+              }
+          {
+          */
+          }
           "
         `,
             explainPollyError

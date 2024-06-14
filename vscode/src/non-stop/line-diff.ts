@@ -10,14 +10,27 @@ interface InsertionEdit {
 
 interface DeletionEdit {
     type: 'deletion'
+    range: vscode.Range
+}
+
+interface DecoratedDeletionEdit {
+    type: 'decoratedDeletion'
     text: string
     oldText: string
     range: vscode.Range
 }
 
-export type Edit = InsertionEdit | DeletionEdit
+export type Edit = InsertionEdit | DeletionEdit | DecoratedDeletionEdit
 
-export function computeDiff(task: FixupTask): Edit[] | undefined {
+interface ComputedDiffOptions {
+    decorateDeletions?: boolean
+}
+
+export function computeDiff(
+    task: FixupTask,
+    document: vscode.TextDocument,
+    options: ComputedDiffOptions = {}
+): Edit[] | undefined {
     if (!task.replacement) {
         return
     }
@@ -33,14 +46,23 @@ export function computeDiff(task: FixupTask): Edit[] | undefined {
         if (change.removed) {
             for (let i = 0; i < count; i++) {
                 const line = lines[i]
-                const range = new vscode.Range(startLine, 0, startLine, line.length)
-                applicableDiff.push({
-                    type: 'deletion',
-                    text: '',
-                    oldText: line,
-                    range,
-                })
-                startLine++
+                if (options.decorateDeletions) {
+                    // Store the previous line, we will inject it as a decoration
+                    applicableDiff.push({
+                        type: 'decoratedDeletion',
+                        text: '',
+                        oldText: line,
+                        range: document.lineAt(startLine).range,
+                    })
+                    // We must increment as we haven't technically deleted the line, only replaced
+                    // it with whitespace
+                    startLine++
+                } else {
+                    applicableDiff.push({
+                        type: 'deletion',
+                        range: document.lineAt(startLine).rangeIncludingLineBreak,
+                    })
+                }
             }
         } else if (change.added) {
             for (let i = 0; i < count; i++) {
@@ -66,22 +88,27 @@ export function computeDiff(task: FixupTask): Edit[] | undefined {
  * Subsequent insertions must use a range that assumes no other insertions were made.
  */
 export function makeDiffEditBuilderCompatible(diff: Edit[]): Edit[] {
-    let linesInserted = 0
+    let linesAdded = 0
     const suitableEdit = []
 
     for (const edit of diff) {
         suitableEdit.push({
             ...edit,
             range: new vscode.Range(
-                edit.range.start.line - linesInserted,
+                edit.range.start.line - linesAdded,
                 edit.range.start.character,
-                edit.range.end.line - linesInserted,
+                edit.range.end.line - linesAdded,
                 edit.range.end.character
             ),
         })
 
+        // Note: We do not modify `linesChanged` if we have a `decoratedDeletion`
+        // This is because there is no net change in lines from this, we have just replaced
+        // that line with an empty string
         if (edit.type === 'insertion') {
-            linesInserted++
+            linesAdded++
+        } else if (edit.type === 'deletion') {
+            linesAdded--
         }
     }
 

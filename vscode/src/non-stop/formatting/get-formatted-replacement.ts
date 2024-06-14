@@ -12,6 +12,9 @@ export async function getFormattedReplacement(
     const taskOffset = document.offsetAt(range.start)
 
     for (const change of changes) {
+        if (change.type !== 'insertion') {
+            continue
+        }
         // Convert the range start and end positions to offsets relative to the selection range
         const startOffset = document.offsetAt(change.range.start) - taskOffset + offsetAdjustment
         const endOffset = document.offsetAt(change.range.end) - taskOffset + offsetAdjustment

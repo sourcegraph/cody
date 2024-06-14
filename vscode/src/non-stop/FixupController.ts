@@ -409,7 +409,7 @@ export class FixupController
         // Update the original text, so we're always computing a diff against the latest
         // code in the editor.
         task.original = document.getText(task.selectionRange)
-        task.diff = computeDiff(task)
+        task.diff = computeDiff(task, document)
         return task.diff
     }
 
@@ -430,6 +430,9 @@ export class FixupController
         let charCount = 0
         const insertionEdits = task.diff.filter(({ type }) => type === 'insertion')
         for (const edit of insertionEdits) {
+            if (edit.type !== 'insertion') {
+                continue
+            }
             charCount += edit.text.length
             for (let line = edit.range.start.line; line <= edit.range.end.line; line++) {
                 countedLines.add(line)
@@ -715,15 +718,23 @@ export class FixupController
         const suitableDiffForEditing = makeDiffEditBuilderCompatible(diff)
 
         if (edit instanceof vscode.WorkspaceEdit) {
-            for (const { range, text } of suitableDiffForEditing) {
-                edit.replace(task.fixupFile.uri, range, text)
+            for (const change of suitableDiffForEditing) {
+                if (change.type === 'deletion') {
+                    edit.delete(task.fixupFile.uri, change.range)
+                } else {
+                    edit.replace(task.fixupFile.uri, change.range, change.text)
+                }
             }
             return vscode.workspace.applyEdit(edit)
         }
 
         return edit(editBuilder => {
-            for (const { range, text } of suitableDiffForEditing) {
-                editBuilder.replace(range, text)
+            for (const change of suitableDiffForEditing) {
+                if (change.type === 'deletion') {
+                    editBuilder.delete(change.range)
+                } else {
+                    editBuilder.replace(change.range, change.text)
+                }
             }
         }, options)
     }
@@ -833,7 +844,7 @@ export class FixupController
         }
 
         // Re-apply the changes using the new replacemnt
-        task.diff = computeDiff(task)
+        task.diff = computeDiff(task, document)
         return this.replaceEdit(edit, task.diff!, task, {
             undoStopAfter: true,
             undoStopBefore: false,
@@ -879,7 +890,7 @@ export class FixupController
             return
         }
 
-        const placeholderLines = task.diff.filter(({ type }) => type === 'deletion')
+        const placeholderLines = task.diff.filter(({ type }) => type === 'decoratedDeletion')
         if (placeholderLines.length === 0) {
             // Nothing to clear
             return

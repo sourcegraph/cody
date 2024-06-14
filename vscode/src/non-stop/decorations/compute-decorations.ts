@@ -42,7 +42,7 @@ export function computeFinalDecorations(task: FixupTask): Decorations | undefine
     }
 
     for (const edit of task.diff) {
-        if (edit.type === 'deletion') {
+        if (edit.type === 'decoratedDeletion') {
             const padding = (edit.oldText.match(/^\s*/)?.[0] || '').length // Get leading whitespace for line
             decorations.linesRemoved.push({
                 range: edit.range,
