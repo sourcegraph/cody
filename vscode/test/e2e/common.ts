@@ -20,6 +20,9 @@ export const sidebarSignin = async (
     await page.getByRole('combobox', { name: 'input' }).fill(VALID_TOKEN)
     await page.getByRole('combobox', { name: 'input' }).press('Enter')
 
+    // Close sidebar chat
+    await page.getByLabel('Chat Section').click()
+
     // Turn off notification
     if (!enableNotifications) {
         await disableNotifications(page)
@@ -62,7 +65,6 @@ export const sidebarExplorer = (page: Page): Locator => page.getByRole('tab', { 
  * macOS appearing to use a native menu where Windows uses a VS Code-drawn menu.
  */
 async function disableNotifications(page: Page): Promise<void> {
-    await closeSidebar(page)
     await executeCommandInPalette(page, 'notifications: toggle do not disturb')
 }
 
@@ -83,9 +85,13 @@ export async function createEmptyChatPanel(
     await focusSidebar(page)
     await page.getByRole('button', { name: 'New Chat', exact: true }).click()
 
-    // Assume the last webview iframe is the newly created panel
-    const chatFrame = page.frameLocator('iframe.webview').last().frameLocator('iframe')
-    const chatInputs = getChatInputs(chatFrame)
+    // .simple-find-part-wrapper helps select for the webview in the panel rather than the sidebar
+    const chatFrame = page
+        .frameLocator('.simple-find-part-wrapper + iframe.webview')
+        .last()
+        .frameLocator('iframe')
+
+    const chatInputs = chatFrame.getByRole('textbox', { name: 'Chat message' })
 
     return [chatFrame, chatInputs.last(), chatInputs.first(), chatInputs]
 }
