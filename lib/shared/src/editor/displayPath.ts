@@ -2,6 +2,7 @@ import { URI } from 'vscode-uri'
 
 import { pathFunctionsForURI, posixFilePaths, windowsFilePaths } from '../common/path'
 import { type RangeData, displayLineRange } from '../common/range'
+import { isRemoteFileURI } from '../common/uri';
 
 /**
  * Convert an absolute URI to a (possibly shorter) path to display to the user. The display path is
@@ -61,6 +62,12 @@ export function displayPathWithLines(location: URI, range: RangeData): string {
  */
 export function displayPathDirname(location: URI): string {
     const envInfo = checkEnvInfo()
+    const dirname = pathFunctionsForURI(location, envInfo.isWindows).dirname
+
+    if (isRemoteFileURI(location)) {
+        return dirname(`${location.authority}${location.path}`)
+    }
+
     const result = _displayPath(location, envInfo)
 
     // File path.
@@ -71,7 +78,6 @@ export function displayPathDirname(location: URI): string {
     }
 
     // Otherwise, URI.
-    const dirname = pathFunctionsForURI(location, envInfo.isWindows).dirname
     return result.with({ path: dirname(result.path) }).toString()
 }
 

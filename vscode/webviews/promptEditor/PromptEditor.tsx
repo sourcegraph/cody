@@ -142,7 +142,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 }
 
                 editor.update(() => {
-                    if (!hasSetInitialContext.current || isEditorContentOnlyInitialContext(editor)) {
+                    if (isEditorContentOnlyInitialContext(editor)) {
                         $getRoot().clear()
                         const nodesToInsert = lexicalNodesForContextItems(items, {
                             isFromInitialContext: true,

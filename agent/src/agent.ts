@@ -5,6 +5,7 @@ import type { Polly, Request } from '@pollyjs/core'
 import { getDotComDefaultModels, isWindows, telemetryRecorder } from '@sourcegraph/cody-shared'
 import envPaths from 'env-paths'
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 
 import {
@@ -459,13 +460,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             this.pushPendingPromise(this.workspace.fireVisibleTextEditorsDidChange())
         })
 
-        this.registerNotification('textDocument/didOpen', document => {
-            const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
-            const textDocument = this.workspace.loadDocument(documentWithUri)
-            vscode_shim.onDidOpenTextDocument.fire(textDocument)
-            this.pushPendingPromise(this.workspace.fireVisibleTextEditorsDidChange())
-            this.workspace.setActiveTextEditor(this.workspace.newTextEditor(textDocument))
-        })
+        this.registerNotification('textDocument/didOpen', this.setActiveDocument)
 
         this.registerNotification('textDocument/didChange', async document => {
             this.handleDocumentChange(document)
@@ -1054,13 +1049,38 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
         })
 
-        this.registerAuthenticatedRequest('chat/new', async () => {
-            return this.createChatPanel(
+        this.registerAuthenticatedRequest('chat/new', async (context) => {
+            const panelID = await this.createChatPanel(
                 Promise.resolve({
                     type: 'chat',
                     session: await vscode.commands.executeCommand('cody.chat.panel.new'),
                 })
             )
+
+            if (context) {
+                const { repositories, file } = context
+
+                const setInitialContext = async () => {
+                    await this.receiveWebviewMessage(panelID, {
+                        command: 'context/choose-remote-search-repo',
+                        explicitRepos: repositories
+                    })
+
+                    if (file) {
+                        const documentWithUri = ProtocolTextDocumentWithUri.from(URI.from(file))
+                        const textDocument = this.workspace.loadDocument(documentWithUri)
+                        vscode_shim.onDidOpenTextDocument.fire(textDocument)
+                        this.pushPendingPromise(this.workspace.fireVisibleTextEditorsDidChange())
+                        this.workspace.setActiveTextEditor(this.workspace.newTextEditor(textDocument))
+                    }
+                }
+
+                setInitialContext()
+            }
+
+            console.log(this.webPanels.getPanelOrError(panelID))
+
+            return panelID
         })
 
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
@@ -1437,6 +1457,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         }
         return this.authStatus()
+    }
+
+    private setActiveDocument (document: ProtocolTextDocument) {
+        const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
+        const textDocument = this.workspace.loadDocument(documentWithUri)
+        vscode_shim.onDidOpenTextDocument.fire(textDocument)
+        this.pushPendingPromise(this.workspace.fireVisibleTextEditorsDidChange())
+        this.workspace.setActiveTextEditor(this.workspace.newTextEditor(textDocument))
     }
 
     private async authStatus(): Promise<AuthStatus | undefined> {
