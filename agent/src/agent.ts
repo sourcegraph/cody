@@ -1057,8 +1057,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 setInitialContext()
             }
 
-            console.log(this.webPanels.getPanelOrError(panelID))
-
             return panelID
         })
 
@@ -1103,13 +1101,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return { models: providers ?? [] }
         })
 
-        this.registerAuthenticatedRequest('chat/export', async () => {
+        this.registerAuthenticatedRequest('chat/export', async input => {
+            const { fullHistory = false } = input ?? {}
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
             const localHistory = await chatHistory.getLocalHistory(authStatus)
 
             if (localHistory != null) {
                 return Object.entries(localHistory?.chat)
-                    .filter(([chatID, chatTranscript]) => chatTranscript.interactions.length > 0)
+                    .filter(([chatID, chatTranscript]) => fullHistory || chatTranscript.interactions.length > 0)
                     .map(([chatID, chatTranscript]) => ({
                         chatID: chatID,
                         transcript: chatTranscript,
@@ -1127,7 +1126,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
             if (localHistory != null) {
                 return Object.entries(localHistory?.chat)
-                    .filter(([chatID, chatTranscript]) => chatTranscript.interactions.length > 0)
                     .map(([chatID, chatTranscript]) => ({
                         chatID: chatID,
                         transcript: chatTranscript,

@@ -40,7 +40,7 @@ export const ChatHistory: FC<ChatHistoryProps> = props => {
         // Populate local chat state as we render chat history component for the
         // first time. It's possible that we missed chatHistory messages while
         // this component hadn't been rendered.
-        client.rpc.sendRequest<ChatExportResult[]>('chat/export', null)
+        client.rpc.sendRequest<ChatExportResult[]>('chat/export', { fullHistory: true })
             .then(setChats)
     }, [client]);
 
@@ -54,12 +54,10 @@ export const ChatHistory: FC<ChatHistoryProps> = props => {
                         return
                     }
 
-                    const nonEmptyReceivedChats: ChatExportResult[] = []
+                    const receivedChats: ChatExportResult[] = []
 
                     for (const [chatID, transcript] of Object.entries(message.value.chat)) {
-                        if (transcript.interactions.length > 0) {
-                            nonEmptyReceivedChats.push({ chatID, transcript })
-                        }
+                        receivedChats.push({ chatID, transcript })
                     }
 
                     setChats(chats => {
@@ -67,7 +65,7 @@ export const ChatHistory: FC<ChatHistoryProps> = props => {
                         // New chats means that we may have new chat blank item in the chats
                         // in this case we should replace them with real chats and update
                         // last active chat id
-                        const newChats = nonEmptyReceivedChats
+                        const newChats = receivedChats
                             .filter(chat =>
                                 !chats.find(currentChat => currentChat.chatID === chat.chatID)
                             )
@@ -76,7 +74,7 @@ export const ChatHistory: FC<ChatHistoryProps> = props => {
                             setLastActiveChatID(newChats[newChats.length - 1].chatID)
                         }
 
-                        return  nonEmptyReceivedChats
+                        return  receivedChats
                     })
                     return
                 }
@@ -144,6 +142,19 @@ export const ChatHistory: FC<ChatHistoryProps> = props => {
 
     const createNewChat = async (): Promise<void> => {
         if (!client || isErrorLike(client)) {
+            return
+        }
+
+        const currentChat = chats.find(chat => chat.chatID === lastActiveChatID)
+        const emptyChat = chats.find(chat => chat.transcript.interactions.length === 0)
+
+        // Don't create another empty chat if we already have one selected
+        if (currentChat && currentChat.transcript.interactions.length === 0) {
+            return
+        }
+
+        if (emptyChat) {
+            await selectChat(emptyChat)
             return
         }
 

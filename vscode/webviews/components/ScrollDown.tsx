@@ -33,7 +33,7 @@ export const ScrollDown: FC<ScrollDownProps> = props => {
         const resizeObserver = new ResizeObserver(() => {
             handleScroll()
         })
-        resizeObserver.observe(scrollableRoot)
+        resizeObserver.observe(scrollableRoot.children[0])
 
         return () => {
             scrollableRoot.removeEventListener('scroll', handleScroll)

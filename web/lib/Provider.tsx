@@ -97,7 +97,7 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
                 })
 
                 // Fetch existing chats from the agent chat storage
-                const chatHistory = await client.rpc.sendRequest<ChatExportResult[]>('chat/export', null)
+                const chatHistory = await client.rpc.sendRequest<ChatExportResult[]>('chat/export', { fullHistory: true })
 
                 // In case of no chats we should create initial empty chat
                 if (chatHistory.length === 0) {
