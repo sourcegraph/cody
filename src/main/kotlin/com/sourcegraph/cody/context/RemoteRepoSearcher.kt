@@ -76,21 +76,17 @@ class RemoteRepoSearcher(private val project: Project) {
             // ignore
           }
         }
-        if (repos == null) {
-          true // unreachable
-        } else {
-          if (repos.state.error != null) {
-            logger.warn("remote repository search had error: ${repos.state.error?.title}")
-            if (repos.repos.isEmpty()) {
-              result.close(CodyAgentException(repos.state.error?.title))
-            }
+        if (repos.state.error != null) {
+          logger.warn("remote repository search had error: ${repos.state.error?.title}")
+          if (repos.repos.isEmpty()) {
+            result.close(CodyAgentException(repos.state.error?.title))
           }
-          _state.value = repos.state
-          logger.debug(
-              "remote repo search $query returning ${repos.repos.size} results (${repos.state.state})")
-          result.send(repos.repos.map { it.name })
-          !fetchDone(repos.state)
         }
+        _state.value = repos.state
+        logger.debug(
+            "remote repo search $query returning ${repos.repos.size} results (${repos.state.state})")
+        result.send(repos.repos.map { it.name })
+        !fetchDone(repos.state)
       }
 
       try {

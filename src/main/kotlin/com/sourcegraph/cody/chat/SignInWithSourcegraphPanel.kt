@@ -40,7 +40,7 @@ class SignInWithSourcegraphPanel(private val project: Project) : JPanel() {
       UIComponents.createMainButton(GOOGLE.value, Icons.SignIn.Google)
 
   init {
-    val jEditorPane = createHtmlViewer(UIUtil.getPanelBackground())
+    val jEditorPane = createHtmlViewer()
     jEditorPane.text =
         ("<html><body><h2>Welcome to Cody</h2>" +
             "<p>Understand and write code faster with an AI assistant</p>" +

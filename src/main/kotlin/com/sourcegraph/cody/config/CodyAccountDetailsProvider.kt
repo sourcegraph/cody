@@ -23,7 +23,7 @@ class CodyAccountDetailsProvider(
   ): CompletableFuture<DetailsLoadingResult<CodyAccountDetails>> {
 
     return ProgressManager.getInstance()
-        .submitIOTask(indicator) { indicator ->
+        .submitIOTask(indicator) { ind ->
           val token =
               accountsModel.newCredentials.getOrElse(account) {
                 accountManager.findCredentials(account)
@@ -31,7 +31,7 @@ class CodyAccountDetailsProvider(
           val executor =
               service<SourcegraphApiRequestExecutor.Factory>().create(account.server, token)
 
-          val accountDetails = SourcegraphApiRequests.CurrentUser(executor, indicator).getDetails()
+          val accountDetails = SourcegraphApiRequests.CurrentUser(executor, ind).getDetails()
           val image =
               accountDetails.avatarURL?.let { url ->
                 CachingCodyUserAvatarLoader.getInstance().requestAvatar(executor, url).join()

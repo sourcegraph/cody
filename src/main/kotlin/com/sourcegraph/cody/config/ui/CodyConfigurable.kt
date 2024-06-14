@@ -76,10 +76,9 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
                   .bindSelected(settingsModel::isCodyAutocompleteEnabled)
         }
         row {
-          val enableLookupAutocomplete =
-              checkBox("Enable autocomplete for lookup elements")
-                  .enabledIf(enableAutocompleteCheckbox.selected)
-                  .bindSelected(settingsModel::isLookupAutocompleteEnabled)
+          checkBox("Enable autocomplete for lookup elements")
+              .enabledIf(enableAutocompleteCheckbox.selected)
+              .bindSelected(settingsModel::isLookupAutocompleteEnabled)
         }
         row {
           autocompleteLanguageTable()

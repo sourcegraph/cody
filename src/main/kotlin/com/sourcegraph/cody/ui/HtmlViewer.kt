@@ -5,13 +5,12 @@ import com.intellij.util.ui.HTMLEditorKitBuilder
 import com.intellij.util.ui.JBInsets
 import com.intellij.util.ui.SwingHelper
 import com.sourcegraph.cody.chat.ChatUIConstants
-import java.awt.Color
 import java.awt.Insets
 import javax.swing.JEditorPane
 
 object HtmlViewer {
   @JvmStatic
-  fun createHtmlViewer(backgroundColor: Color): JEditorPane {
+  fun createHtmlViewer(): JEditorPane {
     val jEditorPane = SwingHelper.createHtmlViewer(true, null, null, null)
     jEditorPane.editorKit = HTMLEditorKitBuilder().withWordWrapViewFactory().build()
     jEditorPane.isFocusable = true

@@ -33,8 +33,9 @@ class CodyAuthCredentialsUi(
     val token = acquireToken(indicator, authMethod)
     // The token has changed, so create a new executor to talk to the same server with the new
     // token.
-    val executor = factory.create(executor.server, token)
-    val details = CodyTokenCredentialsUi.acquireDetails(executor, indicator, isAccountUnique, null)
+    val newExecutor = factory.create(executor.server, token)
+    val details =
+        CodyTokenCredentialsUi.acquireDetails(newExecutor, indicator, isAccountUnique, null)
     return details to token
   }
 

@@ -53,7 +53,7 @@ class CodyOnboardingGuidancePanel(val originalDisplayName: String?) : JPanel() {
   }
 
   private fun createIntroductionMessage(): JEditorPane {
-    val introductionMessage = createHtmlViewer(UIUtil.getPanelBackground())
+    val introductionMessage = createHtmlViewer()
     val introductionMessageEditorKit = introductionMessage.editorKit as HTMLEditorKit
     introductionMessageEditorKit.styleSheet.addRule(paragraphColorStyle)
     introductionMessage.text = buildString {
@@ -129,7 +129,7 @@ class CodyOnboardingGuidancePanel(val originalDisplayName: String?) : JPanel() {
   }
 
   private fun createInfoSection(): JEditorPane {
-    val sectionInfo = createHtmlViewer(UIUtil.getPanelBackground())
+    val sectionInfo = createHtmlViewer()
     val sectionInfoHtmlEditorKit = sectionInfo.editorKit as HTMLEditorKit
     sectionInfoHtmlEditorKit.styleSheet.addRule(paragraphColorStyle)
     sectionInfoHtmlEditorKit.styleSheet.addRule("""h3 { margin-top: 0;}""")

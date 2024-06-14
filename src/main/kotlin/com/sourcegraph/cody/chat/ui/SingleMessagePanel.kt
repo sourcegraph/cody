@@ -91,7 +91,7 @@ class SingleMessagePanel(
   }
 
   private fun addAsNewTextComponent(renderedHtml: String) {
-    val textPane: JEditorPane = createHtmlViewer(getInlineCodeBackgroundColor(chatMessage.speaker))
+    val textPane: JEditorPane = createHtmlViewer()
     SwingHelper.setHtml(textPane, renderedHtml, null)
     val textEditorComponent = TextPart(textPane)
     this.lastMessagePart = textEditorComponent
