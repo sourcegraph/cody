@@ -279,14 +279,10 @@ private constructor(
 
   companion object {
     @RequiresEdt
-    fun createNew(
-        project: Project,
-        runWithConnectionId: (ConnectionId) -> Unit = {}
-    ): AgentChatSession {
+    fun createNew(project: Project): AgentChatSession {
       val connectionId = createNewPanel(project) { it.server.chatNew() }
       val chatSession = AgentChatSession(project, connectionId)
       AgentChatSessionService.getInstance(project).addSession(chatSession)
-      connectionId.thenApply(runWithConnectionId::invoke)
       return chatSession
     }
 

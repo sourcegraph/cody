@@ -1,27 +1,22 @@
 package com.sourcegraph.cody.autocomplete.action
 
 import com.intellij.openapi.actionSystem.DataContext
-import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler
-import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.protocol.AutocompleteItem
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer
 import com.sourcegraph.cody.autocomplete.render.InlayModelUtil
 import com.sourcegraph.utils.CodyEditorUtil
 
 open class AutocompleteActionHandler : EditorActionHandler() {
-  private val logger = Logger.getInstance(AutocompleteActionHandler::class.java)
 
   override fun isEnabledForCaret(editor: Editor, caret: Caret, dataContext: DataContext?): Boolean {
     // Returns false to fall back to normal action if there is no suggestion at the caret.
-    val project = editor.project ?: return false
-    return CodyEditorUtil.isEditorInstanceSupported(editor) &&
-        hasAnyAutocompleteItems(project, caret)
+    return CodyEditorUtil.isEditorInstanceSupported(editor) && hasAnyAutocompleteItems(caret)
   }
 
-  private fun hasAnyAutocompleteItems(project: Project, caret: Caret): Boolean =
+  private fun hasAnyAutocompleteItems(caret: Caret): Boolean =
       getCurrentAutocompleteItem(caret) != null
 
   private fun getAutocompleteRenderers(caret: Caret): List<CodyAutocompleteElementRenderer> =

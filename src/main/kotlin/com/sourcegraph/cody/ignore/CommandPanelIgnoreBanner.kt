@@ -11,7 +11,7 @@ import com.sourcegraph.Icons
 import com.sourcegraph.common.CodyBundle
 import java.awt.Dimension
 
-class CommandPanelIgnoreBanner() : NonOpaquePanel() {
+class CommandPanelIgnoreBanner : NonOpaquePanel() {
   init {
     ApplicationManager.getApplication().assertIsDispatchThread()
 

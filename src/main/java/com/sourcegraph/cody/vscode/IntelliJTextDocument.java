@@ -10,7 +10,6 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.cody.agent.protocol.Position;
 import com.sourcegraph.cody.agent.protocol.Range;
-import com.sourcegraph.cody.autocomplete.AutocompleteDocumentContext;
 import java.net.URI;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
@@ -61,17 +60,6 @@ public class IntelliJTextDocument implements TextDocument {
     int line = this.editor.getDocument().getLineNumber(offset);
     int lineStartOffset = offsetAt(new Position(line, 0));
     return new Position(line, offset - lineStartOffset);
-  }
-
-  @Override
-  public AutocompleteDocumentContext getAutocompleteContext(int offset) {
-    Document document = this.editor.getDocument();
-    int line = document.getLineNumber(offset);
-    int lineEndOffset = document.getLineEndOffset(line);
-    String sameLineSuffix = document.getText(TextRange.create(offset, lineEndOffset));
-    int lineStartOffset = document.getLineStartOffset(line);
-    String sameLinePrefix = document.getText(TextRange.create(lineStartOffset, offset));
-    return new AutocompleteDocumentContext(sameLinePrefix, sameLineSuffix);
   }
 
   @Override

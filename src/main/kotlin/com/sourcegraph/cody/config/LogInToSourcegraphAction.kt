@@ -83,7 +83,7 @@ private fun newAddAccountDialog(
       setLoginButtonText("Add Account")
     }
 
-fun signInWithSourcegrapDialog(
+fun signInWithSourcegraphDialog(
     project: Project?,
     parent: Component?,
     isAccountUnique: UniqueLoginPredicate

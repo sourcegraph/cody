@@ -110,7 +110,7 @@ private constructor(
       HttpURLConnection.HTTP_UNAUTHORIZED,
       HttpURLConnection.HTTP_FORBIDDEN ->
           SourcegraphAuthenticationException("Request response: " + (errorText ?: statusLine))
-      else -> SourcegraphStatusCodeException("$statusLine - $errorText", connection.responseCode)
+      else -> SourcegraphStatusCodeException("$statusLine - $errorText")
     }
   }
 

@@ -8,12 +8,18 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.components.JBCheckBox
-import com.intellij.ui.dsl.builder.*
+import com.intellij.ui.dsl.builder.Cell
+import com.intellij.ui.dsl.builder.bindSelected
+import com.intellij.ui.dsl.builder.bindText
+import com.intellij.ui.dsl.builder.columns
+import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.dsl.builder.rows
+import com.intellij.ui.dsl.builder.selected
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.IgnorePolicySpec
 import javax.swing.JComponent
 
-data object ignoreOverrideModel {
+data object IgnoreOverrideModel {
   var enabled: Boolean = false
   var policy: String =
       """{
@@ -34,14 +40,14 @@ class IgnoreOverrideDialog(val project: Project) : DialogWrapper(project) {
       lateinit var overrideCheckbox: Cell<JBCheckBox>
       row {
         overrideCheckbox =
-            checkBox("Override policy for testing").bindSelected(ignoreOverrideModel::enabled)
+            checkBox("Override policy for testing").bindSelected(IgnoreOverrideModel::enabled)
       }
       row {
         textArea()
             .label("Policy JSON:")
             .columns(40)
             .rows(15)
-            .bindText(ignoreOverrideModel::policy)
+            .bindText(IgnoreOverrideModel::policy)
             .validation { textArea ->
               try {
                 Gson().fromJson(textArea.text, IgnorePolicySpec::class.java)
@@ -58,8 +64,8 @@ class IgnoreOverrideDialog(val project: Project) : DialogWrapper(project) {
   override fun doOKAction() {
     CodyAgentService.withAgent(project) { agent ->
       agent.server.testingIgnoreOverridePolicy(
-          if (ignoreOverrideModel.enabled) {
-            Gson().fromJson(ignoreOverrideModel.policy, IgnorePolicySpec::class.java)
+          if (IgnoreOverrideModel.enabled) {
+            Gson().fromJson(IgnoreOverrideModel.policy, IgnorePolicySpec::class.java)
           } else {
             null
           })

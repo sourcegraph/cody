@@ -2,7 +2,6 @@ package com.sourcegraph.cody.auth
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.PersistentStateComponent
-import com.intellij.openapi.project.Project
 
 /**
  * Stores active account for project To
@@ -11,7 +10,7 @@ import com.intellij.openapi.project.Project
  *
  * @param A - account type
  */
-abstract class PersistentActiveAccountHolder<A : Account>(protected val project: Project) :
+abstract class PersistentActiveAccountHolder<A : Account> :
     PersistentStateComponent<PersistentActiveAccountHolder.AccountState>, Disposable {
 
   var account: A? = null

@@ -2,7 +2,6 @@ package com.sourcegraph.cody.ui
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.runInEdt
-import com.intellij.openapi.diagnostic.Logger
 import com.intellij.util.ui.UIUtil
 import com.sourcegraph.cody.edit.EditUtil
 import com.sourcegraph.cody.edit.widget.component1
@@ -20,7 +19,6 @@ import javax.swing.SwingUtilities
 
 // Provides undecorated JFrames with the ability to be moved and resized.
 class FrameMover(private val frame: JFrame, private val titleBar: JComponent) : Disposable {
-  private val logger = Logger.getInstance(FrameMover::class.java)
 
   private var resizeDirection = ResizeDirection.NONE
   private var lastMouseX = 0

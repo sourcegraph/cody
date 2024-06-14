@@ -126,7 +126,7 @@ public class OpenRevisionAction extends DumbAwareEDTAction {
     if (root == null) {
       return Optional.empty();
     }
-    return Optional.of(new RevisionContext(project, revision, root));
+    return Optional.of(new RevisionContext(revision, root));
   }
 
   @NotNull
@@ -143,6 +143,6 @@ public class OpenRevisionAction extends DumbAwareEDTAction {
 
     String revision = log.getSelectedCommits().get(0).getHash().asString();
     VirtualFile root = log.getSelectedCommits().get(0).getRoot();
-    return Optional.of(new RevisionContext(project, revision, root));
+    return Optional.of(new RevisionContext(revision, root));
   }
 }

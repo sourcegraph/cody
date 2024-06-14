@@ -13,8 +13,7 @@ import com.sourcegraph.cody.auth.PersistentActiveAccountHolder
     storages = [Storage(StoragePathMacros.WORKSPACE_FILE)],
     reportStatistic = false)
 @Service(Service.Level.PROJECT)
-class CodyProjectActiveAccountHolder(project: Project) :
-    PersistentActiveAccountHolder<CodyAccount>(project) {
+class CodyProjectActiveAccountHolder : PersistentActiveAccountHolder<CodyAccount>() {
 
   override fun accountManager() = service<CodyAccountManager>()
 

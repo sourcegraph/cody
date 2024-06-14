@@ -314,7 +314,7 @@ class CodyAgentService(private val project: Project) : Disposable {
         throw Exception("Cody is not enabled")
       }
       try {
-        val instance = CodyAgentService.getInstance(project)
+        val instance = getInstance(project)
         val isReadyButNotFunctional = instance.codyAgent.getNow(null)?.isConnected() == false
         val agent =
             if (isReadyButNotFunctional && restartIfNeeded) instance.restartAgent(project)

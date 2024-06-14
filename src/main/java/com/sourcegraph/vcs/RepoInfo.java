@@ -25,7 +25,7 @@ public class RepoInfo {
     this.relativePath = relativePath;
   }
 
-  // E.g. "sourecegraph/sourcegraph"
+  // E.g. "sourcegraph/sourcegraph"
   @NotNull
   public String getRepoName() {
     int colonIndex = remoteUrl.lastIndexOf(":");
