@@ -104,11 +104,15 @@ export class FixupController
         const autoSaveSetting = vscode.workspace.getConfiguration('files').get<string>('autoSave')
         if (autoSaveSetting === 'off' || autoSaveSetting === 'onWindowChange') {
             this._disposables.push(
-                vscode.workspace.onDidSaveTextDocument(({ uri }) => {
+                // Note: It is important to use `onWillSaveTextDocument` rather than `onDidSaveTextDocument`
+                // here. This is to ensure we run `accept` before any formatting logic runs. In some cases
+                // we modify the document on accept (remove placeholder lines), so doing this alongisde formatting
+                // logic could remove more lines than intended from the document
+                vscode.workspace.onWillSaveTextDocument(({ document }) => {
                     // If we save the document, we consider the user to have accepted any applied tasks.
                     // This helps ensure that the codelens doesn't stay around unnecessarily and become an annoyance.
                     for (const task of this.tasks.values()) {
-                        if (task.fixupFile.uri.fsPath.endsWith(uri.fsPath)) {
+                        if (task.fixupFile.uri.fsPath.endsWith(document.uri.fsPath)) {
                             this.accept(task)
                         }
                     }

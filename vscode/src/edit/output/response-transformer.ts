@@ -55,5 +55,5 @@ export function responseTransformer(
         return decodedText + '\n'
     }
 
-    return decodedText
+    return decodedText.trimEnd()
 }
