@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
-  "version": "1.22.0",
+  "version": "1.22.1",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -47,6 +47,7 @@
     "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts",
     "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts",
     "version-bump:minor": "RELEASE_TYPE=minor ts-node-transpile-only ./scripts/version-bump.ts",
+    "version-bump:patch": "RELEASE_TYPE=patch ts-node-transpile-only ./scripts/version-bump.ts",
     "version-bump:dry-run": "RELEASE_TYPE=prerelease ts-node-transpile-only ./scripts/version-bump.ts"
   },
   "categories": ["Programming Languages", "Machine Learning", "Snippets", "Education"],
