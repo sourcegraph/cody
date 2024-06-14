@@ -8,6 +8,14 @@ import { Agent } from '@sourcegraph/cody-agent/src/agent'
 import { IndexDBStorage } from './index-db-storage'
 import { createActivation } from '@sourcegraph/vscode-cody/src/extension.web'
 
+// Mock standard DOM API otherwise Vite client fails to run them in
+// web-worker env
+
+// @ts-ignore
+self.document.querySelector = () => null
+// @ts-ignore
+self.document.querySelectorAll = () => []
+
 const conn = createMessageConnection(
     new BrowserMessageReader(self),
     new BrowserMessageWriter(self)
