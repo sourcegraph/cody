@@ -6,11 +6,9 @@ import {
     type Model,
     type ClientStateForWebview,
     isErrorLike,
-    MentionQuery,
-    ContextItem,
     PromptString,
     setDisplayPathEnvInfo,
-    ContextItemSource,
+    MentionQueryResolutionMode,
 } from '@sourcegraph/cody-shared'
 
 import { Chat, type UserAccountInfo } from '@sourcegraph/vscode-cody/webviews/Chat'
@@ -24,11 +22,10 @@ import {
     TelemetryRecorderContext
 } from '@sourcegraph/vscode-cody/webviews/utils/telemetry'
 import { WithContextProviders } from '@sourcegraph/vscode-cody/webviews/mentions/providers'
-import { ChatContextClientContext } from '@sourcegraph/vscode-cody/webviews/promptEditor/plugins/atMentions/chatContextClient'
+import { ChatMentionContext } from '@sourcegraph/vscode-cody/webviews/promptEditor/plugins/atMentions/chatContextClient'
 import { ClientStateContextProvider, useClientActionDispatcher, } from '@sourcegraph/vscode-cody/webviews/client/clientState'
 
 import { useWebAgentClient } from './Provider';
-import { debouncePromise } from './agent/utils/debounce-promise'
 
 import './styles.css'
 
@@ -38,6 +35,12 @@ setDisplayPathEnvInfo({
     isWindows: false,
     workspaceFolders: [URI.file('/tmp/foo')]
 })
+
+// Setup mention plugin to request data with remote strategy
+// since Cody Web doesn't have access to local file system
+const WEB_MENTION_RESOLUTION = {
+    resolutionMode: MentionQueryResolutionMode.Remote
+}
 
 interface RepositoryMetadata {
     id: string
@@ -57,8 +60,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
     const {
         activeWebviewPanelID,
         vscodeAPI,
-        client,
-        graphQLClient
+        client
     } = useWebAgentClient()
 
     const rootElementRef = useRef<HTMLDivElement>(null)
@@ -74,42 +76,6 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
     })
 
     const dispatchClientAction = useClientActionDispatcher()
-
-    const getRepositoryFiles = useMemo(
-        () => debouncePromise(graphQLClient.getRepositoryFiles.bind(graphQLClient), 1500),
-        [graphQLClient]
-    )
-
-    const suggestionsSource = useMemo(() => {
-        return {
-            async getChatContextItems(query: MentionQuery): Promise<ContextItem[]> {
-                // TODO: Support symbols providers and add fallback for agent API for all other providers
-                const filesOrError = await getRepositoryFiles(
-                    repositories.map(repository => repository.name),
-                    query.text
-                )
-
-                if (isErrorLike(filesOrError) || filesOrError === 'skipped') {
-                    return []
-                }
-
-                return filesOrError.map<ContextItem>(item => ({
-                    type: 'file',
-                    uri: URI.file(item.file.path),
-                    source: ContextItemSource.User,
-                    isIgnored: false,
-                    size: item.file.byteSize,
-
-                    // This will tell to agent context resolvers use remote
-                    // context file resolution
-                    remoteSource: {
-                        id: item.repository.id,
-                        repositoryName: item.repository.name
-                    }
-                }))
-            }
-        }
-    }, [graphQLClient])
 
     useEffect(() => {
         ;(async () => {
@@ -210,7 +176,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                 isErrorLike(client) ? (
                     <p>Error: {client.message}</p>
                 ) : (
-                    <ChatContextClientContext.Provider value={suggestionsSource}>
+                    <ChatMentionContext.Provider value={WEB_MENTION_RESOLUTION}>
                         <TelemetryRecorderContext.Provider value={telemetryRecorder}>
                             <ChatModelContextProvider value={chatModelContext}>
                                 <ClientStateContextProvider value={clientState}>
@@ -229,7 +195,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                                 </ClientStateContextProvider>
                             </ChatModelContextProvider>
                         </TelemetryRecorderContext.Provider>
-                    </ChatContextClientContext.Provider>
+                    </ChatMentionContext.Provider>
             )) : (
                 <>Loading...</>
             )}
