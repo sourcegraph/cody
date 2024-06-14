@@ -66,7 +66,6 @@ describe('Edit', () => {
           	messages,
           	setChatID,
           	isLoading,
-          ELECTION_END */
           }: ChatColumnProps) {
           interface ChatColumnProps {
             messages: ChatMessage[];
@@ -131,7 +130,7 @@ describe('Edit', () => {
 
     it('editCommand/code (adding/deleting code)', async () => {
         const uri = workspace.file('src', 'trickyLogic.ts')
-        await client.openFile(uri)
+        await client.openFile(uri, { removeCursor: true })
         const task = await client.request('editCommands/code', {
             instruction: 'Convert this to use a switch statement',
             model: ModelsService.getModelByIDSubstringOrError('anthropic/claude-3-opus').model,
@@ -148,8 +147,6 @@ describe('Edit', () => {
                   default:
                       return a - b
               }
-          {
-          */
           }
           "
         `,

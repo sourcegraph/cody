@@ -1358,191 +1358,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: ca9db2a2d35f28f09eee89118ab57160
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2823
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - name: user-agent
-            value: defaultClient / v1
-          - name: traceparent
-            value: 00-90af16414990c696b7cc08dd4ab86569-2d6e3e037ed21a06-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 415
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/TestClass.ts: const foo =
-                  42
-
-
-                  export class TestClass {
-                      constructor(private shouldGreet: boolean) {}
-
-                      public functionName() {
-                          if (this.shouldGreet) {
-                              console.log(/* CURSOR */ 'Hello World!')
-                          }
-                      }
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example.test.ts: import {
-                  expect } from 'vitest'
-
-                  import { it } from 'vitest'
-
-                  import { describe } from 'vitest'
-
-
-                  describe('test block', () => {
-                      it('does 1', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does 2', () => {
-                          expect(true).toBe(true)
-                      })
-
-                      it('does something else', () => {
-                          // This line will error due to incorrect usage of `performance.now`
-                          const startTime = performance.now(/* CURSOR */)
-                      })
-                  })
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  My selected code from @src/animal.ts:1-6:
-                  ```
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: Review the shared code context and configurations to identify the test
-                  framework and libraries in use. Then, generate a suite of
-                  multiple unit tests for the functions in <selected> using the
-                  detected test framework and libraries. Be sure to import the
-                  function being tested. Follow the same patterns as any shared
-                  context. Only add packages, imports, dependencies, and
-                  assertions if they are used in the shared code. Pay attention
-                  to the file path of each shared context to see if test for
-                  <selected> already exists. If one exists, focus on generating
-                  new unit tests for uncovered cases. If none are detected,
-                  import common unit test libraries for {languageName}. Focus on
-                  validating key functionality with simple and complete
-                  assertions. Only include mocks if one is detected in the
-                  shared code. Before writing the tests, identify which test
-                  libraries and frameworks to import, e.g. 'No new imports
-                  needed - using existing libs' or 'Importing test framework
-                  that matches shared context usage' or 'Importing the defined
-                  framework', etc. Then briefly summarize test coverage and any
-                  limitations. At the end, enclose the full completed code for
-                  the new unit tests, including all necessary imports, in a
-                  single markdown codeblock. No fragments or TODO. The new tests
-                  should validate expected functionality and cover edge cases
-                  for <selected> with all required imports, including importing
-                  the function being tested. Do not repeat existing tests.
-            model: anthropic/claude-3-sonnet-20240229
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 636659
-        content:
-          mimeType: text/event-stream
-          size: 636659
-          text: >+
-            event: completion
-
-            data: {"completion":"To generate unit tests for the `Animal` interface, we can use the Vitest framework, which is already being used in the provided code context (`src/example.test.ts`).\n\nNo new imports are needed - using existing libs.\n\nThe test suite should cover the following aspects of the `Animal` interface:\n\n1. Validate the properties (`name` and `isMammal`) with different input values.\n2. Test the `makeAnimalSound` method with different implementations of the `Animal` interface.\n\nHere's a possible test suite:\n\n```typescript\nimport { describe, it, expect } from 'vitest'\n\n// Import the implementations of the Animal interface\nimport { Dog, Cat } from './animals'\n\ndescribe('Animal', () =\u003e {\n  describe('Dog', () =\u003e {\n    const dog = new Dog('Buddy', true)\n\n    it('should have the correct name', () =\u003e {\n      expect(dog.name).toBe('Buddy')\n    })\n\n    it('should be a mammal', () =\u003e {\n      expect(dog.isMammal).toBe(true)\n    })\n\n    it('should make the correct sound', () =\u003e {\n      expect(dog.makeAnimalSound()).toBe('Woof!')\n    })\n  })\n\n  describe('Cat', () =\u003e {\n    const cat = new Cat('Missy', true)\n\n    it('should have the correct name', () =\u003e {\n      expect(cat.name).toBe('Missy')\n    })\n\n    it('should be a mammal', () =\u003e {\n      expect(cat.isMammal).toBe(true)\n    })\n\n    it('should make the correct sound', () =\u003e {\n      expect(cat.makeAnimalSound()).toBe('Meow!')\n    })\n  })\n})\n```\n\nThis test suite covers the basic functionality of the `Animal` interface by testing the properties and the `makeAnimalSound` method with two different implementations (`Dog` and `Cat`). It validates the expected behavior with assertions using the `expect` function from Vitest.\n\nNote: The implementations of `Dog` and `Cat` classes are not provided in the shared code context, so I've assumed their existence for the purpose of this example. You may need to adjust the import statements and class instantiation based on your actual implementation.\n\nThe test coverage is reasonably comprehensive, but it may not cover all edge cases or complex scenarios. Additionally, if there are any dependencies or mocks required for the `Animal` interface or its implementations, those would need to be set up in the test suite as well.","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Mon, 27 May 2024 11:55:04 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: retry-after
-            value: "578"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-27T11:55:02.689Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: d19331cfa2444498d0574efe7441a0d6
       _order: 0
       cache: {}
@@ -1843,6 +1658,207 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-06-08T17:50:06.496Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: ce4376723f632bb377407fac15cdda8b
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 3177
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-2c12086807db9e20163a0a7bfe66a3df-41caacacd7c9290f-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 415
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/TestLogger.ts: const foo =
+                  42
+
+                  export const TestLogger = {
+                      startLogging: () => {
+                          // Do some stuff
+
+                          function recordLog() {
+                              console.log(/* CURSOR */ 'Recording the log')
+                          }
+
+                          recordLog()
+                      },
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/TestClass.ts: const foo =
+                  42
+
+
+                  export class TestClass {
+                      constructor(private shouldGreet: boolean) {}
+
+                      public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+                      }
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example.test.ts: import {
+                  expect } from 'vitest'
+
+                  import { it } from 'vitest'
+
+                  import { describe } from 'vitest'
+
+
+                  describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of `performance.now`
+                          const startTime = performance.now(/* CURSOR */)
+                      })
+                  })
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  My selected code from @src/animal.ts:1-6:
+                  ```
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: Review the shared code context and configurations to identify the test
+                  framework and libraries in use. Then, generate a suite of
+                  multiple unit tests for the functions in <selected> using the
+                  detected test framework and libraries. Be sure to import the
+                  function being tested. Follow the same patterns as any shared
+                  context. Only add packages, imports, dependencies, and
+                  assertions if they are used in the shared code. Pay attention
+                  to the file path of each shared context to see if test for
+                  <selected> already exists. If one exists, focus on generating
+                  new unit tests for uncovered cases. If none are detected,
+                  import common unit test libraries for {languageName}. Focus on
+                  validating key functionality with simple and complete
+                  assertions. Only include mocks if one is detected in the
+                  shared code. Before writing the tests, identify which test
+                  libraries and frameworks to import, e.g. 'No new imports
+                  needed - using existing libs' or 'Importing test framework
+                  that matches shared context usage' or 'Importing the defined
+                  framework', etc. Then briefly summarize test coverage and any
+                  limitations. At the end, enclose the full completed code for
+                  the new unit tests, including all necessary imports, in a
+                  single markdown codeblock. No fragments or TODO. The new tests
+                  should validate expected functionality and cover edge cases
+                  for <selected> with all required imports, including importing
+                  the function being tested. Do not repeat existing tests.
+            model: anthropic/claude-3-sonnet-20240229
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 830744
+        content:
+          mimeType: text/event-stream
+          size: 830744
+          text: >+
+            event: completion
+
+            data: {"completion":"Reviewing the provided context, it appears that the test framework in use is Vitest, which is a Vite-native test runner built on top of Vanilla-tilt. No additional test libraries or dependencies seem to be required, as Vitest provides built-in assertions and utilities for writing tests.\n\nTo generate a suite of unit tests for the `Animal` interface, we can create a new test file (e.g., `animal.test.ts`) and import the necessary functions or classes that implement the `Animal` interface. Since the `Animal` interface doesn't have any concrete implementation provided, we'll need to create a mock implementation for testing purposes.\n\nSummary of test coverage:\n- The generated tests cover the basic functionality of the `Animal` interface, including:\n  - Ensuring that an instance of the `Animal` implementation has the required properties (`name` and `isMammal`).\n  - Verifying that the `makeAnimalSound()` method returns a non-empty string.\n- The tests also cover edge cases, such as ensuring that the `isMammal` property is a boolean value.\n- Limitations: Since no concrete implementation of the `Animal` interface is provided, the tests rely on a mock implementation. Additional tests may be needed once an actual implementation is available.\n\n```typescript\n// animal.test.ts\nimport { describe, it, expect } from 'vitest';\nimport { Animal } from './animal';\n\n// Mock implementation of the Animal interface\nclass MockAnimal implements Animal {\n  name: string;\n  isMammal: boolean;\n\n  constructor(name: string, isMammal: boolean) {\n    this.name = name;\n    this.isMammal = isMammal;\n  }\n\n  makeAnimalSound(): string {\n    return 'Mock animal sound';\n  }\n}\n\ndescribe('Animal', () =\u003e {\n  it('should have a name property', () =\u003e {\n    const animal = new MockAnimal('Fluffy', true);\n    expect(animal).toHaveProperty('name', 'Fluffy');\n  });\n\n  it('should have an isMammal property', () =\u003e {\n    const animal = new MockAnimal('Fido', true);\n    expect(animal).toHaveProperty('isMammal', true);\n  });\n\n  it('should have a makeAnimalSound method that returns a string', () =\u003e {\n    const animal = new MockAnimal('Whiskers', false);\n    const sound = animal.makeAnimalSound();\n    expect(typeof sound).toBe('string');\n    expect(sound).not.toBe('');\n  });\n\n  it('isMammal property should be a boolean', () =\u003e {\n    const animal = new MockAnimal('Nemo', false);\n    expect(typeof animal.isMammal).toBe('boolean');\n  });\n});\n```","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 14 Jun 2024 11:46:07 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-06-14T11:46:05.885Z
       time: 0
       timings:
         blocked: -1

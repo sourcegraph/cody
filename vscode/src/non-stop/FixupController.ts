@@ -409,7 +409,7 @@ export class FixupController
         // Update the original text, so we're always computing a diff against the latest
         // code in the editor.
         task.original = document.getText(task.selectionRange)
-        task.diff = computeDiff(task, document)
+        task.diff = computeDiff(task, { decorateDeletions: !isRunningInsideAgent() })
         return task.diff
     }
 
@@ -844,7 +844,7 @@ export class FixupController
         }
 
         // Re-apply the changes using the new replacemnt
-        task.diff = computeDiff(task, document)
+        task.diff = computeDiff(task, { decorateDeletions: !isRunningInsideAgent() })
         return this.replaceEdit(edit, task.diff!, task, {
             undoStopAfter: true,
             undoStopBefore: false,

@@ -719,63 +719,61 @@ describe('Agent', () => {
                 const lastMessage = await client.firstNonEmptyTranscript(id)
                 expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
                     `
-                  "To generate unit tests for the \`Animal\` interface, we can use the Vitest framework, which is already being used in the provided code context (\`src/example.test.ts\`).
+                  "Reviewing the provided context, it appears that the test framework in use is Vitest, which is a Vite-native test runner built on top of Vanilla-tilt. No additional test libraries or dependencies seem to be required, as Vitest provides built-in assertions and utilities for writing tests.
 
-                  No new imports are needed - using existing libs.
+                  To generate a suite of unit tests for the \`Animal\` interface, we can create a new test file (e.g., \`animal.test.ts\`) and import the necessary functions or classes that implement the \`Animal\` interface. Since the \`Animal\` interface doesn't have any concrete implementation provided, we'll need to create a mock implementation for testing purposes.
 
-                  The test suite should cover the following aspects of the \`Animal\` interface:
-
-                  1. Validate the properties (\`name\` and \`isMammal\`) with different input values.
-                  2. Test the \`makeAnimalSound\` method with different implementations of the \`Animal\` interface.
-
-                  Here's a possible test suite:
+                  Summary of test coverage:
+                  - The generated tests cover the basic functionality of the \`Animal\` interface, including:
+                    - Ensuring that an instance of the \`Animal\` implementation has the required properties (\`name\` and \`isMammal\`).
+                    - Verifying that the \`makeAnimalSound()\` method returns a non-empty string.
+                  - The tests also cover edge cases, such as ensuring that the \`isMammal\` property is a boolean value.
+                  - Limitations: Since no concrete implementation of the \`Animal\` interface is provided, the tests rely on a mock implementation. Additional tests may be needed once an actual implementation is available.
 
                   \`\`\`typescript
-                  import { describe, it, expect } from 'vitest'
+                  // animal.test.ts
+                  import { describe, it, expect } from 'vitest';
+                  import { Animal } from './animal';
 
-                  // Import the implementations of the Animal interface
-                  import { Dog, Cat } from './animals'
+                  // Mock implementation of the Animal interface
+                  class MockAnimal implements Animal {
+                    name: string;
+                    isMammal: boolean;
+
+                    constructor(name: string, isMammal: boolean) {
+                      this.name = name;
+                      this.isMammal = isMammal;
+                    }
+
+                    makeAnimalSound(): string {
+                      return 'Mock animal sound';
+                    }
+                  }
 
                   describe('Animal', () => {
-                    describe('Dog', () => {
-                      const dog = new Dog('Buddy', true)
+                    it('should have a name property', () => {
+                      const animal = new MockAnimal('Fluffy', true);
+                      expect(animal).toHaveProperty('name', 'Fluffy');
+                    });
 
-                      it('should have the correct name', () => {
-                        expect(dog.name).toBe('Buddy')
-                      })
+                    it('should have an isMammal property', () => {
+                      const animal = new MockAnimal('Fido', true);
+                      expect(animal).toHaveProperty('isMammal', true);
+                    });
 
-                      it('should be a mammal', () => {
-                        expect(dog.isMammal).toBe(true)
-                      })
+                    it('should have a makeAnimalSound method that returns a string', () => {
+                      const animal = new MockAnimal('Whiskers', false);
+                      const sound = animal.makeAnimalSound();
+                      expect(typeof sound).toBe('string');
+                      expect(sound).not.toBe('');
+                    });
 
-                      it('should make the correct sound', () => {
-                        expect(dog.makeAnimalSound()).toBe('Woof!')
-                      })
-                    })
-
-                    describe('Cat', () => {
-                      const cat = new Cat('Missy', true)
-
-                      it('should have the correct name', () => {
-                        expect(cat.name).toBe('Missy')
-                      })
-
-                      it('should be a mammal', () => {
-                        expect(cat.isMammal).toBe(true)
-                      })
-
-                      it('should make the correct sound', () => {
-                        expect(cat.makeAnimalSound()).toBe('Meow!')
-                      })
-                    })
-                  })
-                  \`\`\`
-
-                  This test suite covers the basic functionality of the \`Animal\` interface by testing the properties and the \`makeAnimalSound\` method with two different implementations (\`Dog\` and \`Cat\`). It validates the expected behavior with assertions using the \`expect\` function from Vitest.
-
-                  Note: The implementations of \`Dog\` and \`Cat\` classes are not provided in the shared code context, so I've assumed their existence for the purpose of this example. You may need to adjust the import statements and class instantiation based on your actual implementation.
-
-                  The test coverage is reasonably comprehensive, but it may not cover all edge cases or complex scenarios. Additionally, if there are any dependencies or mocks required for the \`Animal\` interface or its implementations, those would need to be set up in the test suite as well."
+                    it('isMammal property should be a boolean', () => {
+                      const animal = new MockAnimal('Nemo', false);
+                      expect(typeof animal.isMammal).toBe('boolean');
+                    });
+                  });
+                  \`\`\`"
                 `,
                     explainPollyError
                 )

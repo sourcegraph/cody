@@ -23,14 +23,10 @@ interface DecoratedDeletionEdit {
 export type Edit = InsertionEdit | DeletionEdit | DecoratedDeletionEdit
 
 interface ComputedDiffOptions {
-    decorateDeletions?: boolean
+    decorateDeletions: boolean
 }
 
-export function computeDiff(
-    task: FixupTask,
-    document: vscode.TextDocument,
-    options: ComputedDiffOptions = {}
-): Edit[] | undefined {
+export function computeDiff(task: FixupTask, options: ComputedDiffOptions): Edit[] | undefined {
     if (!task.replacement) {
         return
     }
@@ -52,7 +48,7 @@ export function computeDiff(
                         type: 'decoratedDeletion',
                         text: '',
                         oldText: line,
-                        range: document.lineAt(startLine).range,
+                        range: new vscode.Range(startLine, 0, startLine, line.length),
                     })
                     // We must increment as we haven't technically deleted the line, only replaced
                     // it with whitespace
@@ -60,7 +56,8 @@ export function computeDiff(
                 } else {
                     applicableDiff.push({
                         type: 'deletion',
-                        range: document.lineAt(startLine).rangeIncludingLineBreak,
+                        // Deletion range should include the line break
+                        range: new vscode.Range(startLine, 0, startLine + 1, 0),
                     })
                 }
             }
