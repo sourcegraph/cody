@@ -533,7 +533,6 @@ export class SourcegraphGraphQLAPIClient {
             CURRENT_SITE_CODY_CONFIG_FEATURES,
             {}
         )
-        console.log('# getCodyConfigFeatures response', response, this.config.accessToken)
         return extractDataOrError(
             response,
             data => data.site?.codyConfigFeatures ?? new Error('cody config not found')
@@ -1151,7 +1150,6 @@ export class ConfigFeaturesSingleton {
     }
 
     public getConfigFeatures(): Promise<CodyConfigFeatures> {
-        console.log('# getConfigFeatures', this.configFeatures)
         return this.configFeatures
     }
 
@@ -1159,7 +1157,6 @@ export class ConfigFeaturesSingleton {
     private async fetchConfigFeatures(): Promise<CodyConfigFeatures> {
         // Execute the GraphQL query to fetch the configuration features
         const features = await graphqlClient.getCodyConfigFeatures()
-        console.log('# fetchConfigFeatures', features)
         if (features instanceof Error) {
             // If there's an error, throw it to be caught in refreshConfigFeatures
             throw features

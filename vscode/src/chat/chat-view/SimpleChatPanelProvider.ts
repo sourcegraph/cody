@@ -1522,7 +1522,6 @@ export class SimpleChatPanelProvider
         await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, true)
 
         const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
-        console.log('#### configFeatures', configFeatures.attribution)
         void this.postMessage({
             type: 'setConfigFeatures',
             configFeatures: {
