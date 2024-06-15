@@ -4,7 +4,7 @@ export const allClientCapabilitiesEnabled: ClientCapabilities = {
     progressBars: 'enabled',
     edit: 'enabled',
     editWorkspace: 'enabled',
-    untitledDocuments: 'enabled',
+    openDocument: 'enabled',
     showDocument: 'enabled',
     codeLenses: 'enabled',
     showWindowMessage: 'request',

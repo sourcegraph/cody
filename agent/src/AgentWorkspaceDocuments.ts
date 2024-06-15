@@ -1,11 +1,7 @@
-import fspromises from 'node:fs/promises'
-
 import * as vscode from 'vscode'
 
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
-import { logError } from '@sourcegraph/cody-shared'
-import { doesFileExist } from '../../vscode/src/commands/utils/workspace-files'
 import { resetActiveEditor } from '../../vscode/src/editor/active-editor'
 import { AgentTextDocument } from './AgentTextDocument'
 import { AgentTextEditor } from './AgentTextEditor'
@@ -45,18 +41,18 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
 
     private doPanic = this.params?.doPanic ? { doPanic: this.params.doPanic } : undefined
 
-    public openUri(uri: vscode.Uri): AgentTextDocument {
-        return this.loadAndUpdateDocument(ProtocolTextDocumentWithUri.from(uri))
-    }
     public loadAndUpdateDocument(document: ProtocolTextDocumentWithUri): AgentTextDocument {
         return this.loadDocumentWithChanges(document).document
     }
+
     public loadDocumentWithChanges(document: ProtocolTextDocumentWithUri): {
         document: AgentTextDocument
         editor: AgentTextEditor
         contentChanges: vscode.TextDocumentContentChangeEvent[]
     } {
         const cached = this.agentDocuments.get(document.underlying.uri)
+
+        // TODO: We can only use a cached value if we have actualy been receiving document updates, which only happens if the document hasn't been closed
         if (!cached) {
             const result = new AgentTextDocument(document)
             const editor = new AgentTextEditor(result, this.params)
@@ -111,7 +107,7 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
 
         fromCache.update(document)
 
-        panicWhenClientIsOutOfSync(document.underlying, cached.editor, this.doPanic)
+        panicWhenClientIsOutOfSync(document.underlying, cached.editor, this, this.doPanic)
 
         return { document: fromCache, editor: cached.editor, contentChanges }
     }
@@ -191,32 +187,25 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         } as any
     }
 
-    public async openTextDocument(uri: vscode.Uri): Promise<AgentTextDocument> {
+    public openTextDocument(uri: vscode.Uri): AgentTextDocument | undefined {
         const document = ProtocolTextDocumentWithUri.from(uri)
-        if (!this.agentDocuments.has(document.underlying.uri)) {
-            if (uri.scheme === 'untitled') {
-                document.underlying.content = ''
-            } else if (!(await doesFileExist(uri))) {
-                logError(
-                    'AgentWorkspaceDocuments.openTextDocument()',
-                    'File does not exist',
-                    uri.toString()
-                )
-            } else if (uri.scheme === 'file') {
-                // Read the file content from disk if the user hasn't opened this file before.
-                const buffer = await fspromises.readFile(uri.fsPath, 'utf8')
-                document.underlying.content = buffer.toString()
-            } else {
-                logError('vscode.workspace.openTextDocument', `unable to read non-file URI: ${uri}`)
-            }
+        if (!this.agentDocuments.has(uri.toString())) {
+            return undefined
         }
-        return Promise.resolve(this.loadAndUpdateDocument(document))
+        return this.loadAndUpdateDocument(document)
+    }
+
+    public createTextDocument(uri: vscode.Uri, content: string): AgentTextDocument {
+        const document = AgentTextDocument.from(uri, content)
+        return this.loadAndUpdateDocument(document.protocolDocument)
     }
 
     public async reset(): Promise<void> {
         for (const uri of this.agentDocuments.keys()) {
-            const document = this.openUri(vscode.Uri.parse(uri))
-            await vscode_shim.onDidCloseTextDocument.cody_fireAsync(document)
+            const document = this.openTextDocument(vscode.Uri.parse(uri))
+            if (document) {
+                await vscode_shim.onDidCloseTextDocument.cody_fireAsync(document)
+            }
         }
         vscode_shim.window.activeTextEditor = undefined
         while (vscode_shim.visibleTextEditors.length > 0) {
@@ -226,14 +215,11 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         resetActiveEditor()
     }
 
-    public async newTextEditorFromStringUri(uri: string): Promise<vscode.TextEditor> {
-        return this.newTextEditor(await this.openTextDocument(vscode.Uri.parse(uri)))
-    }
-
-    public newTextEditor(document: AgentTextDocument): vscode.TextEditor {
+    public newTextEditor(document: vscode.TextDocument): vscode.TextEditor {
+        const agentDocument = document as AgentTextDocument
         return (
-            this.agentDocuments.get(document.protocolDocument.underlying.uri)?.editor ??
-            new AgentTextEditor(document, this.params)
+            this.agentDocuments.get(agentDocument.protocolDocument.underlying.uri)?.editor ??
+            new AgentTextEditor(agentDocument, this.params)
         )
     }
 }

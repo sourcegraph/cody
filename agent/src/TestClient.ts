@@ -337,10 +337,30 @@ export class TestClient extends MessageHandler {
 
             return result
         })
-        this.registerRequest('textDocument/openUntitledDocument', params => {
-            this.workspace.loadDocument(ProtocolTextDocumentWithUri.fromDocument(params))
-            this.notify('textDocument/didOpen', params)
-            return Promise.resolve(true)
+        this.registerRequest('textDocument/openDocument', async params => {
+            const uri = vscode.Uri.parse(params.uri)
+            const textDocument = ProtocolTextDocumentWithUri.from(uri)
+
+            if (uri.scheme === 'untitled') {
+                textDocument.underlying.content = ''
+            } else if (!(await doesFileExist(uri))) {
+                logError(
+                    'AgentWorkspaceDocuments.openTextDocument()',
+                    'File does not exist',
+                    uri.toString()
+                )
+            } else if (uri.scheme === 'file') {
+                // Read the file content from disk if the user hasn't opened this file before.
+                const buffer = await fspromises.readFile(uri.fsPath, 'utf8')
+                textDocument.underlying.content = buffer.toString()
+            } else {
+                logError('vscode.workspace.openTextDocument', `unable to read non-file URI: ${uri}`)
+            }
+
+            this.workspace.loadDocument(textDocument)
+            await this.request('textDocument/open', textDocument.underlying)
+
+            return true
         })
         this.registerRequest('textDocument/edit', params => {
             this.textDocumentEditParams.push(params)
@@ -350,8 +370,14 @@ export class TestClient extends MessageHandler {
             }
             return Promise.resolve(success)
         })
-        this.registerRequest('textDocument/show', () => {
-            return Promise.resolve(true)
+        this.registerRequest('textDocument/show', params => {
+            const uri = vscode.Uri.parse(params.uri)
+            const document = this.workspace.getDocument(uri)
+            if (document) {
+                this.notify('textDocument/didOpen', document.protocolDocument.underlying)
+                return Promise.resolve(true)
+            }
+            return Promise.resolve(false)
         })
         this.registerNotification('debug/message', message => {
             this.logMessage(message)

@@ -46,9 +46,12 @@ import {
 
 import { emptyDisposable } from '../../vscode/src/testutils/emptyDisposable'
 
+import fspromises from 'node:fs/promises'
+import { doesFileExist } from '../../vscode/src/commands/utils/workspace-files'
 import { AgentDiagnostics } from './AgentDiagnostics'
 import { AgentQuickPick } from './AgentQuickPick'
 import { AgentTabGroups } from './AgentTabGroups'
+import type { AgentTextDocument } from './AgentTextDocument'
 import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import type { Agent } from './agent'
 import { matchesGlobPatterns } from './cli/cody-bench/matchesGlobPatterns'
@@ -159,8 +162,9 @@ export const onDidDeleteFiles = new EventEmitter<vscode.FileDeleteEvent>()
 
 export interface WorkspaceDocuments {
     workspaceRootUri?: vscode.Uri
-    openTextDocument: (uri: vscode.Uri) => Promise<vscode.TextDocument>
-    newTextEditorFromStringUri: (uri: string) => Promise<vscode.TextEditor>
+    openTextDocument: (uri: vscode.Uri) => AgentTextDocument | undefined
+    createTextDocument: (uri: vscode.Uri, content: string) => AgentTextDocument
+    newTextEditor(document: vscode.TextDocument): vscode.TextEditor
 }
 let workspaceDocuments: WorkspaceDocuments | undefined
 export function setWorkspaceDocuments(newWorkspaceDocuments: WorkspaceDocuments): void {
@@ -297,16 +301,50 @@ const _workspace: typeof vscode.workspace = {
             throw new Error('workspaceDocuments is uninitialized')
         }
 
-        const result = toUri(uriOrString)
-        if (result) {
-            if (result.uri.scheme === 'untitled' && result.shouldOpenInClient) {
-                await openUntitledDocument(result.uri)
-            }
-            return workspaceDocuments.openTextDocument(result.uri)
+        const uri = toUri(uriOrString)
+        if (!uri) {
+            return Promise.reject(
+                new Error(
+                    `workspace.openTextDocument:unsupported argument ${JSON.stringify(uriOrString)}`
+                )
+            )
         }
-        return Promise.reject(
-            new Error(`workspace.openTextDocument:unsupported argument ${JSON.stringify(uriOrString)}`)
-        )
+
+        const textDocument = workspaceDocuments.openTextDocument(uri)
+        if (textDocument) return textDocument
+
+        if (clientInfo?.capabilities?.openDocument !== 'enabled') {
+            if (uri.scheme === 'untitled') {
+                const errorMessage =
+                    'Client does not support opening documents. To fix this problem, set `openDocument: "enabled"` in client capabilities'
+                logError('vscode.workspace.openTextDocument', 'unsupported operation', errorMessage)
+            } else if (!(await doesFileExist(uri))) {
+                logError('vscode.workspace.openTextDocument', 'File does not exist', uri.toString())
+            } else if (uri.scheme === 'file') {
+                // Read the file content from disk if the user hasn't opened this file before.
+                const buffer = await fspromises.readFile(uri.fsPath, 'utf8')
+                workspaceDocuments.createTextDocument(uri, buffer.toString())
+            } else {
+                logError('vscode.workspace.openTextDocument', `unable to read non-file URI: ${uri}`)
+            }
+        } else {
+            if (!agent)
+                return Promise.reject(new Error('workspace.openTextDocument: no agent instance found'))
+            await agent.request('textDocument/openDocument', {
+                uri: uri.toString(),
+            })
+        }
+
+        const loadedDocument = workspaceDocuments.openTextDocument(uri)
+        if (!loadedDocument) {
+            return Promise.reject(
+                new Error(
+                    `workspace.openTextDocument: document ${uri.toString()} has not been loaded properly}`
+                )
+            )
+        }
+
+        return loadedDocument
     },
     workspaceFolders,
     getWorkspaceFolder: () => {
@@ -465,12 +503,12 @@ const defaultTreeView: vscode.TreeView<any> = {
  */
 function toUri(
     uriOrString: string | vscode.Uri | { language?: string; content?: string } | undefined
-): { uri: Uri; shouldOpenInClient: boolean } | undefined {
+): Uri | undefined {
     if (typeof uriOrString === 'string') {
-        return { uri: Uri.file(uriOrString), shouldOpenInClient: true }
+        return Uri.parse(uriOrString)
     }
     if (uriOrString instanceof Uri) {
-        return { uri: uriOrString, shouldOpenInClient: true }
+        return uriOrString
     }
     if (
         typeof uriOrString === 'object' &&
@@ -478,37 +516,12 @@ function toUri(
     ) {
         const language = (uriOrString as any)?.language ?? ''
         const extension = extensionForLanguage(language) ?? language
-        return {
-            uri: Uri.from({
-                scheme: 'untitled',
-                path: `${uuid.v4()}.${extension}`,
-            }),
-            shouldOpenInClient: false,
-        }
+        return Uri.from({
+            scheme: 'untitled',
+            path: `${uuid.v4()}.${extension}`,
+        })
     }
     return
-}
-
-async function openUntitledDocument(uri: Uri, content?: string, language?: string) {
-    if (clientInfo?.capabilities?.untitledDocuments !== 'enabled') {
-        const errorMessage =
-            'Client does not support untitled documents. To fix this problem, set `untitledDocuments: "enabled"` in client capabilities'
-        logError('vscode.workspace.openTextDocument', 'unsupported operation', errorMessage)
-        throw new Error(errorMessage)
-    }
-    if (agent) {
-        const result = await agent.request('textDocument/openUntitledDocument', {
-            uri: uri.toString(),
-            content,
-            language,
-        })
-
-        if (!result) {
-            throw new Error(
-                `client returned false from textDocument/openUntitledDocument: ${uri.toString()}`
-            )
-        }
-    }
 }
 
 function outputChannel(name: string): vscode.LogOutputChannel {
@@ -714,7 +727,13 @@ const _window: typeof vscode.window = {
             if (!workspaceDocuments) {
                 throw new Error('workspaceDocuments is undefined')
             }
-            return workspaceDocuments.newTextEditorFromStringUri(uri)
+
+            const textDocument = await _workspace.openTextDocument(uri)
+            if (!textDocument) {
+                throw new Error(`vscode.window.showTextDocument: cannot open ${uri}`)
+            }
+
+            return workspaceDocuments.newTextEditor(textDocument)
         }
         console.log(new Error().stack)
         throw new Error('Not implemented: vscode.window.showTextDocument')

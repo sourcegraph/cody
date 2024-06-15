@@ -33,9 +33,30 @@ describe('panicWhenClientIsOutOfSync', () => {
                     ProtocolTextDocumentWithUri.fromDocument(serverBeforeRequestDocument)
                 )
             ),
+            documents,
             { doPanic }
         )
     }
+
+    it.fails('workspace documents', () => {
+        const documents = new AgentWorkspaceDocuments({ doPanic })
+        const toDoc = (uri: string) => ProtocolTextDocumentWithUri.fromDocument({ uri })
+        const client = ['file:///foo/bar.txt'].map(toDoc)
+        const server = ['unknown:///foo/bar.txt'].map(toDoc)
+        for (const b of server) {
+            documents.loadDocumentWithChanges(b)
+        }
+        const editor = new AgentTextEditor(new AgentTextDocument(server[0]))
+        documents.setActiveTextEditor(editor)
+
+        const clientDocument = {
+            ...client[0].underlying,
+            testing: {
+                workspaceDocumentURIs: client.map(d => d.uri.toString()),
+            },
+        }
+        panicWhenClientIsOutOfSync(clientDocument, editor, documents, { doPanic })
+    })
 
     it('equal', () => {
         textDocumentDidChange(sourceOfTruth, {

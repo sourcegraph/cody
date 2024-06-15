@@ -4,5 +4,7 @@ package com.sourcegraph.cody.protocol_generated
 data class TestingParams(
   val selectedText: String? = null,
   val sourceOfTruthDocument: ProtocolTextDocument? = null,
+  val workspaceDocumentURIs: List<String>? = null,
+  val activeWorkspaceDocumentURI: String? = null,
 )
 

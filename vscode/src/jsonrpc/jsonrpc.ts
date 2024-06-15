@@ -117,8 +117,8 @@ export class MessageHandler {
         return await this.conn.sendRequest(method, params)
     }
 
-    public notify<M extends NotificationMethodName>(method: M, params: ParamsOf<M>): void {
-        this.conn.sendNotification(method, params)
+    public notify<M extends NotificationMethodName>(method: M, params: ParamsOf<M>): Promise<void> {
+        return this.conn.sendNotification(method, params)
     }
 
     private alive = true

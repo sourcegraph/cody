@@ -184,6 +184,9 @@ export type ClientRequests = {
     // if the agent server. For example, closes all open documents.
     'testing/reset': [null, null]
 
+    // Request counterpart of the `textDocument/open` notification
+    'textDocument/open': [ProtocolTextDocument, null]
+
     // Updates the extension configuration and returns the new
     // authentication status, which indicates whether the provided credentials are
     // valid or not. The agent can't support autocomplete or chat if the credentials
@@ -269,7 +272,7 @@ export type ServerRequests = {
     'window/showMessage': [ShowWindowMessageParams, string | null]
 
     'textDocument/edit': [TextDocumentEditParams, boolean]
-    'textDocument/openUntitledDocument': [UntitledTextDocument, boolean]
+    'textDocument/openDocument': [{ uri: string }, boolean]
     'textDocument/show': [
         { uri: string; options?: TextDocumentShowOptionsParams | undefined | null },
         boolean,
@@ -457,7 +460,7 @@ export interface ClientCapabilities {
     progressBars?: 'none' | 'enabled' | undefined | null
     edit?: 'none' | 'enabled' | undefined | null
     editWorkspace?: 'none' | 'enabled' | undefined | null
-    untitledDocuments?: 'none' | 'enabled' | undefined | null
+    openDocument?: 'none' | 'enabled' | undefined | null
     showDocument?: 'none' | 'enabled' | undefined | null
     codeLenses?: 'none' | 'enabled' | undefined | null
     showWindowMessage?: 'notification' | 'request' | undefined | null
@@ -597,6 +600,8 @@ export interface ProtocolTextDocument {
         | {
               selectedText?: string | undefined | null
               sourceOfTruthDocument?: ProtocolTextDocument | undefined | null
+              workspaceDocumentURIs?: string[] | undefined | null
+              activeWorkspaceDocumentURI?: string | undefined | null
           }
         | undefined
         | null
@@ -713,12 +718,6 @@ export interface EditFileOperation {
     type: 'edit-file'
     uri: string
     edits: TextEdit[]
-}
-
-export interface UntitledTextDocument {
-    uri: string
-    content?: string | undefined | null
-    language?: string | undefined | null
 }
 
 export interface TextDocumentEditParams {
