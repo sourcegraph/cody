@@ -976,6 +976,9 @@ export class FixupController
      */
     public async didReceiveNewFileRequest(task: FixupTask, opts: OpenDestFileOptions): Promise<void> {
         const [uri, range] = await openDestinationFile(opts)
+        if (task.fixupFile.uri.toString() === uri.toString()) {
+            return this.setTaskState(task, CodyTaskState.Working)
+        }
         // append response to new file
         task.selectionRange = range
         task.fixupFile = this.files.replaceFile(task.fixupFile.uri, uri)
