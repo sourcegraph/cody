@@ -356,7 +356,6 @@ test.extend<ExpectedEvents>({
     await expect(page.getByRole('tab', { name: 'cody.json, preview' })).toHaveCount(1)
 })
 
-// TODO(beyang): re-enable
 testGitWorkspace('use terminal output as context', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
     // Open the Source Control View to confirm this is a git workspace
