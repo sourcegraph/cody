@@ -234,7 +234,8 @@
         {
           "type": "webview",
           "id": "cody.chat",
-          "name": "Chat"
+          "name": "Chat",
+          "when": "!cody.activated"
         },
         {
           "id": "cody.commands.tree.view",
