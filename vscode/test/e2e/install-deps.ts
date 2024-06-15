@@ -12,7 +12,7 @@ import {
 // We set this to stable so that tests are always running on the version of VS Code users are likely to be using. This may
 // result in tests breaking after a VS Code release but it's better for them to be investigated than potential bugs being
 // missed because we're running on an older version than users.
-const vscodeVersion = '1.89.1'
+const vscodeVersion = 'stable'
 
 // A custom version of the VS Code download reporter that silences matching installation
 // notifications as these otherwise are emitted on every test run
