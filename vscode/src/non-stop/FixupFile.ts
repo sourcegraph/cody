@@ -48,7 +48,7 @@ export class FixupFile {
     // }
 }
 
-interface FixupFileEditor {
-    editor: vscode.TextEditor
-    document: vscode.TextDocument
-}
+// interface FixupFileEditor {
+//     editor: vscode.TextEditor
+//     document: vscode.TextDocument
+// }

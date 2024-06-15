@@ -79,7 +79,8 @@ export class FixupTask {
         public destinationFile?: vscode.Uri,
         public insertionPoint?: vscode.Position,
         public readonly telemetryMetadata: FixupTelemetryMetadata = {},
-        public attemptFixImports = false
+        public attemptFixImports = false,
+        public deleteFileOnUndo = false
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, ps``).trim()
@@ -104,16 +105,5 @@ export class FixupTask {
      */
     public get state(): CodyTaskState {
         return this.state_
-    }
-
-    public getOutputURI(): vscode.Uri {
-        if (this.destinationFile) {
-            return this.destinationFile
-        }
-        return this.fixupFile.uri
-    }
-
-    public setOutputURI(uri: vscode.Uri): void {
-        this.destinationFile = uri
     }
 }

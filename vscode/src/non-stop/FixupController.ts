@@ -108,7 +108,6 @@ export class FixupController
                     // This helps ensure that the codelens doesn't stay around unnecessarily and become an annoyance.
                     for (const task of this.tasks.values()) {
                         if (task.fixupFile.uri.fsPath.endsWith(uri.fsPath)) {
-                            task.setOutputURI(uri)
                             // However, if the user has opted to fix imports, we don't want to auto-accept the task
                             // because the first save is by us, so that we can get LSP diagnostics
                             if (!(task.attemptFixImports && version === 1)) {
@@ -599,7 +598,11 @@ export class FixupController
                     editBuilder.replace(task.selectionRange, replacement)
                 }, applyEditOptions)
             }
-            this._disposables.push(new FixupImports(task))
+
+            // Trigger import fixes if necessary
+            if (task.attemptFixImports && task.destinationFile) {
+                this._disposables.push(new FixupImports(task.destinationFile))
+            }
 
             // Add the missing undo stop after this change.
             // Now when the user hits 'undo', the entire format and edit will be undone at once
@@ -971,35 +974,22 @@ export class FixupController
      *
      * NOTE: Currently used for /test command only.
      */
-    public async didReceiveNewFileRequest(id: string, newFileUri: vscode.Uri): Promise<void> {
-        const task = this.tasks.get(id)
-        if (!task) {
-            return
-        }
-
-        if (task.fixupFile.uri.toString() === newFileUri.toString()) {
-            return this.setTaskState(task, CodyTaskState.Working)
-        }
-
+    public async didReceiveNewFileRequest(task: FixupTask, opts: OpenDestFileOptions): Promise<void> {
+        const [uri, range] = await openDestinationFile(opts)
         // append response to new file
-        const doc = await vscode.workspace.openTextDocument(newFileUri)
-        await doc.save()
-        const onDiskUri = vscode.Uri.file(doc.fileName)
-        const pos = new vscode.Position(Math.max(doc.lineCount - 1, 0), 0)
-        const range = new vscode.Range(pos, pos)
         task.selectionRange = range
-        task.fixupFile = this.files.replaceFile(task.fixupFile.uri, onDiskUri)
+        task.fixupFile = this.files.replaceFile(task.fixupFile.uri, uri)
 
         // Set original text to empty as we are not replacing original text but appending to file
         task.original = ''
-        task.destinationFile = onDiskUri
+        task.destinationFile = uri
 
-        // Show the new document before streaming start
-        await vscode.window.showTextDocument(onDiskUri, {
-            selection: range,
-            viewColumn: vscode.ViewColumn.Beside,
-        })
-
+        // If we are creating a new test file, we should attempt to fix imports
+        // and remember to clean up after ourselves if the user undoes the task
+        if (task.intent === 'test' && opts.type === 'create') {
+            task.attemptFixImports = true
+            task.deleteFileOnUndo = true
+        }
         // lift the pending state from the task so it can proceed to the next stage
         this.setTaskState(task, CodyTaskState.Working)
     }
@@ -1194,6 +1184,59 @@ interface ImportError extends vscode.Diagnostic {
     missingImport: string
 }
 
+type OpenDestFileOptions =
+    | { type: 'create'; path: vscode.Uri }
+    | { type: 'existing'; uri: vscode.Uri }
+    | { type: 'untitled'; uri?: vscode.Uri; guessLanguageFrom?: vscode.Uri }
+
+async function openDestinationFile(opts: OpenDestFileOptions): Promise<[vscode.Uri, vscode.Range]> {
+    const doc = await (async (): Promise<vscode.TextDocument> => {
+        switch (opts.type) {
+            case 'untitled': {
+                // Create a new untitled file if the suggested file does not exist
+                if (opts.uri) {
+                    return await vscode.workspace.openTextDocument(opts.uri)
+                }
+                if (opts.guessLanguageFrom) {
+                    const currentDoc = await vscode.workspace.openTextDocument(opts.guessLanguageFrom)
+                    return await vscode.workspace.openTextDocument({
+                        language: currentDoc?.languageId,
+                    })
+                }
+                return await vscode.workspace.openTextDocument()
+            }
+            case 'create': {
+                // Create a new file
+                await vscode.workspace.fs.writeFile(opts.path, new Uint8Array())
+                return await vscode.workspace.openTextDocument(opts.path)
+            }
+            case 'existing': {
+                return await vscode.workspace.openTextDocument(opts.uri)
+            }
+        }
+    })()
+
+    const pos = new vscode.Position(Math.max(doc.lineCount - 1, 0), 0)
+    const range = new vscode.Range(pos, pos)
+    // task.selectionRange = range
+
+    // // Set original text to empty as we are not replacing original text but appending to file
+    // task.original = ''
+    // task.destinationFile = doc.uri
+
+    // Show the new document before streaming start
+    await vscode.window.showTextDocument(doc.uri, {
+        selection: range,
+        viewColumn: vscode.ViewColumn.Beside,
+    })
+
+    return [doc.uri, range]
+
+    // // lift the pending state from the task so it can proceed to the next stage
+    // task.fixupFile = this.files.replaceFile(task.fixupFile.uri, newFileUri)
+    // this.setTaskState(task, CodyTaskState.Working)
+}
+
 interface FormatEditOptions {
     undoStopBefore: boolean
     undoStopAfter: boolean
@@ -1205,11 +1248,8 @@ class FixupImports {
     private disposables: vscode.Disposable[] = []
     private timeout = 1000
     private timeoutId: NodeJS.Timeout | undefined
-    private uri: vscode.Uri
 
-    constructor(public readonly task: FixupTask) {
-        this.uri = task.getOutputURI()
-
+    constructor(private readonly uri: vscode.Uri) {
         this.disposables.push(
             vscode.languages.onDidChangeDiagnostics(event => {
                 if (event.uris.map(String).includes(this.uri.toString())) {
@@ -1322,7 +1362,8 @@ async function attemptFixImports(file: vscode.Uri): Promise<void> {
                 'vscode.executeCodeActionProvider',
                 file,
                 range,
-                vscode.CodeActionKind.QuickFix.value
+                vscode.CodeActionKind.QuickFix.value,
+                10
             )
 
             for (const action of codeActions) {
