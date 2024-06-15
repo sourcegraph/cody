@@ -49,10 +49,10 @@ export class RepoMetadatafromGitApi {
         try {
             const response = await fetch(apiUrl, { method: 'HEAD' })
             metadata.isPublic = response.ok
-            return metadata
         } catch (error) {
-            return undefined
+            console.error('Error fetching repository metadata:', error)
         }
+        return metadata
     }
 
     private parserOwnerAndRepoName(gitUrl: string): { owner: string; repoName: string } | undefined {
