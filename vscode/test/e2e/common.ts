@@ -72,7 +72,7 @@ async function disableNotifications(page: Page): Promise<void> {
  * Gets the chat panel frame locator.
  */
 export function getChatPanel(page: Page): FrameLocator {
-    return page.frameLocator('iframe.webview').first().frameLocator('iframe')
+    return page.frameLocator('.simple-find-part-wrapper + iframe.webview').last().frameLocator('iframe')
 }
 
 /**

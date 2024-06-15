@@ -357,7 +357,7 @@ test.extend<ExpectedEvents>({
 })
 
 // TODO(beyang): re-enable
-testGitWorkspace.skip('use terminal output as context', async ({ page, sidebar }) => {
+testGitWorkspace('use terminal output as context', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
     // Open the Source Control View to confirm this is a git workspace
     // Check the change is showing as a Git file in the sidebar
