@@ -35,6 +35,7 @@ export const CustomCommandConfigMenuItems = [
     {
         kind: 0,
         label: 'New Custom Command...',
+        detail: 'Create a reusable command.',
         id: CommandMenuAction.Add,
         command: 'cody.menu.custom.build',
     },
