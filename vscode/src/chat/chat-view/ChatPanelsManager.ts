@@ -21,12 +21,12 @@ import { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 import type { MessageProviderOptions } from '../MessageProvider'
 import type { ExtensionMessage } from '../protocol'
 
+import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getConfiguration } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType } from './ChatManager'
-import type { SidebarViewOptions } from './SidebarViewController'
 import {
     SimpleChatPanelProvider,
     disposeWebviewViewOrPanel,
@@ -44,6 +44,11 @@ export type ChatPanelConfig = Pick<
 
 export interface ChatViewProviderWebview extends Omit<vscode.Webview, 'postMessage'> {
     postMessage(message: ExtensionMessage): Thenable<boolean>
+}
+
+export interface SidebarViewOptions extends MessageProviderOptions {
+    extensionUri: vscode.Uri
+    startTokenReceiver?: typeof startTokenReceiver
 }
 
 interface ChatPanelProviderOptions extends MessageProviderOptions {

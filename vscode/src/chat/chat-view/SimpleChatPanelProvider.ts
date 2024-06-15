@@ -1389,8 +1389,6 @@ export class SimpleChatPanelProvider
                 localHistory: allHistory,
             })
         }
-        // TODO!(sqs): update chat history tree view (should have change listener on history)
-        // DELETED LINE: await this.treeView.updateTree(this.authProvider.getAuthStatus())
     }
 
     public async clearAndRestartSession(): Promise<void> {
@@ -1585,7 +1583,6 @@ function newChatModelFromSerializedChatTranscript(
 }
 
 export function disposeWebviewViewOrPanel(viewOrPanel: vscode.WebviewView | vscode.WebviewPanel): void {
-    // TODO!(sqs)
     if ('dispose' in viewOrPanel) {
         viewOrPanel.dispose()
     }
@@ -1594,26 +1591,23 @@ export function disposeWebviewViewOrPanel(viewOrPanel: vscode.WebviewView | vsco
 export function webviewViewOrPanelViewColumn(
     viewOrPanel: vscode.WebviewView | vscode.WebviewPanel
 ): vscode.ViewColumn | undefined {
-    // TODO!(sqs)
     if ('viewColumn' in viewOrPanel) {
         return viewOrPanel.viewColumn
     }
+    // Our view is in the sidebar, return undefined
     return undefined
 }
 
 export function webviewViewOrPanelOnDidChangeViewState(
     viewOrPanel: vscode.WebviewView | vscode.WebviewPanel
 ): vscode.Event<vscode.WebviewPanelOnDidChangeViewStateEvent> {
-    // TODO!(sqs)
     if ('onDidChangeViewState' in viewOrPanel) {
         return viewOrPanel.onDidChangeViewState
     }
+    // Return a no-op (this means the provider is for the sidebar)
     return () => {
-        console.error('INVALID EVENT TODO!(sqs)')
         return {
-            dispose: () => {
-                console.error('INVALID DISPOSE TODO!(sqs)')
-            },
+            dispose: () => {},
         }
     }
 }

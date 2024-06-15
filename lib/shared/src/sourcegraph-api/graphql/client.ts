@@ -410,7 +410,6 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public onConfigurationChange(newConfig: GraphQLAPIClientConfig): void {
-        // console.log('# HERE SourcegraphGraphQLAPIClient.onConfigurationChange')
         this._config = newConfig
     }
 

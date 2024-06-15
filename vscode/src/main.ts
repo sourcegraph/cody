@@ -251,16 +251,12 @@ const register = async (
 
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
-        console.log('##### auth status changed', authStatus)
         // Reset the available models based on the auth change.
         await syncModels(authStatus)
 
         // Chat Manager uses Simple Context Provider
         await chatManager.syncAuthStatus(authStatus)
         editorManager.syncAuthStatus(authStatus)
-
-        // // Update context provider first it will also update the configuration
-        // await contextProvider.syncAuthStatus()
 
         const parallelPromises: Promise<void>[] = []
         // feature flag provider
@@ -284,11 +280,12 @@ const register = async (
         // Set the default prompt mixin on auth status change.
         await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
 
-        // TODO(beyang): doesn't trigger a change if nothing changed
+        // Propagate access token through config
         const newConfig = await getFullConfig()
         configWatcher.set(newConfig)
-        console.log('# propagating new access token', newConfig.accessToken)
+        // Re-sync whether guardrails is turned on
         ConfigFeaturesSingleton.getInstance().refreshConfigFeatures()
+        // Sync auth status to graphqlClient
         graphqlClient.onConfigurationChange(newConfig)
 
         // When logged out, user's endpoint will be set to null
