@@ -8,7 +8,7 @@
 import assert from 'node:assert'
 import { expect } from 'playwright/test'
 import * as mockServer from '../fixtures/mock-server'
-import { expectAuthenticated } from './common'
+import { expectAuthenticated, focusSidebar } from './common'
 import {
     type DotcomUrlOverride,
     type ExpectedEvents,
@@ -44,6 +44,7 @@ test.extend<ExpectedEvents>({
     await expect(page.getByText('connection issue', { exact: false })).toBeVisible({
         timeout: 10000,
     })
+    await focusSidebar(page)
     res = await fetch(`${mockServer.SERVER_URL}/.test/connectionIssue/disable`, {
         method: 'POST',
     })
