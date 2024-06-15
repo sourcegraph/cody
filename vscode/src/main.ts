@@ -19,6 +19,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { CommandResult } from './CommandResult'
 import type { MessageProviderOptions } from './chat/MessageProvider'
+import { chatHistory } from './chat/chat-view/ChatHistoryManager'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
 import {
     ACCOUNT_LIMITS_INFO_URL,
@@ -731,6 +732,11 @@ function registerChat(
         contextRanking || null,
         symfRunner || null,
         guardrails
+    )
+    disposables.push(
+        chatHistory.onHistoryChanged(() => {
+            chatManager.chatPanelsManager.treeViewProvider.refresh()
+        })
     )
 
     const ghostHintDecorator = new GhostHintDecorator(authProvider)

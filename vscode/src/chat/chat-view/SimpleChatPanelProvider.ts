@@ -94,7 +94,7 @@ import type {
     LocalEnv,
     WebviewMessage,
 } from '../protocol'
-import { ChatHistoryManager } from './ChatHistoryManager'
+import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType, addWebviewViewHTML } from './ChatManager'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { InitDoer } from './InitDoer'
@@ -167,7 +167,6 @@ export class SimpleChatPanelProvider
     private readonly repoPicker: RemoteRepoPicker | null
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
 
-    private history = new ChatHistoryManager()
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
     private allMentionProvidersMetadataQueryCancellation?: vscode.CancellationTokenSource
 
@@ -1361,7 +1360,7 @@ export class SimpleChatPanelProvider
     // current in-progress completion. If the chat does not exist, then this
     // is a no-op.
     public async restoreSession(sessionID: string): Promise<void> {
-        const oldTranscript = this.history.getChat(this.authProvider.getAuthStatus(), sessionID)
+        const oldTranscript = chatHistory.getChat(this.authProvider.getAuthStatus(), sessionID)
         if (!oldTranscript) {
             return this.newSession()
         }
@@ -1380,7 +1379,7 @@ export class SimpleChatPanelProvider
     }
 
     private async saveSession(): Promise<void> {
-        const allHistory = await this.history.saveChat(
+        const allHistory = await chatHistory.saveChat(
             this.authProvider.getAuthStatus(),
             this.chatModel.toSerializedChatTranscript()
         )
@@ -1433,7 +1432,7 @@ export class SimpleChatPanelProvider
 
         const viewType = CodyChatPanelViewType
         const panelTitle =
-            this.history.getChat(this.authProvider.getAuthStatus(), this.chatModel.sessionID)
+            chatHistory.getChat(this.authProvider.getAuthStatus(), this.chatModel.sessionID)
                 ?.chatTitle || getChatPanelTitle(lastQuestion)
         const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
