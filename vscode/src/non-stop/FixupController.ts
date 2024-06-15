@@ -103,14 +103,14 @@ export class FixupController
         const autoSaveSetting = vscode.workspace.getConfiguration('files').get<string>('autoSave')
         if (autoSaveSetting === 'off' || autoSaveSetting === 'onWindowChange') {
             this._disposables.push(
-                vscode.workspace.onDidSaveTextDocument(({ uri, version }) => {
+                vscode.workspace.onDidSaveTextDocument(({ uri }) => {
                     // If we save the document, we consider the user to have accepted any applied tasks.
                     // This helps ensure that the codelens doesn't stay around unnecessarily and become an annoyance.
                     for (const task of this.tasks.values()) {
                         if (task.fixupFile.uri.fsPath.endsWith(uri.fsPath)) {
                             // However, if the user has opted to fix imports, we don't want to auto-accept the task
                             // because the first save is by us, so that we can get LSP diagnostics
-                            if (!(task.attemptFixImports && version === 1)) {
+                            if (!task.attemptFixImports || task.state === CodyTaskState.Applied) {
                                 this.accept(task)
                             }
                         }
@@ -600,8 +600,9 @@ export class FixupController
             }
 
             // Trigger import fixes if necessary
+            // TODO: This should be part of the same undo group
             if (task.attemptFixImports && task.destinationFile) {
-                this._disposables.push(new FixupImports(task.destinationFile))
+                await fixupImports(task.destinationFile)
             }
 
             // Add the missing undo stop after this change.
@@ -1219,13 +1220,11 @@ async function openDestinationFile(opts: OpenDestFileOptions): Promise<[vscode.U
         }
     })()
 
-    const pos = new vscode.Position(Math.max(doc.lineCount - 1, 0), 0)
+    // Scroll to bottom
+    const line = Math.max(doc.lineCount - 1, 0)
+    const column = 0
+    const pos = new vscode.Position(line, column)
     const range = new vscode.Range(pos, pos)
-    // task.selectionRange = range
-
-    // // Set original text to empty as we are not replacing original text but appending to file
-    // task.original = ''
-    // task.destinationFile = doc.uri
 
     // Show the new document before streaming start
     await vscode.window.showTextDocument(doc.uri, {
@@ -1234,10 +1233,6 @@ async function openDestinationFile(opts: OpenDestFileOptions): Promise<[vscode.U
     })
 
     return [doc.uri, range]
-
-    // // lift the pending state from the task so it can proceed to the next stage
-    // task.fixupFile = this.files.replaceFile(task.fixupFile.uri, newFileUri)
-    // this.setTaskState(task, CodyTaskState.Working)
 }
 
 interface FormatEditOptions {
@@ -1247,35 +1242,35 @@ interface FormatEditOptions {
     editOk: boolean
 }
 
-class FixupImports {
-    private disposables: vscode.Disposable[] = []
-    private timeout = 1000
-    private timeoutId: NodeJS.Timeout | undefined
-
-    constructor(private readonly uri: vscode.Uri) {
-        this.disposables.push(
-            vscode.languages.onDidChangeDiagnostics(event => {
-                if (event.uris.map(String).includes(this.uri.toString())) {
-                    this.fix()
-                }
-            })
-        )
-    }
-
-    fix() {
-        this.resetTimeout()
-        attemptFixImports(this.uri)
-    }
-
-    resetTimeout() {
-        if (this.timeoutId) {
-            clearTimeout(this.timeoutId)
+// Attempts to fix all import errors on the given file until the diagnostics have been
+// stable for 1 second
+async function fixupImports(file: vscode.Uri): Promise<void> {
+    return new Promise((resolve, reject) => {
+        let timeoutId: NodeJS.Timeout | undefined
+        function resetTimeout() {
+            if (timeoutId) {
+                clearTimeout(timeoutId)
+            }
+            timeoutId = setTimeout(dispose, 1000)
         }
-        this.timeoutId = setTimeout(this.dispose, this.timeout)
-    }
 
-    dispose = () => {
-        vscode.Disposable.from(...this.disposables).dispose()
+        function dispose() {
+            subscription.dispose()
+            resolve()
+        }
+
+        const subscription = vscode.languages.onDidChangeDiagnostics(event => {
+            if (event.uris.map(String).includes(file.toString())) {
+                resetTimeout()
+                attemptFixImports(file)
+            }
+        })
+    })
+}
+
+async function attemptFixImports(file: vscode.Uri) {
+    if (!(await attemptFixAllImports(file))) {
+        await attemptFixIndividualImports(file)
     }
 }
 
@@ -1308,30 +1303,18 @@ function getMissingImports(file: vscode.Uri): ImportError[] {
     return diagnostics.map(missingImport).filter(Boolean) as ImportError[]
 }
 
+// Searches for a single quick fix that adds all missing imports and returns whether it was applied
 export async function attemptFixAllImports(file: vscode.Uri): Promise<boolean> {
     const REGEX = /^add all missing imports/i
-    const imports = getMissingImports(file)
 
-    for (const missing of imports) {
+    for (const missing of getMissingImports(file)) {
         const { range } = missing
         // Get the quick fixes for the current diagnostic
-        const codeActions = await vscode.commands.executeCommand<vscode.CodeAction[]>(
-            'vscode.executeCodeActionProvider',
-            file,
-            range,
-            vscode.CodeActionKind.QuickFix.value,
-            10
-        )
+        const codeActions = await getQuickFixes({ file, range })
 
         for (const action of codeActions) {
-            if (action.title.match(REGEX) && action.command) {
-                if (action.edit) {
-                    await vscode.workspace.applyEdit(action.edit)
-                    return true
-                }
-                // Resolve the code action
-                const { command, arguments: args } = action.command
-                await vscode.commands.executeCommand(command, ...(args || []))
+            if (action.title.match(REGEX)) {
+                await vscode.workspace.applyEdit(action.edit)
                 return true
             }
         }
@@ -1340,20 +1323,13 @@ export async function attemptFixAllImports(file: vscode.Uri): Promise<boolean> {
     return false
 }
 
-async function attemptFixImports(file: vscode.Uri): Promise<void> {
-    if (await attemptFixAllImports(file)) {
-        return
-    }
-
+// Searches for individual quick fixes for each unique missing import and applies them
+async function attemptFixIndividualImports(file: vscode.Uri): Promise<void> {
     const IMPORT_QUICKFIX_REGEXES = [/^update import/i, /^add import/i, /^import/i]
 
     // Determines if a quick fix is something like "Add import" and has an edit action
-    const isImportFix = (action: vscode.CodeAction): action is HasWorkspaceEdit =>
+    const isImportFix = (action: HasWorkspaceEdit) =>
         !!IMPORT_QUICKFIX_REGEXES.some(re => action.title.match(re))
-
-    async function applyQuickFix(action: HasWorkspaceEdit) {
-        await vscode.workspace.applyEdit(action.edit)
-    }
 
     const importFixes = new Map<string, HasWorkspaceEdit>()
 
@@ -1361,14 +1337,7 @@ async function attemptFixImports(file: vscode.Uri): Promise<void> {
         if (!importFixes.has(missing.missingImport)) {
             const { range } = missing
             // Get the quick fixes for the current diagnostic
-            const codeActions = await vscode.commands.executeCommand<vscode.CodeAction[]>(
-                'vscode.executeCodeActionProvider',
-                file,
-                range,
-                vscode.CodeActionKind.QuickFix.value,
-                10
-            )
-
+            const codeActions = await getQuickFixes({ file, range })
             for (const action of codeActions) {
                 if (isImportFix(action)) {
                     importFixes.set(missing.missingImport, action)
@@ -1379,6 +1348,28 @@ async function attemptFixImports(file: vscode.Uri): Promise<void> {
     }
 
     for (const fix of importFixes.values()) {
-        await applyQuickFix(fix)
+        await vscode.workspace.applyEdit(fix.edit)
     }
+}
+
+interface QuickFixQuery {
+    file: vscode.Uri
+    range: vscode.Range
+    // Resolve specifies the number of quick fix actions to fully resolve into workspace edits
+    // many language servers avoid this step unless necessary, so if this value is not provided
+    // or does not extend to your desired quick fix, you may not get the full edit.
+    resolve?: number
+}
+
+// Returns the quick fixes for a given range in a file which can be directly applied
+async function getQuickFixes({ file, range, resolve }: QuickFixQuery): Promise<HasWorkspaceEdit[]> {
+    const actions = await vscode.commands.executeCommand<vscode.CodeAction[]>(
+        'vscode.executeCodeActionProvider',
+        file,
+        range,
+        vscode.CodeActionKind.QuickFix.value,
+        resolve ?? 10
+    )
+
+    return actions.filter((action: vscode.CodeAction): action is HasWorkspaceEdit => !!action.edit)
 }
