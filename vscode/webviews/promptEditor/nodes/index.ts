@@ -1,4 +1,9 @@
 import { CodeHighlightNode, CodeNode } from '@lexical/code'
-import { ContextItemMentionNode } from './ContextItemMentionNode'
+import { ContextItemMentionNode, ContextItemMentionTextNode } from './ContextItemMentionNode'
 
-export const RICH_EDITOR_NODES = [ContextItemMentionNode, CodeNode, CodeHighlightNode]
+export const RICH_EDITOR_NODES = [
+    ContextItemMentionNode,
+    ContextItemMentionTextNode,
+    CodeNode,
+    CodeHighlightNode,
+]

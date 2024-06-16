@@ -8,7 +8,7 @@ import {
 import { clsx } from 'clsx'
 import { $createTextNode, $getRoot, $getSelection, $insertNodes, type LexicalEditor } from 'lexical'
 import type { EditorState } from 'lexical'
-import { type FunctionComponent, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
+import { type FunctionComponent, useCallback, useImperativeHandle, useRef } from 'react'
 import type { UserAccountInfo } from '../Chat'
 import {
     isEditorContentOnlyInitialContext,
@@ -16,6 +16,7 @@ import {
 } from '../chat/cells/messageCell/human/editor/initialContext'
 import { BaseEditor } from './BaseEditor'
 import styles from './PromptEditor.module.css'
+import { $selectAfter, $selectEnd } from './lexicalUtils'
 import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
 
 interface Props extends KeyboardEventPluginProps {
@@ -129,7 +130,10 @@ export const PromptEditor: FunctionComponent<Props> = ({
                         isFromInitialContext: false,
                     })
                     $insertNodes([$createTextNode(' '), ...nodesToInsert])
-                    nodesToInsert.at(-1)?.select()
+                    const lastNode = nodesToInsert.at(-1)
+                    if (lastNode) {
+                        $selectAfter(lastNode)
+                    }
                 })
             },
             setInitialContextMentions(items: ContextItem[]) {
@@ -145,10 +149,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
                             isFromInitialContext: true,
                         })
                         $insertNodes(nodesToInsert)
-
-                        const nodeToSelect = nodesToInsert.at(-1)
-                        nodeToSelect?.select()
-
+                        $selectEnd()
                         hasSetInitialContext.current = true
                     }
                 })
@@ -170,7 +171,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
     )
 
     const onBaseEditorChange = useCallback(
-        (_editorState: EditorState, editor: LexicalEditor): void => {
+        (_editorState: EditorState, editor: LexicalEditor, tags: Set<string>): void => {
             if (onChange) {
                 onChange(toSerializedPromptEditorValue(editor))
             }
@@ -178,15 +179,21 @@ export const PromptEditor: FunctionComponent<Props> = ({
         [onChange]
     )
 
-    useEffect(() => {
-        if (initialEditorState) {
-            const editor = editorRef.current
-            if (editor) {
-                const newEditorState = editor.parseEditorState(initialEditorState.lexicalEditorState)
-                editor.setEditorState(newEditorState)
-            }
-        }
-    }, [initialEditorState])
+    // TODO!(sqs)
+    //
+    // const initialEditorStateJSON = JSON.stringify(initialEditorState ?? null)
+    // useEffect(() => {
+    //     const initialEditorState = JSON.parse(
+    //         initialEditorStateJSON
+    //     ) as SerializedPromptEditorState | null
+    //     if (initialEditorState) {
+    //         const editor = editorRef.current
+    //         if (editor) {
+    //             const newEditorState = editor.parseEditorState(initialEditorState.lexicalEditorState)
+    //             editor.setEditorState(newEditorState)
+    //         }
+    //     }
+    // }, [initialEditorStateJSON])
 
     return (
         <BaseEditor

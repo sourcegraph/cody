@@ -3,6 +3,7 @@ import { $createTextNode, $getRoot, type LexicalEditor, TextNode } from 'lexical
 import {
     $createContextItemMentionNode,
     ContextItemMentionNode,
+    type ContextItemMentionTextNode,
 } from '../../../../../promptEditor/nodes/ContextItemMentionNode'
 
 export function lexicalNodesForContextItems(
@@ -12,7 +13,7 @@ export function lexicalNodesForContextItems(
     }: {
         isFromInitialContext: boolean
     }
-): (TextNode | ContextItemMentionNode)[] {
+): (TextNode | ContextItemMentionTextNode | ContextItemMentionNode)[] {
     const nodes = items.flatMap(item => [
         $createContextItemMentionNode(item, { isFromInitialContext }),
         $createTextNode(' '),

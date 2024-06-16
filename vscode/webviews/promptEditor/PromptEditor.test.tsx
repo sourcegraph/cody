@@ -1,10 +1,10 @@
 import {
+    FILE_MENTION_EDITOR_STATE_FIXTURE,
     type SerializedContextItem,
     contextItemsFromPromptEditorValue,
     serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
 import { describe, expect, test } from 'vitest'
-import { FILE_MENTION_EDITOR_STATE_FIXTURE } from './fixtures'
 
 describe('serializedPromptEditorStateFromText', () => {
     test('empty', () =>

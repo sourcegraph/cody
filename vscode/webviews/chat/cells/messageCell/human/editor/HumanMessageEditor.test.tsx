@@ -1,9 +1,11 @@
-import { serializedPromptEditorStateFromText } from '@sourcegraph/cody-shared'
+import {
+    FILE_MENTION_EDITOR_STATE_FIXTURE,
+    serializedPromptEditorStateFromText,
+} from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
 import type { ComponentProps } from 'react'
 import { type Assertion, type Mock, describe, expect, test, vi } from 'vitest'
 import { TestAppWrapper } from '../../../../../AppWrapper'
-import { FILE_MENTION_EDITOR_STATE_FIXTURE } from '../../../../../promptEditor/fixtures'
 import { FIXTURE_USER_ACCOUNT_INFO } from '../../../../fixtures'
 import { HumanMessageEditor } from './HumanMessageEditor'
 

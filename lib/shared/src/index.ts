@@ -300,4 +300,9 @@ export {
 export { type ClientStateForWebview } from './clientState'
 export * from './lexicalEditor/editorState'
 export * from './lexicalEditor/nodes'
+export {
+    FILE_MENTION_EDITOR_STATE_FIXTURE,
+    FILE_TEXT_MENTION_EDITOR_STATE_FIXTURE,
+    UNKNOWN_NODES_EDITOR_STATE_FIXTURE,
+} from './lexicalEditor/fixtures'
 export { getSerializedParams } from './sourcegraph-api/completions/utils'

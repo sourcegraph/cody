@@ -1,8 +1,12 @@
 import { URI } from 'vscode-uri'
 
-import { type ChatMessage, ContextItemSource, ps } from '@sourcegraph/cody-shared'
+import {
+    type ChatMessage,
+    ContextItemSource,
+    FILE_MENTION_EDITOR_STATE_FIXTURE,
+    ps,
+} from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from '../Chat'
-import { FILE_MENTION_EDITOR_STATE_FIXTURE } from '../promptEditor/fixtures'
 
 export function transcriptFixture(transcript: ChatMessage[]): ChatMessage[] {
     return transcript.map(m => ({
