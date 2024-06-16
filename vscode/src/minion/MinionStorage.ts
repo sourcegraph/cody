@@ -32,7 +32,7 @@ export class MinionStorage {
     }
 
     private async refreshFromStorage(authStatus: AuthStatus): Promise<void> {
-        const rawRuns = localStorage.getMinionHistory(authStatus)
+        const rawRuns = await localStorage.getMinionHistory(authStatus)
         if (rawRuns === null) {
             this.minionRuns = {}
             return

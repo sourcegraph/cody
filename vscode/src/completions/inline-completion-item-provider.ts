@@ -135,7 +135,7 @@ export class InlineCompletionItemProvider
         return provider
     }
 
-    private constructor({
+    constructor({
         completeSuggestWidgetSelection = true,
         formatOnAccept = true,
         disableInsideComments = false,
@@ -180,9 +180,6 @@ export class InlineCompletionItemProvider
                 createBfgRetriever
             )
         )
-
-        const chatHistory = localStorage.getChatHistory(this.config.authStatus)?.chat
-        this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0
 
         logDebug(
             'CodyCompletionProvider:initialized',

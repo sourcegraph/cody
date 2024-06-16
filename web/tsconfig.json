@@ -1,19 +1,16 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
+    "module": "commonjs",
     "rootDir": ".",
-    "module": "ESNext",
     "outDir": "dist",
+    "target": "es2019",
+    "allowJs": true,
     "jsx": "react-jsx",
-    "skipLibCheck": true,
-    "skipDefaultLibCheck": true,
     "emitDeclarationOnly": true,
     "lib": ["ESNext", "DOM"]
   },
-  "include": ["src", "lib"],
-  "references": [
-    { "path": "../agent" },
-    { "path": "../vscode" },
-    { "path": "../lib/shared" }
-  ],
+  "include": ["lib", "src"],
+  "exclude": ["dist", "./vitest.config.ts"],
+  "references": [{"path": "../agent"}, { "path": "../lib/shared" }, { "path": "../vscode" }]
 }

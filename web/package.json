@@ -14,7 +14,8 @@
   "scripts": {
     "dev": "vite --mode development",
     "build": "vite build --mode production",
-    "test": "vitest"
+    "test": "vitest",
+    "build-ts": "tsc --build"
   },
   "dependencies": {
     "@sourcegraph/cody-agent": "workspace:*",

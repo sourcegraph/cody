@@ -1,6 +1,5 @@
 import { resolve } from 'node:path'
 
-import dts from 'vite-plugin-dts'
 import react from '@vitejs/plugin-react-swc'
 
 // @ts-ignore
@@ -26,8 +25,8 @@ export default defineProjectWithDefaults(__dirname, {
     logLevel: 'info',
     worker: { format: 'es' },
     plugins: [
+        // @ts-ignore
         react(),
-        dts({ include: ['lib'] })
     ],
     resolve: {
         alias: [
