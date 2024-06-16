@@ -4,6 +4,10 @@ export default {
     ...webviewTailwindConfig,
     content: {
         relative: true,
-        files: ['src/*.{ts,tsx}', '../vscode/webviews/**/*.{ts,tsx}'],
+        files: [
+            'src/*.{ts,tsx}',
+            '../vscode/webviews/**/*.{ts,tsx}',
+            'lib/**/*.{ts,tsx}'
+        ],
     },
 }

@@ -1,9 +1,27 @@
 
+html,
+:host {
+    tab-size: 4;
+    line-height: 1.5;
+    text-size-adjust: 100%;
+    font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji';
+    font-feature-settings: normal;
+    font-variation-settings: normal;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    line-height: inherit;
+}
+
 .root {
     display: flex;
     height: 100vh;
     width: 100%;
     font-size: 13px;
+    overflow: hidden;
 }
 
 .history {
@@ -27,6 +45,7 @@
     }
 
     :global(button) {
+        border: none;
         padding: 0.25rem;
         text-align: start;
         background: #1e1e1e;
