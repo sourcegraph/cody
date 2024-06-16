@@ -63,10 +63,7 @@ export const App: FC = () => {
                         </ul>
                     }
                 </ChatHistory>
-                <CodyWebChat
-                    repositories={MOCK_DOT_COM_SOURCEGRAPH_REPOSITORY}
-                    className={styles.container}
-                />
+                <CodyWebChat className={styles.container} />
             </div>
         </CodyWebChatProvider>
     )
