@@ -14,11 +14,10 @@ import {
 } from './anthropic'
 import { createProviderConfig as createExperimentalOllamaProviderConfig } from './experimental-ollama'
 import {
-    FIREWORKS_FIM_FINE_TUNED_MODEL_1,
-    FIREWORKS_FIM_FINE_TUNED_MODEL_2,
-    FIREWORKS_FIM_FINE_TUNED_MODEL_3,
-    FIREWORKS_FIM_FINE_TUNED_MODEL_4,
+    DEEPSEEK_CODER_1P3_B,
+    DEEPSEEK_CODER_7B,
     FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID,
+    FIREWORKS_FIM_LANG_SPECIFIC_MODEL_MIXTRAL,
     type FireworksOptions,
     createProviderConfig as createFireworksProviderConfig,
 } from './fireworks'
@@ -155,48 +154,49 @@ export async function createProviderConfig(
     return createAnthropicProviderConfig({ client })
 }
 
-async function resolveFinetunedModelFromFeatureFlags(): ReturnType<
+async function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<
     typeof resolveDefaultModelFromVSCodeConfigOrFeatureFlags
 > {
     /**
      * The traffic allocated to the fine-tuned-base feature flag is further split between multiple feature flag in function.
      */
-    const [finetuneControl, finetuneVariant1, finetuneVariant2, finetuneVariant3, finetuneVariant4] =
+    const [fimModelControl, fimModelVariant1, fimModelVariant2, fimModelVariant3, fimModelVariant4] =
         await Promise.all([
             featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteFIMFineTunedModelControl
+                FeatureFlag.CodyAutocompleteFIMModelExperimentControl
             ),
             featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteFIMFineTunedModelVariant1
+                FeatureFlag.CodyAutocompleteFIMModelExperimentVariant1
             ),
             featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteFIMFineTunedModelVariant2
+                FeatureFlag.CodyAutocompleteFIMModelExperimentVariant2
             ),
             featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteFIMFineTunedModelVariant3
+                FeatureFlag.CodyAutocompleteFIMModelExperimentVariant3
             ),
             featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteFIMFineTunedModelVariant4
+                FeatureFlag.CodyAutocompleteFIMModelExperimentVariant4
             ),
         ])
-    if (finetuneVariant1) {
-        return { provider: 'fireworks', model: FIREWORKS_FIM_FINE_TUNED_MODEL_1 }
+    if (fimModelVariant1) {
+        // Variant 1: Current production model with +200msec latency to quantity the effect of latency increase while keeping same quality
+        return { provider: 'fireworks', model: FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID }
     }
-    if (finetuneVariant2) {
-        return { provider: 'fireworks', model: FIREWORKS_FIM_FINE_TUNED_MODEL_2 }
+    if (fimModelVariant2) {
+        return { provider: 'fireworks', model: FIREWORKS_FIM_LANG_SPECIFIC_MODEL_MIXTRAL }
     }
-    if (finetuneVariant3) {
-        return { provider: 'fireworks', model: FIREWORKS_FIM_FINE_TUNED_MODEL_3 }
+    if (fimModelVariant3) {
+        return { provider: 'fireworks', model: DEEPSEEK_CODER_1P3_B }
     }
-    if (finetuneVariant4) {
-        return { provider: 'fireworks', model: FIREWORKS_FIM_FINE_TUNED_MODEL_4 }
+    if (fimModelVariant4) {
+        return { provider: 'fireworks', model: DEEPSEEK_CODER_7B }
     }
-    if (finetuneControl) {
-        return { provider: 'fireworks', model: 'starcoder-hybrid' }
+    if (fimModelControl) {
+        // Current production model
+        return { provider: 'fireworks', model: FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID }
     }
-
     // Extra free traffic - redirect to the current production model which could be different than control
-    return { provider: 'fireworks', model: 'starcoder-hybrid' }
+    return { provider: 'fireworks', model: FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID }
 }
 
 async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
@@ -209,21 +209,16 @@ async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
         return { provider: configuredProvider }
     }
 
-    const [
-        starCoder2Hybrid,
-        starCoderHybrid,
-        claude3,
-        finetunedFIMModelHybrid,
-        finetunedFIMModelExperiment,
-    ] = await Promise.all([
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteFIMFineTunedModelHybrid),
-        featureFlagProvider.evaluateFeatureFlag(
-            FeatureFlag.CodyAutocompleteFIMFineTunedModelBaseFeatureFlag
-        ),
-    ])
+    const [starCoder2Hybrid, starCoderHybrid, claude3, finetunedFIMModelHybrid, fimModelExperimentFlag] =
+        await Promise.all([
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteFIMFineTunedModelHybrid),
+            featureFlagProvider.evaluateFeatureFlag(
+                FeatureFlag.CodyAutocompleteFIMModelExperimentBaseFeatureFlag
+            ),
+        ])
 
     // We run fine tuning experiment for VSC client only.
     // We disable for all agent clients like the JetBrains plugin.
@@ -231,9 +226,9 @@ async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
         .getConfiguration()
         .get<boolean>('cody.advanced.agent.running', false)
 
-    if (!isFinetuningExperimentDisabled && finetunedFIMModelExperiment) {
+    if (!isFinetuningExperimentDisabled && fimModelExperimentFlag) {
         // The traffic in this feature flag is interpreted as a traffic allocated to the fine-tuned experiment.
-        return resolveFinetunedModelFromFeatureFlags()
+        return resolveFIMModelExperimentFromFeatureFlags()
     }
 
     if (finetunedFIMModelHybrid) {

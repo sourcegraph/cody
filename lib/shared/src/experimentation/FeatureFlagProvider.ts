@@ -19,12 +19,12 @@ export enum FeatureFlag {
     CodyAutocompleteFIMFineTunedModelHybrid = 'cody-autocomplete-fim-fine-tuned-model-hybrid',
 
     // Enable various feature flags to experiment with FIM trained fine-tuned models via Fireworks
-    CodyAutocompleteFIMFineTunedModelBaseFeatureFlag = 'cody-autocomplete-fim-fine-tuned-model-experiment-flag',
-    CodyAutocompleteFIMFineTunedModelControl = 'cody-autocomplete-fim-fine-tuned-model-control',
-    CodyAutocompleteFIMFineTunedModelVariant1 = 'cody-autocomplete-fim-fine-tuned-model-variant-1',
-    CodyAutocompleteFIMFineTunedModelVariant2 = 'cody-autocomplete-fim-fine-tuned-model-variant-2',
-    CodyAutocompleteFIMFineTunedModelVariant3 = 'cody-autocomplete-fim-fine-tuned-model-variant-3',
-    CodyAutocompleteFIMFineTunedModelVariant4 = 'cody-autocomplete-fim-fine-tuned-model-variant-4',
+    CodyAutocompleteFIMModelExperimentBaseFeatureFlag = 'cody-autocomplete-fim-model-base-experiment-flag',
+    CodyAutocompleteFIMModelExperimentControl = 'cody-autocomplete-fim-model-experiment-control',
+    CodyAutocompleteFIMModelExperimentVariant1 = 'cody-autocomplete-fim-model-experiment-variant-1',
+    CodyAutocompleteFIMModelExperimentVariant2 = 'cody-autocomplete-fim-model-experiment-variant-2',
+    CodyAutocompleteFIMModelExperimentVariant3 = 'cody-autocomplete-fim-model-experiment-variant-3',
+    CodyAutocompleteFIMModelExperimentVariant4 = 'cody-autocomplete-fim-model-experiment-variant-4',
 
     // Enables Claude 3 if the user is in our holdout group
     CodyAutocompleteClaude3 = 'cody-autocomplete-claude-3',
