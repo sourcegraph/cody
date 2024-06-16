@@ -1,6 +1,7 @@
 import { expect } from '@playwright/test'
 import { SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
 
+import { focusSidebar } from './common'
 import { type ExpectedEvents, signOut, test } from './helpers'
 
 test.extend<ExpectedEvents>({
@@ -62,6 +63,7 @@ test.extend<ExpectedEvents>({
 
     // Sign out.
     await signOut(page)
+    await focusSidebar(page)
 
     const sidebarFrame = page.frameLocator('iframe.webview').frameLocator('iframe').first()
     await expect(
