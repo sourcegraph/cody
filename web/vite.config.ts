@@ -17,6 +17,8 @@ const FAKE_PROCESS_ENV: Record<string, string | boolean> = {
     NODE_DEBUG: false,
     CODY_SUPPRESS_AGENT_AUTOCOMPLETE_WARNING: true,
     CODY_WEB_DONT_SET_SOME_HEADERS: true,
+    LSP_LIGHT_LOGGING_ENABLED: false,
+    LSP_LIGHT_CACHE_DISABLED: false,
     language: 'en-US',
 }
 
@@ -71,7 +73,7 @@ export default defineProjectWithDefaults(__dirname, {
         // the `agent` tests and cause some failures because process.env.CODY_SHIM_TESTING gets
         // `define`d to `false`.
         ...( process.env.VITEST ? {} : {
-            'process': {},
+            'process': { env: {} },
         ...Object.fromEntries(
             Object.entries(FAKE_PROCESS_ENV).map(([key, value]) => [
                           `process.env.${key}`,

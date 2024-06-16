@@ -1,13 +1,10 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 
-import { AppWrapper } from '../../vscode/webviews/AppWrapper'
 import { App } from './App'
 
 ReactDOM.createRoot(document.querySelector('#root') as HTMLElement).render(
     <React.StrictMode>
-        <AppWrapper>
-            <App />
-        </AppWrapper>
+        <App />
     </React.StrictMode>
 )
