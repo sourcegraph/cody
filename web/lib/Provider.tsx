@@ -12,6 +12,7 @@ import {
     MutableRefObject
 } from 'react'
 
+import { AppWrapper } from '@sourcegraph/vscode-cody/webviews/AppWrapper';
 import { ExtensionMessage } from '@sourcegraph/vscode-cody/src/chat/protocol';
 import { setVSCodeWrapper, VSCodeWrapper } from '@sourcegraph/vscode-cody/webviews/utils/VSCodeApi';
 import { hydrateAfterPostMessage, isErrorLike, SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared';
@@ -197,17 +198,19 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
     }, [client, activeWebviewPanelID])
 
     return (
-        <CodyWebChatContext.Provider value={{
-            client,
-            vscodeAPI,
-            graphQLClient,
-            activeWebviewPanelID,
-            lastActiveChatID,
-            setLastActiveChatID,
-            initialContext,
-        }}>
-            { children }
-        </CodyWebChatContext.Provider>
+        <AppWrapper>
+            <CodyWebChatContext.Provider value={{
+                client,
+                vscodeAPI,
+                graphQLClient,
+                activeWebviewPanelID,
+                lastActiveChatID,
+                setLastActiveChatID,
+                initialContext,
+            }}>
+                { children }
+            </CodyWebChatContext.Provider>
+        </AppWrapper>
     )
 }
 
