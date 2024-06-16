@@ -368,6 +368,9 @@ importers:
       '@lexical/text':
         specifier: ^0.15.0
         version: 0.15.0
+      '@lexical/utils':
+        specifier: ^0.16.0
+        version: 0.16.0
       '@mdi/js':
         specifier: ^7.2.96
         version: 7.2.96
@@ -2977,6 +2980,13 @@ packages:
       lexical: 0.15.0
     dev: false
 
+  /@lexical/list@0.16.0:
+    resolution: {integrity: sha512-nBx/DMM7nCgnOzo1JyNnVaIrk/Xi5wIPNi8jixrEV6w9Om2K6dHutn/79Xzp2dQlNGSLHEDjky6N2RyFgmXh0g==}
+    dependencies:
+      '@lexical/utils': 0.16.0
+      lexical: 0.16.0
+    dev: false
+
   /@lexical/mark@0.15.0:
     resolution: {integrity: sha512-cdePA98sOJRc4/HHqcOcPBFq4UDwzaFJOK1N1E6XUGcXH1GU8zHtV1ElTgmbsGkyjBRwhR+OqKm9eso1PBOUkg==}
     dependencies:
@@ -3064,11 +3074,24 @@ packages:
       lexical: 0.15.0
     dev: false
 
+  /@lexical/selection@0.16.0:
+    resolution: {integrity: sha512-trT9gQVJ2j6AwAe7tHJ30SRuxCpV6yR9LFtggxphHsXSvJYnoHC0CXh1TF2jHl8Gd5OsdWseexGLBE4Y0V3gwQ==}
+    dependencies:
+      lexical: 0.16.0
+    dev: false
+
   /@lexical/table@0.15.0:
     resolution: {integrity: sha512-3IRBg8IoIHetqKozRQbJQ2aPyG0ziXZ+lc8TOIAGs6METW/wxntaV+rTNrODanKAgvk2iJTIyfFkYjsqS9+VFg==}
     dependencies:
       '@lexical/utils': 0.15.0
       lexical: 0.15.0
+    dev: false
+
+  /@lexical/table@0.16.0:
+    resolution: {integrity: sha512-A66K779kxdr0yH2RwT2itsMnkzyFLFNPXyiWGLobCH8ON4QPuBouZvjbRHBe8Pe64yJ0c1bRDxSbTqUi9Wt3Gg==}
+    dependencies:
+      '@lexical/utils': 0.16.0
+      lexical: 0.16.0
     dev: false
 
   /@lexical/text@0.15.0:
@@ -3084,6 +3107,15 @@ packages:
       '@lexical/selection': 0.15.0
       '@lexical/table': 0.15.0
       lexical: 0.15.0
+    dev: false
+
+  /@lexical/utils@0.16.0:
+    resolution: {integrity: sha512-GWmFEmd7o3GHqJBaEwzuZQbfTNI3Gg8ReGuHMHABgrkhZ8j2NggoRBlxsQLG0f7BewfTMVwbye22yBPq78775w==}
+    dependencies:
+      '@lexical/list': 0.16.0
+      '@lexical/selection': 0.16.0
+      '@lexical/table': 0.16.0
+      lexical: 0.16.0
     dev: false
 
   /@lexical/yjs@0.15.0(yjs@13.6.15):
@@ -10414,6 +10446,10 @@ packages:
 
   /lexical@0.15.0:
     resolution: {integrity: sha512-/7HrPAmtgsc1F+qpv5bFwoQZ6CbH/w3mPPL2AW5P75/QYrqKz4bhvJrc2jozIX0GxtuT/YUYT7w+1sZMtUWbOg==}
+    dev: false
+
+  /lexical@0.16.0:
+    resolution: {integrity: sha512-Skn45Qhriazq4fpAtwnAB11U//GKc4vjzx54xsV3TkDLDvWpbL4Z9TNRwRoN3g7w8AkWnqjeOSODKkrjgfRSrg==}
     dev: false
 
   /lib0@0.2.94:

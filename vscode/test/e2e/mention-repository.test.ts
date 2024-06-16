@@ -42,5 +42,5 @@ testWithGitRemote('@-mention repository', async ({ page, sidebar, server }) => {
     await openMentionsForProvider(chatFrame, lastChatInput, 'Remote Repositories')
     await expect(mentionMenuItems(chatFrame)).toHaveText(['a/b', 'c/d'])
     await selectMentionMenuItem(chatFrame, 'c/d')
-    await expect(chatInputMentions(lastChatInput)).toHaveText(['@host.example/user/myrepo', '@c/d'])
+    await expect(chatInputMentions(lastChatInput)).toHaveText(['host.example/user/myrepo', 'c/d'])
 })
