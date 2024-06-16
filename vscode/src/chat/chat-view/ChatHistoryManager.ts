@@ -4,11 +4,10 @@ import * as vscode from 'vscode'
 import { localStorage } from '../../services/LocalStorageProvider'
 
 export class ChatHistoryManager implements vscode.Disposable {
-    private historyChanged: vscode.EventEmitter<void>
+    private historyChanged: vscode.EventEmitter<void> = new vscode.EventEmitter<void>()
     private disposables: vscode.Disposable[] = []
 
     constructor() {
-        this.historyChanged = new vscode.EventEmitter<void>()
         this.disposables.push(this.historyChanged)
     }
 

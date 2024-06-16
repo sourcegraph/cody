@@ -107,33 +107,12 @@ export class ChatPanelsManager implements vscode.Disposable {
             )
         )
 
-        this.sidebarProvider = this.createSidebarProvider()
+        this.sidebarProvider = this.createProvider()
         this.disposables.push(
             vscode.window.registerWebviewViewProvider('cody.chat', this.sidebarProvider, {
                 webviewOptions: { retainContextWhenHidden: true },
             })
         )
-    }
-
-    private createSidebarProvider(): SimpleChatPanelProvider {
-        const authProvider = this.options.authProvider
-        const authStatus = authProvider.getAuthStatus()
-
-        const isConsumer = authStatus.isDotCom
-        const isCodyProUser = !authStatus.userCanUpgrade
-        const models = ModelsService.getModels(ModelUsage.Chat, isCodyProUser)
-
-        return new SimpleChatPanelProvider({
-            ...this.options,
-            chatClient: this.chatClient,
-            localEmbeddings: isConsumer ? this.localEmbeddings : null,
-            contextRanking: isConsumer ? this.contextRanking : null,
-            symf: isConsumer ? this.symf : null,
-            enterpriseContext: isConsumer ? null : this.enterpriseContext,
-            models,
-            guardrails: this.guardrails,
-            startTokenReceiver: this.options.startTokenReceiver,
-        })
     }
 
     public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
@@ -244,12 +223,10 @@ export class ChatPanelsManager implements vscode.Disposable {
     }
 
     /**
-     * Creates a provider for the chat panel.
+     * Creates a provider for a chat view.
      */
     private createProvider(): SimpleChatPanelProvider {
-        const authProvider = this.options.authProvider
-        const authStatus = authProvider.getAuthStatus()
-
+        const authStatus = this.options.authProvider.getAuthStatus()
         const isConsumer = authStatus.isDotCom
         const isCodyProUser = !authStatus.userCanUpgrade
         const models = ModelsService.getModels(ModelUsage.Chat, isCodyProUser)
