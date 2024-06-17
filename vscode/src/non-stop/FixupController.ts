@@ -1199,7 +1199,7 @@ async function openDestinationFile(opts: OpenDestFileOptions): Promise<[vscode.U
             case 'untitled': {
                 // Create a new untitled file if the suggested file does not exist
                 if (opts.uri) {
-                    return await vscode.workspace.openTextDocument(opts.uri)
+                    return await vscode.workspace.openTextDocument(opts.uri.with({ scheme: 'untitled' }))
                 }
                 if (opts.guessLanguageFrom) {
                     const currentDoc = await vscode.workspace.openTextDocument(opts.guessLanguageFrom)
