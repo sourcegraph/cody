@@ -1478,7 +1478,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             throw new TypeError(`Expected chat command result, got ${result.type}`)
         }
 
-        const { sessionID, webviewPanel } = result.session ?? {}
+        const { sessionID, webviewPanelOrView: webviewPanel } = result.session ?? {}
         if (sessionID === undefined || webviewPanel === undefined) {
             throw new Error('chatID is undefined')
         }

@@ -1,11 +1,9 @@
 import type { AuthStatus } from '@sourcegraph/cody-shared'
 import { localStorage } from '../services/LocalStorageProvider'
 import type { MinionSession } from './action'
-import type { BlockCheckpoint } from './statemachine'
 
 interface StoredSessionState {
     session: MinionSession
-    checkpoint?: BlockCheckpoint
 }
 
 export class MinionStorage {
