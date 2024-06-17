@@ -384,9 +384,6 @@ describe('Agent', () => {
 
         it('chat/submitMessage (with enhanced context, squirrel test)', async () => {
             await client.openFile(squirrelUri)
-            await client.request('command/execute', {
-                command: 'cody.search.index-update',
-            })
             const { lastMessage, transcript } =
                 await client.sendSingleMessageToNewChatWithFullTranscript('What is Squirrel?', {
                     addEnhancedContext: false,
@@ -547,9 +544,6 @@ describe('Agent', () => {
 
         it('chat/submitMessage on an ignored file (addEnhancedContext: false)', async () => {
             await client.openFile(ignoredUri)
-            await client.request('command/execute', {
-                command: 'cody.search.index-update',
-            })
             const { transcript } = await client.sendSingleMessageToNewChatWithFullTranscript(
                 'Which file is the isIgnoredByCody functions defined?',
                 { addEnhancedContext: false }
@@ -573,9 +567,6 @@ describe('Agent', () => {
         }, 30_000)
 
         it('chat command on an ignored file', async () => {
-            await client.request('command/execute', {
-                command: 'cody.search.index-update',
-            })
             await client.openFile(ignoredUri)
             // Cannot execute commands in an ignored files, so this should throw error
             await client.request('commands/explain', null).catch(err => {
@@ -584,9 +575,6 @@ describe('Agent', () => {
         }, 30_000)
 
         it('inline edit on an ignored file', async () => {
-            await client.request('command/execute', {
-                command: 'cody.search.index-update',
-            })
             await client.openFile(ignoredUri, { removeCursor: false })
             await client.request('editCommands/document', null).catch(err => {
                 expect(err).toBeDefined()
@@ -667,9 +655,6 @@ describe('Agent', () => {
 
     describe('Commands', () => {
         it('commands/explain', async () => {
-            await client.request('command/execute', {
-                command: 'cody.search.index-update',
-            })
             await client.openFile(animalUri)
             const freshChatID = await client.request('chat/new', null)
             const id = await client.request('commands/explain', null)
@@ -708,9 +693,6 @@ describe('Agent', () => {
         it.skipIf(isWindows())(
             'commands/test',
             async () => {
-                await client.request('command/execute', {
-                    command: 'cody.search.index-update',
-                })
                 await client.openFile(animalUri)
                 const id = await client.request('commands/test', null)
                 const lastMessage = await client.firstNonEmptyTranscript(id)
