@@ -13,7 +13,7 @@
   "sideEffects": false,
   "scripts": {
     "dev": "vite --mode development",
-    "build": "tsc --build && vite build --mode production",
+    "build": "vite build --mode production && tsc --build",
     "test": "vitest",
     "build-ts": "tsc --build"
   },
