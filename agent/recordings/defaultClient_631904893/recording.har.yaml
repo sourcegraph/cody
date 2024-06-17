@@ -1232,11 +1232,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: d28860d38d56bf14136916b72774c00f
+    - _id: 1244bb496e3f8246c50b5dda7535b74f
       _order: 0
       cache: {}
       request:
-        bodySize: 676
+        bodySize: 611
         cookies: []
         headers:
           - name: content-type
@@ -1249,7 +1249,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-a76f8965d4313a5369938435e91522a9-1b3b1db64e06e56a-01
+            value: 00-45506104abd1cd1aead1c60823e186c5-6e6da5223f83fef8-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1279,9 +1279,8 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: "The provided codebase context are the code you need and have access to.
-                  Do not make any assumptions. Ask for additional context if you
-                  need it. Question: What is the name of the function that I
+                text: "You have access to the provided codebase context. Do not make any
+                  assumptions. Question: What is the name of the function that I
                   have selected? Only answer with the name of the function,
                   nothing else"
             model: anthropic/claude-3-sonnet-20240229
@@ -1311,7 +1310,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 17 Jun 2024 17:47:11 GMT
+            value: Mon, 17 Jun 2024 19:56:39 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1340,7 +1339,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-17T17:47:10.230Z
+      startedDateTime: 2024-06-17T19:56:38.445Z
       time: 0
       timings:
         blocked: -1
@@ -1350,11 +1349,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: fefeadce6e992706775a316b4fcac9d0
+    - _id: 544c2e12d43d4d8b2efab6fbf6ff2524
       _order: 0
       cache: {}
       request:
-        bodySize: 681
+        bodySize: 616
         cookies: []
         headers:
           - name: content-type
@@ -1367,7 +1366,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-584d182f4bf44a06943d410f6db5ef64-f36bfacddfe5c3c4-01
+            value: 00-e72beaf4bda072c61d8a328e1e9bfb7d-ffc154673d5c1161-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1395,9 +1394,8 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: "The provided codebase context are the code you need and have access to.
-                  Do not make any assumptions. Ask for additional context if you
-                  need it. Question: What is the name of the function that I
+                text: "You have access to the provided codebase context. Do not make any
+                  assumptions. Question: What is the name of the function that I
                   have selected? Only answer with the name of the function,
                   nothing else"
             model: anthropic/claude-3-sonnet-20240229
@@ -1427,7 +1425,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 17 Jun 2024 17:47:12 GMT
+            value: Mon, 17 Jun 2024 19:56:40 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1456,7 +1454,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-17T17:47:11.710Z
+      startedDateTime: 2024-06-17T19:56:39.822Z
       time: 0
       timings:
         blocked: -1
