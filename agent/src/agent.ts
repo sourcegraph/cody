@@ -1050,7 +1050,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 await setInitialContext()
             }
 
-            return panelID
+            return { panelID, chatID: this.webPanels.panels.get(panelID)?.chatID }
         })
 
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {

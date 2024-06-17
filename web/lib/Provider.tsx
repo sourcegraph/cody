@@ -63,6 +63,8 @@ interface CodyWebChatProviderProps {
     serverEndpoint: string
     accessToken: string | null
     initialContext: InitialContext
+    chatID?: string
+    onNewChatCreated?: (chatId: string) => void
 }
 
 /**
@@ -70,7 +72,14 @@ interface CodyWebChatProviderProps {
  * agent client and maintains active web panel ID, chat history and vscodeAPI.
  */
 export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>> = props => {
-    const { serverEndpoint, accessToken, initialContext, children } = props
+    const {
+        serverEndpoint,
+        accessToken,
+        initialContext,
+        children,
+        chatID: initialChatId,
+        onNewChatCreated,
+    } = props
 
     // In order to avoid multiple client creation during dev runs
     // since useEffect can be fired multiple times during dev builds
@@ -84,7 +93,7 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
     // TODO [VK] Memoize agent client creation to avoid re-creating client
     useEffect(() => {
         ;(async () => {
-            if (isClientInitialized.current) {
+            if (isClientInitialized.current || client) {
                 return
             }
 
@@ -99,10 +108,13 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
 
                 // Fetch existing chats from the agent chat storage
                 const chatHistory = await client.rpc.sendRequest<ChatExportResult[]>('chat/export', { fullHistory: true })
+                const hasInitialContext = initialContext && initialContext.repositories.length !== 0 && initialContext.fileURL
+                const initialChat = chatHistory.find(chat => chat.chatID === initialChatId)
 
                 // In case of no chats we should create initial empty chat
-                if (chatHistory.length === 0) {
-                    activeWebviewPanelID.current = await client.rpc.sendRequest('chat/new', {
+                // Also when we have a context
+                if (chatHistory.length === 0 || (hasInitialContext && !initialChat)) {
+                    const { panelID, chatID } = await client.rpc.sendRequest<{panelID: string, chatID: string}>('chat/new', {
                         repositories: initialContext.repositories,
                         file: initialContext.fileURL
                             ? {
@@ -112,11 +124,17 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
                             } as UriComponents
                             : undefined
                     })
+
+                    activeWebviewPanelID.current = panelID
+
+                    if (onNewChatCreated) {
+                        onNewChatCreated(chatID)
+                    }
                 } else {
                     // Activate either last active chat by ID from local storage or
                     // set the last created chat from the history
                     const lastUsedChat = chatHistory.find(chat => chat.chatID === lastActiveChatID)
-                    const lastActiveChat = lastUsedChat ?? chatHistory[chatHistory.length - 1]
+                    const lastActiveChat = initialChat ?? lastUsedChat ?? chatHistory[chatHistory.length - 1]
 
                     activeWebviewPanelID.current = await client.rpc.sendRequest('chat/restore', {
                         chatID: lastActiveChat.chatID,
