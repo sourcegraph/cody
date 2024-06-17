@@ -34,9 +34,9 @@
     font-size: var(--vscode-font-size);
     font-family: var(--vscode-font-family);
     color: var(--vscode-editor-foreground);
-}
 
-[data-cody-web-chat] a {
-    color: var(--vscode-textLink-foreground);
-    text-decoration: none;
+    & a {
+        text-decoration: none;
+        color: var(--vscode-textLink-foreground);
+    }
 }
