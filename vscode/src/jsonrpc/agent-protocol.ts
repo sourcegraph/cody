@@ -428,7 +428,8 @@ export interface AutocompleteItem {
 
 export interface ClientInfo {
     name: string
-    version: string
+    version: string // extension version
+    ideVersion?: string
     workspaceRootUri: string
 
     /** @deprecated Use `workspaceRootUri` instead. */

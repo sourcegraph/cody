@@ -722,6 +722,7 @@ export const vsCodeMocks = {
     Uri,
     Location,
     languages,
+    version: '1.85.1-testing',
     env: {
         uiKind: 1 satisfies vscode_types.UIKind.Desktop,
     },

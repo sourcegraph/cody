@@ -88,6 +88,10 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
                 return extensionConfig?.codebase
             case 'cody.advanced.agent.ide':
                 return this.clientNameToIDE(this.clientInfo()?.name ?? '')
+            case 'cody.advanced.agent.ide.version':
+                return this.clientInfo()?.version
+            case 'cody.advanced.agent.extension.version':
+                return this.clientInfo()?.ideVersion
             case 'editor.insertSpaces':
                 return true // TODO: override from IDE clients
             default:
