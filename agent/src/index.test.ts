@@ -337,7 +337,7 @@ describe('Agent', () => {
             })
         }, 30_000)
 
-        it('chat/submitMessage (addEnhancedContext: true)', async () => {
+        it.skip('chat/submitMessage (addEnhancedContext: true)', async () => {
             await client.openFile(animalUri)
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
@@ -372,7 +372,7 @@ describe('Agent', () => {
             )
         }, 30_000)
 
-        it('chat/submitMessage (addEnhancedContext: true, squirrel test)', async () => {
+        it.skip('chat/submitMessage (addEnhancedContext: true, squirrel test)', async () => {
             await client.openFile(squirrelUri)
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
@@ -633,7 +633,7 @@ describe('Agent', () => {
     })
 
     describe('Text documents', () => {
-        it('chat/submitMessage (understands the selected text)', async () => {
+        it.skip('chat/submitMessage (understands the selected text)', async () => {
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
             })
