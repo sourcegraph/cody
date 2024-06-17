@@ -48,7 +48,7 @@ export const Kbd: FunctionComponent<{
     return (
         <kbd
             className={cn(
-                'tw-flex tw-items-stretch tw-gap-1.5 tw-text-sm tw-leading-none tw-uppercase',
+                'tw-inline-flex tw-items-stretch tw-gap-1.5 tw-text-sm tw-leading-none tw-uppercase tw-align-middle',
                 className
             )}
         >
