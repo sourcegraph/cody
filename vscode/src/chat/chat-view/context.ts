@@ -192,9 +192,8 @@ async function searchRemote(
         if (!remoteSearch) {
             return []
         }
-        const repoIDs = allReposForEnhancedContext
-            ? remoteSearch.getRepoIdSet()
-            : remoteRepositoryIDsFromHumanInput(input)
+        const repoIDs = [...remoteSearch.getRepoIdSet(), ...remoteRepositoryIDsFromHumanInput(input)]
+
         return (await remoteSearch.query(input.text, repoIDs)).map(result => {
             return {
                 type: 'file',

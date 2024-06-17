@@ -11,7 +11,7 @@ interface ChildInput {
     loading: boolean
     error: Error | null
     selectChat: (chat: ChatExportResult) => unknown
-    createNewChat: () => unknown
+    createNewChat: (force: boolean) => void
     deleteChat: (chat: ChatExportResult) => void
     isSelectedChat: (chat: ChatExportResult) => boolean
 }
@@ -135,14 +135,14 @@ export const ChatHistory: FC<ChatHistoryProps> = props => {
 
         // We've deleted the only chat, so we have to create a new empty chat
         if (newChatsList.length === 0) {
-            await createNewChat()
+            await createNewChat(true)
             return
         }
 
         await selectChat(newChatsList[nextChatIndexToSelect] ?? newChatsList[0])
     }
 
-    const createNewChat = async (): Promise<void> => {
+    const createNewChat = async (force: boolean): Promise<void> => {
         if (!client || isErrorLike(client)) {
             return
         }
@@ -151,16 +151,16 @@ export const ChatHistory: FC<ChatHistoryProps> = props => {
         const emptyChat = chats.find(chat => chat.transcript.interactions.length === 0)
 
         // Don't create another empty chat if we already have one selected
-        if (currentChat && currentChat.transcript.interactions.length === 0) {
+        if (!force && currentChat && currentChat.transcript.interactions.length === 0) {
             return
         }
 
-        if (emptyChat) {
+        if (!force && emptyChat) {
             await selectChat(emptyChat)
             return
         }
 
-        activeWebviewPanelID.current = await client.rpc.sendRequest('chat/new', {
+        const { panelID } = await client.rpc.sendRequest<{ panelID: string }>('chat/new', {
             repositories: initialContext.repositories,
             file: initialContext.fileURL
                 ? {
@@ -171,6 +171,7 @@ export const ChatHistory: FC<ChatHistoryProps> = props => {
                 : undefined
         })
 
+        activeWebviewPanelID.current = panelID
         setLastActiveChatID(null)
         vscodeAPI.postMessage({ command: 'initialized' })
     }
