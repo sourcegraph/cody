@@ -39,8 +39,6 @@ testWithGitRemote('initial context - file', async ({ page, sidebar, server }) =>
 
     await openFileInEditorTab(page, 'main.c')
 
-    await page.getByRole('tab', { name: /Cody*/ }).click()
-
     const [, lastChatInput] = await createEmptyChatPanel(page)
 
     await expect(chatInputMentions(lastChatInput)).toHaveText(['@host.example/user/myrepo', '@main.c'])

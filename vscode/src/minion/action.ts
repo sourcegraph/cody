@@ -93,14 +93,14 @@ export interface MinionSession {
     transcript: MinionTranscriptItem[]
 }
 
-export type NodeStatus = 'doing' | 'done' | 'cancelled' | 'failed'
+export type BlockStatus = 'doing' | 'done' | 'cancelled' | 'failed'
 
-export type MinionTranscriptItem = MinionTranscriptEvent | MinionTranscriptNode
+export type MinionTranscriptItem = MinionTranscriptEvent | MinionTranscriptBlock
 
-export type MinionTranscriptNode = {
-    type: 'node'
-    node: { nodeid: string; blockid: string }
-    status: NodeStatus
+export type MinionTranscriptBlock = {
+    type: 'block'
+    block: { nodeid: string; blockid: string }
+    status: BlockStatus
 }
 
 export type MinionTranscriptEvent = {

@@ -18,6 +18,7 @@ import {
     FIREWORKS_FIM_FINE_TUNED_MODEL_2,
     FIREWORKS_FIM_FINE_TUNED_MODEL_3,
     FIREWORKS_FIM_FINE_TUNED_MODEL_4,
+    FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID,
     type FireworksOptions,
     createProviderConfig as createFireworksProviderConfig,
 } from './fireworks'
@@ -208,10 +209,17 @@ async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
         return { provider: configuredProvider }
     }
 
-    const [starCoder2Hybrid, starCoderHybrid, claude3, finetunedFIMModelExperiment] = await Promise.all([
+    const [
+        starCoder2Hybrid,
+        starCoderHybrid,
+        claude3,
+        finetunedFIMModelHybrid,
+        finetunedFIMModelExperiment,
+    ] = await Promise.all([
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoder2Hybrid),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteFIMFineTunedModelHybrid),
         featureFlagProvider.evaluateFeatureFlag(
             FeatureFlag.CodyAutocompleteFIMFineTunedModelBaseFeatureFlag
         ),
@@ -226,6 +234,10 @@ async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(
     if (!isFinetuningExperimentDisabled && finetunedFIMModelExperiment) {
         // The traffic in this feature flag is interpreted as a traffic allocated to the fine-tuned experiment.
         return resolveFinetunedModelFromFeatureFlags()
+    }
+
+    if (finetunedFIMModelHybrid) {
+        return { provider: 'fireworks', model: FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID }
     }
 
     if (starCoder2Hybrid) {

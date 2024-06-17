@@ -18,8 +18,8 @@ import {
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { CommandResult } from './CommandResult'
-import { ContextProvider } from './chat/ContextProvider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
+import { chatHistory } from './chat/chat-view/ChatHistoryManager'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
 import {
     ACCOUNT_LIMITS_INFO_URL,
@@ -76,7 +76,7 @@ import { registerSidebarCommands } from './services/SidebarCommands'
 import { createStatusBar } from './services/StatusBar'
 import { upstreamHealthProvider } from './services/UpstreamHealthProvider'
 import { setUpCodyIgnore } from './services/cody-ignore'
-import { createOrUpdateEventLogger, telemetryService } from './services/telemetry'
+import { createOrUpdateEventLogger, logPrefix, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import {
@@ -221,35 +221,22 @@ const register = async (
 
     // Initialize context provider
     const editor = new VSCodeEditor()
-    const contextProvider = new ContextProvider(
-        initialConfig,
-        editor,
-        authProvider,
-        localEmbeddings,
-        enterpriseContextFactory.createRemoteSearch()
-    )
-    disposables.push(contextProvider)
     disposables.push(contextFiltersProvider)
-    await contextFiltersProvider
-        .init(repoNameResolver.getRepoNamesFromWorkspaceUri)
-        .then(() => contextProvider.init())
+    await contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri)
 
     configWatcher.onChange(async config => {
         await contextFiltersProvider.init(repoNameResolver.getRepoNamesFromWorkspaceUri)
-        await contextProvider.onConfigurationChange(config)
         await localEmbeddings?.setAccessToken(config.serverEndpoint, config.accessToken)
     }, disposables)
 
     const { chatManager, editorManager } = registerChat(
         {
             context,
-            configWatcher,
             platform,
             chatClient,
             guardrails,
             editor,
             authProvider,
-            contextProvider,
             enterpriseContextFactory,
             localEmbeddings,
             contextRanking,
@@ -257,6 +244,7 @@ const register = async (
         },
         disposables
     )
+    disposables.push(chatManager)
 
     const sourceControl = new CodySourceControl(chatClient)
     const statusBar = createStatusBar()
@@ -269,8 +257,6 @@ const register = async (
         // Chat Manager uses Simple Context Provider
         await chatManager.syncAuthStatus(authStatus)
         editorManager.syncAuthStatus(authStatus)
-        // Update context provider first it will also update the configuration
-        await contextProvider.syncAuthStatus()
 
         const parallelPromises: Promise<void>[] = []
         // feature flag provider
@@ -293,6 +279,27 @@ const register = async (
 
         // Set the default prompt mixin on auth status change.
         await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
+
+        // Propagate access token through config
+        const newConfig = await getFullConfig()
+        configWatcher.set(newConfig)
+        // Re-sync whether guardrails is turned on
+        ConfigFeaturesSingleton.getInstance().refreshConfigFeatures()
+        // Sync auth status to graphqlClient
+        graphqlClient.onConfigurationChange(newConfig)
+
+        // When logged out, user's endpoint will be set to null
+        const isLoggedOut = !authStatus.isLoggedIn && !authStatus.endpoint
+        const isAuthError = authStatus?.showNetworkError || authStatus?.showInvalidAccessTokenError
+        const eventValue = isLoggedOut
+            ? 'disconnected'
+            : authStatus.isLoggedIn && !isAuthError
+              ? 'connected'
+              : 'failed'
+        telemetryService.log(`${logPrefix(newConfig.agentIDE)}:Auth:${eventValue}`, undefined, {
+            agent: true,
+        })
+        telemetryRecorder.recordEvent('cody.auth', eventValue)
     })
 
     if (initialConfig.experimentalSupercompletions) {
@@ -674,13 +681,11 @@ function registerParserListeners(disposables: vscode.Disposable[]) {
 
 interface RegisterChatOptions {
     context: vscode.ExtensionContext
-    configWatcher: ConfigWatcher<ConfigurationWithAccessToken>
     platform: PlatformContext
     chatClient: ChatClient
     guardrails: Guardrails
     editor: VSCodeEditor
     authProvider: AuthProvider
-    contextProvider: ContextProvider
     enterpriseContextFactory: EnterpriseContextFactory
     localEmbeddings?: LocalEmbeddingsController
     contextRanking?: ContextRankingController
@@ -690,13 +695,11 @@ interface RegisterChatOptions {
 function registerChat(
     {
         context,
-        configWatcher,
         platform,
         chatClient,
         guardrails,
         editor,
         authProvider,
-        contextProvider,
         enterpriseContextFactory,
         localEmbeddings,
         contextRanking,
@@ -707,21 +710,17 @@ function registerChat(
     chatManager: ChatManager
     editorManager: EditManager
 } {
-    const initialConfig = configWatcher.get()
-
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
         chat: chatClient,
         guardrails,
         editor,
         authProvider,
-        contextProvider,
     }
     const chatManager = new ChatManager(
         {
             ...messageProviderOptions,
             extensionUri: context.extensionUri,
-            config: initialConfig,
             startTokenReceiver: platform.startTokenReceiver,
         },
         chatClient,
@@ -730,6 +729,11 @@ function registerChat(
         contextRanking || null,
         symfRunner || null,
         guardrails
+    )
+    disposables.push(
+        chatHistory.onHistoryChanged(() => {
+            chatManager.chatPanelsManager.treeViewProvider.refresh()
+        })
     )
 
     const ghostHintDecorator = new GhostHintDecorator(authProvider)
@@ -740,23 +744,7 @@ function registerChat(
         authProvider,
         extensionClient: platform.extensionClient,
     })
-    disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider({ contextProvider }))
-
-    // Register tree views
-    disposables.push(
-        chatManager,
-        vscode.window.registerWebviewViewProvider('cody.chat', chatManager.sidebarViewController, {
-            webviewOptions: { retainContextWhenHidden: true },
-        }),
-
-        // NOTE(beyang): it was necessary to keep this, as it is the vector through which
-        // auth status propagates to the LLM client and guardrails after sign in. Without this,
-        // the auth status does not propagate.
-        contextProvider.configurationChangeEvent.event(async () => {
-            const newConfig = await getFullConfig()
-            configWatcher.set(newConfig)
-        })
-    )
+    disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider())
 
     if (localEmbeddings) {
         // kick-off embeddings initialization

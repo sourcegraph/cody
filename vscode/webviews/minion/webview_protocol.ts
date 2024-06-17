@@ -20,7 +20,7 @@ export type MinionWebviewMessage =
           index: number
       }
     | {
-          type: 'cancel-current-node'
+          type: 'cancel-current-block'
       }
     | {
           type: 'update-plan-step'
