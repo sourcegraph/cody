@@ -1,8 +1,22 @@
 import type { AuthStatus, SerializedChatTranscript, UserLocalHistory } from '@sourcegraph/cody-shared'
 
+import * as vscode from 'vscode'
 import { localStorage } from '../../services/LocalStorageProvider'
 
-export class ChatHistoryManager {
+export class ChatHistoryManager implements vscode.Disposable {
+    private historyChanged: vscode.EventEmitter<void> = new vscode.EventEmitter<void>()
+    private disposables: vscode.Disposable[] = []
+
+    constructor() {
+        this.disposables.push(this.historyChanged)
+    }
+
+    public dispose() {
+        for (const disposable of this.disposables) {
+            disposable.dispose()
+        }
+    }
+
     public getLocalHistory(authStatus: AuthStatus): UserLocalHistory | null {
         return localStorage.getChatHistory(authStatus)
     }
@@ -19,7 +33,12 @@ export class ChatHistoryManager {
         const history = localStorage.getChatHistory(authStatus)
         history.chat[chat.id] = chat
         await localStorage.setChatHistory(authStatus, history)
+        this.historyChanged.fire()
         return history
+    }
+
+    public onHistoryChanged(listener: () => any): vscode.Disposable {
+        return this.historyChanged.event(listener)
     }
 
     public async deleteChat(authStatus: AuthStatus, chatID: string): Promise<void> {

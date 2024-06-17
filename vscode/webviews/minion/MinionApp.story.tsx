@@ -48,8 +48,8 @@ const dummyVSCodeAPI: GenericVSCodeWrapper<MinionWebviewMessage, MinionExtension
         cb({ type: 'update-transcript', transcript: [...transcript] })
 
         transcript.push({
-            type: 'node',
-            node: { nodeid: 'restate', blockid: 'restate-0' },
+            type: 'block',
+            block: { nodeid: 'restate', blockid: 'restate-0' },
             status: 'done',
         })
         cb({ type: 'update-transcript', transcript: [...transcript] })
@@ -65,8 +65,8 @@ const dummyVSCodeAPI: GenericVSCodeWrapper<MinionWebviewMessage, MinionExtension
         cb({ type: 'update-transcript', transcript: [...transcript] })
 
         transcript.push({
-            type: 'node',
-            node: { nodeid: 'contextualize', blockid: 'contextualize-0' },
+            type: 'block',
+            block: { nodeid: 'contextualize', blockid: 'contextualize-0' },
             status: 'done',
         })
         cb({ type: 'update-transcript', transcript: [...transcript] })
@@ -81,7 +81,7 @@ const dummyVSCodeAPI: GenericVSCodeWrapper<MinionWebviewMessage, MinionExtension
         })
         cb({ type: 'update-transcript', transcript: [...transcript] })
 
-        transcript.push({ type: 'node', node: { nodeid: 'plan', blockid: 'plan-0' }, status: 'doing' })
+        transcript.push({ type: 'block', block: { nodeid: 'plan', blockid: 'plan-0' }, status: 'doing' })
         cb({ type: 'update-transcript', transcript: [...transcript] })
 
         transcript.push({
