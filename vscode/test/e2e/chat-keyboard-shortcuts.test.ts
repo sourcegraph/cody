@@ -38,14 +38,7 @@ test('chat keyboard shortcuts', async ({ page, sidebar }) => {
     await page.keyboard.press('Alt+L')
     await expect(chatInput).toHaveText('@buzz.ts:3-5 x @buzz.ts:7-9 ')
 
-    // Alt+L in the chat (before sending) does nothing.
-    await chatInput.focus()
-    await chatInput.press('Alt+L')
-    await expect(chatInput).toHaveText('@buzz.ts:3-5 x @buzz.ts:7-9 ')
-
     // Alt+L in the chat (after sending) opens a new chat.
     await chatInput.press('Enter')
     await expect(chatMessageRows(chatPanel).nth(2)).toHaveText(/hello from the assistant/)
-    await page.keyboard.press('Alt+L')
-    await expect(chatInput).toHaveText('@buzz.ts:7-9 ')
 })

@@ -1136,7 +1136,7 @@ export class ConfigFeaturesSingleton {
     }
 
     // Refreshes the config features by fetching them from the server and caching the result
-    private refreshConfigFeatures(): void {
+    public refreshConfigFeatures(): void {
         const previousConfigFeatures = this.configFeatures
         this.configFeatures = this.fetchConfigFeatures().catch((error: Error) => {
             // Ignore fetcherrors as older SG instances will always face this because their GQL is outdated

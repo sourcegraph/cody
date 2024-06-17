@@ -26,8 +26,7 @@ import type { URI } from 'vscode-uri'
 import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import type { ContextRankingController } from '../../local-context/context-ranking'
-import { ChatPanelsManager } from './ChatPanelsManager'
-import { SidebarViewController, type SidebarViewOptions } from './SidebarViewController'
+import { ChatPanelsManager, type SidebarViewOptions } from './ChatPanelsManager'
 import type { ChatSession } from './SimpleChatPanelProvider'
 
 export const CodyChatPanelViewType = 'cody.chatPanel'
@@ -38,10 +37,7 @@ export const CodyChatPanelViewType = 'cody.chatPanel'
  * TODO(sqs): rename from its legacy name ChatManager
  */
 export class ChatManager implements vscode.Disposable {
-    // SidebarView is used for auth view and running tasks that do not require a chat view
-    // We will always keep an instance of this around (even when not visible) to handle states when no panels are open
-    public sidebarViewController: SidebarViewController
-    private chatPanelsManager: ChatPanelsManager
+    public readonly chatPanelsManager: ChatPanelsManager
 
     private options: SidebarViewOptions
 
@@ -62,8 +58,6 @@ export class ChatManager implements vscode.Disposable {
             localEmbeddings ? 'has local embeddings controller' : 'no local embeddings'
         )
         this.options = { extensionUri, ...options }
-
-        this.sidebarViewController = new SidebarViewController(this.options)
 
         this.chatPanelsManager = new ChatPanelsManager(
             this.options,
@@ -253,7 +247,6 @@ export class ChatManager implements vscode.Disposable {
 
     private disposeChatPanelsManager(): void {
         void vscode.commands.executeCommand('setContext', CodyChatPanelViewType, false)
-        this.options.contextProvider.webview = this.sidebarViewController.webview
         this.chatPanelsManager.dispose()
     }
 
