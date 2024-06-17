@@ -10,12 +10,11 @@ import type { SymfRunner } from '../local-context/symf'
 import type { AuthProvider } from '../services/AuthProvider'
 import { MinionStorage } from './MinionStorage'
 import { PlanController } from './PlanController'
-import type { Event, MinionSession, MinionTranscriptItem, MinionTranscriptNode } from './action'
+import type { Event, MinionSession, MinionTranscriptBlock, MinionTranscriptItem } from './action'
 import { ContextualizeBlock } from './blocks/contextualize'
 import { PlanBlock } from './blocks/plan'
 import { RestateBlock } from './blocks/restate'
 import { type Environment, LocalVSCodeEnvironment } from './environment'
-import type { BlockCheckpoint } from './statemachine'
 import { StateMachine } from './statemachine'
 
 /**
@@ -163,9 +162,6 @@ export class MinionController extends ReactPanelController<
 
         // if defined, the session is already running
         canceller?: vscode.CancellationTokenSource
-
-        // data a node can store to save in-progress execution state
-        checkpoint?: { blockid: string; data: string }
     }
 
     private planControllers: { [blockid: string]: PlanController } = {}
@@ -262,8 +258,8 @@ export class MinionController extends ReactPanelController<
                 void this.handleReplayFromIndex(message.index, true)
                 break
             }
-            case 'cancel-current-node': {
-                void this.handleCancelCurrentNode()
+            case 'cancel-current-block': {
+                void this.handleCancelCurrentBlock()
                 break
             }
             case 'update-plan-step': {
@@ -303,8 +299,8 @@ export class MinionController extends ReactPanelController<
     // This method must NOT be async to avoid race conditions and when it
     // returns, all instance state should be updated.
     //
-    // If startNode is defined, then initializes the new state machine
-    // to start at the specified node. If checkpoint is defined, restores
+    // If startBlock is defined, then initializes the new state machine
+    // to start at the specified block. If checkpoint is defined, restores
     // the checkpoint to the session state.
     //
     // This does not update the view state. The caller should call
@@ -312,8 +308,7 @@ export class MinionController extends ReactPanelController<
     // should be updated.
     private loadSession(
         newSession: MinionSession,
-        startNode?: { blockid: string; nodeid: string },
-        checkpoint?: BlockCheckpoint
+        startBlock?: { blockid: string; nodeid: string }
     ): void {
         if (this.sessionState) {
             const old = this.sessionState
@@ -324,10 +319,10 @@ export class MinionController extends ReactPanelController<
 
         const newCanceller = new vscode.CancellationTokenSource()
         const newStateMachine = makeDefaultStateMachine(newCanceller.token)
-        if (startNode) {
-            const newStartNode = newStateMachine.createBlock(startNode.nodeid)
-            newStartNode.id = startNode.blockid
-            newStateMachine.currentNode = { nodeid: startNode.nodeid, block: newStartNode }
+        if (startBlock) {
+            const newStartBlock = newStateMachine.createBlock(startBlock.nodeid)
+            newStartBlock.id = startBlock.blockid
+            newStateMachine.currentBlock = { nodeid: startBlock.nodeid, block: newStartBlock }
         }
         this.sessionState = {
             env: new LocalVSCodeEnvironment(
@@ -336,7 +331,6 @@ export class MinionController extends ReactPanelController<
             ),
             stateMachine: newStateMachine,
             session: newSession,
-            checkpoint,
         }
         this.syncPlanControllersToTranscript()
     }
@@ -356,13 +350,13 @@ export class MinionController extends ReactPanelController<
 
         let done = false
         while (!done) {
-            const currentNode = stateMachine.currentNode
-            const newNode: MinionTranscriptItem = {
-                type: 'node',
+            const currentBlock = stateMachine.currentBlock
+            const newBlock: MinionTranscriptItem = {
+                type: 'block',
                 status: 'doing',
-                node: { nodeid: currentNode.nodeid, blockid: currentNode.block.id },
+                block: { nodeid: currentBlock.nodeid, blockid: currentBlock.block.id },
             }
-            session.transcript.push(newNode)
+            session.transcript.push(newBlock)
             this.postUpdateTranscript()
 
             // TODO(beyang): block interactions with env and human if cancelled
@@ -379,20 +373,6 @@ export class MinionController extends ReactPanelController<
                         this.syncPlanControllersToTranscript()
                         this.postUpdateTranscript()
                     },
-                    setCheckpoint: (checkpoint: BlockCheckpoint | null) => {
-                        if (cancelToken.isCancellationRequested) {
-                            // block posting checkpoints after cancellation
-                            return
-                        }
-                        if (this.sessionState) {
-                            this.sessionState.checkpoint = checkpoint ?? undefined
-                        }
-                    },
-                    getCheckpoint: (blockid: string) => {
-                        return this.sessionState?.checkpoint?.blockid === blockid
-                            ? this.sessionState.checkpoint.data
-                            : null
-                    },
                 },
                 this.anthropic
             )
@@ -400,7 +380,7 @@ export class MinionController extends ReactPanelController<
                 return
             }
 
-            newNode.status = 'done'
+            newBlock.status = 'done'
             this.syncPlanControllersToTranscript()
             this.postUpdateTranscript()
 
@@ -416,11 +396,13 @@ export class MinionController extends ReactPanelController<
         if (!storedSessionState) {
             throw new Error(`session not found with id: ${id}`)
         }
-        const { session, checkpoint } = storedSessionState
+        const { session } = storedSessionState
 
-        const { subTranscript, lastNode } = MinionController.transcriptUntilLastNode(session.transcript)
-        this.loadSession({ id: session.id, transcript: subTranscript }, lastNode?.node, checkpoint)
-        if (lastNode?.status === 'doing') {
+        const { subTranscript, lastBlock } = MinionController.transcriptUntilLastBlock(
+            session.transcript
+        )
+        this.loadSession({ id: session.id, transcript: subTranscript }, lastBlock?.block)
+        if (lastBlock?.status === 'doing') {
             this.replayFromIndex(subTranscript.length - 1, false)
         }
         this.postUpdateTranscript()
@@ -447,42 +429,38 @@ export class MinionController extends ReactPanelController<
             throw new Error('invalid index')
         }
         const lastItem = this.sessionState.session.transcript.at(index)
-        if (lastItem?.type !== 'node') {
-            throw new Error('index is not a node')
+        if (lastItem?.type !== 'block') {
+            throw new Error('index is not a block')
         }
-        const lastNode: MinionTranscriptNode = lastItem
+        const lastBlock: MinionTranscriptBlock = lastItem
         await this.save() // save old session
 
         const newSession = {
             id: new Date().toISOString(), // create new logical session
             transcript: [...this.sessionState.session.transcript.slice(0, index)],
         }
-        this.loadSession(
-            newSession,
-            lastNode.node,
-            clearCheckpoint ? undefined : this.sessionState.checkpoint
-        )
+        this.loadSession(newSession, lastBlock.block)
         void this.runSession()
         await this.save() // save new session
     }
 
-    private static transcriptUntilLastNode(transcript: MinionTranscriptItem[]): {
+    private static transcriptUntilLastBlock(transcript: MinionTranscriptItem[]): {
         subTranscript: MinionTranscriptItem[]
-        lastNode?: MinionTranscriptNode
+        lastBlock?: MinionTranscriptBlock
     } {
         for (let i = transcript.length - 1; i >= 0; i--) {
-            const node = transcript[i]
-            if (node.type === 'node') {
+            const block = transcript[i]
+            if (block.type === 'block') {
                 return {
                     subTranscript: transcript.slice(0, i + 1),
-                    lastNode: node,
+                    lastBlock: block,
                 }
             }
         }
         return { subTranscript: [] }
     }
 
-    private async handleCancelCurrentNode(): Promise<void> {
+    private async handleCancelCurrentBlock(): Promise<void> {
         if (!this.sessionState) {
             throw new Error('session not initialized')
         }
@@ -494,15 +472,15 @@ export class MinionController extends ReactPanelController<
 
         this.sessionState.canceller?.cancel()
 
-        const { subTranscript, lastNode } = MinionController.transcriptUntilLastNode(
+        const { subTranscript, lastBlock } = MinionController.transcriptUntilLastBlock(
             this.sessionState.session.transcript
         )
-        if (!lastNode) {
-            throw new Error('no node to cancel')
+        if (!lastBlock) {
+            throw new Error('no block to cancel')
         }
 
         this.sessionState.session.transcript = subTranscript
-        lastNode.status = 'cancelled'
+        lastBlock.status = 'cancelled'
 
         void this.save()
         this.postUpdateTranscript()
@@ -522,7 +500,6 @@ export class MinionController extends ReactPanelController<
             throw new Error('no session to save')
         }
         await this.storage.save(this.authProvider.getAuthStatus(), {
-            checkpoint: this.sessionState.checkpoint,
             session: this.sessionState.session,
         })
     }
@@ -560,12 +537,6 @@ export class MinionController extends ReactPanelController<
                     {
                         getEvents: () => this.events,
                         postEvent: (event: Event) => {
-                            throw new Error('not implemented')
-                        },
-                        setCheckpoint: (checkpoint: BlockCheckpoint | null) => {
-                            throw new Error('not implemented')
-                        },
-                        getCheckpoint: (blockid: string) => {
                             throw new Error('not implemented')
                         },
                     },
