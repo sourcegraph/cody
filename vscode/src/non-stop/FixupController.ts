@@ -1220,6 +1220,17 @@ async function openDestinationFile(opts: OpenDestFileOptions): Promise<[vscode.U
         }
     })()
 
+    const uri = (() => {
+        switch (opts.type) {
+            case 'untitled':
+                return opts.uri ?? doc.uri
+            case 'create':
+                return opts.path
+            case 'existing':
+                return opts.uri
+        }
+    })()
+
     // Scroll to bottom
     const line = Math.max(doc.lineCount - 1, 0)
     const column = 0
@@ -1227,12 +1238,12 @@ async function openDestinationFile(opts: OpenDestFileOptions): Promise<[vscode.U
     const range = new vscode.Range(pos, pos)
 
     // Show the new document before streaming start
-    await vscode.window.showTextDocument(doc.uri, {
+    await vscode.window.showTextDocument(uri, {
         selection: range,
         viewColumn: vscode.ViewColumn.Beside,
     })
 
-    return [doc.uri, range]
+    return [uri, range]
 }
 
 interface FormatEditOptions {
@@ -1245,7 +1256,7 @@ interface FormatEditOptions {
 // Attempts to fix all import errors on the given file until the diagnostics have been
 // stable for 1 second
 async function fixupImports(file: vscode.Uri): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
         let timeoutId: NodeJS.Timeout | undefined
         function resetTimeout() {
             if (timeoutId) {
@@ -1268,10 +1279,11 @@ async function fixupImports(file: vscode.Uri): Promise<void> {
     })
 }
 
-async function attemptFixImports(file: vscode.Uri) {
-    if (!(await attemptFixAllImports(file))) {
-        await attemptFixIndividualImports(file)
+async function attemptFixImports(file: vscode.Uri): Promise<boolean> {
+    if (await attemptFixAllImports(file)) {
+        return true
     }
+    return attemptFixIndividualImports(file)
 }
 
 // Extracts the set of diagnostics from the task output file
@@ -1314,7 +1326,23 @@ export async function attemptFixAllImports(file: vscode.Uri): Promise<boolean> {
 
         for (const action of codeActions) {
             if (action.title.match(REGEX)) {
-                await vscode.workspace.applyEdit(action.edit)
+                const edits = action.edit.get(file)
+                const editor = vscode.window.visibleTextEditors.find(
+                    editor => editor.document.uri === file
+                )
+                if (editor) {
+                    editor.edit(
+                        editBuilder => {
+                            for (const edit of edits) {
+                                editBuilder.replace(edit.range, edit.newText)
+                            }
+                        },
+                        { undoStopBefore: false, undoStopAfter: false }
+                    )
+                } else {
+                    await vscode.workspace.applyEdit(action.edit)
+                }
+
                 return true
             }
         }
@@ -1324,7 +1352,7 @@ export async function attemptFixAllImports(file: vscode.Uri): Promise<boolean> {
 }
 
 // Searches for individual quick fixes for each unique missing import and applies them
-async function attemptFixIndividualImports(file: vscode.Uri): Promise<void> {
+async function attemptFixIndividualImports(file: vscode.Uri): Promise<boolean> {
     const IMPORT_QUICKFIX_REGEXES = [/^update import/i, /^add import/i, /^import/i]
 
     // Determines if a quick fix is something like "Add import" and has an edit action
@@ -1352,6 +1380,7 @@ async function attemptFixIndividualImports(file: vscode.Uri): Promise<void> {
     for (const fix of importFixes.values()) {
         await vscode.workspace.applyEdit(fix.edit)
     }
+    return importFixes.size > 0
 }
 
 interface QuickFixQuery {
