@@ -10,7 +10,6 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { spawnSync } from 'node:child_process'
-import * as vscode from 'vscode'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
@@ -33,9 +32,9 @@ describe('Chat response quality', () => {
         await workspace.beforeAll()
         await client.beforeAll()
 
-        readmeItem = await loadContextItem('README.md')
-        evalItem = await loadContextItem('eval.go')
-        limitItem = await loadContextItem('limit.go')
+        readmeItem = await workspace.loadContextItem('README.md')
+        evalItem = await workspace.loadContextItem('eval.go')
+        limitItem = await workspace.loadContextItem('limit.go')
 
         spawnSync('git', ['init'], { cwd: workspace.rootPath, stdio: 'inherit' })
         spawnSync(
@@ -388,20 +387,6 @@ const externalServicesItem: ContextItem = {
     uri: workspace.file('vscode/src/external-services.ts'),
     type: 'file',
     content: '\n```typescript\n        },\n    }\n}\n```',
-}
-
-async function loadContextItem(name: string): Promise<ContextItem> {
-    const uri = workspace.file(name)
-
-    const buffer = await vscode.workspace.fs.readFile(uri)
-    const decoder = new TextDecoder('utf-8')
-    const content = decoder.decode(buffer)
-
-    return {
-        uri,
-        type: 'file',
-        content: content,
-    }
 }
 
 // We can't use `addEnhancedContext: true` in these tests, because symf may return
