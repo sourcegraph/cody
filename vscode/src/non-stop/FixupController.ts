@@ -1336,7 +1336,6 @@ async function attemptFixIndividualImports(file: vscode.Uri): Promise<void> {
     for (const missing of getMissingImports(file)) {
         if (!importFixes.has(missing.missingImport)) {
             const { range } = missing
-            // Get the quick fixes for the current diagnostic
             const codeActions = await getQuickFixes({ file, range })
             for (const action of codeActions) {
                 if (isImportFix(action)) {
@@ -1347,6 +1346,9 @@ async function attemptFixIndividualImports(file: vscode.Uri): Promise<void> {
         }
     }
 
+    // We apply them in a batch after collecting them because once we
+    // apply one, the positions will be altered and we won't be able to
+    // query again until the diagnostics update
     for (const fix of importFixes.values()) {
         await vscode.workspace.applyEdit(fix.edit)
     }

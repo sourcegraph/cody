@@ -1,4 +1,4 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 /**
  * A handle to a fixup file. FixupFileObserver is the factory for these; do not
@@ -27,4 +27,3 @@ export class FixupFile {
     // TODO: Add convenience properties for the file name, type and a change
     // notification so the tree view can track file renames and deletions
 }
-
