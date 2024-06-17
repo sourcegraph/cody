@@ -21,9 +21,9 @@ const meta: Meta<typeof SubmitButton> = {
                 {...args}
                 onClick={() => {
                     setArgs({
-                        disabled: true,
+                        // Toggle between default and busy
+                        state: args.state === 'default' ? 'isPendingPriorResponse' : 'default',
                     })
-                    setTimeout(() => setArgs({ disabled: false }), 3000)
                 }}
             />
         )
@@ -34,4 +34,16 @@ export default meta
 
 export const Default: StoryObj<typeof meta> = {
     args: {},
+    argTypes: {
+        state: {
+            options: ['default', 'isPendingPriorResponse'],
+            control: { type: 'radio' },
+        },
+    },
+}
+
+export const EmptyEditor: StoryObj<typeof meta> = {
+    args: {
+        state: 'emptyEditorValue',
+    },
 }

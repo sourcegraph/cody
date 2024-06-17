@@ -144,9 +144,11 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
     submitButton: HTMLElement | null
     onChange: Mock
     onSubmit: Mock
+    onStop: Mock
 } {
     const onChange = vi.fn()
     const onSubmit = vi.fn()
+    const onStop = vi.fn()
 
     const DEFAULT_PROPS: React.ComponentProps<typeof HumanMessageEditor> = {
         userInfo: FIXTURE_USER_ACCOUNT_INFO,
@@ -157,6 +159,7 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
         isSent: false,
         onChange,
         onSubmit,
+        onStop,
     }
 
     const { container } = render(<HumanMessageEditor {...DEFAULT_PROPS} {...props} />, {
@@ -172,5 +175,6 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
         }),
         onChange,
         onSubmit,
+        onStop,
     }
 }

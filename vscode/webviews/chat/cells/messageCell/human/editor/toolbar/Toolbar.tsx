@@ -3,10 +3,11 @@ import clsx from 'clsx'
 import { AtSignIcon } from 'lucide-react'
 import { type FunctionComponent, useCallback } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
+import { Kbd } from '../../../../../../components/Kbd'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { ToolbarButton } from '../../../../../../components/shadcn/ui/toolbar'
 import { useChatModelContext } from '../../../../../models/chatModelContext'
-import { SubmitButton, type SubmitButtonDisabled } from './SubmitButton'
+import { SubmitButton, type State as SubmitButtonState } from './SubmitButton'
 import styles from './Toolbar.module.css'
 
 /**
@@ -20,7 +21,7 @@ export const Toolbar: FunctionComponent<{
     onMentionClick?: () => void
 
     onSubmitClick: () => void
-    submitDisabled: SubmitButtonDisabled
+    submitState: SubmitButtonState
 
     /** Handler for clicks that are in the "gap" (dead space), not any toolbar items. */
     onGapClick?: () => void
@@ -34,7 +35,7 @@ export const Toolbar: FunctionComponent<{
     isEditorFocused,
     onMentionClick,
     onSubmitClick,
-    submitDisabled,
+    submitState,
     onGapClick,
     focusEditor,
     hidden,
@@ -69,7 +70,11 @@ export const Toolbar: FunctionComponent<{
             {onMentionClick && (
                 <ToolbarButton
                     variant="secondary"
-                    tooltip="Add files and other context"
+                    tooltip={
+                        <>
+                            Add files and other context <Kbd macOS="@" linuxAndWindows="@" />
+                        </>
+                    }
                     iconStart={AtSignIcon}
                     onClick={onMentionClick}
                     aria-label="Add context"
@@ -80,7 +85,7 @@ export const Toolbar: FunctionComponent<{
             <SubmitButton
                 onClick={onSubmitClick}
                 isEditorFocused={isEditorFocused}
-                disabled={submitDisabled}
+                state={submitState}
             />
         </menu>
     )

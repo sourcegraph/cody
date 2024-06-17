@@ -1,4 +1,7 @@
 /** @type {import('tailwindcss').Config} */
+
+const plugin = require('tailwindcss/plugin')
+
 export default {
     content: {
         relative: true,
@@ -8,10 +11,10 @@ export default {
     theme: {
         extend: {
             fontSize: {
-                lg: 'calc(1.1*var(--vscode-font-size))',
-                md: 'var(--vscode-font-size)',
-                sm: 'calc(0.9*var(--vscode-font-size))',
-                xs: 'calc(0.85*var(--vscode-font-size))',
+                lg: 'calc(calc(15/13)*var(--vscode-font-size))', // = 15px
+                md: 'var(--vscode-font-size)', // = 13px
+                sm: 'calc(calc(12/13)*var(--vscode-font-size))', // = 12px
+                xs: 'calc(calc(11/13)*var(--vscode-font-size))', // = 11px
             },
             fontFamily: {
                 codyicons: ['cody-icons'],
@@ -38,13 +41,20 @@ export default {
                 ring: 'var(--vscode-focusBorder)',
                 background: 'var(--vscode-editor-background)',
                 foreground: 'var(--vscode-foreground)',
-                primary: {
-                    DEFAULT: 'var(--vscode-button-background)',
+                button: {
+                    background: {
+                        DEFAULT: 'var(--vscode-button-background)',
+                        hover: 'var(--vscode-button-hoverBackground)',
+                    },
                     foreground: 'var(--vscode-button-foreground)',
-                },
-                secondary: {
-                    DEFAULT: 'var(--vscode-button-secondaryBackground)',
-                    foreground: 'var(--vscode-button-secondaryForeground)',
+                    border: 'var(--vscode-button-border, transparent)',
+                    secondary: {
+                        background: {
+                            DEFAULT: 'var(--vscode-button-secondaryBackground)',
+                            hover: 'var(--vscode-button-secondaryHoverBackground)',
+                        },
+                        foreground: 'var(--vscode-button-secondaryForeground)',
+                    },
                 },
                 muted: {
                     DEFAULT: 'var(--vscode-input-background)',
@@ -66,6 +76,7 @@ export default {
                 },
                 link: {
                     DEFAULT: 'var(--vscode-textLink-foreground)',
+                    hover: 'var(--vscode-textLink-activeForeground)',
                 },
             },
             borderRadius: {
@@ -73,6 +84,19 @@ export default {
                 md: '4px',
                 sm: '2px',
             },
+            animation: {
+                // spin: 'spin 1s cubic-bezier(0.53, 0.21, 0.29, 0.67) infinite',
+            },
         },
     },
+    plugins: [
+        plugin(({ addVariant }) => {
+            // Allows use to customize styling for VS Code light and dark themes
+            addVariant('high-contrast-dark', 'body[data-vscode-theme-kind="vscode-high-contrast"] &')
+            addVariant(
+                'high-contrast-light',
+                'body[data-vscode-theme-kind="vscode-high-contrast-light"] &'
+            )
+        }),
+    ],
 }

@@ -127,6 +127,12 @@ const TranscriptInteraction: FunctionComponent<
         [humanMessage]
     )
 
+    const onStop = useCallback(() => {
+        getVSCodeAPI().postMessage({
+            command: 'abort',
+        })
+    }, [])
+
     const isContextLoading = Boolean(
         humanMessage.contextFiles === undefined &&
             isLastSentInteraction &&
@@ -143,6 +149,7 @@ const TranscriptInteraction: FunctionComponent<
                 isSent={!humanMessage.isUnsentFollowup}
                 isPendingPriorResponse={priorAssistantMessageIsLoading}
                 onSubmit={humanMessage.isUnsentFollowup ? onFollowupSubmit : onEditSubmit}
+                onStop={onStop}
                 isEditorInitiallyFocused={isLastInteraction}
                 editorRef={humanEditorRef}
                 className={isLastInteraction ? styles.lastHumanMessage : undefined}

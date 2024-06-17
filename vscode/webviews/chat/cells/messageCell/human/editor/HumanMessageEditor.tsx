@@ -18,7 +18,7 @@ import {
 import { PromptEditor, type PromptEditorRefAPI } from '../../../../../promptEditor/PromptEditor'
 import { useTelemetryRecorder } from '../../../../../utils/telemetry'
 import styles from './HumanMessageEditor.module.css'
-import type { SubmitButtonDisabled } from './toolbar/SubmitButton'
+import type { State as SubmitButtonState } from './toolbar/SubmitButton'
 import { Toolbar } from './toolbar/Toolbar'
 
 /**
@@ -43,6 +43,7 @@ export const HumanMessageEditor: FunctionComponent<{
 
     onChange?: (editorState: SerializedPromptEditorValue) => void
     onSubmit: (editorValue: SerializedPromptEditorValue) => void
+    onStop: () => void
 
     isEditorInitiallyFocused?: boolean
     className?: string
@@ -61,6 +62,7 @@ export const HumanMessageEditor: FunctionComponent<{
     disabled = false,
     onChange,
     onSubmit: parentOnSubmit,
+    onStop,
     isEditorInitiallyFocused,
     className,
     editorRef: parentEditorRef,
@@ -82,14 +84,19 @@ export const HumanMessageEditor: FunctionComponent<{
         [onChange]
     )
 
-    const submitDisabled: SubmitButtonDisabled = isPendingPriorResponse
+    const submitState: SubmitButtonState = isPendingPriorResponse
         ? 'isPendingPriorResponse'
         : isEmptyEditorValue
           ? 'emptyEditorValue'
-          : false
+          : 'default'
 
     const onSubmitClick = useCallback(() => {
-        if (submitDisabled) {
+        if (submitState === 'emptyEditorValue') {
+            return
+        }
+
+        if (submitState === 'isPendingPriorResponse') {
+            onStop()
             return
         }
 
@@ -108,7 +115,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 contextItems: value.contextItems.length,
             },
         })
-    }, [submitDisabled, parentOnSubmit, telemetryRecorder.recordEvent, isFirstMessage, isSent])
+    }, [submitState, parentOnSubmit, onStop, telemetryRecorder.recordEvent, isFirstMessage, isSent])
 
     const onEditorEnterKey = useCallback(
         (event: KeyboardEvent | null): void => {
@@ -266,7 +273,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     isEditorFocused={focused}
                     onMentionClick={onMentionClick}
                     onSubmitClick={onSubmitClick}
-                    submitDisabled={submitDisabled}
+                    submitState={submitState}
                     onGapClick={onGapClick}
                     focusEditor={focusEditor}
                     hidden={!focused && isSent}
