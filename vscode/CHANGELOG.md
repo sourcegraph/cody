@@ -10,7 +10,16 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
-## 1.24.0
+## 1.22.2
+
+### Added
+- Finetuned model shipment for code completions in py, jsx and jsx language. [pull/4533](https://github.com/sourcegraph/cody/pull/4533)
+
+### Fixed
+
+### Changed
+
+## 1.22.1
 
 ### Added
 
