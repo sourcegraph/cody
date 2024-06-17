@@ -8,7 +8,6 @@ import { mkdirp } from 'mkdirp'
 import * as vscode from 'vscode'
 
 import {
-    AbortError,
     type FileURI,
     type IndexedKeywordContextFetcher,
     type PromptString,
@@ -16,7 +15,6 @@ import {
     type SourcegraphCompletionsClient,
     assertFileURI,
     displayPath,
-    isAbortError,
     isDefined,
     isFileURI,
     isWindows,
@@ -428,7 +426,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
 
         const disposeOnFinish: vscode.Disposable[] = []
         if (cancellationToken.isCancellationRequested) {
-            throw new AbortError()
+            throw new vscode.CancellationError()
         }
 
         let wasCancelled = false
@@ -477,7 +475,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
             await rename(tmpIndexDir.fsPath, indexDir.fsPath)
         } catch (error) {
             if (wasCancelled) {
-                throw new AbortError()
+                throw new vscode.CancellationError()
             }
             throw toSymfError(error)
         } finally {
@@ -492,6 +490,7 @@ export class SymfRunner implements IndexedKeywordContextFetcher, vscode.Disposab
     /**
      * Helpers for tracking index failure
      */
+
     private async markIndexFailed(scopeDir: FileURI): Promise<void> {
         const failureRoot = vscode.Uri.joinPath(this.indexRoot, '.failed')
         await mkdirp(failureRoot.fsPath)
@@ -835,7 +834,7 @@ class IndexManager implements vscode.Disposable {
                 ignoreExisting: false,
             })
         } catch (error) {
-            if (!isAbortError(error)) {
+            if (!(error instanceof vscode.CancellationError)) {
                 void vscode.window.showErrorMessage(
                     `Error refreshing search index for ${displayPath(scopeDir)}: ${error}`
                 )
