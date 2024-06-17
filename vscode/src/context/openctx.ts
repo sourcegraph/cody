@@ -5,6 +5,21 @@ import RemoteFileProvider from './openctx/remoteFileSearch'
 import RemoteRepositorySearch from './openctx/remoteRepositorySearch'
 import WebProvider from './openctx/web'
 
+import * as webGetter from "./get-openctx-lib.sync";
+import * as vsCodeGetter from "./get-openctx-lib.async";
+
+// For production when INCLUDE_OPEN_CTX_LIB=true we include
+// openctx-vscode lib in sync mode that later it could be bundled
+// in web-worker in build time, we have to include libs synchronously
+// to avoid problems with bundlers in consumers
+//
+// For development we should load this package asynchronously
+// since VITE has problems with injecting DOM specific scripts
+// in web-worker when we import openctx-vscode synchronously
+const getOpenCtxController = process.env.INCLUDE_OPEN_CTX_LIB
+    ? webGetter.getOpenCtxController
+    : vsCodeGetter.getOpenCtxController
+
 export async function exposeOpenCtxClient(
     context: Pick<vscode.ExtensionContext, 'extension' | 'secrets'>,
     config: ConfigurationWithAccessToken
@@ -12,7 +27,7 @@ export async function exposeOpenCtxClient(
     logDebug('openctx', 'OpenCtx is enabled in Cody')
     await warnIfOpenCtxExtensionConflict()
     try {
-        const { createController } = await import('@openctx/vscode-lib')
+        const createController = await getOpenCtxController()
         const providers = [
             {
                 providerUri: WebProvider.providerUri,

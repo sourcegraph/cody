@@ -1,9 +1,12 @@
 import { resolve } from 'node:path'
 
 import react from '@vitejs/plugin-react-swc'
+import conditionalImportPlugin from "vite-plugin-conditional-import";
 
 // @ts-ignore
 import { defineProjectWithDefaults } from '../.config/viteShared'
+
+console.log('IS_PRODUCTION', process.env.NODE_ENV === 'production')
 
 const FAKE_PROCESS_ENV: Record<string, string | boolean> = {
     CODY_SHIM_TESTING: false,
@@ -20,6 +23,7 @@ const FAKE_PROCESS_ENV: Record<string, string | boolean> = {
     LSP_LIGHT_LOGGING_ENABLED: false,
     LSP_LIGHT_CACHE_DISABLED: false,
     language: 'en-US',
+    INCLUDE_OPEN_CTX_LIB: process.env.NODE_ENV === 'production'
 }
 
 export default defineProjectWithDefaults(__dirname, {
@@ -29,6 +33,10 @@ export default defineProjectWithDefaults(__dirname, {
     plugins: [
         // @ts-ignore
         react(),
+        conditionalImportPlugin({
+            currentEnv: process.env.NODE_ENV === 'production' ? "sync" : "async",
+            envs: ["sync", "async"],
+        }),
     ],
     resolve: {
         alias: [
@@ -70,6 +78,7 @@ export default defineProjectWithDefaults(__dirname, {
     // `agent` tests and cause some failures because process.env.CODY_SHIM_TESTING gets `define`d to
     // `false`.
     define: process.env.VITEST ? {} : {
+        "import.meta.env.IS_WEB": process.env.NODE_ENV === 'production' ? "true" : "false",
         'process': { env: {} },
         ...Object.fromEntries(
             Object.entries(FAKE_PROCESS_ENV).map(([key, value]) => [
@@ -79,7 +88,8 @@ export default defineProjectWithDefaults(__dirname, {
               ),
           },
     build: {
-        minify: false,
+        commonjsOptions: { transformMixedEsModules: true },
+        minify: true,
         assetsDir: './',
         rollupOptions: {
             external: ['react', 'react/jsx-runtime'],
