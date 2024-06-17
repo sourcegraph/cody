@@ -29,7 +29,7 @@ import { fetch } from '@sourcegraph/cody-shared'
 import { type LanguageConfig, getLanguageConfig } from '../../tree-sitter/language'
 import { getSuffixAfterFirstNewline } from '../text-processing'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
-import * as fim_prompt_utils from './fim-prompt-utils'
+import * as fimPromptUtils from './fim-prompt-utils'
 import type { FIMModelSpecificPromptExtractor } from './fim-prompt-utils'
 
 import { SpanStatusCode } from '@opentelemetry/api'
@@ -76,7 +76,9 @@ export const FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID_WITH_200MS_DELAY =
     'fim-fine-tuned-model-hybrid-200ms-delay'
 export const FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID = 'fim-fine-tuned-model-hybrid'
 export const FIREWORKS_FIM_LANG_SPECIFIC_MODEL_MIXTRAL = 'fim-lang-specific-model-mixtral'
+// Huggingface link (https://huggingface.co/deepseek-ai/deepseek-coder-1.3b-base)
 export const DEEPSEEK_CODER_1P3_B = 'deepseek-coder-1p3b'
+// Huggingface link (https://huggingface.co/deepseek-ai/deepseek-coder-6.7b-base)
 export const DEEPSEEK_CODER_7B = 'deepseek-coder-7b'
 
 // Model identifiers can be found in https://docs.fireworks.ai/explore/ and in our internal
@@ -191,22 +193,22 @@ class FireworksProvider extends Provider {
 
     private getFIMPromptExtractorForModel(): FIMModelSpecificPromptExtractor {
         if (isStarCoderFamily(this.model)) {
-            return new fim_prompt_utils.StarcoderPromptExtractor()
+            return new fimPromptUtils.StarcoderPromptExtractor()
         }
         if (isLlamaCode(this.model)) {
-            return new fim_prompt_utils.CodeLlamaPromptExtractor()
+            return new fimPromptUtils.CodeLlamaPromptExtractor()
         }
         if (isFinetunedV1ModelFamily(this.model)) {
-            return new fim_prompt_utils.FinetunedModelV1PromptExtractor()
+            return new fimPromptUtils.FinetunedModelV1PromptExtractor()
         }
         if (isDeepSeekModelFamily(this.model)) {
-            return new fim_prompt_utils.DeepSeekPromptExtractor()
+            return new fimPromptUtils.DeepSeekPromptExtractor()
         }
         console.error(
             'Using default model prompt extractor, could not get prompt extractor for',
             this.model
         )
-        return new fim_prompt_utils.DefaultModelPromptExtractor()
+        return new fimPromptUtils.DefaultModelPromptExtractor()
     }
 
     private adjustModelIdentifierForFinetunedHybrid(
@@ -270,7 +272,7 @@ class FireworksProvider extends Provider {
             const nextPrompt = this.promptExtractor.getInfillingPrompt({
                 filename: PromptString.fromDisplayPath(this.options.document.uri),
                 intro: introString,
-                prefix: prefix,
+                prefix,
                 suffix: suffixAfterFirstNewline,
             })
 
@@ -335,6 +337,15 @@ class FireworksProvider extends Provider {
                 '<fim_middle>',
                 '<|endoftext|>',
                 '<file_sep>',
+            ]
+        }
+        if (isDeepSeekModelFamily(requestParams.model)) {
+            requestParams.stopSequences = [
+                ...(requestParams.stopSequences || []),
+                '<｜fim▁begin｜>',
+                '<｜fim▁hole｜>',
+                '<｜fim▁end｜>',
+                '<|eos_token|>',
             ]
         }
         // Add a condition for adding extra stop tokens here
@@ -431,6 +442,13 @@ class FireworksProvider extends Provider {
                     // Todo: Remove the condition after the experiment is complete and we have the relevant data points.
                     // This delay introduced here is for the experimentation purpose to see the effect of latency on other metrics, such as CAR, wCAR, Retention, #Sugeestions etc.
                     await new Promise(resolve => setTimeout(resolve, 200))
+                }
+                if (abortController.signal.aborted) {
+                    // return empty completion response and skip the HTTP request
+                    return {
+                        completion: '',
+                        stopReason: CompletionStopReason.RequestAborted,
+                    }
                 }
 
                 // Convert the SG instance messages array back to the original prompt
