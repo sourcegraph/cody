@@ -237,6 +237,7 @@ export type {
     EmbeddingsSearchResult,
     event,
 } from './sourcegraph-api/graphql/client'
+export { RestClient } from './sourcegraph-api/rest/client'
 export { GraphQLTelemetryExporter } from './sourcegraph-api/telemetry/GraphQLTelemetryExporter'
 // biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 export { NOOP_TELEMETRY_SERVICE } from './telemetry'
@@ -273,7 +274,6 @@ export {
 export {
     type ContextItemProps,
     allMentionProvidersMetadata,
-    openCtxMentionProviders,
     FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type ContextMentionProviderMetadata,

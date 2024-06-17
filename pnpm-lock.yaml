@@ -18,8 +18,8 @@ importers:
   .:
     dependencies:
       '@openctx/client':
-        specifier: ^0.0.16
-        version: 0.0.16
+        specifier: ^0.0.17
+        version: 0.0.17
       ignore:
         specifier: ^5.3.1
         version: 5.3.1
@@ -372,8 +372,8 @@ importers:
         specifier: ^7.2.96
         version: 7.2.96
       '@openctx/vscode-lib':
-        specifier: ^0.0.8
-        version: 0.0.8
+        specifier: ^0.0.9
+        version: 0.0.9
       '@opentelemetry/api':
         specifier: ^1.7.0
         version: 1.7.0
@@ -574,8 +574,8 @@ importers:
         specifier: ^3.7.3
         version: 3.7.3
       '@playwright/test':
-        specifier: 1.39.0
-        version: 1.39.0
+        specifier: 1.44.1
+        version: 1.44.1
       '@pollyjs/adapter-node-http':
         specifier: ^6.0.6
         version: 6.0.6
@@ -675,6 +675,9 @@ importers:
       fast-json-stable-stringify:
         specifier: ^2.1.0
         version: 2.1.0
+      franc-min:
+        specifier: ^6.2.0
+        version: 6.2.0
       fs-extra:
         specifier: ^11.2.0
         version: 11.2.0
@@ -694,8 +697,8 @@ importers:
         specifier: ^1.0.1
         version: 1.0.1
       playwright:
-        specifier: 1.39.0
-        version: 1.39.0
+        specifier: 1.44.1
+        version: 1.44.1
       postcss:
         specifier: ^8.4.38
         version: 8.4.38
@@ -3211,8 +3214,8 @@ packages:
       rimraf: 3.0.2
     dev: false
 
-  /@openctx/client@0.0.16:
-    resolution: {integrity: sha512-xKyXUWA1oNTpb4PS+vrF2Pd+OR5e/bWW1PQWscRf5ctzHMiBlzFN9PLIFMrwOkFwvmFb4NxU8ATu2puwTZX/7Q==}
+  /@openctx/client@0.0.17:
+    resolution: {integrity: sha512-Uyh+hq8ysC0ahx9MKikQkP9XIngqKTWfemIx16aVRC1K6dQ4uHR0NbQN5eBkZCPtERKI1JA7fo467P/+T5pACg==}
     dependencies:
       '@openctx/protocol': 0.0.13
       '@openctx/provider': 0.0.13
@@ -3249,10 +3252,10 @@ packages:
       xss: 1.0.15
     dev: false
 
-  /@openctx/vscode-lib@0.0.8:
-    resolution: {integrity: sha512-jgniQSdJynkFltD4ASJkWzvB6TUOK9DiffuCidw/08mKDGXMsbD1xu/rsEcXQrLLde8U3ejTW3qr6aqce080sQ==}
+  /@openctx/vscode-lib@0.0.9:
+    resolution: {integrity: sha512-f6Y3oTTAqzqnseaG083HwKjIM6m0SMz/LOMsx5s5GQaAZgAV/65qYGexuwJ/CrotU/9yGhczh/U6w+j0eEWTHw==}
     dependencies:
-      '@openctx/client': 0.0.16
+      '@openctx/client': 0.0.17
       '@openctx/ui-common': 0.0.10
       rxjs: 7.8.1
     dev: false
@@ -3556,12 +3559,12 @@ packages:
       playwright-core: 1.43.1
     dev: true
 
-  /@playwright/test@1.39.0:
-    resolution: {integrity: sha512-3u1iFqgzl7zr004bGPYiN/5EZpRUSFddQBra8Rqll5N0/vfpqlP9I9EXqAoGacuAbX6c9Ulg/Cjqglp5VkK6UQ==}
+  /@playwright/test@1.44.1:
+    resolution: {integrity: sha512-1hZ4TNvD5z9VuhNJ/walIjvMVvYkZKf71axoF/uiAqpntQJXpG64dlXhoDXE3OczPuTuvjf/M5KWFg5VAVUS3Q==}
     engines: {node: '>=16'}
     hasBin: true
     dependencies:
-      playwright: 1.39.0
+      playwright: 1.44.1
     dev: true
 
   /@pollyjs/adapter-node-http@6.0.6:
@@ -6088,7 +6091,7 @@ packages:
       koa-mount: 4.0.0
       koa-static: 5.0.0
       minimist: 1.2.8
-      playwright: 1.39.0
+      playwright: 1.44.1
       tar-fs: 3.0.6
       vscode-uri: 3.0.7
     transitivePeerDependencies:
@@ -7214,6 +7217,10 @@ packages:
   /co@4.6.0:
     resolution: {integrity: sha512-QVb0dM5HvG+uaxitm8wONl7jltx8dqhfU33DcqtOZcLSVIKSDDLDi7+0LbAKiyI8hD9u42m2YxXSkMGWThaecQ==}
     engines: {iojs: '>= 1.0.0', node: '>= 0.12.0'}
+    dev: true
+
+  /collapse-white-space@2.1.0:
+    resolution: {integrity: sha512-loKTxY1zCOuG4j9f6EPnuyyYkf58RnhhWTvRoZEokgB+WbdXehfjFviyOVYkqzEWz1Q5kRiZdBYS5SwxbQYwzw==}
     dev: true
 
   /collection-visit@1.0.0:
@@ -8704,6 +8711,12 @@ packages:
     dependencies:
       map-cache: 0.2.2
     dev: false
+
+  /franc-min@6.2.0:
+    resolution: {integrity: sha512-1uDIEUSlUZgvJa2AKYR/dmJC66v/PvGQ9mWfI9nOr/kPpMFyvswK0gPXOwpYJYiYD008PpHLkGfG58SPjQJFxw==}
+    dependencies:
+      trigram-utils: 2.0.1
+    dev: true
 
   /fresh@0.5.2:
     resolution: {integrity: sha512-zJ2mQYM18rEFOudeV4GShTGIQ7RbzA7ozbU9I/XBpm7kqgMywgmylMwXHxZJmkVoYkna9d2pVXVXPdYTP9ej8Q==}
@@ -11526,6 +11539,10 @@ packages:
       object-assign: 4.1.1
       thenify-all: 1.6.0
 
+  /n-gram@2.0.2:
+    resolution: {integrity: sha512-S24aGsn+HLBxUGVAUFOwGpKs7LBcG4RudKU//eWzt/mQ97/NMKQxDWHyHx63UNWk/OOdihgmzoETn1tf5nQDzQ==}
+    dev: true
+
   /nan@2.19.0:
     resolution: {integrity: sha512-nO1xXxfh/RWNxfd/XPfbIfFk5vgLsAxUR9y5O0cHMJu/AW9U95JLXqthYHjEp+8gQ5p96K9jUp8nbVOxCdRbtw==}
     dev: false
@@ -12260,24 +12277,24 @@ packages:
       - supports-color
     dev: true
 
-  /playwright-core@1.39.0:
-    resolution: {integrity: sha512-+k4pdZgs1qiM+OUkSjx96YiKsXsmb59evFoqv8SKO067qBA+Z2s/dCzJij/ZhdQcs2zlTAgRKfeiiLm8PQ2qvw==}
-    engines: {node: '>=16'}
-    hasBin: true
-    dev: true
-
   /playwright-core@1.43.1:
     resolution: {integrity: sha512-EI36Mto2Vrx6VF7rm708qSnesVQKbxEWvPrfA1IPY6HgczBplDx7ENtx+K2n4kJ41sLLkuGfmb0ZLSSXlDhqPg==}
     engines: {node: '>=16'}
     hasBin: true
     dev: true
 
-  /playwright@1.39.0:
-    resolution: {integrity: sha512-naE5QT11uC/Oiq0BwZ50gDmy8c8WLPRTEWuSSFVG2egBka/1qMoSqYQcROMT9zLwJ86oPofcTH2jBY/5wWOgIw==}
+  /playwright-core@1.44.1:
+    resolution: {integrity: sha512-wh0JWtYTrhv1+OSsLPgFzGzt67Y7BE/ZS3jEqgGBlp2ppp1ZDj8c+9IARNW4dwf1poq5MgHreEM2KV/GuR4cFA==}
+    engines: {node: '>=16'}
+    hasBin: true
+    dev: true
+
+  /playwright@1.44.1:
+    resolution: {integrity: sha512-qr/0UJ5CFAtloI3avF95Y0L1xQo6r3LQArLIg/z/PoGJ6xa+EwzrwO5lpNr/09STxdHuUoP2mvuELJS+hLdtgg==}
     engines: {node: '>=16'}
     hasBin: true
     dependencies:
-      playwright-core: 1.39.0
+      playwright-core: 1.44.1
     optionalDependencies:
       fsevents: 2.3.2
     dev: true
@@ -14426,6 +14443,13 @@ packages:
   /tree-kill@1.2.2:
     resolution: {integrity: sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==}
     hasBin: true
+    dev: true
+
+  /trigram-utils@2.0.1:
+    resolution: {integrity: sha512-nfWIXHEaB+HdyslAfMxSqWKDdmqY9I32jS7GnqpdWQnLH89r6A5sdk3fDVYqGAZ0CrT8ovAFSAo6HRiWcWNIGQ==}
+    dependencies:
+      collapse-white-space: 2.1.0
+      n-gram: 2.0.2
     dev: true
 
   /trim-lines@3.0.1:

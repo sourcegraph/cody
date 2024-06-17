@@ -73,6 +73,7 @@ describe('MentionMenu', () => {
                 const { container } = render(
                     <MentionMenu
                         {...PROPS}
+                        params={{ ...PROPS.params, query: 'q' }}
                         data={{
                             items: [],
                             providers: [],
@@ -97,7 +98,28 @@ describe('MentionMenu', () => {
         })
 
         describe('single provider', () => {
-            test('no items', () => {
+            test('no items with query', () => {
+                const { container } = render(
+                    <MentionMenu
+                        {...PROPS}
+                        params={{
+                            query: 'test',
+                            parentItem: {
+                                ...PROVIDER_P1,
+                                queryLabel: 'p1 queryLabel',
+                                emptyLabel: 'p1 emptyLabel',
+                            },
+                        }}
+                        data={{
+                            items: [],
+                            providers: [],
+                        }}
+                    />
+                )
+                expectMenu(container, ['#p1 queryLabel', '#p1 emptyLabel'])
+            })
+
+            test('no items without query', () => {
                 const { container } = render(
                     <MentionMenu
                         {...PROPS}
@@ -115,7 +137,7 @@ describe('MentionMenu', () => {
                         }}
                     />
                 )
-                expectMenu(container, ['#p1 queryLabel', '#p1 emptyLabel'])
+                expectMenu(container, ['#p1 queryLabel', '#Search...'])
             })
 
             test('with suggested items for empty query', () => {
@@ -282,6 +304,7 @@ function expectMenu(container: HTMLElement, expectedRows: string[]): void {
             ':is([role=option], [role=progressbar], [cmdk-group-heading], [cmdk-empty])'
         )
     )
+
     expect.soft(actualRows).toHaveLength(expectedRows.length)
     for (let i = 0; i < Math.max(expectedRows.length, actualRows.length); i++) {
         const { row: expectedRow, isSelected: expectedRowIsSelected } = parseExpectedRow(

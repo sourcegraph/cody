@@ -1,30 +1,30 @@
 import * as vscode from 'vscode'
 
-import type { Config, ContextProvider } from '../chat/ContextProvider'
-
+import type { Configuration } from '@sourcegraph/cody-shared'
+import { getConfiguration } from '../configuration'
 import { DocumentCodeAction } from './document'
 import { EditCodeAction } from './edit'
 import { ExplainCodeAction } from './explain'
 import { FixupCodeAction } from './fixup'
 import { TestCodeAction } from './test'
 
-interface CodeActionProviderOptions {
-    contextProvider: ContextProvider
-}
-
 export class CodeActionProvider implements vscode.Disposable {
-    private configurationChangeListener: vscode.Disposable
+    private disposables: vscode.Disposable[] = []
     private actionProviders: vscode.Disposable[] = []
 
-    constructor(options: CodeActionProviderOptions) {
-        this.registerCodeActions(options.contextProvider.config)
-        this.configurationChangeListener = options.contextProvider.configurationChangeEvent.event(() => {
-            this.registerCodeActions(options.contextProvider.config)
-        })
+    constructor() {
+        this.registerCodeActions(getConfiguration())
+        this.disposables.push(
+            vscode.workspace.onDidChangeConfiguration(e => {
+                this.registerCodeActions(getConfiguration())
+            })
+        )
     }
 
-    private registerCodeActions(config: Omit<Config, 'codebase'>): void {
-        vscode.Disposable.from(...this.actionProviders).dispose()
+    private registerCodeActions(config: Omit<Configuration, 'codebase'>): void {
+        for (const disposable of this.actionProviders) {
+            disposable.dispose()
+        }
         this.actionProviders = []
 
         if (!config.codeActions) {
@@ -49,7 +49,11 @@ export class CodeActionProvider implements vscode.Disposable {
     }
 
     public dispose(): void {
-        this.configurationChangeListener.dispose()
-        vscode.Disposable.from(...this.actionProviders).dispose()
+        for (const disposable of this.disposables) {
+            disposable.dispose()
+        }
+        for (const disposable of this.actionProviders) {
+            disposable.dispose()
+        }
     }
 }

@@ -41,6 +41,8 @@ export const ModelSelectField: React.FunctionComponent<{
     className,
     __storybook__open,
 }) => {
+    const telemetryRecorder = useTelemetryRecorder()
+
     const usableModels = useMemo(() => models.filter(m => !m.deprecated), [models])
     const selectedModel = usableModels.find(m => m.default) ?? usableModels[0]
 
@@ -50,6 +52,18 @@ export const ModelSelectField: React.FunctionComponent<{
 
     const onModelSelect = useCallback(
         (model: Model): void => {
+            telemetryRecorder.recordEvent('cody.modelSelector', 'select', {
+                metadata: {
+                    modelIsCodyProOnly: model.codyProOnly ? 1 : 0,
+                    isCodyProUser: isCodyProUser ? 1 : 0,
+                },
+                privateMetadata: {
+                    modelId: model.model,
+                    modelProvider: model.provider,
+                    modelTitle: model.title,
+                },
+            })
+
             if (showCodyProBadge && model.codyProOnly) {
                 getVSCodeAPI().postMessage({
                     command: 'links',
@@ -69,21 +83,31 @@ export const ModelSelectField: React.FunctionComponent<{
             })
             parentOnModelSelect(model)
         },
-        [showCodyProBadge, parentOnModelSelect]
+        [telemetryRecorder.recordEvent, showCodyProBadge, parentOnModelSelect, isCodyProUser]
     )
 
     const readOnly = !userInfo.isDotComUser
 
-    const onOpenChange = useCallback((open: boolean): void => {
-        if (open) {
-            // Trigger `CodyVSCodeExtension:openLLMDropdown:clicked` only when dropdown is about to be opened.
-            getVSCodeAPI().postMessage({
-                command: 'event',
-                eventName: 'CodyVSCodeExtension:openLLMDropdown:clicked',
-                properties: undefined,
-            })
-        }
-    }, [])
+    const onOpenChange = useCallback(
+        (open: boolean): void => {
+            if (open) {
+                // Trigger `CodyVSCodeExtension:openLLMDropdown:clicked` only when dropdown is about to be opened.
+                getVSCodeAPI().postMessage({
+                    command: 'event',
+                    eventName: 'CodyVSCodeExtension:openLLMDropdown:clicked',
+                    properties: undefined,
+                })
+
+                telemetryRecorder.recordEvent('cody.modelSelector', 'open', {
+                    metadata: {
+                        isCodyProUser: isCodyProUser ? 1 : 0,
+                        totalModels: usableModels.length,
+                    },
+                })
+            }
+        },
+        [telemetryRecorder.recordEvent, isCodyProUser, usableModels.length]
+    )
 
     const options = useMemo<SelectListOption[]>(
         () =>
@@ -157,8 +181,6 @@ export const ModelSelectField: React.FunctionComponent<{
         [onCloseByEscape]
     )
 
-    const telemetryRecorder = useTelemetryRecorder()
-
     if (!usableModels.length || usableModels.length < 1) {
         return null
     }
@@ -201,13 +223,13 @@ export const ModelSelectField: React.FunctionComponent<{
                                     href={url}
                                     target="_blank"
                                     rel="noreferrer"
-                                    onClick={() =>
+                                    onSelect={() => {
                                         telemetryRecorder.recordEvent(
                                             'cody.modelSelector',
                                             'clickEnterpriseModelOption',
                                             { metadata: { [id]: 1 } }
                                         )
-                                    }
+                                    }}
                                     className={styles.modelTitleWithIcon}
                                 >
                                     <span className={styles.modelIcon}>

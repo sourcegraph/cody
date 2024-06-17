@@ -174,12 +174,19 @@ export const MentionMenu: FunctionComponent<
                     updateMentionMenuParams({
                         parentItem: {
                             id: RemoteFileProvider.providerUri,
-                            title: 'Sourcegraph Files',
-                            queryLabel: 'Enter file path to search.',
-                            emptyLabel: `No files found in ${openCtxItem.mention.data.repoName} repository`,
+                            title: 'Remote Files',
+                            queryLabel: 'Enter file path to search',
+                            emptyLabel: `No matching files found in ${openCtxItem?.mention?.data.repoName} repository`,
                         },
                     })
-                    setEditorQuery(() => `@${openCtxItem.mention?.data?.repoName}:`)
+
+                    setEditorQuery(currentText =>
+                        currentText.replace(
+                            `@${mentionQuery.text}`,
+                            `@${openCtxItem.mention?.data?.repoName}:`
+                        )
+                    )
+
                     setValue(null)
                     return
                 }
@@ -187,7 +194,7 @@ export const MentionMenu: FunctionComponent<
 
             selectOptionAndCleanUp(createMentionMenuOption(item))
         },
-        [data.items, selectOptionAndCleanUp, setEditorQuery, updateMentionMenuParams]
+        [data.items, selectOptionAndCleanUp, updateMentionMenuParams, setEditorQuery, mentionQuery]
     )
 
     // We use `cmdk` Command as a controlled component, so we need to supply its `value`. We track
@@ -256,7 +263,7 @@ export const MentionMenu: FunctionComponent<
 
                 {(heading || (data.items && data.items.length > 0)) && (
                     <CommandGroup heading={heading}>
-                        {heading && <CommandSeparator />}
+                        {heading && data.items && data.items.length > 0 && <CommandSeparator />}
                         {data.items?.map(item => (
                             <CommandItem
                                 key={commandRowValue(item)}
@@ -271,8 +278,11 @@ export const MentionMenu: FunctionComponent<
                     </CommandGroup>
                 )}
 
-                {data.items === undefined && <CommandLoading>Loading...</CommandLoading>}
-                <CommandEmpty>{getEmptyLabel(params.parentItem, mentionQuery)}</CommandEmpty>
+                {data.items === undefined ? (
+                    <CommandLoading>Loading...</CommandLoading>
+                ) : data.items.length === 0 ? (
+                    <CommandEmpty>{getEmptyLabel(params.parentItem, mentionQuery)}</CommandEmpty>
+                ) : null}
             </CommandList>
         </Command>
     )
@@ -294,12 +304,17 @@ function getEmptyLabel(
     parentItem: ContextMentionProviderMetadata | null,
     mentionQuery: MentionQuery
 ): string {
+    if (!mentionQuery.text) {
+        return 'Search...'
+    }
+
     if (!parentItem) {
         return FILE_CONTEXT_MENTION_PROVIDER.emptyLabel!
     }
     if (parentItem.id === SYMBOL_CONTEXT_MENTION_PROVIDER.id && mentionQuery.text.length < 3) {
         return SYMBOL_CONTEXT_MENTION_PROVIDER.emptyLabel! + NO_SYMBOL_MATCHES_HELP_LABEL
     }
+
     return parentItem.emptyLabel ?? 'No results'
 }
 

@@ -116,7 +116,8 @@ test
                 page,
                 `${title}: file is ignored (due to cody.contextFilters Enterprise configuration setting)`
             )
-            await page.locator('.notification-list-item').hover()
+
+            await page.getByLabel(title).first().hover()
             await page.getByRole('button', { name: 'Clear Notification' }).click()
         }
     }

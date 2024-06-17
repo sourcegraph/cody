@@ -1,6 +1,7 @@
 import { expect } from '@playwright/test'
 import { SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
 
+import { focusSidebar } from './common'
 import { type ExpectedEvents, signOut, test } from './helpers'
 
 test.extend<ExpectedEvents>({
@@ -56,8 +57,13 @@ test.extend<ExpectedEvents>({
     await page.getByRole('combobox', { name: 'input' }).fill(VALID_TOKEN)
     await page.getByRole('combobox', { name: 'input' }).press('Enter')
 
+    // TODO(beyang): re-enable when sidebar chat is enabled
+    // // Close sidebar chat
+    // await page.getByLabel('Chat Section').click()
+
     // Sign out.
     await signOut(page)
+    await focusSidebar(page)
 
     const sidebarFrame = page.frameLocator('iframe.webview').frameLocator('iframe').first()
     await expect(
