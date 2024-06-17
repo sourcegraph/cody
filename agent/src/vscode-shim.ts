@@ -63,6 +63,7 @@ export { AgentEventEmitter as EventEmitter } from '../../vscode/src/testutils/Ag
 
 export {
     CancellationTokenSource,
+    CancellationError,
     CodeAction,
     CodeActionTriggerKind,
     CodeActionKind,

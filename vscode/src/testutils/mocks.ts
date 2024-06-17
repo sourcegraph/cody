@@ -498,6 +498,9 @@ export class CancellationToken implements vscode_types.CancellationToken {
     }
     onCancellationRequested = this.emitter.event
 }
+
+export class CancellationError extends Error {}
+
 // @cody refactor
 export class CancellationTokenSource implements vscode_types.CancellationTokenSource {
     public token = new CancellationToken()
@@ -713,6 +716,7 @@ export const vsCodeMocks = {
     EventEmitter,
     EndOfLine,
     CancellationTokenSource,
+    CancellationError,
     ThemeColor,
     ThemeIcon,
     TreeItem,
