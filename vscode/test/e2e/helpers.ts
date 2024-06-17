@@ -302,7 +302,7 @@ export const test = base
             resetLoggedEvents()
         },
     })
-    .extend<{ sidebar: Frame | null; getCodySidebar: () => Promise<Frame> }>({
+    .extend<{ sidebar: Frame | null }>({
         sidebar: async ({ page, preAuthenticate }, use) => {
             if (preAuthenticate) {
                 await use(null)
@@ -310,9 +310,6 @@ export const test = base
                 const sidebar = await getCodySidebar(page)
                 await use(sidebar)
             }
-        },
-        getCodySidebar: async ({ page }, use) => {
-            await use(() => getCodySidebar(page))
         },
     })
     // Simple sleep utility with a default of 300ms
