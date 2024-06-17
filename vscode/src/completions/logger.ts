@@ -3,6 +3,7 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
+    type AutocompleteContextSnippet,
     type BillingCategory,
     type BillingProduct,
     FeatureFlag,
@@ -24,6 +25,7 @@ import type {
     PersistenceRemovedEventPayload,
 } from '../common/persistence-tracker/types'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
+import { RepoMetadatafromGitApi } from '../repository/repo-metadata-from-git-api'
 import { upstreamHealthProvider } from '../services/UpstreamHealthProvider'
 import { completionProviderConfig } from './completion-provider-config'
 import type { ContextSummary } from './context/context-mixer'
@@ -50,6 +52,29 @@ declare const CompletionLogID: unique symbol
 // for a suggestion request.
 export type CompletionItemID = string & { _opaque: typeof CompletionItemID }
 declare const CompletionItemID: unique symbol
+
+export interface InlineCompletionItemRetrievedContext {
+    content: string
+    filePath: string
+    startLine: number
+    endLine: number
+}
+
+export interface InlineContextItemsParams {
+    context: AutocompleteContextSnippet[]
+    gitUrl: string | undefined
+    commit: string | undefined
+}
+
+export interface InlineCompletionItemContext {
+    gitUrl: string
+    commit?: string
+    prefix: string
+    suffix: string
+    triggerLine: number
+    triggerCharacter: number
+    context: InlineCompletionItemRetrievedContext[]
+}
 
 interface InteractionIDPayload {
     /**
@@ -121,6 +146,10 @@ interface SharedEventPayload extends InteractionIDPayload {
     /** The round trip timings to reach the Sourcegraph and Cody Gateway instances. */
     upstreamLatency?: number
     gatewayLatency?: number
+
+    /** Inline Context items used by LLM to get the completions */
+    // 🚨 SECURITY: included log for DotCom users.
+    inlineCompletionItemContext?: InlineCompletionItemContext
 }
 
 /**
@@ -192,15 +221,25 @@ interface FormatEventPayload {
     formatter?: string
 }
 
-function logCompletionSuggestedEvent(params: SuggestedEventPayload): void {
+function logCompletionSuggestedEvent(
+    isDotComUser: boolean,
+    inlineCompletionItemContext: InlineCompletionItemContext | undefined,
+    params: SuggestedEventPayload
+): void {
     // Use automatic splitting for now - make this manual as needed
-    const { metadata, privateMetadata } = splitSafeMetadata(params)
+    const { metadata, privateMetadata } = splitSafeMetadata({
+        ...params,
+        inlineCompletionItemContext,
+    })
     writeCompletionEvent(
         null,
         'suggested',
         {
             version: 0,
-            metadata,
+            metadata: {
+                ...metadata,
+                recordsPrivateMetadataTranscript: isDotComUser ? 1 : 0,
+            },
             privateMetadata,
         },
         params
@@ -493,7 +532,8 @@ export function loaded(
     params: RequestParams,
     items: InlineCompletionItemWithAnalytics[],
     source: InlineCompletionsResultSource,
-    isDotComUser: boolean
+    isDotComUser: boolean,
+    inlineContextParams: InlineContextItemsParams | undefined = undefined
 ): void {
     const event = activeSuggestionRequests.get(id)
     if (!event) {
@@ -512,9 +552,36 @@ export function loaded(
     if (!event.loadedAt) {
         event.loadedAt = performance.now()
     }
-
     if (event.items.length === 0) {
         event.items = items.map(item => completionItemToItemInfo(item, isDotComUser))
+    }
+
+    // 🚨 SECURITY: included only for DotCom users & Public github Repos.
+    if (
+        isDotComUser &&
+        inlineContextParams?.gitUrl &&
+        event.params.inlineCompletionItemContext === undefined
+    ) {
+        const instance = RepoMetadatafromGitApi.getInstance()
+        // Get the metadata only if already cached, We don't wait for the network call here.
+        const gitRepoMetadata = instance.getRepoMetadataIfCached(inlineContextParams.gitUrl)
+        if (gitRepoMetadata === undefined || gitRepoMetadata.isPublic === false) {
+            return
+        }
+        event.params.inlineCompletionItemContext = {
+            gitUrl: inlineContextParams.gitUrl,
+            commit: inlineContextParams.commit,
+            prefix: params.docContext.prefix,
+            suffix: params.docContext.suffix,
+            triggerLine: params.position.line,
+            triggerCharacter: params.position.character,
+            context: inlineContextParams.context.map(snippet => ({
+                content: snippet.content,
+                startLine: snippet.startLine,
+                endLine: snippet.endLine,
+                filePath: snippet.uri.fsPath,
+            })),
+        }
     }
 }
 
@@ -627,7 +694,7 @@ export function accepted(
 
     completionEvent.acceptedAt = performance.now()
 
-    logSuggestionEvents()
+    logSuggestionEvents(isDotComUser)
     logCompletionAcceptedEvent({
         ...getSharedParams(completionEvent),
         acceptedItem: completionItemToItemInfo(completion, isDotComUser),
@@ -713,11 +780,30 @@ export function noResponse(id: CompletionLogID): void {
  * This callback should be triggered whenever VS Code tries to highlight a new completion and it's
  * used to measure how long previous completions were visible.
  */
-export function flushActiveSuggestionRequests(): void {
-    logSuggestionEvents()
+export function flushActiveSuggestionRequests(isDotComUser: boolean): void {
+    logSuggestionEvents(isDotComUser)
 }
 
-function logSuggestionEvents(): void {
+function getInlineContextItemToLog(
+    inlineCompletionItemContext: InlineCompletionItemContext | undefined
+): InlineCompletionItemContext | undefined {
+    if (inlineCompletionItemContext === undefined) {
+        return undefined
+    }
+    const MAX_CONTEXT_ITEMS = 15
+    const MAX_CHARACTERS = 20_000
+    return {
+        ...inlineCompletionItemContext,
+        prefix: inlineCompletionItemContext.prefix.slice(-MAX_CHARACTERS),
+        suffix: inlineCompletionItemContext.suffix.slice(0, MAX_CHARACTERS),
+        context: inlineCompletionItemContext.context.slice(0, MAX_CONTEXT_ITEMS).map(c => ({
+            ...c,
+            content: c.content.slice(0, MAX_CHARACTERS),
+        })),
+    }
+}
+
+function logSuggestionEvents(isDotComUser: boolean): void {
     const now = performance.now()
     // biome-ignore lint/complexity/noForEach: LRUCache#forEach has different typing than #entries, so just keeping it for now
     activeSuggestionRequests.forEach(completionEvent => {
@@ -744,6 +830,9 @@ function logSuggestionEvents(): void {
         const seen = displayDuration >= READ_TIMEOUT_MS
         const accepted = acceptedAt !== null
         const read = accepted || seen
+        const inlineCompletionItemContext = getInlineContextItemToLog(
+            completionEvent.params.inlineCompletionItemContext
+        )
 
         if (!suggestionAnalyticsLoggedAt) {
             completionEvent.suggestionAnalyticsLoggedAt = now
@@ -753,7 +842,7 @@ function logSuggestionEvents(): void {
             }
         }
 
-        logCompletionSuggestedEvent({
+        logCompletionSuggestedEvent(isDotComUser, inlineCompletionItemContext, {
             ...getSharedParams(completionEvent),
             latency,
             displayDuration,
@@ -834,6 +923,9 @@ function getSharedParams(event: CompletionBookkeepingEvent): SharedEventPayload 
         otherCompletionProviders,
         upstreamLatency: upstreamHealthProvider.getUpstreamLatency(),
         gatewayLatency: upstreamHealthProvider.getGatewayLatency(),
+
+        // 🚨 SECURITY: Do not include any context by default
+        inlineCompletionItemContext: undefined,
     }
 }
 
