@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import type {
+    BlockStatus,
     Event as EventItem,
     MinionTranscriptItem,
-    NodeStatus,
     PlanStatus,
     PlanStepsStatus,
     Step,
@@ -197,7 +197,7 @@ const EventItem: React.FunctionComponent<{
 
 const BlockItem: React.FunctionComponent<{
     title: string
-    state: NodeStatus
+    state: BlockStatus
     onReplay: () => void
     onCancelCurrent: () => void
 }> = ({ title, state, onReplay, onCancelCurrent }) => {
@@ -451,11 +451,11 @@ export const MinionApp: React.FunctionComponent<{
         vscodeAPI.postMessage({ type: 'clear-history' })
     }, [vscodeAPI])
 
-    const replayFromNode = useCallback(
+    const replayFromBlock = useCallback(
         (transcriptIndex: number) => {
-            if (transcriptIndex >= transcript.length || transcript[transcriptIndex].type !== 'node') {
+            if (transcriptIndex >= transcript.length || transcript[transcriptIndex].type !== 'block') {
                 throw new Error(
-                    'Item at index was not node: ' + JSON.stringify(transcript[transcriptIndex])
+                    'Item at index was not block: ' + JSON.stringify(transcript[transcriptIndex])
                 )
             }
             vscodeAPI.postMessage({
@@ -466,8 +466,8 @@ export const MinionApp: React.FunctionComponent<{
         [vscodeAPI, transcript]
     )
 
-    const cancelCurrentNode = useCallback(() => {
-        vscodeAPI.postMessage({ type: 'cancel-current-node' })
+    const cancelCurrentBlock = useCallback(() => {
+        vscodeAPI.postMessage({ type: 'cancel-current-block' })
     }, [vscodeAPI])
 
     const updatePlanStep = useCallback(
@@ -528,9 +528,9 @@ export const MinionApp: React.FunctionComponent<{
                             ) : (
                                 <BlockItem
                                     state={item.status}
-                                    title={item.node.nodeid}
-                                    onReplay={() => replayFromNode(i)}
-                                    onCancelCurrent={() => cancelCurrentNode()}
+                                    title={item.block.nodeid}
+                                    onReplay={() => replayFromBlock(i)}
+                                    onCancelCurrent={() => cancelCurrentBlock()}
                                 />
                             )}
                         </div>
