@@ -1,8 +1,10 @@
-import { type FC, type ReactNode, useEffect, useState } from 'react';
+import { type FC, ReactElement, useEffect, useState } from 'react';
 import type { UriComponents } from 'vscode-uri/lib/umd/uri';
 import { isErrorLike } from '@sourcegraph/cody-shared';
-import { ChatExportResult } from '@sourcegraph/vscode-cody//src/jsonrpc/agent-protocol';
+import { ChatExportResult } from '@sourcegraph/vscode-cody/src/jsonrpc/agent-protocol';
 import { useWebAgentClient } from './Provider';
+
+export type { ChatExportResult }
 
 interface ChildInput {
     chats: ChatExportResult[]
@@ -15,7 +17,7 @@ interface ChildInput {
 }
 
 interface ChatHistoryProps {
-    children: (input: ChildInput) => ReactNode
+    children: (input: ChildInput) => ReactElement
 }
 
 export const ChatHistory: FC<ChatHistoryProps> = props => {
