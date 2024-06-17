@@ -1,9 +1,7 @@
 import * as vscode from 'vscode'
 import { isStreamedIntent } from '../../edit/utils/edit-intent'
 import type { FixupTask } from '../FixupTask'
-import { getLastFullLine } from './utils'
-
-const UNICODE_SPACE = '\u00a0'
+import { getLastFullLine, getTextWithSpaceIndentation, getVisibleDocument } from './utils'
 
 export interface Decorations {
     linesAdded: vscode.DecorationOptions[]
@@ -17,14 +15,28 @@ export interface ComputedOutput {
 }
 
 export function computeFinalDecorations(task: FixupTask): Decorations | undefined {
+    const visibleDocument = getVisibleDocument(task)
+    if (!visibleDocument) {
+        return
+    }
+
     const decorations: Decorations = {
         linesAdded: [],
         linesRemoved: [],
         unvisitedLines: [],
     }
 
-    if (isStreamedIntent(task.intent)) {
-        // We don't calculate a diff for the streamed intent, instead we just need
+    if (task.intent === 'doc') {
+        // Decorations are disabled for the `doc` intent.
+        // This is because the `task.selectionRange` does not match the LLM output, as we trim it
+        // to only produce a docstring, and not and replacement code.
+        // We should refactor and not assume `task.selectionRange` is identical for LLM context and task output.
+        // Issue: TODO
+        return
+    }
+
+    if (task.mode === 'insert') {
+        // We don't calculate a diff for insertions, instead we just need
         // to decorate all inserted lines.
         const replacement = task.inProgressReplacement || task.replacement || ''
         const replacementLines = replacement.split('\n')
@@ -42,11 +54,12 @@ export function computeFinalDecorations(task: FixupTask): Decorations | undefine
 
     for (const edit of task.diff) {
         if (edit.type === 'decoratedDeletion') {
-            const padding = (edit.oldText.match(/^\s*/)?.[0] || '').length // Get leading whitespace for line
+            // Decorations do not render tab characters, we must convert any tabs to spaces.
+            const paddedText = getTextWithSpaceIndentation(edit.oldText, visibleDocument)
             decorations.linesRemoved.push({
                 range: edit.range,
                 renderOptions: {
-                    after: { contentText: UNICODE_SPACE.repeat(padding) + edit.oldText.trim() },
+                    after: { contentText: paddedText },
                 },
             })
         } else if (edit.type === 'insertion') {
@@ -71,7 +84,12 @@ export function computeOngoingDecorations(
     task: FixupTask,
     prevComputed?: Decorations
 ): Decorations | undefined {
-    if (task.replacement || !task.inProgressReplacement) {
+    if (task.intent === 'doc') {
+        // Decorations are disabled for the `doc` intent.
+        // This is because the `task.selectionRange` does not match the LLM output, as we trim it
+        // to only produce a docstring, and not and replacement code.
+        // We should refactor and not assume `task.selectionRange` is identical for LLM context and task output.
+        // Issue: TODO
         return
     }
 
@@ -95,8 +113,8 @@ export function computeOngoingDecorations(
         currentLine,
     }
 
-    // Given the in-progress replacement,
-    const latestFullLine = getLastFullLine(task.inProgressReplacement)
+    const replacement = task.replacement || task.inProgressReplacement || ''
+    const latestFullLine = getLastFullLine(replacement)
     if (!latestFullLine) {
         return decorations
     }

@@ -165,6 +165,7 @@ export class FixupController
         }
 
         editor.revealRange(task.selectionRange)
+        task.diff = undefined
         const editOk = await this.revertToOriginal(task, editor.edit)
 
         const legacyMetadata = {
@@ -373,6 +374,7 @@ export class FixupController
             telemetryMetadata
         )
         this.tasks.set(task.id, task)
+        this.decorator.didCreateTask(task)
         return task
     }
 
@@ -406,9 +408,9 @@ export class FixupController
             return undefined
         }
 
-        // Update the original text, so we're always computing a diff against the latest
-        // code in the editor.
-        task.original = document.getText(task.selectionRange)
+        // // Update the original text, so we're always computing a diff against the latest
+        // // code in the editor.
+        // task.original = document.getText(task.selectionRange)
         task.diff = computeDiff(task, { decorateDeletions: !isRunningInsideAgent() })
         return task.diff
     }
@@ -691,7 +693,7 @@ export class FixupController
         this.setTaskState(task, CodyTaskState.Formatting)
         const formatOk = await this.formatEdit(edit, document, task)
         if (formatOk) {
-            this.decorator.didUpdateDiff(task)
+            this.decorator.didApplyTask(task)
         }
 
         // TODO: See if we can discard a FixupFile now.
@@ -802,11 +804,28 @@ export class FixupController
         logDebug('FixupController:edit', 'formatting')
 
         if (isStreamedIntent(task.intent)) {
-            // We don't need to worry about re-computing a diff here, we know there have been no deletions
-            return this.replaceEdit(edit, formattingChangesInRange, task, {
-                undoStopAfter: true,
-                undoStopBefore: false,
-            })
+            if (edit instanceof vscode.WorkspaceEdit) {
+                for (const change of formattingChangesInRange) {
+                    if (change.type === 'insertion') {
+                        edit.replace(task.fixupFile.uri, change.range, change.text)
+                    }
+                }
+                return vscode.workspace.applyEdit(edit)
+            }
+
+            return edit(
+                editBuilder => {
+                    for (const change of formattingChangesInRange) {
+                        if (change.type === 'insertion') {
+                            editBuilder.replace(change.range, change.text)
+                        }
+                    }
+                },
+                {
+                    undoStopAfter: true,
+                    undoStopBefore: false,
+                }
+            )
         }
 
         if (!task.replacement) {
@@ -991,10 +1010,11 @@ export class FixupController
         switch (state) {
             case 'streaming':
                 task.inProgressReplacement = text
-                this.decorator.didUpdateInProgressReplacement(task)
+                this.decorator.didUpdateInProgressTask(task)
                 break
             case 'complete':
                 task.inProgressReplacement = undefined
+                console.log('REPLACEMENT FROM LLM:\n', text)
                 task.replacement = text
                 this.setTaskState(task, CodyTaskState.Applying)
                 break
@@ -1024,6 +1044,7 @@ export class FixupController
         const pos = new vscode.Position(Math.max(doc.lineCount - 1, 0), 0)
         const range = new vscode.Range(pos, pos)
         task.selectionRange = range
+        task.insertionPoint = range.start
         task.fixupFile = this.files.replaceFile(task.fixupFile.uri, newFileUri)
 
         // Set original text to empty as we are not replacing original text but appending to file

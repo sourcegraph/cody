@@ -23,14 +23,14 @@ export class FixupDecorator implements vscode.Disposable {
         this.applyDecorations(file, this.tasksWithDecorations.get(file)?.values() || [].values())
     }
 
-    public didUpdateInProgressReplacement(task: FixupTask): void {
-        const previouslyComputed = this.tasksWithDecorations.get(task.fixupFile)?.get(task)
-        const taskOutput = computeOngoingDecorations(task, previouslyComputed)
+    public didCreateTask(task: FixupTask): void {
+        const taskOutput = computeOngoingDecorations(task)
         this.updateTaskDecorations(task, taskOutput)
     }
 
-    public didUpdateDiff(task: FixupTask): void {
-        const taskOutput = computeFinalDecorations(task)
+    public didUpdateInProgressTask(task: FixupTask): void {
+        const previouslyComputed = this.tasksWithDecorations.get(task.fixupFile)?.get(task)
+        const taskOutput = computeOngoingDecorations(task, previouslyComputed)
         this.updateTaskDecorations(task, taskOutput)
     }
 
