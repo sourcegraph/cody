@@ -407,9 +407,9 @@ export class FixupController
             return undefined
         }
 
-        // // Update the original text, so we're always computing a diff against the latest
-        // // code in the editor.
-        // task.original = document.getText(task.selectionRange)
+        // Update the original text, so we're always computing a diff against the latest
+        // code in the editor.
+        task.original = document.getText(task.selectionRange)
         task.diff = computeDiff(task, { decorateDeletions: !isRunningInsideAgent() })
         return task.diff
     }
@@ -1013,7 +1013,6 @@ export class FixupController
                 break
             case 'complete':
                 task.inProgressReplacement = undefined
-                console.log('REPLACEMENT FROM LLM:\n', text)
                 task.replacement = text
                 this.setTaskState(task, CodyTaskState.Applying)
                 break

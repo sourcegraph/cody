@@ -33,15 +33,13 @@ export class FixupDocumentEditObserver {
                 continue
             }
 
-            for (const edit of event.contentChanges) {
-                if (
-                    edit.range.end.isBefore(task.selectionRange.start) ||
-                    edit.range.start.isAfter(task.selectionRange.end)
-                ) {
-                    continue
-                }
-                break
-            }
+            const changeWithinRange = event.contentChanges.some(
+                edit =>
+                    !(
+                        edit.range.end.isBefore(task.selectionRange.start) ||
+                        edit.range.start.isAfter(task.selectionRange.end)
+                    )
+            )
 
             // Note that we would like to auto-accept at this point if task.state == Applied.
             // But it led to race conditions and bad bugs, because the Agent doesn't get
@@ -50,7 +48,7 @@ export class FixupDocumentEditObserver {
             // notification back to the Agent after we finish applying the
             // changes. https://github.com/sourcegraph/cody-issues/issues/315 is one example
             // of a bug caused by auto-accepting here, but there were others as well.
-            if (task.state === CodyTaskState.Applied && !isRunningInsideAgent()) {
+            if (changeWithinRange && task.state === CodyTaskState.Applied && !isRunningInsideAgent()) {
                 this.provider_.accept(task)
                 continue
             }
