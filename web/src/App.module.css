@@ -16,6 +16,10 @@ body {
     line-height: inherit;
 }
 
+:root {
+    color-scheme: dark;
+}
+
 .root {
     display: flex;
     height: 100vh;
