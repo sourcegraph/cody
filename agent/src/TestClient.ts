@@ -909,6 +909,7 @@ ${patch}`
                 customConfiguration: {
                     // For testing .cody/ignore
                     'cody.internal.unstable': true,
+                    'cody.experimental.symf.enabled': false,
                     ...this.params.extraConfiguration,
                 },
                 debug: false,

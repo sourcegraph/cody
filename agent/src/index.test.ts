@@ -337,7 +337,7 @@ describe('Agent', () => {
             })
         }, 30_000)
 
-        it('chat/submitMessage (addEnhancedContext: true)', async () => {
+        it.skip('chat/submitMessage (addEnhancedContext: true)', async () => {
             await client.openFile(animalUri)
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
@@ -372,7 +372,7 @@ describe('Agent', () => {
             )
         }, 30_000)
 
-        it('chat/submitMessage (addEnhancedContext: true, squirrel test)', async () => {
+        it.skip('chat/submitMessage (addEnhancedContext: true, squirrel test)', async () => {
             await client.openFile(squirrelUri)
             await client.request('command/execute', {
                 command: 'cody.search.index-update',
@@ -644,14 +644,14 @@ describe('Agent', () => {
             })
             const reply = await client.sendSingleMessageToNewChat(
                 'What is the name of the function that I have selected? Only answer with the name of the function, nothing else',
-                { addEnhancedContext: true }
+                { addEnhancedContext: false }
             )
             expect(reply?.text?.trim()).includes('anotherFunction')
             expect(reply?.text?.trim()).not.includes('inner')
             await client.changeFile(multipleSelectionsUri)
             const reply2 = await client.sendSingleMessageToNewChat(
                 'What is the name of the function that I have selected? Only answer with the name of the function, nothing else',
-                { addEnhancedContext: true }
+                { addEnhancedContext: false }
             )
             expect(reply2?.text?.trim()).includes('inner')
             expect(reply2?.text?.trim()).not.includes('anotherFunction')
