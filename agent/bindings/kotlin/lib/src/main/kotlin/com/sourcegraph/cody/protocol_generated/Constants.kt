@@ -140,4 +140,6 @@ object Constants {
   const val enabled = "enabled"
   const val notification = "notification"
   const val request = "request"
+  const val `object` = "object"
+  const val string = "string"
 }

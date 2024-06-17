@@ -38,6 +38,8 @@ interface CodyAgentClient {
   fun ignore_didChange(params: Null?)
   @JsonNotification("webview/postMessage")
   fun webview_postMessage(params: WebviewPostMessageParams)
+  @JsonNotification("webview/postMessageString")
+  fun webview_postMessageString(params: Webview_PostMessageStringParams)
   @JsonNotification("progress/start")
   fun progress_start(params: ProgressStartParams)
   @JsonNotification("progress/report")

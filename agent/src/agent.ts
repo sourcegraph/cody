@@ -1161,6 +1161,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
             await this.receiveWebviewMessage(id, message)
             return null
         })
+        this.registerAuthenticatedRequest(
+            'webview/receiveMessageString',
+            async ({ id, messageStringEncoded }) => {
+                await this.receiveWebviewMessage(id, JSON.parse(messageStringEncoded))
+                return null
+            }
+        )
 
         this.registerAuthenticatedRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
             return featureFlagProvider.evaluateFeatureFlag(
@@ -1443,10 +1450,17 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     })
                 }
 
-                this.notify('webview/postMessage', {
-                    id: panel.panelID,
-                    message,
-                })
+                if (this.clientInfo?.capabilities?.webviewMessages === 'string') {
+                    this.notify('webview/postMessageString', {
+                        id: panel.panelID,
+                        stringEncodedMessage: JSON.stringify(message),
+                    })
+                } else {
+                    this.notify('webview/postMessage', {
+                        id: panel.panelID,
+                        message,
+                    })
+                }
             })
 
             return panel
