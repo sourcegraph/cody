@@ -135,7 +135,6 @@ export class FixupController
             task,
             task.state === CodyTaskState.Error ? CodyTaskState.Error : CodyTaskState.Finished
         )
-        // TODO: This may cause dupliccate discards if a finished item is cancelled, debug
         this.discard(task)
     }
 
@@ -254,7 +253,7 @@ export class FixupController
                 userContextFiles: input.userContextFiles,
                 document,
                 intent: input.intent,
-                mode: task.mode,
+                mode: input.mode,
                 model: input.model,
             },
             source,
@@ -330,7 +329,7 @@ export class FixupController
             input.userContextFiles,
             input.range,
             input.intent,
-            mode,
+            input.mode,
             input.model,
             source,
             undefined,

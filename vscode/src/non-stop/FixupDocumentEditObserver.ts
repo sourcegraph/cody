@@ -33,6 +33,16 @@ export class FixupDocumentEditObserver {
                 continue
             }
 
+            for (const edit of event.contentChanges) {
+                if (
+                    edit.range.end.isBefore(task.selectionRange.start) ||
+                    edit.range.start.isAfter(task.selectionRange.end)
+                ) {
+                    continue
+                }
+                break
+            }
+
             // Note that we would like to auto-accept at this point if task.state == Applied.
             // But it led to race conditions and bad bugs, because the Agent doesn't get
             // notified when the Accept lens is displayed, so it doesn't actually know when it

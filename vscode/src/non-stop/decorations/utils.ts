@@ -21,8 +21,9 @@ const UNICODE_SPACE = '\u00a0'
 export function getTextWithSpaceIndentation(text: string, document: vscode.TextDocument): string {
     const hasTabs = /\t/.test(text)
     if (!hasTabs) {
-        // Nothing to do, continue
-        return text
+        // Pad the line with any leading whitespace
+        const padding = (text.match(/^\s*/)?.[0] || '').length
+        return UNICODE_SPACE.repeat(padding) + text.trim()
     }
 
     const tabSize = getEditorTabSize(document.uri, vscode.workspace, vscode.window)
