@@ -1075,7 +1075,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     }
                 }
 
-                setInitialContext()
+                await setInitialContext()
             }
 
             return panelID
