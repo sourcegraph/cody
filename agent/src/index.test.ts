@@ -644,6 +644,10 @@ describe('Agent', () => {
             })
             const reply = await client.sendSingleMessageToNewChat(
                 'What is the name of the function that I have selected? Only answer with the name of the function, nothing else',
+                // enhanced context is not needed here because we are only
+                // testing the logic related to selecting test. The text
+                // selection is always included in the context even when
+                // `addEnhancedContext: false`
                 { addEnhancedContext: false }
             )
             expect(reply?.text?.trim()).includes('anotherFunction')
