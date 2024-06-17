@@ -3,16 +3,9 @@ import type { CancellationToken } from 'vscode'
 import type { Event } from './action'
 import type { Environment } from './environment'
 
-export interface BlockCheckpoint {
-    blockid: string
-    data: string
-}
-
 export interface Memory {
     getEvents: () => Event[]
     postEvent: (event: Event) => void
-    setCheckpoint: (checkpoint: BlockCheckpoint | null) => void
-    getCheckpoint(blockid: string): string | null
 }
 
 export interface BlockResult {

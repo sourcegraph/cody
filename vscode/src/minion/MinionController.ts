@@ -15,7 +15,6 @@ import { ContextualizeBlock } from './blocks/contextualize'
 import { PlanBlock } from './blocks/plan'
 import { RestateBlock } from './blocks/restate'
 import { type Environment, LocalVSCodeEnvironment } from './environment'
-import type { BlockCheckpoint } from './statemachine'
 import { StateMachine } from './statemachine'
 
 /**
@@ -163,9 +162,6 @@ export class MinionController extends ReactPanelController<
 
         // if defined, the session is already running
         canceller?: vscode.CancellationTokenSource
-
-        // data a node can store to save in-progress execution state
-        checkpoint?: { blockid: string; data: string }
     }
 
     private planControllers: { [blockid: string]: PlanController } = {}
@@ -312,8 +308,7 @@ export class MinionController extends ReactPanelController<
     // should be updated.
     private loadSession(
         newSession: MinionSession,
-        startNode?: { blockid: string; nodeid: string },
-        checkpoint?: BlockCheckpoint
+        startNode?: { blockid: string; nodeid: string }
     ): void {
         if (this.sessionState) {
             const old = this.sessionState
@@ -336,7 +331,6 @@ export class MinionController extends ReactPanelController<
             ),
             stateMachine: newStateMachine,
             session: newSession,
-            checkpoint,
         }
         this.syncPlanControllersToTranscript()
     }
@@ -379,20 +373,6 @@ export class MinionController extends ReactPanelController<
                         this.syncPlanControllersToTranscript()
                         this.postUpdateTranscript()
                     },
-                    setCheckpoint: (checkpoint: BlockCheckpoint | null) => {
-                        if (cancelToken.isCancellationRequested) {
-                            // block posting checkpoints after cancellation
-                            return
-                        }
-                        if (this.sessionState) {
-                            this.sessionState.checkpoint = checkpoint ?? undefined
-                        }
-                    },
-                    getCheckpoint: (blockid: string) => {
-                        return this.sessionState?.checkpoint?.blockid === blockid
-                            ? this.sessionState.checkpoint.data
-                            : null
-                    },
                 },
                 this.anthropic
             )
@@ -416,10 +396,10 @@ export class MinionController extends ReactPanelController<
         if (!storedSessionState) {
             throw new Error(`session not found with id: ${id}`)
         }
-        const { session, checkpoint } = storedSessionState
+        const { session } = storedSessionState
 
         const { subTranscript, lastNode } = MinionController.transcriptUntilLastNode(session.transcript)
-        this.loadSession({ id: session.id, transcript: subTranscript }, lastNode?.node, checkpoint)
+        this.loadSession({ id: session.id, transcript: subTranscript }, lastNode?.node)
         if (lastNode?.status === 'doing') {
             this.replayFromIndex(subTranscript.length - 1, false)
         }
@@ -457,11 +437,7 @@ export class MinionController extends ReactPanelController<
             id: new Date().toISOString(), // create new logical session
             transcript: [...this.sessionState.session.transcript.slice(0, index)],
         }
-        this.loadSession(
-            newSession,
-            lastNode.node,
-            clearCheckpoint ? undefined : this.sessionState.checkpoint
-        )
+        this.loadSession(newSession, lastNode.node)
         void this.runSession()
         await this.save() // save new session
     }
@@ -522,7 +498,6 @@ export class MinionController extends ReactPanelController<
             throw new Error('no session to save')
         }
         await this.storage.save(this.authProvider.getAuthStatus(), {
-            checkpoint: this.sessionState.checkpoint,
             session: this.sessionState.session,
         })
     }
@@ -560,12 +535,6 @@ export class MinionController extends ReactPanelController<
                     {
                         getEvents: () => this.events,
                         postEvent: (event: Event) => {
-                            throw new Error('not implemented')
-                        },
-                        setCheckpoint: (checkpoint: BlockCheckpoint | null) => {
-                            throw new Error('not implemented')
-                        },
-                        getCheckpoint: (blockid: string) => {
                             throw new Error('not implemented')
                         },
                     },
