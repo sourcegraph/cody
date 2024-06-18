@@ -12,17 +12,14 @@ import { logError } from '../log'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import { isValidTestFile } from '../commands/utils/test-commands'
-import { completionProviderConfig } from './completion-provider-config'
+import { gitMetadataForCurrentEditor } from '../repository/git-metadata-for-editor'
+import { RepoMetadatafromGitApi } from '../repository/repo-metadata-from-git-api'
 import type { ContextMixer } from './context/context-mixer'
+import { getCompletionProvider } from './get-completion-provider'
 import { insertIntoDocContext } from './get-current-doc-context'
 import * as CompletionLogger from './logger'
 import type { CompletionLogID } from './logger'
-import type {
-    CompletionProviderTracer,
-    Provider,
-    ProviderConfig,
-    ProviderOptions,
-} from './providers/provider'
+import type { CompletionProviderTracer, ProviderConfig } from './providers/provider'
 import type { RequestManager, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import type { AutocompleteItem } from './suggested-autocomplete-items-cache'
@@ -207,6 +204,14 @@ async function doGetInlineCompletions(
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
 
+    const gitIdentifiersForFile =
+        isDotComUser === true ? gitMetadataForCurrentEditor.getGitIdentifiersForFile() : undefined
+    if (gitIdentifiersForFile?.gitUrl) {
+        const repoMetadataInstance = RepoMetadatafromGitApi.getInstance()
+        // Calling this so that it precomputes the `gitRepoUrl` and store in its cache for query later.
+        repoMetadataInstance.getRepoMetadataUsingGitUrl(gitIdentifiersForFile.gitUrl)
+    }
+
     // If we have a suffix in the same line as the cursor and the suffix contains any word
     // characters, do not attempt to make a completion. This means we only make completions if
     // we have a suffix in the same line for special characters like `)]}` etc.
@@ -277,7 +282,7 @@ async function doGetInlineCompletions(
     // Only log a completion as started if it's either served from cache _or_ the debounce interval
     // has passed to ensure we don't log too many start events where we end up not doing any work at
     // all.
-    CompletionLogger.flushActiveSuggestionRequests()
+    CompletionLogger.flushActiveSuggestionRequests(isDotComUser)
     const multiline = Boolean(multilineTrigger)
     const logId = CompletionLogger.create({
         multiline,
@@ -366,6 +371,7 @@ async function doGetInlineCompletions(
         providerConfig,
         docContext,
         firstCompletionTimeout,
+        completionLogId: logId,
     })
 
     tracer?.({
@@ -388,54 +394,18 @@ async function doGetInlineCompletions(
         tracer: tracer ? createCompletionProviderTracer(tracer) : undefined,
     })
 
-    CompletionLogger.loaded(logId, requestParams, completions, source, isDotComUser)
+    const inlineContextParams = {
+        context: contextResult?.context,
+        gitUrl: gitIdentifiersForFile?.gitUrl,
+        commit: gitIdentifiersForFile?.commit,
+    }
+    CompletionLogger.loaded(logId, requestParams, completions, source, isDotComUser, inlineContextParams)
 
     return {
         logId,
         items: completions,
         source,
     }
-}
-
-interface GetCompletionProvidersParams
-    extends Pick<
-        InlineCompletionsParams,
-        'document' | 'position' | 'triggerKind' | 'providerConfig' | 'firstCompletionTimeout'
-    > {
-    docContext: DocumentContext
-}
-
-function getCompletionProvider(params: GetCompletionProvidersParams): Provider {
-    const { document, position, triggerKind, providerConfig, docContext, firstCompletionTimeout } =
-        params
-
-    const sharedProviderOptions: Omit<ProviderOptions, 'id' | 'n' | 'multiline'> = {
-        triggerKind,
-        docContext,
-        document,
-        position,
-        hotStreak: completionProviderConfig.hotStreak,
-        // For now the value is static and based on the average multiline completion latency.
-        firstCompletionTimeout,
-    }
-
-    // Show more if manually triggered (but only showing 1 is faster, so we use it
-    // in the automatic trigger case).
-    const n = triggerKind === TriggerKind.Automatic ? 1 : 3
-
-    if (docContext.multilineTrigger) {
-        return providerConfig.create({
-            ...sharedProviderOptions,
-            n,
-            multiline: true,
-        })
-    }
-
-    return providerConfig.create({
-        ...sharedProviderOptions,
-        n,
-        multiline: false,
-    })
 }
 
 function createCompletionProviderTracer(

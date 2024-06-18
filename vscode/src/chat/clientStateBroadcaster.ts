@@ -8,9 +8,10 @@ import {
     isMultiLineRange,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { getContextFileFromSelection } from '../commands/context/selection'
+import { getSelectionOrFileContext } from '../commands/context/selection'
 import { createRemoteRepositoryMention } from '../context/openctx/remoteRepositorySearch'
 import type { RemoteSearch } from '../context/remote-search'
+import type { SimpleChatModel } from './chat-view/SimpleChatModel'
 import { contextItemMentionFromOpenCtxItem } from './context/chatContext'
 import type { ExtensionMessage } from './protocol'
 
@@ -22,9 +23,11 @@ type PostMessage = (message: Extract<ExtensionMessage, { type: 'clientState' }>)
 export function startClientStateBroadcaster({
     remoteSearch,
     postMessage: rawPostMessage,
+    chatModel,
 }: {
     remoteSearch: RemoteSearch | null
     postMessage: PostMessage
+    chatModel: SimpleChatModel
 }): vscode.Disposable {
     const postMessage = debouncedIdempotentPostMessage(rawPostMessage)
 
@@ -79,7 +82,11 @@ export function startClientStateBroadcaster({
                 items.push(item)
             }
         }
-        const [contextFile] = await getContextFileFromSelection()
+
+        const { input, context } = chatModel.contextWindow
+        const userContextSize = context?.user ?? input
+
+        const [contextFile] = await getSelectionOrFileContext()
         if (contextFile) {
             const range =
                 contextFile.range && isMultiLineRange(contextFile.range) ? contextFile.range : undefined
@@ -87,9 +94,11 @@ export function startClientStateBroadcaster({
                 ...contextFile,
                 type: 'file',
                 title: range ? 'Current Selection' : 'Current File',
-                description:
-                    displayPathBasename(contextFile.uri) + (range ? `:${displayLineRange(range)}` : ''),
+                description: `${displayPathBasename(contextFile.uri)}${
+                    range ? `:${displayLineRange(range)}` : ''
+                }`,
                 range,
+                isTooLarge: contextFile.size !== undefined && contextFile.size > userContextSize,
                 source: ContextItemSource.Initial,
                 icon: range ? 'list-selection' : 'file',
             } satisfies ContextItem

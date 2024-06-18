@@ -61,7 +61,7 @@ export async function allMentionProvidersMetadata(): Promise<ContextMentionProvi
     return items
 }
 
-export async function openCtxMentionProviders(): Promise<ContextMentionProviderMetadata[]> {
+async function openCtxMentionProviders(): Promise<ContextMentionProviderMetadata[]> {
     const client = openCtx.client
     if (!client) {
         return []
@@ -76,7 +76,7 @@ export async function openCtxMentionProviders(): Promise<ContextMentionProviderM
                 id: provider.providerUri,
                 title: provider.name,
                 queryLabel: provider.name,
-                emptyLabel: 'No results found',
+                emptyLabel: 'No results',
             }))
             .sort((a, b) => (a.title > b.title ? 1 : -1))
     } catch (error) {

@@ -152,13 +152,9 @@ const CommandShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanE
 }
 CommandShortcut.displayName = 'CommandShortcut'
 
-export const CommandLink: React.FunctionComponent<React.AnchorHTMLAttributes<HTMLAnchorElement>> = ({
-    href,
-    className,
-    children,
-    onClick: parentOnClick,
-    ...props
-}) => {
+export const CommandLink: React.FunctionComponent<
+    React.AnchorHTMLAttributes<HTMLAnchorElement> & { onSelect?: () => void }
+> = ({ href, className, children, onSelect, ...props }) => {
     const linkRef = React.useRef<HTMLAnchorElement>(null)
 
     // We use a workaround to make links work in VS Code via keyboard and click (see the
@@ -171,7 +167,10 @@ export const CommandLink: React.FunctionComponent<React.AnchorHTMLAttributes<HTM
     return (
         <CommandItem
             onSelect={() => {
+                onSelect?.()
+
                 if (isHandlingClick.current) {
+                    linkRef.current?.blur() // close after click
                     return
                 }
 
@@ -190,6 +189,7 @@ export const CommandLink: React.FunctionComponent<React.AnchorHTMLAttributes<HTM
                             metaKey: true,
                         })
                     )
+                    linkRef.current?.blur()
                 } catch (error) {
                     console.error(error)
                 } finally {
@@ -210,7 +210,6 @@ export const CommandLink: React.FunctionComponent<React.AnchorHTMLAttributes<HTM
                     setTimeout(() => {
                         isHandlingClick.current = false
                     })
-                    parentOnClick?.(e)
                 }}
                 ref={linkRef}
             >

@@ -106,7 +106,7 @@ export const AssistantMessageCell: FunctionComponent<{
                                 className="tw-pr-4"
                             />
                         )}
-                        {humanMessage && !isLoading && (
+                        {humanMessage && !isLoading && !message.error && (
                             <ContextFocusActions humanMessage={humanMessage} className="tw-pl-5" />
                         )}
                     </div>

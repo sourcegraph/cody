@@ -201,6 +201,7 @@ describe('Transcript', () => {
             />
         )
         expectCells([{ message: 'Foo' }, { message: 'Request Failed: some error' }])
+        expect(screen.queryByText('Try again with different context')).toBeNull()
     })
 
     test('does not clobber user input into followup while isPendingPriorResponse when it completes', async () => {

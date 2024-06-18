@@ -6,6 +6,28 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+### Fixed
+
+### Changed
+
+## 1.22.1
+
+### Added
+
+Enterprise: Expand the context window for Gemini 1.5 models. [pull/4563](https://github.com/sourcegraph/cody/pull/4563)
+
+### Fixed
+
+- Chat: Fix hover tooltips on overflowed paths in the @-mention file picker. [pull/4553](https://github.com/sourcegraph/cody/pull/4553)
+- Custom Commands: Creating a new custom command through the menu without an existing cody.json file now creates a new cody.json file with the command added. [pull/4561](https://github.com/sourcegraph/cody/pull/4561)
+- Ollama: Fix a bug where Ollama models were not connected to the correct client. [pull/4564](https://github.com/sourcegraph/cody/pull/4564)
+
+### Changed
+
+## 1.22.0
+
+### Added
+
 - Chat & Commands: New models available for Cody Pro users:
   - Google Gemini 1.5 Pro [#4360](https://github.com/sourcegraph/cody/pull/4360)
   - Google Gemini 1.5 Flash [#4360](https://github.com/sourcegraph/cody/pull/4360)
@@ -18,11 +40,15 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Fix an issue where it was difficult to copy code from responses that were still streaming in. [pull/4472](https://github.com/sourcegraph/cody/pull/4472)
 - Chat: Fix an issue where opening the @-mention menu in a followup input would scroll the window to the top. [pull/4475](https://github.com/sourcegraph/cody/pull/4475)
 - Chat: Show "Explain Code" and other commands in a more pleasant way, with @-mentions, in the chat. [pull/4424](https://github.com/sourcegraph/cody/pull/4424)
+- Chat: Scrollbars are now shown in the @-mention menu when it overflows, same as chat models. [pull/4523](https://github.com/sourcegraph/cody/pull/4523)
+- Chat: Prevent the chat from remaining in a loading state when using ESC to stop Cody's response mid-stream. [pull/4532](https://github.com/sourcegraph/cody/pull/4532)
+- Chat: Large files added to new chats as @-mentions are now correctly displayed as invalid. [pull/4534](https://github.com/sourcegraph/cody/pull/4534)
 
 ### Changed
 
 - Autocomplete: Improve finding of related code snippets by breaking camelCase and snake_case words. [pull/4467](https://github.com/sourcegraph/cody/pull/4467)
 - The natural language search quickpick was removed. To perform a natural-language search, run a Cody chat and view the items in the context row. [pull/4506](https://github.com/sourcegraph/cody/pull/4506)
+- Temporary Fix for [Win-ca package Certs] Issue(https://github.com/sourcegraph/cody/issues/4491): Bypassed problematic codepath to prevent system hang, resulting in temporary loss of self-signed certs import on Windows. Proper fix planned before July 1.
 
 ## [1.20.3]
 

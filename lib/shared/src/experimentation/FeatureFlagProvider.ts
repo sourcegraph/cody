@@ -16,6 +16,7 @@ export enum FeatureFlag {
     // Enable StarCoder2 7b and 15b as the default model via Fireworks
     CodyAutocompleteStarCoder2Hybrid = 'cody-autocomplete-starcoder2-hybrid',
     // Enable the FineTuned model as the default model via Fireworks
+    CodyAutocompleteFIMFineTunedModelHybrid = 'cody-autocomplete-fim-fine-tuned-model-hybrid',
 
     // Enable various feature flags to experiment with FIM trained fine-tuned models via Fireworks
     CodyAutocompleteFIMFineTunedModelBaseFeatureFlag = 'cody-autocomplete-fim-fine-tuned-model-experiment-flag',
@@ -65,6 +66,12 @@ export enum FeatureFlag {
 
     /** Automatically start indexing using embeddings. */
     CodyEmbeddingsAutoIndexing = 'cody-embeddings-auto-indexing',
+
+    /** Enable Context Preamble for open-end chat questions. */
+    CodyChatContextPreamble = 'cody-chat-context-preamble',
+
+    /** Whether to use generated metadata to power embeddings. */
+    CodyEmbeddingsGenerateMetadata = 'cody-embeddings-generate-metadata',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

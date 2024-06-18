@@ -343,7 +343,10 @@ async function resolveContextMentionProviderContextItem(
         title: item.title,
     }
 
-    const items = await openCtxClient.items({ message: input.toString(), mention }, item.providerUri)
+    const items = await openCtxClient.items(
+        { message: input.toString(), mention },
+        { providerUri: item.providerUri }
+    )
 
     return items
         .map((item): (ContextItemWithContent & { providerUri: string }) | null =>

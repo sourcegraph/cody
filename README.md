@@ -4,7 +4,7 @@
 
 **Code AI with codebase context**
 
-"an AI pair programmer that actually knows about your entire codebase's APIs, impls, and idioms"
+Cody is an AI coding assistant that uses search and codebase context to help you understand, write, and fix code faster.
 
 [Docs](https://sourcegraph.com/docs/cody) • [cody.dev](https://about.sourcegraph.com/cody?utm_source=github.com&utm_medium=referral)
 
@@ -23,24 +23,24 @@
 _&mdash; or &mdash;_
 
 - Build and run the VS Code extension locally: `pnpm install && cd vscode && pnpm run dev`
-- See [all supported editors](https://cody.dev)
+- See [all supported editors](https://sourcegraph.com/docs/cody/clients)
 
 ## What is Cody?
 
-Cody is a free, open-source AI coding assistant that can write and fix code, provide AI-generated autocomplete, and answer your coding questions. Cody fetches relevant code context from across your entire codebase to write better code that uses more of your codebase's APIs, impls, and idioms, with less hallucination.
+Cody is an open-source AI coding assistant that helps you understand, write, and fix code faster. It uses advanced search to pull context from both local and remote codebases so that you can use context about APIs, symbols, and usage patterns from across your codebase at any scale, all from within your IDE. You can also choose from the latest large language models—like GPT-4o and Claude 3 Opus—to customize Cody to your needs.
 
-Cody is currently in Beta and available for [VS Code](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and [JetBrains](https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph).
+Cody is available for [VS Code](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai), [JetBrains](https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph), and [on the web](https://sourcegraph.com/cody/chat).
 
 See [cody.dev](https://about.sourcegraph.com/cody?utm_source=github.com&utm_medium=referral) for more info.
 
 ## What can Cody do?
 
-- **Chat:** Ask Cody questions about your entire codebase. Cody will use semantic search to retrieve files from your codebase and use context from those files to answer your questions.
+- **Chat:** Ask Cody questions about your codebase. Cody will use semantic search to retrieve files from your codebase and use context from those files to answer your questions. You can @-mention files to target specific context, and you can also add remote repositories as context on Cody Enterprise.
 - **Autocomplete:** Cody makes single-line and multi-line suggestions as you type, speeding up your coding and shortcutting the need for you to hunt down function and variable names as you type.
-- **Inline Chat:** Ask Cody to fix or refactor code from anywhere in a file.
+- **Inline Edit:** Ask Cody to fix or refactor code from anywhere in a file.
 - **Commands:** Cody has quick commands for common actions. Simply highlight a code snippet and run a command, like “Document code,” “Explain code,” or “Generate Unit Tests.”
-- **Swappable LLMs:** Support for Anthropic Claude 3, OpenAI GPT-4/GPT-4o, Google Gemini, and Mixtral models, with more being added regularly.
-  - **Free LLM usage included** (currently Anthropic Claude 3 Sonnet) for individual devs on both personal and work code, subject to reasonable per-user rate limits ([more info](#usage)).
+- **Swappable LLMs:** Support for all the latest LLMs such as Anthropic Claude 3, OpenAI GPT-4o, Mixtral, Gemini 1.5, and more.
+  - **Free LLM usage included** Cody Free uses Anthropic Claude 3 and is available for individual devs on both personal and work code, subject to reasonable per-user rate limits ([more info](#usage)).
 
 ## Demos
 
@@ -77,7 +77,7 @@ Individual usage of Cody currently requires a (free) [Sourcegraph.com](https://s
 
 ### Codying at work
 
-You can use Cody Free or Cody Pro when Codying on your work code. If that doesn't meet your needs (because you need higher rate limits, a dedicated/single-tenant instance, scalable embeddings, audit logs, etc.), upgrade to [Cody Enterprise](https://sourcegraph.com/pricing).
+You can use Cody Free or Cody Pro when Codying on your work code. If that doesn't meet your needs (because you need higher rate limits, a dedicated/single-tenant instance, audit logs, etc.), upgrade to [Cody Enterprise](https://sourcegraph.com/pricing).
 
 ### Existing Sourcegraph customers
 

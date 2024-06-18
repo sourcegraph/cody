@@ -14,6 +14,7 @@ describe.skipIf(isWindows())('Fix', () => {
         name: 'fix',
         credentials: TESTING_CREDENTIALS.dotcom,
     })
+
     beforeAll(async () => {
         await workspace.beforeAll()
         await client.beforeAll()
