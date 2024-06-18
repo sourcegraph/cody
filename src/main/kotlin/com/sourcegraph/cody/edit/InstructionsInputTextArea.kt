@@ -68,14 +68,6 @@ class InstructionsInputTextArea(parentDisposable: Disposable) :
     }
   }
 
-  // This is used by the up/down arrow keys to insert a history item.
-  fun setTextAndSelectAll(newContents: String?) {
-    if (newContents != null) {
-      text = newContents
-      selectAll()
-    }
-  }
-
   // Focus tracking ensures the ghost text is hidden or shown on focus change.
   // The superclass has a tendency to hide the text when we lose the focus.
   override fun focusGained(e: FocusEvent?) {

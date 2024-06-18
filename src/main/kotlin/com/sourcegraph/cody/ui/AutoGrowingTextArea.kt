@@ -33,6 +33,7 @@ class AutoGrowingTextArea(private val minRows: Int, maxRows: Int, outerPanel: JC
   init {
     textArea = createTextArea()
     scrollPane = JBScrollPane(textArea)
+    scrollPane.isFocusable = false
     initialPreferredSize = scrollPane.preferredSize
     val document: Document =
         object : PlainDocument() {
