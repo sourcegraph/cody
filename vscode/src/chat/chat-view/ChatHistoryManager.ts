@@ -7,7 +7,6 @@ import type {
     SerializedChatTranscript
 } from '@sourcegraph/cody-shared'
 
-import * as vscode from 'vscode'
 import { localStorage } from '../../services/LocalStorageProvider'
 
 export type ChatHistoryUpdate = UserLocalHistory | null

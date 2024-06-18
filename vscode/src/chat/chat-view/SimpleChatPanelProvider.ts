@@ -196,6 +196,7 @@ export class SimpleChatPanelProvider
         symf,
         editor,
         models,
+        chatModel,
         guardrails,
         enterpriseContext,
         startTokenReceiver,
@@ -209,9 +210,7 @@ export class SimpleChatPanelProvider
         this.repoPicker = enterpriseContext?.repoPicker || null
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
-
-        this.chatModel = new SimpleChatModel(getDefaultModelID(authProvider, models))
-
+        this.chatModel = chatModel
         this.guardrails = guardrails
         this.startTokenReceiver = startTokenReceiver
 
@@ -1472,8 +1471,9 @@ export class SimpleChatPanelProvider
 
         const viewType = CodyChatPanelViewType
         const panelTitle =
-            (await chatHistory.getChat(this.authProvider.getAuthStatus(), this.chatModel.sessionID)
+            (await chatHistory.getChat(this.authProvider.getAuthStatus(), this.chatModel.sessionID))
                 ?.chatTitle || getChatPanelTitle(lastQuestion)
+
         const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
         const panel = vscode.window.createWebviewPanel(
@@ -1663,12 +1663,4 @@ export function revealWebviewViewOrPanel(viewOrPanel: vscode.WebviewView | vscod
 
 function isAbortErrorOrSocketHangUp(error: unknown): error is Error {
     return Boolean(isAbortError(error) || (error && (error as any).message === 'socket hang up'))
-}
-
-function getDefaultModelID(authProvider: AuthProvider, models: Model[]): string {
-    try {
-        return chatModel.get(authProvider, models)
-    } catch {
-        return '(pending)'
-    }
 }

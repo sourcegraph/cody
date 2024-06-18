@@ -54,7 +54,7 @@ export const App: FC = () => {
                                         </li>
                                     )}
                                     <li>
-                                        <button className={styles.createChat} onClick={input.createNewChat}>
+                                        <button className={styles.createChat} onClick={() => input.createNewChat()}>
                                             Create new chat +
                                         </button>
                                     </li>

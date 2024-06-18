@@ -111,7 +111,7 @@ export async function createAgentClient({
     return {
         serverInfo,
         async chat(message: string, options: ChatOptions): Promise<ChatResult> {
-            const id = await rpc.request('chat/new', null)
+            const { panelID: id} = await rpc.request('chat/new', null)
 
             if (options.model) {
                 await rpc.request('webview/receiveMessage', {

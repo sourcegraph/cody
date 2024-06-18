@@ -43,14 +43,36 @@ export class ChatManager implements vscode.Disposable {
 
     private disposables: vscode.Disposable[] = []
 
+    static async create(
+        { extensionUri, ...options }: SidebarViewOptions,
+        chatClient: ChatClient,
+        enterpriseContext: EnterpriseContextFactory | null,
+        localEmbeddings: LocalEmbeddingsController | null,
+        contextRanking: ContextRankingController | null,
+        symf: SymfRunner | null,
+        guardrails: Guardrails
+    ): Promise<ChatManager> {
+        const chatPanelsManager = await ChatPanelsManager.create(
+            { extensionUri, ...options },
+            chatClient,
+            localEmbeddings,
+            contextRanking,
+            symf,
+            enterpriseContext,
+            guardrails
+        )
+
+        return new ChatManager(
+            { extensionUri, ...options },
+            localEmbeddings,
+            chatPanelsManager
+        )
+    }
+
     constructor(
         { extensionUri, ...options }: SidebarViewOptions,
-        private chatClient: ChatClient,
-        private enterpriseContext: EnterpriseContextFactory | null,
-        private localEmbeddings: LocalEmbeddingsController | null,
-        private contextRanking: ContextRankingController | null,
-        private symf: SymfRunner | null,
-        private guardrails: Guardrails
+        localEmbeddings: LocalEmbeddingsController | null,
+        chatPanelsManager: ChatPanelsManager
     ) {
         logDebug(
             'ChatManager:constructor',
@@ -58,16 +80,7 @@ export class ChatManager implements vscode.Disposable {
             localEmbeddings ? 'has local embeddings controller' : 'no local embeddings'
         )
         this.options = { extensionUri, ...options }
-
-        this.chatPanelsManager = new ChatPanelsManager(
-            this.options,
-            this.chatClient,
-            this.localEmbeddings,
-            this.contextRanking,
-            this.symf,
-            this.enterpriseContext,
-            this.guardrails
-        )
+        this.chatPanelsManager = chatPanelsManager
 
         // Register Commands
         this.disposables.push(

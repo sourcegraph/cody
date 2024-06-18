@@ -289,7 +289,7 @@ describe('Chat response quality', () => {
             }, 15_000)
 
             it('simple multi-turn chat', async () => {
-                const id = await client.request('chat/new', null)
+                const { panelID: id } = await client.request('chat/new', null)
                 await client.setChatModel(id, modelString)
 
                 const firstResponse = await client.sendMessage(id, 'explain @README.md', {
@@ -306,7 +306,7 @@ describe('Chat response quality', () => {
             }, 10_000)
 
             it('multi-turn chat with general questions', async () => {
-                const id = await client.request('chat/new', null)
+                const { panelID: id } = await client.request('chat/new', null)
                 await client.setChatModel(id, modelString)
 
                 const firstResponse = await client.sendMessage(id, 'how do goroutines work?', {
@@ -342,7 +342,7 @@ async function sendMessage(
     text: string,
     params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[] }
 ) {
-    const id = await client.request('chat/new', null)
+    const { panelID: id } = await client.request('chat/new', null)
     await client.setChatModel(id, modelString)
     return await client.sendMessage(id, text, params)
 }

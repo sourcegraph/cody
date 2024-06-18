@@ -332,6 +332,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         vscode_shim.setAgent(this)
 
         this.registerRequest('initialize', async clientInfo => {
+            console.log('INIT')
             vscode.languages.registerFoldingRangeProvider(
                 '*',
                 new IndentationBasedFoldingRangeProvider()
@@ -387,6 +388,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
                       path: clientInfo.workspaceRootPath ?? undefined,
                   })
             try {
+
+                if (clientInfo.extensionConfiguration) {
+                    vscode_shim.setExtensionConfiguration(clientInfo.extensionConfiguration)
+                }
+
                 await initializeVscodeExtension(
                     this.workspace.workspaceRootUri,
                     params.extensionActivate,
@@ -1050,7 +1056,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 await setInitialContext()
             }
 
-            return { panelID, chatID: this.webPanels.panels.get(panelID)?.chatID }
+            const chatID = this.webPanels.panels.get(panelID)?.chatID ?? ''
+
+            return { panelID, chatID }
         })
 
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
