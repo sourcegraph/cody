@@ -47,7 +47,7 @@ export class FixupController
     private readonly editObserver: FixupDocumentEditObserver
     // TODO: Make the fixup scheduler use a cooldown timer with a longer delay
     private readonly scheduler = new FixupScheduler(10)
-    private readonly decorator: FixupDecorator
+    private readonly decorator = new FixupDecorator()
     private readonly controlApplicator
     private readonly persistenceTracker = new PersistenceTracker(vscode.workspace, {
         onPresent: ({ metadata, ...event }) => {
@@ -77,7 +77,6 @@ export class FixupController
         private readonly authProvider: AuthProvider,
         client: ExtensionClient
     ) {
-        this.decorator = new FixupDecorator()
         this.controlApplicator = client.createFixupControlApplicator(this)
         // Observe file renaming and deletion
         this.files = new FixupFileObserver()
@@ -106,7 +105,7 @@ export class FixupController
             this._disposables.push(
                 // Note: It is important to use `onWillSaveTextDocument` rather than `onDidSaveTextDocument`
                 // here. This is to ensure we run `accept` before any formatting logic runs. In some cases
-                // we modify the document on accept (remove placeholder lines), so doing this alongisde formatting
+                // we modify the document on accept (remove placeholder lines), so doing this alongside formatting
                 // logic could remove more lines than intended from the document
                 vscode.workspace.onWillSaveTextDocument(({ document }) => {
                     // If we save the document, we consider the user to have accepted any applied tasks.
@@ -156,11 +155,6 @@ export class FixupController
         )
         if (!editor) {
             editor = await vscode.window.showTextDocument(task.fixupFile.uri)
-        }
-
-        const replacementText = task.replacement
-        if (!replacementText) {
-            return
         }
 
         editor.revealRange(task.selectionRange)
@@ -410,7 +404,8 @@ export class FixupController
         // Update the original text, so we're always computing a diff against the latest
         // code in the editor.
         task.original = document.getText(task.selectionRange)
-        task.diff = computeDiff(task, { decorateDeletions: !isRunningInsideAgent() })
+        task.diff = computeDiff(task, document, { decorateDeletions: !isRunningInsideAgent() })
+        console.log('Got diff:', task.diff)
         return task.diff
     }
 
@@ -429,8 +424,7 @@ export class FixupController
 
         const countedLines = new Set<number>()
         let charCount = 0
-        const insertionEdits = task.diff.filter(({ type }) => type === 'insertion')
-        for (const edit of insertionEdits) {
+        for (const edit of task.diff) {
             if (edit.type !== 'insertion') {
                 continue
             }
@@ -684,9 +678,9 @@ export class FixupController
         }
 
         // Update the replacement to match the applied edit.
-        // This is primarily because the diff won't necessarilly match the actual edit from the LLM,
-        // e.g. if we inject placeholder lines, then we need to know about these in order to properly
-        // post-process the changes.
+        // This is as the diff doesn't necessarily match the LLM response, as we may apply additional
+        // changes (e.g. injectiong placeholder lines)
+        // This ensures decorations are correctly computed.
         task.replacement = document.getText(task.selectionRange)
 
         this.setTaskState(task, CodyTaskState.Formatting)
@@ -715,7 +709,9 @@ export class FixupController
         options?: { undoStopBefore: boolean; undoStopAfter: boolean }
     ): Promise<boolean> {
         logDebug('FixupController:edit', 'replacing ')
+        console.log('Original diff:', diff)
         const suitableDiffForEditing = makeDiffEditBuilderCompatible(diff)
+        console.log('Edit builder compatible diff:', diff)
 
         if (edit instanceof vscode.WorkspaceEdit) {
             for (const change of suitableDiffForEditing) {
@@ -860,7 +856,7 @@ export class FixupController
         }
 
         // Re-apply the changes using the new replacemnt
-        task.diff = computeDiff(task, { decorateDeletions: !isRunningInsideAgent() })
+        task.diff = computeDiff(task, document, { decorateDeletions: !isRunningInsideAgent() })
         return this.replaceEdit(edit, task.diff!, task, {
             undoStopAfter: true,
             undoStopBefore: false,
@@ -1014,6 +1010,7 @@ export class FixupController
             case 'complete':
                 task.inProgressReplacement = undefined
                 task.replacement = text
+                console.log('LLM replacement:\n', text)
                 this.setTaskState(task, CodyTaskState.Applying)
                 break
         }

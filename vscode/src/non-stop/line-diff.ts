@@ -26,7 +26,11 @@ interface ComputedDiffOptions {
     decorateDeletions: boolean
 }
 
-export function computeDiff(task: FixupTask, options: ComputedDiffOptions): Edit[] | undefined {
+export function computeDiff(
+    task: FixupTask,
+    document: vscode.TextDocument,
+    options: ComputedDiffOptions
+): Edit[] | undefined {
     if (!task.replacement) {
         return
     }
@@ -41,14 +45,14 @@ export function computeDiff(task: FixupTask, options: ComputedDiffOptions): Edit
 
         if (change.removed) {
             for (let i = 0; i < count; i++) {
-                const line = lines[i]
+                const line = document.lineAt(startLine)
                 if (options.decorateDeletions) {
                     // Store the previous line, we will inject it as a decoration
                     applicableDiff.push({
                         type: 'decoratedDeletion',
                         text: '',
-                        oldText: line,
-                        range: new vscode.Range(startLine, 0, startLine, line.length),
+                        oldText: line.text,
+                        range: line.range,
                     })
                     // We must increment as we haven't technically deleted the line, only replaced
                     // it with whitespace
@@ -57,7 +61,7 @@ export function computeDiff(task: FixupTask, options: ComputedDiffOptions): Edit
                     applicableDiff.push({
                         type: 'deletion',
                         // Deletion range should include the line break
-                        range: new vscode.Range(startLine, 0, startLine + 1, 0),
+                        range: line.rangeIncludingLineBreak,
                     })
                 }
             }

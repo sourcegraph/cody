@@ -56,8 +56,9 @@ export function responseTransformer(
     }
 
     if (task.mode === 'edit' && !isMessageInProgress) {
-        // For non-insertions, we don't want to include any whitespace at the end as it'll likely
-        // cause the diff to be more difficult to read.
+        // LLMs have a tendency to complete the response with a final new line, but we don't want to
+        // include this, as we already trim the users' selection, and any additional whitespace will
+        // hurt the readability of the diff.
         return decodedText.trimEnd()
     }
 
