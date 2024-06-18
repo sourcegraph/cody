@@ -18,12 +18,12 @@ export interface CompletionLogger {
     ):
         | undefined
         | {
-              onError: (error: string, rawError?: unknown) => void
-              onComplete: (
-                  response: string | CompletionResponse | string[] | CompletionResponse[]
-              ) => void
-              onEvents: (events: Event[]) => void
-          }
+            onError: (error: string, rawError?: unknown) => void
+            onComplete: (
+                response: string | CompletionResponse | string[] | CompletionResponse[]
+            ) => void
+            onEvents: (events: Event[]) => void
+        }
 }
 
 export type CompletionsClientConfig = Pick<
@@ -43,7 +43,7 @@ export abstract class SourcegraphCompletionsClient {
     constructor(
         protected config: CompletionsClientConfig,
         protected logger?: CompletionLogger
-    ) {}
+    ) { }
 
     public onConfigurationChange(newConfig: CompletionsClientConfig): void {
         this.config = newConfig
