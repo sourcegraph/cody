@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.agent
 
 import com.intellij.ide.plugins.PluginManagerCore
+import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.extensions.PluginId
@@ -111,6 +112,7 @@ private constructor(
               .initialize(
                   ClientInfo(
                       version = ConfigUtil.getPluginVersion(),
+                      ideVersion = ApplicationInfo.getInstance().build.toString(),
                       workspaceRootUri =
                           ConfigUtil.getWorkspaceRootPath(project).toUri().toString(),
                       extensionConfiguration = ConfigUtil.getAgentConfiguration(project),
