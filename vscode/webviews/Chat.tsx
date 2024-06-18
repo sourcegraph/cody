@@ -1,6 +1,6 @@
 import { clsx } from 'clsx'
 import type React from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect } from 'react'
 
 import type { AuthStatus, ChatMessage, Guardrails, TelemetryService } from '@sourcegraph/cody-shared'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
@@ -8,6 +8,7 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
+import type { TokenUsageLimits } from '@sourcegraph/cody-shared/src/token/counter'
 import styles from './Chat.module.css'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
@@ -23,6 +24,7 @@ interface ChatboxProps {
     isTranscriptError: boolean
     userInfo: UserAccountInfo
     guardrails?: Guardrails
+    remainingTokens: TokenUsageLimits
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -35,6 +37,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     chatEnabled = true,
     userInfo,
     guardrails,
+    remainingTokens,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -111,33 +114,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 
     const postMessage = useCallback<ApiPostMessage>(msg => vscodeAPI.postMessage(msg), [vscodeAPI])
-
-    const [remainingTokens, setRemainingTokens] = useState<{
-        chat: number
-        user: number
-        enhanced: number
-        maxChat: number
-        maxUser: number
-        maxEnhanced: number
-    } | null>(null)
-
-    // Update the message handler to set the remaining token counts when received from the extension
-    useEffect(() => {
-        const handleMessage = (event: MessageEvent) => {
-            const message = event.data
-            switch (message.type) {
-                case 'remainingTokens':
-                    setRemainingTokens(message.remainingTokens)
-                    break
-                // Handle other message types if needed
-            }
-        }
-
-        window.addEventListener('message', handleMessage)
-        return () => {
-            window.removeEventListener('message', handleMessage)
-        }
-    }, [])
 
     useEffect(() => {
         function handleKeyDown(event: KeyboardEvent) {

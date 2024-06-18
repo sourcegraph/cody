@@ -15,6 +15,7 @@ import type { UserAccountInfo } from './Chat'
 
 import type { AuthMethod, ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
 
+import type { TokenUsageLimits } from '@sourcegraph/cody-shared/src/token/counter'
 import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
 import type { View } from './NavBar'
@@ -66,6 +67,15 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             })
         })
     }, [vscodeAPI])
+
+    const [remainingTokens, setRemainingTokens] = useState<TokenUsageLimits>({
+        chat: 0,
+        user: 0,
+        enhanced: 0,
+        maxChat: 7000,
+        maxUser: 7000,
+        maxEnhanced: 4200,
+    })
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally refresh on `view`
     useEffect(
@@ -146,6 +156,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                 new Error(message.error)
                             )
                         }
+                        break
+                    case 'remainingTokens':
+                        setRemainingTokens(message.remainingTokens)
                         break
                 }
             }),
@@ -257,6 +270,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                     telemetryService={telemetryService}
                                     isTranscriptError={isTranscriptError}
                                     guardrails={attributionEnabled ? guardrails : undefined}
+                                    remainingTokens={remainingTokens}
                                 />
                             </ClientStateContextProvider>
                         </TelemetryRecorderContext.Provider>
