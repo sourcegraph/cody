@@ -423,9 +423,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 this.registerWebviewHandlers()
 
                 this.authenticationPromise = clientInfo.extensionConfiguration
-                    ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
-                          forceAuthentication: true,
-                      })
+                    ? this.handleConfigChanges(clientInfo.extensionConfiguration)
                     : this.authStatus()
                 const authStatus = await this.authenticationPromise
 

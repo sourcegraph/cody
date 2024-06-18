@@ -121,9 +121,9 @@ export const GeminiLogo: FunctionComponent<{ size: number; className?: string }>
                 gradientUnits="userSpaceOnUse"
                 gradientTransform="matrix(16.1326 5.4553 -43.70045 129.2322 1.588 6.503)"
             >
-                <stop offset=".067" stop-color="currentColor" />
-                <stop offset=".343" stop-color="currentColor" />
-                <stop offset=".672" stop-color="currentColor" />
+                <stop offset=".067" stopColor="currentColor" />
+                <stop offset=".343" stopColor="currentColor" />
+                <stop offset=".672" stopColor="currentColor" />
             </radialGradient>
         </defs>
     </svg>

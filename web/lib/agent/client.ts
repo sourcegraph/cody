@@ -76,8 +76,8 @@ export async function createAgentClient({
         version: '0.0.1',
         workspaceRootUri,
         extensionConfiguration: {
-            serverEndpoint: 'https://sourcegraph.sourcegraph.com',
             accessToken,
+            serverEndpoint,
             customHeaders: {},
             customConfiguration: {
                 'cody.experimental.noodle': true,

@@ -105,6 +105,20 @@ export async function start(
 
     setLogger({ logDebug, logError })
 
+    if (isRunningInsideAgent()) {
+        const config = vscode.workspace.getConfiguration()
+        const endpoint = config.get<string>('cody.serverEndpoint')
+
+        if (endpoint) {
+            localStorage.saveEndpoint(endpoint)
+            const token = config.get<string>('cody.accessToken')
+
+            if (token) {
+                secretStorage.storeToken(endpoint, token)
+            }
+        }
+    }
+
     const disposables: vscode.Disposable[] = []
 
     const configWatcher = await BaseConfigWatcher.create(getFullConfig, disposables)
@@ -169,7 +183,11 @@ const register = async (
         })
     )
 
-    await authProvider.init()
+    const authStatus = await authProvider.init()
+
+    if (authStatus) {
+        await syncModels(authStatus)
+    }
 
     await exposeOpenCtxClient(context, initialConfig)
 
