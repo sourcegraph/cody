@@ -45,14 +45,14 @@ export function computeDiff(
 
         if (change.removed) {
             for (let i = 0; i < count; i++) {
-                const line = document.lineAt(startLine)
+                const line = lines[i]
                 if (options.decorateDeletions) {
                     // Store the previous line, we will inject it as a decoration
                     applicableDiff.push({
                         type: 'decoratedDeletion',
                         text: '',
-                        oldText: line.text,
-                        range: line.range,
+                        oldText: line,
+                        range: new vscode.Range(startLine, 0, startLine, line.length),
                     })
                     // We must increment as we haven't technically deleted the line, only replaced
                     // it with whitespace
@@ -61,7 +61,7 @@ export function computeDiff(
                     applicableDiff.push({
                         type: 'deletion',
                         // Deletion range should include the line break
-                        range: line.rangeIncludingLineBreak,
+                        range: new vscode.Range(startLine, 0, startLine + 1, 0),
                     })
                 }
             }
