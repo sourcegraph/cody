@@ -90,9 +90,7 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
     const generatorStartTime = performance.now()
 
     for await (const { completion, stopReason, resolvedModel } of completionResponseGenerator) {
-        /**
-         * Add the model resolved by Cody Gateway to the completion event.
-         */
+        // Add the model resolved by Cody Gateway to the completion event.
         CompletionLogger.gatewayModelResolved(completionLogId, resolvedModel)
 
         const isFirstCompletionTimeoutElapsed =
