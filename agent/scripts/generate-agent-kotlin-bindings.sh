@@ -7,8 +7,8 @@ if [ ! -d $INDEXER_DIR ]; then
 fi
 
 pushd $INDEXER_DIR
-git checkout olafurpg/signatures
-git pull origin olafurpg/signatures
+git checkout olafurpg/signatures-rebase1
+git pull origin olafurpg/signatures-rebase1
 yarn install
 popd
 
