@@ -48,7 +48,8 @@
     "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts",
     "version-bump:minor": "RELEASE_TYPE=minor ts-node-transpile-only ./scripts/version-bump.ts",
     "version-bump:patch": "RELEASE_TYPE=patch ts-node-transpile-only ./scripts/version-bump.ts",
-    "version-bump:dry-run": "RELEASE_TYPE=prerelease ts-node-transpile-only ./scripts/version-bump.ts"
+    "version-bump:dry-run": "RELEASE_TYPE=prerelease ts-node-transpile-only ./scripts/version-bump.ts",
+    "win-ca:bundle": "cp ../node_modules/win-ca/lib/roots.exe dist/win-ca-roots.exe"
   },
   "categories": ["Programming Languages", "Machine Learning", "Snippets", "Education"],
   "keywords": [
