@@ -11,7 +11,7 @@ export default {
     theme: {
         extend: {
             fontSize: {
-                lg: 'calc(calc(15/13)*var(--vscode-font-size))', // = 15px
+                lg: 'calc(var(--vscode-font-size) * 15 / 13)', // = 15px
                 md: 'var(--vscode-font-size)', // = 13px
                 sm: 'calc(calc(12/13)*var(--vscode-font-size))', // = 12px
                 xs: 'calc(calc(11/13)*var(--vscode-font-size))', // = 11px
