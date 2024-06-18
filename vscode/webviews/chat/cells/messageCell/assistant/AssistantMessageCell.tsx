@@ -98,7 +98,8 @@ export const AssistantMessageCell: FunctionComponent<{
                 </>
             }
             footer={
-                ((showFeedbackButtons && feedbackButtonsOnSubmit) || humanMessage) && (
+                showFeedbackButtons &&
+                feedbackButtonsOnSubmit && (
                     <div className="tw-flex tw-items-center tw-py-3 tw-divide-x tw-transition tw-divide-muted tw-opacity-65 hover:tw-opacity-100">
                         {showFeedbackButtons && feedbackButtonsOnSubmit && (
                             <FeedbackButtons

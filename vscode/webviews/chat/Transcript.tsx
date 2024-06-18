@@ -174,7 +174,10 @@ const TranscriptInteraction: FunctionComponent<
                     )}
                     isLoading={assistantMessage.isLoading}
                     showFeedbackButtons={
-                        !assistantMessage.isLoading && !isTranscriptError && !assistantMessage.error
+                        !assistantMessage.isLoading &&
+                        !isTranscriptError &&
+                        !assistantMessage.error &&
+                        isLastSentInteraction
                     }
                 />
             )}
@@ -211,4 +214,5 @@ function onFollowupSubmit(editorValue: SerializedPromptEditorValue): void {
         editorState: editorValue.editorState,
         contextFiles: editorValue.contextItems.map(deserializeContextItem),
     })
+    focusLastHumanMessageEditor()
 }

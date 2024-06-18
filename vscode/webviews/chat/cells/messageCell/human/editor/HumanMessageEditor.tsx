@@ -152,13 +152,14 @@ export const HumanMessageEditor: FunctionComponent<{
     useEffect(() => {
         if (isEditorInitiallyFocused) {
             // Only focus the editor if the user hasn't made another selection or has scrolled down.
-            // It would be annoying if we clobber the user's intentional selection or scrolling
-            // choice with the autofocus.
+            // It would be annoying if we clobber the user's intentional selection with the autofocus.
             const selection = window.getSelection()
             const userHasIntentionalSelection = selection && !selection.isCollapsed
-            const userHasIntentionalScroll = window.scrollY !== 0
-            if (!userHasIntentionalSelection && !userHasIntentionalScroll) {
+            if (!userHasIntentionalSelection) {
                 editorRef.current?.setFocus(true, { moveCursorToEnd: true })
+                window.scrollTo({
+                    top: window.document.body.scrollHeight,
+                })
             }
         }
     }, [isEditorInitiallyFocused])
