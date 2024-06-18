@@ -17,7 +17,7 @@ const INITIAL_STATE = {
     preVisibilityCheck: 0,
 }
 
-export class AutocompleteFeedbackRateLogger implements vscode.Disposable {
+export class AutocompleteStageCounter implements vscode.Disposable {
     private nextTimeoutId: NodeJS.Timeout | null = null
     private currentState = { ...INITIAL_STATE }
 
@@ -30,7 +30,7 @@ export class AutocompleteFeedbackRateLogger implements vscode.Disposable {
         const stateToLog = this.currentState
         this.currentState = { ...INITIAL_STATE }
 
-        telemetryRecorder.recordEvent('cody.completion.feedbackRate', 'flush', {
+        telemetryRecorder.recordEvent('cody.completion.stageCounter', 'flush', {
             metadata: stateToLog,
         })
 
@@ -53,7 +53,9 @@ export class AutocompleteFeedbackRateLogger implements vscode.Disposable {
 }
 
 /**
- * Feedback rate captures what fraction of opportunities to generate a suggestion reaches
- * different stages of the autocomplete generation pipeline.
+ * Counts the completion requests that reached different stages of the autocomplete generation pipeline.
+ *
+ * Used in the analytics pipeline to calculate the "feedback rate," which captures what
+ * fraction of opportunities to generate a suggestion reaches different pipeline stages.
  */
-export const autocompleteFeedbackRateLogger = new AutocompleteFeedbackRateLogger()
+export const autocompleteStageCounterLogger = new AutocompleteStageCounter()

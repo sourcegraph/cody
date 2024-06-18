@@ -75,7 +75,7 @@ import { VSCodeSecretStorage, getAccessToken, secretStorage } from './services/S
 import { registerSidebarCommands } from './services/SidebarCommands'
 import { createStatusBar } from './services/StatusBar'
 import { upstreamHealthProvider } from './services/UpstreamHealthProvider'
-import { autocompleteFeedbackRateLogger } from './services/autocomplete-feedback-rate-logger'
+import { autocompleteStageCounterLogger } from './services/autocomplete-stage-counter-logger'
 import { setUpCodyIgnore } from './services/cody-ignore'
 import { createOrUpdateEventLogger, logPrefix, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
@@ -625,7 +625,7 @@ const register = async (
 
                         createBfgRetriever: platform.createBfgRetriever,
                     }),
-                    autocompleteFeedbackRateLogger
+                    autocompleteStageCounterLogger
                 )
             })
             .catch(error => {

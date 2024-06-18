@@ -1,16 +1,16 @@
 import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
-import { AutocompleteFeedbackRateLogger, LOG_INTERVAL } from './autocomplete-feedback-rate-logger'
+import { AutocompleteStageCounter, LOG_INTERVAL } from './autocomplete-stage-counter-logger'
 
-describe('AutocompleteFeedbackRateLogger', () => {
+describe('AutocompleteStageCounter', () => {
     let recordSpy: MockInstance
-    let logger: AutocompleteFeedbackRateLogger
+    let logger: AutocompleteStageCounter
 
     beforeEach(() => {
         vi.useFakeTimers()
         recordSpy = vi.spyOn(telemetryRecorder, 'recordEvent')
-        logger = new AutocompleteFeedbackRateLogger()
+        logger = new AutocompleteStageCounter()
     })
 
     afterEach(() => {
@@ -25,7 +25,7 @@ describe('AutocompleteFeedbackRateLogger', () => {
 
         vi.advanceTimersByTime(1)
 
-        expect(recordSpy).toHaveBeenCalledWith('cody.completion.feedbackRate', 'flush', {
+        expect(recordSpy).toHaveBeenCalledWith('cody.completion.stageCounter', 'flush', {
             metadata: {
                 preLastCandidate: 0,
                 preCache: 0,
@@ -49,7 +49,7 @@ describe('AutocompleteFeedbackRateLogger', () => {
 
         vi.advanceTimersByTime(LOG_INTERVAL)
 
-        expect(recordSpy).toHaveBeenCalledWith('cody.completion.feedbackRate', 'flush', {
+        expect(recordSpy).toHaveBeenCalledWith('cody.completion.stageCounter', 'flush', {
             metadata: {
                 preLastCandidate: 1,
                 preCache: 1,
@@ -69,7 +69,7 @@ describe('AutocompleteFeedbackRateLogger', () => {
 
         vi.advanceTimersByTime(LOG_INTERVAL)
 
-        expect(recordSpy).toHaveBeenCalledWith('cody.completion.feedbackRate', 'flush', {
+        expect(recordSpy).toHaveBeenCalledWith('cody.completion.stageCounter', 'flush', {
             metadata: {
                 preLastCandidate: 1,
                 preCache: 2,
@@ -85,7 +85,7 @@ describe('AutocompleteFeedbackRateLogger', () => {
 
         vi.advanceTimersByTime(LOG_INTERVAL)
 
-        expect(recordSpy).toHaveBeenCalledWith('cody.completion.feedbackRate', 'flush', {
+        expect(recordSpy).toHaveBeenCalledWith('cody.completion.stageCounter', 'flush', {
             metadata: {
                 preLastCandidate: 0,
                 preCache: 0,
