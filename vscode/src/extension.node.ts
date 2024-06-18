@@ -37,7 +37,7 @@ export function activate(
     context: vscode.ExtensionContext,
     extensionClient?: ExtensionClient
 ): Promise<ExtensionApi> {
-    initializeNetworkAgent()
+    initializeNetworkAgent(context)
 
     // When activated by VSCode, we are only passed the extension context.
     // Create the default client for VSCode.
