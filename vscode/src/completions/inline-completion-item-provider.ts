@@ -387,7 +387,7 @@ export class InlineCompletionItemProvider
                 })
 
                 // Do not increment the `preFinalCancellationCheck` counter if the result is empty.
-                // We don't have an opportunity to show a completion if it's null.
+                // We don't have an opportunity to show a completion if it's empty.
                 if (result) {
                     autocompleteFeedbackRateLogger.record('preFinalCancellationCheck')
                 }
