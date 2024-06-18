@@ -38,7 +38,6 @@ export class PlanBlock implements Block {
             blockid: this.id,
             steps,
         })
-        memory.setCheckpoint({ blockid: this.id, data: JSON.stringify({ steps }) })
         return { status: 'done' }
     }
 

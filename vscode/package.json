@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
-  "version": "1.22.0",
+  "version": "1.22.1",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -32,7 +32,7 @@
     "_build:esbuild:node": "esbuild ./src/extension.node.ts --bundle --outfile=dist/extension.node.js --external:vscode --external:typescript --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:lexical=./build/lexical-package-fix --format=cjs --platform=node --sourcemap",
     "_build:esbuild:web": "esbuild ./src/extension.web.ts --platform=browser --bundle --outfile=dist/extension.web.js --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:path=path-browserify --external:typescript --alias:node:path=path-browserify --alias:node:os=os-browserify --external:vscode --external:node:fs/promises --define:process='{\"env\":{}}' --define:window=self --format=cjs --sourcemap",
     "_build:esbuild:uninstall": "esbuild ./src/uninstall/post-uninstall.ts --bundle --outfile=dist/post-uninstall.js --external:typescript --format=cjs --platform=node --sourcemap --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:lexical=./build/lexical-package-fix",
-    "_build:webviews": "vite -c webviews/vite.config.ts build",
+    "_build:webviews": "vite -c webviews/vite.config.mts build",
     "release": "ts-node-transpile-only ./scripts/release.ts",
     "download-wasm": "ts-node-transpile-only ./scripts/download-wasm-modules.ts",
     "release:dry-run": "pnpm run download-wasm && CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
@@ -47,6 +47,7 @@
     "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts",
     "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts",
     "version-bump:minor": "RELEASE_TYPE=minor ts-node-transpile-only ./scripts/version-bump.ts",
+    "version-bump:patch": "RELEASE_TYPE=patch ts-node-transpile-only ./scripts/version-bump.ts",
     "version-bump:dry-run": "RELEASE_TYPE=prerelease ts-node-transpile-only ./scripts/version-bump.ts"
   },
   "categories": ["Programming Languages", "Machine Learning", "Snippets", "Education"],
@@ -531,7 +532,7 @@
         "group": "Chat",
         "title": "Add File to Cody Chat",
         "icon": "$(mention)",
-        "enablement": "cody.activated && resourceScheme == file && cody.hasChatPanelsOpened"
+        "enablement": "cody.activated && resourceSet && cody.hasChatPanelsOpened"
       },
       {
         "command": "cody.chat.panel.reset",
@@ -591,9 +592,9 @@
         "when": "!cody.activated"
       },
       {
-        "command": "cody.chat.tree.view.focus",
-        "key": "alt+f1",
-        "when": "cody.activated"
+        "command": "cody.chat.focus",
+        "key": "alt+l",
+        "when": "!cody.activated"
       },
       {
         "command": "cody.chat.panel.new",
@@ -603,12 +604,17 @@
       {
         "command": "cody.chat.panel.new",
         "key": "alt+l",
-        "when": "cody.activated && !editorHasSelection"
+        "when": "cody.activated"
+      },
+      {
+        "command": "cody.mention.selection",
+        "key": "alt+/",
+        "when": "cody.activated && editorTextFocus && editorHasSelection && cody.hasChatPanelsOpened"
       },
       {
         "command": "cody.mention.selection",
         "key": "alt+l",
-        "when": "cody.activated && !editorReadonly && editorTextFocus && editorHasSelection"
+        "when": "cody.activated && editorTextFocus && editorHasSelection && cody.hasChatPanelsOpened"
       },
       {
         "command": "cody.tutorial.chat",
@@ -757,6 +763,11 @@
           "command": "cody.chat.view.popOut",
           "when": "false",
           "_comment": "Hidden because it is only a wrapper around the workspace pop out command and would place any editor tab (not just Cody chat) in a new window."
+        },
+        {
+          "command": "cody.chat.panel.reset",
+          "when": "false",
+          "_comment": "Hidden because it only needs to be usable in the chat toolbar."
         }
       ],
       "editor/context": [
@@ -769,16 +780,16 @@
         {
           "command": "cody.mention.selection",
           "group": "0_cody",
-          "when": "cody.activated && !editorReadonly && editorHasSelection && cody.hasChatPanelsOpened"
+          "when": "cody.activated && editorHasSelection && cody.hasChatPanelsOpened"
         },
         {
           "command": "cody.mention.file",
           "group": "0_cody",
-          "when": "cody.activated && !editorReadonly && !editorHasSelection && cody.hasChatPanelsOpened"
+          "when": "cody.activated && !editorHasSelection && cody.hasChatPanelsOpened"
         },
         {
           "command": "cody.chat.panel.new",
-          "when": "cody.activated",
+          "when": "cody.activated && (!editorHasSelection || !cody.hasChatPanelsOpened)",
           "group": "ask"
         },
         {
@@ -926,7 +937,7 @@
         {
           "command": "cody.mention.file",
           "group": "0_cody",
-          "when": "cody.activated && resourceScheme == file && cody.hasChatPanelsOpened"
+          "when": "cody.activated && resourceSet && !explorerResourceIsFolder && cody.hasChatPanelsOpened"
         }
       ],
       "scm/title": [
@@ -1306,7 +1317,7 @@
     "@lexical/react": "^0.15.0",
     "@lexical/text": "^0.15.0",
     "@mdi/js": "^7.2.96",
-    "@openctx/vscode-lib": "^0.0.8",
+    "@openctx/vscode-lib": "^0.0.9",
     "@opentelemetry/api": "^1.7.0",
     "@opentelemetry/core": "^1.18.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",
@@ -1410,6 +1421,7 @@
     "express": "^4.18.2",
     "fast-json-stable-stringify": "^2.1.0",
     "fs-extra": "^11.2.0",
+    "franc-min": "^6.2.0",
     "fuzzysort": "^2.0.4",
     "mocha": "^10.2.0",
     "ovsx": "^0.8.2",

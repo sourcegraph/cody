@@ -34,7 +34,7 @@ import {
 } from '../fixtures/mock-server'
 
 import type { RepoListResponse } from '@sourcegraph/cody-shared'
-import { expectAuthenticated, focusSidebar } from './common'
+import { closeSidebar, expectAuthenticated, focusSidebar } from './common'
 import { installVsCode } from './install-deps'
 import { buildCustomCommandConfigFile } from './utils/buildCustomCommands'
 // Playwright test extension: The workspace directory to run the test in.
@@ -302,7 +302,7 @@ export const test = base
             resetLoggedEvents()
         },
     })
-    .extend<{ sidebar: Frame | null; getCodySidebar: () => Promise<Frame> }>({
+    .extend<{ sidebar: Frame | null }>({
         sidebar: async ({ page, preAuthenticate }, use) => {
             if (preAuthenticate) {
                 await use(null)
@@ -310,9 +310,6 @@ export const test = base
                 const sidebar = await getCodySidebar(page)
                 await use(sidebar)
             }
-        },
-        getCodySidebar: async ({ page }, use) => {
-            await use(() => getCodySidebar(page))
         },
     })
     // Simple sleep utility with a default of 300ms
@@ -439,6 +436,7 @@ export async function signOut(page: Page): Promise<void> {
 }
 
 export async function executeCommandInPalette(page: Page, commandName: string): Promise<void> {
+    await closeSidebar(page)
     // TODO(sqs): could simplify this further with a cody.auth.signoutAll command
     await page.keyboard.press('F1')
     await page.getByPlaceholder('Type the name of a command to run.').fill(`>${commandName}`)

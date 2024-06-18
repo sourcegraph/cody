@@ -194,5 +194,12 @@ describe('[getInlineCompletions] completion event', () => {
 
             expect(eventWithoutTimestamps.items?.some(item => item.insertText)).toBe(true)
         })
+        it('does not log `inlineCompletionItemContext` for enterprise users', async () => {
+            const eventWithoutTimestamps = await getAnalyticsEvent(
+                'function foo() {\n  return█}',
+                '"foo"'
+            )
+            expect(eventWithoutTimestamps.params?.inlineCompletionItemContext).toBeUndefined()
+        })
     })
 })
