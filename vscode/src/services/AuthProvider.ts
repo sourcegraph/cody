@@ -58,7 +58,7 @@ export class AuthProvider  implements AuthStatusProvider {
     }
 
     // Sign in to the last endpoint the user was signed in to, if any
-    public async init(): Promise<void> {
+    public async init(): Promise<AuthStatus | null> {
         let lastEndpoint = await localStorage?.getEndpoint() || this.config.serverEndpoint
         let token = (await secretStorage.get(lastEndpoint || '')) || this.config.accessToken
         logDebug(
@@ -74,11 +74,17 @@ export class AuthProvider  implements AuthStatusProvider {
             token = (await secretStorage.get(lastEndpoint)) || null
         }
 
-        await this.auth({
+        const result = await this.auth({
             endpoint: lastEndpoint,
             token: token || null,
             isExtensionStartup: true,
         }).catch(error => logError('AuthProvider:init:failed', lastEndpoint, { verbose: error }))
+
+        if (result) {
+            return result.authStatus
+        }
+
+        return null
     }
 
     public addChangeListener(listener: Listener): Unsubscribe {
