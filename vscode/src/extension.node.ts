@@ -50,6 +50,10 @@ export function activate(
         .getConfiguration()
         .get<boolean>('cody.advanced.agent.running', false)
 
+    const isSymfEnabled = vscode.workspace
+        .getConfiguration()
+        .get<boolean>('cody.experimental.symf.enabled', true)
+
     return activateCommon(context, {
         createLocalEmbeddingsController: isLocalEmbeddingsDisabled
             ? undefined
@@ -59,7 +63,7 @@ export function activate(
             createContextRankingController(context, config),
         createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
         createCommandsProvider: () => new CommandsProvider(),
-        createSymfRunner: (...args) => new SymfRunner(...args),
+        createSymfRunner: isSymfEnabled ? (...args) => new SymfRunner(...args) : undefined,
         createBfgRetriever: () => new BfgRetriever(context),
         createSentryService: (...args) => new NodeSentryService(...args),
         createOpenTelemetryService: (...args) => new OpenTelemetryService(...args),

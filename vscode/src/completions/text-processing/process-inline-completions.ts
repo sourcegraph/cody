@@ -8,7 +8,6 @@ import { getNodeAtCursorAndParents } from '../../tree-sitter/ast-getters'
 import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
 import type { ItemPostProcessingInfo } from '../logger'
 import type { InlineCompletionItem } from '../types'
-
 import { type ParsedCompletion, dropParserFields } from './parse-completion'
 import { findLastAncestorOnTheSameRow } from './truncate-parsed-completion'
 import { collapseDuplicativeWhitespace, removeTrailingWhitespace, trimUntilSuffix } from './utils'

@@ -19,6 +19,10 @@ export class RepoMetadatafromGitApi {
         return RepoMetadatafromGitApi.instance
     }
 
+    public getRepoMetadataIfCached(gitUrl: string): RepoMetaData | undefined {
+        return this.cache.get(gitUrl)
+    }
+
     public async getRepoMetadataUsingGitUrl(gitUrl: string): Promise<RepoMetaData | undefined> {
         if (this.cache.has(gitUrl)) {
             return this.cache.get(gitUrl)
@@ -45,10 +49,10 @@ export class RepoMetadatafromGitApi {
         try {
             const response = await fetch(apiUrl, { method: 'HEAD' })
             metadata.isPublic = response.ok
-            return metadata
         } catch (error) {
-            return undefined
+            console.error('Error fetching repository metadata:', error)
         }
+        return metadata
     }
 
     private parserOwnerAndRepoName(gitUrl: string): { owner: string; repoName: string } | undefined {
