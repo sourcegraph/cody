@@ -9,7 +9,7 @@ const WebProvider: Provider & { providerUri: 'internal-web-provider' } = {
     meta() {
         return {
             name: 'Web URLs',
-            mentions: {},
+            mentions: { label: 'Paste a URL...' },
         }
     },
 

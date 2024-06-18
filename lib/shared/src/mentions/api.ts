@@ -74,7 +74,7 @@ async function openCtxMentionProviders(): Promise<ContextMentionProviderMetadata
             .map(provider => ({
                 id: provider.providerUri,
                 title: provider.name,
-                queryLabel: 'Search...',
+                queryLabel: provider.mentions?.label ?? 'Search...',
                 emptyLabel: 'No results',
             }))
             .sort((a, b) => (a.title > b.title ? 1 : -1))
