@@ -40,17 +40,9 @@ export function getCompletionProvider(params: GetCompletionProvidersParams): Pro
     // in the automatic trigger case).
     const n = triggerKind === TriggerKind.Automatic ? 1 : 3
 
-    if (docContext.multilineTrigger) {
-        return providerConfig.create({
-            ...sharedProviderOptions,
-            n,
-            multiline: true,
-        })
-    }
-
     return providerConfig.create({
         ...sharedProviderOptions,
         n,
-        multiline: false,
+        multiline: !!docContext.multilineTrigger,
     })
 }
