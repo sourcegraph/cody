@@ -148,10 +148,9 @@ export async function createProviderConfig(
                         client,
                         model,
                     })
-                } else {
-                    logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
-                    return null
                 }
+                logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
+                return null
             default:
                 logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
                 return null
