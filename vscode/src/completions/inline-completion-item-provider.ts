@@ -17,6 +17,7 @@ import type { CodyStatusBar } from '../services/StatusBar'
 import { telemetryService } from '../services/telemetry'
 
 import { type CodyIgnoreType, showCodyIgnoreNotification } from '../cody-ignore/notification'
+import { autocompleteFeedbackRateLogger } from '../services/autocomplete-feedback-rate-logger'
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
 import { isInTutorial } from '../tutorial/helpers'
 import { type LatencyFeatureFlags, getArtificialDelay, resetArtificialDelay } from './artificial-delay'
@@ -385,6 +386,12 @@ export class InlineCompletionItemProvider
                     isDotComUser: this.config.isDotComUser,
                 })
 
+                // Do not increment the `preFinalCancellationCheck` counter if the result is empty.
+                // We don't have an opportunity to show a completion if it's null.
+                if (result) {
+                    autocompleteFeedbackRateLogger.record('preFinalCancellationCheck')
+                }
+
                 // Avoid any further work if the completion is invalidated already.
                 if (abortController.signal.aborted) {
                     return null
@@ -424,6 +431,8 @@ export class InlineCompletionItemProvider
                         abortController.signal
                     )
                 )
+
+                autocompleteFeedbackRateLogger.record('preVisibilityCheck')
 
                 // A completion that won't be visible in VS Code will not be returned and not be logged.
                 if (visibleItems.length === 0) {

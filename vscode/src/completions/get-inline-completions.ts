@@ -14,6 +14,7 @@ import type { CompletionIntent } from '../tree-sitter/query-sdk'
 import { isValidTestFile } from '../commands/utils/test-commands'
 import { gitMetadataForCurrentEditor } from '../repository/git-metadata-for-editor'
 import { RepoMetadatafromGitApi } from '../repository/repo-metadata-from-git-api'
+import { autocompleteFeedbackRateLogger } from '../services/autocomplete-feedback-rate-logger'
 import { completionProviderConfig } from './completion-provider-config'
 import type { ContextMixer } from './context/context-mixer'
 import { insertIntoDocContext } from './get-current-doc-context'
@@ -265,6 +266,8 @@ async function doGetInlineCompletions(
         }
     }
 
+    autocompleteFeedbackRateLogger.record('preLastCandidate')
+
     // Check if the user is typing as suggested by the last candidate completion (that is shown as
     // ghost text in the editor), and reuse it if it is still valid.
     const resultToReuse =
@@ -309,6 +312,7 @@ async function doGetInlineCompletions(
         abortSignal,
     }
 
+    autocompleteFeedbackRateLogger.record('preCache')
     const cachedResult = requestManager.checkCache({
         requestParams,
         isCacheEnabled: triggerKind !== TriggerKind.Manual,
@@ -325,6 +329,7 @@ async function doGetInlineCompletions(
         }
     }
 
+    autocompleteFeedbackRateLogger.record('preDebounce')
     const debounceTime =
         triggerKind !== TriggerKind.Automatic
             ? 0
@@ -345,6 +350,7 @@ async function doGetInlineCompletions(
 
     setIsLoading?.(true)
     CompletionLogger.start(logId)
+    autocompleteFeedbackRateLogger.record('preContextRetrieval')
 
     // Fetch context and apply remaining debounce time
     const [contextResult] = await Promise.all([
@@ -388,6 +394,7 @@ async function doGetInlineCompletions(
     })
 
     CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary)
+    autocompleteFeedbackRateLogger.record('preNetworkRequest')
 
     // Get the processed completions from providers
     const { completions, source } = await requestManager.request({
