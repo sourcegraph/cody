@@ -26,6 +26,9 @@ export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'> & { timeo
 export type SerializedCodeCompletionsParams = Omit<SerializedCompletionParameters, 'fast'> & {
     timeoutMs: number
 }
+/**
+ * The backend API response enriched with metadata constructed by the completions HTTP client.
+ */
 export type CompletionResponseWithMetaData = CompletionResponse & {
     resolvedModel?: string | undefined
 }
