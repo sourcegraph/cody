@@ -136,7 +136,7 @@ export function createClient(
                 // regular JSON payload. This ensures that the request also works against older backends
                 const isStreamingResponse = response.headers.get('content-type') === 'text/event-stream'
 
-                const gatewayModel = response.headers.get('x-cody-resolved-model') || undefined
+                const resolvedModel = response.headers.get('x-cody-resolved-model') || undefined
                 let completionResponse: CompletionResponseWithMetaData | undefined = undefined
 
                 try {
@@ -167,7 +167,7 @@ export function createClient(
                                 yield {
                                     completion: completionResponse.completion,
                                     stopReason,
-                                    gatewayModel,
+                                    resolvedModel,
                                 }
                             }
 
@@ -189,7 +189,7 @@ export function createClient(
                     const result = await response.text()
                     completionResponse = {
                         ...(JSON.parse(result) as CompletionResponse),
-                        gatewayModel,
+                        resolvedModel,
                     }
 
                     if (

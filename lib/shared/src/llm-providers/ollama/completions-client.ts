@@ -87,7 +87,6 @@ export function createOllamaClient(
                         yield {
                             completion: insertText,
                             stopReason: CompletionStopReason.StreamingChunk,
-                            gatewayModel: undefined,
                         }
                     }
 

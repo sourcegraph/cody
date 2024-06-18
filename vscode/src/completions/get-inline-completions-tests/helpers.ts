@@ -274,7 +274,7 @@ function paramsWithInlinedCompletion(
                 yield {
                     completion: lastResponse,
                     stopReason: CompletionStopReason.StreamingChunk,
-                    gatewayModel: undefined,
+                    resolvedModel: undefined,
                 }
 
                 if (delayBetweenChunks) {

@@ -27,7 +27,7 @@ export type SerializedCodeCompletionsParams = Omit<SerializedCompletionParameter
     timeoutMs: number
 }
 export type CompletionResponseWithMetaData = CompletionResponse & {
-    gatewayModel?: string | undefined
+    resolvedModel?: string | undefined
 }
 
 export type CompletionResponseGenerator = AsyncGenerator<CompletionResponseWithMetaData>

@@ -108,7 +108,7 @@ interface SharedEventPayload extends InteractionIDPayload {
     providerModel: string
 
     /** Model used by Cody Gateway. e.g. `fireworks/accounts/sourcegraph/models/starcoder-7b` */
-    gatewayModel?: string
+    resolvedModel?: string
 
     /** Language of the document being completed. */
     languageId: string
@@ -530,10 +530,10 @@ export function networkRequestStarted(
     }
 }
 
-export function gatewayModelResolved(id: CompletionLogID, gatewayModel?: string): void {
+export function gatewayModelResolved(id: CompletionLogID, resolvedModel?: string): void {
     const event = activeSuggestionRequests.get(id)
-    if (event && !event.params.gatewayModel && gatewayModel) {
-        event.params.gatewayModel = gatewayModel
+    if (event && !event.params.resolvedModel && resolvedModel) {
+        event.params.resolvedModel = resolvedModel
     }
 }
 

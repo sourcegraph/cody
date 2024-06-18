@@ -85,7 +85,7 @@ describe('logger', () => {
             otherCompletionProviders: [],
             providerIdentifier: 'bfl',
             providerModel: 'blazing-fast-llm',
-            gatewayModel: 'gateway-model',
+            resolvedModel: 'gateway-model',
             medianUpstreamLatency: undefined,
             contextSummary: {
                 retrieverStats: {},
