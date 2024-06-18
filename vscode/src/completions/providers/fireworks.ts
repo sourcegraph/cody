@@ -26,6 +26,7 @@ import {
     tracer,
 } from '@sourcegraph/cody-shared'
 import { fetch } from '@sourcegraph/cody-shared'
+import type * as vscode from 'vscode'
 import { type LanguageConfig, getLanguageConfig } from '../../tree-sitter/language'
 import { getSuffixAfterFirstNewline } from '../text-processing'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
@@ -154,6 +155,9 @@ class FireworksProvider extends Provider {
     private isLocalInstance: boolean
     private fireworksConfig?: ConfigurationWithAccessToken['autocompleteExperimentalFireworksOptions']
     private promptExtractor: FIMModelSpecificPromptExtractor
+    // Todo: This variable is used to introduce an additional delay to collect the data on impact of latency on user experience.
+    // Todo: Delete this variable once the data is collected.
+    private shouldAddArtificialDelayForExperiment = false
 
     constructor(
         options: ProviderOptions,
@@ -161,7 +165,10 @@ class FireworksProvider extends Provider {
     ) {
         super(options)
         this.timeouts = timeouts
-        this.model = this.adjustModelIdentifierForFinetunedHybrid(model, options.document.languageId)
+        if (model === FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID_WITH_200MS_DELAY) {
+            this.shouldAddArtificialDelayForExperiment = true
+        }
+        this.model = this.adjustModelIdentifier(model, options.document.languageId)
         this.promptExtractor = this.getFIMPromptExtractorForModel()
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
         this.client = client
@@ -211,15 +218,25 @@ class FireworksProvider extends Provider {
         return new fimPromptUtils.DefaultModelPromptExtractor()
     }
 
-    private adjustModelIdentifierForFinetunedHybrid(
-        model: FireworksModel,
-        languageId: string
-    ): FireworksModel {
+    private adjustModelIdentifier(model: FireworksModel, languageId: string): FireworksModel {
         switch (model) {
-            case FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID: {
-                // The fine-tuned hybrid model is only deployed for TypeScriptReact, JavaScriptReact, and Python.
-                // For other languages, we use the current production model.
+            case FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID:
+            case FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID_WITH_200MS_DELAY: {
                 if (['typescriptreact', 'javascriptreact', 'python'].includes(languageId)) {
+                    return FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID
+                }
+                return 'starcoder-hybrid'
+            }
+            case FIREWORKS_FIM_LANG_SPECIFIC_MODEL_MIXTRAL: {
+                if (
+                    [
+                        'typescriptreact',
+                        'javascriptreact',
+                        'typescript',
+                        'javascript',
+                        'python',
+                    ].includes(languageId)
+                ) {
                     return FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID
                 }
                 return 'starcoder-hybrid'
@@ -256,7 +273,7 @@ class FireworksProvider extends Provider {
                 } else {
                     intro.push(
                         this.promptExtractor.getContextPrompt({
-                            filename: snippet.uri,
+                            filename: snippet.uri as vscode.Uri,
                             content: contextPrompts.content,
                         })
                     )
@@ -438,7 +455,7 @@ class FireworksProvider extends Provider {
         return tracer.startActiveSpan(
             `POST ${url}`,
             async function* (span): CompletionResponseGenerator {
-                if (self.model === FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID_WITH_200MS_DELAY) {
+                if (self.shouldAddArtificialDelayForExperiment === true) {
                     // Todo: Remove the condition after the experiment is complete and we have the relevant data points.
                     // This delay introduced here is for the experimentation purpose to see the effect of latency on other metrics, such as CAR, wCAR, Retention, #Sugeestions etc.
                     await new Promise(resolve => setTimeout(resolve, 200))

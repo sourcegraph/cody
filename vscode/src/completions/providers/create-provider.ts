@@ -17,6 +17,7 @@ import {
     DEEPSEEK_CODER_1P3_B,
     DEEPSEEK_CODER_7B,
     FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID,
+    FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID_WITH_200MS_DELAY,
     FIREWORKS_FIM_LANG_SPECIFIC_MODEL_MIXTRAL,
     type FireworksOptions,
     createProviderConfig as createFireworksProviderConfig,
@@ -180,7 +181,7 @@ async function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<
         ])
     if (fimModelVariant1) {
         // Variant 1: Current production model with +200msec latency to quantity the effect of latency increase while keeping same quality
-        return { provider: 'fireworks', model: FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID }
+        return { provider: 'fireworks', model: FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID_WITH_200MS_DELAY }
     }
     if (fimModelVariant2) {
         return { provider: 'fireworks', model: FIREWORKS_FIM_LANG_SPECIFIC_MODEL_MIXTRAL }
