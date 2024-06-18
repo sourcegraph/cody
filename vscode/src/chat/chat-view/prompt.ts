@@ -5,7 +5,6 @@ import {
     type ContextItemWithContent,
     type Message,
     PromptString,
-    type TokenCounter,
     getSimplePreamble,
     isDefined,
     wrapInActiveSpan,
@@ -46,7 +45,10 @@ export class DefaultPrompter {
     public async makePrompt(
         chat: SimpleChatModel,
         codyApiVersion: number
-    ): Promise<{ promptInfo: PromptInfo; tokenCounter: TokenCounter }> {
+    ): Promise<{
+        promptInfo: PromptInfo
+        tokenCounter: { chat: number; user: number; enhanced: number }
+    }> {
         return wrapInActiveSpan('chat.prompter', async () => {
             const promptBuilder = new PromptBuilder(chat.contextWindow)
             const preInstruction: PromptString | undefined = PromptString.fromConfig(
@@ -133,7 +135,7 @@ export class DefaultPrompter {
                     prompt: promptBuilder.build(),
                     context,
                 },
-                tokenCounter: promptBuilder.getTokenCounter,
+                tokenCounter: promptBuilder.getRemainingTokensForDisplay(),
             }
         })
     }

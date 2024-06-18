@@ -4,8 +4,11 @@ import styles from './App.module.css'
 
 import {
     type AuthStatus,
+    CHAT_INPUT_TOKEN_BUDGET,
     type ChatMessage,
     type ClientStateForWebview,
+    EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
+    EXTENDED_USER_CONTEXT_TOKEN_BUDGET,
     GuardrailsPost,
     type Model,
     PromptString,
@@ -68,13 +71,26 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         })
     }, [vscodeAPI])
 
-    const [remainingTokens, setRemainingTokens] = useState<TokenUsageLimits>({
-        chat: 0,
-        user: 0,
-        enhanced: 0,
-        maxChat: 7000,
-        maxUser: 7000,
-        maxEnhanced: 4200,
+    const [remainingTokens, setRemainingTokens] = useState<TokenUsageLimits>(() => {
+        const currentModel = chatModels?.find(model => model.default)
+        const isExtendedModel = currentModel?.contextWindow?.context?.user !== undefined
+
+        const chatTokenBudget = isExtendedModel
+            ? EXTENDED_CHAT_INPUT_TOKEN_BUDGET
+            : CHAT_INPUT_TOKEN_BUDGET
+        const userTokenBudget = isExtendedModel
+            ? EXTENDED_USER_CONTEXT_TOKEN_BUDGET
+            : CHAT_INPUT_TOKEN_BUDGET
+        const enhancedTokenBudget = Math.floor(chatTokenBudget * 0.6)
+
+        return {
+            chat: chatTokenBudget,
+            user: userTokenBudget,
+            enhanced: enhancedTokenBudget,
+            maxChat: chatTokenBudget,
+            maxUser: userTokenBudget,
+            maxEnhanced: enhancedTokenBudget,
+        }
     })
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally refresh on `view`

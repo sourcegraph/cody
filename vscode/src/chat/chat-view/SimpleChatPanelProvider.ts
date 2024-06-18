@@ -14,6 +14,7 @@ import {
     type ContextItemWithContent,
     DOTCOM_URL,
     type DefaultChatCommands,
+    ENHANCED_CONTEXT_ALLOCATION,
     type EventSource,
     type FeatureFlagProvider,
     type Guardrails,
@@ -26,7 +27,6 @@ import {
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     type SerializedPromptEditorState,
-    TokenCounter,
     Typewriter,
     allMentionProvidersMetadata,
     hydrateAfterPostMessage,
@@ -569,7 +569,7 @@ export class SimpleChatPanelProvider
 
         this.postChatModels()
         await this.saveSession()
-        this.postRemainingTokensToWebview(new TokenCounter(this.chatModel.contextWindow))
+        this.postRemainingTokensToWebview()
         this.initDoer.signalInitialized()
     }
 
@@ -856,7 +856,7 @@ export class SimpleChatPanelProvider
     private async handleSetChatModel(modelID: string): Promise<void> {
         this.chatModel.updateModel(modelID)
         await chatModel.set(modelID)
-        this.postRemainingTokensToWebview(new TokenCounter(this.chatModel.contextWindow))
+        this.postRemainingTokensToWebview()
     }
 
     private async handleGetAllMentionProvidersMetadata(): Promise<void> {
@@ -1108,26 +1108,37 @@ export class SimpleChatPanelProvider
         }
     }
 
-    private postRemainingTokensToWebview(tokenCounter: TokenCounter): void {
-        // Get the remaining token counts
-        const remainingTokens = tokenCounter.getRemainingTokensForDisplay()
-        const maxTokens = {
-            maxChat: tokenCounter.maxChatTokens,
-            maxUser: tokenCounter.maxContextTokens.user,
-            maxEnhanced: tokenCounter.maxContextTokens.enhanced,
+    private postRemainingTokensToWebview(remainingTokens?: {
+        chat: number
+        user: number
+        enhanced: number
+    }): void {
+        const { input, context } = this.chatModel.contextWindow
+        const maxTokens: {
+            maxChat: number
+            maxUser: number
+            maxEnhanced: number
+        } = {
+            maxChat: input,
+            maxUser: context?.user ?? input,
+            maxEnhanced: Math.floor(input * ENHANCED_CONTEXT_ALLOCATION),
         }
+
+        // If we don't have a token counter, we take the maxTokens values
+        const mergedRemainingTokens = {
+            chat: remainingTokens?.chat ?? maxTokens.maxChat,
+            user: remainingTokens?.user ?? maxTokens.maxUser,
+            enhanced: remainingTokens?.enhanced ?? maxTokens.maxEnhanced,
+        }
+
         // Send the remaining token counts to the webview
         void this.postMessage({
             type: 'remainingTokens',
             remainingTokens: {
-                ...remainingTokens,
+                ...mergedRemainingTokens,
                 ...maxTokens,
             },
         })
-        /* void this.webviewPanel?.webview.postMessage({
-            type: 'remainingTokens',
-            remainingTokens,
-        }) */
     }
 
     /**
@@ -1158,7 +1169,7 @@ export class SimpleChatPanelProvider
         prompter: DefaultPrompter,
         abortSignal: AbortSignal,
         sendTelemetry?: (contextSummary: any, privateContextStats?: any) => void
-    ): Promise<{ prompt: Message[]; tokenCounter: TokenCounter }> {
+    ): Promise<{ prompt: Message[]; tokenCounter: { chat: number; user: number; enhanced: number } }> {
         const { promptInfo, tokenCounter } = await prompter.makePrompt(
             this.chatModel,
             this.authProvider.getAuthStatus().codyApiVersion
@@ -1434,7 +1445,7 @@ export class SimpleChatPanelProvider
 
         this.chatModel = new SimpleChatModel(this.chatModel.modelID)
         this.postViewTranscript()
-        this.postRemainingTokensToWebview(new TokenCounter(this.chatModel.contextWindow))
+        this.postRemainingTokensToWebview()
 
         vscode.commands.executeCommand('setContext', 'cody.hasNewChatOpened', true)
     }
