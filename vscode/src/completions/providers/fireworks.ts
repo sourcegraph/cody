@@ -4,7 +4,6 @@ import {
     type AutocompleteTimeouts,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
-    type CompletionResponse,
     type CompletionResponseGenerator,
     CompletionStopReason,
     type ConfigurationWithAccessToken,
@@ -31,6 +30,7 @@ import { getSuffixAfterFirstNewline } from '../text-processing'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
 import { SpanStatusCode } from '@opentelemetry/api'
+import type { CompletionResponseWithMetaData } from '@sourcegraph/cody-shared/src/inferenceClient/misc'
 import { logDebug } from '../../log'
 import { createRateLimitErrorFromResponse } from '../client'
 import { TriggerKind } from '../get-inline-completions'
@@ -520,7 +520,8 @@ class FireworksProvider extends Provider {
                     )
                 }
 
-                let lastResponse: CompletionResponse | undefined
+                const resolvedModel = response.headers.get('x-cody-resolved-model') || undefined
+                let lastResponse: CompletionResponseWithMetaData | undefined
                 try {
                     const iterator = createSSEIterator(response.body)
                     let chunkIndex = 0
@@ -556,6 +557,7 @@ class FireworksProvider extends Provider {
                                 (lastResponse
                                     ? lastResponse.stopReason
                                     : CompletionStopReason.StreamingChunk),
+                            resolvedModel,
                         }
 
                         span.addEvent('yield', { stopReason: lastResponse.stopReason })
@@ -611,7 +613,7 @@ export function createProviderConfig({
 }: Omit<FireworksOptions, 'model' | 'maxContextTokens'> & {
     model: string | null
 }): ProviderConfig {
-    const resolvedModel =
+    const clientModel =
         model === null || model === ''
             ? 'starcoder-hybrid'
             : ['starcoder-hybrid', 'starcoder2-hybrid'].includes(model)
@@ -620,11 +622,11 @@ export function createProviderConfig({
                 ? (model as keyof typeof MODEL_MAP)
                 : null
 
-    if (resolvedModel === null) {
+    if (clientModel === null) {
         throw new Error(`Unknown model: \`${model}\``)
     }
 
-    const maxContextTokens = getMaxContextTokens(resolvedModel)
+    const maxContextTokens = getMaxContextTokens(clientModel)
 
     return {
         create(options: ProviderOptions) {
@@ -634,7 +636,7 @@ export function createProviderConfig({
                     id: PROVIDER_IDENTIFIER,
                 },
                 {
-                    model: resolvedModel,
+                    model: clientModel,
                     maxContextTokens,
                     timeouts,
                     ...otherOptions,
@@ -643,7 +645,7 @@ export function createProviderConfig({
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
         identifier: PROVIDER_IDENTIFIER,
-        model: resolvedModel,
+        model: clientModel,
     }
 }
 

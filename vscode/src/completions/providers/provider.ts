@@ -7,9 +7,10 @@ import {
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 
+import type { TriggerKind } from '../get-inline-completions'
+import type * as CompletionLogger from '../logger'
 import type { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
 
-import type { TriggerKind } from '../get-inline-completions'
 import type { FetchCompletionResult } from './fetch-and-process-completions'
 
 export interface ProviderConfig {
@@ -76,6 +77,7 @@ export interface ProviderOptions {
      *  Timeout in milliseconds for the first completion to be yielded from the completions generator.
      */
     firstCompletionTimeout: number
+    completionLogId: CompletionLogger.CompletionLogID
 
     // feature flags
     hotStreak?: boolean
