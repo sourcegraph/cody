@@ -101,13 +101,24 @@ interface SharedEventPayload extends InteractionIDPayload {
     /** Describes how the autocomplete request was triggered by the user. */
     triggerKind: TriggerKind
 
-    /** Information about what provider is used. e.g. `anthropic` or `fireworks`. */
+    /** Information about what inference provider is used. e.g. `anthropic` or `fireworks`. */
     providerIdentifier: string
 
-    /** Model used by Cody client. e.g. `starcoder-7b` or `claude-instant`. */
+    /**
+     * Model used by Cody client to request the completion. e.g. `starcoder-7b` or `claude-instant`.
+     * Controls completion request parameters such as prompt template, stop sequences, context size, etc.
+     */
     providerModel: string
 
-    /** Model used by Cody Gateway. e.g. `fireworks/accounts/sourcegraph/models/starcoder-7b` */
+    /**
+     * Model used by Cody Gateway to make the inference. e.g. `fireworks/accounts/sourcegraph/models/starcoder-7b-w8a16`
+     * This is a fully unique identifier of the model used to route a request to the inference provider.
+     * It can include model version, quantization, inference account, and other details not exposed
+     * on the client side (`providerModel`).
+     *
+     * This model can be completely different from the `providerModel` based on the Cody Gateway configuration.
+     * For example, CG can re-route requests to a different model based on the inference provider load.
+     */
     resolvedModel?: string
 
     /** Language of the document being completed. */
