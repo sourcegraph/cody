@@ -93,8 +93,8 @@ export default defineProjectWithDefaults(__dirname, {
               }),
     },
     build: {
-        commonjsOptions: { transformMixedEsModules: true },
-        minify: true,
+        // Turn off minification since it breaks json-rpc in inline web-worker in Safari
+        minify: false,
         assetsDir: './',
         rollupOptions: {
             external: ['react', 'react/jsx-runtime'],
