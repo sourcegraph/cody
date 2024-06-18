@@ -35,7 +35,7 @@ See [cody.dev](https://about.sourcegraph.com/cody?utm_source=github.com&utm_medi
 
 ## What can Cody do?
 
-- **Chat:** Ask Cody questions about your codebase. Cody will use semantic search to retrieve files from your codebase and use context from those files to answer your questions. You can also @-mention files to target specific context. You can also @-mention remote repositories on Cody Enterprise.
+- **Chat:** Ask Cody questions about your codebase. Cody will use semantic search to retrieve files from your codebase and use context from those files to answer your questions. You can @-mention files to target specific context, and you can also @-mention remote repositories on Cody Enterprise.
 - **Autocomplete:** Cody makes single-line and multi-line suggestions as you type, speeding up your coding and shortcutting the need for you to hunt down function and variable names as you type.
 - **Inline Edit:** Ask Cody to fix or refactor code from anywhere in a file.
 - **Commands:** Cody has quick commands for common actions. Simply highlight a code snippet and run a command, like “Document code,” “Explain code,” or “Generate Unit Tests.”
