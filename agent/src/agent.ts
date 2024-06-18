@@ -1162,7 +1162,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return null
         })
         this.registerAuthenticatedRequest(
-            'webview/receiveMessageString',
+            'webview/receiveMessageStringEncoded',
             async ({ id, messageStringEncoded }) => {
                 await this.receiveWebviewMessage(id, JSON.parse(messageStringEncoded))
                 return null
@@ -1450,8 +1450,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     })
                 }
 
-                if (this.clientInfo?.capabilities?.webviewMessages === 'string') {
-                    this.notify('webview/postMessageString', {
+                if (this.clientInfo?.capabilities?.webviewMessages === 'string-encoded') {
+                    this.notify('webview/postMessageStringEncoded', {
                         id: panel.panelID,
                         stringEncodedMessage: JSON.stringify(message),
                     })

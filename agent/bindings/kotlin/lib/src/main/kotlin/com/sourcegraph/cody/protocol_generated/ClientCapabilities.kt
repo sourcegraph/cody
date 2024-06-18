@@ -16,7 +16,7 @@ data class ClientCapabilities(
   val showWindowMessage: ShowWindowMessageEnum? = null, // Oneof: notification, request
   val ignore: IgnoreEnum? = null, // Oneof: none, enabled
   val codeActions: CodeActionsEnum? = null, // Oneof: none, enabled
-  val webviewMessages: WebviewMessagesEnum? = null, // Oneof: object, string
+  val webviewMessages: WebviewMessagesEnum? = null, // Oneof: object-encoded, string-encoded
 ) {
 
   enum class CompletionsEnum {
@@ -79,8 +79,8 @@ data class ClientCapabilities(
   }
 
   enum class WebviewMessagesEnum {
-    @SerializedName("object") Object,
-    @SerializedName("string") String,
+    @SerializedName("object-encoded") `Object-encoded`,
+    @SerializedName("string-encoded") `String-encoded`,
   }
 }
 

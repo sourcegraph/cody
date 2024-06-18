@@ -82,8 +82,8 @@ interface CodyAgentServer {
   fun webview_didDispose(params: Webview_DidDisposeParams): CompletableFuture<Null?>
   @JsonRequest("webview/receiveMessage")
   fun webview_receiveMessage(params: Webview_ReceiveMessageParams): CompletableFuture<Null?>
-  @JsonRequest("webview/receiveMessageString")
-  fun webview_receiveMessageString(params: Webview_ReceiveMessageStringParams): CompletableFuture<Null?>
+  @JsonRequest("webview/receiveMessageStringEncoded")
+  fun webview_receiveMessageStringEncoded(params: Webview_ReceiveMessageStringEncodedParams): CompletableFuture<Null?>
   @JsonRequest("diagnostics/publish")
   fun diagnostics_publish(params: Diagnostics_PublishParams): CompletableFuture<Null?>
   @JsonRequest("testing/progress")

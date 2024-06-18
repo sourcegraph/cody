@@ -1,8 +1,8 @@
 @file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.protocol_generated
 
-data class Webview_PostMessageStringParams(
+data class Webview_ReceiveMessageStringEncodedParams(
   val id: String,
-  val stringEncodedMessage: String,
+  val messageStringEncoded: String,
 )
 

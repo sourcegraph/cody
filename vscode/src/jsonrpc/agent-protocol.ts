@@ -53,7 +53,11 @@ export type ClientRequests = {
     // `webview/postMessage`. Returns a new *panel* ID, which can be used to
     // send a chat message via `chat/submitMessage`.
     'chat/restore': [
-        { modelID?: string | undefined | null; messages: SerializedChatMessage[]; chatID: string },
+        {
+            modelID?: string | undefined | null
+            messages: SerializedChatMessage[]
+            chatID: string
+        },
         string,
     ]
 
@@ -160,7 +164,7 @@ export type ClientRequests = {
     // Same as `webview/receiveMessage` except the parameter is a JSON-encoded
     // string.  The server processes this message by parsing
     // `messageStringEncoded` as JSON and then calling `webview/receiveMessage`.
-    'webview/receiveMessageString': [{ id: string; messageStringEncoded: string }, null]
+    'webview/receiveMessageStringEncoded': [{ id: string; messageStringEncoded: string }, null]
 
     // Register diagnostics (aka. error/warning messages). Overwrites existing
     // diagnostics for the provided document URIs. This request should be used
@@ -275,7 +279,10 @@ export type ServerRequests = {
     'textDocument/edit': [TextDocumentEditParams, boolean]
     'textDocument/openUntitledDocument': [UntitledTextDocument, boolean]
     'textDocument/show': [
-        { uri: string; options?: TextDocumentShowOptionsParams | undefined | null },
+        {
+            uri: string
+            options?: TextDocumentShowOptionsParams | undefined | null
+        },
         boolean,
     ]
     'workspace/edit': [WorkspaceEditParams, boolean]
@@ -374,7 +381,7 @@ export type ServerNotifications = {
     // Same as `webview/postMessage` but the `WebviewMessage` is string-encoded.
     // This method is only used when the `webviewMessages` client capability is
     // set to the value `'string'`.
-    'webview/postMessageString': [{ id: string; stringEncodedMessage: string }]
+    'webview/postMessageStringEncoded': [{ id: string; stringEncodedMessage: string }]
 
     'progress/start': [ProgressStartParams]
 
@@ -472,12 +479,12 @@ export interface ClientCapabilities {
     showWindowMessage?: 'notification' | 'request' | undefined | null
     ignore?: 'none' | 'enabled' | undefined | null
     codeActions?: 'none' | 'enabled' | undefined | null
-    // When 'object' (default), the server uses the `webview/postMessage` method
-    // to send structured JSON objects.  When 'string', the server uses the
-    // `webview/postMessageString` method to send a JSON-encoded string. This is
+    // When 'object-encoded' (default), the server uses the `webview/postMessage` method
+    // to send structured JSON objects.  When 'string-encoded', the server uses the
+    // `webview/postMessageStringEncoded` method to send a JSON-encoded string. This is
     // convenient for clients that forward the string directly to an underlying
     // webview container.
-    webviewMessages?: 'object' | 'string' | undefined | null
+    webviewMessages?: 'object-encoded' | 'string-encoded' | undefined | null
 }
 
 export interface ServerInfo {
