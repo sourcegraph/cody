@@ -13,8 +13,8 @@ export default defineConfig({
         timeout: isWin || isCI ? 5000 : 2000,
     },
     reporter: isCI ? 'github' : 'list',
-    globalSetup: require.resolve('./test/e2e/utils/setup'),
-    globalTeardown: require.resolve('./test/e2e/utils/teardown'),
+    globalSetup: isCI ? undefined : require.resolve('./test/e2e/utils/localSetup'),
+    globalTeardown: isCI ? undefined : require.resolve('./test/e2e/utils/localTeardown'),
     use: {
         video: 'on-first-retry',
     },
