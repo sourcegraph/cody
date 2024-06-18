@@ -77,10 +77,10 @@ export class TokenCounter {
     }
 
     /**
-     * Returns the remaining token counts for different token types.
+     * Returns the remaining token counts for different token types for displaying it in the UI.
      * @returns An object with the remaining token counts for chat, user, and enhanced token types.
      */
-    public getRemainingTokens(): { chat: number; user: number; enhanced: number } {
+    public getRemainingTokensForDisplay(): { chat: number; user: number; enhanced: number } {
         return this.remainingTokens
     }
 

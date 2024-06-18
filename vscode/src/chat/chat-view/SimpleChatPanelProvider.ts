@@ -25,8 +25,8 @@ import {
     PromptString,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
-    TokenCounter,
     type SerializedPromptEditorState,
+    TokenCounter,
     Typewriter,
     allMentionProvidersMetadata,
     hydrateAfterPostMessage,
@@ -1110,7 +1110,7 @@ export class SimpleChatPanelProvider
 
     private postRemainingTokensToWebview(tokenCounter: TokenCounter): void {
         // Get the remaining token counts
-        const remainingTokens = tokenCounter.getRemainingTokens()
+        const remainingTokens = tokenCounter.getRemainingTokensForDisplay()
         const maxTokens = {
             maxChat: tokenCounter.maxChatTokens,
             maxUser: tokenCounter.maxContextTokens.user,
