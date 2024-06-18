@@ -202,13 +202,21 @@ export class FixupController
         edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit,
         options?: { undoStopBefore: boolean; undoStopAfter: boolean }
     ): Promise<boolean> {
+        let editOk: boolean
         if (edit instanceof vscode.WorkspaceEdit) {
             edit.replace(task.fixupFile.uri, task.selectionRange, task.original)
-            return vscode.workspace.applyEdit(edit)
+            editOk = await vscode.workspace.applyEdit(edit)
+        } else {
+            editOk = await edit(editBuilder => {
+                editBuilder.replace(task.selectionRange, task.original)
+            }, options)
         }
-        return edit(editBuilder => {
-            editBuilder.replace(task.selectionRange, task.original)
-        }, options)
+
+        if (editOk) {
+            task.selectionRange = task.originalRange
+        }
+
+        return editOk
     }
 
     // Undo the specified task, then prompt for a new set of instructions near
@@ -791,7 +799,11 @@ export class FixupController
             Number.MAX_VALUE
         )
 
-        const formattingChangesInRange = await getFormattingChangesForRange(document, rangeToFormat)
+        const formattingChangesInRange = await getFormattingChangesForRange(
+            document,
+            rangeToFormat,
+            task
+        )
         if (formattingChangesInRange.length === 0) {
             return false
         }

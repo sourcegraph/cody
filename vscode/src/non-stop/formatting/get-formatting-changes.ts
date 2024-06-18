@@ -1,6 +1,7 @@
 import { getEditorInsertSpaces, getEditorTabSize } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { sleep } from '../../completions/utils'
+import type { FixupTask } from '../FixupTask'
 import type { Edit } from '../line-diff'
 
 /**
@@ -11,7 +12,8 @@ const FORMATTING_TIMEOUT = 1000
 
 export async function getFormattingChangesForRange(
     document: vscode.TextDocument,
-    range: vscode.Range
+    range: vscode.Range,
+    task: FixupTask
 ): Promise<Edit[]> {
     const formattingChanges =
         (await Promise.race([
@@ -26,11 +28,19 @@ export async function getFormattingChangesForRange(
             sleep(FORMATTING_TIMEOUT),
         ])) || []
 
-    return formattingChanges
-        .filter(change => range.contains(change.range))
-        .map(change => ({
-            type: 'insertion',
-            range: change.range,
-            text: change.newText,
-        }))
+    const placeholderRanges = (task.diff || []).filter(({ type }) => type === 'decoratedDeletion')
+    return (
+        formattingChanges
+            .filter(change => range.contains(change.range))
+            // Skip formatting changes that intersect with our injected placeholder ranges
+            .filter(
+                change =>
+                    !placeholderRanges.some(placeholder => change.range.intersection(placeholder.range))
+            )
+            .map(change => ({
+                type: 'insertion',
+                range: change.range,
+                text: change.newText,
+            }))
+    )
 }
