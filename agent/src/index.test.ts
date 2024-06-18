@@ -222,7 +222,7 @@ describe('Agent', () => {
 
         it('chat/restore', async () => {
             // Step 1: create a chat session where I share my name.
-            const id1 = await client.request('chat/new', null)
+            const { panelID: id1 } = await client.request('chat/new', null)
             const reply1 = asTranscriptMessage(
                 await client.request('chat/submitMessage', {
                     id: id1,
@@ -265,7 +265,7 @@ describe('Agent', () => {
 
         it('chat/restore (With null model)', async () => {
             // Step 1: Create a chat session asking what model is used.
-            const id1 = await client.request('chat/new', null)
+            const { panelID: id1 } = await client.request('chat/new', null)
             const reply1 = asTranscriptMessage(
                 await client.request('chat/submitMessage', {
                     id: id1,
@@ -398,7 +398,7 @@ describe('Agent', () => {
         }, 30_000)
 
         it('webview/receiveMessage (type: chatModel)', async () => {
-            const id = await client.request('chat/new', null)
+            const { panelID: id } = await client.request('chat/new', null)
             {
                 await client.setChatModel(id, 'openai/gpt-3.5-turbo')
                 const lastMessage = await client.sendMessage(id, 'what color is the sky?')
@@ -407,7 +407,7 @@ describe('Agent', () => {
         }, 30_000)
 
         it('webview/receiveMessage (type: reset)', async () => {
-            const id = await client.request('chat/new', null)
+            const { panelID: id } = await client.request('chat/new', null)
             await client.setChatModel(id, 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct')
             await client.sendMessage(
                 id,
@@ -428,7 +428,7 @@ describe('Agent', () => {
             it(
                 'edits the last human chat message',
                 async () => {
-                    const id = await client.request('chat/new', null)
+                    const { panelID: id } = await client.request('chat/new', null)
                     await client.setChatModel(
                         id,
                         'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct'
@@ -454,7 +454,7 @@ describe('Agent', () => {
             )
 
             it('edits messages by index', async () => {
-                const id = await client.request('chat/new', null)
+                const { panelID: id } = await client.request('chat/new', null)
                 await client.setChatModel(
                     id,
                     'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct'
@@ -1026,7 +1026,7 @@ describe('Agent', () => {
         // Disabled because `attribution/search` GraphQL does not work on S2
         // See https://sourcegraph.slack.com/archives/C05JDP433DL/p1714017586160079
         it.skip('attribution/found', async () => {
-            const id = await s2EnterpriseClient.request('chat/new', null)
+            const { panelID: id } = await s2EnterpriseClient.request('chat/new', null)
             const { repoNames, error } = await s2EnterpriseClient.request('attribution/search', {
                 id,
                 snippet: 'sourcegraph.Location(new URL',
@@ -1036,7 +1036,7 @@ describe('Agent', () => {
         }, 20_000)
 
         it('attribution/not found', async () => {
-            const id = await s2EnterpriseClient.request('chat/new', null)
+            const { panelID: id } = await s2EnterpriseClient.request('chat/new', null)
             const { repoNames, error } = await s2EnterpriseClient.request('attribution/search', {
                 id,
                 snippet: 'sourcegraph.Location(new LRU',

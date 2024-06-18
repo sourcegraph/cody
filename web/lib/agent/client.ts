@@ -76,7 +76,7 @@ export async function createAgentClient({
         version: '0.0.1',
         workspaceRootUri,
         extensionConfiguration: {
-            serverEndpoint,
+            serverEndpoint: 'https://sourcegraph.sourcegraph.com',
             accessToken,
             customHeaders: {},
             customConfiguration: {

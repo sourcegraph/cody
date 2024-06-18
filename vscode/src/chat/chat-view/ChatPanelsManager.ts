@@ -75,8 +75,47 @@ export class ChatPanelsManager implements vscode.Disposable {
 
     protected disposables: vscode.Disposable[] = []
 
+    static async create(
+        options: SidebarViewOptions,
+        chatClient: ChatClient,
+        localEmbeddings: LocalEmbeddingsController | null,
+        contextRanking: ContextRankingController | null,
+        symf: SymfRunner | null,
+        enterpriseContext: EnterpriseContextFactory | null,
+        guardrails: Guardrails
+    ): Promise<ChatPanelsManager> {
+        const authStatus = options.authProvider.getAuthStatus()
+        const isConsumer = authStatus.isDotCom
+        const isCodyProUser = !authStatus.userCanUpgrade
+        const models = ModelsService.getModels(ModelUsage.Chat, isCodyProUser)
+
+        const provider = await SimpleChatPanelProvider.create({
+            ...{ ...options, featureFlagProvider },
+            chatClient: chatClient,
+            localEmbeddings: isConsumer ? localEmbeddings : null,
+            contextRanking: isConsumer ? contextRanking : null,
+            symf: isConsumer ? symf : null,
+            enterpriseContext: enterpriseContext,
+            models,
+            guardrails: guardrails,
+            startTokenReceiver: options.startTokenReceiver,
+        })
+
+        return new ChatPanelsManager(
+            options,
+            provider,
+            chatClient,
+            localEmbeddings,
+            contextRanking,
+            symf,
+            enterpriseContext,
+            guardrails
+        )
+    }
+
     constructor(
         { extensionUri, ...options }: SidebarViewOptions,
+        sidebarProvider: SimpleChatPanelProvider,
         private chatClient: ChatClient,
         private readonly localEmbeddings: LocalEmbeddingsController | null,
         private readonly contextRanking: ContextRankingController | null,
@@ -107,7 +146,8 @@ export class ChatPanelsManager implements vscode.Disposable {
             )
         )
 
-        this.sidebarProvider = this.createProvider()
+        this.sidebarProvider = sidebarProvider
+
         this.disposables.push(
             vscode.window.registerWebviewViewProvider('cody.chat', this.sidebarProvider, {
                 webviewOptions: { retainContextWhenHidden: true },

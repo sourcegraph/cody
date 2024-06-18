@@ -11,7 +11,7 @@ interface ChildInput {
     loading: boolean
     error: Error | null
     selectChat: (chat: ChatExportResult) => unknown
-    createNewChat: (force: boolean) => void
+    createNewChat: (force?: boolean) => void
     deleteChat: (chat: ChatExportResult) => void
     isSelectedChat: (chat: ChatExportResult) => boolean
 }
@@ -142,7 +142,7 @@ export const ChatHistory: FC<ChatHistoryProps> = props => {
         await selectChat(newChatsList[nextChatIndexToSelect] ?? newChatsList[0])
     }
 
-    const createNewChat = async (force: boolean): Promise<void> => {
+    const createNewChat = async (force?: boolean): Promise<void> => {
         if (!client || isErrorLike(client)) {
             return
         }

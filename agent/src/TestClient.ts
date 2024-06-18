@@ -737,7 +737,7 @@ export class TestClient extends MessageHandler {
         panelID: string
         transcript: ExtensionTranscriptMessage
     }> {
-        const id = params?.id ?? (await this.request('chat/new', null))
+        const id = params?.id ?? (await this.request('chat/new', null)).panelID
         if (params?.addEnhancedContext === true && this.isSymfDisabled()) {
             throw new Error(
                 'addEnhancedContext:true when symf is disabled. ' +
