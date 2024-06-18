@@ -18,7 +18,7 @@
     "dev:web": "pnpm run -s build:dev:web && pnpm run -s _dev:vscode-test-web --browserType none",
     "watch:dev:web": "concurrently \"pnpm run -s watch:build:dev:web\" \"pnpm run -s _dev:vscode-test-web --browserType none\"",
     "_dev:vscode-test-web": "vscode-test-web --extensionDevelopmentPath=. ${WORKSPACE-test/fixtures/workspace}",
-    "build": "pnpm run -s check:build && tsc --build && pnpm run -s _build:esbuild:desktop && pnpm run -s _build:esbuild:web && pnpm run -s _build:webviews --mode production",
+    "build": "pnpm run -s check:build && tsc --build && pnpm run -s _build:esbuild:desktop && pnpm run -s _build:esbuild:web && pnpm run -s _build:webviews --mode production && pnpm win-ca:bundle",
     "check:build": "pnpm run -s check:typehacks && pnpm run -s check:manifest",
     "check:typehacks": "ts-node-transpile-only ./scripts/enable-typehacks.ts && tsc -p tsconfig.typehacks.json",
     "check:manifest": "ts-node-transpile-only ./scripts/validate-package-json.ts",
