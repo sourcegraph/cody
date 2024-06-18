@@ -9,6 +9,7 @@ import { getTier } from '../telemetry-v2/cody-tier'
 
 export interface ExtensionDetails {
     ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
+    ideVersion?: string
     ideExtensionType: 'Cody' | 'CodeSearch'
     platform: string
     arch?: string
