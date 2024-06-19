@@ -34,7 +34,7 @@ export const Transcript: React.FunctionComponent<{
         [transcript, messageInProgress]
     )
     return (
-        <div className="tw-py-2">
+        <div className="tw-p-8 tw-flex tw-flex-col tw-gap-8">
             {interactions.map((interaction, i) => (
                 <TranscriptInteraction
                     // biome-ignore lint/suspicious/noArrayIndexKey:

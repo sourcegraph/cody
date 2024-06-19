@@ -1,7 +1,6 @@
 import { clsx } from 'clsx'
 import type React from 'react'
 import type { FunctionComponent, PropsWithChildren } from 'react'
-import styles from './Cell.module.css'
 import { MESSAGE_CELL_AVATAR_SIZE } from './messageCell/BaseMessageCell'
 
 /**
@@ -28,23 +27,18 @@ export const Cell: FunctionComponent<
     children,
 }) => (
     <div
-        className={clsx(
-            styles.container,
-            {
-                [styles.containerStyleAssistant]: style === 'assistant',
-                [styles.containerStyleContext]: style === 'context',
-                [styles.containerDisabled]: ariaDisabled,
-            },
-            containerClassName
-        )}
+        className={clsx('tw-flex tw-gap-4', containerClassName)}
         role="row"
         aria-current={ariaCurrent}
         aria-disabled={ariaDisabled}
         data-testid={dataTestID}
     >
-        <div className={styles.gutter} style={{ width: `${MESSAGE_CELL_AVATAR_SIZE}px` }}>
+        <div
+            className="tw-pt-[3px] tw-flex tw-items-top tw-justify-center"
+            style={{ width: `${MESSAGE_CELL_AVATAR_SIZE}px` }}
+        >
             {gutterIcon}
         </div>
-        <div className={clsx(styles.content, contentClassName)}>{children}</div>
+        <div className={clsx('tw-flex-1', contentClassName)}>{children}</div>
     </div>
 )
