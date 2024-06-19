@@ -14,7 +14,9 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
-Enterprise: Expand the context window for Gemini 1.5 models. [pull/4563](https://github.com/sourcegraph/cody/pull/4563)
+- Enterprise: Expand the context window for Gemini 1.5 models. [pull/4563](https://github.com/sourcegraph/cody/pull/4563)
+- Telemetry: Added autocomplete stage counter logger. [pull/4595](https://github.com/sourcegraph/cody/pull/4595)
+- Telemetry: Added resolved model to autocomplete events. [pull/4565](https://github.com/sourcegraph/cody/pull/4565)
 
 ### Fixed
 
