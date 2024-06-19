@@ -99,6 +99,9 @@ interface CompletionRequest {
     context: vscode.InlineCompletionContext
 }
 
+type InlineCompletionItemProviderConfig = Omit<CodyCompletionItemProviderConfig, 'createBfgRetriever'> &
+    Required<Pick<CodyCompletionItemProviderConfig, 'isDotComUser'>>
+
 export class InlineCompletionItemProvider
     implements vscode.InlineCompletionItemProvider, vscode.Disposable
 {
@@ -108,8 +111,6 @@ export class InlineCompletionItemProvider
     // completions, we use consult this field inside the completion callback instead.
     private lastManualCompletionTimestamp: number | null = null
     // private reportedErrorMessages: Map<string, number> = new Map()
-
-    private readonly config: Omit<Required<CodyCompletionItemProviderConfig>, 'createBfgRetriever'>
 
     private requestManager: RequestManager
     private contextMixer: ContextMixer
@@ -130,6 +131,15 @@ export class InlineCompletionItemProvider
 
     private firstCompletionDecoration = new FirstCompletionDecorationHandler()
 
+    static get configuration(): InlineCompletionItemProviderConfig {
+        return InlineCompletionItemProvider._configuration
+    }
+    private static _configuration: InlineCompletionItemProviderConfig
+
+    private get config(): InlineCompletionItemProviderConfig {
+        return InlineCompletionItemProvider.configuration
+    }
+
     constructor({
         completeSuggestWidgetSelection = true,
         formatOnAccept = true,
@@ -138,7 +148,9 @@ export class InlineCompletionItemProvider
         createBfgRetriever,
         ...config
     }: CodyCompletionItemProviderConfig) {
-        this.config = {
+        // This is a static field to allow for easy access in the static `configuration` getter.
+        // There must only be one instance of this class at a time.
+        InlineCompletionItemProvider._configuration = {
             ...config,
             completeSuggestWidgetSelection,
             formatOnAccept,
