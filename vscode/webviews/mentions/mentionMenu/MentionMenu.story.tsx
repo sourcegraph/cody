@@ -3,9 +3,11 @@ import { URI } from 'vscode-uri'
 
 import {
     type ContextItem,
+    type ContextItemOpenCtx,
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    openCtxProviderMetadata,
 } from '@sourcegraph/cody-shared'
 import { VSCodeDecorator } from '../../storybook/VSCodeStoryDecorator'
 import { MentionMenu } from './MentionMenu'
@@ -125,6 +127,20 @@ export const Loading: StoryObj<typeof MentionMenu> = {
     args: {
         params: toParams('', FILE_CONTEXT_MENTION_PROVIDER),
         data: toData(undefined),
+    },
+}
+
+export const FileSearchNoQueryNoMatches: StoryObj<typeof MentionMenu> = {
+    args: {
+        params: toParams('', FILE_CONTEXT_MENTION_PROVIDER),
+        data: toData([]),
+    },
+}
+
+export const FileSearchNoQueryMatches: StoryObj<typeof MentionMenu> = {
+    args: {
+        params: toParams('', FILE_CONTEXT_MENTION_PROVIDER),
+        data: toData([{ uri: URI.file('a/b/ddddddd.go'), type: 'file' }]),
     },
 }
 
@@ -282,3 +298,49 @@ export const SymbolSearchMatches: StoryObj<typeof MentionMenu> = {
         ]),
     },
 }
+
+const OPENCTX_PROVIDER = openCtxProviderMetadata({
+    providerUri: 'https://openctx.org/npm/@openctx/provider-example',
+    name: 'OpenCtx Example Title',
+    mentions: {
+        label: 'Search label for OpenCtx Example...',
+    },
+})
+
+function openCtxStory(query: string, names: string[] | undefined): StoryObj<typeof MentionMenu> {
+    const items =
+        names === undefined
+            ? undefined
+            : names.map(
+                  name =>
+                      ({
+                          type: 'openctx',
+                          provider: 'openctx',
+                          title: name,
+                          uri: URI.parse('https://example.com').with({ query: name }),
+                          providerUri: OPENCTX_PROVIDER.id,
+                          mention: {
+                              uri: '',
+                              description: 'openctx description ' + name,
+                          },
+                      }) satisfies ContextItemOpenCtx
+              )
+    return {
+        args: {
+            params: {
+                query: query,
+                parentItem: OPENCTX_PROVIDER,
+            },
+            data: {
+                providers: [],
+                items,
+            },
+        },
+    }
+}
+
+export const OpenctxNoQueryLoading: StoryObj<typeof MentionMenu> = openCtxStory('', undefined)
+export const OpenctxNoQueryNoMatches: StoryObj<typeof MentionMenu> = openCtxStory('', [])
+export const OpenctxNoQueryMatches: StoryObj<typeof MentionMenu> = openCtxStory('', ['a', 'b', 'c'])
+export const OpenctxNoMatches: StoryObj<typeof MentionMenu> = openCtxStory('missing', [])
+export const OpenctxMatches: StoryObj<typeof MentionMenu> = openCtxStory('b', ['a', 'b', 'c'])

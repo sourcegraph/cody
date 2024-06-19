@@ -1,3 +1,4 @@
+import type { MetaResult } from '@openctx/client'
 import { openCtx } from '../context/openctx/api'
 import { logDebug } from '../logger'
 
@@ -60,6 +61,17 @@ export async function allMentionProvidersMetadata(): Promise<ContextMentionProvi
     return items
 }
 
+export function openCtxProviderMetadata(
+    meta: MetaResult & { providerUri: string }
+): ContextMentionProviderMetadata {
+    return {
+        id: meta.providerUri,
+        title: meta.name,
+        queryLabel: meta.mentions?.label ?? 'Search...',
+        emptyLabel: 'No results',
+    }
+}
+
 async function openCtxMentionProviders(): Promise<ContextMentionProviderMetadata[]> {
     const client = openCtx.client
     if (!client) {
@@ -71,12 +83,7 @@ async function openCtxMentionProviders(): Promise<ContextMentionProviderMetadata
 
         return providers
             .filter(provider => !!provider.mentions)
-            .map(provider => ({
-                id: provider.providerUri,
-                title: provider.name,
-                queryLabel: provider.mentions?.label ?? 'Search...',
-                emptyLabel: 'No results',
-            }))
+            .map(openCtxProviderMetadata)
             .sort((a, b) => (a.title > b.title ? 1 : -1))
     } catch (error) {
         logDebug('openctx', `Failed to fetch OpenCtx providers: ${error}`)
