@@ -157,6 +157,10 @@ export class FixupController
             editor = await vscode.window.showTextDocument(task.fixupFile.uri)
         }
 
+        if (task.deleteFileOnUndo && task.destinationFile) {
+            await vscode.workspace.fs.delete(task.destinationFile)
+        }
+
         const replacementText = task.replacement
         if (!replacementText) {
             return
