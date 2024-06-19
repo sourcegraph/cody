@@ -1,5 +1,5 @@
 @file:Suppress("unused", "ConstPropertyName")
-package com.sourcegraph.cody.protocol_generated
+package com.sourcegraph.cody.protocol_generated;
 
 object Constants {
   const val paused = "paused"
