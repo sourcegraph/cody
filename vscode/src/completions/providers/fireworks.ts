@@ -237,7 +237,7 @@ class FireworksProvider extends Provider {
                         'python',
                     ].includes(languageId)
                 ) {
-                    return FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID
+                    return FIREWORKS_FIM_LANG_SPECIFIC_MODEL_MIXTRAL
                 }
                 return 'starcoder-hybrid'
             }
