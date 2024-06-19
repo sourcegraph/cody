@@ -20,15 +20,16 @@ export async function anthropicChatClient(
 ): Promise<void> {
     const log = logger?.startCompletion(params, completionsEndpoint)
     if (!params.model || !params.messages) {
-        log?.onError('No model or messages')
-        throw new Error('No model or messages')
+        throw new Error('Anthropic Client: No model or messages')
     }
 
     const config = getCompletionsModelConfig(params.model)
     const model = config?.model ?? params.model
     const apiKey = config?.key
+    if (!apiKey) {
+        throw new Error('Anthropic Client: No API key')
+    }
 
-    // Update the host if it's different from the current one.
     const anthropic = new Anthropic({ apiKey })
     const result = {
         completion: '',
