@@ -110,11 +110,11 @@ export async function start(
         const endpoint = config.get<string>('cody.serverEndpoint')
 
         if (endpoint) {
-            localStorage.saveEndpoint(endpoint)
+            await localStorage.saveEndpoint(endpoint)
             const token = config.get<string>('cody.accessToken')
 
             if (token) {
-                secretStorage.storeToken(endpoint, token)
+                await secretStorage.storeToken(endpoint, token)
             }
         }
     }

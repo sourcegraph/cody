@@ -2,13 +2,17 @@ import { URI } from 'vscode-uri'
 import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
-    type ChatMessage,
     type Model,
+    type ChatMessage,
     type ClientStateForWebview,
+    type ContextItemRepository,
+    type ContextItem,
+    ContextItemSource,
     isErrorLike,
     PromptString,
-    setDisplayPathEnvInfo,
+    createRemoteFileURI,
     MentionQueryResolutionMode,
+    setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
 
 import { Chat, type UserAccountInfo } from '@sourcegraph/vscode-cody/webviews/Chat'
@@ -23,7 +27,10 @@ import {
 } from '@sourcegraph/vscode-cody/webviews/utils/telemetry'
 import { WithContextProviders } from '@sourcegraph/vscode-cody/webviews/mentions/providers'
 import { ChatMentionContext } from '@sourcegraph/vscode-cody/webviews/promptEditor/plugins/atMentions/chatContextClient'
-import { ClientStateContextProvider, useClientActionDispatcher, } from '@sourcegraph/vscode-cody/webviews/client/clientState'
+import {
+    ClientStateContextProvider,
+    useClientActionDispatcher,
+} from '@sourcegraph/vscode-cody/webviews/client/clientState'
 
 import { useWebAgentClient } from './Provider';
 
@@ -56,6 +63,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
         client
     } = useWebAgentClient()
 
+    const { initialContext } = useWebAgentClient()
     const rootElementRef = useRef<HTMLDivElement>(null)
 
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
@@ -63,10 +71,6 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [userAccountInfo, setUserAccountInfo] = useState<UserAccountInfo>()
     const [chatModels, setChatModels] = useState<Model[]>()
-
-    const [clientState, setClientState] = useState<ClientStateForWebview>({
-        initialContext: [],
-    })
 
     const dispatchClientAction = useClientActionDispatcher()
 
@@ -101,9 +105,6 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                         user: message.authStatus,
                     })
                     break
-                case 'clientState':
-                    setClientState(message.value)
-                    break
                 case 'clientAction':
                     dispatchClientAction(message)
                     break
@@ -114,7 +115,6 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
     useEffect(() => {
         // Notify the extension host that we are ready to receive events.
         vscodeAPI.postMessage({ command: 'ready' })
-
     }, [vscodeAPI])
 
     // Deprecated V1 telemetry
@@ -142,6 +142,39 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
         () => ({ chatModels, onCurrentChatModelChange }),
         [chatModels, onCurrentChatModelChange]
     )
+
+    const clientState: ClientStateForWebview = useMemo<ClientStateForWebview>(() => {
+        const { repositories = [], fileURL } = initialContext ?? {}
+
+        if (repositories.length === 0) {
+            return { initialContext: [] }
+        }
+
+        const mentions: ContextItem[] = repositories.map<ContextItemRepository>(repo => ({
+            type: 'repository',
+            id: repo.id,
+            name: repo.name,
+            repoID: repo.id,
+            repoName: repo.name,
+            uri: URI.parse(`repo:${repo.name}`),
+            content: null,
+            source: ContextItemSource.Initial,
+            icon: 'folder',
+        }))
+
+        if (fileURL) {
+            mentions.push({
+                type: 'file',
+                isIgnored: false,
+                uri: createRemoteFileURI(repositories[0].name, fileURL),
+                source: ContextItemSource.Initial,
+            })
+        }
+
+        return {
+            initialContext: mentions
+        }
+    }, [initialContext])
 
     return (
         <div className={className} data-cody-web-chat={true} ref={rootElementRef}>
