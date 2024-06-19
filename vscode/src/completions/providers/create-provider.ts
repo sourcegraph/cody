@@ -145,8 +145,8 @@ export async function createProviderConfig(
             case 'google':
                 if (authStatus.configOverwrites.completionModel?.includes('claude')) {
                     return createAnthropicProviderConfig({
-                        client,
-                        model,
+                        client, // Model name for google provider is a deployment name. It shouldn't appear in logs.
+                        model: undefined,
                     })
                 }
                 logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
