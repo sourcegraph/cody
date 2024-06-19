@@ -1,7 +1,7 @@
 :root {
-    --cell-spacing-y: 10px;
-    --cell-spacing-x: 15px;
-    --cell-internal-gap: 12px;
+    --cell-spacing-y: 8px;
+    --cell-spacing-x: 12px;
+    --cell-internal-gap: 8px;
 }
 
 .container {
@@ -13,4 +13,8 @@
 .content {
     flex: 1 0;
     overflow: hidden;
+}
+
+.gutter {
+    padding-top: 3px;
 }

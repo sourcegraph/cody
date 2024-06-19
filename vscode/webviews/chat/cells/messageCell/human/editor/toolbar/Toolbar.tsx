@@ -8,7 +8,6 @@ import { ModelSelectField } from '../../../../../../components/modelSelectField/
 import { ToolbarButton } from '../../../../../../components/shadcn/ui/toolbar'
 import { useChatModelContext } from '../../../../../models/chatModelContext'
 import { SubmitButton, type State as SubmitButtonState } from './SubmitButton'
-import styles from './Toolbar.module.css'
 
 /**
  * The toolbar for the human message editor.
@@ -63,25 +62,31 @@ export const Toolbar: FunctionComponent<{
             role="toolbar"
             aria-hidden={hidden}
             hidden={hidden}
-            className={clsx(styles.container, className)}
+            className={clsx('tw-flex tw-items-center tw-ml-[-3px]', className)}
             onMouseDown={onMaybeGapClick}
             onClick={onMaybeGapClick}
         >
-            {onMentionClick && (
-                <ToolbarButton
-                    variant="secondary"
-                    tooltip={
-                        <>
-                            Add files and other context <Kbd macOS="@" linuxAndWindows="@" />
-                        </>
-                    }
-                    iconStart={AtSignIcon}
-                    onClick={onMentionClick}
-                    aria-label="Add context"
-                />
-            )}
-            <ModelSelectFieldToolbarItem userInfo={userInfo} focusEditor={focusEditor} />
-            <div className={styles.spacer} />
+            <div className="tw-flex tw-gap-2 tw-items-center">
+                {onMentionClick && (
+                    <span>
+                        <ToolbarButton
+                            variant="secondary"
+                            tooltip={
+                                <>
+                                    Add files and other context <Kbd macOS="@" linuxAndWindows="@" />
+                                </>
+                            }
+                            iconStart={AtSignIcon}
+                            onClick={onMentionClick}
+                            aria-label="Add context"
+                        />
+                    </span>
+                )}
+                <span>
+                    <ModelSelectFieldToolbarItem userInfo={userInfo} focusEditor={focusEditor} />
+                </span>
+            </div>
+            <div className="tw-flex-1" />
             <SubmitButton
                 onClick={onSubmitClick}
                 isEditorFocused={isEditorFocused}
@@ -111,16 +116,13 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
         onCurrentChatModelChange &&
         userInfo &&
         userInfo.isDotComUser && (
-            <>
-                <div className="tw-ml-[5px] tw-mr-[5px] tw-border-l-[1px] tw-border-white tw-h-6 tw-opacity-10" />
-                <ModelSelectField
-                    models={chatModels}
-                    onModelSelect={onModelSelect}
-                    userInfo={userInfo}
-                    onCloseByEscape={focusEditor}
-                    className={className}
-                />
-            </>
+            <ModelSelectField
+                models={chatModels}
+                onModelSelect={onModelSelect}
+                userInfo={userInfo}
+                onCloseByEscape={focusEditor}
+                className={className}
+            />
         )
     )
 }

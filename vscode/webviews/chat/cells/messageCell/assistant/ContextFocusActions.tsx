@@ -82,7 +82,7 @@ export const ContextFocusActions: FunctionComponent<{
         [humanMessage, telemetryRecorder, logRerunWithDifferentContext, initialContextEventMetadata]
     )
     return actions.length > 0 ? (
-        <menu className={clsx('tw-flex tw-gap-2 tw-text-sm tw-text-muted-foreground', className)}>
+        <menu className={clsx('tw-flex tw-gap-1 tw-text-sm tw-text-muted-foreground', className)}>
             <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-x-4 tw-gap-y-2">
                 <h3 className="tw-flex tw-items-center tw-gap-3">Try again with different context</h3>
                 <ul className="tw-whitespace-nowrap tw-flex tw-gap-2 tw-flex-wrap">
