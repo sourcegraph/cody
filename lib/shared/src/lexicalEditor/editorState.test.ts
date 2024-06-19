@@ -1,17 +1,14 @@
 import type { SerializedLexicalNode, SerializedRootNode } from 'lexical'
 import { describe, expect, test } from 'vitest'
 import { URI } from 'vscode-uri'
-import { isWindows } from '../common/platform'
+import { ContextItemSource } from '../codebase-context/messages'
 import { PromptString, ps } from '../prompt/prompt-string'
+import { lexicalEditorStateFromPromptString, textContentFromSerializedLexicalNode } from './editorState'
 import {
-    STATE_VERSION_CURRENT,
-    type SerializedPromptEditorState,
-    lexicalEditorStateFromPromptString,
-    textContentFromSerializedLexicalNode,
-} from './editorState'
-import { CONTEXT_ITEM_MENTION_NODE_TYPE } from './nodes'
-
-const prefix = isWindows() ? '\\' : ''
+    FILE_MENTION_EDITOR_STATE_FIXTURE,
+    OLD_TEXT_FILE_MENTION_EDITOR_STATE_FIXTURE,
+} from './fixtures'
+import type { SerializedContextItemMentionNode } from './nodes'
 
 describe('textContentFromSerializedLexicalNode', () => {
     test('empty root', () => {
@@ -27,13 +24,22 @@ describe('textContentFromSerializedLexicalNode', () => {
         ).toEqual('')
     })
 
-    test('fixture', () => {
+    test('fixture from chip mentions', () => {
         expect(
             textContentFromSerializedLexicalNode(
                 FILE_MENTION_EDITOR_STATE_FIXTURE.lexicalEditorState.root,
-                annotateMentionNodes
+                wrapMention
             )
-        ).toBe('What does <<@Symbol1>> in <<@dir/dir/file-a-1.py>> do? Also use <<@README.md:2-8>>.')
+        ).toBe('What does <<Symbol1>> in <<file-a-1.py>> do? Also use <<README.md:2-8>>.')
+    })
+
+    test('fixture from text mentions', () => {
+        expect(
+            textContentFromSerializedLexicalNode(
+                OLD_TEXT_FILE_MENTION_EDITOR_STATE_FIXTURE.lexicalEditorState.root,
+                wrapMention
+            )
+        ).toBe('What does <<Symbol1>> in <<file-a-1.py>> do? Also use <<README.md:2-8>>.')
     })
 })
 
@@ -57,18 +63,13 @@ describe('lexicalEditorStateFromPromptString', () => {
                             version: 1,
                         },
                         {
-                            detail: 1,
-                            format: 0,
-                            mode: 'token',
-                            style: '',
-                            text: `@${prefix}foo.go:3-5`,
                             type: 'contextItemMention',
                             version: 1,
                             contextItem: {
                                 type: 'file',
                                 uri: 'file:///foo.go',
                                 content: undefined,
-                                source: 'user',
+                                source: ContextItemSource.User,
                                 range: {
                                     start: {
                                         line: 2,
@@ -81,7 +82,8 @@ describe('lexicalEditorStateFromPromptString', () => {
                                 },
                             },
                             isFromInitialContext: false,
-                        },
+                            text: 'foo.go:3-5',
+                        } satisfies SerializedContextItemMentionNode,
                         {
                             detail: 0,
                             format: 0,
@@ -92,11 +94,6 @@ describe('lexicalEditorStateFromPromptString', () => {
                             version: 1,
                         },
                         {
-                            detail: 1,
-                            format: 0,
-                            mode: 'token',
-                            style: '',
-                            text: `@${prefix}bar.go`,
                             type: 'contextItemMention',
                             version: 1,
                             contextItem: {
@@ -104,10 +101,11 @@ describe('lexicalEditorStateFromPromptString', () => {
                                 uri: 'file:///bar.go',
                                 content: undefined,
                                 range: undefined,
-                                source: 'editor',
+                                source: ContextItemSource.Editor,
                             },
                             isFromInitialContext: false,
-                        },
+                            text: 'bar.go',
+                        } satisfies SerializedContextItemMentionNode,
                         {
                             detail: 0,
                             format: 0,
@@ -131,135 +129,12 @@ describe('lexicalEditorStateFromPromptString', () => {
             type: 'root',
             version: 1,
         })
-        expect(textContentFromSerializedLexicalNode(editorState.root, annotateMentionNodes)).toBe(
-            `What are <<@${prefix}foo.go:3-5>> and <<@${prefix}bar.go>> about?`
+        expect(textContentFromSerializedLexicalNode(editorState.root, wrapMention)).toBe(
+            'What are <<foo.go:3-5>> and <<bar.go>> about?'
         )
     })
 })
 
-const FILE_MENTION_EDITOR_STATE_FIXTURE: SerializedPromptEditorState = {
-    v: STATE_VERSION_CURRENT,
-    lexicalEditorState: {
-        root: {
-            children: [
-                {
-                    children: [
-                        {
-                            detail: 0,
-                            format: 0,
-                            mode: 'normal',
-                            style: '',
-                            text: 'What does ',
-                            type: 'text',
-                            version: 1,
-                        },
-                        {
-                            detail: 1,
-                            format: 0,
-                            mode: 'token',
-                            style: '',
-                            text: '@Symbol1',
-                            type: 'contextItemMention',
-                            version: 1,
-                            contextItem: {
-                                type: 'symbol',
-                                uri: 'file:///a/b/file1.go',
-                                range: {
-                                    start: {
-                                        line: 2,
-                                        character: 13,
-                                    },
-                                    end: {
-                                        line: 4,
-                                        character: 1,
-                                    },
-                                },
-                                symbolName: 'Symbol1',
-                                kind: 'function',
-                            },
-                        },
-                        {
-                            detail: 0,
-                            format: 0,
-                            mode: 'normal',
-                            style: '',
-                            text: ' in ',
-                            type: 'text',
-                            version: 1,
-                        },
-                        {
-                            detail: 1,
-                            format: 0,
-                            mode: 'token',
-                            style: '',
-                            text: '@dir/dir/file-a-1.py',
-                            type: 'contextItemMention',
-                            version: 1,
-                            contextItem: {
-                                type: 'file',
-                                uri: 'file:///dir/dir/file-a-1.py',
-                            },
-                        },
-                        {
-                            detail: 0,
-                            format: 0,
-                            mode: 'normal',
-                            style: '',
-                            text: ' do? Also use ',
-                            type: 'text',
-                            version: 1,
-                        },
-                        {
-                            detail: 1,
-                            format: 0,
-                            mode: 'token',
-                            style: '',
-                            text: '@README.md:2-8',
-                            type: 'contextItemMention',
-                            version: 1,
-                            contextItem: {
-                                type: 'file',
-                                uri: 'file:///dir/dir/file-a-1.py',
-                                range: {
-                                    start: {
-                                        line: 1,
-                                        character: 0,
-                                    },
-                                    end: {
-                                        line: 8,
-                                        character: 0,
-                                    },
-                                },
-                            },
-                        },
-                        {
-                            detail: 0,
-                            format: 0,
-                            mode: 'normal',
-                            style: '',
-                            text: '.',
-                            type: 'text',
-                            version: 1,
-                        },
-                    ],
-                    direction: 'ltr',
-                    format: '',
-                    indent: 0,
-                    type: 'paragraph',
-                    version: 1,
-                } as SerializedLexicalNode,
-            ],
-            direction: 'ltr',
-            format: '',
-            indent: 0,
-            type: 'root',
-            version: 1,
-        },
-    },
-}
-
-function annotateMentionNodes(node: SerializedLexicalNode): string | undefined {
-    return 'text' in node && node.type === CONTEXT_ITEM_MENTION_NODE_TYPE
-        ? `<<${node.text}>>`
-        : undefined
+function wrapMention(text: string): string | undefined {
+    return `<<${text}>>`
 }

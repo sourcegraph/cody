@@ -33,6 +33,7 @@ describe('[getInlineCompletions] completion event', () => {
                     {
                         completion,
                         stopReason: 'unit-test',
+                        resolvedModel: 'sourcegraph/gateway-model',
                     },
                 ],
                 additionalParams
@@ -105,6 +106,7 @@ describe('[getInlineCompletions] completion event', () => {
                   "multilineMode": "block",
                   "providerIdentifier": "anthropic",
                   "providerModel": "claude-instant-1.2",
+                  "resolvedModel": "sourcegraph/gateway-model",
                   "source": "Network",
                   "testFile": false,
                   "traceId": undefined,
@@ -162,6 +164,7 @@ describe('[getInlineCompletions] completion event', () => {
                   "multilineMode": null,
                   "providerIdentifier": "anthropic",
                   "providerModel": "claude-instant-1.2",
+                  "resolvedModel": "sourcegraph/gateway-model",
                   "source": "Network",
                   "testFile": false,
                   "traceId": undefined,
@@ -190,6 +193,13 @@ describe('[getInlineCompletions] completion event', () => {
             )
 
             expect(eventWithoutTimestamps.items?.some(item => item.insertText)).toBe(true)
+        })
+        it('does not log `inlineCompletionItemContext` for enterprise users', async () => {
+            const eventWithoutTimestamps = await getAnalyticsEvent(
+                'function foo() {\n  return█}',
+                '"foo"'
+            )
+            expect(eventWithoutTimestamps.params?.inlineCompletionItemContext).toBeUndefined()
         })
     })
 })

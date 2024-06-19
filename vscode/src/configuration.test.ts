@@ -84,6 +84,10 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.advanced.agent.ide':
                         return undefined
+                    case 'cody.advanced.agent.ide.version':
+                        return undefined
+                    case 'cody.advanced.agent.extension.version':
+                        return undefined
                     case 'cody.internal.unstable':
                         return false
                     case 'cody.experimental.chatContextRanker':

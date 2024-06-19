@@ -81,6 +81,8 @@ export interface Configuration {
      */
     isRunningInsideAgent?: boolean
     agentIDE?: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
+    agentIDEVersion?: string
+    agentExtensionVersion?: string
     autocompleteTimeouts: AutocompleteTimeouts
     autocompleteFirstCompletionTimeout: number
 

@@ -1,5 +1,6 @@
 import {
     Model,
+    ModelUIGroup,
     ModelUsage,
     ModelsService,
     RestClient,
@@ -65,7 +66,9 @@ describe('syncModels', () => {
             new Model(
                 authStatus.configOverwrites.chatModel,
                 [ModelUsage.Chat, ModelUsage.Edit],
-                getEnterpriseContextWindow(chatModel, authStatus.configOverwrites)
+                getEnterpriseContextWindow(chatModel, authStatus.configOverwrites),
+                undefined,
+                ModelUIGroup.Enterprise
             ),
         ])
     })

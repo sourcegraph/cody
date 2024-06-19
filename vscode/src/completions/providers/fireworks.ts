@@ -4,7 +4,6 @@ import {
     type AutocompleteTimeouts,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
-    type CompletionResponse,
     type CompletionResponseGenerator,
     CompletionStopReason,
     type ConfigurationWithAccessToken,
@@ -26,11 +25,15 @@ import {
     tracer,
 } from '@sourcegraph/cody-shared'
 import { fetch } from '@sourcegraph/cody-shared'
-import { getLanguageConfig } from '../../tree-sitter/language'
+import type * as vscode from 'vscode'
+import { type LanguageConfig, getLanguageConfig } from '../../tree-sitter/language'
 import { getSuffixAfterFirstNewline } from '../text-processing'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
+import * as fimPromptUtils from './fim-prompt-utils'
+import type { FIMModelSpecificPromptExtractor } from './fim-prompt-utils'
 
 import { SpanStatusCode } from '@opentelemetry/api'
+import type { CompletionResponseWithMetaData } from '@sourcegraph/cody-shared/src/inferenceClient/misc'
 import { logDebug } from '../../log'
 import { createRateLimitErrorFromResponse } from '../client'
 import { TriggerKind } from '../get-inline-completions'
@@ -67,23 +70,17 @@ const PROVIDER_IDENTIFIER = 'fireworks'
 
 const EOT_STARCODER = '<|endoftext|>'
 const EOT_LLAMA_CODE = ' <EOT>'
+const EOT_DEEPSEEK_CODE = '<|eos_token|>'
 
 // Fireworks hosted fine tuned model on py, tsx, jsx and starcoder-hybrid on other langs.
+export const FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID_WITH_200MS_DELAY =
+    'fim-fine-tuned-model-hybrid-200ms-delay'
 export const FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID = 'fim-fine-tuned-model-hybrid'
-
-// Fireworks hosted model identifier strings
-export const FIREWORKS_FIM_FINE_TUNED_MODEL_1 = 'fim-fine-tuned-model-variant-1'
-export const FIREWORKS_FIM_FINE_TUNED_MODEL_2 = 'fim-fine-tuned-model-variant-2'
-export const FIREWORKS_FIM_FINE_TUNED_MODEL_3 = 'fim-fine-tuned-model-variant-3'
-export const FIREWORKS_FIM_FINE_TUNED_MODEL_4 = 'fim-fine-tuned-model-variant-4'
-
-const FIREWORKS_FIM_FINE_TUNED_MODEL_FAMILY = [
-    FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID,
-    FIREWORKS_FIM_FINE_TUNED_MODEL_1,
-    FIREWORKS_FIM_FINE_TUNED_MODEL_2,
-    FIREWORKS_FIM_FINE_TUNED_MODEL_3,
-    FIREWORKS_FIM_FINE_TUNED_MODEL_4,
-]
+export const FIREWORKS_FIM_LANG_SPECIFIC_MODEL_MIXTRAL = 'fim-lang-specific-model-mixtral'
+// Huggingface link (https://huggingface.co/deepseek-ai/deepseek-coder-1.3b-base)
+export const DEEPSEEK_CODER_1P3_B = 'deepseek-coder-1p3b'
+// Huggingface link (https://huggingface.co/deepseek-ai/deepseek-coder-6.7b-base)
+export const DEEPSEEK_CODER_7B = 'deepseek-coder-7b'
 
 // Model identifiers can be found in https://docs.fireworks.ai/explore/ and in our internal
 // conversations
@@ -101,12 +98,11 @@ const MODEL_MAP = {
     // Fine-tuned model hybrid identifier
     [FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID]:
         'fireworks/accounts/sourcegraph/models/finetuned-fim-lang-all-model-mixtral-8x7b',
-
-    // Fine-tuned model mapping
-    [FIREWORKS_FIM_FINE_TUNED_MODEL_1]: FIREWORKS_FIM_FINE_TUNED_MODEL_1,
-    [FIREWORKS_FIM_FINE_TUNED_MODEL_2]: FIREWORKS_FIM_FINE_TUNED_MODEL_2,
-    [FIREWORKS_FIM_FINE_TUNED_MODEL_3]: FIREWORKS_FIM_FINE_TUNED_MODEL_3,
-    [FIREWORKS_FIM_FINE_TUNED_MODEL_4]: FIREWORKS_FIM_FINE_TUNED_MODEL_4,
+    [FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID_WITH_200MS_DELAY]:
+        'fireworks/accounts/sourcegraph/models/finetuned-fim-lang-all-model-mixtral-8x7b',
+    [FIREWORKS_FIM_LANG_SPECIFIC_MODEL_MIXTRAL]: FIREWORKS_FIM_LANG_SPECIFIC_MODEL_MIXTRAL,
+    [DEEPSEEK_CODER_1P3_B]: 'fireworks/accounts/sourcegraph/models/custom-deepseek-1p3b-base-hf-version',
+    [DEEPSEEK_CODER_7B]: 'fireworks/accounts/sourcegraph/models/deepseek-coder-7b-base',
 }
 
 type FireworksModel =
@@ -134,12 +130,10 @@ function getMaxContextTokens(model: FireworksModel): number {
             // compare the results
             return 2048
         case FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID:
+        case FIREWORKS_FIM_LANG_SPECIFIC_MODEL_MIXTRAL:
+        case DEEPSEEK_CODER_1P3_B:
+        case DEEPSEEK_CODER_7B: {
             return 2048
-        case FIREWORKS_FIM_FINE_TUNED_MODEL_1:
-        case FIREWORKS_FIM_FINE_TUNED_MODEL_2:
-        case FIREWORKS_FIM_FINE_TUNED_MODEL_3:
-        case FIREWORKS_FIM_FINE_TUNED_MODEL_4: {
-            return 3072
         }
         default:
             return 1200
@@ -160,6 +154,10 @@ class FireworksProvider extends Provider {
     private authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>
     private isLocalInstance: boolean
     private fireworksConfig?: ConfigurationWithAccessToken['autocompleteExperimentalFireworksOptions']
+    private promptExtractor: FIMModelSpecificPromptExtractor
+    // Todo: This variable is used to introduce an additional delay to collect the data on impact of latency on user experience.
+    // Todo: Delete this variable once the data is collected.
+    private shouldAddArtificialDelayForExperiment = false
 
     constructor(
         options: ProviderOptions,
@@ -167,7 +165,11 @@ class FireworksProvider extends Provider {
     ) {
         super(options)
         this.timeouts = timeouts
-        this.model = this.adjustModelIdentifierForFinetunedHybrid(model, options.document.languageId)
+        if (model === FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID_WITH_200MS_DELAY) {
+            this.shouldAddArtificialDelayForExperiment = true
+        }
+        this.model = this.adjustModelIdentifier(model, options.document.languageId)
+        this.promptExtractor = this.getFIMPromptExtractorForModel()
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)
         this.client = client
         this.authStatus = authStatus
@@ -196,15 +198,45 @@ class FireworksProvider extends Provider {
         }
     }
 
-    private adjustModelIdentifierForFinetunedHybrid(
-        model: FireworksModel,
-        languageId: string
-    ): FireworksModel {
+    private getFIMPromptExtractorForModel(): FIMModelSpecificPromptExtractor {
+        if (isStarCoderFamily(this.model)) {
+            return new fimPromptUtils.StarcoderPromptExtractor()
+        }
+        if (isLlamaCode(this.model)) {
+            return new fimPromptUtils.CodeLlamaPromptExtractor()
+        }
+        if (isFinetunedV1ModelFamily(this.model)) {
+            return new fimPromptUtils.FinetunedModelV1PromptExtractor()
+        }
+        if (isDeepSeekModelFamily(this.model)) {
+            return new fimPromptUtils.DeepSeekPromptExtractor()
+        }
+        console.error(
+            'Using default model prompt extractor, could not get prompt extractor for',
+            this.model
+        )
+        return new fimPromptUtils.DefaultModelPromptExtractor()
+    }
+
+    private adjustModelIdentifier(model: FireworksModel, languageId: string): FireworksModel {
         switch (model) {
-            case FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID: {
-                // The fine-tuned hybrid model is only deployed for TypeScriptReact, JavaScriptReact, and Python.
-                // For other languages, we use the current production model.
+            case FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID:
+            case FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID_WITH_200MS_DELAY: {
                 if (['typescriptreact', 'javascriptreact', 'python'].includes(languageId)) {
+                    return FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID
+                }
+                return 'starcoder-hybrid'
+            }
+            case FIREWORKS_FIM_LANG_SPECIFIC_MODEL_MIXTRAL: {
+                if (
+                    [
+                        'typescriptreact',
+                        'javascriptreact',
+                        'typescript',
+                        'javascript',
+                        'python',
+                    ].includes(languageId)
+                ) {
                     return FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID
                 }
                 return 'starcoder-hybrid'
@@ -225,11 +257,7 @@ class FireworksProvider extends Provider {
 
         const languageConfig = getLanguageConfig(this.options.document.languageId)
 
-        // In StarCoder we have a special token to announce the path of the file
-        if (
-            !isStarCoderFamily(this.model) &&
-            !FIREWORKS_FIM_FINE_TUNED_MODEL_FAMILY.includes(this.model)
-        ) {
+        if (isLlamaCode(this.model)) {
             intro.push(ps`Path: ${PromptString.fromDisplayPath(this.options.document.uri)}`)
         }
 
@@ -242,39 +270,28 @@ class FireworksProvider extends Provider {
                     intro.push(
                         ps`Additional documentation for \`${contextPrompts.symbol}\`:\n\n${contextPrompts.content}`
                     )
-                } else if (FIREWORKS_FIM_FINE_TUNED_MODEL_FAMILY.includes(this.model)) {
-                    // Fine-tuned model have a additional <file_sep> tag.
-                    intro.push(
-                        ps`<file_sep>Here is a reference snippet of code from ${PromptString.fromDisplayPath(
-                            snippet.uri
-                        )}\n${contextPrompts.content}`
-                    )
                 } else {
                     intro.push(
-                        ps`Here is a reference snippet of code from ${PromptString.fromDisplayPath(
-                            snippet.uri
-                        )}:\n\n${contextPrompts.content}`
+                        this.promptExtractor.getContextPrompt({
+                            filename: snippet.uri as vscode.Uri,
+                            content: contextPrompts.content,
+                        })
                     )
                 }
             }
 
-            const introString = ps`${PromptString.join(
-                PromptString.join(intro, ps`\n\n`)
-                    .split('\n')
-                    .map(line => ps`${languageConfig ? languageConfig.commentStart : ps`// `}${line}`),
-                ps`\n`
-            )}\n`
+            const introString = this.getIntroString(intro, languageConfig)
 
             // We want to remove the same line suffix from a completion request since both StarCoder and Llama
             // code can't handle this correctly.
             const suffixAfterFirstNewline = getSuffixAfterFirstNewline(suffix)
 
-            const nextPrompt = this.createInfillingPrompt(
-                PromptString.fromDisplayPath(this.options.document.uri),
-                introString,
+            const nextPrompt = this.promptExtractor.getInfillingPrompt({
+                filename: PromptString.fromDisplayPath(this.options.document.uri),
+                intro: introString,
                 prefix,
-                suffixAfterFirstNewline
-            )
+                suffix: suffixAfterFirstNewline,
+            })
 
             if (nextPrompt.length >= this.promptChars) {
                 return prompt
@@ -284,6 +301,19 @@ class FireworksProvider extends Provider {
         }
 
         return prompt
+    }
+
+    private getIntroString(intro: PromptString[], languageConfig: LanguageConfig | null): PromptString {
+        if (isFinetunedV1ModelFamily(this.model) || isDeepSeekModelFamily(this.model)) {
+            // These model families take code from the context files without comments.
+            return ps`${PromptString.join(intro, ps`\n\n`)}\n`
+        }
+        return ps`${PromptString.join(
+            PromptString.join(intro, ps`\n\n`)
+                .split('\n')
+                .map(line => ps`${languageConfig ? languageConfig.commentStart : ps`// `}${line}`),
+            ps`\n`
+        )}\n`
     }
 
     public generateCompletions(
@@ -315,7 +345,7 @@ class FireworksProvider extends Provider {
 
         if (
             requestParams.model.includes('starcoder2') ||
-            FIREWORKS_FIM_FINE_TUNED_MODEL_FAMILY.includes(requestParams.model)
+            isFinetunedV1ModelFamily(requestParams.model)
         ) {
             requestParams.stopSequences = [
                 ...(requestParams.stopSequences || []),
@@ -326,6 +356,16 @@ class FireworksProvider extends Provider {
                 '<file_sep>',
             ]
         }
+        if (isDeepSeekModelFamily(requestParams.model)) {
+            requestParams.stopSequences = [
+                ...(requestParams.stopSequences || []),
+                '<｜fim▁begin｜>',
+                '<｜fim▁hole｜>',
+                '<｜fim▁end｜>',
+                '<|eos_token|>',
+            ]
+        }
+        // Add a condition for adding extra stop tokens here
 
         tracer?.params(requestParams)
 
@@ -366,28 +406,6 @@ class FireworksProvider extends Provider {
         return zipGenerators(completionsGenerators)
     }
 
-    private createInfillingPrompt(
-        filename: PromptString,
-        intro: PromptString,
-        prefix: PromptString,
-        suffix: PromptString
-    ): PromptString {
-        if (isStarCoderFamily(this.model)) {
-            // c.f. https://huggingface.co/bigcode/starcoder#fill-in-the-middle
-            // c.f. https://arxiv.org/pdf/2305.06161.pdf
-            return ps`<filename>${filename}<fim_prefix>${intro}${prefix}<fim_suffix>${suffix}<fim_middle>`
-        }
-        if (isLlamaCode(this.model)) {
-            // c.f. https://github.com/facebookresearch/codellama/blob/main/llama/generation.py#L402
-            return ps`<PRE> ${intro}${prefix} <SUF>${suffix} <MID>`
-        }
-        if (FIREWORKS_FIM_FINE_TUNED_MODEL_FAMILY.includes(this.model)) {
-            return ps`${intro}<fim_suffix>${filename}\n${suffix}<fim_prefix>${prefix}<fim_middle>`
-        }
-        console.error('Could not generate infilling prompt for', this.model)
-        return ps`${intro}${prefix}`
-    }
-
     private postProcess = (content: string): string => {
         if (isStarCoderFamily(this.model)) {
             return content.replace(EOT_STARCODER, '')
@@ -395,9 +413,11 @@ class FireworksProvider extends Provider {
         if (isLlamaCode(this.model)) {
             return content.replace(EOT_LLAMA_CODE, '')
         }
-        if (FIREWORKS_FIM_FINE_TUNED_MODEL_FAMILY.includes(this.model)) {
-            // Finetuned models use the same tokens as the Starcoder family.
+        if (isFinetunedV1ModelFamily(this.model)) {
             return content.replace(EOT_STARCODER, '')
+        }
+        if (isDeepSeekModelFamily(this.model)) {
+            return content.replace(EOT_DEEPSEEK_CODE, '')
         }
         return content
     }
@@ -435,6 +455,19 @@ class FireworksProvider extends Provider {
         return tracer.startActiveSpan(
             `POST ${url}`,
             async function* (span): CompletionResponseGenerator {
+                if (self.shouldAddArtificialDelayForExperiment === true) {
+                    // Todo: Remove the condition after the experiment is complete and we have the relevant data points.
+                    // This delay introduced here is for the experimentation purpose to see the effect of latency on other metrics, such as CAR, wCAR, Retention, #Sugeestions etc.
+                    await new Promise(resolve => setTimeout(resolve, 200))
+                }
+                if (abortController.signal.aborted) {
+                    // return empty completion response and skip the HTTP request
+                    return {
+                        completion: '',
+                        stopReason: CompletionStopReason.RequestAborted,
+                    }
+                }
+
                 // Convert the SG instance messages array back to the original prompt
                 const prompt =
                     await requestParams.messages[0]!.text!.toFilteredString(contextFiltersProvider)
@@ -520,7 +553,8 @@ class FireworksProvider extends Provider {
                     )
                 }
 
-                let lastResponse: CompletionResponse | undefined
+                const resolvedModel = response.headers.get('x-cody-resolved-model') || undefined
+                let lastResponse: CompletionResponseWithMetaData | undefined
                 try {
                     const iterator = createSSEIterator(response.body)
                     let chunkIndex = 0
@@ -556,6 +590,7 @@ class FireworksProvider extends Provider {
                                 (lastResponse
                                     ? lastResponse.stopReason
                                     : CompletionStopReason.StreamingChunk),
+                            resolvedModel,
                         }
 
                         span.addEvent('yield', { stopReason: lastResponse.stopReason })
@@ -611,7 +646,7 @@ export function createProviderConfig({
 }: Omit<FireworksOptions, 'model' | 'maxContextTokens'> & {
     model: string | null
 }): ProviderConfig {
-    const resolvedModel =
+    const clientModel =
         model === null || model === ''
             ? 'starcoder-hybrid'
             : ['starcoder-hybrid', 'starcoder2-hybrid'].includes(model)
@@ -620,11 +655,11 @@ export function createProviderConfig({
                 ? (model as keyof typeof MODEL_MAP)
                 : null
 
-    if (resolvedModel === null) {
+    if (clientModel === null) {
         throw new Error(`Unknown model: \`${model}\``)
     }
 
-    const maxContextTokens = getMaxContextTokens(resolvedModel)
+    const maxContextTokens = getMaxContextTokens(clientModel)
 
     return {
         create(options: ProviderOptions) {
@@ -634,7 +669,7 @@ export function createProviderConfig({
                     id: PROVIDER_IDENTIFIER,
                 },
                 {
-                    model: resolvedModel,
+                    model: clientModel,
                     maxContextTokens,
                     timeouts,
                     ...otherOptions,
@@ -643,7 +678,7 @@ export function createProviderConfig({
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
         identifier: PROVIDER_IDENTIFIER,
-        model: resolvedModel,
+        model: clientModel,
     }
 }
 
@@ -653,6 +688,18 @@ function isStarCoderFamily(model: string): boolean {
 
 function isLlamaCode(model: string): boolean {
     return model.startsWith('llama-code')
+}
+
+function isFinetunedV1ModelFamily(model: string): boolean {
+    return [
+        FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID,
+        FIREWORKS_FIM_LANG_SPECIFIC_MODEL_MIXTRAL,
+        FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID_WITH_200MS_DELAY,
+    ].includes(model)
+}
+
+function isDeepSeekModelFamily(model: string): boolean {
+    return [DEEPSEEK_CODER_1P3_B, DEEPSEEK_CODER_7B].includes(model)
 }
 
 interface FireworksSSEData {
