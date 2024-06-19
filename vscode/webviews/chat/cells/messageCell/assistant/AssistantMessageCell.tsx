@@ -103,7 +103,7 @@ export const AssistantMessageCell: FunctionComponent<{
                 chatEnabled &&
                 showFeedbackButtons &&
                 feedbackButtonsOnSubmit && (
-                    <div className="tw-flex tw-items-center tw-pt-3 tw-divide-x tw-transition tw-divide-muted tw-opacity-65 hover:tw-opacity-100">
+                    <div className="tw-flex tw-items-center tw-pt-4 tw-divide-x tw-transition tw-divide-muted tw-opacity-80">
                         {showFeedbackButtons && feedbackButtonsOnSubmit && (
                             <FeedbackButtons
                                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
