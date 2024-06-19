@@ -127,7 +127,9 @@ export class InlineCompletionItemProvider
 
     private firstCompletionDecoration = new FirstCompletionDecorationHandler()
 
-    static async create(config: CodyCompletionItemProviderConfig): Promise<InlineCompletionItemProvider> {
+    static async create(
+        config: CodyCompletionItemProviderConfig
+    ): Promise<InlineCompletionItemProvider> {
         const provider = new InlineCompletionItemProvider(config)
 
         const chatHistory = (await localStorage.getChatHistory(config.authStatus))?.chat

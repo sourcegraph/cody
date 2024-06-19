@@ -1,21 +1,23 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
-import { CodyWebChat, ChatHistory, CodyWebChatProvider, getChatTitle } from '../lib'
+import { ChatHistory, CodyWebChat, CodyWebChatProvider, getChatTitle } from '../lib'
+import type { Repository } from '../lib/types'
 import styles from './App.module.css'
-import { Repository } from '../lib/types';
 
 let ACCESS_TOKEN = localStorage.getItem('accessToken')
 
 // Only for testing/demo purpose, in real-life usage consumer
 // should provide context repo information for Cody chat component
-const MOCK_DOT_COM_SOURCEGRAPH_REPOSITORY: Repository[] = [{
-    "id": "UmVwb3NpdG9yeTozNjgwOTI1MA==",
-    "name": "github.com/sourcegraph/sourcegraph"
-}]
+const MOCK_DOT_COM_SOURCEGRAPH_REPOSITORY: Repository[] = [
+    {
+        id: 'UmVwb3NpdG9yeTozNjgwOTI1MA==',
+        name: 'github.com/sourcegraph/sourcegraph',
+    },
+]
 
 const MOCK_INITIAL_DOT_COM_CONTEXT = {
     fileURL: '/internal/uploadstore/config.go',
-    repositories: MOCK_DOT_COM_SOURCEGRAPH_REPOSITORY
+    repositories: MOCK_DOT_COM_SOURCEGRAPH_REPOSITORY,
 }
 
 if (!ACCESS_TOKEN) {
@@ -30,40 +32,52 @@ export const App: FC = () => {
     return (
         <CodyWebChatProvider
             accessToken={ACCESS_TOKEN}
-            serverEndpoint='https://sourcegraph.com'
+            serverEndpoint="https://sourcegraph.com"
             initialContext={MOCK_INITIAL_DOT_COM_CONTEXT}
         >
             <div className={styles.root}>
                 <ChatHistory>
-                    { input =>
+                    {input => (
                         <ul className={styles.history}>
                             {input.loading && 'Loading...'}
                             {input.error && <p>Error: {input.error.message}</p>}
 
-                            {!input.loading && !input.error &&
+                            {!input.loading && !input.error && (
                                 <>
-                                    {input.chats.map(chat =>
-                                        <li key={chat.chatID} className={input.isSelectedChat(chat) ? styles.selected : ''}>
+                                    {input.chats.map(chat => (
+                                        <li
+                                            key={chat.chatID}
+                                            className={input.isSelectedChat(chat) ? styles.selected : ''}
+                                        >
                                             <button
+                                                type="button"
                                                 className={styles.select}
                                                 onClick={() => input.selectChat(chat)}
                                             >
                                                 {getChatTitle(chat)}
                                             </button>
-                                            <button className={styles.delete} onClick={() => input.deleteChat(chat)}>
-                                                <i className='codicon codicon-trash'/>
+                                            <button
+                                                type="button"
+                                                className={styles.delete}
+                                                onClick={() => input.deleteChat(chat)}
+                                            >
+                                                <i className="codicon codicon-trash" />
                                             </button>
                                         </li>
-                                    )}
+                                    ))}
                                     <li>
-                                        <button className={styles.createChat} onClick={() => input.createNewChat()}>
+                                        <button
+                                            type="button"
+                                            className={styles.createChat}
+                                            onClick={() => input.createNewChat()}
+                                        >
                                             Create new chat +
                                         </button>
                                     </li>
                                 </>
-                            }
+                            )}
                         </ul>
-                    }
+                    )}
                 </ChatHistory>
                 <CodyWebChat className={styles.container} />
             </div>

@@ -2,7 +2,7 @@ import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 import type { ContextItem } from '../../codebase-context/messages'
 import type { RangeData } from '../../common/range'
-import { isRemoteFileURI } from '../../common/uri';
+import { isRemoteFileURI } from '../../common/uri'
 
 /**
  * VS Code intentionally limits what `command:vscode.open?ARGS` can have for args (see
@@ -51,7 +51,7 @@ export function webviewOpenURIForContextItem(item: Pick<ContextItem, 'uri' | 'ra
     if (isRemoteFileURI(item.uri)) {
         return {
             href: `/${item.uri.authority}/${item.uri.path}}`,
-            target: '_blank'
+            target: '_blank',
         }
     }
     return { href: commandURIForVSCodeOpen(item.uri, item.range), target: undefined }

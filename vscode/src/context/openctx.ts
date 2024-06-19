@@ -5,8 +5,8 @@ import RemoteFileProvider from './openctx/remoteFileSearch'
 import RemoteRepositorySearch from './openctx/remoteRepositorySearch'
 import WebProvider from './openctx/web'
 
-import * as webGetter from "./get-openctx-lib.sync";
-import * as vsCodeGetter from "./get-openctx-lib.async";
+import * as vsCodeGetter from './get-openctx-lib.async'
+import * as webGetter from './get-openctx-lib.sync'
 
 // For production when INCLUDE_OPEN_CTX_LIB=true we include
 // openctx-vscode lib in sync mode that later it could be bundled

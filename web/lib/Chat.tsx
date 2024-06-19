@@ -1,17 +1,17 @@
-import { URI } from 'vscode-uri'
 import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { URI } from 'vscode-uri'
 
 import {
-    type Model,
     type ChatMessage,
     type ClientStateForWebview,
-    type ContextItemRepository,
     type ContextItem,
+    type ContextItemRepository,
     ContextItemSource,
-    isErrorLike,
+    MentionQueryResolutionMode,
+    type Model,
     PromptString,
     createRemoteFileURI,
-    MentionQueryResolutionMode,
+    isErrorLike,
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
 
@@ -21,18 +21,18 @@ import {
     ChatModelContextProvider,
 } from '@sourcegraph/vscode-cody/webviews/chat/models/chatModelContext'
 import {
-    createWebviewTelemetryRecorder,
-    createWebviewTelemetryService,
-    TelemetryRecorderContext
-} from '@sourcegraph/vscode-cody/webviews/utils/telemetry'
-import { WithContextProviders } from '@sourcegraph/vscode-cody/webviews/mentions/providers'
-import { ChatMentionContext } from '@sourcegraph/vscode-cody/webviews/promptEditor/plugins/atMentions/chatContextClient'
-import {
     ClientStateContextProvider,
     useClientActionDispatcher,
 } from '@sourcegraph/vscode-cody/webviews/client/clientState'
+import { WithContextProviders } from '@sourcegraph/vscode-cody/webviews/mentions/providers'
+import { ChatMentionContext } from '@sourcegraph/vscode-cody/webviews/promptEditor/plugins/atMentions/chatContextClient'
+import {
+    TelemetryRecorderContext,
+    createWebviewTelemetryRecorder,
+    createWebviewTelemetryService,
+} from '@sourcegraph/vscode-cody/webviews/utils/telemetry'
 
-import { useWebAgentClient } from './Provider';
+import { useWebAgentClient } from './Provider'
 
 import './styles.css'
 
@@ -40,13 +40,13 @@ import './styles.css'
 // the cody agent properly (completely mock data)
 setDisplayPathEnvInfo({
     isWindows: false,
-    workspaceFolders: [URI.file('/tmp/foo')]
+    workspaceFolders: [URI.file('/tmp/foo')],
 })
 
 // Setup mention plugin to request data with remote strategy
 // since Cody Web doesn't have access to local file system
 const WEB_MENTION_RESOLUTION = {
-    resolutionMode: MentionQueryResolutionMode.Remote
+    resolutionMode: MentionQueryResolutionMode.Remote,
 }
 
 export interface CodyWebChatProps {
@@ -58,10 +58,7 @@ export interface CodyWebChatProps {
 export const CodyWebChat: FC<CodyWebChatProps> = props => {
     const { className } = props
 
-    const {
-        vscodeAPI,
-        client
-    } = useWebAgentClient()
+    const { vscodeAPI, client } = useWebAgentClient()
 
     const { initialContext } = useWebAgentClient()
     const rootElementRef = useRef<HTMLDivElement>(null)
@@ -110,7 +107,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                     break
             }
         })
-    }, [vscodeAPI])
+    }, [vscodeAPI, dispatchClientAction])
 
     useEffect(() => {
         // Notify the extension host that we are ready to receive events.
@@ -172,7 +169,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
         }
 
         return {
-            initialContext: mentions
+            initialContext: mentions,
         }
     }, [initialContext])
 
@@ -202,7 +199,8 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                             </ChatModelContextProvider>
                         </TelemetryRecorderContext.Provider>
                     </ChatMentionContext.Provider>
-            )) : (
+                )
+            ) : (
                 <>Loading...</>
             )}
         </div>

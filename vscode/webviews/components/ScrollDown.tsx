@@ -14,7 +14,7 @@ interface ScrollDownProps {
  * there is more content if they scroll down.
  */
 export const ScrollDown: FC<ScrollDownProps> = props => {
-    const { scrollableParent , onClick: parentOnClick } = props
+    const { scrollableParent, onClick: parentOnClick } = props
     const [canScrollDown, setCanScrollDown] = useState(false)
 
     const scrollableRoot = scrollableParent ?? window.document.body
@@ -40,7 +40,7 @@ export const ScrollDown: FC<ScrollDownProps> = props => {
             scrollableRoot.removeEventListener('resize', handleScroll)
             resizeObserver.disconnect()
         }
-    }, [])
+    }, [scrollableRoot])
 
     const onClick = useCallback(() => {
         setCanScrollDown(false) // immediately hide to avoid jitter
@@ -48,7 +48,7 @@ export const ScrollDown: FC<ScrollDownProps> = props => {
             top: scrollableRoot.scrollHeight,
         })
         parentOnClick?.()
-    }, [parentOnClick])
+    }, [parentOnClick, scrollableRoot])
 
     return canScrollDown ? (
         <div className="tw-sticky tw-bottom-0 tw-w-full tw-text-center tw-py-4">

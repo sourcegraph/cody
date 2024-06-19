@@ -14,9 +14,9 @@ import {
 import { isSourcegraphToken } from '../chat/protocol'
 
 export interface AsyncMemento {
-    keys(): Promise<readonly string[]>;
-    get<T>(key: string, defaultValue: T): Promise<T>;
-    update(key: string, value: any): Promise<void>;
+    keys(): Promise<readonly string[]>
+    get<T>(key: string, defaultValue: T): Promise<T>
+    update(key: string, value: any): Promise<void>
 }
 
 function convertToAsyncStore(store: Memento | AsyncMemento): AsyncMemento {
@@ -31,7 +31,7 @@ function convertToAsyncStore(store: Memento | AsyncMemento): AsyncMemento {
             store.update(key, value)
 
             return Promise.resolve()
-        }
+        },
     }
 }
 
@@ -124,7 +124,10 @@ class LocalStorage {
     }
 
     public async getChatHistory(authStatus: AuthStatus): Promise<UserLocalHistory> {
-        const history = await this.storage.get<AccountKeyedChatHistory | null>(this.KEY_LOCAL_HISTORY, null)
+        const history = await this.storage.get<AccountKeyedChatHistory | null>(
+            this.KEY_LOCAL_HISTORY,
+            null
+        )
         const accountKey = getKeyForAuthStatus(authStatus)
 
         // Migrate chat history to set the `ChatMessage.model` property on each assistant message

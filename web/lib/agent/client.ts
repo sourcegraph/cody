@@ -1,11 +1,11 @@
+import type { ServerInfo } from '@sourcegraph/vscode-cody/src/jsonrpc/agent-protocol'
 import {
-    Trace,
     BrowserMessageReader,
     BrowserMessageWriter,
-    createMessageConnection,
     type MessageConnection,
+    Trace,
+    createMessageConnection,
 } from 'vscode-jsonrpc/browser'
-import type { ServerInfo } from '@sourcegraph/vscode-cody/src/jsonrpc/agent-protocol'
 
 // Inline Agent web worker since we're building cody/web package
 // in the cody repository and ship it via published npm package
@@ -39,7 +39,6 @@ export async function createAgentClient({
     debug = true,
     trace = false,
 }: AgentClientOptions): Promise<AgentClient> {
-
     // Run agent worker and set up a transport bridge between
     // main thread and web-worker thread via json-rpc protocol
     const worker = new AgentWorker() as Worker

@@ -157,7 +157,7 @@ export interface ContextItemOpenCtx extends ContextItemCommon {
  * A file (or a subset of a file given by a range) that is included as context in a chat message.
  */
 export interface ContextItemFile extends ContextItemCommon {
-    type: 'file',
+    type: 'file'
 }
 
 /**

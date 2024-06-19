@@ -85,6 +85,10 @@ import {
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
+import { countGeneratedCode } from '../utils'
+
+import { MentionQueryResolutionMode } from '@sourcegraph/cody-shared/src/mentions/query'
+
 import type { MessageErrorType } from '../MessageProvider'
 import { startClientStateBroadcaster } from '../clientStateBroadcaster'
 import { getChatContextItemsForMention } from '../context/chatContext'
@@ -95,7 +99,7 @@ import type {
     LocalEnv,
     WebviewMessage,
 } from '../protocol'
-import { countGeneratedCode } from '../utils'
+
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType, addWebviewViewHTML } from './ChatManager'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
@@ -104,7 +108,6 @@ import { SimpleChatModel, prepareChatMessage } from './SimpleChatModel'
 import { getChatPanelTitle, openFile } from './chat-helpers'
 import { getEnhancedContext } from './context'
 import { DefaultPrompter } from './prompt'
-import { MentionQueryResolutionMode } from '@sourcegraph/cody-shared/src/mentions/query';
 
 interface SimpleChatPanelProviderOptions {
     extensionUri: vscode.Uri
@@ -181,8 +184,12 @@ export class SimpleChatPanelProvider
         this.disposables = []
     }
 
-    static async create(options: Omit<SimpleChatPanelProviderOptions, 'chatModel'>): Promise<SimpleChatPanelProvider> {
-        const chatModelInstance = new SimpleChatModel(await chatModel.get(options.authProvider, options.models))
+    static async create(
+        options: Omit<SimpleChatPanelProviderOptions, 'chatModel'>
+    ): Promise<SimpleChatPanelProvider> {
+        const chatModelInstance = new SimpleChatModel(
+            await chatModel.get(options.authProvider, options.models)
+        )
 
         return new SimpleChatPanelProvider({ ...options, chatModel: chatModelInstance})
     }

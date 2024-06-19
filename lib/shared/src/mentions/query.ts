@@ -7,8 +7,8 @@ import {
 } from './api'
 
 export enum MentionQueryResolutionMode {
-    Local,
-    Remote
+    Local = 0,
+    Remote = 1,
 }
 
 /**

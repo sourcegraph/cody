@@ -4,7 +4,7 @@ import { SourcegraphBrowserCompletionsClient } from '@sourcegraph/cody-shared'
 
 import type { ExtensionApi } from './extension-api'
 import { type ExtensionClient, defaultVSCodeExtensionClient } from './extension-client'
-import { activate as activateCommon, PlatformContext } from './extension.common'
+import { type PlatformContext, activate as activateCommon } from './extension.common'
 import { WebSentryService } from './services/sentry/sentry.web'
 
 /**

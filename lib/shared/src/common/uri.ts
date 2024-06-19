@@ -7,7 +7,7 @@ export const SUPPORTED_URI_SCHEMAS = new Set([
     'untitled',
     'remote-file',
     'vscode-notebook',
-    'vscode-notebook-cell'
+    'vscode-notebook-cell',
 ])
 
 /**
@@ -34,7 +34,7 @@ interface ParsedRemoteFileData {
 export function parseRemoteFileURI(uri: URI): ParsedRemoteFileData {
     return {
         path: uri.path,
-        repository: uri.authority
+        repository: uri.authority,
     }
 }
 

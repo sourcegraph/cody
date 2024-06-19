@@ -387,7 +387,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
                       path: clientInfo.workspaceRootPath ?? undefined,
                   })
             try {
-
                 if (clientInfo.extensionConfiguration) {
                     vscode_shim.setExtensionConfiguration(clientInfo.extensionConfiguration)
                 }
@@ -1084,7 +1083,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
             if (localHistory != null) {
                 return Object.entries(localHistory?.chat)
-                    .filter(([chatID, chatTranscript]) => fullHistory || chatTranscript.interactions.length > 0)
+                    .filter(
+                        ([chatID, chatTranscript]) =>
+                            fullHistory || chatTranscript.interactions.length > 0
+                    )
                     .map(([chatID, chatTranscript]) => ({
                         chatID: chatID,
                         transcript: chatTranscript,
@@ -1094,18 +1096,19 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return []
         })
 
-        this.registerAuthenticatedRequest('chat/delete', async (params) => {
-            await vscode.commands.executeCommand<AuthStatus>('cody.chat.history.delete', { id: params.chatID })
+        this.registerAuthenticatedRequest('chat/delete', async params => {
+            await vscode.commands.executeCommand<AuthStatus>('cody.chat.history.delete', {
+                id: params.chatID,
+            })
 
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
             const localHistory = await chatHistory.getLocalHistory(authStatus)
 
             if (localHistory != null) {
-                return Object.entries(localHistory?.chat)
-                    .map(([chatID, chatTranscript]) => ({
-                        chatID: chatID,
-                        transcript: chatTranscript,
-                    }))
+                return Object.entries(localHistory?.chat).map(([chatID, chatTranscript]) => ({
+                    chatID: chatID,
+                    transcript: chatTranscript,
+                }))
             }
 
             return []
@@ -1413,7 +1416,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         return this.authStatus()
     }
 
-    private setActiveDocument (document: ProtocolTextDocument) {
+    private setActiveDocument(document: ProtocolTextDocument) {
         const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
         const textDocument = this.workspace.loadDocument(documentWithUri)
         vscode_shim.onDidOpenTextDocument.fire(textDocument)

@@ -62,11 +62,7 @@ export class ChatManager implements vscode.Disposable {
             guardrails
         )
 
-        return new ChatManager(
-            { extensionUri, ...options },
-            localEmbeddings,
-            chatPanelsManager
-        )
+        return new ChatManager({ extensionUri, ...options }, localEmbeddings, chatPanelsManager)
     }
 
     constructor(
@@ -198,7 +194,9 @@ export class ChatManager implements vscode.Disposable {
             hasV2Event: true,
         })
         telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked')
-        const historyJson = (await localStorage.getChatHistory(this.options.authProvider.getAuthStatus()))?.chat
+        const historyJson = (
+            await localStorage.getChatHistory(this.options.authProvider.getAuthStatus())
+        )?.chat
         const exportPath = await vscode.window.showSaveDialog({
             filters: { 'Chat History': ['json'] },
         })

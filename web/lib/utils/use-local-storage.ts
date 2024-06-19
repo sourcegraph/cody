@@ -1,4 +1,11 @@
-import { type Dispatch, type SetStateAction, useCallback, useRef, useSyncExternalStore, useMemo } from 'react'
+import {
+    type Dispatch,
+    type SetStateAction,
+    useCallback,
+    useMemo,
+    useRef,
+    useSyncExternalStore,
+} from 'react'
 
 import { isEqual } from 'lodash'
 
@@ -42,7 +49,11 @@ function notifyCallbacks(key: string): void {
 /**
  * A helper method to convert any `Storage` object into a React hook, such as `useLocalStorage`.
  */
-export const useStorageHook = <T>(storage: Storage, key: string, initialValue: T): [T, Dispatch<SetStateAction<T>>] => {
+export const useStorageHook = <T>(
+    storage: Storage,
+    key: string,
+    initialValue: T
+): [T, Dispatch<SetStateAction<T>>] => {
     const subscribe = useMemo(() => subscribeToStorage(key), [key])
     const getSnapshot = useMutableSnapshot<T>({ key, storage, initialValue })
 
@@ -56,7 +67,9 @@ export const useStorageHook = <T>(storage: Storage, key: string, initialValue: T
             // We need to cast here because T could be a function type itself,
             // but we cannot tell TypeScript that functions are not allowed as T.
             const valueToStore =
-                typeof value === 'function' ? (value as (previousValue: T) => T)(valueRef.current) : value
+                typeof value === 'function'
+                    ? (value as (previousValue: T) => T)(valueRef.current)
+                    : value
             storage.setItem(key, JSON.stringify(valueToStore))
             notifyCallbacks(key)
         },

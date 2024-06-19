@@ -14,25 +14,25 @@ import {
     type SymbolKind,
     TokenCounter,
     contextFiltersProvider,
+    createRemoteFileURI,
     displayPath,
+    graphqlClient,
     isCodyIgnoredFile,
     isDefined,
+    isErrorLike,
+    isRemoteFileURI,
     isWindows,
     logError,
     openCtx,
-    toRangeData,
-    graphqlClient,
-    isErrorLike,
-    createRemoteFileURI,
-    isRemoteFileURI,
     parseRemoteFileURI,
+    toRangeData,
 } from '@sourcegraph/cody-shared'
 
 import { URI } from 'vscode-uri'
 import { getOpenTabsUris } from '.'
 import { toVSCodeRange } from '../../common/range'
-import { findWorkspaceFiles } from './findWorkspaceFiles'
 import { debouncePromise } from './debounce-promise'
+import { findWorkspaceFiles } from './findWorkspaceFiles'
 
 // Some matches we don't want to ignore because they might be valid code (for example `bin/` in Dart)
 // but could also be junk (`bin/` in .NET). If a file path contains a segment matching any of these
@@ -51,7 +51,10 @@ const lowScoringPathSegments = ['bin']
 const throttledLocalFindFiles = throttle(() => findWorkspaceFiles(), 10000)
 
 const debouncedRemoteFindFiles = debouncePromise(graphqlClient.getRemoteFiles.bind(graphqlClient), 1000)
-const debouncedRemoteFindSymbols = debouncePromise(graphqlClient.getRemoteSymbols.bind(graphqlClient), 1000)
+const debouncedRemoteFindSymbols = debouncePromise(
+    graphqlClient.getRemoteSymbols.bind(graphqlClient),
+    1000
+)
 
 /**
  * Searches all workspaces for files matching the given string. VS Code doesn't
@@ -332,7 +335,7 @@ export async function filterContextItemFiles(
 export async function resolveContextItems(
     editor: Editor,
     items: ContextItem[],
-    input: PromptString,
+    input: PromptString
 ): Promise<ContextItemWithContent[]> {
     return (
         await Promise.all(
@@ -420,18 +423,20 @@ async function resolveFileOrSymbolContextItem(
 
     if (isRemoteFileURI(contextItem.uri)) {
         const { repository, path } = parseRemoteFileURI(contextItem.uri)
-        const resultOrError = await graphqlClient.getFileContent(
-            repository,
-            path,
-            { startLine: contextItem.range?.start.line, endLine: contextItem.range?.end.line  }
-        )
+        const resultOrError = await graphqlClient.getFileContent(repository, path, {
+            startLine: contextItem.range?.start.line,
+            endLine: contextItem.range?.end.line,
+        })
 
         if (!isErrorLike(resultOrError)) {
             content = resultOrError
         }
     }
 
-   content ??= await editor.getTextEditorContentForFile(contextItem.uri, toVSCodeRange(contextItem.range))
+    content ??= await editor.getTextEditorContentForFile(
+        contextItem.uri,
+        toVSCodeRange(contextItem.range)
+    )
 
     return {
         ...contextItem,
