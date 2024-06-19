@@ -39,11 +39,8 @@ export async function rewriteChatQuery({
             return query
         }
 
-        // Only include context items which are mentioned by the user.
-        const mentions = contextItems.filter(item => item.source === ContextItemSource.User)
-
-        // If it is the first question and there are no mention items return the original query.
-        if (chatMessages.length < 2 && mentions.length === 0) {
+        // If it is the first question and there are no context items return the original query.
+        if (chatMessages.length < 2 && contextItems.length === 0) {
             return query
         }
 
@@ -84,7 +81,7 @@ Rewrite the following latest query based on the chat history: <latest_query>${qu
          * Include mention context items only after adding the latest user message,
          * so that the input tokens are counted, otherwise it throws.
          */
-        await promptBuilder.tryAddContext('user', mentions)
+        await promptBuilder.tryAddContext('user', contextItems)
 
         const messages = promptBuilder.build()
 
