@@ -23,14 +23,12 @@ export function lexicalNodesForContextItems(
 export function isEditorContentOnlyInitialContext(editor: LexicalEditor): boolean {
     return editor.getEditorState().read(() => {
         const root = $getRoot()
-        return (
-            root
-                .getAllTextNodes()
-                .every(
-                    node =>
-                        (node instanceof ContextItemMentionNode && node.isFromInitialContext) ||
-                        (node instanceof TextNode && node.getTextContent() === '')
-                )
-        )
+        return root
+            .getAllTextNodes()
+            .every(
+                node =>
+                    (node instanceof ContextItemMentionNode && node.isFromInitialContext) ||
+                    (node instanceof TextNode && node.getTextContent() === '')
+            )
     })
 }

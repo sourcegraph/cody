@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 
 import react from '@vitejs/plugin-react-swc'
-import conditionalImportPlugin from "vite-plugin-conditional-import";
+import conditionalImportPlugin from 'vite-plugin-conditional-import'
 
 // @ts-ignore
 import { defineProjectWithDefaults } from '../.config/viteShared'
@@ -25,7 +25,7 @@ const FAKE_PROCESS_ENV: Record<string, string | boolean> = {
     // CODY Web specific variables, based on this we choose the right
     // openctx resolver function (sync/async) for prod and deb builds
     // (See openctx.ts for more context)
-    INCLUDE_OPEN_CTX_LIB: process.env.NODE_ENV === 'production'
+    INCLUDE_OPEN_CTX_LIB: process.env.NODE_ENV === 'production',
 }
 
 export default defineProjectWithDefaults(__dirname, {
@@ -36,8 +36,8 @@ export default defineProjectWithDefaults(__dirname, {
         // @ts-ignore
         react(),
         conditionalImportPlugin({
-            currentEnv: process.env.NODE_ENV === 'production' ? "sync" : "async",
-            envs: ["sync", "async"],
+            currentEnv: process.env.NODE_ENV === 'production' ? 'sync' : 'async',
+            envs: ['sync', 'async'],
         }),
     ],
     resolve: {
@@ -82,10 +82,12 @@ export default defineProjectWithDefaults(__dirname, {
         // and need to apply the `define`s when building, not when testing. The `define`s leak into
         // the `agent` tests and cause some failures because process.env.CODY_SHIM_TESTING gets
         // `define`d to `false`.
-        ...( process.env.VITEST ? {} : {
-        'process': { env: {} },
-        ...Object.fromEntries(
-            Object.entries(FAKE_PROCESS_ENV).map(([key, value]) => [
+        ...( process.env.VITEST
+        ? {}
+        : {
+              process: { env: {} },
+              ...Object.fromEntries(
+                  Object.entries(FAKE_PROCESS_ENV).map(([key, value]) => [
                           `process.env.${key}`,
                           JSON.stringify(value),
                       ])
@@ -105,8 +107,8 @@ export default defineProjectWithDefaults(__dirname, {
         },
         lib: {
             formats: ['cjs'],
-            entry: resolve(__dirname, 'lib/index.ts')
-        }
+            entry: resolve(__dirname, 'lib/index.ts'),
+        },
     },
-    server: { strictPort: true, port: 5777 }
+    server: { strictPort: true, port: 5777 },
 })

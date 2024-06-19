@@ -75,7 +75,7 @@ export async function createInlineCompletionItemProvider({
 
     if (providerConfig) {
         const authStatus = authProvider.getAuthStatus()
-        const completionsProvider = await InlineCompletionItemProvider.create ({
+        const completionsProvider = await InlineCompletionItemProvider.create({
             authStatus,
             providerConfig,
             firstCompletionTimeout: config.autocompleteFirstCompletionTimeout,

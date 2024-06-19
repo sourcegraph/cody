@@ -22,7 +22,7 @@ import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import type { Uri } from 'vscode'
 import type { View } from '../../webviews/NavBar'
 import type { Repo } from '../context/repo-fetcher'
-import type { ChatHistoryUpdate } from './chat-view/ChatHistoryManager';
+import type { ChatHistoryUpdate } from './chat-view/ChatHistoryManager'
 
 /**
  * DO NOT USE DIRECTLY - ALWAYS USE a TelemetryRecorder from

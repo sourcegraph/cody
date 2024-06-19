@@ -213,17 +213,16 @@ export const MentionMenu: FunctionComponent<
     const heading = getItemsHeading(params.parentItem, mentionQuery)
 
     // TODO [VK] Disable remote repositories for VSCode dotcom users
-    const providers = data.providers
-        .map(provider => (
-            <CommandItem
-                key={commandRowValue(provider)}
-                value={commandRowValue(provider)}
-                onSelect={onProviderSelect}
-                className={styles.item}
-            >
-                <MentionMenuProviderItemContent provider={provider} />
-            </CommandItem>
-        ))
+    const providers = data.providers.map(provider => (
+        <CommandItem
+            key={commandRowValue(provider)}
+            value={commandRowValue(provider)}
+            onSelect={onProviderSelect}
+            className={styles.item}
+        >
+            <MentionMenuProviderItemContent provider={provider} />
+        </CommandItem>
+    ))
 
     return (
         <Command

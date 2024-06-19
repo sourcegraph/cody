@@ -37,9 +37,12 @@ type Unsubscribe = () => void
 
 const HAS_AUTHENTICATED_BEFORE_KEY = 'has-authenticated-before'
 
-type AuthProviderConfig = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
+type AuthProviderConfig = Pick<
+    ConfigurationWithAccessToken,
+    'serverEndpoint' | 'accessToken' | 'customHeaders'
+>
 
-export class AuthProvider  implements AuthStatusProvider {
+export class AuthProvider implements AuthStatusProvider {
     private endpointHistory: string[] = []
 
     private client: SourcegraphGraphQLAPIClient | null = null
@@ -60,7 +63,7 @@ export class AuthProvider  implements AuthStatusProvider {
 
     // Sign in to the last endpoint the user was signed in to, if any
     public async init(): Promise<AuthStatus | null> {
-        let lastEndpoint = await localStorage?.getEndpoint() || this.config.serverEndpoint
+        let lastEndpoint = (await localStorage?.getEndpoint()) || this.config.serverEndpoint
         let token = (await secretStorage.get(lastEndpoint || '')) || this.config.accessToken
         logDebug(
             'AuthProvider:init:lastEndpoint',
@@ -387,7 +390,7 @@ export class AuthProvider  implements AuthStatusProvider {
                 await this.setHasAuthenticatedBefore()
             } else if (isLoggedIn) {
                 await this.handleFirstEverAuthentication()
-        }
+            }
 
             return { authStatus, isLoggedIn }
         } catch (error) {
@@ -492,7 +495,7 @@ export class AuthProvider  implements AuthStatusProvider {
 
     // Refresh current endpoint history with the one from local storage
     private async loadEndpointHistory(): Promise<void> {
-        this.endpointHistory = await localStorage.getEndpointHistory() || []
+        this.endpointHistory = (await localStorage.getEndpointHistory()) || []
     }
 
     // Store endpoint in local storage, token in secret storage, and update endpoint history.
@@ -540,7 +543,7 @@ export class AuthProvider  implements AuthStatusProvider {
 /**
  * Singleton instance of auth provider.
  */
-export let authProvider: AuthProvider | null = null
+export const authProvider: AuthProvider | null = null
 
 export function isNetworkError(error: Error): boolean {
     const message = error.message

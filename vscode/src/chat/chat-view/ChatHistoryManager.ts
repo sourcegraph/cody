@@ -3,8 +3,8 @@ import * as vscode from 'vscode'
 import type {
     AuthStatus,
     Disposable,
+    SerializedChatTranscript,
     UserLocalHistory,
-    SerializedChatTranscript
 } from '@sourcegraph/cody-shared'
 
 import { localStorage } from '../../services/LocalStorageProvider'
@@ -31,7 +31,7 @@ export class ChatHistoryManager implements vscode.Disposable {
     // The way to observer/subscribe on the chat history updates
     // Primary is used for the agent mode, in order to catch chat history
     // updates and send them to the agent's client
-    public onDidChatHistoryChange(callback: (chatHistory: UserLocalHistory | null) => void) : Disposable {
+    public onDidChatHistoryChange(callback: (chatHistory: UserLocalHistory | null) => void): Disposable {
         return this.eventEmitter.event(callback)
     }
 
@@ -39,7 +39,10 @@ export class ChatHistoryManager implements vscode.Disposable {
         return localStorage.getChatHistory(authStatus)
     }
 
-    public async getChat(authStatus: AuthStatus, sessionID: string): Promise<SerializedChatTranscript | null> {
+    public async getChat(
+        authStatus: AuthStatus,
+        sessionID: string
+    ): Promise<SerializedChatTranscript | null> {
         const chatHistory = await this.getLocalHistory(authStatus)
         return chatHistory?.chat ? chatHistory.chat[sessionID] : null
     }

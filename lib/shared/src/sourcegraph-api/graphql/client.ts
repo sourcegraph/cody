@@ -1,5 +1,5 @@
-import type { Response as NodeResponse } from 'node-fetch'
 import { escapeRegExp } from 'lodash'
+import type { Response as NodeResponse } from 'node-fetch'
 import { URI } from 'vscode-uri'
 import { fetch } from '../../fetch'
 
@@ -29,7 +29,10 @@ import {
     EVALUATE_FEATURE_FLAG_QUERY,
     FILE_CONTENTS_QUERY,
     FILE_MATCH_SEARCH_QUERY,
+    FUZZY_FILES_QUERY,
+    FUZZY_SYMBOLS_QUERY,
     GET_FEATURE_FLAGS_QUERY,
+    GET_REMOTE_FILE_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
     PACKAGE_LIST_QUERY,
@@ -40,9 +43,6 @@ import {
     REPOSITORY_SEARCH_QUERY,
     REPO_NAME_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
-    FUZZY_FILES_QUERY,
-    GET_REMOTE_FILE_QUERY,
-    FUZZY_SYMBOLS_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
 
@@ -62,7 +62,7 @@ interface SiteVersionResponse {
 }
 
 export type FuzzyFindFilesResponse = {
-    __typename?: 'Query',
+    __typename?: 'Query'
     search: {
         results: {
             results: Array<FuzzyFindFile>
@@ -71,7 +71,7 @@ export type FuzzyFindFilesResponse = {
 }
 
 export type FuzzyFindSymbolsResponse = {
-    __typename?: 'Query',
+    __typename?: 'Query'
     search: {
         results: {
             results: FuzzyFindSymbol[]
@@ -87,12 +87,12 @@ type FuzzyFindFile = {
         byteSize: number
         isDirectory: boolean
     }
-    repository: { id: string, name: string }
+    repository: { id: string; name: string }
 }
 
 type FuzzyFindSymbol = {
     symbols: {
-        name: string,
+        name: string
         location: {
             range: {
                 start: { line: number }
@@ -103,11 +103,11 @@ type FuzzyFindSymbol = {
             }
         }
     }[]
-    repository: { id: string, name: string }
+    repository: { id: string; name: string }
 }
 
 interface RemoteFileContentReponse {
-    __typename?: 'Query',
+    __typename?: 'Query'
     repository: {
         id: string
         commit: {
@@ -119,7 +119,6 @@ interface RemoteFileContentReponse {
         }
     }
 }
-
 
 interface SiteIdentificationResponse {
     site: {
@@ -513,44 +512,52 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async getRemoteFiles(repositories: string[], query: string): Promise<FuzzyFindFile[] | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<FuzzyFindFilesResponse>>(
-            FUZZY_FILES_QUERY,
-            { query: `type:path count:30 ${repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''} ${query}` }
-        ).then(response =>
+    public async getRemoteFiles(
+        repositories: string[],
+        query: string
+    ): Promise<FuzzyFindFile[] | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<FuzzyFindFilesResponse>>(FUZZY_FILES_QUERY, {
+            query: `type:path count:30 ${
+                repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''
+            } ${query}`,
+        }).then(response =>
             extractDataOrError(
                 response,
-                data =>
-                    data.search?.results.results
-                    ?? new Error('no files found')
+                data => data.search?.results.results ?? new Error('no files found')
             )
         )
     }
 
-    public async getRemoteSymbols(repositories: string[], query: string): Promise<FuzzyFindSymbol[] | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<FuzzyFindSymbolsResponse>>(
-            FUZZY_SYMBOLS_QUERY,
-            { query: `type:symbol count:30 ${repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''} ${query}` }
-        ).then(response =>
+    public async getRemoteSymbols(
+        repositories: string[],
+        query: string
+    ): Promise<FuzzyFindSymbol[] | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<FuzzyFindSymbolsResponse>>(FUZZY_SYMBOLS_QUERY, {
+            query: `type:symbol count:30 ${
+                repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''
+            } ${query}`,
+        }).then(response =>
             extractDataOrError(
                 response,
-                data =>
-                    data.search?.results.results
-                    ?? new Error('no symbols found')
+                data => data.search?.results.results ?? new Error('no symbols found')
             )
         )
     }
 
-    public async getFileContent(repository: string, filePath: string, range?: { startLine?: number, endLine?: number }): Promise<string | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<RemoteFileContentReponse>>(
-            GET_REMOTE_FILE_QUERY,
-            { repositoryName: repository, filePath, startLine: range?.startLine, endLine: range?.endLine }
-        ).then(response =>
+    public async getFileContent(
+        repository: string,
+        filePath: string,
+        range?: { startLine?: number; endLine?: number }
+    ): Promise<string | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<RemoteFileContentReponse>>(GET_REMOTE_FILE_QUERY, {
+            repositoryName: repository,
+            filePath,
+            startLine: range?.startLine,
+            endLine: range?.endLine,
+        }).then(response =>
             extractDataOrError(
                 response,
-                data =>
-                    data.repository.commit.blob.content
-                    ?? new Error('no file found')
+                data => data.repository.commit.blob.content ?? new Error('no file found')
             )
         )
     }

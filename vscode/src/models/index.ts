@@ -8,7 +8,11 @@ async function setModel(modelID: EditModel, storageKey: string) {
     return localStorage.set(storageKey, modelID)
 }
 
-async function getModel<T extends string>(authProvider: AuthProvider, models: Model[], storageKey: string): Promise<T> {
+async function getModel<T extends string>(
+    authProvider: AuthProvider,
+    models: Model[],
+    storageKey: string
+): Promise<T> {
     const authStatus = authProvider.getAuthStatus()
 
     if (!authStatus.authenticated) {

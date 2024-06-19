@@ -35,7 +35,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     chatEnabled = true,
     userInfo,
     guardrails,
-    scrollableParent
+    scrollableParent,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 

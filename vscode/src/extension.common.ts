@@ -21,12 +21,12 @@ import type { ContextRankerConfig, ContextRankingController } from './local-cont
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
+import type { AsyncMemento } from './services/LocalStorageProvider'
 import type {
     OpenTelemetryService,
     OpenTelemetryServiceConfig,
 } from './services/open-telemetry/OpenTelemetryService.node'
 import { type SentryService, captureException } from './services/sentry/sentry'
-import { AsyncMemento } from './services/LocalStorageProvider';
 
 type Constructor<T extends new (...args: any) => any> = T extends new (
     ...args: infer A

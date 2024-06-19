@@ -5,8 +5,8 @@ import {
     type RangeData,
     displayLineRange,
     displayPath,
-    webviewOpenURIForContextItem,
     isRemoteFileURI,
+    webviewOpenURIForContextItem,
 } from '@sourcegraph/cody-shared'
 
 import type { URI } from 'vscode-uri'

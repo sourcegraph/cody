@@ -4,13 +4,13 @@ import {
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionQuery,
     MentionQueryResolutionMode,
-    parseMentionQuery
+    parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { LRUCache } from 'lru-cache'
 import {
     type Context,
-    createContext,
     type FunctionComponent,
+    createContext,
     useContext,
     useEffect,
     useMemo,
@@ -28,7 +28,7 @@ interface ChatMention {
 }
 
 export const ChatMentionContext = createContext<ChatMention>({
-    resolutionMode: MentionQueryResolutionMode.Local
+    resolutionMode: MentionQueryResolutionMode.Local,
 })
 
 export const ChatContextClientContext: Context<ChatContextClient> = createContext({
@@ -82,7 +82,7 @@ export function useChatContextItems(
     const unmemoizedClient = useContext(ChatContextClientContext)
     const chatContextClient = useMemo(
         () => memoizeChatContextClient(unmemoizedClient),
-        [mentionContext, unmemoizedClient]
+        [unmemoizedClient]
     )
     const [results, setResults] = useState<ContextItem[]>()
     const lastProvider = useRef<ContextMentionProviderMetadata['id'] | null>(null)
@@ -102,7 +102,7 @@ export function useChatContextItems(
         // results.
         const mentionQuery: MentionQuery = {
             ...parseMentionQuery(query, provider),
-            resolutionMode: mentionContext.resolutionMode
+            resolutionMode: mentionContext.resolutionMode,
         }
 
         if (!hasResults && mentionQuery.maybeHasRangeSuffix && !mentionQuery.range) {
@@ -123,7 +123,10 @@ export function useChatContextItems(
             chatContextClient
                 .getChatContextItems(mentionQuery)
                 .then(mentions => {
-                    if (invalidated && mentionQuery.resolutionMode !== MentionQueryResolutionMode.Remote) {
+                    if (
+                        invalidated &&
+                        mentionQuery.resolutionMode !== MentionQueryResolutionMode.Remote
+                    ) {
                         return
                     }
                     setResults(mentions)
@@ -137,7 +140,7 @@ export function useChatContextItems(
         return () => {
             invalidated = true
         }
-    }, [query, provider, chatContextClient])
+    }, [query, provider, chatContextClient, mentionContext.resolutionMode])
     return results
 }
 

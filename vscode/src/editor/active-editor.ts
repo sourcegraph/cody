@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { isCodyIgnoredFile, SUPPORTED_URI_SCHEMAS } from '@sourcegraph/cody-shared'
+import { SUPPORTED_URI_SCHEMAS, isCodyIgnoredFile } from '@sourcegraph/cody-shared'
 
 /**
  * Interface for tracking the last active text editor that is not a webview panel for

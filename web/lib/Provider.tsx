@@ -1,26 +1,27 @@
-import { URI } from 'vscode-uri';
-import type { MessageConnection } from 'vscode-jsonrpc/browser';
 import {
+    type FC,
+    type MutableRefObject,
+    type PropsWithChildren,
     createContext,
-    FC,
-    PropsWithChildren,
+    useCallback,
     useContext,
     useEffect,
     useMemo,
     useRef,
     useState,
-    MutableRefObject, useCallback
 } from 'react'
+import type { MessageConnection } from 'vscode-jsonrpc/browser'
+import { URI } from 'vscode-uri'
 
-import { AppWrapper } from '@sourcegraph/vscode-cody/webviews/AppWrapper';
-import { ExtensionMessage } from '@sourcegraph/vscode-cody/src/chat/protocol';
-import { setVSCodeWrapper, VSCodeWrapper } from '@sourcegraph/vscode-cody/webviews/utils/VSCodeApi';
-import { hydrateAfterPostMessage, isErrorLike } from '@sourcegraph/cody-shared';
+import { hydrateAfterPostMessage, isErrorLike } from '@sourcegraph/cody-shared'
+import type { ExtensionMessage } from '@sourcegraph/vscode-cody/src/chat/protocol'
+import { AppWrapper } from '@sourcegraph/vscode-cody/webviews/AppWrapper'
+import { type VSCodeWrapper, setVSCodeWrapper } from '@sourcegraph/vscode-cody/webviews/utils/VSCodeApi'
 
-import { createAgentClient } from './agent/client';
-import { useLocalStorage } from './utils/use-local-storage';
-import { ChatExportResult } from '@sourcegraph/vscode-cody/src/jsonrpc/agent-protocol';
-import { InitialContext } from './types';
+import type { ChatExportResult } from '@sourcegraph/vscode-cody/src/jsonrpc/agent-protocol'
+import { createAgentClient } from './agent/client'
+import type { InitialContext } from './types'
+import { useLocalStorage } from './utils/use-local-storage'
 
 /**
  * Local storage key for storing last active chat id, preserving
@@ -40,7 +41,7 @@ interface CodyWebChatContextData {
     activeWebviewPanelID: MutableRefObject<string>
     vscodeAPI: VSCodeWrapper
     initialContext: InitialContext | undefined
-    setLastActiveChatID: (chatID: string|null) => void
+    setLastActiveChatID: (chatID: string | null) => void
     createChat: () => Promise<void>
     selectChat: (chat: ChatExportResult) => Promise<void>
 }
@@ -57,7 +58,7 @@ export const CodyWebChatContext = createContext<CodyWebChatContextData>({
     vscodeAPI: null as any,
     setLastActiveChatID: () => {},
     createChat: () => Promise.resolve(),
-    selectChat: () => Promise.resolve()
+    selectChat: () => Promise.resolve(),
 })
 
 interface CodyWebChatProviderProps {
@@ -89,12 +90,15 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
     const onMessageCallbacksRef = useRef<((message: ExtensionMessage) => void)[]>([])
 
     const [client, setClient] = useState<AgentClient | Error | null>(null)
-    const [lastActiveChatID, setLastActiveChatID] = useLocalStorage<string|null>(ACTIVE_CHAT_ID_KEY, null)
+    const [lastActiveChatID, setLastActiveChatID] = useLocalStorage<string | null>(
+        ACTIVE_CHAT_ID_KEY,
+        null
+    )
 
     // TODO [VK] Memoize agent client creation to avoid re-creating client
     useEffect(() => {
         ;(async () => {
-            if (isClientInitialized.current || client) {
+            if (isClientInitialized.current) {
                 return
             }
 
@@ -108,7 +112,9 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
                 })
 
                 // Fetch existing chats from the agent chat storage
-                const chatHistory = await client.rpc.sendRequest<ChatExportResult[]>('chat/export', { fullHistory: true })
+                const chatHistory = await client.rpc.sendRequest<ChatExportResult[]>('chat/export', {
+                    fullHistory: true,
+                })
 
                 // In case of no chats we should create initial empty chat
                 // Also when we have a context
@@ -119,7 +125,8 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
                     // set the last created chat from the history
                     const lastUsedChat = chatHistory.find(chat => chat.chatID === lastActiveChatID)
                     const initialChat = chatHistory.find(chat => chat.chatID === initialChatId)
-                    const lastActiveChat = initialChat ?? lastUsedChat ?? chatHistory[chatHistory.length - 1]
+                    const lastActiveChat =
+                        initialChat ?? lastUsedChat ?? chatHistory[chatHistory.length - 1]
 
                     await selectChat(lastActiveChat, client)
                 }
@@ -129,8 +136,8 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
                         id: activeWebviewPanelID.current,
                         message: {
                             command: 'context/choose-remote-search-repo',
-                            explicitRepos: initialContext?.repositories ?? []
-                        }
+                            explicitRepos: initialContext?.repositories ?? [],
+                        },
                     })
                 }
 
@@ -140,7 +147,7 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
                 setClient(() => error as Error)
             }
         })()
-    }, [])
+    }, [initialChatId, accessToken, serverEndpoint, lastActiveChatID, initialContext])
 
     const vscodeAPI = useMemo<VSCodeWrapper>(() => {
         if (client && !isErrorLike(client)) {
@@ -192,62 +199,68 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
         return vscodeAPI
     }, [client])
 
-    const createChat = useCallback(async (agent = client) => {
-        if (!agent || isErrorLike(agent)) {
-            return
-        }
+    const createChat = useCallback(
+        async (agent = client) => {
+            if (!agent || isErrorLike(agent)) {
+                return
+            }
 
-        const { panelID, chatID } = await agent.rpc.sendRequest<{ panelID: string, chatID: string }>('chat/new')
-        activeWebviewPanelID.current = panelID
-        setLastActiveChatID(chatID)
+            const { panelID, chatID } = await agent.rpc.sendRequest<{ panelID: string; chatID: string }>(
+                'chat/new'
+            )
+            activeWebviewPanelID.current = panelID
+            setLastActiveChatID(chatID)
 
-        if (onNewChatCreated) {
-            onNewChatCreated(chatID)
-        }
-    }, [client, onNewChatCreated, setLastActiveChatID])
+            if (onNewChatCreated) {
+                onNewChatCreated(chatID)
+            }
+        },
+        [client, onNewChatCreated, setLastActiveChatID]
+    )
 
-    const selectChat = useCallback(async (chat: ChatExportResult, agent = client) => {
-        if (!agent || isErrorLike(agent)) {
-            return
-        }
+    const selectChat = useCallback(
+        async (chat: ChatExportResult, agent = client) => {
+            if (!agent || isErrorLike(agent)) {
+                return
+            }
 
-        // Restore chat with chat history (transcript data) and set the newly
-        // restored panel ID to be able to listen event from only this panel
-        // in the vscode API
-        activeWebviewPanelID.current = await agent.rpc.sendRequest('chat/restore', {
-            chatID: chat.chatID,
-            messages: chat
-                .transcript
-                .interactions
-                .flatMap(interaction =>
+            // Restore chat with chat history (transcript data) and set the newly
+            // restored panel ID to be able to listen event from only this panel
+            // in the vscode API
+            activeWebviewPanelID.current = await agent.rpc.sendRequest('chat/restore', {
+                chatID: chat.chatID,
+                messages: chat.transcript.interactions.flatMap(interaction =>
                     // Ignore incomplete messages from bot, this might be possible
                     // if chat was closed before LLM responded with a final message chunk
-                    [interaction.humanMessage, interaction.assistantMessage]
-                        .filter(message => message)
-                )
-        })
+                    [interaction.humanMessage, interaction.assistantMessage].filter(message => message)
+                ),
+            })
 
-        // Make sure that agent will reset the internal state and
-        // sends all necessary events with transcript to switch active chat
-        vscodeAPI.postMessage({ chatID: chat.chatID, command: 'restoreHistory' })
+            // Make sure that agent will reset the internal state and
+            // sends all necessary events with transcript to switch active chat
+            vscodeAPI.postMessage({ chatID: chat.chatID, command: 'restoreHistory' })
 
-        // Notify main root provider about chat selection
-        setLastActiveChatID(chat.chatID)
-    }, [client, vscodeAPI, setLastActiveChatID])
+            // Notify main root provider about chat selection
+            setLastActiveChatID(chat.chatID)
+        },
+        [client, vscodeAPI, setLastActiveChatID]
+    )
 
     return (
         <AppWrapper>
-            <CodyWebChatContext.Provider value={{
-                client,
-                vscodeAPI,
-                activeWebviewPanelID,
-                activeChatID: lastActiveChatID,
-                setLastActiveChatID,
-                initialContext,
-                createChat,
-                selectChat,
-            }}>
-                { children }
+            <CodyWebChatContext.Provider
+                value={{
+                    client,
+                    vscodeAPI,
+                    activeWebviewPanelID,
+                    activeChatID: lastActiveChatID,
+                    setLastActiveChatID,
+                    initialContext,
+                    createChat,
+                    selectChat,
+                }}
+            >
+                {children}
             </CodyWebChatContext.Provider>
         </AppWrapper>
     )

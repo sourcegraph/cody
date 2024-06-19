@@ -2,7 +2,7 @@ import { URI } from 'vscode-uri'
 
 import { pathFunctionsForURI, posixFilePaths, windowsFilePaths } from '../common/path'
 import { type RangeData, displayLineRange } from '../common/range'
-import { isRemoteFileURI } from '../common/uri';
+import { isRemoteFileURI } from '../common/uri'
 
 /**
  * Convert an absolute URI to a (possibly shorter) path to display to the user. The display path is
