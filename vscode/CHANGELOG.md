@@ -12,13 +12,21 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Chat: @-mentions are shown as chips instead of text. [pull/4539](https://github.com/sourcegraph/cody/pull/4539)
 
+## 1.22.2
+
+### Added
+
+- Autocomplete: Finetuned model shipment for code completions in py, jsx and jsx language. [pull/4533](https://github.com/sourcegraph/cody/pull/4533)
+- Telemetry: Context logging for the autocomplete feature in private metadata. [pull/4501](https://github.com/sourcegraph/cody/pull/4501)
+- Autocomplete: Feature flags for the fine-tuning model and deepseek experiment for code completions. [pull/4577](https://github.com/sourcegraph/cody/pull/4577)
+- Telemetry: Added autocomplete stage counter logger. [pull/4595](https://github.com/sourcegraph/cody/pull/4595)
+- Telemetry: Added resolved model to autocomplete events. [pull/4565](https://github.com/sourcegraph/cody/pull/4565)
+
 ## 1.22.1
 
 ### Added
 
 - Enterprise: Expand the context window for Gemini 1.5 models. [pull/4563](https://github.com/sourcegraph/cody/pull/4563)
-- Telemetry: Added autocomplete stage counter logger. [pull/4595](https://github.com/sourcegraph/cody/pull/4595)
-- Telemetry: Added resolved model to autocomplete events. [pull/4565](https://github.com/sourcegraph/cody/pull/4565)
 
 ### Fixed
 
