@@ -358,6 +358,7 @@ async function resolveContextMentionProviderContextItem(
                       providerUri: item.providerUri,
                       content: item.ai.content,
                       provider: 'openctx',
+                      source: ContextItemSource.User,
                   }
                 : null
         )

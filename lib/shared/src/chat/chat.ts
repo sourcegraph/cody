@@ -16,7 +16,7 @@ const DEFAULT_CHAT_COMPLETION_PARAMETERS: Omit<ChatParameters, 'maxTokensToSampl
 
 export class ChatClient {
     constructor(
-        private completions: SourcegraphCompletionsClient,
+        public completions: SourcegraphCompletionsClient,
         private getAuthStatus: () => Pick<
             AuthStatus,
             'userCanUpgrade' | 'isDotCom' | 'endpoint' | 'codyApiVersion'
