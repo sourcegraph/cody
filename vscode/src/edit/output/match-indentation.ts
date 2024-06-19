@@ -15,9 +15,13 @@ export function getIndentationCharacter(text: string): ' ' | '\t' {
     return ' '
 }
 
-export function matchIndentation(incoming: string, original: string, range: vscode.Range): string {
-    const startCharacter = range.start.character
-    const originalIndentationLength = original.length - original.trimStart().length + startCharacter
+export function matchIndentation(
+    incoming: string,
+    original: string,
+    startPosition: vscode.Position
+): string {
+    const startIndex = startPosition.character
+    const originalIndentationLength = original.length - original.trimStart().length + startIndex
     const incomingIndentationLength = incoming.length - incoming.trimStart().length
     const indentationAdjustment = originalIndentationLength - incomingIndentationLength
 
