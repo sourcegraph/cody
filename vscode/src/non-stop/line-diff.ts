@@ -52,7 +52,7 @@ export function computeDiff(
                         type: 'decoratedDeletion',
                         text: '',
                         oldText: line,
-                        range: new vscode.Range(startLine, 0, startLine, line.length),
+                        range: new vscode.Range(startLine, 0, startLine, Number.MAX_SAFE_INTEGER),
                     })
                     // We must increment as we haven't technically deleted the line, only replaced
                     // it with whitespace

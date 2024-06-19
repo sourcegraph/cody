@@ -1,6 +1,7 @@
 import { decode } from 'he'
 import type { FixupTask } from '../../non-stop/FixupTask'
 import { PROMPT_TOPICS } from '../prompt/constants'
+import { matchIndentation } from './match-indentation'
 
 /**
  * Regular expression to match prompt topics.
@@ -52,14 +53,14 @@ export function responseTransformer(
 
     if (task.mode === 'insert' && !isMessageInProgress && !decodedText.endsWith('\n')) {
         // For insertions, we want to always ensure we include a new line at the end of the response
-        return decodedText + '\n'
+        return matchIndentation(decodedText + '\n', task.original, task.selectionRange)
     }
 
     if (task.mode === 'edit' && !isMessageInProgress) {
         // LLMs have a tendency to complete the response with a final new line, but we don't want to
         // include this, as we already trim the users' selection, and any additional whitespace will
         // hurt the readability of the diff.
-        return decodedText.trimEnd()
+        return matchIndentation(decodedText.trim(), task.original, task.selectionRange)
     }
 
     return decodedText

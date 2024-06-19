@@ -690,12 +690,7 @@ export class FixupController
         // changes (e.g. injectiong placeholder lines)
         // This ensures decorations are correctly computed.
         task.replacement = document.getText(task.selectionRange)
-
-        this.setTaskState(task, CodyTaskState.Formatting)
-        const formatOk = await this.formatEdit(edit, document, task)
-        if (formatOk) {
-            this.decorator.didApplyTask(task)
-        }
+        this.decorator.didApplyTask(task)
 
         // TODO: See if we can discard a FixupFile now.
         this.setTaskState(task, CodyTaskState.Applied)
@@ -779,7 +774,10 @@ export class FixupController
         }, options)
     }
 
-    private async formatEdit(
+    /**
+     * TODO: Remove this
+     */
+    public async formatEdit(
         edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit,
         document: vscode.TextDocument,
         task: FixupTask
