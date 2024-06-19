@@ -1,8 +1,12 @@
 import { URI } from 'vscode-uri'
 
-import { type ChatMessage, ContextItemSource, ps } from '@sourcegraph/cody-shared'
+import {
+    type ChatMessage,
+    ContextItemSource,
+    FILE_MENTION_EDITOR_STATE_FIXTURE,
+    ps,
+} from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from '../Chat'
-import { FILE_MENTION_EDITOR_STATE_FIXTURE } from '../promptEditor/fixtures'
 
 export function transcriptFixture(transcript: ChatMessage[]): ChatMessage[] {
     return transcript.map(m => ({
@@ -82,7 +86,7 @@ export const FIXTURE_TRANSCRIPT: Record<
     explainCode2: transcriptFixture([
         {
             speaker: 'human',
-            text: ps`What does @Symbol1 in @dir/dir/file-a-1.py do? Also use @README.md:2-8.`,
+            text: ps`What does Symbol1 in dir/dir/file-a-1.py do? Also use README.md:2-8.`,
             editorState: FILE_MENTION_EDITOR_STATE_FIXTURE,
             contextFiles: [
                 {

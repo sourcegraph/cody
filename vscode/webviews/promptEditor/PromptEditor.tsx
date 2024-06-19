@@ -1,4 +1,3 @@
-import { $isRootTextContentEmpty } from '@lexical/text'
 import {
     type ContextItem,
     type SerializedPromptEditorState,
@@ -7,7 +6,8 @@ import {
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import { $createTextNode, $getRoot, $getSelection, $insertNodes, type LexicalEditor } from 'lexical'
-import type { EditorState } from 'lexical'
+import type { EditorState, SerializedEditorState, SerializedLexicalNode } from 'lexical'
+import { isEqual } from 'lodash'
 import { type FunctionComponent, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
 import type { UserAccountInfo } from '../Chat'
 import {
@@ -16,6 +16,7 @@ import {
 } from '../chat/cells/messageCell/human/editor/initialContext'
 import { BaseEditor } from './BaseEditor'
 import styles from './PromptEditor.module.css'
+import { $selectAfter, $selectEnd } from './lexicalUtils'
 import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
 
 interface Props extends KeyboardEventPluginProps {
@@ -41,7 +42,6 @@ export interface PromptEditorRefAPI {
     appendText(text: string, ensureWhitespaceBefore?: boolean): void
     addMentions(items: ContextItem[]): void
     setInitialContextMentions(items: ContextItem[]): void
-    isEmpty(): boolean
 }
 
 /**
@@ -129,7 +129,10 @@ export const PromptEditor: FunctionComponent<Props> = ({
                         isFromInitialContext: false,
                     })
                     $insertNodes([$createTextNode(' '), ...nodesToInsert])
-                    nodesToInsert.at(-1)?.select()
+                    const lastNode = nodesToInsert.at(-1)
+                    if (lastNode) {
+                        $selectAfter(lastNode)
+                    }
                 })
             },
             setInitialContextMentions(items: ContextItem[]) {
@@ -145,24 +148,9 @@ export const PromptEditor: FunctionComponent<Props> = ({
                             isFromInitialContext: true,
                         })
                         $insertNodes(nodesToInsert)
-
-                        const nodeToSelect = nodesToInsert.at(-1)
-                        nodeToSelect?.select()
-
+                        $selectEnd()
                         hasSetInitialContext.current = true
                     }
-                })
-            },
-            isEmpty(): boolean {
-                if (!editorRef.current) {
-                    throw new Error('PromptEditor has no Lexical editor ref')
-                }
-                return editorRef.current.getEditorState().read(() => {
-                    const root = $getRoot()
-                    if (root.getChildrenSize() === 0) {
-                        return true
-                    }
-                    return $isRootTextContentEmpty(false, true)
                 })
             },
         }),
@@ -170,7 +158,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
     )
 
     const onBaseEditorChange = useCallback(
-        (_editorState: EditorState, editor: LexicalEditor): void => {
+        (_editorState: EditorState, editor: LexicalEditor, tags: Set<string>): void => {
             if (onChange) {
                 onChange(toSerializedPromptEditorValue(editor))
             }
@@ -182,8 +170,11 @@ export const PromptEditor: FunctionComponent<Props> = ({
         if (initialEditorState) {
             const editor = editorRef.current
             if (editor) {
-                const newEditorState = editor.parseEditorState(initialEditorState.lexicalEditorState)
-                editor.setEditorState(newEditorState)
+                const currentEditorState = normalizeEditorStateJSON(editor.getEditorState().toJSON())
+                const newEditorState = initialEditorState.lexicalEditorState
+                if (!isEqual(currentEditorState, newEditorState)) {
+                    editor.setEditorState(editor.parseEditorState(newEditorState))
+                }
             }
         }
     }, [initialEditorState])
@@ -206,4 +197,14 @@ export const PromptEditor: FunctionComponent<Props> = ({
             onEnterKey={onEnterKey}
         />
     )
+}
+
+/**
+ * Remove properties whose value is undefined, so that this value is the same (for deep-equality) in
+ * JavaScript if it is JSON.stringify'd and re-JSON.parse'd.
+ */
+function normalizeEditorStateJSON(
+    value: SerializedEditorState<SerializedLexicalNode>
+): SerializedEditorState<SerializedLexicalNode> {
+    return JSON.parse(JSON.stringify(value))
 }

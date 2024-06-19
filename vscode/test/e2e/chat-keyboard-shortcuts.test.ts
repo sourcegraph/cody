@@ -21,7 +21,7 @@ test('chat keyboard shortcuts', async ({ page, sidebar }) => {
     await openFileInEditorTab(page, 'buzz.ts')
     await selectLineRangeInEditorTab(page, 3)
     await page.keyboard.press('Alt+L')
-    await expect(chatInput).toHaveText('@buzz.ts ')
+    await expect(chatInput).toHaveText('buzz.ts ')
 
     await executeCommandInPalette(page, 'View: Close Editor')
 
@@ -29,14 +29,14 @@ test('chat keyboard shortcuts', async ({ page, sidebar }) => {
     await openFileInEditorTab(page, 'buzz.ts')
     await selectLineRangeInEditorTab(page, 3, 5)
     await page.keyboard.press('Alt+L')
-    await expect(chatInput).toHaveText('@buzz.ts:3-5 ')
+    await expect(chatInput).toHaveText('buzz.ts:3-5 ')
 
     // Alt+L with an existing chat appends a selection mention.
     await chatInput.press('x')
     await clickEditorTab(page, 'buzz.ts')
     await selectLineRangeInEditorTab(page, 7, 9)
     await page.keyboard.press('Alt+L')
-    await expect(chatInput).toHaveText('@buzz.ts:3-5 x @buzz.ts:7-9 ')
+    await expect(chatInput).toHaveText('buzz.ts:3-5 x buzz.ts:7-9 ')
 
     // Alt+L in the chat (after sending) opens a new chat.
     await chatInput.press('Enter')

@@ -16,6 +16,7 @@ import {
     CONTEXT_ITEM_MENTION_NODE_TYPE,
     type SerializedContextItem,
     type SerializedContextItemMentionNode,
+    contextItemMentionNodeDisplayText,
     isSerializedContextItemMentionNode,
     serializeContextItem,
 } from './nodes'
@@ -212,14 +213,19 @@ export function filterContextItemsFromPromptEditorValue(
 
 export function textContentFromSerializedLexicalNode(
     root: SerializedLexicalNode | SerializedRootNode,
-    __testing_textContent?: (node: SerializedLexicalNode) => string | undefined
+    __testing_wrapText?: (text: string) => string | undefined
 ): string {
     const text: string[] = []
     const queue: SerializedLexicalNode[] = [root]
     while (queue.length > 0) {
         const node = queue.shift()!
-        if ('text' in node && typeof node.text === 'string') {
-            text.push(__testing_textContent ? __testing_textContent(node) ?? node.text : node.text)
+        if ('type' in node && node.type === CONTEXT_ITEM_MENTION_NODE_TYPE) {
+            const nodeText = contextItemMentionNodeDisplayText(
+                (node as SerializedContextItemMentionNode).contextItem
+            )
+            text.push(__testing_wrapText ? __testing_wrapText(nodeText) ?? nodeText : nodeText)
+        } else if ('text' in node && typeof node.text === 'string') {
+            text.push(node.text)
         }
         if (node && 'children' in node && Array.isArray(node.children)) {
             for (const child of node.children as SerializedLexicalNode[]) {
@@ -270,23 +276,20 @@ export function lexicalEditorStateFromPromptString(input: PromptString): Seriali
                     lastTextNode = undefined
                 }
 
+                const contextItem = serializeContextItem({
+                    type: 'file',
+                    uri,
+                    range,
+                    // HACK(sqs): makes Explain work, but see HACK note above.
+                    source: range ? ContextItemSource.User : ContextItemSource.Editor,
+                })
                 children.push({
                     type: CONTEXT_ITEM_MENTION_NODE_TYPE,
-                    contextItem: serializeContextItem({
-                        type: 'file',
-                        uri,
-                        range,
-                        // HACK(sqs): makes Explain work, but see HACK note above.
-                        source: range ? ContextItemSource.User : ContextItemSource.Editor,
-                    }),
-                    detail: 1,
-                    format: 0,
-                    mode: 'token',
-                    style: '',
-                    text: word,
+                    contextItem,
+                    text: contextItemMentionNodeDisplayText(contextItem),
                     isFromInitialContext: false,
                     version: 1,
-                })
+                } satisfies SerializedContextItemMentionNode)
                 lastTextNode = textNode(' ')
                 continue
             }
