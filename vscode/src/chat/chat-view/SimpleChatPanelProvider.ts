@@ -841,7 +841,8 @@ export class SimpleChatPanelProvider
 
     private handleAbort(): void {
         this.cancelSubmitOrEditOperation()
-
+        // Notify the webview there is no message in progress.
+        this.postViewTranscript()
         telemetryService.log('CodyVSCodeExtension:abortButton:clicked', { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
     }
