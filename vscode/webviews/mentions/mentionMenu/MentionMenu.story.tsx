@@ -96,16 +96,7 @@ export const Default: StoryObj<typeof MentionMenu> = {
                     uri: URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`),
                 },
             ],
-            [
-                {
-                    title: 'Files',
-                    id: FILE_CONTEXT_MENTION_PROVIDER.id,
-                },
-                {
-                    title: 'Symbols',
-                    id: SYMBOL_CONTEXT_MENTION_PROVIDER.id,
-                },
-            ]
+            [FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER]
         ),
     },
 }
@@ -125,16 +116,7 @@ export const WithExperimentalProviders: StoryObj<typeof MentionMenu> = {
                     range: { start: { line: 3, character: 5 }, end: { line: 7, character: 9 } },
                 },
             ],
-            [
-                {
-                    title: 'Files',
-                    id: FILE_CONTEXT_MENTION_PROVIDER.id,
-                },
-                {
-                    title: 'Symbols',
-                    id: SYMBOL_CONTEXT_MENTION_PROVIDER.id,
-                },
-            ]
+            [FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER]
         ),
     },
 }
