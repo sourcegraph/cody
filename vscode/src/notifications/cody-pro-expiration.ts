@@ -142,7 +142,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
         const actionText = CodyProExpirationNotifications.actionText
         const noThanksText = CodyProExpirationNotifications.noThanksText
         const action = await this.showInformationMessage(text, actionText, noThanksText)
-        this.suppressFutureNotifications()
+        await this.suppressFutureNotifications()
         if (action === actionText) {
             await this.openExternal(URI.parse(actionUrl))
         }
@@ -162,11 +162,11 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
         return false
     }
 
-    private suppressFutureNotifications() {
+    private async suppressFutureNotifications() {
         // Don't show again this session.
         this.dispose()
         // Or again in future.
-        localStorage.set(CodyProExpirationNotifications.localStorageSuppressionKey, 'true')
+        await localStorage.set(CodyProExpirationNotifications.localStorageSuppressionKey, 'true')
     }
 
     /**

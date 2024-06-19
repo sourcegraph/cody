@@ -187,7 +187,7 @@ const register = async (
 
     const authStatus = await authProvider.init()
 
-    if (authStatus) {
+    if (authStatus?.authenticated) {
         await syncModels(authStatus)
     }
 

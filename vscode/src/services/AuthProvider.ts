@@ -521,11 +521,11 @@ export class AuthProvider implements AuthStatusProvider {
             return
         }
         telemetryRecorder.recordEvent('cody.auth.login', 'firstEver')
-        this.setHasAuthenticatedBefore()
+        await this.setHasAuthenticatedBefore()
         void maybeStartInteractiveTutorial()
     }
 
-    private setHasAuthenticatedBefore() {
+    private async setHasAuthenticatedBefore() {
         return localStorage.set(HAS_AUTHENTICATED_BEFORE_KEY, 'true')
     }
 }

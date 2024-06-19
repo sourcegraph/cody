@@ -48,7 +48,7 @@ export const showSetupNotification = async (config: ConfigurationWithAccessToken
             {
                 label: 'Do not show again',
                 onClick: async () => {
-                    localStorage.set('notification.setupDismissed', 'true')
+                    await localStorage.set('notification.setupDismissed', 'true')
                     telemetryService.log(
                         'CodyVSCodeExtension:signInNotification:doNotShow:clicked',
                         undefined,
