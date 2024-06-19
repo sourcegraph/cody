@@ -20,20 +20,19 @@ export interface ContextMentionProviderMetadata {
     id: string
 
     /**
-     * A short, human-readable display title for the provider, such as "Google Docs". If not given,
-     * `id` is used instead.
+     * A short, human-readable display title for the provider, such as "Google Docs".
      */
-    title?: string
+    title: string
 
     /**
      * Human-readable display string for when the user is querying items from this provider.
      */
-    queryLabel?: string
+    queryLabel: string
 
     /**
      * Human-readable display string for when the provider has no items for the query.
      */
-    emptyLabel?: string
+    emptyLabel: string
 }
 
 export const FILE_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata & { id: 'file' } = {
@@ -75,7 +74,7 @@ async function openCtxMentionProviders(): Promise<ContextMentionProviderMetadata
             .map(provider => ({
                 id: provider.providerUri,
                 title: provider.name,
-                queryLabel: provider.name,
+                queryLabel: 'Search...',
                 emptyLabel: 'No results',
             }))
             .sort((a, b) => (a.title > b.title ? 1 : -1))
