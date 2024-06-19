@@ -83,7 +83,16 @@ export class FixupTask {
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, ps``).trim()
-        this.originalRange = selectionRange
+        // We always expand the range to encompass all characters from the selection lines
+        // This is so we can calculate an optimal diff, and the LLM has the best chance at understanding
+        // the indentation in the returned code.
+        this.selectionRange = new vscode.Range(
+            selectionRange.start.line,
+            0,
+            selectionRange.end.line,
+            Number.MAX_SAFE_INTEGER
+        )
+        this.originalRange = this.selectionRange
     }
 
     /**

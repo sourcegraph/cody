@@ -1,5 +1,3 @@
-import type * as vscode from 'vscode'
-
 export function getIndentationCharacter(text: string): ' ' | '\t' {
     const lines = text.split('\n')
     for (const line of lines) {
@@ -15,13 +13,8 @@ export function getIndentationCharacter(text: string): ' ' | '\t' {
     return ' '
 }
 
-export function matchIndentation(
-    incoming: string,
-    original: string,
-    startPosition: vscode.Position
-): string {
-    const startIndex = startPosition.character
-    const originalIndentationLength = original.length - original.trimStart().length + startIndex
+export function matchIndentation(incoming: string, original: string): string {
+    const originalIndentationLength = original.length - original.trimStart().length
     const incomingIndentationLength = incoming.length - incoming.trimStart().length
     const indentationAdjustment = originalIndentationLength - incomingIndentationLength
 
