@@ -249,6 +249,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     [styles.sent]: isSent,
                     [styles.focused]: focused,
                 },
+                'tw-transition',
                 className
             )}
             onMouseDown={onMaybeGapClick}
@@ -278,7 +279,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     onGapClick={onGapClick}
                     focusEditor={focusEditor}
                     hidden={!focused && isSent}
-                    className={styles.toolbar}
+                    className={clsx('tw-transition-all', styles.toolbar)}
                 />
             )}
         </div>

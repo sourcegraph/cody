@@ -10,7 +10,6 @@ import type { ApiPostMessage } from '../Chat'
 import type { PromptEditorRefAPI } from '../promptEditor/PromptEditor'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
-import styles from './Transcript.module.css'
 import { ContextCell } from './cells/contextCell/ContextCell'
 import {
     AssistantMessageCell,
@@ -152,7 +151,6 @@ const TranscriptInteraction: FunctionComponent<
                 onStop={onStop}
                 isEditorInitiallyFocused={isLastInteraction}
                 editorRef={humanEditorRef}
-                className={isLastInteraction ? styles.lastHumanMessage : undefined}
             />
             {((humanMessage.contextFiles && humanMessage.contextFiles.length > 0) ||
                 isContextLoading) && (

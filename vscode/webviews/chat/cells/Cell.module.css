@@ -1,5 +1,5 @@
 :root {
-    --cell-spacing-y: 15px;
+    --cell-spacing-y: 10px;
     --cell-spacing-x: 15px;
     --cell-internal-gap: 12px;
 }
