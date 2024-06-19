@@ -189,7 +189,7 @@ export class SimpleChatPanelProvider
         options: Omit<SimpleChatPanelProviderOptions, 'chatModel'>
     ): Promise<SimpleChatPanelProvider> {
         const chatModelInstance = new SimpleChatModel(
-            await chatModel.get(options.authProvider, options.models)
+            await getDefaultModelID(options.authProvider, options.models)
         )
 
         return new SimpleChatPanelProvider({ ...options, chatModel: chatModelInstance})
@@ -1668,4 +1668,12 @@ export function revealWebviewViewOrPanel(viewOrPanel: vscode.WebviewView | vscod
 
 function isAbortErrorOrSocketHangUp(error: unknown): error is Error {
     return Boolean(isAbortError(error) || (error && (error as any).message === 'socket hang up'))
+}
+
+async function getDefaultModelID(authProvider: AuthProvider, models: Model[]): Promise<string> {
+    try {
+        return chatModel.get(authProvider, models)
+    } catch {
+        return '(pending)'
+    }
 }
