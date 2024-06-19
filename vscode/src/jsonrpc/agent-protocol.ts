@@ -17,7 +17,6 @@ import type {
     TelemetryEventParameters,
 } from '@sourcegraph/telemetry'
 import type * as vscode from 'vscode'
-import type { UriComponents } from 'vscode-uri/lib/umd/uri';
 
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent } from '../completions/logger'
@@ -46,10 +45,7 @@ export type ClientRequests = {
     // Start a new chat session and returns a UUID that can be used to reference
     // this session in other requests like chat/submitMessage or
     // webview/didDispose.
-    'chat/new': [
-        null | { repositories: [{ id: string, name: string }], file?: UriComponents },
-        { panelID: string, chatID: string }
-    ]
+    'chat/new': [null, { panelID: string, chatID: string }]
 
     // Similar to `chat/new` except it starts a new chat session from an
     // existing transcript. The chatID matches the `chatID` property of the

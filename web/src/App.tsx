@@ -13,6 +13,11 @@ const MOCK_DOT_COM_SOURCEGRAPH_REPOSITORY: Repository[] = [{
     "name": "github.com/sourcegraph/sourcegraph"
 }]
 
+const MOCK_INITIAL_DOT_COM_CONTEXT = {
+    fileURL: '/internal/uploadstore/config.go',
+    repositories: MOCK_DOT_COM_SOURCEGRAPH_REPOSITORY
+}
+
 if (!ACCESS_TOKEN) {
     ACCESS_TOKEN = window.prompt('Enter a Sourcegraph.com access token:')
     if (!ACCESS_TOKEN) {
@@ -26,10 +31,7 @@ export const App: FC = () => {
         <CodyWebChatProvider
             accessToken={ACCESS_TOKEN}
             serverEndpoint='https://sourcegraph.com'
-            initialContext={{
-                repositories: MOCK_DOT_COM_SOURCEGRAPH_REPOSITORY,
-                fileURL: '/internal/uploadstore/config.go'
-            }}
+            initialContext={MOCK_INITIAL_DOT_COM_CONTEXT}
         >
             <div className={styles.root}>
                 <ChatHistory>

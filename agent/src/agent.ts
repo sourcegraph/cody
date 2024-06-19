@@ -5,7 +5,6 @@ import type { Polly, Request } from '@pollyjs/core'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import envPaths from 'env-paths'
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 
 import {
@@ -1025,7 +1024,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
         })
 
-        this.registerAuthenticatedRequest('chat/new', async (context) => {
+        this.registerAuthenticatedRequest('chat/new', async () => {
             const panelID = await this.createChatPanel(
                 Promise.resolve({
                     type: 'chat',
@@ -1033,29 +1032,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 })
             )
 
-            if (context) {
-                const { repositories, file } = context
-
-                const setInitialContext = async () => {
-                    await this.receiveWebviewMessage(panelID, {
-                        command: 'context/choose-remote-search-repo',
-                        explicitRepos: repositories
-                    })
-
-                    if (file) {
-                        const documentWithUri = ProtocolTextDocumentWithUri.from(URI.from(file))
-                        const textDocument = this.workspace.loadDocument(documentWithUri)
-                        vscode_shim.onDidOpenTextDocument.fire(textDocument)
-                        this.pushPendingPromise(this.workspace.fireVisibleTextEditorsDidChange())
-                        this.workspace.setActiveTextEditor(this.workspace.newTextEditor(textDocument))
-                    }
-                }
-
-                await setInitialContext()
-            }
-
             const chatID = this.webPanels.panels.get(panelID)?.chatID ?? ''
-
             return { panelID, chatID }
         })
 

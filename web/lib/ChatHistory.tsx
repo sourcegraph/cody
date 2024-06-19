@@ -1,7 +1,8 @@
 import { type FC, ReactElement, useEffect, useState } from 'react';
-import type { UriComponents } from 'vscode-uri/lib/umd/uri';
+
 import { isErrorLike } from '@sourcegraph/cody-shared';
 import { ChatExportResult } from '@sourcegraph/vscode-cody/src/jsonrpc/agent-protocol';
+
 import { useWebAgentClient } from './Provider';
 
 export type { ChatExportResult }
@@ -26,10 +27,10 @@ export const ChatHistory: FC<ChatHistoryProps> = props => {
     const {
         client,
         vscodeAPI,
-        initialContext,
-        activeWebviewPanelID,
-        lastActiveChatID,
-        setLastActiveChatID
+        activeChatID,
+        setLastActiveChatID,
+        createChat,
+        selectChat,
     } = useWebAgentClient()
 
     const [chats, setChats] = useState<ChatExportResult[]>([])
@@ -84,43 +85,11 @@ export const ChatHistory: FC<ChatHistoryProps> = props => {
         })
     }, [vscodeAPI]);
 
-    const selectChat = async (chat: ChatExportResult): Promise<void> => {
-        // Since chats were received through subscription event it's safe to
-        // assume that all messages and chat data is most recent and updated
-        const selectedChat = chats.find(item => item.chatID === chat.chatID)
-
-        if (!selectedChat || !client || isErrorLike(client)) {
-            return
-        }
-
-        // Restore chat with chat history (transcript data) and set the newly
-        // restored panel ID to be able to listen event from only this panel
-        // in the vscode API
-        activeWebviewPanelID.current = await client.rpc.sendRequest('chat/restore', {
-            chatID: selectedChat.chatID,
-            messages: selectedChat
-                .transcript
-                .interactions
-                .flatMap(interaction =>
-                    // Ignore incomplete messages from bot, this might be possible
-                    // if chat was closed before LLM responded with a final message chunk
-                    [interaction.humanMessage, interaction.assistantMessage]
-                        .filter(message => message)
-                )
-        })
-
-        // Make sure that agent will reset the internal state and
-        // sends all necessary events with transcript to switch active chat
-        vscodeAPI.postMessage({ chatID: selectedChat.chatID, command: 'restoreHistory' })
-
-        // Notify main root provider about chat selection
-        setLastActiveChatID(selectedChat.chatID)
-    }
-
     const deleteChat = async (chat: ChatExportResult): Promise<void> => {
         if (!client || isErrorLike(client)) {
             return
         }
+
 
         const nextChatIndexToSelect =
             Math.max(chats.findIndex(currentChat => currentChat.chatID === chat.chatID) - 1, 0)
@@ -132,6 +101,12 @@ export const ChatHistory: FC<ChatHistoryProps> = props => {
         )
 
         setChats(newChatsList)
+
+        // this means that we deleted not selected chat, so we can skip checks
+        // about zero chat list case and selected chat was deleted case
+        if (chat.chatID !== activeChatID) {
+            return
+        }
 
         // We've deleted the only chat, so we have to create a new empty chat
         if (newChatsList.length === 0) {
@@ -147,7 +122,7 @@ export const ChatHistory: FC<ChatHistoryProps> = props => {
             return
         }
 
-        const currentChat = chats.find(chat => chat.chatID === lastActiveChatID)
+        const currentChat = chats.find(chat => chat.chatID === activeChatID)
         const emptyChat = chats.find(chat => chat.transcript.interactions.length === 0)
 
         // Don't create another empty chat if we already have one selected
@@ -160,19 +135,7 @@ export const ChatHistory: FC<ChatHistoryProps> = props => {
             return
         }
 
-        const { panelID } = await client.rpc.sendRequest<{ panelID: string }>('chat/new', {
-            repositories: initialContext.repositories,
-            file: initialContext.fileURL
-                ? {
-                    scheme: 'remote-file',
-                    authority: initialContext.repositories[0].name,
-                    path: initialContext.fileURL
-                } as UriComponents
-                : undefined
-        })
-
-        activeWebviewPanelID.current = panelID
-        setLastActiveChatID(null)
+        await createChat()
         vscodeAPI.postMessage({ command: 'initialized' })
     }
 
@@ -183,7 +146,7 @@ export const ChatHistory: FC<ChatHistoryProps> = props => {
         selectChat,
         createNewChat,
         deleteChat,
-        isSelectedChat: chat => chat.chatID === lastActiveChatID
+        isSelectedChat: chat => chat.chatID === activeChatID
     })
 }
 
