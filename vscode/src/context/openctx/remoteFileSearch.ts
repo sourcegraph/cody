@@ -88,7 +88,6 @@ async function getFileMentions(repoName: string, filePath?: string): Promise<Men
                 title: basename,
                 description: result.file.path,
                 data: {
-                    mentionLabel: basename,
                     repoName: result.repository.name,
                     rev: result.file.commit.oid,
                     filePath: result.file.path,
