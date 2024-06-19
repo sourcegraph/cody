@@ -88,7 +88,7 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
             return contextItem.symbolName
 
         case 'openctx':
-            return contextItem.mention?.data?.mentionLabel || contextItem.title
+            return contextItem.title
     }
     // @ts-ignore
     throw new Error(`unrecognized context item type ${contextItem.type}`)
