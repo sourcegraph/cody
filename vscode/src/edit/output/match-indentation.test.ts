@@ -26,17 +26,13 @@ describe('matchIndentation', () => {
     describe('whitespace indentation', () => {
         it('returns correct when incoming has less indentation as original', () => {
             const incoming = EXAMPLE_WHITESPACE_RESPONSE
-            const indentedOriginal = EXAMPLE_WHITESPACE_RESPONSE.split('\n')
-                .map(line => line.padStart(line.length + 1)) // Add a space to the start of each line
-                .join('\n')
+            const indentedOriginal = EXAMPLE_WHITESPACE_RESPONSE.replace('console.log', '  console.log')
             const updated = matchIndentation(incoming, indentedOriginal)
             expect(updated).toBe(indentedOriginal)
         })
 
         it('returns correct when incoming has more indentation then original', () => {
-            const incoming = EXAMPLE_WHITESPACE_RESPONSE.split('\n')
-                .map(line => line.padStart(line.length + 1)) // Add a space to the start of each line
-                .join('\n')
+            const incoming = EXAMPLE_WHITESPACE_RESPONSE.replace('console.log', '  console.log')
             const updated = matchIndentation(incoming, EXAMPLE_WHITESPACE_RESPONSE)
             expect(updated).toBe(EXAMPLE_WHITESPACE_RESPONSE)
         })
@@ -45,17 +41,13 @@ describe('matchIndentation', () => {
     describe('tab indentation', () => {
         it('returns correct when incoming has less indentation as original', () => {
             const incoming = EXAMPLE_TAB_RESPONSE
-            const indentedOriginal = EXAMPLE_TAB_RESPONSE.split('\n')
-                .map(line => '\t' + line) // Adding another tab at the start of each line
-                .join('\n')
+            const indentedOriginal = EXAMPLE_TAB_RESPONSE.replace('console.log', '\tconsole.log')
             const updated = matchIndentation(incoming, indentedOriginal)
             expect(updated).toBe(indentedOriginal)
         })
 
         it('returns correct when incoming has more indentation than original', () => {
-            const incoming = EXAMPLE_TAB_RESPONSE.split('\n')
-                .map(line => '\t' + line) // Adding a tab at the start of each line
-                .join('\n')
+            const incoming = EXAMPLE_TAB_RESPONSE.replace('console.log', '\tconsole.log')
             const updated = matchIndentation(incoming, EXAMPLE_TAB_RESPONSE)
             expect(updated).toBe(EXAMPLE_TAB_RESPONSE)
         })
