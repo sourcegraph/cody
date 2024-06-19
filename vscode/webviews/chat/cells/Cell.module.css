@@ -10,50 +10,7 @@
     gap: var(--cell-internal-gap);
 }
 
-.gutter {
-    flex: 0 0 auto;
-    overflow: hidden;
-    display: flex;
-    justify-content: center;
-}
-
 .content {
     flex: 1 0;
     overflow: hidden;
-}
-
-.container--disabled {
-    opacity: 0.5;
-    pointer-events: none;
-}
-
-/**
- * Styles
- */
-
- /* Allow left border to be styled */
-.container {
-    position: relative;
-}
-.container::before {
-    position: absolute;
-    inset: 0;
-    width: 2px;
-    height: 100%;
-    content: '';
-}
-
-/* 'context' style */
-.container--style-context::before {
-    background-image: linear-gradient(to bottom, #00cbec, #b200f8, #ff5543);
-}
-
-/* 'assistant' style */
-body[data-vscode-theme-kind='vscode-light'] .container--style-assistant::before,
-body[data-vscode-theme-kind='vscode-high-contrast-light'] .container--style-assistant::before {
-    background-color: rgb(0 0 0 / 16%);
-}
-body[data-vscode-theme-kind='vscode-dark'] .container--style-assistant::before,
-body[data-vscode-theme-kind='vscode-high-contrast'] .container--style-assistant::before {
-    background-color: rgb(255 255 255 / 16%);
 }

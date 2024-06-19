@@ -31,6 +31,7 @@ export const AssistantMessageCell: FunctionComponent<{
     humanMessage: PriorHumanMessageInfo | null
 
     userInfo: UserAccountInfo
+    chatEnabled: boolean
     isLoading: boolean
 
     showFeedbackButtons: boolean
@@ -45,6 +46,7 @@ export const AssistantMessageCell: FunctionComponent<{
     message,
     humanMessage,
     userInfo,
+    chatEnabled,
     isLoading,
     showFeedbackButtons,
     feedbackButtonsOnSubmit,
@@ -98,6 +100,7 @@ export const AssistantMessageCell: FunctionComponent<{
                 </>
             }
             footer={
+                chatEnabled &&
                 showFeedbackButtons &&
                 feedbackButtonsOnSubmit && (
                     <div className="tw-flex tw-items-center tw-py-3 tw-divide-x tw-transition tw-divide-muted tw-opacity-65 hover:tw-opacity-100">
