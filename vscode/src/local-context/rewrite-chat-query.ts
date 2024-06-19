@@ -2,7 +2,6 @@ import { XMLParser } from 'fast-xml-parser'
 
 import {
     type ChatMessage,
-    ContextItemSource,
     type ContextItemWithContent,
     ModelsService,
     PromptString,
