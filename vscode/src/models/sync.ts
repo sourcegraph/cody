@@ -3,6 +3,7 @@ import {
     type AuthStatus,
     CHAT_INPUT_TOKEN_BUDGET,
     Model,
+    ModelUIGroup,
     ModelUsage,
     ModelsService,
     RestClient,
@@ -65,7 +66,9 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
                 getEnterpriseContextWindow(
                     authStatus?.configOverwrites?.chatModel,
                     authStatus?.configOverwrites
-                )
+                ),
+                undefined,
+                ModelUIGroup.Enterprise
             ),
         ])
     } else {

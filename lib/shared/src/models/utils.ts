@@ -33,4 +33,6 @@ export const ModelUIGroup: Record<string, string> = {
     Balanced: 'Balanced (Speed & Accuracy)',
     Speed: 'Optimized for Speed',
     Ollama: 'Ollama (Local)',
+    // Used for identifying the model type but currently not used for displaying in the UI.
+    Enterprise: 'Enterprise',
 }
