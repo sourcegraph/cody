@@ -229,7 +229,7 @@ export abstract class CachedRetriever implements ContextRetriever {
         if (key) {
             this.addDependency(key)
         }
-        if (this.subscriptions.has(handler.name)) {
+        if (this.subscriptions.has(handler.name) || !register) {
             return
         }
         // Unless they have specified no debounce, default to debouncing all handlers
