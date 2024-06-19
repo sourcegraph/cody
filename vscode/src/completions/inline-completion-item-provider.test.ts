@@ -34,6 +34,10 @@ vi.mock('vscode', () => ({
             return null
         },
     },
+    window: {
+        ...vsCodeMocks.window,
+        onDidChangeTextEditorSelection() {},
+    },
 }))
 
 const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
