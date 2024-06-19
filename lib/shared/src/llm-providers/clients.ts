@@ -2,6 +2,7 @@ import { ModelUIGroup, googleChatClient, groqChatClient, ollamaChatClient } from
 import { type Model, ModelsService } from '../models'
 import type { CompletionLogger } from '../sourcegraph-api/completions/client'
 import type { CompletionCallbacks, CompletionParameters } from '../sourcegraph-api/completions/types'
+import { anthropicChatClient } from './anthropic/chat-client'
 
 export async function useCustomChatClient(
     completionsEndpoint: string,
@@ -25,6 +26,7 @@ export async function useCustomChatClient(
             signal?: AbortSignal
         ) => Promise<void>
     > = {
+        anthropic: anthropicChatClient,
         ollama: ollamaChatClient,
         google: googleChatClient,
         groq: groqChatClient,

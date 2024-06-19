@@ -265,6 +265,9 @@ importers:
 
   lib/shared:
     dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.20.8
+        version: 0.20.8
       '@microsoft/fetch-event-source':
         specifier: ^2.0.1
         version: 2.0.1
