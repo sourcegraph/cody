@@ -270,7 +270,7 @@ export class JvmCodegen extends BaseCodegen {
                   })
             this.writeDataClass({ p, f, symtab }, typeName, info, {
                 heritageClause:
-                    this.language === JvmLanguage.Kotlin ? ` : ${name}()` : ` implements ${name}`,
+                    this.language === JvmLanguage.Kotlin ? ` : ${name}()` : ` extends ${name}`,
             })
         }
         if (this.language === JvmLanguage.Java) {
