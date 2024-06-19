@@ -10,6 +10,12 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+## 1.22.3
+
+### Fixed
+
+- Autocomplete: Fixed model identifier name for language specific fine-tuned models. [pull/4619](https://github.com/sourcegraph/cody/pull/4619)
+
 ## 1.22.2
 
 ### Added
