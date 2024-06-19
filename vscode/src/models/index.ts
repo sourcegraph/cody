@@ -35,7 +35,7 @@ async function getModel<T extends string>(
     const migratedModelID = migrateAndNotifyForOutdatedModels(lastSelectedModelID)
 
     if (migratedModelID && migratedModelID !== lastSelectedModelID) {
-        void setModel(migratedModelID, storageKey)
+        await setModel(migratedModelID, storageKey)
     }
 
     if (migratedModelID) {

@@ -559,7 +559,7 @@ export class InlineCompletionItemProvider
         }
 
         // Mark as seen, so we don't show again after this.
-        void localStorage.set(key, 'true')
+        await localStorage.set(key, 'true')
 
         if (isInTutorial(request.document)) {
             // Do nothing, the user is already working through the tutorial

@@ -188,9 +188,8 @@ export class SimpleChatPanelProvider
     static async create(
         options: Omit<SimpleChatPanelProviderOptions, 'chatModel'>
     ): Promise<SimpleChatPanelProvider> {
-        const chatModelInstance = new SimpleChatModel(
-            await getDefaultModelID(options.authProvider, options.models)
-        )
+        const model =  await getDefaultModelID(options.authProvider, options.models)
+        const chatModelInstance = new SimpleChatModel(model)
 
         return new SimpleChatPanelProvider({ ...options, chatModel: chatModelInstance})
     }
@@ -1672,7 +1671,8 @@ function isAbortErrorOrSocketHangUp(error: unknown): error is Error {
 
 async function getDefaultModelID(authProvider: AuthProvider, models: Model[]): Promise<string> {
     try {
-        return chatModel.get(authProvider, models)
+        const result = await chatModel.get(authProvider, models)
+        return result
     } catch {
         return '(pending)'
     }
