@@ -103,7 +103,7 @@ test.extend<ExpectedEvents>({
 
     // The mentions in the command should show up as mentions.
     const firstChatInput = chatPanel.getByRole('textbox', { name: 'Chat message' }).first()
-    await expect(chatInputMentions(firstChatInput)).toHaveText(['@index.html:2-10', '@index.html'])
+    await expect(chatInputMentions(firstChatInput)).toHaveText(['index.html:2-10', 'index.html'])
 
     // When the message is resent, ensure that the same number of context items are included.
     await firstChatInput.focus()
@@ -118,7 +118,7 @@ test.extend<ExpectedEvents>({
     await expectContextCellCounts(contextCell, { files: 2 })
     await contextCell.click()
     await expect(chatPanel.getByRole('link', { name: 'index.html:2-10' })).toBeVisible()
-    await expect(chatInputMentions(firstChatInput)).toHaveText(['@index.html:2-10', '@index.html'])
+    await expect(chatInputMentions(firstChatInput)).toHaveText(['index.html:2-10', 'index.html'])
 })
 
 test.extend<ExpectedEvents>({

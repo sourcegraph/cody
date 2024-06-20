@@ -1,14 +1,15 @@
 import type { DiscriminatedUnion, DiscriminatedUnionMember } from './BaseCodegen'
-import type { KotlinCodegen } from './KotlinCodegen'
+import { type JvmCodegen, JvmLanguage } from './JvmCodegen'
 import type { SymbolTable } from './SymbolTable'
 import { isNullOrUndefinedOrUnknownType } from './isNullOrUndefinedOrUnknownType'
 import type { scip } from './scip'
 import { capitalize, typescriptKeyword, typescriptKeywordSyntax } from './utils'
 
-export class KotlinFormatter {
+export class JvmFormatter {
     constructor(
+        private readonly language: JvmLanguage,
         private readonly symtab: SymbolTable,
-        private codegen: KotlinCodegen
+        private codegen: JvmCodegen
     ) {}
     public functionName(info: scip.SymbolInformation): string {
         return info.display_name.replaceAll('$/', '').replaceAll('/', '_')
@@ -32,7 +33,10 @@ export class KotlinFormatter {
     } {
         const parameterType = jsonrpcMethod.signature.value_signature.tpe.type_ref.type_arguments[0]
         const parameterSyntax = this.jsonrpcTypeName(jsonrpcMethod, parameterType, 'parameter')
-        return { parameterType, parameterSyntax: `params: ${parameterSyntax}` }
+        if (this.language === JvmLanguage.Kotlin) {
+            return { parameterType, parameterSyntax: `params: ${parameterSyntax}` }
+        }
+        return { parameterType, parameterSyntax: `${parameterSyntax} params` }
     }
 
     public isNullish(symbol: string): boolean {
@@ -43,6 +47,10 @@ export class KotlinFormatter {
         return this.isNullable(info.signature.value_signature.tpe)
     }
     public nullableSyntax(tpe: scip.Type): string {
+        if (this.language === JvmLanguage.Java) {
+            // TODO: emit @Nullable
+            return ''
+        }
         return this.isNullable(tpe) ? '?' : ''
     }
     public isNullable(tpe: scip.Type): boolean {
@@ -77,16 +85,22 @@ export class KotlinFormatter {
                 const [k, v] = parameterOrResultType.type_ref.type_arguments
                 const key = this.jsonrpcTypeName(jsonrpcMethod, k, kind)
                 const value = this.jsonrpcTypeName(jsonrpcMethod, v, kind)
-                return `Map<${key}, ${value}>`
+                if (this.language === JvmLanguage.Kotlin) {
+                    return `Map<${key}, ${value}>`
+                }
+                return `java.util.Map<${key}, ${value}>`
             }
-            const keyword = typescriptKeywordSyntax(parameterOrResultType.type_ref.symbol)
+            const keyword = typescriptKeywordSyntax(this.language, parameterOrResultType.type_ref.symbol)
             if (keyword === 'List') {
                 const elementType = this.jsonrpcTypeName(
                     jsonrpcMethod,
                     parameterOrResultType.type_ref.type_arguments[0],
                     kind
                 )
-                return `List<${elementType}>`
+                if (this.language === JvmLanguage.Kotlin) {
+                    return `List<${elementType}>`
+                }
+                return `java.util.List<${elementType}>`
             }
             if (keyword) {
                 return keyword
@@ -105,7 +119,7 @@ export class KotlinFormatter {
             parameterOrResultType.has_constant_type &&
             parameterOrResultType.constant_type.constant.has_int_constant
         ) {
-            return 'Int'
+            return this.language === JvmLanguage.Kotlin ? 'Int' : 'Integer'
         }
 
         if (parameterOrResultType.has_structural_type || parameterOrResultType.has_intersection_type) {
@@ -198,13 +212,33 @@ export class KotlinFormatter {
         'val',
         'var',
         'fun',
+        'when',
+    ])
+    private javaKeywords = new Set([
+        'class',
+        'interface',
+        'object',
+        'package',
+        'var',
+        'default',
+        'case',
+        'switch',
     ])
 
     public formatFieldName(name: string): string {
         const escaped = name.replace(':', '_').replace('/', '_')
-        const isKeyword = this.kotlinKeywords.has(escaped)
-        const needsBacktick = isKeyword || !/^[a-zA-Z0-9_]+$/.test(escaped)
-        return needsBacktick ? `\`${escaped}\`` : escaped
+        if (this.language === JvmLanguage.Kotlin) {
+            const isKeyword = this.kotlinKeywords.has(escaped)
+            const needsBacktick = isKeyword || !/^[a-zA-Z0-9_]+$/.test(escaped)
+            return needsBacktick ? `\`${escaped}\`` : escaped
+        }
+
+        // Java
+        const isKeyword = this.javaKeywords.has(escaped)
+        if (isKeyword) {
+            return escaped + '_'
+        }
+        return escaped.replace(/[^a-zA-Z0-9]/g, '_')
     }
 
     public discriminatedUnionTypeName(

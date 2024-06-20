@@ -104,12 +104,12 @@ function getFileSourceIconTitle(source?: string): string {
 function getFileSourceDisplayText(source?: string): string {
     switch (source) {
         case 'unified':
-            return 'Enhanced Context (Enterprise Search)'
+            return 'Automatic Codebase Context (Enterprise Search)'
         case 'search':
         case 'symf':
-            return 'Enhanced Context (Search)'
+            return 'Automatic Codebase Context (Search)'
         case 'embeddings':
-            return 'Enhanced Context (Embeddings)'
+            return 'Automatic Codebase Context (Embeddings)'
         case 'editor':
             return 'Editor Context'
         case 'selection':
@@ -117,6 +117,6 @@ function getFileSourceDisplayText(source?: string): string {
         case 'user':
             return '@-mention'
         default:
-            return source ?? 'Enhanced Context'
+            return source ?? 'Automatic Codebase Context'
     }
 }

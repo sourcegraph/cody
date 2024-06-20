@@ -274,6 +274,7 @@ export {
 export {
     type ContextItemProps,
     allMentionProvidersMetadata,
+    openCtxProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type ContextMentionProviderMetadata,
@@ -300,4 +301,9 @@ export {
 export { type ClientStateForWebview } from './clientState'
 export * from './lexicalEditor/editorState'
 export * from './lexicalEditor/nodes'
+export {
+    FILE_MENTION_EDITOR_STATE_FIXTURE,
+    OLD_TEXT_FILE_MENTION_EDITOR_STATE_FIXTURE,
+    UNKNOWN_NODES_EDITOR_STATE_FIXTURE,
+} from './lexicalEditor/fixtures'
 export { getSerializedParams } from './sourcegraph-api/completions/utils'

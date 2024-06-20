@@ -172,6 +172,8 @@ export function getConfiguration(
         // Rely on this flag sparingly.
         isRunningInsideAgent: getHiddenSetting('advanced.agent.running', false),
         agentIDE: getHiddenSetting<'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'>('advanced.agent.ide'),
+        agentIDEVersion: getHiddenSetting('advanced.agent.ide.version'),
+        agentExtensionVersion: getHiddenSetting('advanced.agent.extension.version'),
         autocompleteTimeouts: {
             multiline: getHiddenSetting<number | undefined>(
                 'autocomplete.advanced.timeout.multiline',
@@ -184,7 +186,7 @@ export function getConfiguration(
         },
         autocompleteFirstCompletionTimeout: getHiddenSetting<number>(
             'autocomplete.advanced.timeout.firstCompletion',
-            1_500
+            3_500
         ),
         testingModelConfig:
             isTesting && hasValidLocalEmbeddingsConfig()

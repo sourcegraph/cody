@@ -1,9 +1,9 @@
 @file:Suppress("FunctionName", "ClassName")
-package com.sourcegraph.cody.protocol_generated
+package com.sourcegraph.cody.protocol_generated;
 
-import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
-import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
-import java.util.concurrent.CompletableFuture
+import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;
+import org.eclipse.lsp4j.jsonrpc.services.JsonRequest;
+import java.util.concurrent.CompletableFuture;
 
 @Suppress("unused")
 interface CodyAgentClient {
@@ -38,6 +38,8 @@ interface CodyAgentClient {
   fun ignore_didChange(params: Null?)
   @JsonNotification("webview/postMessage")
   fun webview_postMessage(params: WebviewPostMessageParams)
+  @JsonNotification("webview/postMessageStringEncoded")
+  fun webview_postMessageStringEncoded(params: Webview_PostMessageStringEncodedParams)
   @JsonNotification("progress/start")
   fun progress_start(params: ProgressStartParams)
   @JsonNotification("progress/report")

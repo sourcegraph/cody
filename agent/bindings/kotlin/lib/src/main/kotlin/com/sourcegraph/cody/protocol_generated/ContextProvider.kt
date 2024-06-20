@@ -1,21 +1,20 @@
 @file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
-package com.sourcegraph.cody.protocol_generated
+package com.sourcegraph.cody.protocol_generated;
 
-import com.google.gson.annotations.SerializedName
-import com.google.gson.Gson
-import com.google.gson.JsonDeserializationContext
-import com.google.gson.JsonDeserializer
-import com.google.gson.JsonElement
-import java.lang.reflect.Type
+import com.google.gson.annotations.SerializedName;
+import com.google.gson.Gson;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import java.lang.reflect.Type;
 
 sealed class ContextProvider {
   companion object {
     val deserializer: JsonDeserializer<ContextProvider> =
       JsonDeserializer { element: JsonElement, _: Type, context: JsonDeserializationContext ->
-        when (element.asJsonObject.get("kind").asString) {
+        when (element.getAsJsonObject().get("kind").getAsString()) {
           "embeddings" -> context.deserialize<LocalEmbeddingsProvider>(element, LocalEmbeddingsProvider::class.java)
           "search" -> context.deserialize<LocalSearchProvider>(element, LocalSearchProvider::class.java)
-          "search" -> context.deserialize<RemoteSearchProvider>(element, RemoteSearchProvider::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }

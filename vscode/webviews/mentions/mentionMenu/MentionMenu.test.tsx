@@ -19,10 +19,16 @@ vi.mock('./MentionMenuItem', () => ({
 
 const PROVIDER_P1: ContextMentionProviderMetadata = {
     id: 'p1',
+    title: 'p1 title',
+    queryLabel: 'p1 queryLabel',
+    emptyLabel: 'p1 emptyLabel',
 }
 
 const PROVIDER_P2: ContextMentionProviderMetadata = {
     id: 'p2',
+    title: 'p2 title',
+    queryLabel: 'p2 queryLabel',
+    emptyLabel: 'p2 emptyLabel',
 }
 
 const ITEM_FILE1: ContextItem = {
@@ -104,11 +110,7 @@ describe('MentionMenu', () => {
                         {...PROPS}
                         params={{
                             query: 'test',
-                            parentItem: {
-                                ...PROVIDER_P1,
-                                queryLabel: 'p1 queryLabel',
-                                emptyLabel: 'p1 emptyLabel',
-                            },
+                            parentItem: PROVIDER_P1,
                         }}
                         data={{
                             items: [],
@@ -116,7 +118,7 @@ describe('MentionMenu', () => {
                         }}
                     />
                 )
-                expectMenu(container, ['#p1 queryLabel', '#p1 emptyLabel'])
+                expectMenu(container, ['#p1 title', '#p1 emptyLabel'])
             })
 
             test('no items without query', () => {
@@ -125,11 +127,7 @@ describe('MentionMenu', () => {
                         {...PROPS}
                         params={{
                             query: '',
-                            parentItem: {
-                                ...PROVIDER_P1,
-                                queryLabel: 'p1 queryLabel',
-                                emptyLabel: 'p1 emptyLabel',
-                            },
+                            parentItem: PROVIDER_P1,
                         }}
                         data={{
                             items: [],
@@ -137,7 +135,7 @@ describe('MentionMenu', () => {
                         }}
                     />
                 )
-                expectMenu(container, ['#p1 queryLabel', '#Search...'])
+                expectMenu(container, ['#p1 title', '#p1 queryLabel'])
             })
 
             test('with suggested items for empty query', () => {
@@ -146,7 +144,7 @@ describe('MentionMenu', () => {
                         {...PROPS}
                         params={{
                             query: '',
-                            parentItem: { ...PROVIDER_P1, queryLabel: 'p1 queryLabel' },
+                            parentItem: PROVIDER_P1,
                         }}
                         data={{
                             items: [ITEM_FILE1],
@@ -154,7 +152,7 @@ describe('MentionMenu', () => {
                         }}
                     />
                 )
-                expectMenu(container, ['#p1 queryLabel', 'item file file1.go'])
+                expectMenu(container, ['#p1 title', 'item file file1.go'])
             })
 
             test('with items and non-empty query', () => {
@@ -163,7 +161,7 @@ describe('MentionMenu', () => {
                         {...PROPS}
                         params={{
                             query: 'q',
-                            parentItem: { ...PROVIDER_P1, queryLabel: 'p1 queryLabel' },
+                            parentItem: PROVIDER_P1,
                         }}
                         data={{
                             items: [ITEM_FILE1],
@@ -171,7 +169,7 @@ describe('MentionMenu', () => {
                         }}
                     />
                 )
-                expectMenu(container, ['#p1 queryLabel', 'item file file1.go'])
+                expectMenu(container, ['#p1 title', 'item file file1.go'])
             })
 
             test('by trigger prefix', () => {

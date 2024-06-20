@@ -722,6 +722,7 @@ export const vsCodeMocks = {
     Uri,
     Location,
     languages,
+    version: '1.85.1-testing',
     env: {
         uiKind: 1 satisfies vscode_types.UIKind.Desktop,
     },
@@ -864,7 +865,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
         multiline: undefined,
         singleline: undefined,
     },
-    autocompleteFirstCompletionTimeout: 1500,
+    autocompleteFirstCompletionTimeout: 3500,
     testingModelConfig: undefined,
     experimentalChatContextRanker: false,
 } satisfies Configuration

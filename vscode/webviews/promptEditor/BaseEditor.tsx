@@ -21,7 +21,7 @@ import { OnFocusChangePlugin } from './plugins/onFocus'
 interface Props extends KeyboardEventPluginProps {
     userInfo?: UserAccountInfo
     initialEditorState: SerializedEditorState | null
-    onChange: (editorState: EditorState, editor: LexicalEditor) => void
+    onChange: (editorState: EditorState, editor: LexicalEditor, tags: Set<string>) => void
     onFocusChange?: (focused: boolean) => void
     editorRef?: RefObject<LexicalEditor>
     placeholder?: string
@@ -83,7 +83,12 @@ export const BaseEditor: FunctionComponent<Props> = ({
                     />
                     <NoRichTextFormatShortcutsPlugin />
                     <HistoryPlugin />
-                    <OnChangePlugin onChange={onChange} ignoreSelectionChange={true} />
+                    <OnChangePlugin
+                        onChange={onChange}
+                        // `ignoreHistoryMergeTagChange={false}` is necessary for onChange to run in
+                        // our tests using JSDOM. It doesn't hurt to enable otherwise.
+                        ignoreHistoryMergeTagChange={false}
+                    />
                     <MentionsPlugin userInfo={userInfo} />
                     <CodeHighlightPlugin />
                     {onFocusChange && <OnFocusChangePlugin onFocusChange={onFocusChange} />}

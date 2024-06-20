@@ -1,5 +1,6 @@
 import fspromises from 'node:fs/promises'
 import { globalAgent } from 'node:https'
+import path from 'node:path'
 
 /**
  * Registers local root certificates onto the global HTTPS agent.
@@ -9,8 +10,9 @@ import { globalAgent } from 'node:https'
  * On Linux, this adds Linux root certs.
  *
  * This allows HTTPS requests made via the global agent to trust these root certs.
+ * @param {Pick<vscode.ExtensionContext, 'extensionUri'>} context
  */
-export function registerLocalCertificates() {
+export function registerLocalCertificates(context) {
     // Deduplicates and installs macOS root certs onto the global agent. This is a no-op for
     // non-macOS environments
     try {
@@ -22,7 +24,15 @@ export function registerLocalCertificates() {
     // Installs Windows root certs onto the global agent. This is a no-op for non-Windows
     // environments.
     try {
-        require('win-ca/fallback')
+        // By default, win-ca automatically locates the path to roots.exe from
+        // node_modules, but this doesn't work for Cody in VSC because we bundle
+        // the extension. Instead, we manually include roots.exe in the
+        // extension distribution and locate it via `vscode.ExtensionContext.extensionUri`.
+        // Docs https://github.com/ukoloff/win-ca#exe
+        const ca = require('win-ca/api')
+        const rootsExe = path.join(context.extensionUri.fsPath, 'dist', 'win-ca-roots.exe')
+        ca.exe(rootsExe)
+        ca({ fallback: true })
     } catch (e) {
         console.warn('Error installing Windows certs', e)
     }

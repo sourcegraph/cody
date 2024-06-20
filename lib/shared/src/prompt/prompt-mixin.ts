@@ -5,7 +5,7 @@ import { PromptString, ps } from './prompt-string'
 /**
  * The preamble we add to the start of the last human open-end chat message that has context items.
  */
-const CONTEXT_PREAMBLE = ps`The provided codebase context are the code you need and have access to. Do not make any assumptions. Ask for additional context if you need it. Question: `
+const CONTEXT_PREAMBLE = ps`You have access to the provided codebase context. Do not make any assumptions. Question: `
 
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.

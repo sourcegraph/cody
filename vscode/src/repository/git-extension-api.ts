@@ -1,5 +1,4 @@
 import * as vscode from 'vscode'
-
 import type { API, GitExtension } from './builtinGitExtension'
 
 /**

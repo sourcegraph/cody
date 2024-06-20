@@ -577,7 +577,7 @@ describe('InlineCompletionItemProvider', () => {
                 expect.objectContaining({
                     title: 'Cody Autocomplete Disabled Due to Rate Limit',
                     description:
-                        "You've used all autocompletions for today. Usage will reset tomorrow at 1:00 PM",
+                        "You've used all of your autocompletions for today. Usage will reset tomorrow at 1:00 PM",
                 })
             )
 
@@ -608,11 +608,11 @@ describe('InlineCompletionItemProvider', () => {
                     canUpgrade
                         ? expect.objectContaining({
                               title: 'Upgrade to Continue Using Cody Autocomplete',
-                              description: "You've used all autocompletions for the month.",
+                              description: "You've used all of your autocompletions for the month.",
                           })
                         : expect.objectContaining({
                               title: 'Cody Autocomplete Disabled Due to Rate Limit',
-                              description: "You've used all autocompletions for today.",
+                              description: "You've used all of your autocompletions for today.",
                           })
                 )
 
