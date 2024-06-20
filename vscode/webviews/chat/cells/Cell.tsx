@@ -34,7 +34,7 @@ export const Cell: FunctionComponent<
         data-testid={dataTestID}
     >
         <div
-            className="tw-pt-[3px] tw-flex tw-items-top tw-justify-center"
+            className="tw-flex tw-pt-[2px] tw-items-top tw-justify-center"
             style={{ width: `${MESSAGE_CELL_AVATAR_SIZE}px` }}
         >
             {gutterIcon}
