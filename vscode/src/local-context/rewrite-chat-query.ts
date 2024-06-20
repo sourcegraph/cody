@@ -1,14 +1,14 @@
 import { XMLParser } from 'fast-xml-parser'
 
 import {
-    type ChatMessage,
+    type ChatClient,
     type ContextItemWithContent,
     ModelsService,
     PromptString,
-    type SourcegraphCompletionsClient,
     getSimplePreamble,
     psDedent,
 } from '@sourcegraph/cody-shared'
+import type { SimpleChatModel } from '../chat/chat-view/SimpleChatModel'
 import { logDebug, logError } from '../log'
 import { PromptBuilder } from '../prompt-builder'
 
@@ -18,18 +18,16 @@ import { PromptBuilder } from '../prompt-builder'
 export async function rewriteChatQuery({
     query,
     contextItems,
-    chatMessages,
-    completionsClient,
-    modelID,
+    chatClient,
+    chatModel,
 }: {
     query: PromptString
     contextItems: ContextItemWithContent[]
-    chatMessages: readonly ChatMessage[]
-    completionsClient: SourcegraphCompletionsClient
-    modelID: string
+    chatClient: ChatClient
+    chatModel: SimpleChatModel
 }): Promise<PromptString> {
     try {
-        const contextWindow = ModelsService.getContextWindowByID(modelID)
+        const contextWindow = ModelsService.getContextWindowByID(chatModel.modelID)
         const promptBuilder = new PromptBuilder(contextWindow)
 
         // Include simple preamble in the prompt.
@@ -37,6 +35,8 @@ export async function rewriteChatQuery({
         if (!promptBuilder.tryAddToPrefix(preamble)) {
             return query
         }
+
+        const chatMessages = chatModel.getMessages()
 
         // If it is the first question and there are no context items return the original query.
         if (chatMessages.length < 2 && contextItems.length === 0) {
@@ -84,16 +84,12 @@ Rewrite the following latest query based on the chat history: <latest_query>${qu
 
         const messages = promptBuilder.build()
 
-        const stream = completionsClient.stream(
-            {
-                messages,
-                model: modelID,
-                maxTokensToSample: 400,
-                temperature: 0,
-                topK: 1,
-            },
-            0 // Use legacy API version for now
-        )
+        const stream = chatClient.chat(messages, {
+            model: chatModel.modelID,
+            maxTokensToSample: 400,
+            temperature: 0,
+            topK: 1,
+        })
 
         const streamingText: string[] = []
         for await (const message of stream) {

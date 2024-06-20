@@ -725,9 +725,8 @@ export class SimpleChatPanelProvider
                                   ? await rewriteChatQuery({
                                         query: inputText,
                                         contextItems: userContextItems,
-                                        chatMessages: this.chatModel.getMessages(),
-                                        completionsClient: this.chatClient.completions,
-                                        modelID: this.chatModel.modelID,
+                                        chatClient: this.chatClient,
+                                        chatModel: this.chatModel,
                                     })
                                   : inputText
 
