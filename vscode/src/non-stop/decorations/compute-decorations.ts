@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 import { isStreamedIntent } from '../../edit/utils/edit-intent'
 import type { FixupTask } from '../FixupTask'
-import { getLastFullLine, getTextWithSpaceIndentation, getVisibleDocument } from './utils'
+import { getDecorationSuitableText, getLastFullLine, getVisibleDocument } from './utils'
 
 export interface Decorations {
     linesAdded: vscode.DecorationOptions[]
@@ -55,11 +55,11 @@ export function computeAppliedDecorations(task: FixupTask): Decorations | undefi
     for (const edit of task.diff) {
         if (edit.type === 'decoratedDeletion') {
             // Decorations do not render tab characters, we must convert any tabs to spaces.
-            const paddedText = getTextWithSpaceIndentation(edit.oldText, visibleDocument)
+            const decorationText = getDecorationSuitableText(edit.oldText, visibleDocument)
             decorations.linesRemoved.push({
                 range: edit.range,
                 renderOptions: {
-                    after: { contentText: paddedText },
+                    after: { contentText: decorationText },
                 },
             })
         } else if (edit.type === 'insertion') {

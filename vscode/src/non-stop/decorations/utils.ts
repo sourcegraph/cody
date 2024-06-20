@@ -18,7 +18,7 @@ export function getVisibleDocument(task: FixupTask): vscode.TextDocument | undef
 
 const UNICODE_SPACE = '\u00a0'
 
-export function getTextWithSpaceIndentation(text: string, document: vscode.TextDocument): string {
+function getTextWithSpaceIndentation(text: string, document: vscode.TextDocument): string {
     const hasTabs = /\t/.test(text)
     if (!hasTabs) {
         // Pad the line with any leading whitespace
@@ -29,4 +29,11 @@ export function getTextWithSpaceIndentation(text: string, document: vscode.TextD
     const tabSize = getEditorTabSize(document.uri, vscode.workspace, vscode.window)
     const tabAsSpace = UNICODE_SPACE.repeat(tabSize)
     return text.replaceAll(/\t/g, tabAsSpace)
+}
+
+export function getDecorationSuitableText(text: string, document: vscode.TextDocument): string {
+    // Decorations do not render the tab character, so update it to use whitespace
+    const textWithSpaceIndentation = getTextWithSpaceIndentation(text, document)
+    // Decorations do not render normal spaces, we must use unicode spaces to ensure they are not trimmed.
+    return textWithSpaceIndentation.replace(/ /g, UNICODE_SPACE)
 }
