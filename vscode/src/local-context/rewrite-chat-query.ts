@@ -9,7 +9,7 @@ import {
     getSimplePreamble,
     psDedent,
 } from '@sourcegraph/cody-shared'
-import { logDebug } from '../log'
+import { logDebug, logError } from '../log'
 import { PromptBuilder } from '../prompt-builder'
 
 /**
@@ -112,11 +112,19 @@ Rewrite the following latest query based on the chat history: <latest_query>${qu
         const parser = new XMLParser()
         const document = parser.parse(text)
 
+        logDebug(
+            'rewrite-chat-query:success',
+            JSON.stringify({
+                original: query.toString(),
+                rewritten: document?.rewritten_query?.trim(),
+            })
+        )
+
         return document?.rewritten_query?.trim()
             ? PromptString.unsafe_fromLLMResponse(document.rewritten_query.trim())
             : query
     } catch (err) {
-        logDebug('rewrite-chat-query', 'failed', { verbose: err })
+        logError('rewrite-chat-query:failed', JSON.stringify({ verbose: err }))
         // If we fail to rewrite, just return the original query.
         return query
     }
