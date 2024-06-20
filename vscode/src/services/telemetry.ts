@@ -23,12 +23,15 @@ let globalAnonymousUserID: string
 
 const { platform, arch } = getOSArch()
 
-export const getExtensionDetails = (config: Pick<Configuration, 'agentIDE'>): ExtensionDetails => ({
+export const getExtensionDetails = (
+    config: Pick<Configuration, 'agentIDE' | 'agentIDEVersion' | 'agentExtensionVersion'>
+): ExtensionDetails => ({
     ide: config.agentIDE ?? 'VSCode',
+    ideVersion: config.agentIDEVersion ?? vscode.version,
     ideExtensionType: 'Cody',
     platform: platform ?? 'browser',
-    arch,
-    version,
+    arch: arch,
+    version: config.agentExtensionVersion ?? version,
 })
 
 /**

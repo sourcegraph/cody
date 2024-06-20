@@ -305,7 +305,7 @@ function getEmptyLabel(
     mentionQuery: MentionQuery
 ): string {
     if (!mentionQuery.text) {
-        return 'Search...'
+        return parentItem?.queryLabel ?? 'Search...'
     }
 
     if (!parentItem) {
@@ -338,5 +338,5 @@ function getItemsHeading(
         // Don't show heading for these common types because it's just noisy.
         return ''
     }
-    return parentItem.queryLabel ?? parentItem.title ?? parentItem.id
+    return parentItem.title ?? parentItem.id
 }

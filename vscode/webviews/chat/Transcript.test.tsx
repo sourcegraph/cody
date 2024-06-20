@@ -1,5 +1,5 @@
-import { errorToChatError, ps } from '@sourcegraph/cody-shared'
-import { fireEvent, render as render_, screen } from '@testing-library/react'
+import { type ChatMessage, errorToChatError, ps } from '@sourcegraph/cody-shared'
+import { fireEvent, getQueriesForElement, render as render_, screen } from '@testing-library/react'
 import type { ComponentProps } from 'react'
 import { type Assertion, describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
@@ -201,15 +201,14 @@ describe('Transcript', () => {
             />
         )
         expectCells([{ message: 'Foo' }, { message: 'Request Failed: some error' }])
+        expect(screen.queryByText('Try again with different context')).toBeNull()
     })
 
     test('does not clobber user input into followup while isPendingPriorResponse when it completes', async () => {
+        const humanMessage: ChatMessage = { speaker: 'human', text: ps`Foo`, contextFiles: [] }
+        const assistantMessage: ChatMessage = { speaker: 'assistant', text: ps`Bar` }
         const { container, rerender } = render(
-            <Transcript
-                {...PROPS}
-                transcript={[{ speaker: 'human', text: ps`Foo`, contextFiles: [] }]}
-                messageInProgress={{ speaker: 'assistant', text: ps`Bar` }}
-            />
+            <Transcript {...PROPS} transcript={[humanMessage]} messageInProgress={assistantMessage} />
         )
         const editor = container.querySelector<EditorHTMLElement>(
             '[role="row"]:last-child [data-lexical-editor="true"]'
@@ -220,15 +219,15 @@ describe('Transcript', () => {
         rerender(
             <Transcript
                 {...PROPS}
-                transcript={[
-                    { speaker: 'human', text: ps`Foo`, contextFiles: [] },
-                    { speaker: 'assistant', text: ps`Bar` },
-                ]}
+                transcript={[humanMessage, assistantMessage]}
                 messageInProgress={null}
             />
         )
         await typeInEditor(editor, 'yap')
-        expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: 'qux', canSubmit: true }])
+        expectCells(
+            [{ message: 'Foo' }, { message: 'Bar' }, { message: 'qux', canSubmit: true }],
+            container
+        )
     })
 
     test('focus', async () => {
@@ -280,15 +279,20 @@ type CellMatcher =
       }
 
 /** A test helper to make it easier to describe an expected transcript. */
-function expectCells(expectedCells: CellMatcher[]): void {
-    const actualCells = screen.getAllByRole('row')
+function expectCells(expectedCells: CellMatcher[], containerElement?: HTMLElement): void {
+    const container = containerElement ? getQueriesForElement(containerElement) : screen
+    const actualCells = container.getAllByRole('row')
     expect(actualCells).toHaveLength(expectedCells.length)
     for (const [i, cell] of actualCells.entries()) {
         const expectedCell = expectedCells[i]
         if ('message' in expectedCell) {
             expect(cell).toHaveAttribute('data-testid', 'message')
             if (typeof expectedCell.message === 'string') {
-                expect(cell.innerText).toMatch(expectedCell.message)
+                const textElement =
+                    cell.querySelector<HTMLDivElement>('[data-lexical-editor]') ??
+                    cell.querySelector<HTMLDivElement>('[data-testid="chat-message-content"]') ??
+                    cell
+                expect(textElement.innerText.trim()).toBe(expectedCell.message)
             } else if ('loading' in expectedCell.message) {
                 expect(cell.querySelector('[role="status"]')).toHaveAttribute('aria-busy')
             }

@@ -1,4 +1,8 @@
-import type { SerializedPromptEditorState, SerializedPromptEditorValue } from '@sourcegraph/cody-shared'
+import {
+    type SerializedPromptEditorState,
+    type SerializedPromptEditorValue,
+    textContentFromSerializedLexicalNode,
+} from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import {
     type FocusEventHandler,
@@ -78,8 +82,11 @@ export const HumanMessageEditor: FunctionComponent<{
     useImperativeHandle(parentEditorRef, (): PromptEditorRefAPI | null => editorRef.current, [])
 
     // The only PromptEditor state we really need to track in our own state is whether it's empty.
-    const [isEmptyEditorValue_, setIsEmptyEditorValue] = useState(initialEditorState === undefined)
-    const isEmptyEditorValue = editorRef.current ? editorRef.current.isEmpty() : isEmptyEditorValue_
+    const [isEmptyEditorValue, setIsEmptyEditorValue] = useState(
+        initialEditorState
+            ? textContentFromSerializedLexicalNode(initialEditorState.lexicalEditorState.root) === ''
+            : true
+    )
     const onEditorChange = useCallback(
         (value: SerializedPromptEditorValue): void => {
             onChange?.(value)

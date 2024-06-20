@@ -1,12 +1,8 @@
 import * as vscode from 'vscode'
 
-import type {
-    CompletionLogger,
-    CompletionParameters,
-    CompletionResponse,
-    Event,
-} from '@sourcegraph/cody-shared'
+import type { CompletionLogger, CompletionParameters, Event } from '@sourcegraph/cody-shared'
 
+import type { CompletionResponseWithMetaData } from '@sourcegraph/cody-shared/src/inferenceClient/misc'
 import { getConfiguration } from './configuration'
 
 export const CODY_OUTPUT_CHANNEL = 'Cody by Sourcegraph'
@@ -127,7 +123,7 @@ export const logger: CompletionLogger = {
         }
 
         function onComplete(
-            result: string | CompletionResponse | string[] | CompletionResponse[]
+            result: string | CompletionResponseWithMetaData | string[] | CompletionResponseWithMetaData[]
         ): void {
             if (hasFinished) {
                 return

@@ -1,13 +1,16 @@
-import type { SerializedLexicalNode, SerializedTextNode, Spread } from 'lexical'
+import type { SerializedLexicalNode, Spread } from 'lexical'
 import { URI } from 'vscode-uri'
 import type {
     ContextItem,
     ContextItemFile,
     ContextItemOpenCtx,
     ContextItemRepository,
+    ContextItemSource,
     ContextItemSymbol,
     ContextItemTree,
 } from '../codebase-context/messages'
+import { displayLineRange } from '../common/range'
+import { displayPathBasename } from '../editor/displayPath'
 
 export const CONTEXT_ITEM_MENTION_NODE_TYPE = 'contextItemMention'
 
@@ -15,12 +18,17 @@ export const CONTEXT_ITEM_MENTION_NODE_TYPE = 'contextItemMention'
  * The subset of {@link ContextItem} fields that we need to store to identify and display context
  * item mentions.
  */
-export type SerializedContextItem = { uri: string; title?: string; content?: undefined } & (
-    | Omit<ContextItemFile, 'uri' | 'content'>
-    | Omit<ContextItemRepository, 'uri' | 'content'>
-    | Omit<ContextItemTree, 'uri' | 'content'>
-    | Omit<ContextItemSymbol, 'uri' | 'content'>
-    | Omit<ContextItemOpenCtx, 'uri' | 'content'>
+export type SerializedContextItem = {
+    uri: string
+    title?: string
+    content?: undefined
+    source?: ContextItemSource
+} & (
+    | Omit<ContextItemFile, 'uri' | 'content' | 'source'>
+    | Omit<ContextItemRepository, 'uri' | 'content' | 'source'>
+    | Omit<ContextItemTree, 'uri' | 'content' | 'source'>
+    | Omit<ContextItemSymbol, 'uri' | 'content' | 'source'>
+    | Omit<ContextItemOpenCtx, 'uri' | 'content' | 'source'>
 )
 
 export type SerializedContextItemMentionNode = Spread<
@@ -28,8 +36,9 @@ export type SerializedContextItemMentionNode = Spread<
         type: typeof CONTEXT_ITEM_MENTION_NODE_TYPE
         contextItem: SerializedContextItem
         isFromInitialContext: boolean
+        text: string
     },
-    SerializedTextNode
+    SerializedLexicalNode
 >
 
 export function serializeContextItem(
@@ -55,4 +64,36 @@ export function isSerializedContextItemMentionNode(
     node: SerializedLexicalNode | null | undefined
 ): node is SerializedContextItemMentionNode {
     return Boolean(node && node.type === CONTEXT_ITEM_MENTION_NODE_TYPE)
+}
+
+export function contextItemMentionNodeDisplayText(contextItem: SerializedContextItem): string {
+    // A displayed range of `foo.txt:2-4` means "include all of lines 2, 3, and 4", which means the
+    // range needs to go to the start (0th character) of line 5. Also, `RangeData` is 0-indexed but
+    // display ranges are 1-indexed.
+    const rangeText = contextItem.range?.start ? `:${displayLineRange(contextItem.range)}` : ''
+    switch (contextItem.type) {
+        case 'file':
+            if (contextItem.provider && contextItem.title) {
+                return contextItem.title
+            }
+            return `${decodeURIComponent(displayPathBasename(URI.parse(contextItem.uri)))}${rangeText}`
+
+        case 'repository':
+            return trimCommonRepoNamePrefixes(contextItem.repoName) ?? 'unknown repository'
+
+        case 'tree':
+            return contextItem.name ?? 'unknown folder'
+
+        case 'symbol':
+            return contextItem.symbolName
+
+        case 'openctx':
+            return contextItem.title
+    }
+    // @ts-ignore
+    throw new Error(`unrecognized context item type ${contextItem.type}`)
+}
+
+function trimCommonRepoNamePrefixes(repoName: string): string {
+    return repoName.replace(/^(github|gitlab)\.com\//, '')
 }

@@ -1,4 +1,6 @@
 import {
+    FILE_MENTION_EDITOR_STATE_FIXTURE,
+    OLD_TEXT_FILE_MENTION_EDITOR_STATE_FIXTURE,
     type SerializedPromptEditorState,
     serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
@@ -7,7 +9,6 @@ import { type FunctionComponent, useState } from 'react'
 import { ContextProvidersDecorator, VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
 import styles from './BaseEditor.story.module.css'
 import { PromptEditor } from './PromptEditor'
-import { FILE_MENTION_EDITOR_STATE_FIXTURE } from './fixtures'
 
 const meta: Meta<typeof PromptEditor> = {
     title: 'ui/PromptEditor',
@@ -33,7 +34,7 @@ const PromptEditorWithStateValue: FunctionComponent<React.ComponentProps<typeof 
         <div>
             <PromptEditor
                 {...props}
-                initialEditorState={editorState}
+                initialEditorState={initialValue}
                 onChange={value => setEditorState(value.editorState)}
             />
             <pre className={styles.stateValue}>{JSON.stringify(editorState, null, 2)}</pre>
@@ -48,6 +49,11 @@ export const Interactive: StoryObj<typeof meta> = {
 export const WithInitialValue: StoryObj<typeof meta> = {
     render: props => <PromptEditorWithStateValue {...props} />,
     args: { initialEditorState: FILE_MENTION_EDITOR_STATE_FIXTURE },
+}
+
+export const WithInitialValueOldTextMentions: StoryObj<typeof meta> = {
+    render: props => <PromptEditorWithStateValue {...props} />,
+    args: { initialEditorState: OLD_TEXT_FILE_MENTION_EDITOR_STATE_FIXTURE },
 }
 
 export const VerticalScroll: StoryObj<typeof meta> = {

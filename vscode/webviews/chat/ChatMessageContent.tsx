@@ -303,7 +303,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     }, [copyButtonOnSubmit, insertButtonOnSubmit, guardrails, displayMarkdown, isMessageLoading])
 
     return (
-        <div ref={rootRef}>
+        <div ref={rootRef} data-testid="chat-message-content">
             <MarkdownFromCody className={clsx(styles.content, className)}>
                 {displayMarkdown}
             </MarkdownFromCody>
