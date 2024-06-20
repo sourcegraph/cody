@@ -8,7 +8,7 @@ import java.nio.file.Paths
 import java.nio.file.SimpleFileVisitor
 import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.BasicFileAttributes
-import java.util.*
+import java.util.EnumSet
 import java.util.jar.JarFile
 import java.util.zip.ZipFile
 import org.jetbrains.changelog.markdownToHTML
@@ -328,11 +328,7 @@ tasks {
       commandLine("pnpm", "run", "build:agent")
     }
     copy {
-      from(agentDir.resolve("dist")) {
-        include("index.js")
-        include("index.js.map")
-        include("*.wasm")
-      }
+      from(agentDir.resolve("dist"))
       into(buildCodyDir)
     }
 
