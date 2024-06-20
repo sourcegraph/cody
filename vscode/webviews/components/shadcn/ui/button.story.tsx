@@ -22,7 +22,7 @@ export const Default: StoryObj<typeof meta> = {
     argTypes: {
         variant: {
             control: { type: 'radio' },
-            options: ['default', 'outline', 'toolbarItem', 'secondary', 'ghost', 'link'],
+            options: ['default', 'outline', 'secondary', 'ghost', 'link'],
         },
     },
 

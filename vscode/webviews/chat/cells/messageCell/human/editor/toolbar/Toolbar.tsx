@@ -1,12 +1,10 @@
 import type { Model } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
-import { AtSignIcon } from 'lucide-react'
 import { type FunctionComponent, useCallback } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
-import { Kbd } from '../../../../../../components/Kbd'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
-import { ToolbarButton } from '../../../../../../components/shadcn/ui/toolbar'
 import { useChatModelContext } from '../../../../../models/chatModelContext'
+import { MentionButton } from './MentionButton'
 import { SubmitButton, type State as SubmitButtonState } from './SubmitButton'
 
 /**
@@ -67,21 +65,7 @@ export const Toolbar: FunctionComponent<{
             onClick={onMaybeGapClick}
         >
             <div className="tw-flex tw-gap-2 tw-items-center">
-                {onMentionClick && (
-                    <span>
-                        <ToolbarButton
-                            variant="secondary"
-                            tooltip={
-                                <>
-                                    Add files and other context <Kbd macOS="@" linuxAndWindows="@" />
-                                </>
-                            }
-                            iconStart={AtSignIcon}
-                            onClick={onMentionClick}
-                            aria-label="Add context"
-                        />
-                    </span>
-                )}
+                {onMentionClick && <MentionButton onClick={onMentionClick} />}
                 <span>
                     <ModelSelectFieldToolbarItem userInfo={userInfo} focusEditor={focusEditor} />
                 </span>
