@@ -6,7 +6,7 @@ import { cn } from '../utils'
 const roundedIconStyles = 'tw-flex tw-items-center tw-justify-center !tw-rounded-full !tw-p-2 tw-border'
 
 const buttonVariants = cva(
-    'tw-inline-flex tw-items-center tw-justify-center tw-whitespace-nowrap tw-rounded-md focus-visible:tw-border-ring focus-visible:tw-outline-none disabled:tw-pointer-events-none disabled:tw-opacity-50',
+    'tw-inline-flex tw-items-center tw-justify-center tw-whitespace-nowrap tw-rounded-md focus-visible:tw-border-ring focus-visible:tw-outline-none disabled:tw-pointer-events-none disabled:tw-opacity-50 tw-transition',
     {
         variants: {
             variant: {
@@ -18,7 +18,7 @@ const buttonVariants = cva(
                     'tw-bg-button-secondary-background tw-text-button-secondary-foreground hover:tw-bg-button-secondary-background-hover disabled:tw-opacity-75',
                 ghost: 'tw-opacity-80 hover:tw-opacity-100',
                 link: 'tw-text-link tw-underline-offset-4 hover:tw-underline hover:tw-text-link-hover',
-                primaryRoundedIcon: `${roundedIconStyles} tw-border tw-border-button-border tw-bg-button-background tw-text-button-foreground hover:tw-bg-button-background-hover`,
+                primaryRoundedIcon: `${roundedIconStyles} tw-border tw-border-button-border tw-bg-button-background tw-text-button-foreground hover:tw-bg-button-background-hover disabled:tw-bg-current-50 disabled:tw-opacity-100`,
                 outlineRoundedIcon: `${roundedIconStyles} tw-border tw-border-border`,
                 ghostRoundedIcon: `${roundedIconStyles} tw-border-transparent`,
             },

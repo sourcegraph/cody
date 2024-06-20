@@ -78,6 +78,9 @@ export default {
                     DEFAULT: 'var(--vscode-textLink-foreground)',
                     hover: 'var(--vscode-textLink-activeForeground)',
                 },
+                current: {
+                    50: 'color-mix(in lch, currentColor 25%, transparent)',
+                },
             },
             borderRadius: {
                 lg: '6px',
