@@ -99,6 +99,7 @@ export const AssistantMessageCell: FunctionComponent<{
                     )}
                 </>
             }
+            className="tw-mb-4"
             footer={
                 chatEnabled &&
                 showFeedbackButtons &&

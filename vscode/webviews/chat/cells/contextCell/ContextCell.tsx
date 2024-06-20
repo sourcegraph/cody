@@ -125,8 +125,8 @@ export const ContextCell: React.FunctionComponent<{
                                             'tw-flex tw-items-center tw-gap-2'
                                         )}
                                     >
-                                        <MessagesSquareIcon size={12} className="tw-ml-1" /> Prior
-                                        messages and context in this conversation
+                                        <MessagesSquareIcon size={14} className="tw-ml-1" />
+                                        <span>Prior messages and context in this conversation</span>
                                     </span>
                                 )}
                                 <li>
@@ -138,13 +138,15 @@ export const ContextCell: React.FunctionComponent<{
                                                     'tw-flex tw-items-center tw-gap-2'
                                                 )}
                                             >
-                                                <BrainIcon size={12} className="tw-ml-1" /> Public
-                                                knowledge{' '}
+                                                <BrainIcon size={14} className="tw-ml-1" />
+                                                <span>Public knowledge</span>
                                             </span>
                                         </TooltipTrigger>
-                                        <TooltipContent>
-                                            Information and general reasoning capabilities trained into
-                                            the model {model && <code>{model}</code>}
+                                        <TooltipContent side="bottom">
+                                            <span>
+                                                Information and general reasoning capabilities trained
+                                                into the model {model && <code>model</code>}
+                                            </span>
                                         </TooltipContent>
                                     </Tooltip>
                                 </li>
