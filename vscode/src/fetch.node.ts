@@ -6,6 +6,7 @@ import type { Configuration } from '@sourcegraph/cody-shared'
 import { HttpProxyAgent } from 'http-proxy-agent'
 import { HttpsProxyAgent } from 'https-proxy-agent'
 import { SocksProxyAgent } from 'socks-proxy-agent'
+import type * as vscode from 'vscode'
 // @ts-ignore
 import { registerLocalCertificates } from './certs'
 import { getConfiguration } from './configuration'
@@ -91,9 +92,9 @@ function getSystemProxyURI(protocol: string, env: typeof process.env): string | 
     return null
 }
 
-export function initializeNetworkAgent(): void {
+export function initializeNetworkAgent(context: Pick<vscode.ExtensionContext, 'extensionUri'>): void {
     // This is to load certs for HTTPS requests
-    registerLocalCertificates()
+    registerLocalCertificates(context)
     httpAgent = new http.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
     httpsAgent = new https.Agent({
         ...https.globalAgent.options,

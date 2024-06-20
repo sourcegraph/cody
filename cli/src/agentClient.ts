@@ -6,20 +6,20 @@ import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../vscode/
 import type { ServerInfo } from '../../vscode/src/jsonrpc/agent-protocol'
 import { MessageHandler } from '../../vscode/src/jsonrpc/jsonrpc'
 
-export interface AgentClient {
+interface AgentClient {
     serverInfo: ServerInfo
     chat(message: string, options: ChatOptions): Promise<ChatResult>
     dispose(): void
 }
 
-export interface AgentClientOptions {
+interface AgentClientOptions {
     serverEndpoint: string
     accessToken: string
     workspaceRootUri: string
     debug?: boolean
 }
 
-export interface ChatOptions {
+interface ChatOptions {
     model?: string
     contextRepositoryNames?: string[]
 }

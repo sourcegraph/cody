@@ -8,5 +8,8 @@ export default defineProjectWithDefaults(__dirname, {
         // Only use happy-dom for React component unit tests. Unit tests of plain JavaScript
         // functions don't need the DOM.
         environmentMatchGlobs: [['webviews/**/*.test.tsx', 'happy-dom']],
+        benchmark: {
+            include: ['{src,webviews}/**/*.bench.ts'],
+        },
     },
 })

@@ -16,7 +16,7 @@ export interface AgentClient {
     dispose(): void
 }
 
-export interface AgentClientOptions {
+interface AgentClientOptions {
     serverEndpoint: string
     accessToken: string
     workspaceRootUri: string
@@ -65,7 +65,6 @@ export async function createAgentClient({
             accessToken,
             customHeaders: {},
             customConfiguration: {
-                'cody.experimental.urlContext': true,
                 'cody.experimental.noodle': true,
                 'cody.autocomplete.enabled': false,
             },

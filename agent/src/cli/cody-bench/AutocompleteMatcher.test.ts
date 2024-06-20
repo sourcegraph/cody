@@ -9,6 +9,7 @@ import { getLanguageForFileName } from '../../language'
 import { AutocompleteMatcher } from './AutocompleteMatcher'
 import { EvaluationDocument } from './EvaluationDocument'
 import { Queries } from './Queries'
+import { BenchStrategy } from './cody-bench'
 import { isWindows } from './isWindows'
 
 describe.skipIf(isWindows())('AutocompleteMatcher', () => {
@@ -34,7 +35,8 @@ describe.skipIf(isWindows())('AutocompleteMatcher', () => {
                 const document = new EvaluationDocument(
                     matcher.params,
                     match.newText,
-                    vscode.Uri.file(filename)
+                    vscode.Uri.file(filename),
+                    { fixture: { name: 'test', strategy: BenchStrategy.BFG } }
                 )
                 document.pushItem({
                     range: new vscode.Range(

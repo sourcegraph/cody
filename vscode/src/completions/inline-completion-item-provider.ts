@@ -7,6 +7,7 @@ import {
     RateLimitError,
     contextFiltersProvider,
     isCodyIgnoredFile,
+    telemetryRecorder,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
@@ -16,6 +17,7 @@ import type { CodyStatusBar } from '../services/StatusBar'
 import { telemetryService } from '../services/telemetry'
 
 import { type CodyIgnoreType, showCodyIgnoreNotification } from '../cody-ignore/notification'
+import { autocompleteStageCounterLogger } from '../services/autocomplete-stage-counter-logger'
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
 import { isInTutorial } from '../tutorial/helpers'
 import { type LatencyFeatureFlags, getArtificialDelay, resetArtificialDelay } from './artificial-delay'
@@ -41,7 +43,6 @@ import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 import type { ProviderConfig } from './providers/provider'
 import { RequestManager, type RequestParams } from './request-manager'
 import { getRequestParamsFromLastCandidate } from './reuse-last-candidate'
-import { SmartThrottleService } from './smart-throttle'
 import {
     type AutocompleteInlineAcceptedCommandArgs,
     type AutocompleteItem,
@@ -60,9 +61,9 @@ interface AutocompleteResult extends vscode.InlineCompletionList {
 
 interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
+    firstCompletionTimeout: number
     statusBar: CodyStatusBar
     tracer?: ProvideInlineCompletionItemsTracer | null
-    triggerNotice: ((notice: { key: string }) => void) | null
     isRunningInsideAgent?: boolean
 
     authStatus: AuthStatus
@@ -109,7 +110,6 @@ export class InlineCompletionItemProvider
 
     private requestManager: RequestManager
     private contextMixer: ContextMixer
-    private smartThrottleService: SmartThrottleService | null = null
 
     /** Mockable (for testing only). */
     protected getInlineCompletions = getInlineCompletions
@@ -172,11 +172,6 @@ export class InlineCompletionItemProvider
                 createBfgRetriever
             )
         )
-
-        if (completionProviderConfig.smartThrottle) {
-            this.smartThrottleService = new SmartThrottleService()
-            this.disposables.push(this.smartThrottleService)
-        }
 
         const chatHistory = localStorage.getChatHistory(this.config.authStatus)?.chat
         this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0
@@ -246,7 +241,7 @@ export class InlineCompletionItemProvider
             const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
 
             if (!configFeatures.autoComplete) {
-                // If Configfeatures exists and autocomplete is disabled then raise
+                // If ConfigFeatures exists and autocomplete is disabled then raise
                 // the error banner for autocomplete config turned off
                 const error = new Error('AutocompleteConfigTurnedOff')
                 this.onError(error)
@@ -372,7 +367,6 @@ export class InlineCompletionItemProvider
                     providerConfig: this.config.providerConfig,
                     contextMixer: this.contextMixer,
                     requestManager: this.requestManager,
-                    smartThrottleService: this.smartThrottleService,
                     lastCandidate: this.lastCandidate,
                     debounceInterval: {
                         singleLine: debounceInterval,
@@ -386,10 +380,17 @@ export class InlineCompletionItemProvider
                         this.unstable_handleDidPartiallyAcceptCompletionItem.bind(this),
                     completeSuggestWidgetSelection: takeSuggestWidgetSelectionIntoAccount,
                     artificialDelay,
+                    firstCompletionTimeout: this.config.firstCompletionTimeout,
                     completionIntent,
                     lastAcceptedCompletionItem: this.lastAcceptedCompletionItem,
                     isDotComUser: this.config.isDotComUser,
                 })
+
+                // Do not increment the `preFinalCancellationCheck` counter if the result is empty.
+                // We don't have an opportunity to show a completion if it's empty.
+                if (result) {
+                    autocompleteStageCounterLogger.record('preFinalCancellationCheck')
+                }
 
                 // Avoid any further work if the completion is invalidated already.
                 if (abortController.signal.aborted) {
@@ -430,6 +431,8 @@ export class InlineCompletionItemProvider
                         abortController.signal
                     )
                 )
+
+                autocompleteStageCounterLogger.record('preVisibilityCheck')
 
                 // A completion that won't be visible in VS Code will not be returned and not be logged.
                 if (visibleItems.length === 0) {
@@ -562,11 +565,6 @@ export class InlineCompletionItemProvider
             return
         }
 
-        // Trigger external notice (chat sidebar)
-        if (this.config.triggerNotice) {
-            this.config.triggerNotice({ key: 'onboarding-autocomplete' })
-        }
-
         // Show inline decoration.
         this.firstCompletionDecoration.show(request)
     }
@@ -672,6 +670,11 @@ export class InlineCompletionItemProvider
                         telemetryService.log('CodyVSCodeExtension:upsellUsageLimitCTA:clicked', {
                             limit_type: 'suggestions',
                         })
+                        telemetryRecorder.recordEvent('cody.upsellUsageLimitCTA', 'clicked', {
+                            privateMetadata: {
+                                limit_type: 'suggestions',
+                            },
+                        })
                     }
                     void vscode.commands.executeCommand('cody.show-page', pageName)
                 },
@@ -689,6 +692,13 @@ export class InlineCompletionItemProvider
                             tier,
                         }
                     )
+                    telemetryRecorder.recordEvent(
+                        canUpgrade ? 'cody.upsellUsageLimitCTA' : 'cody.abuseUsageLimitCTA',
+                        'shown',
+                        {
+                            privateMetadata: { limit_type: 'suggestions', tier },
+                        }
+                    )
                 },
             })
 
@@ -699,6 +709,13 @@ export class InlineCompletionItemProvider
                 {
                     limit_type: 'suggestions',
                     tier,
+                }
+            )
+            telemetryRecorder.recordEvent(
+                canUpgrade ? 'cody.upsellUsageLimitStatusBar' : 'cody.abuseUsageLimitStatusBar',
+                'shown',
+                {
+                    privateMetadata: { limit_type: 'suggestions', tier },
                 }
             )
             return

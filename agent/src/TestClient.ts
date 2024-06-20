@@ -71,7 +71,7 @@ interface ProgressEndMessage {
     message: Record<string, never>
 }
 
-export function getAgentDir(): string {
+function getAgentDir(): string {
     const cwd = process.cwd()
     return path.basename(cwd) === 'agent' ? cwd : path.join(cwd, 'agent')
 }
@@ -130,6 +130,7 @@ function buildAgentBinary(): void {
 }
 
 export class TestClient extends MessageHandler {
+    private extensionConfigurationDuringInitialization: ExtensionConfiguration | undefined
     public static create({ bin = 'node', ...params }: TestClientParams): TestClient {
         buildAgentBinary()
         const agentDir = getAgentDir()
@@ -737,6 +738,13 @@ export class TestClient extends MessageHandler {
         transcript: ExtensionTranscriptMessage
     }> {
         const id = params?.id ?? (await this.request('chat/new', null))
+        if (params?.addEnhancedContext === true && this.isSymfDisabled()) {
+            throw new Error(
+                'addEnhancedContext:true when symf is disabled. ' +
+                    'To fix this problem, make sure the setting "cody.experimental.symf.enabled" is set to true. ' +
+                    'You can enable symf in the call to `TestClient.beforeAll()` or `TestClient.initialize()`.'
+            )
+        }
         const reply = asTranscriptMessage(
             await this.request('chat/submitMessage', {
                 id,
@@ -754,6 +762,10 @@ export class TestClient extends MessageHandler {
             transcript: reply,
             lastMessage: reply.messages.at(-1),
         }
+    }
+    private isSymfDisabled(): boolean {
+        const customConfiguration = this.extensionConfigurationDuringInitialization?.customConfiguration
+        return customConfiguration?.['cody.experimental.symf.enabled'] === false
     }
 
     // Given the following missing recording, tries to find an existing
@@ -863,6 +875,19 @@ ${patch}`
         clientInfo: ClientInfo,
         additionalConfig?: Partial<ExtensionConfiguration>
     ): Promise<ServerInfo> {
+        if (this.extensionConfigurationDuringInitialization !== undefined) {
+            throw new Error(
+                'the "initialize" request has already been sent. ' +
+                    'To fix this problem, make sure you only call "initialize" only once.'
+            )
+        }
+        this.extensionConfigurationDuringInitialization = {
+            serverEndpoint: 'https://invalid',
+            accessToken: 'invalid',
+            customHeaders: {},
+            ...clientInfo.extensionConfiguration,
+            ...additionalConfig,
+        }
         return new Promise((resolve, reject) => {
             setTimeout(
                 () =>
@@ -877,13 +902,7 @@ ${patch}`
             )
             this.request('initialize', {
                 ...clientInfo,
-                extensionConfiguration: {
-                    serverEndpoint: 'https://invalid',
-                    accessToken: 'invalid',
-                    customHeaders: {},
-                    ...clientInfo.extensionConfiguration,
-                    ...additionalConfig,
-                },
+                extensionConfiguration: this.extensionConfigurationDuringInitialization,
             }).then(
                 info => {
                     this.notify('initialized', null)
@@ -909,6 +928,9 @@ ${patch}`
                 customConfiguration: {
                     // For testing .cody/ignore
                     'cody.internal.unstable': true,
+                    // Symf is disabled for all agent integration tests because
+                    // it makes the tests more stable.
+                    'cody.experimental.symf.enabled': false,
                     ...this.params.extraConfiguration,
                 },
                 debug: false,

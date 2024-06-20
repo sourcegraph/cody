@@ -95,3 +95,7 @@ export function createSubscriber<T>(): Subscriber<T> {
         notify,
     }
 }
+
+export function nextTick() {
+    return new Promise(resolve => process.nextTick(resolve))
+}

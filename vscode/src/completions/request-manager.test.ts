@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { nextTick } from '@sourcegraph/cody-shared'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
+import type { CompletionLogID } from './logger'
 import type { FetchCompletionResult } from './providers/fetch-and-process-completions'
 import { STOP_REASON_HOT_STREAK } from './providers/hot-streak'
 import { Provider } from './providers/provider'
@@ -12,7 +14,7 @@ import {
     type RequestParams,
     computeIfRequestStillRelevant,
 } from './request-manager'
-import { documentAndPosition, nextTick } from './test-helpers'
+import { documentAndPosition } from './test-helpers'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 
 class MockProvider extends Provider {
@@ -75,6 +77,7 @@ function createProvider(prefix: string) {
         n: 1,
         firstCompletionTimeout: 1500,
         triggerKind: TriggerKind.Automatic,
+        completionLogId: 'mock-log-id' as CompletionLogID,
     })
 }
 

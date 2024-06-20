@@ -11,6 +11,7 @@ const meta: Meta<typeof ContextCell> = {
     decorators: [VSCodeStandaloneComponent],
     args: {
         __storybook__initialOpen: true,
+        isForFirstMessage: true,
     },
 }
 
@@ -56,5 +57,12 @@ export const Default: Story = {
                 range: { start: { line: 1, character: 2 }, end: { line: 5, character: 0 } },
             },
         ],
+    },
+}
+
+export const Followup: Story = {
+    args: {
+        contextItems: [{ type: 'file', uri: URI.file('/foo/bar.go') }],
+        isForFirstMessage: false,
     },
 }

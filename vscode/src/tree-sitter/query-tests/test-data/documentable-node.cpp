@@ -106,16 +106,6 @@ void return_statement()
 
 // ------------------------------------
 
-return_statement('value');
-//       |
-
-// ------------------------------------
-
-char *user_name = "Tom";
-//  |
-
-// ------------------------------------
-
 enum Level
 {
     //  |
@@ -123,3 +113,40 @@ enum Level
     MEDIUM,
     HIGH
 };
+
+// ------------------------------------
+
+template <typename T> struct SampleStruct {
+  template <typename ParseContext>
+    auto parse(ParseContext &ctx) {
+        // |
+        return ctx.begin();
+    }
+
+      void foo() {
+    }
+};
+
+// ------------------------------------
+
+#define TEST(name) void test_##name()
+
+TEST(twoSum)
+{
+    int target = 9;
+    int returnSize[2];
+    int expected[] = {0, 1};
+    // |
+};
+
+// ------------------------------------
+
+// Variable should not be detected as documentable.
+int nums[] = {2, 7, 11, 15};
+//       |
+
+// ------------------------------------
+
+// Variable should not be detected as documentable.
+char *user_name = "Tom";
+//  |

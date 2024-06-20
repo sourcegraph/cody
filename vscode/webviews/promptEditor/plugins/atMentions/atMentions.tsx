@@ -25,6 +25,7 @@ import {
     type ContextItem,
     FAST_CHAT_INPUT_TOKEN_BUDGET,
     scanForMentionTriggerInUserTextInput,
+    toSerializedPromptEditorValue,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import type { UserAccountInfo } from '../../../Chat'
@@ -34,7 +35,6 @@ import {
     useMentionMenuData,
     useMentionMenuParams,
 } from '../../../mentions/mentionMenu/useMentionMenuData'
-import { toSerializedPromptEditorValue } from '../../PromptEditor'
 import {
     $createContextItemMentionNode,
     $createContextItemTextNode,
@@ -232,16 +232,7 @@ export default function MentionsPlugin({
             }
             onOpen={menuResolution => {
                 refs.setPositionReference({
-                    getBoundingClientRect: (): DOMRect => {
-                        const range = document.createRange()
-                        const sel = document.getSelection()
-                        if (sel?.anchorNode) {
-                            range.setStart(sel.anchorNode, menuResolution.match?.leadOffset ?? 0)
-                            range.setEnd(sel.anchorNode, sel.anchorOffset)
-                            return range.getBoundingClientRect()
-                        }
-                        throw new Error('no selection anchor')
-                    },
+                    getBoundingClientRect: menuResolution.getRect,
                 })
             }}
             menuRenderFn={(anchorElementRef, itemProps) => {
@@ -254,11 +245,15 @@ export default function MentionsPlugin({
                                 ref={ref => {
                                     refs.setFloating(ref)
                                 }}
-                                style={{
-                                    position: strategy,
-                                    top: y,
-                                    left: x,
-                                }}
+                                style={
+                                    x === 0 && y === 0
+                                        ? { display: 'none' }
+                                        : {
+                                              position: strategy,
+                                              top: y,
+                                              left: x,
+                                          }
+                                }
                                 className={clsx(styles.popover)}
                             >
                                 <MentionMenu

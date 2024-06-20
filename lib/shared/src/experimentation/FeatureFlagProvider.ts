@@ -13,19 +13,18 @@ export enum FeatureFlag {
     // This flag is used to track the overall eligibility to use the StarCoder model. The `-hybrid`
     // suffix is no longer relevant
     CodyAutocompleteStarCoderHybrid = 'cody-autocomplete-default-starcoder-hybrid',
-    // Enable Llama Code 13b as the default model via Fireworks
-    CodyAutocompleteLlamaCode13B = 'cody-autocomplete-llama-code-13b',
     // Enable StarCoder2 7b and 15b as the default model via Fireworks
     CodyAutocompleteStarCoder2Hybrid = 'cody-autocomplete-starcoder2-hybrid',
     // Enable the FineTuned model as the default model via Fireworks
+    CodyAutocompleteFIMFineTunedModelHybrid = 'cody-autocomplete-fim-fine-tuned-model-hybrid',
 
     // Enable various feature flags to experiment with FIM trained fine-tuned models via Fireworks
-    CodyAutocompleteFIMFineTunedModelBaseFeatureFlag = 'cody-autocomplete-fim-fine-tuned-model-experiment-flag',
-    CodyAutocompleteFIMFineTunedModelControl = 'cody-autocomplete-fim-fine-tuned-model-control',
-    CodyAutocompleteFIMFineTunedModelVariant1 = 'cody-autocomplete-fim-fine-tuned-model-variant-1',
-    CodyAutocompleteFIMFineTunedModelVariant2 = 'cody-autocomplete-fim-fine-tuned-model-variant-2',
-    CodyAutocompleteFIMFineTunedModelVariant3 = 'cody-autocomplete-fim-fine-tuned-model-variant-3',
-    CodyAutocompleteFIMFineTunedModelVariant4 = 'cody-autocomplete-fim-fine-tuned-model-variant-4',
+    CodyAutocompleteFIMModelExperimentBaseFeatureFlag = 'cody-autocomplete-fim-model-experiment-flag',
+    CodyAutocompleteFIMModelExperimentControl = 'cody-autocomplete-fim-model-experiment-control',
+    CodyAutocompleteFIMModelExperimentVariant1 = 'cody-autocomplete-fim-model-experiment-variant-1',
+    CodyAutocompleteFIMModelExperimentVariant2 = 'cody-autocomplete-fim-model-experiment-variant-2',
+    CodyAutocompleteFIMModelExperimentVariant3 = 'cody-autocomplete-fim-model-experiment-variant-3',
+    CodyAutocompleteFIMModelExperimentVariant4 = 'cody-autocomplete-fim-model-experiment-variant-4',
 
     // Enables Claude 3 if the user is in our holdout group
     CodyAutocompleteClaude3 = 'cody-autocomplete-claude-3',
@@ -40,10 +39,11 @@ export enum FeatureFlag {
     // Continue generations after a single-line completion and use the response to see the next line
     // if the first completion is accepted.
     CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
-    // Enable smart-throttling for more aggressive request cancellation and lower initial latencies
-    CodyAutocompleteSmartThrottle = 'cody-autocomplete-smart-throttle',
     // When activated, reduces the debounce time to 25ms (from 75ms).
     CodyAutocompleteReducedDebounce = 'cody-autocomplete-reduced-debounce',
+    // When enabled, it will extend the number of languages considered for context (e.g. React files
+    // will be able to use CSS files as context).
+    CodyAutocompleteContextExtendLanguagePool = 'cody-autocomplete-context-extend-language-pool',
 
     // use-ssc-for-cody-subscription is a feature flag that enables the use of SSC as the source of truth for Cody subscription data.
     UseSscForCodySubscription = 'use-ssc-for-cody-subscription',
@@ -66,6 +66,12 @@ export enum FeatureFlag {
 
     /** Automatically start indexing using embeddings. */
     CodyEmbeddingsAutoIndexing = 'cody-embeddings-auto-indexing',
+
+    /** Enable Context Preamble for open-end chat questions. */
+    CodyChatContextPreamble = 'cody-chat-context-preamble',
+
+    /** Whether to use generated metadata to power embeddings. */
+    CodyEmbeddingsGenerateMetadata = 'cody-embeddings-generate-metadata',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

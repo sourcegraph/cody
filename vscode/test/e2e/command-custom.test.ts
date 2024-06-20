@@ -28,7 +28,6 @@ test.extend<ExpectedEvents>({
     expectedEvents: [
         'CodyInstalled',
         'CodyVSCodeExtension:codyIgnore:hasFile',
-        'CodyVSCodeExtension:Auth:failed',
         'CodyVSCodeExtension:auth:clickOtherSignInOptions',
         'CodyVSCodeExtension:login:clicked',
         'CodyVSCodeExtension:auth:selectSigninMenu',
@@ -42,7 +41,6 @@ test.extend<ExpectedEvents>({
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
         'cody.extension:savedLogin',
         'cody.codyIgnore:hasFile',
-        'cody.auth:failed',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
@@ -176,7 +174,6 @@ test.extend<ExpectedEvents>({
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
         'cody.extension:savedLogin',
         'cody.codyIgnore:hasFile',
-        'cody.auth:failed',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
@@ -268,9 +265,9 @@ test.extend<ExpectedEvents>({
     // The files from the open tabs should be added as context
     await expectContextCellCounts(contextCell, { files: 2 })
     await contextCell.click()
-    await expect(chatContext.getByRole('link', { name: 'index.html:1-11' })).toBeVisible()
+    await expect(chatContext.getByRole('link', { name: 'index.html' })).toBeVisible()
     await expect(
-        chatContext.getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go:1') })
+        chatContext.getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go') })
     ).toBeVisible()
 })
 
@@ -289,7 +286,6 @@ test.extend<ExpectedEvents>({
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
         'cody.extension:savedLogin',
         'cody.codyIgnore:hasFile',
-        'cody.auth:failed',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',

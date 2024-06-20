@@ -22,7 +22,7 @@ interface ContextItemCommon {
     /**
      * The content, either the entire document or the range subset.
      */
-    content?: string
+    content?: string | null
 
     repoName?: string
     revision?: string
@@ -31,6 +31,11 @@ interface ContextItemCommon {
      * For anything other than a file or symbol, the title to display (e.g., "Terminal Output").
      */
     title?: string
+
+    /**
+     * The description of the context item used to display in mentions menu.
+     */
+    description?: string
 
     /**
      * The source of this context item.
@@ -57,6 +62,11 @@ interface ContextItemCommon {
      * if from a built-in context source such as files and symbols).
      */
     provider?: string
+
+    /**
+     * Lucid icon name for the context item
+     */
+    icon?: string
 }
 
 /**
@@ -74,6 +84,9 @@ export enum ContextItemSource {
 
     /** From symf search */
     Search = 'search',
+
+    /** In initial context */
+    Initial = 'initial',
 
     /** Remote search */
     Unified = 'unified',
@@ -94,7 +107,35 @@ export enum ContextItemSource {
 /**
  * An item (such as a file or symbol) that is included as context in a chat message.
  */
-export type ContextItem = ContextItemFile | ContextItemSymbol | ContextItemOpenCtx
+export type ContextItem =
+    | ContextItemFile
+    | ContextItemRepository
+    | ContextItemTree
+    | ContextItemSymbol
+    | ContextItemOpenCtx
+
+/**
+ * A context item that represents a repository.
+ */
+export interface ContextItemRepository extends ContextItemCommon {
+    type: 'repository'
+    repoName: string
+    repoID: string
+    content: null
+}
+
+/**
+ * A context item that represents a tree (directory).
+ */
+export interface ContextItemTree extends ContextItemCommon {
+    type: 'tree'
+
+    /** Only workspace root trees are supported right now. */
+    isWorkspaceRoot: true
+
+    content: null
+    name: string
+}
 
 /**
  * An OpenCtx context item returned from a provider.
@@ -136,7 +177,7 @@ export interface ContextItemSymbol extends ContextItemCommon {
 export type SymbolKind = 'class' | 'function' | 'method'
 
 /** {@link ContextItem} with the `content` field set to the content. */
-export type ContextItemWithContent = ContextItem & Required<Pick<ContextItem, 'content'>>
+export type ContextItemWithContent = ContextItem & { content: string }
 
 /**
  * A system chat message that adds a context item to the conversation.

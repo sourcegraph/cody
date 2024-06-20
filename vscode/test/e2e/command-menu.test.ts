@@ -11,7 +11,6 @@ test.extend<ExpectedEvents>({
     expectedEvents: [
         'CodyInstalled',
         'CodyVSCodeExtension:codyIgnore:hasFile',
-        'CodyVSCodeExtension:Auth:failed',
         'CodyVSCodeExtension:auth:clickOtherSignInOptions',
         'CodyVSCodeExtension:login:clicked',
         'CodyVSCodeExtension:auth:selectSigninMenu',
@@ -26,7 +25,6 @@ test.extend<ExpectedEvents>({
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
         'cody.extension:savedLogin',
         'cody.codyIgnore:hasFile',
-        'cody.auth:failed',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
@@ -61,7 +59,6 @@ test.extend<ExpectedEvents>({
     // Verify all the alwaysShow items are visible
     await expect(page.getByLabel(`comment New Chat, ${menu.chat.description}`)).toBeVisible()
     await expect(page.getByLabel(`wand Edit Code, ${menu.edit.description}`)).toBeVisible()
-    await expect(page.getByLabel(`search Search Code (Beta), ${menu.search.description}`)).toBeVisible()
 
     // this will fail if more than 1 New Chat item in the menu is found
     await page.getByLabel('Start a new chat').locator('a').click()

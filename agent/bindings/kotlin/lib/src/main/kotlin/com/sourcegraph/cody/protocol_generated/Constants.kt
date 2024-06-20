@@ -1,5 +1,5 @@
 @file:Suppress("unused", "ConstPropertyName")
-package com.sourcegraph.cody.protocol_generated
+package com.sourcegraph.cody.protocol_generated;
 
 object Constants {
   const val paused = "paused"
@@ -14,10 +14,10 @@ object Constants {
   const val chat = "chat"
   const val login = "login"
   const val errors = "errors"
-  const val notice = "notice"
   const val `transcript-errors` = "transcript-errors"
   const val userContextFiles = "userContextFiles"
-  const val `chat-input-context` = "chat-input-context"
+  const val clientState = "clientState"
+  const val clientAction = "clientAction"
   const val chatModels = "chatModels"
   const val `update-search-results` = "update-search-results"
   const val `index-updated` = "index-updated"
@@ -27,9 +27,6 @@ object Constants {
   const val `context_remote-repos` = "context/remote-repos"
   const val setConfigFeatures = "setConfigFeatures"
   const val allMentionProvidersMetadata = "allMentionProvidersMetadata"
-  const val symbol = "symbol"
-  const val Symbols = "Symbols"
-  const val `Search for a symbol to include...` = "Search for a symbol to include..."
   const val embeddings = "embeddings"
   const val indeterminate = "indeterminate"
   const val `no-match` = "no-match"
@@ -49,11 +46,15 @@ object Constants {
   const val manual = "manual"
   const val user = "user"
   const val editor = "editor"
+  const val initial = "initial"
   const val unified = "unified"
   const val selection = "selection"
   const val terminal = "terminal"
   const val uri = "uri"
   const val file = "file"
+  const val repository = "repository"
+  const val tree = "tree"
+  const val symbol = "symbol"
   const val `class` = "class"
   const val function = "function"
   const val method = "method"
@@ -139,4 +140,6 @@ object Constants {
   const val enabled = "enabled"
   const val notification = "notification"
   const val request = "request"
+  const val `object-encoded` = "object-encoded"
+  const val `string-encoded` = "string-encoded"
 }

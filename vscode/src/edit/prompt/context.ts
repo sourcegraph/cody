@@ -1,4 +1,4 @@
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
 import {
     type ContextItem,
@@ -18,12 +18,19 @@ import type { EditIntent } from '../types'
 import { truncatePromptString, truncatePromptStringStart } from '@sourcegraph/cody-shared'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import { PROMPT_TOPICS } from './constants'
+import { extractContextItemsFromContextMessages } from './utils'
 
 interface GetContextFromIntentOptions {
     intent: EditIntent
     selectedText: PromptString
-    precedingText: PromptString
-    followingText: PromptString
+    prefix: {
+        text: PromptString
+        range: vscode.Range
+    }
+    suffix: {
+        text: PromptString
+        range: vscode.Range
+    }
     uri: vscode.Uri
     selectionRange: vscode.Range
     editor: VSCodeEditor
@@ -31,14 +38,14 @@ interface GetContextFromIntentOptions {
 
 const getContextFromIntent = async ({
     intent,
-    precedingText,
-    followingText,
+    prefix,
+    suffix,
     uri,
     selectionRange,
     editor,
 }: GetContextFromIntentOptions): Promise<ContextMessage[]> => {
-    const truncatedPrecedingText = truncatePromptStringStart(precedingText, MAX_CURRENT_FILE_TOKENS)
-    const truncatedFollowingText = truncatePromptString(followingText, MAX_CURRENT_FILE_TOKENS)
+    const truncatedPrecedingText = truncatePromptStringStart(prefix.text, MAX_CURRENT_FILE_TOKENS)
+    const truncatedFollowingText = truncatePromptString(suffix.text, MAX_CURRENT_FILE_TOKENS)
 
     // Disable no case declarations because we get better type checking with a switch case
     switch (intent) {
@@ -64,7 +71,12 @@ const getContextFromIntent = async ({
                         uri,
                         PROMPT_TOPICS.OUTPUT
                     ),
-                    file: { type: 'file', uri, source: ContextItemSource.Editor },
+                    file: {
+                        type: 'file',
+                        uri,
+                        source: ContextItemSource.Editor,
+                        range: new vscode.Range(prefix.range.start, suffix.range.end),
+                    },
                 },
             ]
         }
@@ -83,14 +95,14 @@ const getContextFromIntent = async ({
                 contextMessages.push({
                     speaker: 'human',
                     text: populateCodeContextTemplate(truncatedPrecedingText, uri, undefined, 'edit'),
-                    file: { type: 'file', uri, source: ContextItemSource.Editor },
+                    file: { type: 'file', uri, source: ContextItemSource.Editor, range: prefix.range },
                 })
             }
             if (truncatedFollowingText.trim().length > 0) {
                 contextMessages.push({
                     speaker: 'human',
                     text: populateCodeContextTemplate(truncatedFollowingText, uri, undefined, 'edit'),
-                    file: { type: 'file', uri, source: ContextItemSource.Editor },
+                    file: { type: 'file', uri, source: ContextItemSource.Editor, range: suffix.range },
                 })
             }
             return contextMessages
@@ -141,7 +153,7 @@ export const getContext = async ({
     userContextItems,
     editor,
     ...options
-}: GetContextOptions): Promise<(ContextItem | ContextMessage)[]> => {
+}: GetContextOptions): Promise<ContextItem[]> => {
     if (isAgentTesting) {
         // Need deterministic ordering of context files for the tests to pass
         // consistently across different file systems.
@@ -150,5 +162,5 @@ export const getContext = async ({
 
     const derivedContext = await getContextFromIntent({ editor, ...options })
     const userContext = await resolveContextItems(editor, userContextItems, options.selectedText)
-    return [...derivedContext, ...userContext]
+    return [...extractContextItemsFromContextMessages(derivedContext), ...userContext]
 }

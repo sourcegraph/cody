@@ -100,7 +100,7 @@ export class RequestManager {
 
         addAutocompleteDebugEvent('RequestManager.request')
 
-        const shouldHonorCancellation = eagerCancellation || completionProviderConfig.smartThrottle
+        const shouldHonorCancellation = eagerCancellation
 
         // When request recycling is enabled, we do not pass the original abort signal forward as to
         // not interrupt requests that are no longer relevant. Instead, we let all previous requests

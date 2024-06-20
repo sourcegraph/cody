@@ -134,7 +134,7 @@ interface CodyLLMSiteConfigurationProviderResponse {
     } | null
 }
 
-export interface PackageListResponse {
+interface PackageListResponse {
     packageRepoReferences: {
         nodes: {
             id: string
@@ -165,7 +165,7 @@ export interface RepoSearchResponse {
         }
     }
 }
-export interface FileMatchSearchResponse {
+interface FileMatchSearchResponse {
     search: {
         results: {
             results: {
@@ -185,7 +185,7 @@ export interface FileMatchSearchResponse {
     }
 }
 
-export interface FileContentsResponse {
+interface FileContentsResponse {
     repository: {
         commit: {
             file: {
@@ -258,7 +258,7 @@ export interface ContextSearchResult {
     content: string
 }
 
-export interface ContextFiltersResponse {
+interface ContextFiltersResponse {
     site: {
         codyContextFilters: {
             raw: ContextFilters | null
@@ -688,11 +688,11 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async contextSearch(
-        repos: Set<string>,
+        repoIDs: string[],
         query: string
     ): Promise<ContextSearchResult[] | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<ContextSearchResponse>>(CONTEXT_SEARCH_QUERY, {
-            repos: [...repos],
+            repos: repoIDs,
             query,
             codeResultsCount: 15,
             textResultsCount: 5,
@@ -1136,7 +1136,7 @@ export class ConfigFeaturesSingleton {
     }
 
     // Refreshes the config features by fetching them from the server and caching the result
-    private refreshConfigFeatures(): void {
+    public refreshConfigFeatures(): void {
         const previousConfigFeatures = this.configFeatures
         this.configFeatures = this.fetchConfigFeatures().catch((error: Error) => {
             // Ignore fetcherrors as older SG instances will always face this because their GQL is outdated
@@ -1165,7 +1165,9 @@ export class ConfigFeaturesSingleton {
     }
 }
 
-async function verifyResponseCode(response: BrowserOrNodeResponse): Promise<BrowserOrNodeResponse> {
+export async function verifyResponseCode(
+    response: BrowserOrNodeResponse
+): Promise<BrowserOrNodeResponse> {
     if (!response.ok) {
         const body = await response.text()
         throw new Error(`HTTP status code ${response.status}${body ? `: ${body}` : ''}`)

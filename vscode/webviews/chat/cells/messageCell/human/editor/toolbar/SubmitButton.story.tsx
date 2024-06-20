@@ -10,7 +10,6 @@ const meta: Meta<typeof SubmitButton> = {
     args: {
         onClick: () => {},
         isEditorFocused: true,
-        isPendingResponse: true,
     },
 
     decorators: [VSCodeStandaloneComponent],
@@ -20,7 +19,6 @@ const meta: Meta<typeof SubmitButton> = {
         return (
             <SubmitButton
                 {...args}
-                isPendingResponse={true}
                 onClick={() => {
                     setArgs({
                         disabled: true,

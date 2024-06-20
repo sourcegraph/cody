@@ -15,27 +15,16 @@
     "build:agent": "node src/esbuild.mjs",
     "build": "pnpm run -s build:root && pnpm run -s build:agent",
     "build-minify": "pnpm run build --minify",
-    "agent": "pnpm run build && node dist/index.js",
-    "agent:skip-root-build": "pnpm run build:agent && node dist/index.js",
+    "agent": "pnpm run build && node --enable-source-maps dist/index.js",
+    "agent:skip-root-build": "pnpm run build:agent && node --enable-source-maps dist/index.js",
     "agent:debug": "pnpm run build && CODY_AGENT_TRACE_PATH=/tmp/agent.json CODY_AGENT_DEBUG_REMOTE=true node --enable-source-maps ./dist/index.js",
     "build-ts": "tsc --build",
-    "build-agent-binaries": "pnpm run build && pkg --options \"max-old-space-size=4096\" --compress GZip --no-bytecode --public-packages \"*\" --public . --out-path ${AGENT_EXECUTABLE_TARGET_DIRECTORY:-dist}",
     "test-agent-binary": "esbuild ./scripts/test-agent-binary.ts --bundle --platform=node --alias:vscode=./src/vscode-shim.ts --outdir=dist && node ./dist/test-agent-binary.js",
     "test": "vitest",
     "prepublishOnly": "pnpm run build"
   },
-  "pkg": {
-    "targets": [
-      "latest-linux-arm64",
-      "latest-linux-x64",
-      "latest-macos-x64",
-      "latest-win-x64",
-      "latest-macos-arm64"
-    ],
-    "assets": "dist/*.{wasm,map}"
-  },
   "bin": "dist/index.js",
-  "files": ["dist/index.js", "dist/index.js.map", "dist/*.wasm"],
+  "files": ["dist/index.js", "dist/index.js.map", "dist/*.wasm", "dist/win-ca-roots.exe"],
   "dependencies": {
     "@pollyjs/core": "^6.0.6",
     "@pollyjs/persister": "^6.0.6",
@@ -75,7 +64,6 @@
     "fast-json-stable-stringify": "^2.1.0",
     "google-protobuf": "^3.21.2",
     "parse-git-diff": "^0.0.14",
-    "pkg": "^5.8.1",
     "rimraf": "^5.0.5",
     "yaml": "^2.3.4"
   }

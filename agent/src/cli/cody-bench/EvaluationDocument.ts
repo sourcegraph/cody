@@ -12,6 +12,8 @@ import { ProtocolTextDocumentWithUri } from '../../../../vscode/src/jsonrpc/Text
 import { AgentTextDocument } from '../../AgentTextDocument'
 
 import type { AutocompleteMatchKind } from './AutocompleteMatcher'
+import { BenchStrategy, type CodyBenchOptions } from './cody-bench'
+import type { EvaluateFileParams } from './evaluateEachFile'
 
 export type EvaluationDocumentParams = Pick<
     EvaluationItem,
@@ -22,10 +24,26 @@ export class EvaluationDocument {
     public items: EvaluationItem[] = []
     public readonly lines: string[]
     public readonly textDocument: AgentTextDocument
+    public static from(params: EvaluateFileParams, options: CodyBenchOptions): EvaluationDocument {
+        return new EvaluationDocument(
+            {
+                languageid: params.languageid,
+                filepath: params.file,
+                strategy: options.fixture.strategy,
+                fixture: options.fixture.name,
+                workspace: path.basename(options.workspace),
+                revision: params.revision,
+            },
+            params.content,
+            params.uri,
+            options
+        )
+    }
     constructor(
         public readonly params: EvaluationDocumentParams,
         public readonly text: string,
         public readonly uri: vscode.Uri,
+        public readonly options: Pick<CodyBenchOptions, 'fixture'>,
         public readonly snapshotDirectory?: string
     ) {
         this.lines = text.split('\n')
@@ -81,6 +99,15 @@ export class EvaluationDocument {
     public formatSnapshot(): string {
         const commentSyntax = commentSyntaxForLanguage(this.params.languageid)
         const out: string[] = []
+        const pushMultilineText = (kind: string, text: string): void => {
+            out.push('\n')
+            for (const line of text.split('\n')) {
+                out.push(commentSyntax)
+                out.push(` ${kind} `)
+                out.push(line)
+                out.push('\n')
+            }
+        }
         this.items.sort(compareItemByRange)
         let occurrenceIndex = 0
         for (const [lineNumber, line] of this.lines.entries()) {
@@ -106,7 +133,21 @@ export class EvaluationDocument {
                 if (!item.range.isSingleLine) {
                     out.push(` ${item.range.end.line}:${item.range.end.character}`)
                 }
-                out.push(' AUTOCOMPLETE')
+                if (this.options.fixture.strategy === BenchStrategy.BFG) {
+                    out.push(' AUTOCOMPLETE')
+                } else if (this.options.fixture.strategy === BenchStrategy.Fix) {
+                    out.push(' FIX')
+                } else {
+                    throw new Error(`unknown strategy ${this.options.fixture.strategy}`)
+                }
+
+                if (item.resultExact) {
+                    out.push(' EXACT_MATCH')
+                }
+
+                if (item.resultExact) {
+                    out.push(' EXACT_MATCH')
+                }
                 if (item.resultEmpty) {
                     out.push(' EMPTY_RESULT')
                 }
@@ -125,6 +166,15 @@ export class EvaluationDocument {
                     out.push(' TYPECHECK_OK')
                 } else if (item.resultTypechecks === false) {
                     out.push(' TYPECHECK_ERROR')
+                }
+                if (item.fixBeforeDiagnostic) {
+                    pushMultilineText('DIAGNOSTIC_BEFORE', item.fixBeforeDiagnostic)
+                }
+                if (item.editDiff) {
+                    pushMultilineText('DIFF', item.editDiff)
+                }
+                if (item.fixAfterDiagnostic) {
+                    pushMultilineText('DIAGNOSTIC_AFTER', item.fixAfterDiagnostic)
                 }
                 if (item.resultText) {
                     out.push(' RESULT ')
@@ -202,6 +252,11 @@ interface EvaluationItem {
     contextBfgSuggestedCount?: number
     contextBfgDurationMs?: number
     resultCharacterCount?: number
+    editDiff?: string
+    fixBeforeDiagnostic?: string
+    fixAfterDiagnostic?: string
+    llmJudgeScore?: number
+    llmJudgeReasoning?: string
     info?: CompletionItemInfo
     event?: CompletionBookkeepingEvent
     eventJSON?: string
@@ -230,6 +285,11 @@ export const autocompleteItemHeaders: ObjectHeaderItem[] = [
     { id: 'resultText', title: 'RESULT_TEXT' },
     { id: 'resultCharacterCount', title: 'RESULT_CHAR_COUNT' },
     { id: 'resultNonInsertPatch', title: 'RESULT_NON_INSERT_PATCH' },
+    { id: 'editDiff', title: 'EDIT_DIFF' },
+    { id: 'fixAfterDiagnostic', title: 'FIX_AFTER_DIAGNOSTIC' },
+    { id: 'fixBeforeDiagnostic', title: 'FIX_BEFORE_DIAGNOSTIC' },
+    { id: 'llmJudgeScore', title: 'LLM_JUDGE_SCORE' },
+    { id: 'llmJudgeReasoning', title: 'LLM_JUDGE_REASONING' },
     { id: 'providerIdentifier', title: 'PROVIDER_IDENTIFIER' },
     { id: 'providerModel', title: 'PROVIDER_MODEL' },
     { id: 'stopReason', title: 'STOP_REASON' },

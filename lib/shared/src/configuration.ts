@@ -55,17 +55,12 @@ export interface Configuration {
     /**
      * Experimental
      */
-    experimentalGuardrails: boolean
-    experimentalSymfContext: boolean
     experimentalTracing: boolean
-    experimentalSimpleChatContext: boolean
     experimentalChatContextRanker: boolean | undefined
-    experimentalOllamaChat: boolean
     experimentalSupercompletions: boolean
-    experimentalGithubAccessToken: string
     experimentalCommitMessage: boolean
     experimentalNoodle: boolean
-    experimentalURLContext: boolean
+    experimentalMinionAnthropicKey: string | undefined
 
     /**
      * Unstable Features for internal testing only
@@ -79,7 +74,6 @@ export interface Configuration {
     autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | 'bfg-mixed' | 'tsc' | 'tsc-mixed' | null
     autocompleteExperimentalOllamaOptions: OllamaOptions
     autocompleteExperimentalFireworksOptions?: FireworksOptions
-    autocompleteExperimentalSmartThrottle?: boolean
     autocompleteExperimentalMultiModelCompletions?: MultimodelSingleModelConfig[]
 
     /**
@@ -87,7 +81,10 @@ export interface Configuration {
      */
     isRunningInsideAgent?: boolean
     agentIDE?: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
+    agentIDEVersion?: string
+    agentExtensionVersion?: string
     autocompleteTimeouts: AutocompleteTimeouts
+    autocompleteFirstCompletionTimeout: number
 
     testingModelConfig: EmbeddingsModelConfig | undefined
 }

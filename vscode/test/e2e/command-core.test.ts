@@ -1,7 +1,14 @@
 import { expect } from '@playwright/test'
 
 import * as mockServer from '../fixtures/mock-server'
-import { expectContextCellCounts, getContextCell, sidebarExplorer, sidebarSignin } from './common'
+import {
+    chatInputMentions,
+    contextCellItems,
+    expectContextCellCounts,
+    getContextCell,
+    sidebarExplorer,
+    sidebarSignin,
+} from './common'
 import { type DotcomUrlOverride, type ExpectedEvents, test as baseTest } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
@@ -10,7 +17,6 @@ test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
     expectedEvents: [
         'CodyInstalled',
-        'CodyVSCodeExtension:Auth:failed',
         'CodyVSCodeExtension:auth:clickOtherSignInOptions',
         'CodyVSCodeExtension:login:clicked',
         'CodyVSCodeExtension:auth:selectSigninMenu',
@@ -31,7 +37,6 @@ test.extend<ExpectedEvents>({
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
         'cody.extension:savedLogin',
         'cody.codyIgnore:hasFile',
-        'cody.auth:failed',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
@@ -70,7 +75,9 @@ test.extend<ExpectedEvents>({
     // If there is no cursor position, we will use the visible content of the editor
     // NOTE: Core commands context should not start with ✨
     const contextCell = getContextCell(chatPanel)
-    await expectContextCellCounts(contextCell, { files: 1 })
+    // NOTE(sqs): It's OK if the test changes so that it's just `index.html`.
+    await expect(contextCellItems(contextCell)).toHaveText(['index.html', 'index.html:1-11'])
+    await expectContextCellCounts(contextCell, { files: 2 })
     await contextCell.click()
 
     // Check if assistant responsed
@@ -78,7 +85,7 @@ test.extend<ExpectedEvents>({
 
     // Click on the file link in chat
     const chatContext = chatPanel.locator('details').last()
-    await chatContext.getByRole('link', { name: 'index.html' }).click()
+    await chatContext.getByRole('link', { name: 'index.html' }).first().click()
 
     // Check if the file is opened
     await expect(page.getByRole('list').getByText('index.html')).toBeVisible()
@@ -89,30 +96,35 @@ test.extend<ExpectedEvents>({
     await page.getByText('<title>Hello Cody</title>').click()
     await expect(page.getByText('Explain Code')).toBeVisible()
     await page.getByText('Explain Code').click()
-    await expectContextCellCounts(contextCell, { files: 1 })
+    const CONTEXT_ITEM_TEXTS = ['index.html', 'index.html:2-10']
+    await expect(contextCellItems(contextCell)).toHaveText(CONTEXT_ITEM_TEXTS)
+    await expectContextCellCounts(contextCell, { files: 2 })
     await contextCell.click()
 
-    // The context should show the file with the correct range
-    await expect(chatPanel.getByRole('link', { name: 'index.html:1-11' })).toBeVisible()
-    // If a context item is a subcontext of an existing context item,
-    // it should be removed to avoid duplication unless it's a user-specified context item.
-    // For chat command, selection context is always included as it's a user-specified context item.
-    await expect(chatPanel.getByRole('link', { name: 'index.html:2-10' })).toBeVisible()
+    // The mentions in the command should show up as mentions.
+    const firstChatInput = chatPanel.getByRole('textbox', { name: 'Chat message' }).first()
+    await expect(chatInputMentions(firstChatInput)).toHaveText(['index.html:2-10', 'index.html'])
+
+    // When the message is resent, ensure that the same number of context items are included.
+    await firstChatInput.focus()
+    await firstChatInput.press('Enter')
+    await expect(contextCellItems(contextCell)).toHaveText(CONTEXT_ITEM_TEXTS)
+    await expectContextCellCounts(contextCell, { files: 2 })
 
     // Smell Command
     // Running a command again should reuse the current cursor position
     await expect(page.getByText('Find Code Smells')).toBeVisible()
     await page.getByText('Find Code Smells').click()
-    await expectContextCellCounts(contextCell, { files: 1 })
+    await expectContextCellCounts(contextCell, { files: 2 })
     await contextCell.click()
     await expect(chatPanel.getByRole('link', { name: 'index.html:2-10' })).toBeVisible()
+    await expect(chatInputMentions(firstChatInput)).toHaveText(['index.html:2-10', 'index.html'])
 })
 
 test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
     expectedEvents: [
         'CodyInstalled',
-        'CodyVSCodeExtension:Auth:failed',
         'CodyVSCodeExtension:auth:clickOtherSignInOptions',
         'CodyVSCodeExtension:login:clicked',
         'CodyVSCodeExtension:auth:selectSigninMenu',
@@ -129,7 +141,6 @@ test.extend<ExpectedEvents>({
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
         'cody.extension:savedLogin',
         'cody.codyIgnore:hasFile',
-        'cody.auth:failed',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
@@ -167,7 +178,6 @@ test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
     expectedEvents: [
         'CodyInstalled',
-        'CodyVSCodeExtension:Auth:failed',
         'CodyVSCodeExtension:auth:clickOtherSignInOptions',
         'CodyVSCodeExtension:login:clicked',
         'CodyVSCodeExtension:auth:selectSigninMenu',
@@ -182,7 +192,6 @@ test.extend<ExpectedEvents>({
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
         'cody.extension:savedLogin',
         'cody.codyIgnore:hasFile',
-        'cody.auth:failed',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',

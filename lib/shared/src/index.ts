@@ -1,6 +1,6 @@
 // Add anything else here that needs to be used outside of this library.
 
-export { ModelProvider } from './models'
+export { Model, ModelsService } from './models'
 export {
     type EditModel,
     type EditProvider,
@@ -69,6 +69,8 @@ export {
     type ContextFileType,
     type ContextMessage,
     type SymbolKind,
+    type ContextItemTree,
+    type ContextItemRepository,
 } from './codebase-context/messages'
 export type {
     CodyCommand,
@@ -89,6 +91,7 @@ export {
     toRangeData,
     displayLineRange,
     displayRange,
+    isMultiLineRange,
 } from './common/range'
 export * from './common/abortController'
 export {
@@ -97,7 +100,6 @@ export {
     markdownCodeBlockLanguageIDForFilename,
     extensionForLanguage,
 } from './common/languages'
-export { escapeHTML } from './common/markdown'
 export {
     posixFilePaths,
     pathFunctionsForURI,
@@ -227,6 +229,7 @@ export {
     type ContextFilters,
     type CodyContextFilterItem,
     type RepoListResponse,
+    type RepoSearchResponse,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
@@ -234,6 +237,7 @@ export type {
     EmbeddingsSearchResult,
     event,
 } from './sourcegraph-api/graphql/client'
+export { RestClient } from './sourcegraph-api/rest/client'
 export { GraphQLTelemetryExporter } from './sourcegraph-api/telemetry/GraphQLTelemetryExporter'
 // biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 export { NOOP_TELEMETRY_SERVICE } from './telemetry'
@@ -254,8 +258,9 @@ export { testFileUri } from './test/path-helpers'
 export * from './tracing'
 export {
     convertGitCloneURLToCodebaseName,
-    isError,
     createSubscriber,
+    isError,
+    nextTick,
 } from './utils'
 export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
 export * from './auth/types'
@@ -267,10 +272,9 @@ export {
     scanForMentionTriggerInUserTextInput,
 } from './mentions/query'
 export {
-    type ContextMentionProvider,
     type ContextItemProps,
     allMentionProvidersMetadata,
-    openCtxMentionProviders,
+    openCtxProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type ContextMentionProviderMetadata,
@@ -290,9 +294,16 @@ export * from './sourcegraph-api/utils'
 export * from './token'
 export * from './token/constants'
 export * from './configuration'
-export * from './githubClient'
 export {
     setOpenCtxClient,
     openCtx,
 } from './context/openctx/api'
-export { URL_CONTEXT_MENTION_PROVIDER } from './mentions/providers/urlMentions'
+export { type ClientStateForWebview } from './clientState'
+export * from './lexicalEditor/editorState'
+export * from './lexicalEditor/nodes'
+export {
+    FILE_MENTION_EDITOR_STATE_FIXTURE,
+    OLD_TEXT_FILE_MENTION_EDITOR_STATE_FIXTURE,
+    UNKNOWN_NODES_EDITOR_STATE_FIXTURE,
+} from './lexicalEditor/fixtures'
+export { getSerializedParams } from './sourcegraph-api/completions/utils'

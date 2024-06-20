@@ -75,3 +75,14 @@ export function displayRange(range: RangeData): PromptString {
         range.end.character + 1
     }`
 }
+
+/**
+ * Report whether {@link range} spans multiple lines. Note that a range of 1:0-2:0 only spans a
+ * single line because no characters on the end line are included in the range.
+ */
+export function isMultiLineRange(range: RangeData): boolean {
+    const singleLine =
+        range.start.line === range.end.line ||
+        (range.end.line === range.start.line + 1 && range.end.character === 0)
+    return !singleLine
+}

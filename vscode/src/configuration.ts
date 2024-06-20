@@ -136,21 +136,15 @@ export function getConfiguration(
         internalUnstable: getHiddenSetting('internal.unstable', isTesting),
 
         autocompleteExperimentalGraphContext,
-        experimentalSimpleChatContext: getHiddenSetting('experimental.simpleChatContext', true),
-        experimentalSymfContext: getHiddenSetting('experimental.symfContext', true),
         experimentalCommitMessage: getHiddenSetting('experimental.commitMessage', true),
         experimentalNoodle: getHiddenSetting('experimental.noodle', false),
-        experimentalURLContext: getHiddenSetting('experimental.urlContext', false),
 
-        experimentalGuardrails: getHiddenSetting('experimental.guardrails', isTesting),
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
-        experimentalOllamaChat: getHiddenSetting('experimental.ollamaChat', true),
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
+        experimentalMinionAnthropicKey: getHiddenSetting('experimental.minion.anthropicKey', undefined),
 
         experimentalChatContextRanker: getHiddenSetting('experimental.chatContextRanker', false),
-
-        experimentalGithubAccessToken: getHiddenSetting('experimental.github.accessToken', ''),
 
         autocompleteExperimentalHotStreak: getHiddenSetting(
             'autocomplete.experimental.hotStreak',
@@ -167,10 +161,6 @@ export function getConfiguration(
             'autocomplete.experimental.fireworksOptions',
             undefined
         ),
-        autocompleteExperimentalSmartThrottle: getHiddenSetting(
-            'autocomplete.experimental.smartThrottle',
-            false
-        ),
         autocompleteExperimentalMultiModelCompletions: getHiddenSetting(
             'autocomplete.experimental.multiModelCompletions',
             undefined
@@ -182,6 +172,8 @@ export function getConfiguration(
         // Rely on this flag sparingly.
         isRunningInsideAgent: getHiddenSetting('advanced.agent.running', false),
         agentIDE: getHiddenSetting<'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'>('advanced.agent.ide'),
+        agentIDEVersion: getHiddenSetting('advanced.agent.ide.version'),
+        agentExtensionVersion: getHiddenSetting('advanced.agent.extension.version'),
         autocompleteTimeouts: {
             multiline: getHiddenSetting<number | undefined>(
                 'autocomplete.advanced.timeout.multiline',
@@ -192,6 +184,10 @@ export function getConfiguration(
                 undefined
             ),
         },
+        autocompleteFirstCompletionTimeout: getHiddenSetting<number>(
+            'autocomplete.advanced.timeout.firstCompletion',
+            1_500
+        ),
         testingModelConfig:
             isTesting && hasValidLocalEmbeddingsConfig()
                 ? {

@@ -9,6 +9,7 @@ import { getTier } from '../telemetry-v2/cody-tier'
 
 export interface ExtensionDetails {
     ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
+    ideVersion?: string
     ideExtensionType: 'Cody' | 'CodeSearch'
     platform: string
     arch?: string
@@ -123,8 +124,6 @@ export class EventLogger {
             tier: getTier(this.getAuthStatus()),
             configurationDetails: {
                 contextSelection: this.config.useContext,
-                guardrails: this.config.experimentalGuardrails,
-                ollama: this.config.experimentalOllamaChat,
             },
             version: this.extensionDetails.version, // for backcompat
             hasV2Event,

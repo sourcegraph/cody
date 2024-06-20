@@ -12,7 +12,7 @@ import { logDebug } from '../log'
 import { Platform, getOSArch } from '../os'
 import { captureException } from '../services/sentry/sentry'
 
-const symfVersion = 'v0.0.10'
+const symfVersion = 'v0.0.12'
 
 /**
  * Get the path to `symf`. If the symf binary is not found, download it.
@@ -20,7 +20,9 @@ const symfVersion = 'v0.0.10'
 export async function getSymfPath(context: vscode.ExtensionContext): Promise<string | null> {
     // If user-specified symf path is set, use that
     const config = vscode.workspace.getConfiguration()
-    const userSymfPath = config.get<string>('cody.experimental.symf.path')
+    const userSymfPath =
+        config.get<string>('cody.experimental.symf.path') ??
+        config.get<string>('cody.internal.symf.path')
     if (userSymfPath) {
         logDebug('symf', `using user symf: ${userSymfPath}`)
         return userSymfPath

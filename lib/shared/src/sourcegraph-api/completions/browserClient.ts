@@ -3,15 +3,10 @@ import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { dependentAbortController } from '../../common/abortController'
 import { addCustomUserAgent } from '../graphql/client'
 
-import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import { addClientInfoParams } from '../client-name-version'
 import { SourcegraphCompletionsClient } from './client'
-import type {
-    CompletionCallbacks,
-    CompletionParameters,
-    Event,
-    SerializedCompletionParameters,
-} from './types'
+import type { CompletionCallbacks, CompletionParameters, Event } from './types'
+import { getSerializedParams } from './utils'
 
 export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsClient {
     protected async _streamWithCallbacks(
@@ -20,15 +15,7 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
         cb: CompletionCallbacks,
         signal?: AbortSignal
     ): Promise<void> {
-        const serializedParams: SerializedCompletionParameters = {
-            ...params,
-            messages: await Promise.all(
-                params.messages.map(async m => ({
-                    ...m,
-                    text: await m.text?.toFilteredString(contextFiltersProvider),
-                }))
-            ),
-        }
+        const serializedParams = await getSerializedParams(params)
 
         const url = new URL(this.completionsEndpoint)
         if (apiVersion >= 1) {

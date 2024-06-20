@@ -4,7 +4,7 @@ import type {
     BillingProduct,
     ContextFilters,
     CurrentUserCodySubscription,
-    ModelProvider,
+    Model,
     ModelUsage,
     SerializedChatMessage,
     SerializedChatTranscript,
@@ -53,11 +53,15 @@ export type ClientRequests = {
     // `webview/postMessage`. Returns a new *panel* ID, which can be used to
     // send a chat message via `chat/submitMessage`.
     'chat/restore': [
-        { modelID?: string | undefined | null; messages: SerializedChatMessage[]; chatID: string },
+        {
+            modelID?: string | undefined | null
+            messages: SerializedChatMessage[]
+            chatID: string
+        },
         string,
     ]
 
-    'chat/models': [{ modelUsage: ModelUsage }, { models: ModelProvider[] }]
+    'chat/models': [{ modelUsage: ModelUsage }, { models: Model[] }]
     'chat/export': [null, ChatExportResult[]]
     'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] | undefined | null }]
 
@@ -157,6 +161,10 @@ export type ClientRequests = {
     // session).  Refrain from using this API in favor of high-level APIs like
     // `chat/submitMessage`.
     'webview/receiveMessage': [{ id: string; message: WebviewMessage }, null]
+    // Same as `webview/receiveMessage` except the parameter is a JSON-encoded
+    // string.  The server processes this message by parsing
+    // `messageStringEncoded` as JSON and then calling `webview/receiveMessage`.
+    'webview/receiveMessageStringEncoded': [{ id: string; messageStringEncoded: string }, null]
 
     // Register diagnostics (aka. error/warning messages). Overwrites existing
     // diagnostics for the provided document URIs. This request should be used
@@ -271,7 +279,10 @@ export type ServerRequests = {
     'textDocument/edit': [TextDocumentEditParams, boolean]
     'textDocument/openUntitledDocument': [UntitledTextDocument, boolean]
     'textDocument/show': [
-        { uri: string; options?: TextDocumentShowOptionsParams | undefined | null },
+        {
+            uri: string
+            options?: TextDocumentShowOptionsParams | undefined | null
+        },
         boolean,
     ]
     'workspace/edit': [WorkspaceEditParams, boolean]
@@ -367,6 +378,10 @@ export type ServerNotifications = {
     // chat/new). Subscribe to these messages to get access to streaming updates
     // on the chat reply.
     'webview/postMessage': [WebviewPostMessageParams]
+    // Same as `webview/postMessage` but the `WebviewMessage` is string-encoded.
+    // This method is only used when the `webviewMessages` client capability is
+    // set to the value `'string'`.
+    'webview/postMessageStringEncoded': [{ id: string; stringEncodedMessage: string }]
 
     'progress/start': [ProgressStartParams]
 
@@ -428,7 +443,8 @@ export interface AutocompleteItem {
 
 export interface ClientInfo {
     name: string
-    version: string
+    version: string // extension version
+    ideVersion?: string | undefined | null
     workspaceRootUri: string
 
     /** @deprecated Use `workspaceRootUri` instead. */
@@ -463,6 +479,12 @@ export interface ClientCapabilities {
     showWindowMessage?: 'notification' | 'request' | undefined | null
     ignore?: 'none' | 'enabled' | undefined | null
     codeActions?: 'none' | 'enabled' | undefined | null
+    // When 'object-encoded' (default), the server uses the `webview/postMessage` method
+    // to send structured JSON objects.  When 'string-encoded', the server uses the
+    // `webview/postMessageStringEncoded` method to send a JSON-encoded string. This is
+    // convenient for clients that forward the string directly to an underlying
+    // webview container.
+    webviewMessages?: 'object-encoded' | 'string-encoded' | undefined | null
 }
 
 export interface ServerInfo {
@@ -500,6 +522,8 @@ export interface ExtensionConfiguration {
     eventProperties?: EventProperties | undefined | null
 
     customConfiguration?: Record<string, any> | undefined | null
+
+    baseGlobalState?: Record<string, any> | undefined | null
 }
 
 /**

@@ -27,6 +27,7 @@ import {
 
 import { SpanStatusCode } from '@opentelemetry/api'
 import { contextFiltersProvider, fetch } from '@sourcegraph/cody-shared'
+import type { CompletionResponseWithMetaData } from '@sourcegraph/cody-shared/src/inferenceClient/misc'
 
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.
@@ -135,7 +136,8 @@ export function createClient(
                 // regular JSON payload. This ensures that the request also works against older backends
                 const isStreamingResponse = response.headers.get('content-type') === 'text/event-stream'
 
-                let completionResponse: CompletionResponse | undefined = undefined
+                const resolvedModel = response.headers.get('x-cody-resolved-model') || undefined
+                let completionResponse: CompletionResponseWithMetaData | undefined = undefined
 
                 try {
                     if (isStreamingResponse && isNodeResponse(response)) {
@@ -165,6 +167,7 @@ export function createClient(
                                 yield {
                                     completion: completionResponse.completion,
                                     stopReason,
+                                    resolvedModel,
                                 }
                             }
 
@@ -184,7 +187,10 @@ export function createClient(
 
                     // Handle non-streaming response
                     const result = await response.text()
-                    completionResponse = JSON.parse(result) as CompletionResponse
+                    completionResponse = {
+                        ...(JSON.parse(result) as CompletionResponse),
+                        resolvedModel,
+                    }
 
                     if (
                         typeof completionResponse.completion !== 'string' ||

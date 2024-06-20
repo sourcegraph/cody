@@ -2,7 +2,7 @@ import fuzzysort from 'fuzzysort'
 import * as vscode from 'vscode'
 import { type Repo, type RepoFetcher, RepoFetcherState } from './repo-fetcher'
 
-export interface RemoteRepoListResult {
+interface RemoteRepoListResult {
     repos: Repo[]
     startIndex: number
     count: number

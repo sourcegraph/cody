@@ -27,7 +27,7 @@ export class AgentGlobalState implements vscode.Memento {
 
     public keys(): readonly string[] {
         return [
-            localStorage.LAST_USED_ENDPOINT,
+            localStorage.LAST_USED_ENDPOINT_KEY,
             localStorage.ANONYMOUS_USER_ID_KEY,
             ...this.globalStorage.keys(),
         ]
@@ -37,7 +37,7 @@ export class AgentGlobalState implements vscode.Memento {
         switch (key) {
             case localStorage.ANONYMOUS_USER_ID_KEY:
                 return vscode_shim.extensionConfiguration?.anonymousUserID
-            case localStorage.LAST_USED_ENDPOINT:
+            case localStorage.LAST_USED_ENDPOINT_KEY:
                 return vscode_shim.extensionConfiguration?.serverEndpoint
             default:
                 return this.globalStorage.get(key) ?? defaultValue

@@ -1,4 +1,4 @@
-import { resolve } from 'path'
+import { resolve } from 'node:path'
 
 import react from '@vitejs/plugin-react-swc'
 
@@ -62,14 +62,16 @@ export default defineProjectWithDefaults(__dirname, {
     // need to apply the `define`s when building, not when testing. The `define`s leak into the
     // `agent` tests and cause some failures because process.env.CODY_SHIM_TESTING gets `define`d to
     // `false`.
-    define: process.env.VITEST ? null : {
-        ...Object.fromEntries(
-            Object.entries(fakeProcessEnv).map(([key, value]) => [
-                `process.env.${key}`,
-                JSON.stringify(value),
-            ])
-        ),
-    },
+    define: process.env.VITEST
+        ? null
+        : {
+              ...Object.fromEntries(
+                  Object.entries(fakeProcessEnv).map(([key, value]) => [
+                      `process.env.${key}`,
+                      JSON.stringify(value),
+                  ])
+              ),
+          },
     build: {
         emptyOutDir: false,
         outDir: 'dist',

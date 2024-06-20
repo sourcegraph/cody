@@ -11,7 +11,7 @@ import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/c
 import { showCodyIgnoreNotification } from '../../cody-ignore/notification'
 import { getEditor } from '../../editor/active-editor'
 
-export interface ExecuteChatArguments extends Omit<WebviewSubmitMessage, 'text'> {
+export interface ExecuteChatArguments extends Omit<WebviewSubmitMessage, 'text' | 'editorState'> {
     source?: EventSource
     command?: DefaultChatCommands
     text: PromptString
@@ -19,7 +19,7 @@ export interface ExecuteChatArguments extends Omit<WebviewSubmitMessage, 'text'>
 
 /**
  * Wrapper around the `cody.action.chat` command that can be used anywhere but with better type-safety.
- * This is also called by all the default chat commands (e.g. /explain, /smell).
+ * This is also called by all the default commands (e.g., explain).
  */
 export const executeChat = async (args: ExecuteChatArguments): Promise<ChatSession | undefined> => {
     const { chat, commands } = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()

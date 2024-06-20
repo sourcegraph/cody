@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { expect } from '@playwright/test'
 import {
-    atMentionMenuItem,
+    atMentionMenuMessage,
     createEmptyChatPanel,
     getContextCell,
     sidebarExplorer,
@@ -22,7 +22,6 @@ test.extend<ExpectedEvents>({
     expectEvents: [
         'CodyInstalled',
         'CodyVSCodeExtension:codyIgnore:hasFile',
-        'CodyVSCodeExtension:Auth:failed',
         'CodyVSCodeExtension:auth:clickOtherSignInOptions',
         'CodyVSCodeExtension:login:clicked',
         'CodyVSCodeExtension:auth:selectSigninMenu',
@@ -37,7 +36,6 @@ test.extend<ExpectedEvents>({
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
         'cody.extension:savedLogin',
         'cody.codyIgnore:hasFile',
-        'cody.auth:failed',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
@@ -82,7 +80,7 @@ test.extend<ExpectedEvents>({
     await chatInput.focus()
     await chatInput.clear()
     await chatInput.fill('@ignoredByCody')
-    await expect(atMentionMenuItem(chatPanel, 'No files found')).toBeVisible()
+    await expect(atMentionMenuMessage(chatPanel, 'No files found')).toBeVisible()
     await chatInput.clear()
     await chatInput.fill('@ignore')
     await expect(

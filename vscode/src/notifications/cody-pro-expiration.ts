@@ -24,6 +24,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
 
                 Setup your payment information to continue using Cody Pro, you won't be charged until February 21.
             `
+    public static readonly localStorageSuppressionKey = 'extension.codyPro.suppressExpirationNotices'
 
     public static readonly actionText = 'Setup Payment Info'
 
@@ -153,7 +154,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
     private shouldSuppressNotifications(): boolean {
         if (this.isDisposed) return true
 
-        if (localStorage.get(localStorage.CODY_PRO_SUPPRESSION_KEY)) {
+        if (localStorage.get(CodyProExpirationNotifications.localStorageSuppressionKey)) {
             this.dispose()
             return true
         }
@@ -165,7 +166,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
         // Don't show again this session.
         this.dispose()
         // Or again in future.
-        localStorage.set(localStorage.CODY_PRO_SUPPRESSION_KEY, 'true')
+        localStorage.set(CodyProExpirationNotifications.localStorageSuppressionKey, 'true')
     }
 
     /**

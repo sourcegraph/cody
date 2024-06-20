@@ -2,14 +2,14 @@ import {
     type ContextItem,
     DefaultChatCommands,
     PromptString,
-    displayLineRange,
+    isDefined,
     logDebug,
     ps,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { defaultCommands } from '.'
+import { defaultCommands, selectedCodePromptWithExtraFiles } from '.'
 import type { ChatCommandResult } from '../../CommandResult'
 // biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
@@ -20,6 +20,7 @@ import { type ExecuteChatArguments, executeChat } from './ask'
 import type { Span } from '@opentelemetry/api'
 import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/context-filter'
 import { getEditor } from '../../editor/active-editor'
+import { getContextFileFromCurrentFile } from '../context/current-file'
 
 /**
  * Generates the prompt and context files with arguments for the 'smell' command.
@@ -30,7 +31,6 @@ async function smellCommand(
     span: Span,
     args?: Partial<CodyCommandArgs>
 ): Promise<ExecuteChatArguments | null> {
-    const addEnhancedContext = false
     let prompt = PromptString.fromDefaultCommands(defaultCommands, 'smell')
 
     if (args?.additionalInstruction) {
@@ -38,27 +38,23 @@ async function smellCommand(
         prompt = ps`${prompt} ${args.additionalInstruction}`
     }
 
-    const contextFiles: ContextItem[] = []
-
-    const currentSelection = await getContextFileFromCursor()
-    contextFiles.push(...currentSelection)
-
-    const cs = currentSelection[0]
-    if (cs) {
-        const range = cs.range && ps`:${displayLineRange(cs.range)}`
-        prompt = prompt.replaceAll(
-            'the selected code',
-            ps`@${PromptString.fromDisplayPath(cs.uri)}${range ?? ''} `
-        )
-    } else {
+    const currentSelection = await getContextFileFromCursor(args?.range?.start)
+    const currentFile = await getContextFileFromCurrentFile()
+    const contextItems: ContextItem[] = [currentSelection, currentFile].filter(isDefined)
+    if (contextItems.length === 0) {
         return null
     }
+
+    prompt = prompt.replaceAll(
+        'the selected code',
+        selectedCodePromptWithExtraFiles(contextItems[0], contextItems.slice(1))
+    )
 
     return {
         text: prompt,
         submitType: 'user-newchat',
-        contextFiles,
-        addEnhancedContext,
+        contextFiles: contextItems,
+        addEnhancedContext: false,
         source: args?.source,
         command: DefaultChatCommands.Smell,
     }

@@ -28,22 +28,25 @@ interface PersistedUserLocalHistory {
  * NOTE: Only accessible within the LocalStorage module.
  */
 const keys = {
+    // Bump this on storage changes so we don't handle incorrectly formatted data
     CHAT_HISTORY: 'cody-local-chatHistory-v2',
     CONFIG: 'cody-config',
     ANONYMOUS_USER_ID: 'sourcegraphAnonymousUid',
+    // Last saved and used endpoint and access token:
     LAST_USED_ENDPOINT: 'SOURCEGRAPH_CODY_ENDPOINT',
-    ENDPOINT_HISTORY: 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY',
-    ENROLLMENT_HISTORY: 'SOURCEGRAPH_CODY_ENROLLMENTS',
-    CODY_PRO_SUPPRESSION: 'extension.codyPro.suppressExpirationNotices',
     ACCESS_TOKEN_SECRET: 'cody.access-token',
+    // All used and saved endpoints.
+    ENDPOINT_HISTORY: 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY',
+    // All A/B test features that have been enrolled in.
+    ENROLLMENT_HISTORY: 'SOURCEGRAPH_CODY_ENROLLMENTS',
+    LOCAL_MINION_HISTORY: 'cody-local-minionHistory-v0',
 }
 
 class LocalStorage {
-    // Bump this on storage changes so we don't handle incorrectly formatted data
+    // Only include keys that need to be accessed outside of the LocalStorage module.
     public readonly ANONYMOUS_USER_ID_KEY = keys.ANONYMOUS_USER_ID
-    public readonly LAST_USED_ENDPOINT = keys.LAST_USED_ENDPOINT
-    public readonly CODY_PRO_SUPPRESSION_KEY = keys.CODY_PRO_SUPPRESSION
-    public readonly ACCESS_TOKEN_SECRET_KEY = keys.CODY_PRO_SUPPRESSION
+    public readonly LAST_USED_ENDPOINT_KEY = keys.LAST_USED_ENDPOINT
+    public readonly ACCESS_TOKEN_SECRET_KEY = keys.ACCESS_TOKEN_SECRET
 
     /**
      * Clears the local storage, excluding the anonymous user ID.
@@ -170,6 +173,16 @@ class LocalStorage {
                 console.error(error)
             }
         }
+    }
+
+    public async setMinionHistory(authStatus: AuthStatus, serializedHistory: string): Promise<void> {
+        // TODO(beyang): SECURITY - use authStatus
+        await this.storage.update(keys.LOCAL_MINION_HISTORY, serializedHistory)
+    }
+
+    public getMinionHistory(authStatus: AuthStatus): string | null {
+        // TODO(beyang): SECURITY - use authStatus
+        return this.storage.get<string | null>(keys.LOCAL_MINION_HISTORY, null)
     }
 
     public async removeChatHistory(authStatus: AuthStatus): Promise<void> {

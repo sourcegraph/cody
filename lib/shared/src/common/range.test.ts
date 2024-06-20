@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { displayLineRange, displayRange, toRangeData } from './range'
+import { displayLineRange, displayRange, isMultiLineRange, toRangeData } from './range'
 
 describe('toRangeData', () => {
     test('converts Range to RangeData', () => {
@@ -82,4 +82,17 @@ describe('displayRange', () => {
         expect(
             displayRange({ start: { line: 1, character: 2 }, end: { line: 3, character: 4 } }).toString()
         ).toBe('2:3-4:5'))
+})
+describe('isMultiLineRange', () => {
+    test('ok', () => {
+        expect(
+            isMultiLineRange({ start: { line: 1, character: 0 }, end: { line: 1, character: 31 } })
+        ).toBe(false)
+        expect(
+            isMultiLineRange({ start: { line: 1, character: 0 }, end: { line: 2, character: 0 } })
+        ).toBe(false)
+        expect(
+            isMultiLineRange({ start: { line: 1, character: 0 }, end: { line: 2, character: 1 } })
+        ).toBe(true)
+    })
 })

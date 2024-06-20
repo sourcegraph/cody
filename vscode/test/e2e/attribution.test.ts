@@ -3,12 +3,7 @@ import { expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 
 import { createEmptyChatPanel, sidebarSignin } from './common'
-import {
-    type DotcomUrlOverride,
-    type ExpectedEvents,
-    type ExtraWorkspaceSettings,
-    test as baseTest,
-} from './helpers'
+import { type DotcomUrlOverride, type ExpectedEvents, test as baseTest } from './helpers'
 
 const test = baseTest
     .extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
@@ -25,12 +20,6 @@ const test = baseTest
             'CodyVSCodeExtension:chat-question:executed',
             'CodyVSCodeExtension:chatResponse:hasCode',
         ],
-    })
-    .extend<ExtraWorkspaceSettings>({
-        extraWorkspaceSettings: {
-            // TODO(#59720): Remove experimental setting.
-            'cody.experimental.guardrails': true,
-        },
     })
 
 test('attribution search enabled in chat', async ({ page, sidebar, expectedEvents }) => {

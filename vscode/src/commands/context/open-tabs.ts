@@ -1,4 +1,4 @@
-import { type ContextItem, logError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
+import { type ContextItem, isDefined, logError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getContextFileFromUri } from './file-path'
 
@@ -22,18 +22,18 @@ export async function getContextFileFromTabs(): Promise<ContextItem[]> {
                     openTabs.map(async tab => {
                         // Skip non-file items
                         if (!tab.uri || tab.uri.scheme !== 'file') {
-                            return []
+                            return null
                         }
 
                         if (!vscode.workspace.getWorkspaceFolder(tab.uri)) {
                             // Skip files that are not from the current workspace
-                            return []
+                            return null
                         }
 
                         return getContextFileFromUri(tab.uri)
                     })
                 )
-            ).flat()
+            ).filter(isDefined)
         } catch (error) {
             logError('getContextFileFromTabs', 'failed', { verbose: error })
             return []

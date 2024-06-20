@@ -6,3 +6,4 @@ dist/
 resources/wasm/
 GITHUB_CHANGELOG.md
 walkthroughs/cody_tutorial.py
+tsconfig.typehacks.json

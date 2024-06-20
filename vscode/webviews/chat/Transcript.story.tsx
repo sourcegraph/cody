@@ -35,6 +35,7 @@ const meta: Meta<typeof Transcript> = {
         insertButtonOnSubmit: () => {},
         userInfo: FIXTURE_USER_ACCOUNT_INFO,
         postMessage: () => {},
+        chatEnabled: true,
     } satisfies ComponentProps<typeof Transcript>,
 
     decorators: [VSCodeWebview],
@@ -63,7 +64,7 @@ const SIMPLE_TRANSCRIPT = FIXTURE_TRANSCRIPT.simple
 export const WaitingForContext: StoryObj<typeof meta> = {
     args: {
         transcript: [...SIMPLE_TRANSCRIPT, { speaker: 'human', text: ps`What color is the sky?` }],
-        messageInProgress: { speaker: 'assistant' },
+        messageInProgress: { speaker: 'assistant', model: 'my-llm' },
     },
 }
 
@@ -91,7 +92,7 @@ export const WaitingForAssistantMessageNoContext: StoryObj<typeof meta> = {
                 contextFiles: [],
             },
         ]),
-        messageInProgress: { speaker: 'assistant' },
+        messageInProgress: { speaker: 'assistant', model: 'my-llm' },
     },
 }
 

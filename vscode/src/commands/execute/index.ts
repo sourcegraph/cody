@@ -1,8 +1,10 @@
 import {
+    type ContextItem,
     DefaultChatCommands,
     type DefaultCodyCommands,
     DefaultEditCommands,
-    type PromptString,
+    PromptString,
+    ps,
 } from '@sourcegraph/cody-shared'
 import type { CommandResult } from '../../CommandResult'
 import { executeDocCommand } from './doc'
@@ -64,4 +66,17 @@ export async function executeDefaultCommand(
             console.log('not a default command')
             return undefined
     }
+}
+
+export function selectedCodePromptWithExtraFiles(
+    primary: ContextItem,
+    other: ContextItem[]
+): PromptString {
+    const primaryMention = ps`@${PromptString.fromDisplayPathLineRange(primary.uri, primary.range)}`
+    const otherMentions = other.map(
+        item => ps`@${PromptString.fromDisplayPathLineRange(item.uri, item.range)}`
+    )
+    return ps`${primaryMention}${
+        otherMentions.length > 0 ? ps` ( ${PromptString.join(otherMentions, ps` `)} )` : ''
+    }`
 }

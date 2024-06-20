@@ -4,7 +4,7 @@ import {
     type AuthStatus,
     type ChatClient,
     ConfigFeaturesSingleton,
-    type ModelProvider,
+    type Model,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 
@@ -45,7 +45,7 @@ export class EditManager implements vscode.Disposable {
     private readonly controller: FixupController
     private disposables: vscode.Disposable[] = []
     private editProviders = new WeakMap<FixupTask, EditProvider>()
-    private models: ModelProvider[] = []
+    private models: Model[] = []
 
     constructor(public options: EditManagerOptions) {
         this.controller = new FixupController(options.authProvider, options.extensionClient)

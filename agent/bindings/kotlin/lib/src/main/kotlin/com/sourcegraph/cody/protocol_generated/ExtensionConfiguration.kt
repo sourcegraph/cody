@@ -1,5 +1,5 @@
 @file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
-package com.sourcegraph.cody.protocol_generated
+package com.sourcegraph.cody.protocol_generated;
 
 data class ExtensionConfiguration(
   val serverEndpoint: String,
@@ -14,5 +14,6 @@ data class ExtensionConfiguration(
   val codebase: String? = null,
   val eventProperties: EventProperties? = null,
   val customConfiguration: Map<String, Any>? = null,
+  val baseGlobalState: Map<String, Any>? = null,
 )
 

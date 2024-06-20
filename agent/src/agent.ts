@@ -11,7 +11,7 @@ import {
     type BillingCategory,
     type BillingProduct,
     FeatureFlag,
-    ModelProvider,
+    ModelsService,
     NoOpTelemetryRecorderProvider,
     PromptString,
     contextFiltersProvider,
@@ -33,6 +33,7 @@ import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/pro
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 
+import { copyFileSync, mkdirSync } from 'node:fs'
 import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
@@ -91,12 +92,33 @@ type ExtensionActivate = (
     extensionClient?: ExtensionClient
 ) => Promise<unknown>
 
+// In certs.js, we run `win-ca` to install self-signed certificates.  The
+// `win-ca` package needs access to a "roots.exe" file, which we bundle
+// alongside the agent as 'win-ca-roots.exe'. In VS Code, we use
+// `vscode.ExtensionContext.extensionUri` to discover the location of this file.
+// In the agent, we assume this file is placed next to the bundled `index.js`
+// file, and we copy it over to the `extensionPath` so the VS Code logic works
+// without changes.
+function copyWinCaRootsBinary(extensionPath: string): void {
+    const source = path.join(__dirname, 'win-ca-roots.exe')
+    const target = path.join(extensionPath, 'dist', 'win-ca-roots.exe')
+    try {
+        mkdirSync(path.dirname(target), { recursive: true })
+        copyFileSync(source, target)
+    } catch (err) {
+        logDebug('win-ca', `Failed to copy ${source} to dist ${target}`, err)
+    }
+}
+
 export async function initializeVscodeExtension(
     workspaceRoot: vscode.Uri,
     extensionActivate: ExtensionActivate,
     extensionClient: ExtensionClient
 ): Promise<void> {
     const paths = envPaths('Cody')
+    const extensionPath = paths.config
+    copyWinCaRootsBinary(extensionPath)
+
     const context: vscode.ExtensionContext = {
         asAbsolutePath(relativePath) {
             return path.resolve(workspaceRoot.fsPath, relativePath)
@@ -107,7 +129,7 @@ export async function initializeVscodeExtension(
         // Placeholder string values for extension path/uri. These are only used
         // to resolve paths to icon in the UI. They need to have compatible
         // types but don't have to point to a meaningful path/URI.
-        extensionPath: paths.config,
+        extensionPath,
         extensionUri: vscode.Uri.file(paths.config),
         globalState,
         logUri: vscode.Uri.file(paths.log),
@@ -333,6 +355,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 '*',
                 new IndentationBasedFoldingRangeProvider()
             )
+            if (clientInfo.extensionConfiguration?.baseGlobalState) {
+                for (const key in clientInfo.extensionConfiguration.baseGlobalState) {
+                    const value = clientInfo.extensionConfiguration.baseGlobalState[key]
+                    globalState.update(key, value)
+                }
+            }
             this.workspace.workspaceRootUri = vscode.Uri.parse(clientInfo.workspaceRootUri)
             vscode_shim.setWorkspaceDocuments(this.workspace)
             if (clientInfo.capabilities?.codeActions === 'enabled') {
@@ -1039,7 +1067,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
             const theModel = modelID
                 ? modelID
-                : ModelProvider.getProviders(
+                : ModelsService.getModels(
                       ModelUsage.Chat,
                       authStatus.isDotCom && !authStatus.userCanUpgrade
                   ).at(0)?.model
@@ -1069,7 +1097,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            const providers = ModelProvider.getProviders(
+            const providers = ModelsService.getModels(
                 modelUsage,
                 authStatus.isDotCom && !authStatus.userCanUpgrade
             )
@@ -1155,6 +1183,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
             await this.receiveWebviewMessage(id, message)
             return null
         })
+        this.registerAuthenticatedRequest(
+            'webview/receiveMessageStringEncoded',
+            async ({ id, messageStringEncoded }) => {
+                await this.receiveWebviewMessage(id, JSON.parse(messageStringEncoded))
+                return null
+            }
+        )
 
         this.registerAuthenticatedRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
             return featureFlagProvider.evaluateFeatureFlag(
@@ -1437,10 +1472,17 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     })
                 }
 
-                this.notify('webview/postMessage', {
-                    id: panel.panelID,
-                    message,
-                })
+                if (this.clientInfo?.capabilities?.webviewMessages === 'string-encoded') {
+                    this.notify('webview/postMessageStringEncoded', {
+                        id: panel.panelID,
+                        stringEncodedMessage: JSON.stringify(message),
+                    })
+                } else {
+                    this.notify('webview/postMessage', {
+                        id: panel.panelID,
+                        message,
+                    })
+                }
             })
 
             return panel
@@ -1472,7 +1514,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             throw new TypeError(`Expected chat command result, got ${result.type}`)
         }
 
-        const { sessionID, webviewPanel } = result.session ?? {}
+        const { sessionID, webviewPanelOrView: webviewPanel } = result.session ?? {}
         if (sessionID === undefined || webviewPanel === undefined) {
             throw new Error('chatID is undefined')
         }
