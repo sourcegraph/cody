@@ -17,13 +17,13 @@ const EXAMPLE_TAB_RESPONSE = EXAMPLE_WHITESPACE_RESPONSE.split('\n')
     .join('\n')
 
 describe('matchIndentation', () => {
-    it('returns correct when incoming has the same indentation as original', () => {
-        const incoming = EXAMPLE_WHITESPACE_RESPONSE
-        const updated = matchIndentation(incoming, EXAMPLE_WHITESPACE_RESPONSE)
-        expect(updated).toBe(EXAMPLE_WHITESPACE_RESPONSE)
-    })
-
     describe('whitespace indentation', () => {
+        it('returns correct when incoming has the same indentation as original', () => {
+            const incoming = EXAMPLE_WHITESPACE_RESPONSE
+            const updated = matchIndentation(incoming, EXAMPLE_WHITESPACE_RESPONSE)
+            expect(updated).toBe(EXAMPLE_WHITESPACE_RESPONSE)
+        })
+
         it('returns correct when incoming has less indentation as original', () => {
             const incoming = EXAMPLE_WHITESPACE_RESPONSE
             const indentedOriginal = EXAMPLE_WHITESPACE_RESPONSE.replace('console.log', '  console.log')
@@ -39,6 +39,12 @@ describe('matchIndentation', () => {
     })
 
     describe('tab indentation', () => {
+        it('returns correct when incoming has the same indentation as original', () => {
+            const incoming = EXAMPLE_TAB_RESPONSE
+            const updated = matchIndentation(incoming, EXAMPLE_TAB_RESPONSE)
+            expect(updated).toBe(EXAMPLE_TAB_RESPONSE)
+        })
+
         it('returns correct when incoming has less indentation as original', () => {
             const incoming = EXAMPLE_TAB_RESPONSE
             const indentedOriginal = EXAMPLE_TAB_RESPONSE.replace('console.log', '\tconsole.log')
@@ -50,6 +56,72 @@ describe('matchIndentation', () => {
             const incoming = EXAMPLE_TAB_RESPONSE.replace('console.log', '\tconsole.log')
             const updated = matchIndentation(incoming, EXAMPLE_TAB_RESPONSE)
             expect(updated).toBe(EXAMPLE_TAB_RESPONSE)
+        })
+    })
+
+    describe('mixed indentation', () => {
+        it('returns correct when incoming uses tab indentation, and the original uses whitespace indentation', () => {
+            const updated = matchIndentation(EXAMPLE_TAB_RESPONSE, EXAMPLE_WHITESPACE_RESPONSE)
+            expect(updated).toBe(EXAMPLE_WHITESPACE_RESPONSE)
+        })
+
+        it('returns correct when incoming uses whitespace indentation, and the original uses tab indentation', () => {
+            const updated = matchIndentation(EXAMPLE_WHITESPACE_RESPONSE, EXAMPLE_TAB_RESPONSE)
+            expect(updated).toBe(EXAMPLE_TAB_RESPONSE)
+        })
+    })
+
+    describe('special cases', () => {
+        // LLMs often get the very first line indentation wrong, even though sometimes the rest of the lines are indented correctly
+        it('returns correct when the incoming is the same, except the first line has the wrong indentation', () => {
+            const original = EXAMPLE_WHITESPACE_RESPONSE.split('\n')
+                .map(line => {
+                    return ' '.repeat(4) + line // Add an extra 4 spaces to each line
+                })
+                .join('\n')
+
+            // Incoming has the same indentation, except the first line is wrong
+            const incoming = original.trimStart()
+            console.log('Incoming is\n', incoming)
+            const updated = matchIndentation(incoming, original)
+            expect(updated).toBe(original)
+        })
+
+        it('returns correct when the incoming has the wrong indentation on every line', () => {
+            const original = EXAMPLE_WHITESPACE_RESPONSE.split('\n')
+                .map(line => {
+                    return ' '.repeat(4) + line // Add an extra 4 spaces to each line
+                })
+                .join('\n')
+
+            const updated = matchIndentation(EXAMPLE_WHITESPACE_RESPONSE, original)
+            expect(updated).toBe(original)
+        })
+
+        it('returns correct when the incoming is the same, but with an indentation mismatch AND the first line has the wrong indentation', () => {
+            const original = EXAMPLE_TAB_RESPONSE.split('\n')
+                .map(line => {
+                    return '\t' + line // Add an extra tab to each line
+                })
+                .join('\n')
+
+            // Incoming with whitespace indentation, and the incorrect starting indentation
+            const incoming = original.replace('\t', ' ').trimStart()
+            const updated = matchIndentation(incoming, original)
+            expect(updated).toBe(original)
+        })
+
+        it('returns correct when the incoming is the same, but with an indentation mismatch AND has the wrong indentation on every line', () => {
+            const original = EXAMPLE_TAB_RESPONSE.split('\n')
+                .map(line => {
+                    return '\t' + line // Add an extra tab to each line
+                })
+                .join('\n')
+
+            // Incoming with whitespace indentation instead
+            const incoming = original.replace('\t', '  ')
+            const updated = matchIndentation(incoming, original)
+            expect(updated).toBe(original)
         })
     })
 })
