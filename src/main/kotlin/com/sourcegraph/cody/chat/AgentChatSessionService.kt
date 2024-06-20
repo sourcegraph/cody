@@ -36,11 +36,13 @@ class AgentChatSessionService(private val project: Project) {
       chatSessions.find { it.hasConnectionId(connectionId) }
 
   fun restoreAllSessions(agent: CodyAgent) {
-    chatSessions.forEach { agentChatSession ->
-      HistoryService.getInstance(project)
-          .findActiveAccountChat(agentChatSession.getInternalId())
-          ?.let { agentChatSession.updateFromState(agent, it) }
-    }
+    chatSessions
+        .filter { agentChatSession -> agentChatSession.getConnectionId() != null }
+        .forEach { agentChatSession ->
+          HistoryService.getInstance(project)
+              .findActiveAccountChat(agentChatSession.getInternalId())
+              ?.let { agentChatSession.updateFromState(agent, it) }
+        }
   }
 
   companion object {
