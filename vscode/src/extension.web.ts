@@ -25,10 +25,10 @@ export function activate(
 export function createActivation(platformContext: Partial<PlatformContext>): typeof activate {
     return (context: vscode.ExtensionContext, extensionClient?: ExtensionClient) => {
         return activateCommon(context, {
-            ...platformContext,
             createCompletionsClient: (...args) => new SourcegraphBrowserCompletionsClient(...args),
             createSentryService: (...args) => new WebSentryService(...args),
             extensionClient: extensionClient ?? defaultVSCodeExtensionClient(),
+            ...platformContext,
         })
     }
 }

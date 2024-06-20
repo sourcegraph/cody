@@ -192,7 +192,21 @@ async function searchRemote(
         if (!remoteSearch) {
             return []
         }
-        const repoIDs = [...remoteSearch.getRepoIdSet(), ...remoteRepositoryIDsFromHumanInput(input)]
+
+        const humanInputRepositoriesIds = remoteRepositoryIDsFromHumanInput(input)
+        const globalRepositoriesIds = remoteSearch.getRepoIdSet()
+
+        const inputBasedRepositoriesIds = humanInputRepositoriesIds.length
+            ? humanInputRepositoriesIds
+            : globalRepositoriesIds
+
+        // If consumer requests has enhanced context param we should include
+        // all possible repositories we have in context storage, otherwise
+        // we pick repositories based on input mentions (if user mentions repo
+        // we pick this repo if not we pick all repos in global context)
+        const repoIDs = allReposForEnhancedContext
+            ? [...humanInputRepositoriesIds, ...globalRepositoriesIds]
+            : inputBasedRepositoriesIds
 
         return (await remoteSearch.query(input.text, repoIDs)).map(result => {
             return {

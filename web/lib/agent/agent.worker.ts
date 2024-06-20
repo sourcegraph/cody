@@ -5,7 +5,7 @@ import {
     createMessageConnection,
 } from 'vscode-jsonrpc/browser'
 
-import { createActivation } from '@sourcegraph/vscode-cody/src/extension.web'
+import { createActivation } from 'cody-ai/src/extension.web'
 import { IndexDBStorage } from './index-db-storage'
 
 // Mock standard DOM API otherwise Vite client fails to run them in
@@ -21,6 +21,9 @@ const conn = createMessageConnection(new BrowserMessageReader(self), new Browser
 const agent = new Agent({
     conn,
     extensionActivate: createActivation({
+        // Since agent is running within web-worker web sentry service will fail
+        // since it relies on DOM API which is not available in web-worker
+        createSentryService: undefined,
         createStorage: () => IndexDBStorage.create(),
     }),
 })

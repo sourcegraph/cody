@@ -89,13 +89,22 @@ export class ChatPanelsManager implements vscode.Disposable {
         const isCodyProUser = !authStatus.userCanUpgrade
         const models = ModelsService.getModels(ModelUsage.Chat, isCodyProUser)
 
+        // Enterprise context is used for remote repositories context fetching
+        // in vs cody extension it should be always off if extension is connected
+        // to dot com instance, but in Cody Web it should be on by default for
+        // all instances (including dot com), Cody Web client sets cody.allow-remote-context
+        // to true to enable this directly.
+        const allowRemoteContext = vscode.workspace
+            .getConfiguration()
+            .get<boolean>('cody.allow-remote-context', !isConsumer)
+
         const provider = await SimpleChatPanelProvider.create({
             ...{ ...options, featureFlagProvider },
             chatClient: chatClient,
             localEmbeddings: isConsumer ? localEmbeddings : null,
             contextRanking: isConsumer ? contextRanking : null,
             symf: isConsumer ? symf : null,
-            enterpriseContext: enterpriseContext,
+            enterpriseContext: allowRemoteContext ? enterpriseContext : null,
             models,
             guardrails: guardrails,
             startTokenReceiver: options.startTokenReceiver,
@@ -270,6 +279,9 @@ export class ChatPanelsManager implements vscode.Disposable {
         const isConsumer = authStatus.isDotCom
         const isCodyProUser = !authStatus.userCanUpgrade
         const models = ModelsService.getModels(ModelUsage.Chat, isCodyProUser)
+        const allowRemoteContext = vscode.workspace
+            .getConfiguration()
+            .get<boolean>('cody.allow-remote-context', !isConsumer)
 
         return SimpleChatPanelProvider.create({
             ...this.options,
@@ -277,7 +289,7 @@ export class ChatPanelsManager implements vscode.Disposable {
             localEmbeddings: isConsumer ? this.localEmbeddings : null,
             contextRanking: isConsumer ? this.contextRanking : null,
             symf: isConsumer ? this.symf : null,
-            enterpriseContext: this.enterpriseContext,
+            enterpriseContext: allowRemoteContext ? this.enterpriseContext : null,
             models,
             guardrails: this.guardrails,
             startTokenReceiver: this.options.startTokenReceiver,

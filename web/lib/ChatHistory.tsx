@@ -1,7 +1,7 @@
 import { type FC, type ReactElement, useEffect, useState } from 'react'
 
 import { isErrorLike } from '@sourcegraph/cody-shared'
-import type { ChatExportResult } from '@sourcegraph/vscode-cody/src/jsonrpc/agent-protocol'
+import type { ChatExportResult } from 'cody-ai/src/jsonrpc/agent-protocol'
 
 import { useWebAgentClient } from './Provider'
 

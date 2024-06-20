@@ -51,17 +51,22 @@ export class AuthProvider implements AuthStatusProvider {
     private listeners: Set<Listener> = new Set()
 
     static async createAuthProvider(config: AuthProviderConfig): Promise<AuthProvider> {
-        const authProvider = new AuthProvider(config)
-        await authProvider.loadEndpointHistory()
+        const provider = new AuthProvider(config)
+        await provider.loadEndpointHistory()
 
-        return authProvider
+        // Update global auth provider singleton
+        if (!authProvider) {
+            authProvider = provider
+        }
+
+        return provider
     }
 
     private constructor(private config: AuthProviderConfig) {
         this.authStatus.endpoint = 'init'
     }
 
-    // Sign in to the last endpoint the user was signed in to, if any
+    // Sign into the last endpoint the user was signed into, if any
     public async init(): Promise<AuthStatus | null> {
         let lastEndpoint = (await localStorage?.getEndpoint()) || this.config.serverEndpoint
         let token = (await secretStorage.get(lastEndpoint || '')) || this.config.accessToken
@@ -265,12 +270,17 @@ export class AuthProvider implements AuthStatusProvider {
         isOfflineMode?: boolean
     ): Promise<AuthStatus> {
         const endpoint = config.serverEndpoint
+
         if (isOfflineMode) {
             return { ...offlineModeAuthStatus, endpoint }
         }
+
+        // Check only endpoint since Cody Web can run extension without
+        // actual access token via cookie authorization
         if (!endpoint) {
             return { ...defaultAuthStatus, endpoint }
         }
+
         // Cache the config and the GraphQL client
         if (this.config !== config || !this.client) {
             this.config = config
@@ -543,7 +553,7 @@ export class AuthProvider implements AuthStatusProvider {
 /**
  * Singleton instance of auth provider.
  */
-export const authProvider: AuthProvider | null = null
+export let authProvider: AuthProvider | null = null
 
 export function isNetworkError(error: Error): boolean {
     const message = error.message

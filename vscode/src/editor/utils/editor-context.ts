@@ -423,10 +423,9 @@ async function resolveFileOrSymbolContextItem(
 
     if (isRemoteFileURI(contextItem.uri)) {
         const { repository, path } = parseRemoteFileURI(contextItem.uri)
-        const resultOrError = await graphqlClient.getFileContent(repository, path, {
-            startLine: contextItem.range?.start.line,
-            endLine: contextItem.range?.end.line,
-        })
+
+        // TODO [VK]: Support ranges for symbol context items
+        const resultOrError = await graphqlClient.getFileContent(repository, path)
 
         if (!isErrorLike(resultOrError)) {
             content = resultOrError
