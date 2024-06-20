@@ -50,12 +50,6 @@ export class FixupTask {
     public diff: Edit[] | undefined
     /** The number of times we've submitted this to the LLM. */
     public spinCount = 0
-    /**
-     * A callback to skip formatting.
-     * We use the users' default editor formatter so it is possible that
-     * they may run into an error that we can't anticipate
-     */
-    public formattingResolver: ((value: boolean) => void) | null = null
 
     constructor(
         /**

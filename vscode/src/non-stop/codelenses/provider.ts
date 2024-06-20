@@ -116,19 +116,6 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
                 telemetryRecorder.recordEvent('cody.fixup.codeLens', 'showError')
                 return this.showError(id)
             }),
-            vscode.commands.registerCommand('cody.fixup.codelens.skip-formatting', id => {
-                telemetryService.log(
-                    'CodyVSCodeExtension:fixup:codeLens:clicked',
-                    {
-                        op: 'skip_formatting',
-                    },
-                    {
-                        hasV2Event: true,
-                    }
-                )
-                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'skipFormatting')
-                return this.skipFormatting(id)
-            }),
             vscode.commands.registerCommand('cody.fixup.cancelNearest', () => {
                 const nearestTask = this.getNearestTask({ filter: { states: ACTIVE_TASK_STATES } })
                 if (!nearestTask) {
@@ -185,19 +172,6 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
 
         const position = editor.selection.active
         return this.controller.taskNearPosition(fixupFile, position, filter)
-    }
-
-    private skipFormatting(id: FixupTaskID): void {
-        const task = this.controller.taskForId(id)
-        if (!task) {
-            return
-        }
-
-        if (!task.formattingResolver) {
-            return
-        }
-
-        task.formattingResolver(false)
     }
 
     /**

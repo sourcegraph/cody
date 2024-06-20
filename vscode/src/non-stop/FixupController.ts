@@ -19,20 +19,16 @@ import { countCode } from '../services/utils/code-count'
 import { PersistenceTracker } from '../common/persistence-tracker'
 import { lines } from '../completions/text-processing'
 import { getInput } from '../edit/input/get-input'
-import { isStreamedIntent } from '../edit/utils/edit-intent'
 import { getOverridenModelForIntent } from '../edit/utils/edit-models'
 import type { ExtensionClient } from '../extension-client'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { AuthProvider } from '../services/AuthProvider'
-import { isInTutorial } from '../tutorial/helpers'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type FixupTaskID, type FixupTelemetryMetadata } from './FixupTask'
 import { FixupDecorator } from './decorations/FixupDecorator'
-import { getFormattedReplacement } from './formatting/get-formatted-replacement'
-import { getFormattingChangesForRange } from './formatting/get-formatting-changes'
 import { type Edit, computeDiff, makeDiffEditBuilderCompatible } from './line-diff'
 import { trackRejection } from './rejection-tracker'
 import type { FixupActor, FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
@@ -560,10 +556,9 @@ export class FixupController
                 throw new Error('Task applied with no replacement text')
             }
 
-            // We will format this code once applied, so we do not place an undo stop after this edit to avoid cluttering the undo stack.
             const applyEditOptions = {
                 undoStopBefore: false,
-                undoStopAfter: false,
+                undoStopAfter: true,
             }
 
             let editOk: boolean
@@ -574,28 +569,6 @@ export class FixupController
                 editOk = await edit(editBuilder => {
                     editBuilder.replace(task.selectionRange, replacement)
                 }, applyEditOptions)
-            }
-
-            this.setTaskState(task, CodyTaskState.Formatting)
-            const formatOk = await new Promise((resolve, reject) => {
-                task.formattingResolver = resolve
-
-                this.formatEdit(
-                    visibleEditor ? visibleEditor.edit.bind(this) : new vscode.WorkspaceEdit(),
-                    document,
-                    task
-                )
-                    .then(resolve)
-                    .catch(reject)
-                    .finally(() => {
-                        task.formattingResolver = null
-                    })
-            })
-
-            if (formatOk) {
-                // Update the replacement to match the formatted edit.
-                // This ensures any decorations are correctly recomputed
-                task.replacement = document.getText(task.selectionRange)
             }
 
             // TODO: See if we can discard a FixupFile now.
@@ -665,9 +638,7 @@ export class FixupController
             edit = new vscode.WorkspaceEdit()
         }
 
-        // We will format this code once applied, so we avoid placing an undo stop after this edit to avoid cluttering the undo stack.
         const applyEditOptions = { undoStopBefore: true, undoStopAfter: false }
-
         let editOk: boolean
         if (task.mode === 'edit') {
             const applicableDiff = this.applicableDiffOrRespin(task, document)
@@ -769,105 +740,6 @@ export class FixupController
         return edit(editBuilder => {
             editBuilder.insert(task.insertionPoint, replacementText)
         }, options)
-    }
-
-    /**
-     * TODO: Remove this
-     */
-    public async formatEdit(
-        edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit,
-        document: vscode.TextDocument,
-        task: FixupTask
-    ): Promise<boolean> {
-        if (isInTutorial(document)) {
-            // Skip formatting in tutorial files,
-            // This is an additional enhancement that doesn't add much value to the tutorial
-            // and makes the tutorial UX more error-prone
-            return false
-        }
-
-        // Expand the range to include full lines to reduce the likelihood of formatting issues
-        const rangeToFormat = new vscode.Range(
-            task.selectionRange.start.line,
-            0,
-            task.selectionRange.end.line,
-            Number.MAX_VALUE
-        )
-
-        const formattingChangesInRange = await getFormattingChangesForRange(
-            document,
-            rangeToFormat,
-            task
-        )
-        if (formattingChangesInRange.length === 0) {
-            return false
-        }
-
-        logDebug('FixupController:edit', 'formatting')
-
-        if (isStreamedIntent(task.intent)) {
-            if (edit instanceof vscode.WorkspaceEdit) {
-                for (const change of formattingChangesInRange) {
-                    if (change.type === 'insertion') {
-                        edit.replace(task.fixupFile.uri, change.range, change.text)
-                    }
-                }
-                return vscode.workspace.applyEdit(edit)
-            }
-
-            return edit(
-                editBuilder => {
-                    for (const change of formattingChangesInRange) {
-                        if (change.type === 'insertion') {
-                            editBuilder.replace(change.range, change.text)
-                        }
-                    }
-                },
-                {
-                    undoStopAfter: true,
-                    undoStopBefore: false,
-                }
-            )
-        }
-
-        if (!task.replacement) {
-            return false
-        }
-
-        // We're not formatting a streamed edit, which means we may have deletions to handle
-        // We need to ensure that we produce the formatted string, and then treat this as if the
-        // text came from the LLM, recompute the diff and then re-apply the edit.
-        // This ensures we will get a correct diff, including any placeholder lines that are reserved
-        // for decorations.
-        const formattedReplacement = await getFormattedReplacement(
-            document,
-            task.replacement || '',
-            task.selectionRange,
-            formattingChangesInRange
-        )
-
-        if (!formattedReplacement || task.replacement === formattedReplacement) {
-            // No actual change here, do nothing
-            return false
-        }
-
-        task.replacement = formattedReplacement
-
-        // Undo the original applied changes
-        const revertOk = await this.revertToOriginal(task, edit, {
-            undoStopAfter: false,
-            undoStopBefore: false,
-        })
-        if (!revertOk) {
-            return false
-        }
-
-        // Re-apply the changes using the new replacemnt
-        task.diff = computeDiff(task, document, { decorateDeletions: !isRunningInsideAgent() })
-        return this.replaceEdit(edit, task.diff!, task, {
-            undoStopAfter: true,
-            undoStopBefore: false,
-        })
     }
 
     // Notify users of task completion when the edited file is not visible
