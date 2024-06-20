@@ -34,6 +34,7 @@ import { type Edit, computeDiff, makeDiffEditBuilderCompatible } from './line-di
 import { trackRejection } from './rejection-tracker'
 import type { FixupActor, FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
 import { CodyTaskState, expandRangeToInsertedText, getMinimumDistanceToRangeBoundary } from './utils'
+import { isStreamedIntent } from '../edit/utils/edit-intent'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
@@ -951,6 +952,13 @@ export class FixupController
             // as we will accept this task here anyway
             return
         }
+
+        if (isStreamedIntent(task.intent)) {
+            // Text change is most likely coming from the incoming streamed insertions,
+            // No need to update the decorator here as it'll cause a flicker.
+            return
+        }
+
         this.decorator.didUpdateInProgressTask(task)
     }
 
