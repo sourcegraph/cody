@@ -1,18 +1,18 @@
 @file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
-package com.sourcegraph.cody.protocol_generated
+package com.sourcegraph.cody.protocol_generated;
 
-import com.google.gson.annotations.SerializedName
-import com.google.gson.Gson
-import com.google.gson.JsonDeserializationContext
-import com.google.gson.JsonDeserializer
-import com.google.gson.JsonElement
-import java.lang.reflect.Type
+import com.google.gson.annotations.SerializedName;
+import com.google.gson.Gson;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import java.lang.reflect.Type;
 
 sealed class TextEdit {
   companion object {
     val deserializer: JsonDeserializer<TextEdit> =
       JsonDeserializer { element: JsonElement, _: Type, context: JsonDeserializationContext ->
-        when (element.asJsonObject.get("type").asString) {
+        when (element.getAsJsonObject().get("type").getAsString()) {
           "replace" -> context.deserialize<ReplaceTextEdit>(element, ReplaceTextEdit::class.java)
           "insert" -> context.deserialize<InsertTextEdit>(element, InsertTextEdit::class.java)
           "delete" -> context.deserialize<DeleteTextEdit>(element, DeleteTextEdit::class.java)

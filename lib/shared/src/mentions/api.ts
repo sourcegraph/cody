@@ -1,3 +1,4 @@
+import type { MetaResult } from '@openctx/client'
 import { openCtx } from '../context/openctx/api'
 import { logDebug } from '../logger'
 
@@ -20,20 +21,19 @@ export interface ContextMentionProviderMetadata {
     id: string
 
     /**
-     * A short, human-readable display title for the provider, such as "Google Docs". If not given,
-     * `id` is used instead.
+     * A short, human-readable display title for the provider, such as "Google Docs".
      */
-    title?: string
+    title: string
 
     /**
      * Human-readable display string for when the user is querying items from this provider.
      */
-    queryLabel?: string
+    queryLabel: string
 
     /**
      * Human-readable display string for when the provider has no items for the query.
      */
-    emptyLabel?: string
+    emptyLabel: string
 }
 
 export const FILE_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata & { id: 'file' } = {
@@ -61,6 +61,17 @@ export async function allMentionProvidersMetadata(): Promise<ContextMentionProvi
     return items
 }
 
+export function openCtxProviderMetadata(
+    meta: MetaResult & { providerUri: string }
+): ContextMentionProviderMetadata {
+    return {
+        id: meta.providerUri,
+        title: meta.name,
+        queryLabel: meta.mentions?.label ?? 'Search...',
+        emptyLabel: 'No results',
+    }
+}
+
 async function openCtxMentionProviders(): Promise<ContextMentionProviderMetadata[]> {
     const client = openCtx.client
     if (!client) {
@@ -72,12 +83,7 @@ async function openCtxMentionProviders(): Promise<ContextMentionProviderMetadata
 
         return providers
             .filter(provider => !!provider.mentions)
-            .map(provider => ({
-                id: provider.providerUri,
-                title: provider.name,
-                queryLabel: provider.name,
-                emptyLabel: 'No results',
-            }))
+            .map(openCtxProviderMetadata)
             .sort((a, b) => (a.title > b.title ? 1 : -1))
     } catch (error) {
         logDebug('openctx', `Failed to fetch OpenCtx providers: ${error}`)

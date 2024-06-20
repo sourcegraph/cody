@@ -73,8 +73,11 @@ async function buildAgent(minify) {
     // Copy all .wasm files to the dist/ directory
     const distDir = path.join(process.cwd(), '..', 'vscode', 'dist')
     const files = await fs.readdir(distDir)
-    const wasmFiles = files.filter(file => file.endsWith('.wasm'))
-    for (const file of wasmFiles) {
+    for (const file of files) {
+        const shouldCopyFile = file.endsWith('.wasm') || file.endsWith('win-ca-roots.exe')
+        if (!shouldCopyFile) {
+            continue
+        }
         const src = path.join(distDir, file)
         const dest = path.join(process.cwd(), 'dist', file)
         await fs.copyFile(src, dest)

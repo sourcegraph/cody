@@ -1,9 +1,11 @@
-import { serializedPromptEditorStateFromText } from '@sourcegraph/cody-shared'
+import {
+    FILE_MENTION_EDITOR_STATE_FIXTURE,
+    serializedPromptEditorStateFromText,
+} from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
 import type { ComponentProps } from 'react'
 import { type Assertion, type Mock, describe, expect, test, vi } from 'vitest'
 import { TestAppWrapper } from '../../../../../AppWrapper'
-import { FILE_MENTION_EDITOR_STATE_FIXTURE } from '../../../../../promptEditor/fixtures'
 import { FIXTURE_USER_ACCOUNT_INFO } from '../../../../fixtures'
 import { HumanMessageEditor } from './HumanMessageEditor'
 
@@ -21,7 +23,7 @@ const ENTER_KEYBOARD_EVENT_DATA: Pick<KeyboardEvent, 'key' | 'code' | 'keyCode'>
 describe('HumanMessageEditor', () => {
     test('renders textarea', async () => {
         const { editor } = renderWithMocks({})
-        expect(editor).toHaveTextContent('What does @Symbol1')
+        expect(editor).toHaveTextContent('What does Symbol1')
     })
 
     describe('states', () => {
@@ -83,7 +85,7 @@ describe('HumanMessageEditor', () => {
 
     describe('submitting', () => {
         function testNoSubmitting({
-            container,
+            editor,
             submitButton,
             onSubmit,
         }: ReturnType<typeof renderWithMocks>): void {
@@ -95,7 +97,6 @@ describe('HumanMessageEditor', () => {
             }
 
             // Enter
-            const editor = container.querySelector<HTMLElement>('[data-lexical-editor="true"]')!
             fireEvent.keyDown(editor, ENTER_KEYBOARD_EVENT_DATA)
             expect(onSubmit).toHaveBeenCalledTimes(0)
         }
@@ -118,7 +119,7 @@ describe('HumanMessageEditor', () => {
         })
 
         test('submit', async () => {
-            const { container, submitButton, onSubmit } = renderWithMocks({
+            const { submitButton, editor, onSubmit } = renderWithMocks({
                 initialEditorState: FILE_MENTION_EDITOR_STATE_FIXTURE,
             })
             expect(submitButton).toBeEnabled()
@@ -128,7 +129,6 @@ describe('HumanMessageEditor', () => {
             expect(onSubmit).toHaveBeenCalledTimes(1)
 
             // Enter
-            const editor = container.querySelector<HTMLElement>('[data-lexical-editor="true"]')!
             fireEvent.keyDown(editor, ENTER_KEYBOARD_EVENT_DATA)
             expect(onSubmit).toHaveBeenCalledTimes(2)
         })

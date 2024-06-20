@@ -33,6 +33,7 @@ import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/pro
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 
+import { copyFileSync, mkdirSync } from 'node:fs'
 import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
@@ -91,12 +92,33 @@ type ExtensionActivate = (
     extensionClient?: ExtensionClient
 ) => Promise<unknown>
 
+// In certs.js, we run `win-ca` to install self-signed certificates.  The
+// `win-ca` package needs access to a "roots.exe" file, which we bundle
+// alongside the agent as 'win-ca-roots.exe'. In VS Code, we use
+// `vscode.ExtensionContext.extensionUri` to discover the location of this file.
+// In the agent, we assume this file is placed next to the bundled `index.js`
+// file, and we copy it over to the `extensionPath` so the VS Code logic works
+// without changes.
+function copyWinCaRootsBinary(extensionPath: string): void {
+    const source = path.join(__dirname, 'win-ca-roots.exe')
+    const target = path.join(extensionPath, 'dist', 'win-ca-roots.exe')
+    try {
+        mkdirSync(path.dirname(target), { recursive: true })
+        copyFileSync(source, target)
+    } catch (err) {
+        logDebug('win-ca', `Failed to copy ${source} to dist ${target}`, err)
+    }
+}
+
 export async function initializeVscodeExtension(
     workspaceRoot: vscode.Uri,
     extensionActivate: ExtensionActivate,
     extensionClient: ExtensionClient
 ): Promise<void> {
     const paths = envPaths('Cody')
+    const extensionPath = paths.config
+    copyWinCaRootsBinary(extensionPath)
+
     const context: vscode.ExtensionContext = {
         asAbsolutePath(relativePath) {
             return path.resolve(workspaceRoot.fsPath, relativePath)
@@ -107,7 +129,7 @@ export async function initializeVscodeExtension(
         // Placeholder string values for extension path/uri. These are only used
         // to resolve paths to icon in the UI. They need to have compatible
         // types but don't have to point to a meaningful path/URI.
-        extensionPath: paths.config,
+        extensionPath,
         extensionUri: vscode.Uri.file(paths.config),
         globalState,
         logUri: vscode.Uri.file(paths.log),

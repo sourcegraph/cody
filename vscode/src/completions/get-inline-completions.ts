@@ -14,6 +14,7 @@ import type { CompletionIntent } from '../tree-sitter/query-sdk'
 import { isValidTestFile } from '../commands/utils/test-commands'
 import { gitMetadataForCurrentEditor } from '../repository/git-metadata-for-editor'
 import { RepoMetadatafromGitApi } from '../repository/repo-metadata-from-git-api'
+import { autocompleteStageCounterLogger } from '../services/autocomplete-stage-counter-logger'
 import type { ContextMixer } from './context/context-mixer'
 import { getCompletionProvider } from './get-completion-provider'
 import { insertIntoDocContext } from './get-current-doc-context'
@@ -260,6 +261,8 @@ async function doGetInlineCompletions(
         }
     }
 
+    autocompleteStageCounterLogger.record('preLastCandidate')
+
     // Check if the user is typing as suggested by the last candidate completion (that is shown as
     // ghost text in the editor), and reuse it if it is still valid.
     const resultToReuse =
@@ -304,6 +307,7 @@ async function doGetInlineCompletions(
         abortSignal,
     }
 
+    autocompleteStageCounterLogger.record('preCache')
     const cachedResult = requestManager.checkCache({
         requestParams,
         isCacheEnabled: triggerKind !== TriggerKind.Manual,
@@ -320,6 +324,7 @@ async function doGetInlineCompletions(
         }
     }
 
+    autocompleteStageCounterLogger.record('preDebounce')
     const debounceTime =
         triggerKind !== TriggerKind.Automatic
             ? 0
@@ -340,6 +345,7 @@ async function doGetInlineCompletions(
 
     setIsLoading?.(true)
     CompletionLogger.start(logId)
+    autocompleteStageCounterLogger.record('preContextRetrieval')
 
     // Fetch context and apply remaining debounce time
     const [contextResult] = await Promise.all([
@@ -384,6 +390,7 @@ async function doGetInlineCompletions(
     })
 
     CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary)
+    autocompleteStageCounterLogger.record('preNetworkRequest')
 
     // Get the processed completions from providers
     const { completions, source } = await requestManager.request({

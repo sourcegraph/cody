@@ -12,14 +12,12 @@
     display: flex;
     position: relative;
     outline: 0;
-    z-index: 0;
     overflow: auto;
 }
 
 .editor {
     flex: auto;
     position: relative;
-    z-index: -1;
 }
 
 /* ContentEditable */

@@ -49,7 +49,7 @@ export const Transcript: React.FunctionComponent<{
                         i === interactions.length - 2 && interaction.assistantMessage !== null
                     }
                     priorAssistantMessageIsLoading={Boolean(
-                        interactions.at(i - 1)?.assistantMessage?.isLoading
+                        messageInProgress && interactions.at(i - 1)?.assistantMessage?.isLoading
                     )}
                 />
             ))}
@@ -87,6 +87,7 @@ export function transcriptToInteractionPairs(
                           index: i + 1,
                           isLoading:
                               assistantMessage.error === undefined &&
+                              !!assistantMessageInProgress &&
                               (isLastPairInTranscript || assistantMessage.text === undefined),
                       }
                     : null,
