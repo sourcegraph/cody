@@ -65,7 +65,7 @@ export const Toolbar: FunctionComponent<{
             onClick={onMaybeGapClick}
         >
             <div className="tw-flex tw-gap-2 tw-items-center">
-                {onMentionClick && <MentionButton onClick={onMentionClick} />}
+                {onMentionClick && <MentionButton onClick={onMentionClick} className="tw-opacity-60" />}
                 <span>
                     <ModelSelectFieldToolbarItem userInfo={userInfo} focusEditor={focusEditor} />
                 </span>
