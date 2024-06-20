@@ -45,8 +45,8 @@ export const DEFAULT_DOT_COM_MODELS = [
         uiGroup: ModelUIGroup.Balanced,
     },
     {
-        title: 'Claude 3 Opus',
-        model: 'anthropic/claude-3-opus-20240229',
+        title: 'Claude 3.5 Sonnet',
+        model: 'anthropic/claude-3-5-sonnet-20240620',
         provider: 'Anthropic',
         default: false,
         codyProOnly: true,
@@ -57,8 +57,8 @@ export const DEFAULT_DOT_COM_MODELS = [
         uiGroup: ModelUIGroup.Accuracy,
     },
     {
-        title: 'Claude 3.5 Sonnet',
-        model: 'anthropic/claude-3.5-sonnet-20240620',
+        title: 'Claude 3 Opus',
+        model: 'anthropic/claude-3-opus-20240229',
         provider: 'Anthropic',
         default: false,
         codyProOnly: true,
