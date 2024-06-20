@@ -75,6 +75,7 @@ function applyLocalTokenLimitOverwrite(
 const modelWithExpandedWindowSubStrings = [
     'claude-3-opus',
     'claude-3-sonnet',
+    'claude-3.5-sonnet',
     'gemini-1.5',
     'gpt-4o',
     'gpt-4-turbo',
