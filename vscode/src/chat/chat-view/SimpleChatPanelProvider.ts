@@ -79,6 +79,7 @@ import type { EnterpriseContextFactory } from '../../context/enterprise-context-
 import type { Repo } from '../../context/repo-fetcher'
 import type { RemoteRepoPicker } from '../../context/repo-picker'
 import type { ContextRankingController } from '../../local-context/context-ranking'
+import { rewriteChatQuery } from '../../local-context/rewrite-chat-query'
 import { chatModel } from '../../models'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { gitCommitIdFromGitExtension } from '../../repository/git-extension-api'
@@ -713,11 +714,26 @@ export class SimpleChatPanelProvider
                 const prompter = new DefaultPrompter(
                     userContextItems,
                     addEnhancedContext || hasCorpusMentions
-                        ? async text =>
-                              getEnhancedContext({
+                        ? async () => {
+                              /* EXPERIMENTAL: Rewrite query based on the chat history and the
+                               * mentioned context items for better enhanced context retrieval.
+                               *
+                               * The retrieval performance boost is not evaluated yet and thus
+                               * it is only available when `experimentNoodle` is set to `true`.
+                               */
+                              const rewrite = config.experimentalNoodle
+                                  ? await rewriteChatQuery({
+                                        query: inputText,
+                                        contextItems: userContextItems,
+                                        chatClient: this.chatClient,
+                                        chatModel: this.chatModel,
+                                    })
+                                  : inputText
+
+                              return getEnhancedContext({
                                   strategy: config.useContext,
                                   editor: this.editor,
-                                  input: { text, mentions },
+                                  input: { text: rewrite, mentions },
                                   addEnhancedContext,
                                   providers: {
                                       localEmbeddings: this.localEmbeddings,
@@ -726,6 +742,7 @@ export class SimpleChatPanelProvider
                                   },
                                   contextRanking: this.contextRanking,
                               })
+                          }
                         : undefined,
                     command !== undefined
                 )
