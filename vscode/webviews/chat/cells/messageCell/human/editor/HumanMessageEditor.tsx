@@ -45,6 +45,8 @@ export const HumanMessageEditor: FunctionComponent<{
     onSubmit: (editorValue: SerializedPromptEditorValue) => void
     onStop: () => void
 
+    isFirstInteraction?: boolean
+    isLastInteraction?: boolean
     isEditorInitiallyFocused?: boolean
     className?: string
 
@@ -63,6 +65,8 @@ export const HumanMessageEditor: FunctionComponent<{
     onChange,
     onSubmit: parentOnSubmit,
     onStop,
+    isFirstInteraction,
+    isLastInteraction,
     isEditorInitiallyFocused,
     className,
     editorRef: parentEditorRef,
@@ -252,6 +256,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 'tw-transition',
                 className
             )}
+            data-keep-toolbar-open={(isFirstInteraction && isLastInteraction) || undefined}
             onMouseDown={onMaybeGapClick}
             onClick={onMaybeGapClick}
             onFocus={onFocus}

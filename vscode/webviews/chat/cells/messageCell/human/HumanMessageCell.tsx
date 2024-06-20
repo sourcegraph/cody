@@ -31,6 +31,8 @@ export const HumanMessageCell: FunctionComponent<{
     onSubmit: (editorValue: SerializedPromptEditorValue) => void
     onStop: () => void
 
+    isFirstInteraction?: boolean
+    isLastInteraction?: boolean
     isEditorInitiallyFocused?: boolean
 
     className?: string
@@ -48,6 +50,8 @@ export const HumanMessageCell: FunctionComponent<{
     onChange,
     onSubmit,
     onStop,
+    isFirstInteraction,
+    isLastInteraction,
     isEditorInitiallyFocused,
     className,
     editorRef,
@@ -75,6 +79,8 @@ export const HumanMessageCell: FunctionComponent<{
                     onSubmit={onSubmit}
                     onStop={onStop}
                     disabled={!chatEnabled}
+                    isFirstInteraction={isFirstInteraction}
+                    isLastInteraction={isLastInteraction}
                     isEditorInitiallyFocused={isEditorInitiallyFocused}
                     editorRef={editorRef}
                     __storybook__focus={__storybook__focus}

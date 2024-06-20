@@ -22,7 +22,7 @@
     overflow: hidden;
 }
 
-.container:not(.focused, :hover) {
+.container:not(.focused, :hover, [data-keep-toolbar-open]) {
     --human-message-editor-gap: 0px;
 
     .toolbar {

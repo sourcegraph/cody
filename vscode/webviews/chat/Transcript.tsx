@@ -43,6 +43,7 @@ export const Transcript: React.FunctionComponent<{
                     transcript={transcript}
                     messageInProgress={messageInProgress}
                     interaction={interaction}
+                    isFirstInteraction={i === 0}
                     isLastInteraction={i === interactions.length - 1}
                     isLastSentInteraction={
                         i === interactions.length - 2 && interaction.assistantMessage !== null
@@ -106,12 +107,14 @@ export function transcriptToInteractionPairs(
 const TranscriptInteraction: FunctionComponent<
     ComponentProps<typeof Transcript> & {
         interaction: Interaction
+        isFirstInteraction: boolean
         isLastInteraction: boolean
         isLastSentInteraction: boolean
         priorAssistantMessageIsLoading: boolean
     }
 > = ({
     interaction: { humanMessage, assistantMessage },
+    isFirstInteraction,
     isLastInteraction,
     isLastSentInteraction,
     priorAssistantMessageIsLoading,
@@ -149,6 +152,8 @@ const TranscriptInteraction: FunctionComponent<
                 isPendingPriorResponse={priorAssistantMessageIsLoading}
                 onSubmit={humanMessage.isUnsentFollowup ? onFollowupSubmit : onEditSubmit}
                 onStop={onStop}
+                isFirstInteraction={isFirstInteraction}
+                isLastInteraction={isLastInteraction}
                 isEditorInitiallyFocused={isLastInteraction}
                 editorRef={humanEditorRef}
             />
