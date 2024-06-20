@@ -5,11 +5,11 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: f3711129982c6945bf991f3cef29c687
+    - _id: 8f75f0892d67f31e6d6b1a0f26daaefb
       _order: 0
       cache: {}
       request:
-        bodySize: 2259
+        bodySize: 2261
         cookies: []
         headers:
           - name: content-type
@@ -22,7 +22,7 @@ log:
           - name: user-agent
             value: fix / v1
           - name: traceparent
-            value: 00-db364d610c9787854a21dd3b0f7db093-d7028d24de7ba40c-01
+            value: 00-aea70bd1aa5907da38ff7678853c862f-1a0f5d4f4cafcda7-01
           - name: connection
             value: keep-alive
           - name: host
@@ -68,7 +68,9 @@ log:
 
                   <SELECTEDCODE7662>export function fixCommandExample(): number {
                       return '42';
-                  }</SELECTEDCODE7662>
+                  }
+
+                  </SELECTEDCODE7662>
 
 
                   The user wants you to correct problems in their code by following their instructions.
@@ -104,14 +106,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=fix&client-version=v1
       response:
-        bodySize: 1557
+        bodySize: 1684
         content:
           mimeType: text/event-stream
-          size: 1557
+          size: 1684
           text: >+
             event: completion
 
-            data: {"completion":"export function fixCommandExample(): number {\n    return 42;\n}","stopReason":"stop_sequence"}
+            data: {"completion":"export function fixCommandExample(): number {\n    return 42;\n}\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -121,7 +123,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 29 May 2024 13:43:04 GMT
+            value: Thu, 20 Jun 2024 12:16:54 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -150,7 +152,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-29T13:43:02.599Z
+      startedDateTime: 2024-06-20T12:16:52.409Z
       time: 0
       timings:
         blocked: -1

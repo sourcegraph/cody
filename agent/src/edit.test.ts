@@ -66,17 +66,11 @@ describe('Edit', () => {
           	messages,
           	setChatID,
           	isLoading,
-          }: ChatColumnProps) {
-          interface ChatColumnProps {
-            messages: ChatMessage[];
-            setChatID: (chatID: string) => void;
-            isLoading: boolean;
-          }
-
-          interface ChatMessage {
-            chatID: string;
-            text: string;
-          }
+          }: {
+          	messages: Array<{ chatID: string; text: string }>
+          	setChatID: (chatID: string) => void
+          	isLoading: boolean
+          }) {
           	useEffect(() => {
           		if (!isLoading) {
           			setChatID(messages[0].chatID);
@@ -118,11 +112,9 @@ describe('Edit', () => {
           }
 
           export const Heading: React.FC<HeadingProps> = ({ text, level = 1 }) => {
-            const HeadingTag = \`h\${level}\` as keyof JSX.IntrinsicElements;
-
-            return <HeadingTag>{text}</HeadingTag>;
-          };
-          "
+          const HeadingTag = \`h\${level}\` as keyof JSX.IntrinsicElements
+          return <HeadingTag>{text}</HeadingTag>
+          }"
         `,
             explainPollyError
         )

@@ -413,7 +413,6 @@ export class FixupController
         // code in the editor.
         task.original = document.getText(task.selectionRange)
         task.diff = computeDiff(task, document, { decorateDeletions: !isRunningInsideAgent() })
-        console.log('Got diff:', task.diff)
         return task.diff
     }
 
@@ -712,9 +711,7 @@ export class FixupController
         options?: { undoStopBefore: boolean; undoStopAfter: boolean }
     ): Promise<boolean> {
         logDebug('FixupController:edit', 'replacing ')
-        console.log('Original diff:', diff)
         const suitableDiffForEditing = makeDiffEditBuilderCompatible(diff)
-        console.log('Edit builder compatible diff:', diff)
 
         if (edit instanceof vscode.WorkspaceEdit) {
             for (const change of suitableDiffForEditing) {
@@ -1020,7 +1017,6 @@ export class FixupController
             case 'complete':
                 task.inProgressReplacement = undefined
                 task.replacement = text
-                console.log('LLM replacement:\n', text)
                 this.setTaskState(task, CodyTaskState.Applying)
                 break
         }
