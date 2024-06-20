@@ -6,6 +6,9 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+Chat & Commands: New model Anthropic Claude 3.5 Sonnet available for Cody Pro users. [pull/4631](https://github.com/sourcegraph/cody/pull/4631)
+Dev: Anthropic network client for chat. [pull/4610](https://github.com/sourcegraph/cody/pull/4610)
+
 ### Fixed
 
 ### Changed
