@@ -14,7 +14,7 @@ export interface ComputedOutput {
     decorations: Decorations
 }
 
-export function computeFinalDecorations(task: FixupTask): Decorations | undefined {
+export function computeAppliedDecorations(task: FixupTask): Decorations | undefined {
     const visibleDocument = getVisibleDocument(task)
     if (!visibleDocument) {
         return
@@ -121,7 +121,13 @@ export function computeOngoingDecorations(
 
     const nextLineIndex = currentLineIndex + 1
     const linesToSeek = task.original.split('\n').slice(nextLineIndex)
-    const foundLine = linesToSeek.findIndex(line => line.trim() === latestFullLine.trim())
+    const foundLine = linesToSeek.findIndex(line => {
+        const trimmedLine = line.trim()
+        if (trimmedLine.length < 3) {
+            // Line is too short, may not be a match, skip it
+        }
+        return trimmedLine === latestFullLine.trim()
+    })
 
     if (foundLine > -1) {
         // We found a matching line, highlight it

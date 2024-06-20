@@ -4,7 +4,7 @@ import type { FixupFile } from '../FixupFile'
 import type { FixupTask } from '../FixupTask'
 import {
     type Decorations,
-    computeFinalDecorations,
+    computeAppliedDecorations,
     computeOngoingDecorations,
 } from './compute-decorations'
 import {
@@ -35,7 +35,7 @@ export class FixupDecorator implements vscode.Disposable {
     }
 
     public async didApplyTask(task: FixupTask): Promise<void> {
-        const taskOutput = computeFinalDecorations(task)
+        const taskOutput = computeAppliedDecorations(task)
         this.updateTaskDecorations(task, taskOutput)
     }
 

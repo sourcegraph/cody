@@ -41,17 +41,21 @@ export class FixupDocumentEditObserver {
                     )
             )
 
-            // Note that we would like to auto-accept at this point if task.state == Applied.
-            // But it led to race conditions and bad bugs, because the Agent doesn't get
-            // notified when the Accept lens is displayed, so it doesn't actually know when it
-            // is safe to auto-accept. Fixing it properly will require us to send some sort of
-            // notification back to the Agent after we finish applying the
-            // changes. https://github.com/sourcegraph/cody-issues/issues/315 is one example
-            // of a bug caused by auto-accepting here, but there were others as well.
-            if (changeWithinRange && task.state === CodyTaskState.Applied && !isRunningInsideAgent()) {
-                this.provider_.accept(task)
-                continue
+            if (changeWithinRange) {
+                // Note that we would like to auto-accept at this point if task.state == Applied.
+                // But it led to race conditions and bad bugs, because the Agent doesn't get
+                // notified when the Accept lens is displayed, so it doesn't actually know when it
+                // is safe to auto-accept. Fixing it properly will require us to send some sort of
+                // notification back to the Agent after we finish applying the
+                // changes. https://github.com/sourcegraph/cody-issues/issues/315 is one example
+                // of a bug caused by auto-accepting here, but there were others as well.
+                if (task.state === CodyTaskState.Applied && !isRunningInsideAgent()) {
+                    this.provider_.accept(task)
+                    continue
+                }
+                this.provider_.textDidChange(task)
             }
+
             const changes = new Array<TextChange>(...event.contentChanges)
             const updatedRange = updateRangeMultipleChanges(task.selectionRange, changes, {
                 supportRangeAffix: true,

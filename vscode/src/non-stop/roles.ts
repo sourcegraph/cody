@@ -81,5 +81,6 @@ export interface FixupIdleTaskRunner {
  * in the file, or the text provided by Cody--has changed.
  */
 export interface FixupTextChanged {
+    textDidChange(task: FixupTask): void
     rangeDidChange(task: FixupTask): void
 }

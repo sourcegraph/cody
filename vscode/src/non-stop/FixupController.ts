@@ -28,6 +28,7 @@ import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type FixupTaskID, type FixupTelemetryMetadata } from './FixupTask'
+import { TERMINAL_EDIT_STATES } from './codelenses/constants'
 import { FixupDecorator } from './decorations/FixupDecorator'
 import { type Edit, computeDiff, makeDiffEditBuilderCompatible } from './line-diff'
 import { trackRejection } from './rejection-tracker'
@@ -103,11 +104,21 @@ export class FixupController
                 // here. This is to ensure we run `accept` before any formatting logic runs. In some cases
                 // we modify the document on accept (remove placeholder lines), so doing this alongside formatting
                 // logic could remove more lines than intended from the document
-                vscode.workspace.onWillSaveTextDocument(({ document }) => {
+                vscode.workspace.onWillSaveTextDocument(event => {
+                    if (event.reason !== vscode.TextDocumentSaveReason.Manual) {
+                        // Not a manual save, do not accept any tasks
+                        return
+                    }
+
                     // If we save the document, we consider the user to have accepted any applied tasks.
                     // This helps ensure that the codelens doesn't stay around unnecessarily and become an annoyance.
                     for (const task of this.tasks.values()) {
-                        if (task.fixupFile.uri.fsPath.endsWith(document.uri.fsPath)) {
+                        if (task.fixupFile.uri.fsPath.endsWith(event.document.uri.fsPath)) {
+                            // Use waitUntil to ensure that we clear the placeholder lines before any post-save
+                            // actions (like formatting) happen.
+                            event.waitUntil(this.clearPlaceholderInsertions(task))
+                            // Clear the diff, so we don't try to clear the placeholder lines again on accept
+                            task.diff = undefined
                             this.accept(task)
                         }
                     }
@@ -931,6 +942,16 @@ export class FixupController
 
         // lift the pending state from the task so it can proceed to the next stage
         this.setTaskState(task, CodyTaskState.Working)
+    }
+
+    // Handles changes to the source document in the fixup selection
+    public textDidChange(task: FixupTask): void {
+        if (TERMINAL_EDIT_STATES.includes(task.state)) {
+            // We don't need to worry about updating decorations for terminal states,
+            // as we will accept this task here anyway
+            return
+        }
+        this.decorator.didUpdateInProgressTask(task)
     }
 
     // Handles when the range associated with a fixup task changes.
