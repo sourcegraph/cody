@@ -209,7 +209,7 @@ class LocalStorage {
         // Log the first enrollment event
         if (!hasEnrolled) {
             history.push(featureName)
-            this.storage.update(this.CODY_ENROLLMENT_HISTORY, history)
+            await this.storage.update(this.CODY_ENROLLMENT_HISTORY, history)
         }
         return hasEnrolled
     }

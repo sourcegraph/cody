@@ -126,7 +126,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
         )
         if (await this.shouldSuppressNotifications()) return // Status may have changed during await
 
-        // We will now definitely show a message, so dispose so that no other checks that might overlap can also trigger this.
+        // We will now definitely show a message, so dispose that no other checks that might overlap can also trigger this.
         this.dispose()
 
         let actionUrl: string
