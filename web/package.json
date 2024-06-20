@@ -20,7 +20,7 @@
   "dependencies": {
     "@sourcegraph/cody-agent": "workspace:*",
     "@sourcegraph/cody-shared": "workspace:*",
-    "@sourcegraph/vscode-cody": "workspace:*",
+    "cody-ai": "workspace:*",
     "@vitest/web-worker": "^1.4.0",
     "@vscode/codicons": "^0.0.35",
     "buffer": "^6.0.3",

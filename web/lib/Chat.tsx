@@ -15,22 +15,22 @@ import {
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
 
-import { Chat, type UserAccountInfo } from '@sourcegraph/vscode-cody/webviews/Chat'
+import { Chat, type UserAccountInfo } from 'cody-ai/webviews/Chat'
 import {
     type ChatModelContext,
     ChatModelContextProvider,
-} from '@sourcegraph/vscode-cody/webviews/chat/models/chatModelContext'
+} from 'cody-ai/webviews/chat/models/chatModelContext'
 import {
     ClientStateContextProvider,
     useClientActionDispatcher,
-} from '@sourcegraph/vscode-cody/webviews/client/clientState'
-import { WithContextProviders } from '@sourcegraph/vscode-cody/webviews/mentions/providers'
-import { ChatMentionContext } from '@sourcegraph/vscode-cody/webviews/promptEditor/plugins/atMentions/chatContextClient'
+} from 'cody-ai/webviews/client/clientState'
+import { WithContextProviders } from 'cody-ai/webviews/mentions/providers'
+import { ChatMentionContext } from 'cody-ai/webviews/promptEditor/plugins/atMentions/chatContextClient'
 import {
     TelemetryRecorderContext,
     createWebviewTelemetryRecorder,
     createWebviewTelemetryService,
-} from '@sourcegraph/vscode-cody/webviews/utils/telemetry'
+} from 'cody-ai/webviews/utils/telemetry'
 
 import { useWebAgentClient } from './Provider'
 

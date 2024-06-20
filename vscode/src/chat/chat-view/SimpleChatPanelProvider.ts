@@ -187,7 +187,7 @@ export class SimpleChatPanelProvider
     static async create(
         options: Omit<SimpleChatPanelProviderOptions, 'chatModel'>
     ): Promise<SimpleChatPanelProvider> {
-        const model =  await getDefaultModelID(options.authProvider, options.models)
+        const model = await getDefaultModelID(options.authProvider, options.models)
         const chatModelInstance = new SimpleChatModel(model)
 
         return new SimpleChatPanelProvider({ ...options, chatModel: chatModelInstance})
@@ -276,6 +276,9 @@ export class SimpleChatPanelProvider
             })
         )
 
+        // Observe any changes inn chat history and send client notifications to
+        // the consumer, primary is used for Cody Web to track down any changes
+        // over history items.
         this.disposables.push(
             chatHistory.onDidChatHistoryChange(chatHistory => {
                 this.postMessage({ type: 'chatHistory', value: chatHistory })
@@ -952,6 +955,9 @@ export class SimpleChatPanelProvider
                 query,
                 cancellation.token,
                 scopedTelemetryRecorder,
+                // Pass possible remote repository context in order to resolve files
+                // for this remote repositories and not for local one, Cody Web case
+                // when we have only remote repositories as context
                 query.resolutionMode === MentionQueryResolutionMode.Remote
                     ? this.remoteSearch?.getRepos('all')?.map(repo => repo.name)
                     : undefined
@@ -969,7 +975,6 @@ export class SimpleChatPanelProvider
                 userContextFiles,
             })
         } catch (error) {
-            console.log('ERRORR!!')
             if (cancellation.token.isCancellationRequested) {
                 return
             }

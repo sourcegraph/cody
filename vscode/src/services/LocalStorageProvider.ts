@@ -143,7 +143,6 @@ class LocalStorage {
 
     public async setChatHistory(authStatus: AuthStatus, history: UserLocalHistory): Promise<void> {
         try {
-            console.log('SaveChatHistory', history)
             const key = getKeyForAuthStatus(authStatus)
             let fullHistory = await this.storage.get<{ [key: ChatHistoryKey]: UserLocalHistory } | null>(
                 this.KEY_LOCAL_HISTORY,

@@ -1,4 +1,4 @@
-import type { ServerInfo } from '@sourcegraph/vscode-cody/src/jsonrpc/agent-protocol'
+import type { ServerInfo } from 'cody-ai/src/jsonrpc/agent-protocol'
 import {
     BrowserMessageReader,
     BrowserMessageWriter,
@@ -82,6 +82,7 @@ export async function createAgentClient({
                 'cody.experimental.noodle': true,
                 'cody.autocomplete.enabled': false,
                 'cody.experimental.urlContext': true,
+                'cody.allow-remote-context': true,
             },
         },
     })

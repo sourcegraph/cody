@@ -11,6 +11,6 @@
     "lib": ["ESNext", "DOM"]
   },
   "include": ["lib", "src"],
-  "exclude": ["dist", "./vitest.config.ts"],
+  "exclude": ["dist", "./vitest.config.mts"],
   "references": [{"path": "../agent"}, { "path": "../lib/shared" }, { "path": "../vscode" }]
 }

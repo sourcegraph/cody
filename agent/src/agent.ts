@@ -331,7 +331,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
         vscode_shim.setAgent(this)
 
         this.registerRequest('initialize', async clientInfo => {
-            console.log('INIT')
             vscode.languages.registerFoldingRangeProvider(
                 '*',
                 new IndentationBasedFoldingRangeProvider()
@@ -387,6 +386,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                       path: clientInfo.workspaceRootPath ?? undefined,
                   })
             try {
+                // Set configuration shim before we hit vs code extension initialization
                 if (clientInfo.extensionConfiguration) {
                     vscode_shim.setExtensionConfiguration(clientInfo.extensionConfiguration)
                 }

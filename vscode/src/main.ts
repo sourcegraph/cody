@@ -107,6 +107,9 @@ export async function start(
 
     setLogger({ logDebug, logError })
 
+    // In agent's run we should seed configuration with endpoint and access token
+    // before we hit auth provider init call in order to avoid double auth() calls
+    // during extension activation
     if (isRunningInsideAgent()) {
         const config = vscode.workspace.getConfiguration()
         const endpoint = config.get<string>('cody.serverEndpoint')
@@ -187,6 +190,8 @@ const register = async (
 
     const authStatus = await authProvider.init()
 
+    // Sync models as soon as possibles in order to avoid runtime error
+    // during chat management services initialization
     if (authStatus?.authenticated) {
         await syncModels(authStatus)
     }
