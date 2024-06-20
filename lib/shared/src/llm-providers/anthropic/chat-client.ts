@@ -1,23 +1,15 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { MessageParam } from '@anthropic-ai/sdk/resources/messages.mjs'
-import {
-    type CompletionCallbacks,
-    type CompletionLogger,
-    type CompletionParameters,
-    CompletionStopReason,
-    contextFiltersProvider,
-    getCompletionsModelConfig,
-    onAbort,
-} from '../..'
+import type { ChatNetworkClientParams } from '..'
+import { CompletionStopReason, contextFiltersProvider, getCompletionsModelConfig, onAbort } from '../..'
 
-export async function anthropicChatClient(
-    params: CompletionParameters,
-    cb: CompletionCallbacks,
-    // This is used for logging as the completions request is sent to the provider's API
-    completionsEndpoint: string,
-    logger?: CompletionLogger,
-    signal?: AbortSignal
-): Promise<void> {
+export async function anthropicChatClient({
+    params,
+    cb,
+    completionsEndpoint,
+    logger,
+    signal,
+}: ChatNetworkClientParams): Promise<void> {
     const log = logger?.startCompletion(params, completionsEndpoint)
     if (!params.model || !params.messages) {
         throw new Error('Anthropic Client: No model or messages')

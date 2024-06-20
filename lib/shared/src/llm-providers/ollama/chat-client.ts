@@ -1,22 +1,20 @@
 import { Ollama } from 'ollama/browser'
+import type { ChatNetworkClientParams } from '..'
 import { getCompletionsModelConfig } from '../..'
 import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import { onAbort } from '../../common/abortController'
 import { CompletionStopReason } from '../../inferenceClient/misc'
-import type { CompletionLogger } from '../../sourcegraph-api/completions/client'
-import type { CompletionCallbacks, CompletionParameters } from '../../sourcegraph-api/completions/types'
 
 /**
  * Calls the Ollama API for chat completions with history.
  */
-export async function ollamaChatClient(
-    params: CompletionParameters,
-    cb: CompletionCallbacks,
-    // This is used for logging as the completions request is sent to the provider's API
-    completionsEndpoint: string,
-    logger?: CompletionLogger,
-    signal?: AbortSignal
-): Promise<void> {
+export async function ollamaChatClient({
+    params,
+    cb,
+    completionsEndpoint,
+    logger,
+    signal,
+}: ChatNetworkClientParams): Promise<void> {
     const log = logger?.startCompletion(params, completionsEndpoint)
 
     if (!params.model || !params.messages) {
