@@ -1,30 +1,22 @@
+import type { ChatNetworkClient, ChatNetworkClientParams } from '.'
 import { ModelUIGroup, googleChatClient, groqChatClient, ollamaChatClient } from '..'
 import { type Model, ModelsService } from '../models'
-import type { CompletionLogger } from '../sourcegraph-api/completions/client'
-import type { CompletionCallbacks, CompletionParameters } from '../sourcegraph-api/completions/types'
+import { anthropicChatClient } from './anthropic/chat-client'
 
-export async function useCustomChatClient(
-    completionsEndpoint: string,
-    params: CompletionParameters,
-    cb: CompletionCallbacks,
-    logger?: CompletionLogger,
-    signal?: AbortSignal
-): Promise<boolean> {
+export async function useCustomChatClient({
+    params,
+    cb,
+    completionsEndpoint,
+    logger,
+    signal,
+}: ChatNetworkClientParams): Promise<boolean> {
     const model = ModelsService.getModelByID(params.model ?? '')
     if (!model || isCodyGatewayModel(model)) {
         return false
     }
 
-    const clientMap: Record<
-        string,
-        (
-            params: CompletionParameters,
-            cb: CompletionCallbacks,
-            completionsEndpoint: string,
-            logger?: CompletionLogger,
-            signal?: AbortSignal
-        ) => Promise<void>
-    > = {
+    const clientMap: Record<string, ChatNetworkClient> = {
+        anthropic: anthropicChatClient,
         ollama: ollamaChatClient,
         google: googleChatClient,
         groq: groqChatClient,
@@ -34,7 +26,7 @@ export async function useCustomChatClient(
     const client = clientMap[model.provider.toLowerCase()]
 
     if (client) {
-        await client(params, cb, completionsEndpoint, logger, signal)
+        await client({ params, cb, completionsEndpoint, logger, signal })
         return true
     }
 

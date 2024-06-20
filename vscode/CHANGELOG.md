@@ -6,6 +6,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+Dev: Anthropic network client for chat. [pull/4610](https://github.com/sourcegraph/cody/pull/4610)
+
 ### Fixed
 
 ### Changed
