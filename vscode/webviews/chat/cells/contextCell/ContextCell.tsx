@@ -83,7 +83,7 @@ export const ContextCell: React.FunctionComponent<{
                 <Accordion
                     type="single"
                     collapsible
-                    className="tw-pt-1"
+                    className="tw-pt-1.5"
                     defaultValue={(__storybook__initialOpen && 'item-1') || undefined}
                 >
                     <AccordionItem value="item-1">
