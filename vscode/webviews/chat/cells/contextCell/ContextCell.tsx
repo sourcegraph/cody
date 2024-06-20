@@ -19,7 +19,6 @@ import { Cell } from '../Cell'
 import { NON_HUMAN_CELL_AVATAR_SIZE } from '../messageCell/assistant/AssistantMessageCell'
 import styles from './ContextCell.module.css'
 
-
 /**
  * A component displaying the context for a human message.
  */

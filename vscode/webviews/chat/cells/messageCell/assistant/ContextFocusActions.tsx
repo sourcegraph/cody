@@ -82,7 +82,8 @@ export const ContextFocusActions: FunctionComponent<{
         [humanMessage, telemetryRecorder, logRerunWithDifferentContext, initialContextEventMetadata]
     )
     return actions.length > 0 ? (
-        <menu className={clsx('tw-flex tw-gap-2 tw-text-sm tw-text-muted-foreground', className)}
+        <menu
+            className={clsx('tw-flex tw-gap-2 tw-text-sm tw-text-muted-foreground', className)}
             role="group"
             aria-label="Try again with different context"
         >
