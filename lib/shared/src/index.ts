@@ -274,6 +274,7 @@ export {
 export {
     type ContextItemProps,
     allMentionProvidersMetadata,
+    openCtxProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type ContextMentionProviderMetadata,
