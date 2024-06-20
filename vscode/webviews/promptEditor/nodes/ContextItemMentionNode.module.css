@@ -39,3 +39,8 @@ body:is([data-vscode-theme-kind='vscode-high-contrast'], [data-vscode-theme-kind
         outline: solid 1px var(--vscode-input-foreground);
     }
 }
+
+p:has(span .context-item-mention-node) > span {
+    display: inline-block;
+    margin-bottom: 4px;
+}
