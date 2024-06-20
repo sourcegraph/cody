@@ -45,6 +45,18 @@ export const DEFAULT_DOT_COM_MODELS = [
         uiGroup: ModelUIGroup.Balanced,
     },
     {
+        title: 'Claude 3.5 Sonnet',
+        model: 'anthropic/claude-3-5-sonnet-20240620',
+        provider: 'Anthropic',
+        default: false,
+        codyProOnly: true,
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+        // Has a higher context window with a separate limit for user-context.
+        contextWindow: expandedContextWindow,
+        deprecated: false,
+        uiGroup: ModelUIGroup.Accuracy,
+    },
+    {
         title: 'Claude 3 Opus',
         model: 'anthropic/claude-3-opus-20240229',
         provider: 'Anthropic',

@@ -353,7 +353,9 @@ const ModelTitleWithIcon: FunctionComponent<{
         )}
         {model.provider === 'Ollama' && <span className={clsx(styles.badge)}>Experimental</span>}
         {model.title === 'Claude 3 Sonnet' ||
-        ((model.title === 'Claude 3 Opus' || model.title === 'GPT-4o') &&
+        ((model.title === 'Claude 3 Opus' ||
+            model.title === 'GPT-4o' ||
+            model.title === 'Claude 3.5 Sonnet') &&
             modelAvailability !== 'needs-cody-pro') ? (
             <span className={clsx(styles.badge, styles.otherBadge, styles.recommendedBadge)}>
                 Recommended
