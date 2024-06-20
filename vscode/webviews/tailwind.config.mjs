@@ -87,8 +87,19 @@ export default {
                 md: '4px',
                 sm: '2px',
             },
+            keyframes: {
+                'accordion-down': {
+                    from: { height: '0' },
+                    to: { height: 'var(--radix-accordion-content-height)' },
+                },
+                'accordion-up': {
+                    from: { height: 'var(--radix-accordion-content-height)' },
+                    to: { height: '0' },
+                },
+            },
             animation: {
-                // spin: 'spin 1s cubic-bezier(0.53, 0.21, 0.29, 0.67) infinite',
+                'accordion-down': 'accordion-down 0.15s ease-out',
+                'accordion-up': 'accordion-up 0.15s ease-out',
             },
         },
     },

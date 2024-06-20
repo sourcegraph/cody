@@ -66,3 +66,10 @@ export const Followup: Story = {
         isForFirstMessage: false,
     },
 }
+
+export const Loading: Story = {
+    args: {
+        contextItems: undefined,
+        isForFirstMessage: false,
+    },
+}
