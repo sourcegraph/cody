@@ -37,6 +37,12 @@ export class LocalSGInstance {
 
     // Returns a GraphQL client to interact with the API.
     public apiClient() {
+        // sg.config.yaml
+        //
+        // site config
+        // "endpoint": "http://localhost:9992",
+        // "chatModel": "anthropic/claude-2",
+        // "completionModel": "anthropic/claude-instant-1",
     }
 
     public async beforeAll() {
