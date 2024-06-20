@@ -38,7 +38,13 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
                 return [accept, undo]
             }
             if (isEdit) {
-                return [accept, retry, undo, showDiff]
+                const actions = [accept, retry, undo]
+                if (isRunningInsideAgent()) {
+                    // We only show an inline diff in VS Code, so keep the "Show Diff"
+                    // option in other clients
+                    return [...actions, showDiff]
+                }
+                return actions
             }
             return [accept, retry, undo]
         }

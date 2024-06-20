@@ -31,7 +31,7 @@ export function computeAppliedDecorations(task: FixupTask): Decorations | undefi
         // This is because the `task.selectionRange` does not match the LLM output, as we trim it
         // to only produce a docstring, and not and replacement code.
         // We should refactor and not assume `task.selectionRange` is identical for LLM context and task output.
-        // Issue: TODO
+        // Issue: https://github.com/sourcegraph/cody/issues/4628
         return
     }
 
@@ -89,7 +89,7 @@ export function computeOngoingDecorations(
         // This is because the `task.selectionRange` does not match the LLM output, as we trim it
         // to only produce a docstring, and not and replacement code.
         // We should refactor and not assume `task.selectionRange` is identical for LLM context and task output.
-        // Issue: TODO
+        // Issue: https://github.com/sourcegraph/cody/issues/4628
         return
     }
 
