@@ -24,7 +24,7 @@ describe('E2E-local', () => {
             // credentials: TESTING_CREDENTIALS.dotcom,
             credentials: {
                 token: params.accessToken,
-                redactedToken: 'REDACTED_0c2005dd006a3a317fba202984cf5e21',
+                redactedToken: 'REDACTED_foobar',
                 serverEndpoint: params.serverEndpoint
             }
         })

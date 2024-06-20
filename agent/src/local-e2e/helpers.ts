@@ -22,9 +22,8 @@ class LocalInstanceError extends Error {
 export class LocalSGInstance {
     private params: LocalSGInstanceParams
 
-    constructor(private readonly endpoint: string = 'https://sourcegraph.test:3443') {
-        const accessToken = process.env.LOCAL_SG_ACCESS_TOKEN ?? ''
-        this.params = { serverEndpoint: this.endpoint, accessToken: accessToken }
+    constructor(private readonly endpoint: string = 'https://sourcegraph.test:3443', private readonly accessToken: string = 'sgp_local_f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0') {
+        this.params = { serverEndpoint: this.endpoint, accessToken: this.accessToken }
 
         // There's no point in recording responses when running the whole stack locally.
         // - Roundtrip time is negligeable locally.
@@ -98,6 +97,11 @@ export class LocalSGInstance {
                         case 307:
                             resolve(undefined)
                             break
+                        case 502:
+                            resolve({
+                                reason: `Sourcegraph instance answered with a status code 502.`,
+                                fix: 'Most likely, the instance is still booting up. Wait until you the see the "Sourcegraph is Ready" banner and try again.'
+                            })
                         default:
                             resolve({
                                 reason: `Sourcegraph instance answered with a status code of ${res.statusCode}`,
