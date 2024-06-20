@@ -29,9 +29,9 @@ export function startClientStateBroadcaster({
     postMessage: PostMessage
     chatModel: SimpleChatModel
 }): vscode.Disposable {
-    const postMessage = debouncedIdempotentPostMessage(rawPostMessage)
+    const postMessage = idempotentPostMessage(rawPostMessage)
 
-    async function sendClientState(): Promise<void> {
+    async function rawSendClientState(signal: AbortSignal | null): Promise<void> {
         const items: ContextItem[] = []
 
         // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
@@ -87,6 +87,7 @@ export function startClientStateBroadcaster({
         const userContextSize = context?.user ?? input
 
         const [contextFile] = await getSelectionOrFileContext()
+        signal?.throwIfAborted()
         if (contextFile) {
             const range =
                 contextFile.range && isMultiLineRange(contextFile.range) ? contextFile.range : undefined
@@ -111,31 +112,42 @@ export function startClientStateBroadcaster({
 
     const disposables: vscode.Disposable[] = []
 
+    const sendClientState = debounced(rawSendClientState)
     disposables.push(
         vscode.window.onDidChangeActiveTextEditor(() => {
-            void sendClientState()
+            // Relatively infrequent action, so don't debounce and show immediately in the UI.
+            //
+            // Here and in other invocations with 'immediate' still need to go through the debounced
+            // function and should not call rawSendClientState directly to avoid a race condition
+            // where a slow earlier call to rawSendClientState could call postMessage with stale
+            // data.
+            void sendClientState('immediate')
         }),
-        vscode.window.onDidChangeTextEditorSelection(() => {
-            void sendClientState()
+        vscode.window.onDidChangeTextEditorSelection(e => {
+            // Frequent action, so debounce.
+            void sendClientState('debounce')
         }),
         vscode.workspace.onDidChangeWorkspaceFolders(() => {
-            void sendClientState()
+            // Infrequent action, so don't debounce and show immediately in the UI.
+            void sendClientState('immediate')
         })
     )
     if (remoteSearch) {
         disposables.push(
             remoteSearch.onDidChangeStatus(() => {
-                void sendClientState()
+                // Background action, so it's fine to debounce.
+                void sendClientState('debounce')
             })
         )
     }
 
-    void sendClientState()
+    // Don't debounce for the first invocation so we immediately reflect the state in the UI.
+    void sendClientState('immediate')
 
     return vscode.Disposable.from(...disposables)
 }
 
-function debouncedIdempotentPostMessage(rawPostMessage: PostMessage): PostMessage {
+function idempotentPostMessage(rawPostMessage: PostMessage): PostMessage {
     let lastMessage: Parameters<typeof rawPostMessage>[0] | undefined
     const idempotentPostMessage: PostMessage = message => {
         const changed =
@@ -145,20 +157,43 @@ function debouncedIdempotentPostMessage(rawPostMessage: PostMessage): PostMessag
             rawPostMessage(message)
         }
     }
+    return idempotentPostMessage
+}
 
-    let lastTimeoutHandle: number | NodeJS.Timeout | undefined
-    let nextMessage: Parameters<typeof rawPostMessage>[0] | undefined
-    const debouncedPostMessage: PostMessage = message => {
-        nextMessage = message
-        if (lastTimeoutHandle !== undefined) {
-            return
+function debounced(
+    fn: (signal: AbortSignal) => Promise<void>
+): (behavior: 'debounce' | 'immediate') => Promise<void> {
+    // We can't just use lodash's debounce because we need to pass the `fn` an AbortSignal so it
+    // knows when it has been canceled.
+
+    const DEBOUNCE_DELAY = 200
+    let timeoutId: NodeJS.Timeout | number | undefined = undefined
+    let abortController: AbortController | undefined = undefined
+
+    return async (behavior: 'debounce' | 'immediate'): Promise<void> => {
+        if (timeoutId) {
+            clearTimeout(timeoutId)
+            if (abortController) {
+                abortController.abort()
+                abortController = undefined
+            }
         }
-        lastTimeoutHandle = setTimeout(() => {
-            clearTimeout(lastTimeoutHandle)
-            lastTimeoutHandle = undefined
-            idempotentPostMessage(nextMessage!)
-        }, 200)
-    }
 
-    return debouncedPostMessage
+        abortController = new AbortController()
+        const signal = abortController.signal
+
+        timeoutId = setTimeout(
+            async () => {
+                timeoutId = undefined
+                try {
+                    await fn(signal)
+                } catch (error) {
+                    if (error && (error as any).name !== 'AbortError') {
+                        console.error('debounced function execution failed:', error)
+                    }
+                }
+            },
+            behavior === 'debounce' ? DEBOUNCE_DELAY : 0
+        )
+    }
 }
