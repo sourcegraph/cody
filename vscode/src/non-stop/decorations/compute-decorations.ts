@@ -119,20 +119,22 @@ export function computeOngoingDecorations(
         return decorations
     }
 
-    const nextLineIndex = currentLineIndex + 1
-    const linesToSeek = task.original.split('\n').slice(nextLineIndex)
+    const linesToSeek = task.original.split('\n').slice(currentLineIndex)
     const foundLine = linesToSeek.findIndex(line => {
-        const trimmedLine = line.trim()
-        if (trimmedLine.length < 3) {
-            // Line is too short, may not be a match, skip it
+        if (line.trim().length < 3) {
+            // This line does not have enough useful characters to be considered a useful match.
+            // 3 is used as it covers most common opening/closing bracket cases, e.g. "}", ")}", ")};"
+            // It is also likely that the LLM will quickly move past this line, so skipping it has 
+            // a minimal effect.
+            return false
         }
-        return trimmedLine === latestFullLine.trim()
+        return line === latestFullLine
     })
 
     if (foundLine > -1) {
         // We found a matching line, highlight it
         const currentLine = new vscode.Position(
-            task.selectionRange.start.line + foundLine + nextLineIndex,
+            task.selectionRange.start.line + foundLine + currentLineIndex,
             0
         )
         decorations.currentLine = {
@@ -142,7 +144,7 @@ export function computeOngoingDecorations(
         // We know that preceding lines are visited, but following lines are not, so highlight those too
         decorations.unvisitedLines = getRemainingLinesFromRange(
             task.selectionRange,
-            foundLine + nextLineIndex + 1
+            foundLine + currentLineIndex + 1
         ).map(range => ({
             range,
         }))
