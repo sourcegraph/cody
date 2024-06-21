@@ -8,6 +8,7 @@ import {
     CHAT_OUTPUT_TOKEN_BUDGET,
     type ChatClient,
     type ChatMessage,
+    CodyIDE,
     ConfigFeaturesSingleton,
     type ContextItem,
     ContextItemSource,
@@ -42,17 +43,39 @@ import {
     truncatePromptString,
 } from '@sourcegraph/cody-shared'
 
+import type { Span } from '@opentelemetry/api'
+import { captureException } from '@sentry/core'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
+import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
+import type { URI } from 'vscode-uri'
+import { version as VSCEVersion } from '../../../package.json'
 import type { View } from '../../../webviews/NavBar'
+import {
+    closeAuthProgressIndicator,
+    startAuthProgressIndicator,
+} from '../../auth/auth-progress-indicator'
+import type { startTokenReceiver } from '../../auth/token-receiver'
+import { getContextFileFromUri } from '../../commands/context/file-path'
+import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
 import { getConfiguration, getFullConfig } from '../../configuration'
+import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
+import type { Repo } from '../../context/repo-fetcher'
+import type { RemoteRepoPicker } from '../../context/repo-picker'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
+import type { ContextRankingController } from '../../local-context/context-ranking'
 import { ContextStatusAggregator } from '../../local-context/enhanced-context-status'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
+import { rewriteChatQuery } from '../../local-context/rewrite-chat-query'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
+import { chatModel } from '../../models'
+import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
+import { gitCommitIdFromGitExtension } from '../../repository/git-extension-api'
 import type { AuthProvider } from '../../services/AuthProvider'
+import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
+import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 // biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
 import {
@@ -62,29 +85,6 @@ import {
 } from '../../services/utils/codeblock-action-tracker'
 import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
-import { countGeneratedCode } from '../utils'
-
-import type { Span } from '@opentelemetry/api'
-import { captureException } from '@sentry/core'
-import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
-import type { URI } from 'vscode-uri'
-import {
-    closeAuthProgressIndicator,
-    startAuthProgressIndicator,
-} from '../../auth/auth-progress-indicator'
-import type { startTokenReceiver } from '../../auth/token-receiver'
-import { getContextFileFromUri } from '../../commands/context/file-path'
-import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
-import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
-import type { Repo } from '../../context/repo-fetcher'
-import type { RemoteRepoPicker } from '../../context/repo-picker'
-import type { ContextRankingController } from '../../local-context/context-ranking'
-import { rewriteChatQuery } from '../../local-context/rewrite-chat-query'
-import { chatModel } from '../../models'
-import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
-import { gitCommitIdFromGitExtension } from '../../repository/git-extension-api'
-import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
-import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import type { MessageErrorType } from '../MessageProvider'
 import { startClientStateBroadcaster } from '../clientStateBroadcaster'
 import { getChatContextItemsForMention } from '../context/chatContext'
@@ -95,6 +95,7 @@ import type {
     LocalEnv,
     WebviewMessage,
 } from '../protocol'
+import { countGeneratedCode } from '../utils'
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType, addWebviewViewHTML } from './ChatManager'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
@@ -506,6 +507,10 @@ export class SimpleChatPanelProvider
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const config = await getFullConfig()
         return {
+            agentIDE: config.isRunningInsideAgent ? config.agentIDE : CodyIDE.VSCode,
+            agentExtensionVersion: config.isRunningInsideAgent
+                ? config.agentExtensionVersion
+                : VSCEVersion,
             uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
             serverEndpoint: config.serverEndpoint,
             experimentalNoodle: config.experimentalNoodle,
