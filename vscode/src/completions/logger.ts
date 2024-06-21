@@ -592,9 +592,10 @@ export function loaded(
         // Get the metadata only if already cached, We don't wait for the network call here.
         const gitRepoMetadata = instance.getRepoMetadataIfCached(inlineContextParams.gitUrl)
         if (gitRepoMetadata === undefined || gitRepoMetadata.isPublic === false) {
-            // 🚨 SECURITY: For Non-Public git Repos, We can only log the Url but not the code.
+            // 🚨 SECURITY: For Non-Public git Repos, We cannot log any code related information, just git url and commit.
             event.params.inlineCompletionItemContext = {
                 gitUrl: inlineContextParams.gitUrl,
+                commit: inlineContextParams.commit,
             }
             return
         }
