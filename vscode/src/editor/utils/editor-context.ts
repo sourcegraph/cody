@@ -419,8 +419,6 @@ async function resolveFileOrSymbolContextItem(
     contextItem: ContextItemFile | ContextItemSymbol,
     editor: Editor
 ): Promise<ContextItemWithContent> {
-    let content = contextItem.content
-
     if (isRemoteFileURI(contextItem.uri)) {
         const { repository, path } = parseRemoteFileURI(contextItem.uri)
 
@@ -428,11 +426,20 @@ async function resolveFileOrSymbolContextItem(
         const resultOrError = await graphqlClient.getFileContent(repository, path)
 
         if (!isErrorLike(resultOrError)) {
-            content = resultOrError
+            return {
+                ...contextItem,
+                uri: URI.from({
+                    scheme: '',
+                    authority: '',
+                    path: `${repository}${path}`,
+                }),
+                content: resultOrError,
+                size: contextItem.size ?? TokenCounter.countTokens(resultOrError),
+            }
         }
     }
 
-    content ??= await editor.getTextEditorContentForFile(
+    const content = await editor.getTextEditorContentForFile(
         contextItem.uri,
         toVSCodeRange(contextItem.range)
     )
