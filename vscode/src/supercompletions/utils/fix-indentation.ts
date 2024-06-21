@@ -1,5 +1,7 @@
 // Computes a derivation of the updated text that attempts to fix indentation by
 // looking at the differences between the current and original text.
+// TODO: Consider using vscode/src/edit/output/match-indentation.ts instead.
+// There are scenarios here where an LLM will commonly get the indentation wrong and we do not handle them. 
 export function fixIndentation(current: string, original: string, updated: string): string {
     const currentMinIndentation = minIndentation(current)
     const originalMinIndentation = minIndentation(original)

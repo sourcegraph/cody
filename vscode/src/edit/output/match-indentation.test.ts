@@ -82,7 +82,6 @@ describe('matchIndentation', () => {
 
             // Incoming has the same indentation, except the first line is wrong
             const incoming = original.trimStart()
-            console.log('Incoming is\n', incoming)
             const updated = matchIndentation(incoming, original)
             expect(updated).toBe(original)
         })
