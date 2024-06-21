@@ -60,11 +60,11 @@ export const Toolbar: FunctionComponent<{
             role="toolbar"
             aria-hidden={hidden}
             hidden={hidden}
-            className={clsx('tw-flex tw-items-center tw-ml-[-3px]', className)}
+            className={clsx('tw-flex tw-items-center', className)}
             onMouseDown={onMaybeGapClick}
             onClick={onMaybeGapClick}
         >
-            <div className="tw-flex tw-gap-2 tw-items-center">
+            <div className="tw-flex tw-gap-1 tw-items-center">
                 {onMentionClick && <MentionButton onClick={onMentionClick} className="tw-opacity-60" />}
                 <span>
                     <ModelSelectFieldToolbarItem userInfo={userInfo} focusEditor={focusEditor} />
