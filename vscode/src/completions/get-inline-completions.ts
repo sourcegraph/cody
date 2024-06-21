@@ -315,6 +315,7 @@ async function doGetInlineCompletions(
     if (cachedResult) {
         const { completions, source } = cachedResult
 
+        CompletionLogger.start(logId)
         CompletionLogger.loaded(logId, requestParams, completions, source, isDotComUser)
 
         return {
