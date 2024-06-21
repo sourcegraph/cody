@@ -2,12 +2,13 @@ import * as vscode from 'vscode'
 
 export const CURRENT_LINE_DECORATION = vscode.window.createTextEditorDecorationType({
     isWholeLine: true,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: new vscode.ThemeColor('editor.wordHighlightTextBackground'),
+    borderColor: new vscode.ThemeColor('editor.wordHighlightTextBorder'),
 })
 
 export const UNVISITED_LINE_DECORATION = vscode.window.createTextEditorDecorationType({
     isWholeLine: true,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: new vscode.ThemeColor('diffEditor.unchangedCodeBackground'),
 })
 
 export const INSERTED_CODE_DECORATION = vscode.window.createTextEditorDecorationType({
