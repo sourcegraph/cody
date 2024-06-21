@@ -7,11 +7,13 @@ if [ ! -d $INDEXER_DIR ]; then
 fi
 
 pushd $INDEXER_DIR
+git fetch origin
 git checkout olafurpg/signatures-rebase1
 git pull origin olafurpg/signatures-rebase1
 yarn install
 popd
 
+pnpm install
 pnpm build
 # TODO: invoke @sourcegraph/scip-typescript npm package instead
 pnpm dlx ts-node $INDEXER_DIR/src/main.ts index --emit-signatures --emit-external-symbols
