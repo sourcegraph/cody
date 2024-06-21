@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { telemetryRecorder } from '@sourcegraph/cody-shared'
+import { CodyIDE, telemetryRecorder } from '@sourcegraph/cody-shared'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
@@ -65,7 +65,7 @@ export function registerSidebarCommands(): vscode.Disposable[] {
         }),
         vscode.commands.registerCommand('cody.sidebar.releaseNotes', () => {
             logSidebarClick('releaseNotes')
-            void vscode.commands.executeCommand('vscode.open', releaseNotesURL(version))
+            void vscode.commands.executeCommand('vscode.open', releaseNotesURL(version, CodyIDE.VSCode))
         }),
         vscode.commands.registerCommand('cody.sidebar.documentation', () => {
             logSidebarClick('documentation')

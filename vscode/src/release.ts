@@ -16,7 +16,7 @@ const RELEASE_BLOG_POSTS: Record<string, string> = {
     '1.20': 'https://sourcegraph.com/blog/cody-vscode-1-20-0-release',
 }
 
-export const releaseNotesURL = (version: string, IDE?: CodyIDE): string => {
+export const releaseNotesURL = (version: string, IDE: CodyIDE): string => {
     const vsCodeBlogPostURL = RELEASE_BLOG_POSTS[majorMinorVersion(version)]
     switch (IDE) {
         case CodyIDE.JetBrains:
