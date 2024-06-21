@@ -347,14 +347,16 @@ const attachArtifacts = async (
     await fs.rename(oldVideoPath, newVideoPath)
     await testInfo.attach('video', { path: newVideoPath, contentType: 'video/webm' })
 
-    // Copy the file from the temporary trace directory to the assets
-    // directory so it is not deleted
-    const [trace] = await fs.readdir(getTempTraceDir(testInfo.title))
-    const oldTracePath = path.join(getTempTraceDir(testInfo.title), trace)
-    const newTracePath = path.join(assetsDirectory, 'traces', `${testSlug}.zip`)
-    await fs.mkdir(path.join(assetsDirectory, 'traces'), { recursive: true })
-    await fs.rename(oldTracePath, newTracePath)
-    await testInfo.attach('trace', { path: newTracePath, contentType: 'application/zip' })
+    try {
+        // Copy the file from the temporary trace directory to the assets
+        // directory so it is not deleted
+        const [trace] = await fs.readdir(getTempTraceDir(testInfo.title))
+        const oldTracePath = path.join(getTempTraceDir(testInfo.title), trace)
+        const newTracePath = path.join(assetsDirectory, 'traces', `${testSlug}.zip`)
+        await fs.mkdir(path.join(assetsDirectory, 'traces'), { recursive: true })
+        await fs.rename(oldTracePath, newTracePath)
+        await testInfo.attach('trace', { path: newTracePath, contentType: 'application/zip' })
+    } catch {}
 }
 
 /**
