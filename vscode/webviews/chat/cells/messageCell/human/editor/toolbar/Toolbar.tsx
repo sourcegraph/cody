@@ -4,7 +4,7 @@ import { type FunctionComponent, useCallback } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { useChatModelContext } from '../../../../../models/chatModelContext'
-import { MentionButton } from './MentionButton'
+import { AddContextButton } from './AddContextButton'
 import { SubmitButton, type State as SubmitButtonState } from './SubmitButton'
 
 /**
@@ -65,7 +65,9 @@ export const Toolbar: FunctionComponent<{
             onClick={onMaybeGapClick}
         >
             <div className="tw-flex tw-gap-1 tw-items-center">
-                {onMentionClick && <MentionButton onClick={onMentionClick} className="tw-opacity-60" />}
+                {onMentionClick && (
+                    <AddContextButton onClick={onMentionClick} className="tw-opacity-60" />
+                )}
                 <span>
                     <ModelSelectFieldToolbarItem userInfo={userInfo} focusEditor={focusEditor} />
                 </span>

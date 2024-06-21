@@ -28,7 +28,7 @@ describe('HumanMessageEditor', () => {
 
     describe('states', () => {
         function expectState(
-            { mentionButton, submitButton }: ReturnType<typeof renderWithMocks>,
+            { addContextButton, submitButton }: ReturnType<typeof renderWithMocks>,
             expected: {
                 toolbarVisible?: boolean
                 submitButtonVisible?: boolean
@@ -37,7 +37,7 @@ describe('HumanMessageEditor', () => {
             }
         ): void {
             if (expected.toolbarVisible !== undefined) {
-                notUnless(expect.soft(mentionButton), expected.toolbarVisible).toBeVisible()
+                notUnless(expect.soft(addContextButton), expected.toolbarVisible).toBeVisible()
             }
             if (expected.submitButtonVisible !== undefined) {
                 notUnless(expect.soft(submitButton), expected.submitButtonVisible).toBeVisible()
@@ -140,7 +140,7 @@ type EditorHTMLElement = HTMLDivElement & { dataset: { lexicalEditor: 'true' } }
 function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor>>): {
     container: HTMLElement
     editor: EditorHTMLElement
-    mentionButton: HTMLElement | null
+    addContextButton: HTMLElement | null
     submitButton: HTMLElement | null
     onChange: Mock
     onSubmit: Mock
@@ -168,7 +168,7 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
     return {
         container,
         editor: container.querySelector<EditorHTMLElement>('[data-lexical-editor="true"]')!,
-        mentionButton: screen.queryByRole('button', { name: 'Add context', hidden: true }),
+        addContextButton: screen.queryByRole('button', { name: 'Add context', hidden: true }),
         submitButton: screen.queryByRole('button', {
             name: 'Send',
             hidden: true,
