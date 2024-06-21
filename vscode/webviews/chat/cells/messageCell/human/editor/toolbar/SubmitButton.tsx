@@ -3,14 +3,14 @@ import { Kbd } from '../../../../../../components/Kbd'
 import { Button } from '../../../../../../components/shadcn/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../../../components/shadcn/ui/tooltip'
 
-export type State = 'default' | 'emptyEditorValue' | 'isPendingPriorResponse'
+export type State = 'submittable' | 'emptyEditorValue' | 'waitingResponseComplete'
 
 export const SubmitButton: FunctionComponent<{
     onClick: () => void
     isEditorFocused?: boolean
     state?: State
-}> = ({ onClick, state = 'default' }) => {
-    if (state === 'isPendingPriorResponse') {
+}> = ({ onClick, state = 'submittable' }) => {
+    if (state === 'waitingResponseComplete') {
         return (
             <Tooltip>
                 <TooltipTrigger asChild>

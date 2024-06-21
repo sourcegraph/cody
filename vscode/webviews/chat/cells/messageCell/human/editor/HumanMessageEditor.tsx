@@ -96,17 +96,17 @@ export const HumanMessageEditor: FunctionComponent<{
     )
 
     const submitState: SubmitButtonState = isPendingPriorResponse
-        ? 'isPendingPriorResponse'
+        ? 'waitingResponseComplete'
         : isEmptyEditorValue
           ? 'emptyEditorValue'
-          : 'default'
+          : 'submittable'
 
     const onSubmitClick = useCallback(() => {
         if (submitState === 'emptyEditorValue') {
             return
         }
 
-        if (submitState === 'isPendingPriorResponse') {
+        if (submitState === 'waitingResponseComplete') {
             onStop()
             return
         }

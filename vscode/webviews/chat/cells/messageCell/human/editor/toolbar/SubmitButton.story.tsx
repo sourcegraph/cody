@@ -21,8 +21,8 @@ const meta: Meta<typeof SubmitButton> = {
                 {...args}
                 onClick={() => {
                     setArgs({
-                        // Toggle between default and busy
-                        state: args.state === 'default' ? 'isPendingPriorResponse' : 'default',
+                        // Toggle between submittable and busy
+                        state: args.state === 'submittable' ? 'waitingResponseComplete' : 'submittable',
                     })
                 }}
             />
@@ -36,7 +36,7 @@ export const Default: StoryObj<typeof meta> = {
     args: {},
     argTypes: {
         state: {
-            options: ['default', 'isPendingPriorResponse'],
+            options: ['submittable', 'waitingResponseComplete'],
             control: { type: 'radio' },
         },
     },
