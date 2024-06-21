@@ -187,7 +187,7 @@ export function getConfiguration(
         },
         autocompleteFirstCompletionTimeout: getHiddenSetting<number>(
             'autocomplete.advanced.timeout.firstCompletion',
-            1_500
+            3_500
         ),
         testingModelConfig:
             isTesting && hasValidLocalEmbeddingsConfig()
