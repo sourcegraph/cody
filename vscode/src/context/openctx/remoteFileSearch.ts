@@ -65,7 +65,9 @@ async function getRepoMentions(query?: string): Promise<Mention[]> {
 }
 
 async function getFileMentions(repoName: string, filePath?: string): Promise<Mention[]> {
-    const query = `repo:${repoName} type:file count:10` + ` file:${filePath || '.*'}`
+    const repoRe = `^${escapeRegExp(repoName)}$`
+    const fileRe = filePath ? escapeRegExp(filePath) : '^.*$'
+    const query = `repo:${repoRe} file:${fileRe} type:file count:10`
 
     const dataOrError = await graphqlClient.searchFileMatches(query)
 
@@ -120,6 +122,10 @@ async function getFileItem(repoName: string, filePath: string, rev = 'HEAD'): Pr
             },
         },
     ] satisfies Item[]
+}
+
+function escapeRegExp(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 export default RemoteFileProvider
