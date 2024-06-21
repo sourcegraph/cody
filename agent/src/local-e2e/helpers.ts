@@ -1,9 +1,9 @@
 import https from 'node:https'
 import json5 from 'json5'
 
-import { registerLocalCertificates } from '../certs'
 import { SourcegraphGraphQLAPIClient, isError } from '@sourcegraph/cody-shared'
-import { TestingCredentials } from '../../../vscode/src/testutils/testing-credentials'
+import type { TestingCredentials } from '../../../vscode/src/testutils/testing-credentials'
+import { registerLocalCertificates } from '../certs'
 
 // Endpoint as defined by `sg setup` and `sg start dotcom`
 const defaultEndpoint = 'https://sourcegraph.test:3443'
@@ -72,7 +72,10 @@ export class LocalSGInstance {
     private params: LocalSGInstanceParams
     private gqlclient: SourcegraphGraphQLAPIClient
 
-    constructor(private readonly endpoint: string = defaultEndpoint, private readonly accessToken: string = defaultAccessToken) {
+    constructor(
+        private readonly endpoint: string = defaultEndpoint,
+        private readonly accessToken: string = defaultAccessToken
+    ) {
         this.params = { serverEndpoint: this.endpoint, accessToken: this.accessToken }
 
         // There's no point in recording responses when running the whole stack locally.
@@ -101,31 +104,31 @@ export class LocalSGInstance {
      */
     public async beforeAll() {
         // Pretty rare case, but cheap to cover, so let's handle it anyway.
-        if (this.params.serverEndpoint == '') {
+        if (this.params.serverEndpoint === '') {
             throw new LocalInstanceError({
-                reason: "Sourcegraph Local instance endpoint cannot be blank",
-                fix: "Make sure the endpoint passed to `new LocalSGInstance(arg)` is not an empty string, or simply use the default value"
+                reason: 'Sourcegraph Local instance endpoint cannot be blank',
+                fix: 'Make sure the endpoint passed to `new LocalSGInstance(arg)` is not an empty string, or simply use the default value',
             })
         }
         // Same.
-        if (this.params.accessToken == '') {
+        if (this.params.accessToken === '') {
             throw new LocalInstanceError({
-                reason: "Sourcegraph Local instance access token cannot be blank",
-                fix: "TODO"
+                reason: 'Sourcegraph Local instance access token cannot be blank',
+                fix: 'TODO',
             })
         }
         // Someone might think it's ok to use this against a live instance, which is not what this is made for.
         if (!this.params.accessToken.startsWith('sgp_local_')) {
             throw new LocalInstanceError({
                 reason: "Sourcegraph Local instance access token isn't a local access token, i.e. not starting with sgp_local.",
-                fix: "TODO"
+                fix: 'TODO',
             })
         }
         // Avoid residual environment variables messing up with flow.
-        if (process.env.CODY_RECORDING_MODE != "passthrough") {
+        if (process.env.CODY_RECORDING_MODE !== 'passthrough') {
             throw new LocalInstanceError({
-                reason: "Local E2E tests should never record response",
-                fix: "TODO"
+                reason: 'Local E2E tests should never record response',
+                fix: 'TODO',
             })
         }
 
@@ -146,7 +149,6 @@ export class LocalSGInstance {
         return this.params
     }
 
-
     /**
      * Pass these to the TestClient.create function.
      */
@@ -165,48 +167,51 @@ export class LocalSGInstance {
     // running the wrong instance type, local instance isn't up, etc...
     private checkInstanceIsOnline(): Promise<LocalInstanceFailure | undefined> {
         return new Promise((resolve, _) => {
-            https.get(
-                this.params.serverEndpoint,
-                { timeout: 2000 }, // ms
-                (res) => {
-                    switch (res.statusCode) {
-                        // Dotcom redirects to the marketing pages on /, so if we don't see that, we're not running in dotcom mode.
-                        case 200:
-                            resolve({
-                                reason: "Sourcegraph instance is not running in Dotcom mode",
-                                fix: "Kill the currently running instance and start it again using `sg start dotcom` instead."
-                            })
-                            break
-                        // This is what we want.
-                        case 307:
-                            resolve(undefined)
-                            break
-                        case 502:
-                            resolve({
-                                reason: `Sourcegraph instance answered with a status code 502.`,
-                                fix: 'Most likely, the instance is still booting up. Wait until you the see the "Sourcegraph is Ready" banner and try again.'
-                            })
-                        default:
-                            resolve({
-                                reason: `Sourcegraph instance answered with a status code of ${res.statusCode} `,
-                                fix: 'Inspect the logs, they most probably contain a line about it.'
-                            })
-                            break
+            https
+                .get(
+                    this.params.serverEndpoint,
+                    { timeout: 2000 }, // ms
+                    res => {
+                        switch (res.statusCode) {
+                            // Dotcom redirects to the marketing pages on /, so if we don't see that, we're not running in dotcom mode.
+                            case 200:
+                                resolve({
+                                    reason: 'Sourcegraph instance is not running in Dotcom mode',
+                                    fix: 'Kill the currently running instance and start it again using `sg start dotcom` instead.',
+                                })
+                                break
+                            // This is what we want.
+                            case 307:
+                                resolve(undefined)
+                                break
+                            case 502:
+                                resolve({
+                                    reason: 'Sourcegraph instance answered with a status code 502.',
+                                    fix: 'Most likely, the instance is still booting up. Wait until you the see the "Sourcegraph is Ready" banner and try again.',
+                                })
+                                break
+                            default:
+                                resolve({
+                                    reason: `Sourcegraph instance answered with a status code of ${res.statusCode} `,
+                                    fix: 'Inspect the logs, they most probably contain a line about it.',
+                                })
+                                break
+                        }
                     }
-                }
-            ).on('error', (err: NodeJS.ErrnoException) => {
-                if (err.code === 'ECONNREFUSED') {
-                    resolve({
-                        reason: 'Sourcegraph instance is *not* running at all',
-                        fix: 'In your Sourcegraph folder, run `sg start dotcom` and run the tests again'
-                    })
-                } else {
-                    resolve({
-                        reason: `Failed to connect to Sourcegraph instance: ${err.message} `,
-                        fix: 'Something went wrong, if you have a running `sg start dotcom`, you could try to restart it'
-                    })
-                }
-            })
+                )
+                .on('error', (err: NodeJS.ErrnoException) => {
+                    if (err.code === 'ECONNREFUSED') {
+                        resolve({
+                            reason: 'Sourcegraph instance is *not* running at all',
+                            fix: 'In your Sourcegraph folder, run `sg start dotcom` and run the tests again',
+                        })
+                    } else {
+                        resolve({
+                            reason: `Failed to connect to Sourcegraph instance: ${err.message} `,
+                            fix: 'Something went wrong, if you have a running `sg start dotcom`, you could try to restart it',
+                        })
+                    }
+                })
         })
     }
 
@@ -234,55 +239,56 @@ export class LocalSGInstance {
 
 👉 The local instance will reload the configuration automatically, so you just need to save for the changes to take effects.`
 
-
         return new Promise((resolve, _) => {
-            this.gqlclient.fetchSourcegraphAPI<APIResponse<JSONCLLMSiteConfig>>(q).then(resp => {
-                if (isError(resp)) {
-                    resolve({
-                        reason: `Failed to connect to Sourcegraph instance: ${resp.message} `,
-                        fix: 'Something went wrong, if you have a running `sg start dotcom`, you could try to restart it'
-                    })
-                    return
-                }
-                const raw = resp.data?.site.configuration.effectiveContents
-                if (raw === undefined) {
-                    resolve({
-                        reason: "Sourcegraph site-config is somehow empty.",
-                        fix: "Check the logs on the local instance side.",
-                    })
-                    return
-                }
+            this.gqlclient
+                .fetchSourcegraphAPI<APIResponse<JSONCLLMSiteConfig>>(q)
+                .then(resp => {
+                    if (isError(resp)) {
+                        resolve({
+                            reason: `Failed to connect to Sourcegraph instance: ${resp.message} `,
+                            fix: 'Something went wrong, if you have a running `sg start dotcom`, you could try to restart it',
+                        })
+                        return
+                    }
+                    const raw = resp.data?.site.configuration.effectiveContents
+                    if (raw === undefined) {
+                        resolve({
+                            reason: 'Sourcegraph site-config is somehow empty.',
+                            fix: 'Check the logs on the local instance side.',
+                        })
+                        return
+                    }
 
-                const content: LLMSiteConfig = json5.parse(raw)
-                if (!content['cody.enabled']) {
-                    resolve({
-                        reason: "Sourcegraph Local instance doesn't have Cody enabled",
-                        fix: siteConfigFix,
-                    })
-                    return
-                }
-                if (content.completions.provider != 'sourcegraph') {
-                    resolve({
-                        reason: "Sourcegraph Local instance Cody provider isn't set to 'sourcegraph'.",
-                        fix: siteConfigFix,
-                    })
-                    return
-                }
-                if (content.completions.endpoint != expectedCodyGatewayEndpoint) {
-                    resolve({
-                        reason: `Sourcegraph Local instance completion endpoint isn't set to the locally running Cody gateway (got '${content.completions.endpoint}' instead).`,
-                        fix: siteConfigFix,
-                    })
-                    return
-                }
-                resolve(undefined)
-            }).catch(e => {
-                resolve({
-                    reason: `Unexpected error: ${JSON.stringify(e)}`,
-                    fix: "Examine the error.",
+                    const content: LLMSiteConfig = json5.parse(raw)
+                    if (!content['cody.enabled']) {
+                        resolve({
+                            reason: "Sourcegraph Local instance doesn't have Cody enabled",
+                            fix: siteConfigFix,
+                        })
+                        return
+                    }
+                    if (content.completions.provider !== 'sourcegraph') {
+                        resolve({
+                            reason: "Sourcegraph Local instance Cody provider isn't set to 'sourcegraph'.",
+                            fix: siteConfigFix,
+                        })
+                        return
+                    }
+                    if (content.completions.endpoint !== expectedCodyGatewayEndpoint) {
+                        resolve({
+                            reason: `Sourcegraph Local instance completion endpoint isn't set to the locally running Cody gateway (got '${content.completions.endpoint}' instead).`,
+                            fix: siteConfigFix,
+                        })
+                        return
+                    }
+                    resolve(undefined)
                 })
-            })
+                .catch(e => {
+                    resolve({
+                        reason: `Unexpected error: ${JSON.stringify(e)}`,
+                        fix: 'Examine the error.',
+                    })
+                })
         })
     }
 }
-

@@ -1,8 +1,8 @@
 // The goal of this file is to document the steps to run Cody with all services locally.
 import path from 'node:path'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+
 import { ModelsService, getDotComDefaultModels } from '@sourcegraph/cody-shared'
-import { afterAll, beforeAll, describe, it, expect } from 'vitest'
-// import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient } from '../TestClient'
 import { TestWorkspace } from '../TestWorkspace'
 import { LocalSGInstance } from './helpers'
@@ -10,7 +10,7 @@ import { LocalSGInstance } from './helpers'
 describe('E2E-local', () => {
     const workspace = new TestWorkspace(path.join(__dirname, '..', '__tests__', 'example-ts'))
     let client: TestClient
-    let sg = new LocalSGInstance()
+    const sg = new LocalSGInstance()
 
     beforeAll(async () => {
         ModelsService.setModels(getDotComDefaultModels())
@@ -20,7 +20,7 @@ describe('E2E-local', () => {
         client = TestClient.create({
             workspaceRootUri: workspace.rootUri,
             name: path.basename(__filename),
-            credentials: sg.getCredentials()
+            credentials: sg.getCredentials(),
         })
 
         await client.beforeAll(sg.getParams())
@@ -46,7 +46,7 @@ describe('E2E-local', () => {
 
         const lastMessage = await client.firstNonEmptyTranscript(id)
         console.log(lastMessage)
-        for (let m of lastMessage.messages) {
+        for (const m of lastMessage.messages) {
             console.log(m)
         }
     }, 200_000) // We're making full roundtrips, so we need to increase the default timeout.
