@@ -5,7 +5,7 @@ import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { useChatModelContext } from '../../../../../models/chatModelContext'
 import { AddContextButton } from './AddContextButton'
-import { SubmitButton, type State as SubmitButtonState } from './SubmitButton'
+import { SubmitButton, type SubmitButtonState } from './SubmitButton'
 
 /**
  * The toolbar for the human message editor.

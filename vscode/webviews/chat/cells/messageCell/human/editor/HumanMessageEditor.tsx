@@ -22,7 +22,7 @@ import {
 import { PromptEditor, type PromptEditorRefAPI } from '../../../../../promptEditor/PromptEditor'
 import { useTelemetryRecorder } from '../../../../../utils/telemetry'
 import styles from './HumanMessageEditor.module.css'
-import type { State as SubmitButtonState } from './toolbar/SubmitButton'
+import type { SubmitButtonState } from './toolbar/SubmitButton'
 import { Toolbar } from './toolbar/Toolbar'
 
 /**
