@@ -233,7 +233,11 @@ export const test = base
 
             await waitUntil(() => app.windows().length > 0)
 
+            await app.context().tracing.start({ screenshots: true, snapshots: true })
+
             await use(app)
+
+            await app.context().tracing.stop()
 
             await app.close()
 
