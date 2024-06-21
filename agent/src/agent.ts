@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process'
 import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
+import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
@@ -12,7 +13,6 @@ import {
     type BillingProduct,
     FeatureFlag,
     ModelsService,
-    NoOpTelemetryRecorderProvider,
     PromptString,
     contextFiltersProvider,
     convertGitCloneURLToCodebaseName,
@@ -78,8 +78,6 @@ import type {
     ProtocolTextDocument,
     TextEdit,
 } from './protocol-alias'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { AgentHandlerTelemetryRecorderProvider } from './telemetry'
 import * as vscode_shim from './vscode-shim'
 import { vscodeLocation, vscodeRange } from './vscode-type-converters'
 
@@ -320,25 +318,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
     private clientInfo: ClientInfo | null = null
 
-    /**
-     * agentTelemetryRecorderProvider must be used for all events recording
-     * directly within the agent (i.e. code in agent/src/...) and via the agent's
-     * 'telemetry/recordEvent' RPC.
-     *
-     * Components that use VSCode implementations directly (i.e. code in
-     * vscode/src/...) will continue to use the shared recorder initialized and
-     * configured as part of VSCode initialization in vscode/src/services/telemetry-v2.ts.
-     */
-    private agentTelemetryRecorderProvider: AgentHandlerTelemetryRecorderProvider =
-        new NoOpTelemetryRecorderProvider([
-            {
-                processEvent: event =>
-                    console.error(
-                        `Cody Agent: failed to record telemetry event '${event.feature}/${event.action}' before agent initialization\n`
-                    ),
-            },
-        ])
-
     constructor(
         private readonly params: {
             polly?: Polly | undefined
@@ -398,14 +377,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
             vscode_shim.setClientInfo(clientInfo)
             this.clientInfo = clientInfo
             setUserAgent(`${clientInfo?.name} / ${clientInfo?.version}`)
-
-            this.agentTelemetryRecorderProvider?.unsubscribe()
-            this.agentTelemetryRecorderProvider = new AgentHandlerTelemetryRecorderProvider(
-                this.clientInfo,
-                {
-                    getMarketingTrackingMetadata: () => this.clientInfo?.marketingTracking || null,
-                }
-            )
 
             this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
                 ? vscode.Uri.parse(clientInfo.workspaceRootUri)
@@ -888,7 +859,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('telemetry/recordEvent', async event => {
-            this.agentTelemetryRecorderProvider.getRecorder().recordEvent(
+            telemetryRecorder.recordEvent(
                 // 👷 HACK: We have no control over what gets sent over JSON RPC,
                 // so we depend on client implementations to give type guidance
                 // to ensure that we don't accidentally share arbitrary,
