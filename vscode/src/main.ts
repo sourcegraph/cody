@@ -388,14 +388,14 @@ const register = async (
             }),
 
             // Clear access token and local storage.
-            vscode.commands.registerCommand('cody.dev.clear', async () => {
+            vscode.commands.registerCommand('cody.test.clear-storage', async () => {
                 // Remove current access token.
-                await context.secrets.delete(localStorage.ACCESS_TOKEN_SECRET_KEY)
+                await secretStorage.deleteLastSavedToken()
 
                 // Remove Access Tokens for each stored endpoint.
                 const endpointHistory = localStorage.getEndpointHistory() ?? []
                 for (const endpoint of endpointHistory) {
-                    await context.secrets.delete(localStorage.ACCESS_TOKEN_SECRET_KEY + endpoint)
+                    await secretStorage.delete(endpoint)
                 }
 
                 // Clear local storage, including all chat history and configuration.

@@ -32,9 +32,8 @@ const keys = {
     CHAT_HISTORY: 'cody-local-chatHistory-v2',
     CONFIG: 'cody-config',
     ANONYMOUS_USER_ID: 'sourcegraphAnonymousUid',
-    // Last saved and used endpoint and access token:
+    // Last saved and used endpoint.
     LAST_USED_ENDPOINT: 'SOURCEGRAPH_CODY_ENDPOINT',
-    ACCESS_TOKEN_SECRET: 'cody.access-token',
     // All used and saved endpoints.
     ENDPOINT_HISTORY: 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY',
     // All A/B test features that have been enrolled in.
@@ -46,7 +45,6 @@ class LocalStorage {
     // Only include keys that need to be accessed outside of the LocalStorage module.
     public readonly ANONYMOUS_USER_ID_KEY = keys.ANONYMOUS_USER_ID
     public readonly LAST_USED_ENDPOINT_KEY = keys.LAST_USED_ENDPOINT
-    public readonly ACCESS_TOKEN_SECRET_KEY = keys.ACCESS_TOKEN_SECRET
 
     /**
      * Clears the local storage, excluding the anonymous user ID.
@@ -129,33 +127,35 @@ class LocalStorage {
     }
 
     public getChatHistory(authStatus: AuthStatus): UserLocalHistory {
+        const history = this.storage.get<AccountKeyedChatHistory | null>(keys.CHAT_HISTORY, null)
         const accountKey = getKeyForAuthStatus(authStatus)
-        let history = this.storage.get<AccountKeyedChatHistory>(keys.CHAT_HISTORY)
 
-        if (history) {
-            // Migrate chat history to set the `ChatMessage.model` property on each assistant message
-            // instead of `chatModel` on the overall transcript. Can remove when
-            // `SerializedChatTranscript.chatModel` property is removed in v1.22.
-            const migratedHistory = migrateHistoryForChatModelProperty(history)
-            if (history !== migratedHistory) {
-                this.storage.update(keys.CHAT_HISTORY, migratedHistory).then(() => {}, console.error)
-            }
-
-            history = migratedHistory ?? history
+        // Migrate chat history to set the `ChatMessage.model` property on each assistant message
+        // instead of `chatModel` on the overall transcript. Can remove when
+        // `SerializedChatTranscript.chatModel` property is removed in v1.22.
+        const migratedHistory = migrateHistoryForChatModelProperty(history)
+        if (history !== migratedHistory) {
+            this.storage.update(keys.CHAT_HISTORY, migratedHistory).then(() => {}, console.error)
         }
 
-        return history?.[accountKey] ?? { chat: {} }
+        return migratedHistory?.[accountKey] ?? { chat: {} }
     }
 
     public async setChatHistory(authStatus: AuthStatus, history: UserLocalHistory): Promise<void> {
         try {
             const key = getKeyForAuthStatus(authStatus)
-            const fullHistory = this.storage.get<{ [key: ChatHistoryKey]: UserLocalHistory }>(
+            let fullHistory = this.storage.get<{ [key: ChatHistoryKey]: UserLocalHistory } | null>(
                 keys.CHAT_HISTORY,
-                { [key]: history }
+                null
             )
 
-            fullHistory[key] = history
+            if (fullHistory) {
+                fullHistory[key] = history
+            } else {
+                fullHistory = {
+                    [key]: history,
+                }
+            }
 
             await this.storage.update(keys.CHAT_HISTORY, fullHistory)
         } catch (error) {

@@ -1,13 +1,12 @@
 import * as vscode from 'vscode'
 
 import { logDebug, logError } from '../log'
-import { localStorage } from './LocalStorageProvider'
 
-const CODY_ACCESS_TOKEN_SECRET = localStorage.ACCESS_TOKEN_SECRET_KEY
+const CODY_ACCESS_TOKEN_SECRET_KEY = 'cody.access-token'
 
 export async function getAccessToken(): Promise<string | null> {
     try {
-        const token = (await secretStorage.get(CODY_ACCESS_TOKEN_SECRET)) || null
+        const token = (await secretStorage.get(CODY_ACCESS_TOKEN_SECRET_KEY)) || null
         if (token) {
             return token
         }
@@ -15,7 +14,7 @@ export async function getAccessToken(): Promise<string | null> {
     } catch (error) {
         logError('VSCodeSecretStorage:getAccessToken', 'failed', { verbose: error })
         // Remove corrupted token from secret storage
-        await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
+        await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET_KEY)
         return null
     }
 }
@@ -105,12 +104,17 @@ export class VSCodeSecretStorage implements SecretStorage {
             return
         }
         await this.store(endpoint, value)
-        await this.store(CODY_ACCESS_TOKEN_SECRET, value)
+        // Store as the last used token
+        await this.store(CODY_ACCESS_TOKEN_SECRET_KEY, value)
+    }
+
+    public async deleteLastSavedToken(): Promise<void> {
+        await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET_KEY)
     }
 
     public async deleteToken(endpoint: string): Promise<void> {
         await this.secretStorage.delete(endpoint)
-        await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
+        await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET_KEY)
     }
 
     public async delete(key: string): Promise<void> {
@@ -120,7 +124,7 @@ export class VSCodeSecretStorage implements SecretStorage {
     public onDidChange(callback: ({ key }: { key: string }) => Promise<void>): vscode.Disposable {
         return this.secretStorage.onDidChange(event => {
             // Run callback on token changes for current endpoint only
-            if (event.key === CODY_ACCESS_TOKEN_SECRET) {
+            if (event.key === CODY_ACCESS_TOKEN_SECRET_KEY) {
                 return callback({ key: event.key })
             }
             return
@@ -177,12 +181,16 @@ class InMemorySecretStorage implements SecretStorage {
 
     public async storeToken(endpoint: string, value: string): Promise<void> {
         await this.store(endpoint, value)
-        await this.store(CODY_ACCESS_TOKEN_SECRET, value)
+        await this.store(CODY_ACCESS_TOKEN_SECRET_KEY, value)
     }
 
     public async deleteToken(endpoint: string): Promise<void> {
         await this.delete(endpoint)
-        await this.delete(CODY_ACCESS_TOKEN_SECRET)
+        await this.deleteLastSavedToken()
+    }
+
+    public async deleteLastSavedToken(): Promise<void> {
+        await this.delete(CODY_ACCESS_TOKEN_SECRET_KEY)
     }
 
     public async delete(key: string): Promise<void> {

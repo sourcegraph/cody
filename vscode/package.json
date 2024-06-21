@@ -587,7 +587,7 @@
         "enablement": "cody.activated && cody.devOrTest"
       },
       {
-        "command": "cody.dev.clear",
+        "command": "cody.test.clear-storage",
         "category": "Cody Dev",
         "title": "Clear Cody Storage & Restart",
         "enablement": "cody.devOrTest"
@@ -768,7 +768,7 @@
           "when": "cody.activated && cody.devOrTest"
         },
         {
-          "command": "cody.dev.clear",
+          "command": "cody.test.clear-storage",
           "when": "cody.devOrTest"
         },
         {
