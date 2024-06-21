@@ -102,6 +102,7 @@ export function transcriptToInteractionPairs(
             assistantMessage: null,
         })
     }
+
     return pairs
 }
 

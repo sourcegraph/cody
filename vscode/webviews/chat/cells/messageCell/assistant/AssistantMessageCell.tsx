@@ -4,6 +4,7 @@ import {
     type Guardrails,
     contextItemsFromPromptEditorValue,
     filterContextItemsFromPromptEditorValue,
+    isAbortErrorOrSocketHangUp,
     ps,
     reformatBotMessageForChat,
     serializedPromptEditorStateFromChatMessage,
@@ -60,6 +61,7 @@ export const AssistantMessageCell: FunctionComponent<{
 
     const chatModel = useChatModelByID(message.model)
     const ModelIcon = chatModel ? chatModelIconComponent(chatModel.model) : null
+    const isAborted = isAbortErrorOrSocketHangUp(message.error)
 
     return (
         <BaseMessageCell
@@ -73,7 +75,7 @@ export const AssistantMessageCell: FunctionComponent<{
             }
             content={
                 <>
-                    {message.error ? (
+                    {message.error && !isAborted ? (
                         typeof message.error === 'string' ? (
                             <RequestErrorItem error={message.error} />
                         ) : (
@@ -100,13 +102,18 @@ export const AssistantMessageCell: FunctionComponent<{
             footer={
                 ((showFeedbackButtons && feedbackButtonsOnSubmit) || humanMessage) && (
                     <div className="tw-flex tw-items-center tw-py-3 tw-divide-x tw-transition tw-divide-muted tw-opacity-65 hover:tw-opacity-100">
+                        {isAborted && (
+                            <div className="tw-text-sm tw-text-muted-foreground">
+                                Output stream stopped.
+                            </div>
+                        )}
                         {showFeedbackButtons && feedbackButtonsOnSubmit && (
                             <FeedbackButtons
                                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                                 className="tw-pr-4"
                             />
                         )}
-                        {humanMessage && !isLoading && !message.error && (
+                        {humanMessage && !isLoading && (!message.error || isAborted) && (
                             <ContextFocusActions humanMessage={humanMessage} className="tw-pl-5" />
                         )}
                     </div>
