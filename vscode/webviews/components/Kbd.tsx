@@ -15,25 +15,27 @@ const isMac = isMacOS()
 function keyTextOrSvg(key: string): React.ReactElement | string {
     const iconClassName = 'tw-w-[1em] tw-h-[1em]'
 
-    if (isMac && (/opt/i.test(key) || /option/i.test(key))) {
-        return <OptionIcon className={iconClassName} />
+    if (isMac) {
+        switch (key) {
+            case 'opt':
+                return <OptionIcon className={iconClassName} />
+            case 'cmd':
+                return <CommandIcon className={iconClassName} />
+            case 'ctrl':
+                return <ChevronUpIcon className={cn(iconClassName, '-tw-translate-y-[.2em]')} />
+            case '@':
+                return <AtSignIcon className={cn(iconClassName)} />
+        }
     }
-    if (isMac && /cmd/i.test(key)) {
-        return <CommandIcon className={iconClassName} />
+
+    switch (key) {
+        case 'return':
+            return <CornerDownLeftIcon className={iconClassName} />
+        case 'shift':
+            return <ArrowBigUpIcon className={iconClassName} />
+        default:
+            return <span>{key}</span>
     }
-    if (isMac && /ctrl/i.test(key)) {
-        return <ChevronUpIcon className={cn(iconClassName, '-tw-translate-y-[.2em]')} />
-    }
-    if (isMac && /@/i.test(key)) {
-        return <AtSignIcon className={cn(iconClassName)} />
-    }
-    if (/return/i.test(key)) {
-        return <CornerDownLeftIcon className={iconClassName} />
-    }
-    if (/shift/i.test(key)) {
-        return <ArrowBigUpIcon className={iconClassName} />
-    }
-    return <span>{key}</span>
 }
 
 /** A component that displays a keyboard shortcut. */
