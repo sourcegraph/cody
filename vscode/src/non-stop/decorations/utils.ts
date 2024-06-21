@@ -2,10 +2,17 @@ import { getEditorTabSize } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type { FixupTask } from '../FixupTask'
 
+/**
+ * Returns the last full line in a string.
+ * E.g. "Hello\nWorld\n" -> "World"
+ */
+const FULL_LINES_REGEX = /.*\n(?=.*$)/
+
 export function getLastFullLine(str: string): string {
-    const match = str.match(/.*\n(?=.*$)/)
+    const match = str.match(FULL_LINES_REGEX)
 
     if (match) {
+        // Trim the new line character
         return match[0].slice(0, -1)
     }
 
