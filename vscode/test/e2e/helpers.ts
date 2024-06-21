@@ -237,7 +237,7 @@ export const test = base
 
             await use(app)
 
-            await app.context().tracing.stop()
+            await app.context().tracing.stop({ path: 'trace.zip' })
 
             await app.close()
 
@@ -352,14 +352,14 @@ const attachArtifacts = async (
     await testInfo.attach('video', { path: newVideoPath, contentType: 'video/webm' })
 
     try {
-        // Copy the file from the temporary trace directory to the assets
-        // directory so it is not deleted
-        const [trace] = await fs.readdir(getTempTraceDir(testInfo.title))
-        const oldTracePath = path.join(getTempTraceDir(testInfo.title), trace)
+        const oldTracePath = path.join(getTempTraceDir(testInfo.title), 'trace.zip')
         const newTracePath = path.join(assetsDirectory, 'traces', `${testSlug}.zip`)
         await fs.mkdir(path.join(assetsDirectory, 'traces'), { recursive: true })
         await fs.rename(oldTracePath, newTracePath)
         await testInfo.attach('trace', { path: newTracePath, contentType: 'application/zip' })
+    } catch {}
+    try {
+        rmSyncWithRetries(getTempTraceDir(testInfo.title), { recursive: true, force: true })
     } catch {}
 }
 

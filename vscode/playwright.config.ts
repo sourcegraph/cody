@@ -17,7 +17,7 @@ export default defineConfig({
     globalTeardown: require.resolve('./test/e2e/utils/teardown'),
     use: isCI
         ? {
-              trace: 'retain-on-failure',
+              trace: 'retry-with-trace',
           }
         : undefined,
 })
