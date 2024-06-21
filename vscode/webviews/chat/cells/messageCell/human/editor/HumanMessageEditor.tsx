@@ -263,7 +263,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 'tw-transition',
                 className
             )}
-            data-keep-toolbar-open={(isFirstInteraction && isLastInteraction) || undefined}
+            data-keep-toolbar-open={isLastInteraction || undefined}
             onMouseDown={onMaybeGapClick}
             onClick={onMaybeGapClick}
             onFocus={onFocus}
