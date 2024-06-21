@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { majorMinorVersion, releaseNotesURL } from '../../src/release'
+import { getReleaseNotesURLByIDE, majorMinorVersion } from '../../src/release'
 
 import { Notice } from './Notice'
 
@@ -56,7 +56,7 @@ export const VersionUpdatedNotice: React.FunctionComponent<VersionUpdateNoticePr
         <Notice
             icon={<Icon />}
             title={`Cody updated to v${majorMinorVersion(version)}`}
-            linkHref={releaseNotesURL(version, IDE)}
+            linkHref={getReleaseNotesURLByIDE(version, IDE)}
             linkText="See what’s new →"
             linkTarget="_blank"
             onDismiss={setDismissed}
