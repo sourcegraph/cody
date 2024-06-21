@@ -37,6 +37,11 @@ enum class CodyStatus : PresentableEnum, WithIcon {
 
     override val icon: Icon = Icons.StatusBar.CodyUnavailable
   },
+  CodyInvalidToken {
+    override fun getPresentableText(): String = "Invalid access token"
+
+    override val icon: Icon = Icons.StatusBar.CodyUnavailable
+  },
   CodyAgentNotRunning {
     override fun getPresentableText(): String = "Cody encountered an unexpected error"
 

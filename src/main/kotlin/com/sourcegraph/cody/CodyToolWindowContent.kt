@@ -30,8 +30,6 @@ class CodyToolWindowContent(private val project: Project) {
   private val allContentLayout = CardLayout()
   val allContentPanel = JPanel(allContentLayout)
 
-  private var codyOnboardingGuidancePanel: CodyOnboardingGuidancePanel? = null
-  private val signInWithSourcegraphPanel = SignInWithSourcegraphPanel(project)
   private val chatHistoryPanel =
       ChatHistoryPanel(project, ::selectChat, ::removeChat, ::removeAllChats)
   private val tabbedPane = TabbedPaneWrapper(CodyAgentService.getInstance(project))
@@ -59,20 +57,25 @@ class CodyToolWindowContent(private val project: Project) {
     tabbedPane.insertSimpleTab("Commands", commandsPanel, COMMANDS_TAB_INDEX)
 
     allContentPanel.add(tabbedPane.component, MAIN_PANEL, CHAT_PANEL_INDEX)
-    allContentPanel.add(signInWithSourcegraphPanel, SIGN_IN_PANEL, SIGN_IN_PANEL_INDEX)
-    allContentLayout.show(allContentPanel, SIGN_IN_PANEL)
-
-    refreshPanelsVisibility()
-    refreshMyAccountTab()
-    val codyAuthenticationManager = CodyAuthenticationManager.getInstance(project)
-    if (codyAuthenticationManager.getActiveAccount() != null) {
-      switchToChatSession(AgentChatSession.createNew(project))
+    allContentPanel.add(SignInWithSourcegraphPanel(project), SIGN_IN_PANEL, SIGN_IN_PANEL_INDEX)
+    val codyOnboardingGuidancePanel = CodyOnboardingGuidancePanel()
+    codyOnboardingGuidancePanel.addMainButtonActionListener {
+      CodyApplicationSettings.instance.isOnboardingGuidanceDismissed = true
+      refreshPanelsVisibility()
     }
+    allContentPanel.add(codyOnboardingGuidancePanel, ONBOARDING_PANEL, ONBOARDING_PANEL_INDEX)
+    allContentLayout.show(allContentPanel, MAIN_PANEL)
+
+    refreshMyAccountTab()
+    removeAllChatSessions()
   }
 
   fun removeAllChatSessions() {
     AgentChatSessionService.getInstance(project).removeAllSessions()
-    switchToChatSession(AgentChatSession.createNew(project))
+    val codyAuthenticationManager = CodyAuthenticationManager.getInstance(project)
+    if (codyAuthenticationManager.hasActiveAccount()) {
+      switchToChatSession(AgentChatSession.createNew(project))
+    }
   }
 
   fun switchToChatSession(chatSession: AgentChatSession, showChatWindow: Boolean = true) {
@@ -108,29 +111,17 @@ class CodyToolWindowContent(private val project: Project) {
   @RequiresEdt
   fun refreshPanelsVisibility() {
     val codyAuthenticationManager = CodyAuthenticationManager.getInstance(project)
-    if (codyAuthenticationManager.getAccounts().isEmpty() ||
-        codyAuthenticationManager.getActiveAccountTier().getNow(null) == null) {
+    if (codyAuthenticationManager.hasNoActiveAccount() ||
+        codyAuthenticationManager.showInvalidAccessTokenError()) {
       allContentLayout.show(allContentPanel, SIGN_IN_PANEL)
       return
     }
     val activeAccount = codyAuthenticationManager.getActiveAccount()
     if (!CodyApplicationSettings.instance.isOnboardingGuidanceDismissed) {
       val displayName = activeAccount?.let(CodyAccount::displayName)
-      val newCodyOnboardingGuidancePanel = CodyOnboardingGuidancePanel(displayName)
-      newCodyOnboardingGuidancePanel.addMainButtonActionListener {
-        CodyApplicationSettings.instance.isOnboardingGuidanceDismissed = true
-        refreshPanelsVisibility()
+      allContentPanel.getComponent(ONBOARDING_PANEL_INDEX)?.let {
+        (it as CodyOnboardingGuidancePanel).updateDisplayName(displayName)
       }
-      if (displayName != null) {
-        if (codyOnboardingGuidancePanel?.originalDisplayName?.let { it != displayName } == true)
-            try {
-              allContentPanel.remove(ONBOARDING_PANEL_INDEX)
-            } catch (ex: Throwable) {
-              // ignore because panel was not created before
-            }
-      }
-      codyOnboardingGuidancePanel = newCodyOnboardingGuidancePanel
-      allContentPanel.add(codyOnboardingGuidancePanel, ONBOARDING_PANEL, ONBOARDING_PANEL_INDEX)
       allContentLayout.show(allContentPanel, ONBOARDING_PANEL)
       return
     }

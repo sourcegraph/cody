@@ -12,8 +12,6 @@ interface CodyAccountsHost {
       id: String
   )
 
-  fun isAccountUnique(login: String, server: SourcegraphServerPath): Boolean
-
   companion object {
     val DATA_KEY: DataKey<CodyAccountsHost> = DataKey.create("CodyAccountsHots")
     val KEY: Key<CodyAccountsHost> = Key.create("CodyAccountsHots")

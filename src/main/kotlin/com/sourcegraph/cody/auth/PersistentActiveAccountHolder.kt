@@ -18,16 +18,6 @@ abstract class PersistentActiveAccountHolder<A : Account> :
   private val accountManager: AccountManager<A, *>
     get() = accountManager()
 
-  init {
-    accountManager.addListener(
-        this,
-        object : AccountsListener<A> {
-          override fun onAccountListChanged(old: Collection<A>, new: Collection<A>) {
-            if (!new.contains(account)) account = null
-          }
-        })
-  }
-
   override fun getState(): AccountState {
     return AccountState().apply { activeAccountId = account?.id }
   }

@@ -19,11 +19,10 @@ abstract class BaseLoginDialog(
     project: Project?,
     parent: Component?,
     executorFactory: SourcegraphApiRequestExecutor.Factory,
-    isAccountUnique: UniqueLoginPredicate,
     private val authMethod: SsoAuthMethod
 ) : DialogWrapper(project, parent, false, IdeModalityType.PROJECT) {
 
-  protected val loginPanel = CodyLoginPanel(executorFactory, isAccountUnique)
+  protected val loginPanel = CodyLoginPanel(executorFactory)
 
   var id: String = ""
     private set

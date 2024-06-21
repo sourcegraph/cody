@@ -13,10 +13,8 @@ import com.sourcegraph.cody.auth.SourcegraphAuthService
 import com.sourcegraph.cody.auth.SsoAuthMethod
 import javax.swing.JComponent
 
-class CodyAuthCredentialsUi(
-    val factory: SourcegraphApiRequestExecutor.Factory,
-    val isAccountUnique: UniqueLoginPredicate
-) : CodyCredentialsUi() {
+class CodyAuthCredentialsUi(val factory: SourcegraphApiRequestExecutor.Factory) :
+    CodyCredentialsUi() {
 
   override fun getPreferredFocusableComponent(): JComponent? = null
 
@@ -34,8 +32,7 @@ class CodyAuthCredentialsUi(
     // The token has changed, so create a new executor to talk to the same server with the new
     // token.
     val newExecutor = factory.create(executor.server, token)
-    val details =
-        CodyTokenCredentialsUi.acquireDetails(newExecutor, indicator, isAccountUnique, null)
+    val details = CodyTokenCredentialsUi.acquireDetails(newExecutor, indicator, null)
     return details to token
   }
 

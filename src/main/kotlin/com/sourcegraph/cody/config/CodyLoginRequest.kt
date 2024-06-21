@@ -23,9 +23,7 @@ internal fun CodyLoginRequest.loginWithToken(
     !isCheckLoginUnique ||
         CodyAuthenticationManager.getInstance(project).isAccountUnique(login, server)
   }
-  val dialog =
-      SourcegraphTokenLoginDialog(
-          project, parentComponent, isLoginUniqueChecker, SsoAuthMethod.DEFAULT)
+  val dialog = SourcegraphTokenLoginDialog(project, parentComponent, SsoAuthMethod.DEFAULT)
   configure(dialog)
 
   return dialog.getAuthData()

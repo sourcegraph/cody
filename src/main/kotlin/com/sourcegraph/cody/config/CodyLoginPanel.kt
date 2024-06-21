@@ -22,16 +22,15 @@ internal typealias UniqueLoginPredicate = (login: String, server: SourcegraphSer
 
 class CodyLoginPanel(
     executorFactory: SourcegraphApiRequestExecutor.Factory,
-    isAccountUnique: UniqueLoginPredicate
 ) : Wrapper() {
 
   private val serverTextField = ExtendableTextField(SourcegraphServerPath.DEFAULT_HOST, 0)
   private var tokenAcquisitionError: ValidationInfo? = null
 
   private lateinit var currentUi: CodyCredentialsUi
-  private var tokenUi = CodyTokenCredentialsUi(serverTextField, executorFactory, isAccountUnique)
+  private var tokenUi = CodyTokenCredentialsUi(serverTextField, executorFactory)
 
-  private var authUI = CodyAuthCredentialsUi(executorFactory, isAccountUnique)
+  private var authUI = CodyAuthCredentialsUi(executorFactory)
 
   private val progressIcon = AnimatedIcon.Default.INSTANCE
   private val progressExtension = ExtendableTextComponent.Extension { progressIcon }

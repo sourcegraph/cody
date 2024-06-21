@@ -26,8 +26,7 @@ import javax.swing.JTextField
 
 internal class CodyTokenCredentialsUi(
     private val serverTextField: ExtendableTextField,
-    val factory: SourcegraphApiRequestExecutor.Factory,
-    val isAccountUnique: UniqueLoginPredicate
+    val factory: SourcegraphApiRequestExecutor.Factory
 ) : CodyCredentialsUi() {
 
   lateinit var customRequestHeadersField: ExtendableTextField
@@ -112,7 +111,7 @@ internal class CodyTokenCredentialsUi(
       indicator: ProgressIndicator,
       authMethod: SsoAuthMethod
   ): Pair<CodyAccountDetails, String> {
-    val details = acquireDetails(executor, indicator, isAccountUnique, fixedLogin)
+    val details = acquireDetails(executor, indicator, fixedLogin)
     return details to tokenTextField.text
   }
 
@@ -136,24 +135,20 @@ internal class CodyTokenCredentialsUi(
     fun acquireDetails(
         executor: SourcegraphApiRequestExecutor,
         indicator: ProgressIndicator,
-        isAccountUnique: UniqueLoginPredicate,
         fixedLogin: String?
     ): CodyAccountDetails {
       val accountDetails = SourcegraphApiRequests.CurrentUser(executor, indicator).getDetails()
 
       val login = accountDetails.username
       if (fixedLogin != null && fixedLogin != login)
-          throw SourcegraphAuthenticationException("Token should match username \"$fixedLogin\"")
-      if (!isAccountUnique(login, executor.server)) throw LoginNotUniqueException(login)
+          throw SourcegraphAuthenticationException("Token should match username \"$fixedLogin\".")
 
       return accountDetails
     }
 
     fun handleError(error: Throwable): ValidationInfo =
         when (error) {
-          is LoginNotUniqueException ->
-              ValidationInfo("Account '${error.login}' already added").withOKEnabled()
-          is UnknownHostException -> ValidationInfo("Server is unreachable").withOKEnabled()
+          is UnknownHostException -> ValidationInfo("Server is unreachable.").withOKEnabled()
           is SourcegraphAuthenticationException ->
               ValidationInfo("Incorrect credentials.\n" + error.message.orEmpty()).withOKEnabled()
           else ->

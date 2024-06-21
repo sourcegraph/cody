@@ -1,16 +1,23 @@
 package com.sourcegraph.cody.config
 
+import com.intellij.collaboration.async.CompletableFutureUtil.submitIOTask
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.progress.EmptyProgressIndicator
+import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.util.AuthData
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
+import com.sourcegraph.cody.api.SourcegraphApiRequests
 import com.sourcegraph.cody.config.notification.AccountSettingChangeActionNotifier
 import com.sourcegraph.cody.config.notification.AccountSettingChangeContext
+import com.sourcegraph.cody.config.notification.AccountSettingChangeContext.Companion.UNAUTHORIZED_ERROR_MESSAGE
 import com.sourcegraph.config.ConfigUtil
 import java.awt.Component
 import java.awt.event.WindowAdapter
@@ -45,9 +52,14 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
 
   @Volatile private var activeAccountTier: CompletableFuture<AccountTier?>? = null
 
+  @Volatile private var isTokenInvalid: CompletableFuture<Boolean?>? = null
+
   init {
     scheduler.scheduleAtFixedRate(
-        /* command = */ { getActiveAccountTier(forceRefresh = true) },
+        /* command = */ {
+          getActiveAccountTier(forceRefresh = true)
+          getIsTokenInvalid(forceRefresh = true)
+        },
         /* initialDelay = */ 2,
         /* period = */ 2,
         /* unit = */ TimeUnit.HOURS)
@@ -58,6 +70,7 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
           override fun windowActivated(e: WindowEvent?) {
             super.windowActivated(e)
             getActiveAccountTier(forceRefresh = true)
+            getIsTokenInvalid(forceRefresh = true)
           }
         }
     frame?.addWindowListener(listener)
@@ -72,6 +85,9 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
   @CalledInAny
   fun getActiveAccountTier(): CompletableFuture<AccountTier?> =
       getActiveAccountTier(forceRefresh = false)
+
+  @CalledInAny
+  fun getIsTokenInvalid(): CompletableFuture<Boolean?> = getIsTokenInvalid(forceRefresh = false)
 
   /**
    * User account type can change because users can renew or cancel their subscriptions at any time.
@@ -109,6 +125,40 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
   }
 
   @CalledInAny
+  private fun getIsTokenInvalid(forceRefresh: Boolean): CompletableFuture<Boolean?> {
+    isTokenInvalid?.let { if (!forceRefresh) return it }
+
+    val previousIsTokenInvalid = isTokenInvalid?.getNow(null)
+    val isTokenInvalidFuture = CompletableFuture<Boolean?>()
+    isTokenInvalid = isTokenInvalidFuture
+
+    isTokenInvalidFuture.thenApply { isTokenInvalid ->
+      if (previousIsTokenInvalid != isTokenInvalid) {
+        publisher.afterAction(AccountSettingChangeContext(isTokenInvalidChanged = true))
+      }
+    }
+
+    val activeAccount = getActiveAccount()
+    val token = activeAccount?.let(::getTokenForAccount)
+    if (activeAccount != null && token != null) {
+      val executor =
+          SourcegraphApiRequestExecutor.Factory.instance.create(activeAccount.server, token)
+      val progressIndicator = EmptyProgressIndicator(ModalityState.NON_MODAL)
+      val submitIOTask =
+          service<ProgressManager>().submitIOTask(progressIndicator) {
+            SourcegraphApiRequests.CurrentUser(executor, progressIndicator).getDetails()
+          }
+
+      submitIOTask.exceptionally { error ->
+        isTokenInvalidFuture.complete(error.cause?.message == UNAUTHORIZED_ERROR_MESSAGE)
+        null
+      }
+    }
+
+    return isTokenInvalidFuture
+  }
+
+  @CalledInAny
   internal fun getTokenForAccount(account: CodyAccount): String? =
       accountManager.findCredentials(account)
 
@@ -121,7 +171,14 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
 
   @RequiresEdt
   internal fun updateAccountToken(account: CodyAccount, newToken: String) {
+    val oldToken = getTokenForAccount(account)
     accountManager.updateAccount(account, newToken)
+    if (oldToken != newToken && account == getActiveAccount()) {
+      CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
+        agent.server.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
+        publisher.afterAction(AccountSettingChangeContext(accessTokenChanged = true))
+      }
+    }
   }
 
   fun getActiveAccount(): CodyAccount? {
@@ -132,29 +189,32 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
   fun setActiveAccount(account: CodyAccount?) {
     if (!project.isDisposed) {
       val previousAccount = getActiveAccount()
-      val previousToken = previousAccount?.let { getTokenForAccount(it) }
       val previousUrl = previousAccount?.server?.url
       val previousTier = previousAccount?.isDotcomAccount()
 
       CodyProjectActiveAccountHolder.getInstance(project).account = account
+      activeAccountTier = null
+      isTokenInvalid = null
 
       val serverUrlChanged = previousUrl != account?.server?.url
-      val accessTokenChanged = previousToken != account?.let { getTokenForAccount(it) }
       val tierChanged = previousTier != account?.isDotcomAccount()
 
-      if (serverUrlChanged || accessTokenChanged || tierChanged) {
+      if (serverUrlChanged || tierChanged) {
         CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
           agent.server.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
           publisher.afterAction(
-              AccountSettingChangeContext(serverUrlChanged, accessTokenChanged, tierChanged))
+              AccountSettingChangeContext(
+                  serverUrlChanged = serverUrlChanged, accountTierChanged = tierChanged))
         }
       }
     }
   }
 
-  fun hasActiveAccount() = getInstance(project).getActiveAccount() != null
+  fun hasActiveAccount() = getActiveAccount() != null
 
   fun hasNoActiveAccount() = !hasActiveAccount()
+
+  fun showInvalidAccessTokenError() = getIsTokenInvalid().getNow(null) == true
 
   override fun dispose() {
     scheduler.shutdown()

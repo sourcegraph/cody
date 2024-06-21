@@ -9,6 +9,7 @@ import com.intellij.util.ui.EmptyIcon
 import com.sourcegraph.cody.auth.Account
 import com.sourcegraph.cody.auth.AccountDetails
 import com.sourcegraph.cody.auth.SingleValueModel
+import com.sourcegraph.cody.config.notification.AccountSettingChangeContext.Companion.UNAUTHORIZED_ERROR_MESSAGE
 import java.awt.Image
 import java.util.concurrent.CompletableFuture
 import javax.swing.Icon
@@ -41,9 +42,13 @@ abstract class LoadingAccountsDetailsProvider<in A : Account, D : AccountDetails
           }
           .exceptionally {
             val error = CompletableFutureUtil.extractError(it)
-            val errorMessage =
-                error.localizedMessage.takeWhile { c -> c.isLetterOrDigit() || c.isWhitespace() }
-            DetailsLoadingResult(null, null, errorMessage, false)
+            if (error.message == UNAUTHORIZED_ERROR_MESSAGE) {
+              DetailsLoadingResult(null, null, error.localizedMessage, true)
+            } else {
+              val errorMessage =
+                  error.localizedMessage.takeWhile { c -> c.isLetterOrDigit() || c.isWhitespace() }
+              DetailsLoadingResult(null, null, errorMessage, false)
+            }
           }
     }
   }

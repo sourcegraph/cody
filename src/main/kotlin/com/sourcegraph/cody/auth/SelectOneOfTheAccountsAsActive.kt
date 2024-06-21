@@ -13,6 +13,7 @@ class SelectOneOfTheAccountsAsActive : Activity {
       val newActiveAccount =
           CodyAuthenticationManager.getInstance(project).getAccounts().getFirstAccountOrNull()
       CodyAuthenticationManager.getInstance(project).setActiveAccount(newActiveAccount)
+      // The call to refreshPanelsVisibility() is needed to update the UI when there is no account.
       CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) { refreshPanelsVisibility() }
     }
   }

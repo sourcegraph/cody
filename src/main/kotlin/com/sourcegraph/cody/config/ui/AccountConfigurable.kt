@@ -15,6 +15,7 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.util.ui.EmptyIcon
+import com.sourcegraph.cody.auth.Account
 import com.sourcegraph.cody.auth.ui.customAccountsPanel
 import com.sourcegraph.cody.config.CodyAccountDetailsProvider
 import com.sourcegraph.cody.config.CodyAccountListModel
@@ -38,6 +39,16 @@ class AccountConfigurable(val project: Project) :
   private val codyApplicationSettings = service<CodyApplicationSettings>()
   private val settingsModel =
       SettingsModel(shouldCheckForUpdates = codyApplicationSettings.shouldCheckForUpdates)
+  private val authManager = CodyAuthenticationManager.getInstance(project)
+
+  private val initialActiveAccount: Account?
+  private val initialToken: String?
+
+  init {
+    initialActiveAccount = authManager.getActiveAccount()
+    initialToken =
+        initialActiveAccount?.let { authManager.getTokenForAccount(initialActiveAccount) }
+  }
 
   override fun createPanel(): DialogPanel {
     dialogPanel = panel {

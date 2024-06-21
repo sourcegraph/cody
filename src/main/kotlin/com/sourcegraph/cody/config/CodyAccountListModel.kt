@@ -69,7 +69,4 @@ class CodyAccountListModel(private val project: Project) :
     newCredentials[account] = token
     notifyCredentialsChanged(account)
   }
-
-  override fun isAccountUnique(login: String, server: SourcegraphServerPath): Boolean =
-      accountsListModel.items.none { it.name == login && it.server.url == server.url }
 }

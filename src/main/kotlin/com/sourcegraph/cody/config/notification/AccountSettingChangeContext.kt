@@ -7,7 +7,12 @@ class AccountSettingChangeContext(
     // make clear that `AccountSettingChangeContext` is not only about server url and token changes.
     // There are code paths which needs to be executed even if account is not switched and only tier
     // changes.
-    val accountTierChanged: Boolean = false
+    val accountTierChanged: Boolean = false,
+    val isTokenInvalidChanged: Boolean = false
 ) {
   fun accountSwitched(): Boolean = serverUrlChanged || accessTokenChanged
+
+  companion object {
+    val UNAUTHORIZED_ERROR_MESSAGE = "Request response: 401 Unauthorized"
+  }
 }
