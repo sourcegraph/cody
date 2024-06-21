@@ -475,10 +475,12 @@ const activeSuggestionRequests = new LRUCache<CompletionLogID, CompletionBookkee
 
 // Maintain a history of the last n displayed completions and their generated completion IDs. This
 // allows us to reuse the completion ID across multiple suggestions.
-const recentCompletions = new LRUCache<string, CompletionAnalyticsID>({
+const recentCompletions = new LRUCache<RecentCompletionKey, CompletionAnalyticsID>({
     max: 20,
 })
-function getRecentCompletionsKey(params: RequestParams, completion: string): string {
+
+type RecentCompletionKey = string
+function getRecentCompletionsKey(params: RequestParams, completion: string): RecentCompletionKey {
     return `${params.docContext.prefix}█${completion}█${params.docContext.nextNonEmptyLine}`
 }
 
@@ -541,13 +543,6 @@ export function networkRequestStarted(
     }
 }
 
-export function gatewayModelResolved(id: CompletionLogID, resolvedModel?: string): void {
-    const event = activeSuggestionRequests.get(id)
-    if (event && !event.params.resolvedModel && resolvedModel) {
-        event.params.resolvedModel = resolvedModel
-    }
-}
-
 export function loaded(
     id: CompletionLogID,
     params: RequestParams,
@@ -564,17 +559,24 @@ export function loaded(
     event.params.source = source
 
     // Check if we already have a completion id for the loaded completion item
-    const key = items.length > 0 ? getRecentCompletionsKey(params, items[0].insertText) : ''
-    const completionId: CompletionAnalyticsID =
-        recentCompletions.get(key) ?? (uuid.v4() as CompletionAnalyticsID)
-    recentCompletions.set(key, completionId)
-    event.params.id = completionId
+    const recentCompletionKey =
+        items.length > 0 ? getRecentCompletionsKey(params, items[0].insertText) : ''
+
+    const completionAnalyticsId =
+        recentCompletions.get(recentCompletionKey) ?? (uuid.v4() as CompletionAnalyticsID)
+
+    recentCompletions.set(recentCompletionKey, completionAnalyticsId)
+    event.params.id = completionAnalyticsId
 
     if (!event.loadedAt) {
         event.loadedAt = performance.now()
     }
     if (event.items.length === 0) {
         event.items = items.map(item => completionItemToItemInfo(item, isDotComUser))
+    }
+
+    if (!event.params.resolvedModel && items[0]?.resolvedModel) {
+        event.params.resolvedModel = items[0]?.resolvedModel
     }
 
     // 🚨 SECURITY: included only for DotCom users & Public github Repos.
