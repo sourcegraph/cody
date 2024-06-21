@@ -102,8 +102,12 @@ export const ContextCell: React.FunctionComponent<{
                         <AccordionContent>
                             <ul className="tw-list-none tw-flex tw-flex-col tw-gap-2 tw-pt-2">
                                 {contextItems?.map((item, i) => (
-                                    // biome-ignore lint/suspicious/noArrayIndexKey: stable order
-                                    <li key={i} data-testid="context-item" className="tw-max-w-full">
+                                    <li
+                                        // biome-ignore lint/suspicious/noArrayIndexKey: stable order
+                                        key={i}
+                                        data-testid="context-item"
+                                        className="tw-max-w-full"
+                                    >
                                         <FileLink
                                             uri={item.uri}
                                             repoName={item.repoName}

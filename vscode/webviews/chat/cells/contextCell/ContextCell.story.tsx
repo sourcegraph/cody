@@ -24,7 +24,12 @@ export const Default: Story = {
         contextItems: [
             { type: 'file', uri: URI.file('/foo/bar.go') },
             { type: 'file', uri: URI.file('/foo/qux.go') },
-            { type: 'file', uri: URI.file('/this/is/a/very/very/very/very/long/file/path.ts') },
+            {
+                type: 'file',
+                uri: URI.file(
+                    '/this/is/a/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/long/file/path.ts'
+                ),
+            },
             {
                 type: 'file',
                 uri: URI.file('/foo/bar.go'),
@@ -47,6 +52,12 @@ export const Default: Story = {
                 type: 'file',
                 uri: URI.file('/internal/large.go'),
                 isTooLarge: true,
+                source: ContextItemSource.User,
+            },
+            {
+                type: 'file',
+                uri: URI.file('/internal/ignored.go'),
+                isIgnored: true,
                 source: ContextItemSource.User,
             },
             {

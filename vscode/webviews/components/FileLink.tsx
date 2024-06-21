@@ -2,6 +2,7 @@ import { clsx } from 'clsx'
 import type React from 'react'
 
 import {
+    type ContextItemSource,
     type RangeData,
     displayLineRange,
     displayPath,
@@ -16,7 +17,7 @@ interface FileLinkProps {
     uri: URI
     repoName?: string
     revision?: string
-    source?: string
+    source?: ContextItemSource
     range?: RangeData
     title?: string
     isTooLarge?: boolean
@@ -25,6 +26,23 @@ interface FileLinkProps {
 
 const LIMIT_WARNING = 'Excluded due to context window limit'
 const IGNORE_WARNING = 'File ignored by an admin setting'
+
+// todo(tim): All OpenCtx context source items have source === undefined,
+// instead of 'user' or something more useful (like the provider icon and name)
+
+const hoverSourceLabels: Record<ContextItemSource, string | undefined> = {
+    // Shown in the format `Included ${label}`
+    unified: 'via remote repository search',
+    search: 'via local repository index (symf)',
+    embeddings: 'via local repository index (embeddings)',
+    editor: 'from workspace files',
+    selection: 'from selected code',
+    user: 'via @-mention',
+    terminal: 'from terminal output',
+    uri: 'from URI', // todo(tim): what is this?
+    history: 'from git history',
+    initial: 'from open repo or file',
+}
 
 export const FileLink: React.FunctionComponent<
     FileLinkProps & { className?: string; linkClassName?: string }
@@ -86,37 +104,20 @@ export const FileLink: React.FunctionComponent<
             >
                 <i
                     className={clsx('codicon', `codicon-${source === 'user' ? 'mention' : 'file'}`)}
-                    title={getFileSourceIconTitle(source)}
+                    title={
+                        (source &&
+                            hoverSourceLabels[source] &&
+                            `Included ${hoverSourceLabels[source]}`) ||
+                        undefined
+                    }
                 />
-                <div className={clsx(styles.path, (isTooLarge || isIgnored) && styles.excluded)}>
+                <div
+                    className={clsx(styles.path, (isTooLarge || isIgnored) && styles.excluded)}
+                    data-source={source || 'unknown'}
+                >
                     {pathWithRange}
                 </div>
             </a>
         </div>
     )
-}
-
-function getFileSourceIconTitle(source?: string): string {
-    const displayText = getFileSourceDisplayText(source)
-    return `Included via ${displayText}`
-}
-
-function getFileSourceDisplayText(source?: string): string {
-    switch (source) {
-        case 'unified':
-            return 'Automatic Codebase Context (Enterprise Search)'
-        case 'search':
-        case 'symf':
-            return 'Automatic Codebase Context (Search)'
-        case 'embeddings':
-            return 'Automatic Codebase Context (Embeddings)'
-        case 'editor':
-            return 'Editor Context'
-        case 'selection':
-            return 'Selection'
-        case 'user':
-            return '@-mention'
-        default:
-            return source ?? 'Automatic Codebase Context'
-    }
 }
