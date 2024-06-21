@@ -11,6 +11,7 @@ import {
 import { type FunctionComponent, type RefObject, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
 import { chatModelIconComponent } from '../../../../components/ChatModelIcon'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../components/shadcn/ui/tooltip'
 import type { PromptEditorRefAPI } from '../../../../promptEditor/PromptEditor'
 import { ChatMessageContent, type CodeBlockActionsProps } from '../../../ChatMessageContent'
 import { ErrorItem, RequestErrorItem } from '../../../ErrorItem'
@@ -68,8 +69,13 @@ export const AssistantMessageCell: FunctionComponent<{
             speaker={message.speaker}
             speakerIcon={
                 chatModel && ModelIcon ? (
-                    <span title={`${chatModel.title} by ${chatModel.provider}`}>
-                        <ModelIcon size={NON_HUMAN_CELL_AVATAR_SIZE} />
+                    <span>
+                        <Tooltip>
+                            <TooltipTrigger className="tw-cursor-default">
+                                <ModelIcon size={NON_HUMAN_CELL_AVATAR_SIZE} />
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom">{`${chatModel.title} by ${chatModel.provider}`}</TooltipContent>
+                        </Tooltip>
                     </span>
                 ) : null
             }
