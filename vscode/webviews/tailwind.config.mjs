@@ -79,6 +79,7 @@ export default {
                     hover: 'var(--vscode-textLink-activeForeground)',
                 },
                 current: {
+                    DEFAULT: 'currentColor',
                     25: 'color-mix(in lch, currentColor 25%, transparent)',
                 },
             },
