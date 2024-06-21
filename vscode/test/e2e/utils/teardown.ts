@@ -17,6 +17,7 @@ export default async function (_: FullConfig) {
 
             // if there is only one file in the directory, there were no failures,
             // so we can remove the whole directory
+            // TODO this is broken with traces
             const dirToRemove = files.length === 1 ? dirPath : tempVideoDir
             rmSyncWithRetries(dirToRemove, { recursive: true, force: true })
         }

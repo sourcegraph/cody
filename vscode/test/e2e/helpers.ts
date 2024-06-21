@@ -85,6 +85,9 @@ export const getAssetsDir = (testName: string): string =>
 export const getTempVideoDir = (testName: string): string =>
     path.join(getAssetsDir(testName), 'temp-videos')
 
+export const getTempTraceDir = (testName: string): string =>
+    path.join(getAssetsDir(testName), 'temp-traces')
+
 export const test = base
     // By default, use ../../test/fixtures/workspace as the workspace.
     .extend<WorkspaceDirectory>({
@@ -225,6 +228,7 @@ export const test = base
                     // successful runs will be deleted, failures will be kept
                     dir: getTempVideoDir(testInfo.title),
                 },
+                tracesDir: getTempTraceDir(testInfo.title),
             })
 
             await waitUntil(() => app.windows().length > 0)
@@ -333,14 +337,24 @@ const attachArtifacts = async (
         path: path.join(assetsDirectory, 'screenshots', `${testSlug}.png`),
     })
     await testInfo.attach('screenshot', { body: screenshot, contentType: 'image/png' })
-    // Copy the file from the temporary video directory to the assets directory
-    // to the assets directory so it is not deleted
+
+    // Copy the file from the temporary video directory to the assets
+    // directory so it is not deleted
     const [video] = await fs.readdir(getTempVideoDir(testInfo.title))
     const oldVideoPath = path.join(getTempVideoDir(testInfo.title), video)
     const newVideoPath = path.join(assetsDirectory, 'videos', `${testSlug}.webm`)
     await fs.mkdir(path.join(assetsDirectory, 'videos'), { recursive: true })
     await fs.rename(oldVideoPath, newVideoPath)
     await testInfo.attach('video', { path: newVideoPath, contentType: 'video/webm' })
+
+    // Copy the file from the temporary trace directory to the assets
+    // directory so it is not deleted
+    const [trace] = await fs.readdir(getTempTraceDir(testInfo.title))
+    const oldTracePath = path.join(getTempTraceDir(testInfo.title), trace)
+    const newTracePath = path.join(assetsDirectory, 'traces', `${testSlug}.zip`)
+    await fs.mkdir(path.join(assetsDirectory, 'traces'), { recursive: true })
+    await fs.rename(oldTracePath, newTracePath)
+    await testInfo.attach('trace', { path: newTracePath, contentType: 'application/zip' })
 }
 
 /**
