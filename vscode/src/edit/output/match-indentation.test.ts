@@ -1,7 +1,7 @@
+import dedent from 'dedent'
+import detectIndent from 'detect-indent'
 import { describe, expect, it } from 'vitest'
 import { matchIndentation } from './match-indentation'
-import detectIndent from 'detect-indent'
-import dedent from 'dedent'
 
 const EXAMPLE_WHITESPACE_RESPONSE = `export function log(text: string): void {
     console.log(text)
@@ -141,7 +141,7 @@ describe('matchIndentation', () => {
             b: boolean
             c: boolean
         }`
-        
+
         const incoming = dedent`interface Test {
             a: boolean
             b: boolean

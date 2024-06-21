@@ -19,6 +19,7 @@ import { countCode } from '../services/utils/code-count'
 import { PersistenceTracker } from '../common/persistence-tracker'
 import { lines } from '../completions/text-processing'
 import { getInput } from '../edit/input/get-input'
+import { isStreamedIntent } from '../edit/utils/edit-intent'
 import { getOverridenModelForIntent } from '../edit/utils/edit-models'
 import type { ExtensionClient } from '../extension-client'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
@@ -34,7 +35,6 @@ import { type Edit, computeDiff, makeDiffEditBuilderCompatible } from './line-di
 import { trackRejection } from './rejection-tracker'
 import type { FixupActor, FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
 import { CodyTaskState, expandRangeToInsertedText, getMinimumDistanceToRangeBoundary } from './utils'
-import { isStreamedIntent } from '../edit/utils/edit-intent'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
