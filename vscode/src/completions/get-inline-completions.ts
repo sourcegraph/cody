@@ -404,6 +404,7 @@ async function doGetInlineCompletions(
 
     const inlineContextParams = {
         context: contextResult?.context,
+        filePath: gitIdentifiersForFile?.filePath,
         gitUrl: gitIdentifiersForFile?.gitUrl,
         commit: gitIdentifiersForFile?.commit,
     }
