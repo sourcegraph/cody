@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { matchIndentation } from './match-indentation'
+import detectIndent from 'detect-indent'
+import dedent from 'dedent'
 
 const EXAMPLE_WHITESPACE_RESPONSE = `export function log(text: string): void {
     console.log(text)
@@ -122,5 +124,31 @@ describe('matchIndentation', () => {
             const updated = matchIndentation(incoming, original)
             expect(updated).toBe(original)
         })
+    })
+
+    describe('detect-indent', () => {
+        // Checks for an issue that was introduced in detect-indent 7.0.0
+        // Can close when the following issue is fixed.
+        // Issue: https://github.com/sindresorhus/detect-indent/issues/36
+        it('correctly filters out single character indentations for multi-line commentes', () => {
+            const originalIndent = detectIndent(original)
+            const incomingIndent = detectIndent(incoming)
+            expect(incomingIndent.amount).toBe(originalIndent.amount)
+        })
+
+        const original = dedent`interface Test {
+            a: boolean
+            b: boolean
+            c: boolean
+        }`
+        
+        const incoming = dedent`interface Test {
+            a: boolean
+            b: boolean
+            /**
+             * multi-line comment
+             */
+            c: boolean
+        }`
     })
 })

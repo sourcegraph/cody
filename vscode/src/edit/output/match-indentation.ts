@@ -147,7 +147,7 @@ export function matchIndentation(incoming: string, original: string): string {
                 return line
             }
 
-            const indentationAdjustment = Math.max(lineIndentation + indentationDifference, 0)
+            const indentationAdjustment = lineIndentation + indentationDifference
             return indentationCharacter.repeat(indentationAdjustment) + trimmedLine
         })
         .join('\n')
