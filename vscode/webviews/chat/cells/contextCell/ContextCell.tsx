@@ -74,7 +74,7 @@ export const ContextCell: React.FunctionComponent<{
                 />
             }
             containerClassName={className}
-            contentClassName="tw-flex tw-flex-col tw-gap-4"
+            contentClassName="tw-flex tw-flex-col tw-gap-4 tw-overflow-hidden tw-max-w-full"
             data-testid="context"
         >
             {contextItems === undefined ? (
@@ -106,7 +106,6 @@ export const ContextCell: React.FunctionComponent<{
                                         // biome-ignore lint/suspicious/noArrayIndexKey: stable order
                                         key={i}
                                         data-testid="context-item"
-                                        className="tw-max-w-full"
                                     >
                                         <FileLink
                                             uri={item.uri}
