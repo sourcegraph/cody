@@ -15,4 +15,9 @@ export default defineConfig({
     reporter: isCI ? 'github' : 'list',
     globalSetup: require.resolve('./test/e2e/utils/setup'),
     globalTeardown: require.resolve('./test/e2e/utils/teardown'),
+    use: isCI
+        ? {
+              trace: 'retain-on-failure',
+          }
+        : undefined,
 })
