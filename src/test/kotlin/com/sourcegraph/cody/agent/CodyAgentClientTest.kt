@@ -17,10 +17,10 @@ class CodyAgentClientTest : BasePlatformTestCase() {
 
   // Use lock/condition to synchronize between observer being invoked
   // and the test being able to assert.
-  val lock = ReentrantLock()
-  val condition = lock.newCondition()
+  private val lock = ReentrantLock()
+  private val condition = lock.newCondition()
 
-  fun client(): CodyAgentClient {
+  private fun client(): CodyAgentClient {
     val client = CodyAgentClient()
     client.onSetConfigFeatures = ConfigFeaturesObserver {
       lock.lock()

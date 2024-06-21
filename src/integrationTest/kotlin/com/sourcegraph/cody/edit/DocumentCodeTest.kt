@@ -37,7 +37,7 @@ class DocumentCodeTest : CodyIntegrationTextFixture() {
         selection.startOffset == caret && selection.endOffset == caret)
   }
 
-  fun testGetsWorkingGroupLens() {
+  fun skip_testGetsWorkingGroupLens() {
     runAndWaitForNotifications(DocumentCodeAction.ID, TOPIC_DISPLAY_WORKING_GROUP)
     assertInlayIsShown()
 

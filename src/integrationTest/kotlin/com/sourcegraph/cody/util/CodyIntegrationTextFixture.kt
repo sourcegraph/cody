@@ -5,7 +5,6 @@ import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
@@ -180,7 +179,7 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase() {
   }
 
   private fun triggerAction(actionId: String) {
-    runInEdt {
+    runInEdtAndWait {
       PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
       EditorTestUtil.executeAction(myFixture.editor, actionId)
     }
@@ -192,7 +191,7 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase() {
   }
 
   protected fun assertNoInlayShown() {
-    runInEdt {
+    runInEdtAndWait {
       PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
       assertFalse(
           "Lens group inlay should NOT be displayed",
@@ -201,7 +200,7 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase() {
   }
 
   protected fun assertInlayIsShown() {
-    runInEdt {
+    runInEdtAndWait {
       PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
       assertTrue(
           "Lens group inlay should be displayed", myFixture.editor.inlayModel.hasBlockElements())
