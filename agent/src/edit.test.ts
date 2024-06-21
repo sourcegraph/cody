@@ -145,4 +145,27 @@ describe('Edit', () => {
             explainPollyError
         )
     }, 20_000)
+
+    it('editCommand/code add a jsdoc to function', async () => {
+        const uri = workspace.file('src', 'log.ts')
+        await client.openFile(uri)
+        const task = await client.request('editCommands/code', {
+            instruction: 'Add a JSDoc',
+            model: ModelsService.getModelByIDSubstringOrError('anthropic/claude-3-opus').model,
+        })
+        await client.acceptEditTask(uri, task)
+        expect(client.documentText(uri)).toMatchInlineSnapshot(
+            `
+          "/**
+           * Logs a message to the console
+           * @param message - The message to log
+           */
+          function log(message: string): void {
+              console.log(message)
+          }
+          "
+        `,
+            explainPollyError
+        )
+    }, 20_000)
 })
