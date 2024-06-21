@@ -1031,7 +1031,6 @@ export class FixupController
     public dispose(): void {
         this.reset()
         this.controlApplicator.dispose()
-        this.decorator.dispose()
         for (const disposable of this._disposables) {
             disposable.dispose()
         }

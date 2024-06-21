@@ -14,12 +14,10 @@ import {
     UNVISITED_LINE_DECORATION,
 } from './constants'
 
-export class FixupDecorator implements vscode.Disposable {
+export class FixupDecorator {
     private tasksWithDecorations: Map<FixupFile, Map<FixupTask, Decorations>> = new Map()
 
-    public dispose(): void {}
-
-    public async didChangeVisibleTextEditors(file: FixupFile): Promise<void> {
+    public didChangeVisibleTextEditors(file: FixupFile): void {
         this.applyDecorations(file, this.tasksWithDecorations.get(file)?.values() || [].values())
     }
 
@@ -34,12 +32,12 @@ export class FixupDecorator implements vscode.Disposable {
         this.updateTaskDecorations(task, taskOutput)
     }
 
-    public async didApplyTask(task: FixupTask): Promise<void> {
+    public didApplyTask(task: FixupTask): void {
         const taskOutput = computeAppliedDecorations(task)
         this.updateTaskDecorations(task, taskOutput)
     }
 
-    public async didCompleteTask(task: FixupTask): Promise<void> {
+    public didCompleteTask(task: FixupTask): void {
         this.updateTaskDecorations(task, undefined)
     }
 
