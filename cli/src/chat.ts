@@ -22,35 +22,35 @@ export const chatCommand = new Command('chat')
     .option('--context-repo <repos...>', 'Names of repositories to use as context')
     .option('--show-context', 'Show context items in reply', false)
     .option('--debug', 'Enable debug logging', false)
-    .action(
-        async (options: {
-            endpoint: string
-            accessToken: string
-            message: string
-            dir: string
-            model?: string
-            contextRepo?: string[]
-            showContext: boolean
-            debug: boolean
-        }) => {
-            const client = await createAgentClient({
-                serverEndpoint: options.endpoint,
-                accessToken: options.accessToken,
-                workspaceRootUri: `file://${resolve(options.dir)}`,
-                debug: options.debug,
-            })
-            const { text, contextFiles } = await client.chat(options.message, {
-                model: options.model,
-                contextRepositoryNames: options.contextRepo,
-            })
-            if (options.showContext) {
-                console.log('> Context items:')
-                for (const [i, item] of contextFiles.entries()) {
-                    console.log(`> ${i + 1}. ${item}`)
-                }
-                console.log()
-            }
-            console.log(text)
-            client.dispose()
+    .action(chatAction)
+
+export async function chatAction(options: {
+    endpoint: string
+    accessToken: string
+    message: string
+    dir: string
+    model?: string
+    contextRepo?: string[]
+    showContext: boolean
+    debug: boolean
+}) {
+    const client = await createAgentClient({
+        serverEndpoint: options.endpoint,
+        accessToken: options.accessToken,
+        workspaceRootUri: `file://${resolve(options.dir)}`,
+        debug: options.debug,
+    })
+    const { text, contextFiles } = await client.chat(options.message, {
+        model: options.model,
+        contextRepositoryNames: options.contextRepo,
+    })
+    if (options.showContext) {
+        console.log('> Context items:')
+        for (const [i, item] of contextFiles.entries()) {
+            console.log(`> ${i + 1}. ${item}`)
         }
-    )
+        console.log()
+    }
+    console.log(text)
+    client.dispose()
+}

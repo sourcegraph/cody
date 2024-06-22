@@ -33,7 +33,7 @@ import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/pro
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 
-import { copyFileSync, mkdirSync } from 'node:fs'
+import { copyFileSync, mkdirSync, statSync } from 'node:fs'
 import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
@@ -102,6 +102,15 @@ type ExtensionActivate = (
 function copyWinCaRootsBinary(extensionPath: string): void {
     const source = path.join(__dirname, 'win-ca-roots.exe')
     const target = path.join(extensionPath, 'dist', 'win-ca-roots.exe')
+    try {
+        const stat = statSync(source)
+        if (!stat.isFile()) {
+            return
+        }
+    } catch {
+        // Silently ignore when win-ca-roots.exe doesn't exist
+        return
+    }
     try {
         mkdirSync(path.dirname(target), { recursive: true })
         copyFileSync(source, target)
@@ -231,6 +240,7 @@ export async function newEmbeddedAgentClient(
             end(): void {}
         })()
     )
+    conn.listen()
 
     const agent = new Agent({ conn, extensionActivate })
     agent.registerNotification('debug/message', params => {

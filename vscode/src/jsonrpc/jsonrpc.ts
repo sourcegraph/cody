@@ -147,6 +147,7 @@ export class MessageHandler {
                 const handler = this.notificationHandlers.get(method)
                 if (handler) {
                     handler(params)
+                    return
                 }
                 throw new Error(`No such notification handler: ${method}`)
             },

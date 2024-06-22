@@ -11,9 +11,10 @@ async function setModel(modelID: EditModel, storageKey: string) {
 function getModel<T extends string>(authProvider: AuthProvider, models: Model[], storageKey: string): T {
     const authStatus = authProvider.getAuthStatus()
 
-    if (!authStatus.authenticated) {
-        throw new Error('You are not authenticated')
-    }
+    // Commented out because it prevents offline usage.
+    // if (!authStatus.authenticated) {
+    //     throw new Error('You are not authenticated')
+    // }
 
     // Free user can only use the default model
     if (authStatus.isDotCom && authStatus.userCanUpgrade) {

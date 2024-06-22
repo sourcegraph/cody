@@ -83,7 +83,6 @@ export function createOllamaClient(
                     }
 
                     if (line.response) {
-                        console.log({ response: line.response })
                         insertText += line.response
                         yield {
                             completion: insertText,

@@ -15,6 +15,7 @@ export async function useCustomChatClient({
         return false
     }
 
+    console.log('')
     const clientMap: Record<string, ChatNetworkClient> = {
         anthropic: anthropicChatClient,
         ollama: ollamaChatClient,

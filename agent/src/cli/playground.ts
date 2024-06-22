@@ -44,7 +44,7 @@ export const playgroundCommand = new Command('playground')
     .option('--eval-command <command>', 'The command to run the evaluation with')
     .action(async (options: PlaygroundOptions) => {
         const provider = new AutocompleteProvider()
-        provider.completions({
+        await provider.completions({
             code: dedent`
             function sum(a: number, b: number): number {
               const <CURSOR> = a + b
@@ -53,9 +53,9 @@ export const playgroundCommand = new Command('playground')
             `,
         })
     })
-const args = process.argv.slice(2)
+// const args = process.argv.slice(2)
 
-playgroundCommand.parseAsync(args, { from: 'user' }).catch(error => {
-    console.error('Error:', error)
-    process.exit(1)
-})
+// playgroundCommand.parseAsync(args, { from: 'user' }).catch(error => {
+//     console.error('Error:', error)
+//     process.exit(1)
+// })
