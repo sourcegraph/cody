@@ -43,7 +43,7 @@ import { executeExplainHistoryCommand } from './commands/execute/explain-history
 import { CodySourceControl } from './commands/scm/source-control'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
-import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
+import { DeepseekCoderCompletionItemProvider } from './completions/DeepseekCoderCompletionItemProvider'
 import { createInlineCompletionItemFromMultipleProviders } from './completions/create-multi-model-inline-completion-provider'
 import { getFullConfig } from './configuration'
 import { BaseConfigWatcher, type ConfigWatcher } from './configwatcher'
@@ -129,6 +129,12 @@ const register = async (
     disposable: vscode.Disposable
 }> => {
     const disposables: vscode.Disposable[] = []
+    disposables.push(
+        vscode.languages.registerInlineCompletionItemProvider(
+            '*',
+            new DeepseekCoderCompletionItemProvider()
+        )
+    )
     const initialConfig = configWatcher.get()
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
@@ -606,16 +612,16 @@ const register = async (
                 autocompleteDisposables.push({
                     dispose: autocompleteFeatureFlagChangeSubscriber,
                 })
-                autocompleteDisposables.push(
-                    await createInlineCompletionItemProvider({
-                        config,
-                        client: codeCompletionsClient,
-                        statusBar,
-                        authProvider,
+                // autocompleteDisposables.push(
+                //     await createInlineCompletionItemProvider({
+                //         config,
+                //         client: codeCompletionsClient,
+                //         statusBar,
+                //         authProvider,
 
-                        createBfgRetriever: platform.createBfgRetriever,
-                    })
-                )
+                //         createBfgRetriever: platform.createBfgRetriever,
+                //     })
+                // )
                 autocompleteDisposables.push(
                     await createInlineCompletionItemFromMultipleProviders({
                         config,

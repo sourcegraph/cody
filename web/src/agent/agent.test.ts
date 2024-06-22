@@ -20,6 +20,7 @@ describe('agent web worker', () => {
                 accessToken: 'asdf',
                 workspaceRootUri: 'file:///tmp/foo',
             })
+
             const id = await agent.rpc.sendRequest('chat/new')
             const UUID = /^[0-9a-f-]{36}$/
             expect(id).toMatch(UUID)
