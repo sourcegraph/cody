@@ -1,10 +1,10 @@
 import { describe } from 'node:test'
 import { it } from 'vitest'
-import { apiAction } from './api'
+import { chatAction } from './api'
 
 describe('api', () => {
     it('chat', async () => {
-        await apiAction({
+        await chatAction({
             endpoint: 'https://sourcegraph.com',
             accessToken: 'blah',
             debug: false,

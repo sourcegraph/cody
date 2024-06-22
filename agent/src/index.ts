@@ -3,6 +3,7 @@
 import type { Command } from 'commander'
 import { registerLocalCertificates } from './certs'
 
+export const consoleLogBackup = console.log
 console.log = console.error
 
 // IMPORTANT: use require(...) instead of `import` so that we can redirect

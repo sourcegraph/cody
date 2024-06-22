@@ -19,7 +19,6 @@ import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
 import type { View } from './NavBar'
 import { Notices } from './Notices'
-import { LoginSimplified } from './OnboardingExperiment'
 import { ConnectionIssuesPage } from './Troubleshooting'
 import { type ChatModelContext, ChatModelContextProvider } from './chat/models/chatModelContext'
 import { ClientStateContextProvider, useClientActionDispatcher } from './client/clientState'
@@ -211,7 +210,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         return <LoadingPage />
     }
 
-    if (authStatus.showNetworkError) {
+    if (authStatus.showNetworkError && view.length === 1) {
         return (
             <div className={styles.outerContainer}>
                 <TelemetryRecorderContext.Provider value={telemetryRecorder}>
@@ -224,21 +223,22 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         )
     }
 
-    if (view === 'login' || !authStatus.isLoggedIn || !userAccountInfo) {
-        return (
-            <div className={styles.outerContainer}>
-                <TelemetryRecorderContext.Provider value={telemetryRecorder}>
-                    <LoginSimplified
-                        simplifiedLoginRedirect={loginRedirect}
-                        telemetryService={telemetryService}
-                        uiKindIsWeb={config?.uiKindIsWeb}
-                        vscodeAPI={vscodeAPI}
-                    />
-                </TelemetryRecorderContext.Provider>
-            </div>
-        )
-    }
+    // if (view === 'login' || authStatus.isLoggedIn || !userAccountInfo) {
+    //     return (
+    //         <div className={styles.outerContainer}>
+    //             <TelemetryRecorderContext.Provider value={telemetryRecorder}>
+    //                 <LoginSimplified
+    //                     simplifiedLoginRedirect={loginRedirect}
+    //                     telemetryService={telemetryService}
+    //                     uiKindIsWeb={config?.uiKindIsWeb}
+    //                     vscodeAPI={vscodeAPI}
+    //                 />
+    //             </TelemetryRecorderContext.Provider>
+    //         </div>
+    //     )
+    // }
 
+    console.log({ chatEnabled })
     return (
         <div className={styles.outerContainer}>
             {userHistory && <Notices probablyNewInstall={isNewInstall} vscodeAPI={vscodeAPI} />}
@@ -250,7 +250,16 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             <ClientStateContextProvider value={clientState}>
                                 <Chat
                                     chatEnabled={chatEnabled}
-                                    userInfo={userAccountInfo}
+                                    userInfo={
+                                        userAccountInfo ?? {
+                                            isCodyProUser: true,
+                                            isDotComUser: true,
+                                            user: {
+                                                avatarURL: 'https://gravatar.com/olafurpg',
+                                                username: 'olafurpg',
+                                            },
+                                        }
+                                    }
                                     messageInProgress={messageInProgress}
                                     transcript={transcript}
                                     vscodeAPI={vscodeAPI}

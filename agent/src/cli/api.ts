@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { activate } from '../../../vscode/src/extension.node'
 import { newEmbeddedAgentClient } from '../agent'
 
-interface ApiOptions {
+interface ChatOptions {
     endpoint: string
     accessToken: string
     message: string
@@ -13,15 +13,19 @@ interface ApiOptions {
     showContext: boolean
     debug: boolean
 }
-export const apiCommand = new Command('experimental-api')
+
+export const chatCommand = new Command('chat')
+    .description('Chat with codebase context')
+    .requiredOption('-m, --message <message>', 'Message to send')
     .option('-C, --dir <dir>', 'Run in directory <dir>', process.cwd())
     .option('--model <model>', 'Chat model to use')
     .option('--context-repo <repos...>', 'Names of repositories to use as context')
     .option('--show-context', 'Show context items in reply', false)
     .option('--debug', 'Enable debug logging', false)
-    .action(apiAction)
+    .action(chatAction)
+export const cliCommand = new Command('experimental-cli').addCommand(chatCommand)
 
-export async function apiAction(options: ApiOptions): Promise<void> {
+export async function chatAction(options: ChatOptions): Promise<void> {
     const agent = await newEmbeddedAgentClient(
         {
             name: 'experimental-api',
@@ -53,6 +57,21 @@ export async function apiAction(options: ApiOptions): Promise<void> {
             addEnhancedContext: true,
         },
     })
+
+    if (options.contextRepo && options.contextRepo.length > 0) {
+        const { repos } = await client.request('graphql/getRepoIds', {
+            names: options.contextRepo,
+            first: options.contextRepo.length,
+        })
+        await client.request('webview/receiveMessage', {
+            id,
+            message: {
+                command: 'context/choose-remote-search-repo',
+                explicitRepos: repos,
+            },
+        })
+    }
+
     if (result.type === 'transcript') {
         const reply = result.messages.at(-1)
         if (reply?.text) {

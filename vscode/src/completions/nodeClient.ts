@@ -65,6 +65,8 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
             const log = this.logger?.startCompletion(params, url.toString())
 
+            console.log({ protocol: url.protocol })
+
             const requestFn = url.protocol === 'https:' ? https.request : http.request
 
             // Keep track if we have send any message to the completion callbacks
