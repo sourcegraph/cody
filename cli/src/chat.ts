@@ -44,13 +44,13 @@ export const chatCommand = new Command('chat')
                 contextRepositoryNames: options.contextRepo,
             })
             if (options.showContext) {
-                console.log('> Context items:')
+                process.stdout.write('> Context items:\n')
                 for (const [i, item] of contextFiles.entries()) {
-                    console.log(`> ${i + 1}. ${item}`)
+                    process.stdout.write(`> ${i + 1}. ${item}\n`)
                 }
-                console.log()
+                process.stdout.write('\n')
             }
-            console.log(text)
+            process.stdout.write(text + '\n')
             client.dispose()
         }
     )
