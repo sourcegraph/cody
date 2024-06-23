@@ -121,6 +121,7 @@ export function getConfiguration(
             CONFIG_KEY.autocompleteCompleteSuggestWidgetSelection,
             true
         ),
+        autocompleteHighlightOnAccept: config.get(CONFIG_KEY.autocompleteHighlightOnAccept, true),
         autocompleteFormatOnAccept: config.get(CONFIG_KEY.autocompleteFormatOnAccept, true),
         autocompleteDisableInsideComments: config.get(
             CONFIG_KEY.autocompleteDisableInsideComments,

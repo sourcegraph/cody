@@ -1115,6 +1115,11 @@
           "default": false,
           "markdownDescription": "Format completions on accept using [the default document formatter](https://code.visualstudio.com/docs/editor/codebasics#_formatting)."
         },
+        "cody.autocomplete.highlightOnAccept": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Briefly highlight the accepted code"
+        },
         "cody.autocomplete.disableInsideComments": {
           "type": "boolean",
           "default": false,

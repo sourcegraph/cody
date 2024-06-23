@@ -29,14 +29,14 @@ export interface InlineCompletionItemProviderArgs {
  * Implemented as a class instead of anonymous function so that you can identify
  * it with `console.log()` debugging.
  */
-class NoopCompletionItemProvider implements vscode.InlineCompletionItemProvider {
+export class NoopCompletionItemProvider implements vscode.InlineCompletionItemProvider {
     public provideInlineCompletionItems(
         _document: vscode.TextDocument,
         _position: vscode.Position,
         _context: vscode.InlineCompletionContext,
         _token: vscode.CancellationToken
     ): vscode.ProviderResult<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> {
-        return { items: [] }
+        return { items: [{ insertText: 'noop' }] }
     }
 }
 
@@ -81,6 +81,7 @@ export async function createInlineCompletionItemProvider({
             firstCompletionTimeout: config.autocompleteFirstCompletionTimeout,
             statusBar,
             completeSuggestWidgetSelection: config.autocompleteCompleteSuggestWidgetSelection,
+            highlightOnAccept: config.autocompleteHighlightOnAccept,
             formatOnAccept: config.autocompleteFormatOnAccept,
             disableInsideComments: config.autocompleteDisableInsideComments,
             isRunningInsideAgent: config.isRunningInsideAgent,

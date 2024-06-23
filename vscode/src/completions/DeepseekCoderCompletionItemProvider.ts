@@ -69,20 +69,26 @@ export class DeepseekCoderCompletionItemProvider implements vscode.InlineComplet
         })
         const abortController = new AbortController()
         token.onCancellationRequested(() => abortController.abort())
-        let completion = ''
+        let insertText = ''
         for await (const part of this.client.complete(
             { model: OLLAMA_MODEL_ID, prompt, template: '{{ .Prompt }}' },
             abortController
         )) {
-            completion = part.completion
+            insertText = part.completion
         }
-        log({ completion })
+        log({ completion: insertText })
         const items: vscode.InlineCompletionItem[] = []
-        if (completion) {
+        if (insertText) {
+            const range = new vscode.Range(position, position)
             items.push({
-                insertText: completion,
+                insertText,
                 // filterText: completion,
-                range: new vscode.Range(position, position),
+                range: range,
+                command: {
+                    command: 'cody.highlight-completion',
+                    title: 'Highlight',
+                    arguments: [{ range, insertText, document }],
+                },
             })
         }
         return { items }

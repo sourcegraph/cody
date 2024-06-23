@@ -50,6 +50,7 @@ export interface Configuration {
     autocompleteAdvancedModel: string | null
     autocompleteCompleteSuggestWidgetSelection?: boolean
     autocompleteFormatOnAccept?: boolean
+    autocompleteHighlightOnAccept?: boolean
     autocompleteDisableInsideComments: boolean
 
     /**

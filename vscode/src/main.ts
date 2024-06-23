@@ -45,6 +45,7 @@ import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { DeepseekCoderCompletionItemProvider } from './completions/DeepseekCoderCompletionItemProvider'
 import { createInlineCompletionItemFromMultipleProviders } from './completions/create-multi-model-inline-completion-provider'
+import { highlightCompletion } from './completions/highlight-completion'
 import { getFullConfig } from './configuration'
 import { BaseConfigWatcher, type ConfigWatcher } from './configwatcher'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
@@ -106,6 +107,9 @@ export async function start(
     setLogger({ logDebug, logError })
 
     const disposables: vscode.Disposable[] = []
+    // disposables.push(
+    //     vscode.languages.registerInlineCompletionItemProvider('*', new NoopCompletionItemProvider())
+    // )
 
     const configWatcher = await BaseConfigWatcher.create(getFullConfig, disposables)
 
@@ -133,6 +137,11 @@ const register = async (
         vscode.languages.registerInlineCompletionItemProvider(
             '*',
             new DeepseekCoderCompletionItemProvider()
+        )
+    )
+    disposables.push(
+        vscode.commands.registerCommand('cody.highlight-completion', ([params]) =>
+            highlightCompletion(params)
         )
     )
     const initialConfig = configWatcher.get()

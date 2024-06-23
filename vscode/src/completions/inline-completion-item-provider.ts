@@ -36,6 +36,7 @@ import {
     TriggerKind,
     getInlineCompletions,
 } from './get-inline-completions'
+import { highlightCompletion } from './highlight-completion'
 import { isCompletionVisible } from './is-completion-visible'
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './logger'
 import * as CompletionLogger from './logger'
@@ -73,6 +74,7 @@ interface CodyCompletionItemProviderConfig {
 
     // Settings
     formatOnAccept?: boolean
+    highlightOnAccept?: boolean
     disableInsideComments?: boolean
 
     // Feature flags
@@ -130,6 +132,7 @@ export class InlineCompletionItemProvider
     constructor({
         completeSuggestWidgetSelection = true,
         formatOnAccept = true,
+        highlightOnAccept = true,
         disableInsideComments = false,
         tracer = null,
         createBfgRetriever,
@@ -139,6 +142,7 @@ export class InlineCompletionItemProvider
             ...config,
             completeSuggestWidgetSelection,
             formatOnAccept,
+            highlightOnAccept,
             disableInsideComments,
             tracer,
             isRunningInsideAgent: config.isRunningInsideAgent ?? false,
@@ -513,6 +517,10 @@ export class InlineCompletionItemProvider
 
         if (!completion) {
             return
+        }
+
+        if (this.config.highlightOnAccept && !this.config.isRunningInsideAgent) {
+            await highlightCompletion(completion as AutocompleteItem)
         }
 
         if (this.config.formatOnAccept && !this.config.isRunningInsideAgent) {
