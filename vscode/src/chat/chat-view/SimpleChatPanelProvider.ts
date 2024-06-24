@@ -578,7 +578,8 @@ export class SimpleChatPanelProvider
             verbose: configForWebview,
         })
         // Update the chat model providers again to ensure the correct token limit is set on ready
-        this.handleSetChatModel(this.chatModel.modelID)
+        await this.handleSetChatModel(this.chatModel.modelID)
+        this.postChatModels()
     }
 
     private initDoer = new InitDoer<boolean | undefined>()
