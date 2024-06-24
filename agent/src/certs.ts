@@ -28,7 +28,7 @@ export function registerLocalCertificates() {
     }
 }
 
-const linuxPossibleCertPaths = ['/etc/ssl/certs/ca-certificates.crt', '/etc/ssl/certs/ca-bundle.crt', '/home/noah/.local/share/caddy/certificates/local/sourcegraph.test/sourcegraph.test.crt']
+const linuxPossibleCertPaths = ['/etc/ssl/certs/ca-certificates.crt', '/etc/ssl/certs/ca-bundle.crt']
 
 function addLinuxCerts() {
     if (process.platform !== 'linux') {
