@@ -349,6 +349,10 @@ test.extend<ExpectedEvents>({
         'cody.chatResponse:noCode',
     ],
 })('@-mention symbol in chat', async ({ page, nap, sidebar }) => {
+    // This test requires that the window be focused in the OS window manager because it deals with
+    // focus.
+    await page.bringToFront()
+
     await sidebarSignin(page, sidebar)
 
     // Open the buzz.ts file so that VS Code starts to populate symbols.
