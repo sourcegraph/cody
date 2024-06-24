@@ -25,6 +25,7 @@ import {
     IGNORED_FILE_WARNING_LABEL,
     LARGE_FILE_WARNING_LABEL,
 } from '../../../src/chat/context/constants'
+import LinearIssuesProvider from '../../../src/context/openctx/linear-issues'
 import RemoteFileProvider from '../../../src/context/openctx/remoteFileSearch'
 import RemoteRepositorySearch from '../../../src/context/openctx/remoteRepositorySearch'
 import WebProvider from '../../../src/context/openctx/web'
@@ -141,6 +142,7 @@ export const iconForProvider: Record<
     'https://openctx.org/npm/@openctx/provider-hello-world': SmileIcon,
     'https://openctx.org/npm/@openctx/provider-devdocs': LibraryBigIcon,
     'https://openctx.org/npm/@openctx/provider-sourcegraph-search': SourcegraphLogo,
+    [LinearIssuesProvider.providerUri]: LinearLogo,
     [RemoteRepositorySearch.providerUri]: FolderGitIcon,
     [RemoteFileProvider.providerUri]: FolderGitIcon,
     [WebProvider.providerUri]: LinkIcon,
