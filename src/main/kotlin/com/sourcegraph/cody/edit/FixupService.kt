@@ -134,6 +134,10 @@ class FixupService(val project: Project) : Disposable {
     synchronized(fixupSessionStateListeners) { fixupSessionStateListeners.add(listener) }
   }
 
+  fun removeListener(listener: ActiveFixupSessionStateListener) {
+    synchronized(fixupSessionStateListeners) { fixupSessionStateListeners.remove(listener) }
+  }
+
   fun isEditInProgress(): Boolean {
     return activeSession?.isShowingWorkingLens() ?: false
   }
