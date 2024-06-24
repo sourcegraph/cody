@@ -63,7 +63,7 @@ export class VSCodeDocumentHistory implements DocumentHistory, vscode.Disposable
     /**
      * Returns the last n items of history in reverse chronological order (latest item at the front)
      */
-    public lastN(n: number, baseLanguageId: string, ignoreUris?: vscode.Uri[]): HistoryItem[] {
+    public lastN(n: number, baseLanguageId?: string, ignoreUris?: vscode.Uri[]): HistoryItem[] {
         const ret: HistoryItem[] = []
         const ignoreSet = new Set(ignoreUris || [])
         for (let i = this.history.length - 1; i >= 0; i--) {
@@ -75,7 +75,7 @@ export class VSCodeDocumentHistory implements DocumentHistory, vscode.Disposable
                 continue
             }
             if (
-                shouldBeUsedAsContext(
+                !shouldBeUsedAsContext(
                     completionProviderConfig.getPrefetchedFlag(
                         FeatureFlag.CodyAutocompleteContextExtendLanguagePool
                     ),

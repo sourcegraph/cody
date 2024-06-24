@@ -20,9 +20,12 @@ const htmlFamily = new Set([
  */
 export function shouldBeUsedAsContext(
     enableExtendedLanguagePool: boolean,
-    baseLanguageId: string,
+    baseLanguageId: string | undefined,
     languageId: string
 ): boolean {
+    if (!baseLanguageId) {
+        return true
+    }
     if (baseLanguageId === languageId) {
         return true
     }
