@@ -1,6 +1,7 @@
 import type { Provider } from '@openctx/client'
 import dedent from 'dedent'
 import { XMLBuilder } from 'fast-xml-parser'
+import * as vscode from 'vscode'
 
 const xmlBuilder = new XMLBuilder({ format: true })
 
@@ -94,13 +95,25 @@ const LinearIssuesProvider: Provider & { providerUri: string } = {
 
 export default LinearIssuesProvider
 
+const LINEAR_AUTHENTICATION_PROVIDER_ID = 'linear'
+const LINEAR_AUTHENTICATION_SCOPES = ['read']
+
 async function linearApiRequest(query: string, variables: object): Promise<{ data: any }> {
-    const accessToken = 'TODO'
+    const session = await vscode.authentication.getSession(
+        LINEAR_AUTHENTICATION_PROVIDER_ID,
+        LINEAR_AUTHENTICATION_SCOPES,
+        { createIfNone: true }
+    )
+
+    if (!session) {
+        throw new Error(`We weren't able to log you into Linear when trying to open the issue.`)
+    }
+
     const response = await fetch('https://api.linear.app/graphql', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${session.accessToken}`,
         },
         body: JSON.stringify({ query, variables }),
     })
