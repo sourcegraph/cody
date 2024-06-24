@@ -112,16 +112,18 @@ export class FixupController
                     }
 
                     // If we save the document, we consider the user to have accepted any applied tasks.
-                    // This helps ensure that the codelens doesn't stay around unnecessarily and become an annoyance.
-                    for (const task of this.tasks.values()) {
-                        if (task.fixupFile.uri.fsPath.endsWith(event.document.uri.fsPath)) {
-                            // Use waitUntil to ensure that we clear the placeholder lines before any post-save
-                            // actions (like formatting) happen.
-                            event.waitUntil(this.clearPlaceholderInsertions(task))
-                            // Clear the diff, so we don't try to clear the placeholder lines again on accept
-                            task.diff = undefined
-                            this.accept(task)
-                        }
+                    // This helps ensure that the codelens doesn't stay around unnecessarily and become an annoyance
+                    const tasksToAccept = [...this.tasks.values()].filter(task =>
+                        task.fixupFile.uri.fsPath.endsWith(event.document.uri.fsPath)
+                    )
+
+                    // Use waitUntil to ensure that we clear the placeholder lines before any post-save
+                    // actions (like formatting) happen.
+                    event.waitUntil(this.clearPlaceholderInsertions(tasksToAccept, event.document.uri))
+
+                    for (const task of tasksToAccept) {
+                        // Finally accept all of the tasks
+                        this.accept(task)
                     }
                 })
             )
@@ -786,18 +788,23 @@ export class FixupController
     }
 
     private discard(task: FixupTask): void {
-        this.clearPlaceholderInsertions(task)
+        this.clearPlaceholderInsertions([task], task.fixupFile.uri)
         this.controlApplicator.didDeleteTask(task)
         this.decorator.didCompleteTask(task)
         this.tasks.delete(task.id)
     }
 
-    private async clearPlaceholderInsertions(task: FixupTask): Promise<void> {
-        if (!task.diff) {
-            return
+    private async clearPlaceholderInsertions(tasks: FixupTask[], uri: vscode.Uri): Promise<void> {
+        const placeholderLines: Edit[] = []
+        for (const task of tasks) {
+            const decoratedReplacements = (task.diff || []).filter(
+                ({ type }) => type === 'decoratedReplacement'
+            )
+            placeholderLines.push(...decoratedReplacements)
+            // Clear the diff afterwards, we want to ensure we never duplicate removing placeholder lines
+            task.diff = undefined
         }
 
-        const placeholderLines = task.diff.filter(({ type }) => type === 'decoratedReplacement')
         if (placeholderLines.length === 0) {
             // Nothing to clear
             return
@@ -807,7 +814,7 @@ export class FixupController
         let document: vscode.TextDocument
 
         const visibleEditor = vscode.window.visibleTextEditors.find(
-            editor => editor.document.uri === task.fixupFile.uri
+            editor => editor.document.uri === uri
         )
 
         if (visibleEditor) {
@@ -815,7 +822,7 @@ export class FixupController
             edit = visibleEditor.edit.bind(this)
         } else {
             // Perform the edit in the background
-            document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
+            document = await vscode.workspace.openTextDocument(uri)
             edit = new vscode.WorkspaceEdit()
         }
 
