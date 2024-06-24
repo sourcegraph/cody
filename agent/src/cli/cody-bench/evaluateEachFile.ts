@@ -53,7 +53,7 @@ export async function evaluateEachFile(
             }
             const content = (await fspromises.readFile(filePath)).toString()
             const languageid = getLanguageForFileName(file)
-            if (!isSupportedLanguage(languageid)) {
+            if (!isSupportedLanguage(languageid) && !isSupportedBenchLanguage(languageid)) {
                 continue
             }
             if (
@@ -81,4 +81,8 @@ export async function evaluateEachFile(
     } finally {
         await testCleanup(options)
     }
+}
+
+function isSupportedBenchLanguage(languageid: string): boolean {
+    return languageid === 'yaml'
 }

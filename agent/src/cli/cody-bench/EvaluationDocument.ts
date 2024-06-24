@@ -137,10 +137,15 @@ export class EvaluationDocument {
                     out.push(' AUTOCOMPLETE')
                 } else if (this.options.fixture.strategy === BenchStrategy.Fix) {
                     out.push(' FIX')
+                } else if (this.options.fixture.strategy === BenchStrategy.Chat) {
+                    out.push(' CHAT')
                 } else {
                     throw new Error(`unknown strategy ${this.options.fixture.strategy}`)
                 }
 
+                if (item.chatReply) {
+                    pushMultilineText('CHAT_REPLY', item.chatReply)
+                }
                 if (item.resultExact) {
                     out.push(' EXACT_MATCH')
                 }
@@ -253,6 +258,7 @@ interface EvaluationItem {
     contextBfgDurationMs?: number
     resultCharacterCount?: number
     editDiff?: string
+    chatReply?: string
     fixBeforeDiagnostic?: string
     fixAfterDiagnostic?: string
     llmJudgeScore?: number
@@ -286,6 +292,7 @@ export const autocompleteItemHeaders: ObjectHeaderItem[] = [
     { id: 'resultCharacterCount', title: 'RESULT_CHAR_COUNT' },
     { id: 'resultNonInsertPatch', title: 'RESULT_NON_INSERT_PATCH' },
     { id: 'editDiff', title: 'EDIT_DIFF' },
+    { id: 'chatReply', title: 'CHAT_REPLY' },
     { id: 'fixAfterDiagnostic', title: 'FIX_AFTER_DIAGNOSTIC' },
     { id: 'fixBeforeDiagnostic', title: 'FIX_BEFORE_DIAGNOSTIC' },
     { id: 'llmJudgeScore', title: 'LLM_JUDGE_SCORE' },
