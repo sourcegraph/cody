@@ -439,7 +439,7 @@ async function resolveFileOrSymbolContextItem(
         }
     }
 
-    const content = await editor.getTextEditorContentForFile(
+    const content = contextItem.content ?? await editor.getTextEditorContentForFile(
         contextItem.uri,
         toVSCodeRange(contextItem.range)
     )

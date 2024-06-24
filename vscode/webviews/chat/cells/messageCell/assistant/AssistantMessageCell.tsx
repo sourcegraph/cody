@@ -41,6 +41,7 @@ export const AssistantMessageCell: FunctionComponent<{
 
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
+    showSnippetActions?: boolean
 }> = ({
     message,
     humanMessage,
@@ -52,6 +53,7 @@ export const AssistantMessageCell: FunctionComponent<{
     insertButtonOnSubmit,
     postMessage,
     guardrails,
+    showSnippetActions,
 }) => {
     const displayMarkdown = useMemo(
         () => reformatBotMessageForChat(message.text ?? ps``).toString(),
@@ -91,6 +93,7 @@ export const AssistantMessageCell: FunctionComponent<{
                             copyButtonOnSubmit={copyButtonOnSubmit}
                             insertButtonOnSubmit={insertButtonOnSubmit}
                             guardrails={guardrails}
+                            showSnippetActions={showSnippetActions}
                         />
                     ) : (
                         isLoading && <LoadingDots />
