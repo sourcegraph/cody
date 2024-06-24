@@ -131,6 +131,13 @@ export function matchIndentation(incoming: string, original: string): string {
         return updatedIndentation
     }
 
+    if (originalIndentation.type === 'space' && (originalIndentation.amount === 1 || incomingIndentation.amount === 1)) {
+        // There are cases where detect-indent will wrongly detect a most common indentation difference of a single space.
+        // This is primarily in cases where, e.g., there are mostly multi-line comments in the original/incoming string.
+        // It is very unlikely that the user will be using a single space for indentation, so we skip this case.
+        return updatedIndentation
+    }
+
     // The incoming indentation still does not match the original, so we need to add/remove
     // the remaining amount of indentation to the incoming lines.
     return updatedIndentation
