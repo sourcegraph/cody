@@ -122,7 +122,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         )
     }
 
-    constructor(
+    private constructor(
         { extensionUri, ...options }: SidebarViewOptions,
         sidebarProvider: SimpleChatPanelProvider,
         private chatClient: ChatClient,

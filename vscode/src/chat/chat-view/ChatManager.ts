@@ -65,7 +65,7 @@ export class ChatManager implements vscode.Disposable {
         return new ChatManager({ extensionUri, ...options }, localEmbeddings, chatPanelsManager)
     }
 
-    constructor(
+    private constructor(
         { extensionUri, ...options }: SidebarViewOptions,
         localEmbeddings: LocalEmbeddingsController | null,
         chatPanelsManager: ChatPanelsManager

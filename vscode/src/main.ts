@@ -188,13 +188,11 @@ const register = async (
         })
     )
 
-    const authStatus = await authProvider.init()
+    await authProvider.init()
 
     // Sync models as soon as possibles in order to avoid runtime error
     // during chat management services initialization
-    if (authStatus?.authenticated) {
-        await syncModels(authStatus)
-    }
+    await syncModels(authProvider.getAuthStatus())
 
     await exposeOpenCtxClient(context, initialConfig)
 
@@ -339,7 +337,6 @@ const register = async (
 
     // Sync initial auth status
     const initAuthStatus = authProvider.getAuthStatus()
-    await syncModels(initAuthStatus)
     await chatManager.syncAuthStatus(initAuthStatus)
     editorManager.syncAuthStatus(initAuthStatus)
     await configWatcher.initAndOnChange(() => ModelsService.onConfigChange(), disposables)
