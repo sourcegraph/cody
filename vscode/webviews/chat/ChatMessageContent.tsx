@@ -27,6 +27,7 @@ interface ChatMessageContentProps {
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 
     guardrails?: Guardrails
+    showSnippetActions?: boolean
     className?: string
 }
 
@@ -242,13 +243,14 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     copyButtonOnSubmit,
     insertButtonOnSubmit,
     guardrails,
+    showSnippetActions,
     className,
 }) => {
     const rootRef = useRef<HTMLDivElement>(null)
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: needs to run when `displayMarkdown` changes or else the buttons won't show up.
     useEffect(() => {
-        if (!rootRef.current) {
+        if (!rootRef.current || !showSnippetActions) {
             return
         }
 
@@ -304,7 +306,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
 
     return (
         <div ref={rootRef} data-testid="chat-message-content">
-            <MarkdownFromCody className={clsx(styles.content, className)}>
+            <MarkdownFromCody className={clsx(styles.content, !showSnippetActions && styles.contentWithNoActions,  className)}>
                 {displayMarkdown}
             </MarkdownFromCody>
         </div>

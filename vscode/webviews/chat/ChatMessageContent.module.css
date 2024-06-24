@@ -113,6 +113,10 @@
     margin: 1rem 0;
 }
 
+.content-with-no-actions pre {
+    border: 1px solid var(--vscode-sideBarSectionHeader-border);
+}
+
 .content code,
 .content pre {
     font-family: var(--vscode-editor-font-family);

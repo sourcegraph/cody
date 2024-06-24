@@ -29,6 +29,7 @@ export const Transcript: React.FunctionComponent<{
     chatEnabled: boolean
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
+    showSnippetActions?: boolean
 }> = ({ transcript, messageInProgress, ...props }) => {
     const interactions = useMemo(
         () => transcriptToInteractionPairs(transcript, messageInProgress),
@@ -191,7 +192,6 @@ export function editHumanMessage(
         command: 'edit',
         index: messageIndexInTranscript,
         text: editorValue.text,
-        addEnhancedContext: true,
         editorState: editorValue.editorState,
         contextFiles: editorValue.contextItems.map(deserializeContextItem),
     })
@@ -203,7 +203,6 @@ function onFollowupSubmit(editorValue: SerializedPromptEditorValue): void {
         command: 'submit',
         submitType: 'user',
         text: editorValue.text,
-        addEnhancedContext: true,
         editorState: editorValue.editorState,
         contextFiles: editorValue.contextItems.map(deserializeContextItem),
     })

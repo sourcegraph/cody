@@ -360,7 +360,7 @@ test.extend<ExpectedEvents>({
     // Wait for the tsserver to become ready: when sync icon disappears
     const langServerLoadingState = 'Editor Language Status: Loading'
     await expect(page.getByRole('button', { name: langServerLoadingState })).toBeVisible()
-    await expect(page.getByRole('button', { name: langServerLoadingState })).not.toBeVisible()
+    await expect(page.getByRole('button', { name: langServerLoadingState })).not.toBeVisible({ timeout: 5000 })
 
     // Go back to the Cody chat tab
     await nap()

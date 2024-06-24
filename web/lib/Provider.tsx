@@ -166,6 +166,12 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
         const vscodeAPI: VSCodeWrapper = {
             postMessage: message => {
                 if (client && !isErrorLike(client)) {
+
+                    // Include all enhanced context by default for Cody Web
+                    if (message.command === 'submit' || message.command === 'edit') {
+                        message.addEnhancedContext = true
+                    }
+
                     void client.rpc.sendRequest('webview/receiveMessage', {
                         id: activeWebviewPanelID.current,
                         message,
@@ -211,11 +217,21 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
             activeWebviewPanelID.current = panelID
             setLastActiveChatID(chatID)
 
+            if (initialContext?.repositories.length) {
+                await agent.rpc.sendRequest('webview/receiveMessage', {
+                    id: activeWebviewPanelID.current,
+                    message: {
+                        command: 'context/choose-remote-search-repo',
+                        explicitRepos: initialContext?.repositories ?? [],
+                    },
+                })
+            }
+
             if (onNewChatCreated) {
                 onNewChatCreated(chatID)
             }
         },
-        [client, onNewChatCreated, setLastActiveChatID]
+        [client, onNewChatCreated, setLastActiveChatID, initialContext]
     )
 
     const selectChat = useCallback(
@@ -223,6 +239,9 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
             if (!agent || isErrorLike(agent)) {
                 return
             }
+
+            // Notify main root provider about chat selection
+            setLastActiveChatID(chat.chatID)
 
             // Restore chat with chat history (transcript data) and set the newly
             // restored panel ID to be able to listen event from only this panel
@@ -239,9 +258,6 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
             // Make sure that agent will reset the internal state and
             // sends all necessary events with transcript to switch active chat
             vscodeAPI.postMessage({ chatID: chat.chatID, command: 'restoreHistory' })
-
-            // Notify main root provider about chat selection
-            setLastActiveChatID(chat.chatID)
         },
         [client, vscodeAPI, setLastActiveChatID]
     )
