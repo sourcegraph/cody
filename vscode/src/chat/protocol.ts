@@ -242,7 +242,10 @@ export interface ExtensionTranscriptMessage {
  * The subset of configuration that is visible to the webview.
  */
 export interface ConfigurationSubsetForWebview
-    extends Pick<ConfigurationWithAccessToken, 'experimentalNoodle' | 'serverEndpoint'> {}
+    extends Pick<
+        ConfigurationWithAccessToken,
+        'experimentalNoodle' | 'serverEndpoint' | 'agentIDE' | 'agentExtensionVersion'
+    > {}
 
 /**
  * URLs for the Sourcegraph instance and app.
