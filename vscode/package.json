@@ -597,6 +597,21 @@
     ],
     "keybindings": [
       {
+        "command": "cody.supersuggest.accept",
+        "key": "tab",
+        "when": "editorTextFocus && cody.activated && cody.supersuggest.active"
+      },
+      {
+        "command": "cody.supersuggest.dismiss",
+        "key": "escape",
+        "when": "editorTextFocus && cody.activated && cody.supersuggest.active"
+      },
+      {
+        "command": "cody.experimental.suggest",
+        "key": "ctrl+shift+enter",
+        "when": "cody.activated"
+      },
+      {
         "command": "cody.chat.focus",
         "key": "alt+/",
         "when": "!cody.activated"
