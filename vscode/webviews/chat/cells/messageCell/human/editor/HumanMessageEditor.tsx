@@ -185,7 +185,11 @@ export const HumanMessageEditor: FunctionComponent<{
         if (!editorRef.current) {
             throw new Error('No editorRef')
         }
-        editorRef.current.appendText('@', true)
+        if (editorRef.current.getSerializedValue().text.trim().endsWith('@')) {
+            editorRef.current.setFocus(true, { moveCursorToEnd: true })
+        } else {
+            editorRef.current.appendText('@', true)
+        }
 
         const value = editorRef.current.getSerializedValue()
         telemetryRecorder.recordEvent('cody.humanMessageEditor.toolbar.mention', 'click', {
