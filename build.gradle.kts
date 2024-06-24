@@ -429,6 +429,11 @@ tasks {
     }
   }
 
+  patchPluginXml {
+    sinceBuild = properties("pluginSinceBuild")
+    untilBuild = properties("pluginUntilBuild")
+  }
+
   runIde {
     dependsOn(project.tasks.getByPath("buildCody"))
     jvmArgs("-Djdk.module.illegalAccess.silent=true")
