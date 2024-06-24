@@ -112,7 +112,7 @@ export async function getGhostHintEnablement(): Promise<EnabledFeatures> {
     }
 }
 
-const GHOST_TEXT_COLOR = new vscode.ThemeColor('editorGhostText.foreground')
+export const GHOST_TEXT_COLOR = new vscode.ThemeColor('editorGhostText.foreground')
 const UNICODE_SPACE = '\u00a0'
 
 /**

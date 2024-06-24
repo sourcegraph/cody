@@ -18,6 +18,7 @@ import {
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { CommandResult } from './CommandResult'
+import { Completer } from './Completer'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { chatHistory } from './chat/chat-view/ChatHistoryManager'
 import { ChatManager, CodyChatPanelViewType } from './chat/chat-view/ChatManager'
@@ -354,6 +355,17 @@ const register = async (
         // Process command with the commands controller
         return await executeCodyCommand(id, newCodyCommandArgs(args))
     }
+
+    // Register multiline trigger
+    if (initialConfig.experimentalMinionAnthropicKey) {
+        const completer = new Completer(initialConfig.experimentalMinionAnthropicKey)
+        disposables.push(
+            vscode.commands.registerCommand('cody.experimental.suggest', () => {
+                completer.triggerComplete()
+            })
+        )
+    }
+
     // Register Cody Commands
     disposables.push(
         vscode.commands.registerCommand('cody.action.command', (id, a) => executeCommand(id, a)),
