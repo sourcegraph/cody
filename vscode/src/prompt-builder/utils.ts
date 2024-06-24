@@ -15,7 +15,7 @@ import { URI } from 'vscode-uri'
 
 export function renderContextItem(contextItem: ContextItem): ContextMessage | null {
     const { source, range } = contextItem
-    const { content, repoName } = PromptString.fromContextItem(contextItem)
+    const { content, repoName, title } = PromptString.fromContextItem(contextItem)
     // Do not create context item for empty file
     if (!content?.trim()?.length) {
         return null
@@ -43,8 +43,15 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
             messageText = content
             break
         default:
-            messageText = populateCodeContextTemplate(content, uri, repoName)
-            break
+            // title is a required field for ContextItemOpenctx, only checking for type safety here.
+            if (contextItem.type === 'openctx' && title) {
+                messageText = ps`Content for "{title}" from {displayPath}:\n"`
+                    .replace('{title}', title)
+                    .replace('{displayPath}', PromptString.fromDisplayPath(uri))
+                    .concat(content)
+            } else {
+                messageText = populateCodeContextTemplate(content, uri, repoName)
+            }
     }
 
     return { speaker: 'human', text: messageText, file: contextItem }

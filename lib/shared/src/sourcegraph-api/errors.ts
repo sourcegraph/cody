@@ -68,7 +68,7 @@ export class NetworkError extends Error {
     public readonly status: number
 
     constructor(
-        response: BrowserOrNodeResponse,
+        response: Pick<BrowserOrNodeResponse, 'url' | 'status' | 'statusText'>,
         content: string,
         public traceId: string | undefined
     ) {
