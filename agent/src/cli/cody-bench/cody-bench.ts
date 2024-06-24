@@ -10,6 +10,7 @@ import { ModelsService, getDotComDefaultModels, graphqlClient } from '@sourcegra
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
 import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled'
 import { arrayOption, booleanOption, intOption } from './cli-parsers'
+import { evaluateChatStrategy } from './evaluateChatStrategy'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { evaluateAutocompleteStrategy } from './strategy-autocomplete'
 import { evaluateFixStrategy } from './strategy-fix'
@@ -65,6 +66,7 @@ export enum BenchStrategy {
     Autocomplete = 'autocomplete',
     GitLog = 'git-log',
     Fix = 'fix',
+    Chat = 'chat',
 }
 
 interface EvaluationFixture {
@@ -380,6 +382,9 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
             case BenchStrategy.Fix:
                 await evaluateFixStrategy(client, options)
                 break
+            case BenchStrategy.Chat:
+                await evaluateChatStrategy(client, options)
+                break
             default:
                 throw new Error(`unknown strategy ${options.fixture.strategy}`)
         }
@@ -390,3 +395,4 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
     await client.request('shutdown', null)
     client.notify('exit', null)
 }
+
