@@ -161,7 +161,7 @@ test('edit (fixup) input - range selection', async ({ page, sidebar }) => {
     expect(updatedRangeItem).toBeVisible()
 })
 
-test.only('edit (fixup) input - model selection', async ({ page, nap, sidebar }) => {
+test('edit (fixup) input - model selection', async ({ page, nap, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
