@@ -23,10 +23,10 @@ import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
 import type { AuthProvider } from '../services/AuthProvider'
 import { telemetryService } from '../services/telemetry'
 import { splitSafeMetadata } from '../services/telemetry-v2'
-import { DEFAULT_EDIT_MODE } from './constants'
 import type { ExecuteEditArguments } from './execute'
 import { EditProvider } from './provider'
 import { getEditIntent } from './utils/edit-intent'
+import { getEditMode } from './utils/edit-mode'
 import { getEditModelsForUser } from './utils/edit-models'
 import { getEditLineSelection, getEditSmartSelection } from './utils/edit-selection'
 
@@ -124,9 +124,9 @@ export class EditManager implements vscode.Disposable {
         // Set default edit configuration, if not provided
         // It is possible that these values may be overriden later, e.g. if the user changes them in the edit input.
         const range = getEditLineSelection(document, proposedRange)
-        const mode = configuration.mode || DEFAULT_EDIT_MODE
         const model = configuration.model || editModel.get(this.options.authProvider, this.models)
         const intent = getEditIntent(document, range, configuration.intent)
+        const mode = getEditMode(intent, configuration.mode)
 
         let expandedRange: vscode.Range | undefined
         // Support expanding the selection range for intents where it is useful
