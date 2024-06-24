@@ -91,7 +91,7 @@ export {
     toRangeData,
     displayLineRange,
     displayRange,
-    isMultiLineRange,
+    expandToLineRange,
 } from './common/range'
 export * from './common/abortController'
 export {
