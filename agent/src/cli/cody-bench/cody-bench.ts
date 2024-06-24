@@ -10,9 +10,9 @@ import { ModelsService, getDotComDefaultModels, graphqlClient } from '@sourcegra
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
 import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled'
 import { arrayOption, booleanOption, intOption } from './cli-parsers'
-import { evaluateChatStrategy } from './evaluateChatStrategy'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { evaluateAutocompleteStrategy } from './strategy-autocomplete'
+import { evaluateChatStrategy } from './strategy-chat'
 import { evaluateFixStrategy } from './strategy-fix'
 import { evaluateGitLogStrategy } from './strategy-git-log'
 
@@ -351,7 +351,10 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
             accessToken: options.srcAccessToken,
             serverEndpoint: options.srcEndpoint,
             customHeaders: {},
-            customConfiguration: options.fixture.customConfiguration,
+            customConfiguration: {
+                'cody.experimental.symf.enabled': false, // fixes errors in Polly.js related to fetchin the symf binary
+                ...options.fixture.customConfiguration,
+            },
             baseGlobalState,
         },
         codyAgentPath: options.codyAgentBinary,
@@ -395,4 +398,3 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
     await client.request('shutdown', null)
     client.notify('exit', null)
 }
-
