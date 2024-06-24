@@ -5,7 +5,7 @@ import {
     contextFiltersProvider,
     displayLineRange,
     displayPathBasename,
-    isMultiLineRange,
+    expandToLineRange,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getSelectionOrFileContext } from '../commands/context/selection'
@@ -89,8 +89,7 @@ export function startClientStateBroadcaster({
         const [contextFile] = await getSelectionOrFileContext()
         signal?.throwIfAborted()
         if (contextFile) {
-            const range =
-                contextFile.range && isMultiLineRange(contextFile.range) ? contextFile.range : undefined
+            const range = contextFile.range ? expandToLineRange(contextFile.range) : undefined
             const item = {
                 ...contextFile,
                 type: 'file',
