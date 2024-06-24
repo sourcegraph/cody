@@ -309,6 +309,7 @@ export const codyBenchCommand = new commander.Command('cody-bench')
         } finally {
             await polly.stop()
         }
+        process.exit(0)
     })
 
 async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: string): Promise<void> {
