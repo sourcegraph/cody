@@ -2,9 +2,9 @@ import { type ChildProcessWithoutNullStreams, fork } from 'node:child_process'
 import { displayLineRange } from '@sourcegraph/cody-shared'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 import { URI } from 'vscode-uri'
-import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../vscode/src/chat/protocol'
-import type { ServerInfo } from '../../vscode/src/jsonrpc/agent-protocol'
-import { MessageHandler } from '../../vscode/src/jsonrpc/jsonrpc'
+import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../../../vscode/src/chat/protocol'
+import type { ServerInfo } from '../../../../vscode/src/jsonrpc/agent-protocol'
+import { MessageHandler } from '../../../../vscode/src/jsonrpc/jsonrpc'
 
 interface AgentClient {
     serverInfo: ServerInfo
