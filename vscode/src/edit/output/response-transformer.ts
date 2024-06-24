@@ -64,9 +64,12 @@ export function responseTransformer(
         }
 
         // LLMs have a tendency to complete the response with a final new line, but we don't want to
-        // include this, as we already trim the users' selection, and any additional whitespace will
+        // include this unless necessary, as we already trim the users' selection, and any additional whitespace will
         // hurt the readability of the diff.
-        const trimmedReplacement = formattedToMatchLanguage.trimEnd()
+        const trimmedReplacement =
+            task.original.trimEnd().length === task.original.length
+                ? formattedToMatchLanguage.trimEnd()
+                : formattedToMatchLanguage
         // Attempt to match the indentation of the replacement with the original text
         return matchIndentation(trimmedReplacement, task.original)
     }

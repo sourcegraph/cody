@@ -62,9 +62,13 @@ function fixIndentation(
 
     const difference = originalFirstLineIndent - incomingFirstLineIndent
     const incomingLines = fixedReplacement.split('\n')
-    const incomingSecondLineIndent = incomingLines[1].length - incomingLines[1].trimStart().length
+    const secondLine = incomingLines[1]
+    const incomingSecondLineIndent = secondLine
+        ? secondLine.length - secondLine.trimStart().length
+        : null
 
     if (
+        incomingSecondLineIndent !== null &&
         incomingFirstLineIndent === 0 &&
         incomingSecondLineIndent !== 0 &&
         incomingSecondLineIndent + difference !== originalFirstLineIndent + originalIndentation.amount
@@ -131,7 +135,10 @@ export function matchIndentation(incoming: string, original: string): string {
         return updatedIndentation
     }
 
-    if (originalIndentation.type === 'space' && (originalIndentation.amount === 1 || incomingIndentation.amount === 1)) {
+    if (
+        originalIndentation.type === 'space' &&
+        (originalIndentation.amount === 1 || incomingIndentation.amount === 1)
+    ) {
         // There are cases where detect-indent will wrongly detect a most common indentation difference of a single space.
         // This is primarily in cases where, e.g., there are mostly multi-line comments in the original/incoming string.
         // It is very unlikely that the user will be using a single space for indentation, so we skip this case.

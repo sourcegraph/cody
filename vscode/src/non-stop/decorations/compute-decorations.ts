@@ -53,17 +53,28 @@ export function computeAppliedDecorations(task: FixupTask): Decorations | undefi
     }
 
     for (const edit of task.diff) {
-        if (edit.type === 'decoratedDeletion') {
-            // Decorations do not render tab characters, we must convert any tabs to spaces.
-            const decorationText = getDecorationSuitableText(edit.oldText, visibleDocument)
-            decorations.linesRemoved.push({
-                range: edit.range,
-                renderOptions: {
-                    after: { contentText: decorationText },
-                },
-            })
+        const countChanged = edit.range.end.line - edit.range.start.line - 1
+        if (edit.type === 'decoratedReplacement') {
+            const linesDeleted = edit.oldText.split('\n')
+            for (let i = 0; i <= countChanged; i++) {
+                const decorationText = getDecorationSuitableText(linesDeleted[i], visibleDocument)
+                const line = new vscode.Position(edit.range.start.line + i, 0)
+                decorations.linesRemoved.push({
+                    range: new vscode.Range(line, line),
+                    renderOptions: {
+                        after: { contentText: decorationText },
+                    },
+                })
+            }
         } else if (edit.type === 'insertion') {
-            decorations.linesAdded.push({ range: edit.range })
+            decorations.linesAdded.push({
+                range: new vscode.Range(
+                    edit.range.start.line,
+                    0,
+                    edit.range.start.line + countChanged,
+                    0
+                ),
+            })
         }
     }
 
@@ -124,7 +135,7 @@ export function computeOngoingDecorations(
         if (line.trim().length < 3) {
             // This line does not have enough useful characters to be considered a useful match.
             // 3 is used as it covers most common opening/closing bracket cases, e.g. "}", ")}", ")};"
-            // It is also likely that the LLM will quickly move past this line, so skipping it has 
+            // It is also likely that the LLM will quickly move past this line, so skipping it has
             // a minimal effect.
             return false
         }

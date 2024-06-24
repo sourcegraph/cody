@@ -13,14 +13,14 @@ interface DeletionEdit {
     range: vscode.Range
 }
 
-interface DecoratedDeletionEdit {
-    type: 'decoratedDeletion'
+interface DecoratedReplacementEdit {
+    type: 'decoratedReplacement'
     text: string
     oldText: string
     range: vscode.Range
 }
 
-export type Edit = InsertionEdit | DeletionEdit | DecoratedDeletionEdit
+export type Edit = InsertionEdit | DeletionEdit | DecoratedReplacementEdit
 
 interface ComputedDiffOptions {
     decorateDeletions: boolean
@@ -41,40 +41,34 @@ export function computeDiff(
 
     for (const change of diff) {
         const count = change.count || 0
-        const lines = change.value.split('\n')
 
         if (change.removed) {
-            for (let i = 0; i < count; i++) {
-                const line = lines[i]
-                if (options.decorateDeletions) {
-                    // Store the previous line, we will inject it as a decoration
-                    applicableDiff.push({
-                        type: 'decoratedDeletion',
-                        text: '',
-                        oldText: line,
-                        range: new vscode.Range(startLine, 0, startLine, Number.MAX_SAFE_INTEGER),
-                    })
-                    // We must increment as we haven't technically deleted the line, only replaced
-                    // it with whitespace
-                    startLine++
-                } else {
-                    applicableDiff.push({
-                        type: 'deletion',
-                        // Deletion range should include the line break
-                        range: new vscode.Range(startLine, 0, startLine + 1, 0),
-                    })
-                }
+            if (options.decorateDeletions) {
+                // Clamp old text to match `count`, as `count` does not include trailing new lines here.
+                // We will inject this text as a decoration later
+                const oldText = change.value.split('\n').slice(0, count).join('\n')
+                applicableDiff.push({
+                    type: 'decoratedReplacement',
+                    text: '\n'.repeat(count),
+                    oldText,
+                    range: new vscode.Range(startLine, 0, startLine + count, 0),
+                })
+                // We must increment as we haven't technically deleted the line, only replaced
+                // it with whitespace
+                startLine += count
+            } else {
+                applicableDiff.push({
+                    type: 'deletion',
+                    range: new vscode.Range(startLine, 0, startLine + count, 0),
+                })
             }
         } else if (change.added) {
-            for (let i = 0; i < count; i++) {
-                const range = new vscode.Range(startLine, 0, startLine, 0)
-                applicableDiff.push({
-                    type: 'insertion',
-                    text: lines[i] + '\n',
-                    range,
-                })
-                startLine++
-            }
+            applicableDiff.push({
+                type: 'insertion',
+                text: change.value,
+                range: new vscode.Range(startLine, 0, startLine + count, 0),
+            })
+            startLine += count
         } else {
             startLine += count
         }
@@ -103,13 +97,14 @@ export function makeDiffEditBuilderCompatible(diff: Edit[]): Edit[] {
             ),
         })
 
-        // Note: We do not modify `linesChanged` if we have a `decoratedDeletion`
+        // Note: We do not modify `linesAdded` if we have a `decoratedDeletion`
         // This is because there is no net change in lines from this, we have just replaced
         // that line with an empty string
+        const linesChanged = edit.range.end.line - edit.range.start.line
         if (edit.type === 'insertion') {
-            linesAdded++
+            linesAdded += linesChanged
         } else if (edit.type === 'deletion') {
-            linesAdded--
+            linesAdded -= linesChanged
         }
     }
 

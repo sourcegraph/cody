@@ -700,8 +700,10 @@ export class FixupController
             for (const change of suitableDiffForEditing) {
                 if (change.type === 'deletion') {
                     edit.delete(task.fixupFile.uri, change.range)
-                } else {
+                } else if (change.type === 'decoratedReplacement') {
                     edit.replace(task.fixupFile.uri, change.range, change.text)
+                } else {
+                    edit.insert(task.fixupFile.uri, change.range.start, change.text)
                 }
             }
             return vscode.workspace.applyEdit(edit)
@@ -711,8 +713,10 @@ export class FixupController
             for (const change of suitableDiffForEditing) {
                 if (change.type === 'deletion') {
                     editBuilder.delete(change.range)
-                } else {
+                } else if (change.type === 'decoratedReplacement') {
                     editBuilder.replace(change.range, change.text)
+                } else {
+                    editBuilder.insert(change.range.start, change.text)
                 }
             }
         }, options)
@@ -793,7 +797,7 @@ export class FixupController
             return
         }
 
-        const placeholderLines = task.diff.filter(({ type }) => type === 'decoratedDeletion')
+        const placeholderLines = task.diff.filter(({ type }) => type === 'decoratedReplacement')
         if (placeholderLines.length === 0) {
             // Nothing to clear
             return
@@ -815,23 +819,15 @@ export class FixupController
             edit = new vscode.WorkspaceEdit()
         }
 
-        const placeholderLinesForDeletion = placeholderLines.map(line => {
-            return {
-                ...line,
-                // Expand the range to the start of the next line, so that it includes any line break characters
-                range: document.lineAt(line.range.start.line).rangeIncludingLineBreak,
-            }
-        })
-
         if (edit instanceof vscode.WorkspaceEdit) {
-            for (const line of placeholderLinesForDeletion) {
+            for (const line of placeholderLines) {
                 edit.delete(document.uri, line.range)
             }
             await vscode.workspace.applyEdit(edit)
         } else {
             await edit(
                 editBuilder => {
-                    for (const line of placeholderLinesForDeletion) {
+                    for (const line of placeholderLines) {
                         editBuilder.delete(line.range)
                     }
                 },
