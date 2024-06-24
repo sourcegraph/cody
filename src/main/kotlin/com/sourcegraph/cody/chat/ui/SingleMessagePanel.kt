@@ -1,6 +1,5 @@
 package com.sourcegraph.cody.chat.ui
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.ui.ColorUtil
 import com.intellij.util.ui.SwingHelper
@@ -123,9 +122,7 @@ class SingleMessagePanel(
         AttributionSearchCommand(project).onSnippetFinished(lastPart.text, connectionId, listener)
       }
 
-      ApplicationManager.getApplication().executeOnPooledThread {
-        GraphQlLogger.logCodeGenerationEvent(project, "chatResponse", "hasCode", lastPart.text)
-      }
+      GraphQlLogger.logCodeGenerationEvent(project, "chatResponse", "hasCode", lastPart.text)
     }
   }
 

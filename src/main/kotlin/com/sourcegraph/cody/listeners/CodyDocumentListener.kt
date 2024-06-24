@@ -1,6 +1,5 @@
 package com.sourcegraph.cody.listeners
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.editor.event.BulkAwareDocumentListener
 import com.intellij.openapi.editor.event.DocumentEvent
@@ -12,6 +11,7 @@ import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
 import com.sourcegraph.cody.autocomplete.action.AcceptCodyAutocompleteAction
 import com.sourcegraph.cody.chat.CodeEditorFactory
+import com.sourcegraph.cody.telemetry.TelemetryV2
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
 import com.sourcegraph.telemetry.GraphQlLogger
 
@@ -21,9 +21,9 @@ class CodyDocumentListener(val project: Project) : BulkAwareDocumentListener {
     val pastedCode = event.newFragment.toString()
     if (pastedCode.isNotBlank() && CodeEditorFactory.lastCopiedText == pastedCode) {
       CodeEditorFactory.lastCopiedText = null
-      ApplicationManager.getApplication().executeOnPooledThread {
-        GraphQlLogger.logCodeGenerationEvent(project, "keyDown:Paste", "clicked", pastedCode)
-      }
+      GraphQlLogger.logCodeGenerationEvent(project, "keyDown:Paste", "clicked", pastedCode)
+      TelemetryV2.sendCodeGenerationEvent(
+          project, feature = "keyDown", action = "paste", pastedCode)
     }
   }
 

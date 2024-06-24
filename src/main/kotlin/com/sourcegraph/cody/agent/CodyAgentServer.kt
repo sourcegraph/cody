@@ -31,6 +31,7 @@ import com.sourcegraph.cody.agent.protocol.RemoteRepoListParams
 import com.sourcegraph.cody.agent.protocol.RemoteRepoListResponse
 import com.sourcegraph.cody.agent.protocol.ServerInfo
 import com.sourcegraph.cody.agent.protocol.TaskIdParam
+import com.sourcegraph.cody.agent.protocol.TelemetryEvent
 import com.sourcegraph.cody.chat.ConnectionId
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
@@ -50,6 +51,9 @@ interface CodyAgentServer {
 
   @JsonRequest("autocomplete/execute")
   fun autocompleteExecute(params: AutocompleteParams?): CompletableFuture<AutocompleteResult>
+
+  @JsonRequest("telemetry/recordEvent")
+  fun recordEvent(event: TelemetryEvent): CompletableFuture<Void?>
 
   @JsonRequest("graphql/logEvent") fun logEvent(event: Event): CompletableFuture<Void?>
 
