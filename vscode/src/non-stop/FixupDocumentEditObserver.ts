@@ -60,6 +60,17 @@ export class FixupDocumentEditObserver {
             const updatedRange = updateRangeMultipleChanges(task.selectionRange, changes, {
                 supportRangeAffix: true,
             })
+            const decoratedReplacements = (task.diff || []).filter(
+                ({ type }) => type === 'decoratedReplacement'
+            )
+            if (task.state === CodyTaskState.Applied && decoratedReplacements.length > 0) {
+                // For applied tasks, we ensure we always keep the decoratedReplacements up to date in the diff
+                // This is so we know exactly where they are so we can remove them accurately on save/undo
+                for (const edit of decoratedReplacements) {
+                    edit.range = updateRangeMultipleChanges(edit.range, changes, {}, updateFixedRange)
+                }
+            }
+
             if (!updatedRange.isEqual(task.selectionRange)) {
                 task.selectionRange = updatedRange
                 this.provider_.rangeDidChange(task)
