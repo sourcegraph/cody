@@ -12,6 +12,7 @@ import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled
 import { arrayOption, booleanOption, intOption } from './cli-parsers'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { evaluateAutocompleteStrategy } from './strategy-autocomplete'
+import { evaluateChatStrategy } from './strategy-chat'
 import { evaluateFixStrategy } from './strategy-fix'
 import { evaluateGitLogStrategy } from './strategy-git-log'
 
@@ -65,6 +66,7 @@ export enum BenchStrategy {
     Autocomplete = 'autocomplete',
     GitLog = 'git-log',
     Fix = 'fix',
+    Chat = 'chat',
 }
 
 interface EvaluationFixture {
@@ -349,7 +351,10 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
             accessToken: options.srcAccessToken,
             serverEndpoint: options.srcEndpoint,
             customHeaders: {},
-            customConfiguration: options.fixture.customConfiguration,
+            customConfiguration: {
+                'cody.experimental.symf.enabled': false, // fixes errors in Polly.js related to fetchin the symf binary
+                ...options.fixture.customConfiguration,
+            },
             baseGlobalState,
         },
         codyAgentPath: options.codyAgentBinary,
@@ -379,6 +384,9 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
                 break
             case BenchStrategy.Fix:
                 await evaluateFixStrategy(client, options)
+                break
+            case BenchStrategy.Chat:
+                await evaluateChatStrategy(client, options)
                 break
             default:
                 throw new Error(`unknown strategy ${options.fixture.strategy}`)
