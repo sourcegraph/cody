@@ -579,6 +579,7 @@ export class SimpleChatPanelProvider
         logDebug('SimpleChatPanelProvider', 'updateViewConfig', {
             verbose: configForWebview,
         })
+        this.postChatModels()
     }
 
     private initDoer = new InitDoer<boolean | undefined>()
