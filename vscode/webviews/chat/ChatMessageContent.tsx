@@ -306,7 +306,13 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
 
     return (
         <div ref={rootRef} data-testid="chat-message-content">
-            <MarkdownFromCody className={clsx(styles.content, !showSnippetActions && styles.contentWithNoActions,  className)}>
+            <MarkdownFromCody
+                className={clsx(
+                    styles.content,
+                    !showSnippetActions && styles.contentWithNoActions,
+                    className
+                )}
+            >
                 {displayMarkdown}
             </MarkdownFromCody>
         </div>

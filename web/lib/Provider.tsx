@@ -166,7 +166,6 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
         const vscodeAPI: VSCodeWrapper = {
             postMessage: message => {
                 if (client && !isErrorLike(client)) {
-
                     // Include all enhanced context by default for Cody Web
                     if (message.command === 'submit' || message.command === 'edit') {
                         message.addEnhancedContext = true
