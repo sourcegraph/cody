@@ -53,7 +53,7 @@ export interface CodyWebChatProps {
     className?: string
 }
 
-// NOTE: This code is copied from the VS Code webview's App component and implements a subset of the
+// NOTE: This code is implements a subset of the
 // functionality for the experimental web chat prototype.
 export const CodyWebChat: FC<CodyWebChatProps> = props => {
     const { className } = props

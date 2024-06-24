@@ -228,7 +228,9 @@ export const HumanMessageEditor: FunctionComponent<{
         if (initialContext && !isSent && isFirstMessage) {
             const editor = editorRef.current
             if (editor && initialContext.length > 0) {
-                editor.setInitialContextMentions(initialContext)
+                window.requestAnimationFrame(() => {
+                    editor.setInitialContextMentions(initialContext)
+                })
             }
         }
     }, [initialContext, isSent, isFirstMessage])
