@@ -537,6 +537,7 @@ tasks {
   named("check") { dependsOn("integrationTest") }
 
   test {
+    jvmArgs("-Didea.ProcessCanceledException=disabled")
     agentProperties.forEach { (key, value) -> systemProperty(key, value) }
     dependsOn("buildCody")
   }
