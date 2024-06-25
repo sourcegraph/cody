@@ -1,6 +1,8 @@
 package com.sourcegraph.cody.agent.protocol
 
 import com.intellij.openapi.application.WriteAction
+import com.intellij.openapi.fileEditor.FileEditorProvider
+import com.intellij.openapi.fileEditor.impl.text.TextEditorProvider
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.sourcegraph.cody.listeners.EditorChangesBus
@@ -13,12 +15,15 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
 
   override fun setUp() {
     super.setUp()
+    // We need to specify the provider so that the created editor has EditorKind.MAIN_EDITOR.
+    // Without putting that data, the default is UNTYPED - that breaks some tests.
+    file.putUserData(FileEditorProvider.KEY, TextEditorProvider.getInstance())
     myFixture.openFileInEditor(file)
   }
 
   override fun tearDown() {
-    super.tearDown()
     EditorChangesBus.listeners = emptyList()
+    super.tearDown()
   }
 
   fun test_emptySelection() {
@@ -70,8 +75,7 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
         ProtocolTextDocument.fromVirtualFile(myFixture.editor, emptyFile).selection)
   }
 
-  // TODO: https://linear.app/sourcegraph/issue/CODY-2576
-  fun skip_test_selectionListener() {
+  fun test_selectionListener() {
     var lastTextDocument: ProtocolTextDocument? = null
     EditorChangesBus.addListener { _, textDocument -> lastTextDocument = textDocument }
 
@@ -81,7 +85,7 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
         myFixture.editor.testing_substring(lastTextDocument!!.selection!!))
   }
 
-  fun skip_test_caretListener() {
+  fun test_caretListener() {
     var lastTextDocument: ProtocolTextDocument? = null
     EditorChangesBus.addListener { _, textDocument -> lastTextDocument = textDocument }
 
