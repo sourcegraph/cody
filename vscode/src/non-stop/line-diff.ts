@@ -1,6 +1,5 @@
 import { diffLines } from 'diff'
 import * as vscode from 'vscode'
-import type { FixupTask } from './FixupTask'
 
 interface InsertionEdit {
     type: 'insertion'
@@ -27,17 +26,18 @@ interface ComputedDiffOptions {
 }
 
 export function computeDiff(
-    task: FixupTask,
-    document: vscode.TextDocument,
+    replacement: string,
+    original: string,
+    range: vscode.Range,
     options: ComputedDiffOptions
 ): Edit[] | undefined {
-    if (!task.replacement) {
+    if (!replacement) {
         return
     }
 
-    let startLine = task.selectionRange.start.line
+    let startLine = range.start.line
     const applicableDiff: Edit[] = []
-    const diff = diffLines(task.original, task.replacement)
+    const diff = diffLines(original, replacement)
 
     for (const change of diff) {
         const count = change.count || 0

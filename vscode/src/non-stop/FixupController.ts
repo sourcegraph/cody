@@ -422,7 +422,9 @@ export class FixupController
         // Update the original text, so we're always computing a diff against the latest
         // code in the editor.
         task.original = document.getText(task.selectionRange)
-        task.diff = computeDiff(task, document, { decorateDeletions: !isRunningInsideAgent() })
+        task.diff = computeDiff(task.replacement || '', task.original, task.selectionRange, {
+            decorateDeletions: !isRunningInsideAgent(),
+        })
         return task.diff
     }
 
