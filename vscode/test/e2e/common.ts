@@ -114,7 +114,7 @@ export function chatMessageRows(chatPanel: FrameLocator): Locator {
  * Gets the chat context cell.
  */
 export function getContextCell(chatPanel: FrameLocator): Locator {
-    return chatPanel.locator('details', { hasText: 'Context' })
+    return chatPanel.locator('[data-testid="context"]', { hasText: 'Context' })
 }
 
 export function contextCellItems(contextCell: Locator): Locator {
