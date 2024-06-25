@@ -10,7 +10,7 @@ import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
 import com.sourcegraph.config.ConfigUtil
 
 class CodySelectionListener(val project: Project) : SelectionListener {
-  private val inlayManager = CodySelectionInlayManager()
+  private val inlayManager = CodySelectionInlayManager(project)
 
   override fun selectionChanged(event: SelectionEvent) {
     if (!ConfigUtil.isCodyEnabled() ||

@@ -184,6 +184,8 @@ should match whatever we have most recently set them to; they change now and the
 * The hotkeys displayed in the hint should be correct.
 * The colors chosen should be clearly visible on all themes.
 * It is OK if the hint is not visible in some places because it's offscreen.
+* The hint should not appear in any views/panes in the IDE other than code editor tabs.
+* The hint should not appear if there is an active edit session.
 
 ### Explain Code
 

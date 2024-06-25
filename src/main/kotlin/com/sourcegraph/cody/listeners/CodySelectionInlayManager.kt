@@ -9,7 +9,9 @@ import com.intellij.openapi.editor.colors.EditorFontType
 import com.intellij.openapi.editor.event.SelectionEvent
 import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.openapi.keymap.KeymapManager
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.sourcegraph.cody.edit.FixupService
 import java.awt.Font
 import java.awt.Graphics
 import java.awt.Graphics2D
@@ -18,7 +20,7 @@ import java.awt.event.KeyEvent
 import java.awt.geom.GeneralPath
 import java.util.*
 
-class CodySelectionInlayManager {
+class CodySelectionInlayManager(val project: Project) {
 
   private var currentInlay: Inlay<*>? = null
 
@@ -26,10 +28,20 @@ class CodySelectionInlayManager {
 
   fun handleSelectionChanged(editor: Editor, event: SelectionEvent) {
     clearInlay()
+
+    val service = FixupService.getInstance(project)
+    if (!service.isEligibleForInlineEdit(editor)) {
+      return
+    }
+    // Don't show it if we're in the middle of an edit.
+    if (service.getActiveSession() != null) {
+      return
+    }
+
     val startOffset = event.newRange.startOffset
     val endOffset = event.newRange.endOffset
     if (startOffset == endOffset) {
-      // Don't show if there's no selection
+      // Don't show if there's no selection.
       return
     }
     val startLine = editor.document.getLineNumber(startOffset)
