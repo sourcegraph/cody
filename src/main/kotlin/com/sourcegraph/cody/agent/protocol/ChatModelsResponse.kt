@@ -16,6 +16,7 @@ data class ChatModelsResponse(val models: List<ChatModelProvider>) {
           "Anthropic" -> Icons.LLM.Anthropic
           "OpenAI" -> Icons.LLM.OpenAI
           "Mistral" -> Icons.LLM.Mistral
+          "Google" -> Icons.LLM.Google
           else -> null
         }
 

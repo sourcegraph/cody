@@ -50,6 +50,7 @@ public interface Icons {
 
   interface LLM {
     Icon Anthropic = IconLoader.getIcon("/icons/chat/llm/anthropic.svg", Icons.class);
+    Icon Google = IconLoader.getIcon("/icons/chat/llm/google.svg", Icons.class);
     Icon OpenAI = IconLoader.getIcon("/icons/chat/llm/openai.svg", Icons.class);
     Icon Mistral = IconLoader.getIcon("/icons/chat/llm/mistral.svg", Icons.class);
     Icon ProSticker = IconLoader.getIcon("/icons/chat/llm/pro_sticker.svg", Icons.class);
