@@ -106,7 +106,9 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
 
     accountTierFuture.thenApply { currentAccountTier ->
       if (previousAccountTier != currentAccountTier) {
-        publisher.afterAction(AccountSettingChangeContext(accountTierChanged = true))
+        if (!project.isDisposed) {
+          publisher.afterAction(AccountSettingChangeContext(accountTierChanged = true))
+        }
       }
     }
 
@@ -134,7 +136,9 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
 
     isTokenInvalidFuture.thenApply { isTokenInvalid ->
       if (previousIsTokenInvalid != isTokenInvalid) {
-        publisher.afterAction(AccountSettingChangeContext(isTokenInvalidChanged = true))
+        if (!project.isDisposed) {
+          publisher.afterAction(AccountSettingChangeContext(isTokenInvalidChanged = true))
+        }
       }
     }
 
@@ -176,7 +180,9 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
     if (oldToken != newToken && account == getActiveAccount()) {
       CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
         agent.server.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
-        publisher.afterAction(AccountSettingChangeContext(accessTokenChanged = true))
+        if (!project.isDisposed) {
+          publisher.afterAction(AccountSettingChangeContext(accessTokenChanged = true))
+        }
       }
     }
   }
@@ -202,9 +208,11 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
       if (serverUrlChanged || tierChanged) {
         CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
           agent.server.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
-          publisher.afterAction(
-              AccountSettingChangeContext(
-                  serverUrlChanged = serverUrlChanged, accountTierChanged = tierChanged))
+          if (!project.isDisposed) {
+            publisher.afterAction(
+                AccountSettingChangeContext(
+                    serverUrlChanged = serverUrlChanged, accountTierChanged = tierChanged))
+          }
         }
       }
     }
