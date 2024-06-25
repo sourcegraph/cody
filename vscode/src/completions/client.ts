@@ -27,7 +27,10 @@ import {
 
 import { SpanStatusCode } from '@opentelemetry/api'
 import { contextFiltersProvider, fetch } from '@sourcegraph/cody-shared'
-import type { CompletionResponseWithMetaData } from '@sourcegraph/cody-shared/src/inferenceClient/misc'
+import type {
+    CodeCompletionProviderOptions,
+    CompletionResponseWithMetaData,
+} from '@sourcegraph/cody-shared/src/inferenceClient/misc'
 
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.
@@ -38,7 +41,8 @@ export function createClient(
 ): CodeCompletionsClient {
     function complete(
         params: CodeCompletionsParams,
-        abortController: AbortController
+        abortController: AbortController,
+        providerOptions: CodeCompletionProviderOptions
     ): CompletionResponseGenerator {
         const query = new URLSearchParams(getClientInfoParams())
         const url = new URL(`/.api/completions/code?${query.toString()}`, config.serverEndpoint).href
@@ -60,6 +64,13 @@ export function createClient(
                 if (config.accessToken) {
                     headers.set('Authorization', `token ${config.accessToken}`)
                 }
+
+                if (providerOptions?.customHeaders) {
+                    for (const [key, value] of Object.entries(providerOptions.customHeaders)) {
+                        headers.set(key, value)
+                    }
+                }
+
                 if (tracingFlagEnabled) {
                     headers.set('X-Sourcegraph-Should-Trace', '1')
 
