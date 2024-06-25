@@ -19,7 +19,7 @@ export class ChatClient {
         private completions: SourcegraphCompletionsClient,
         private getAuthStatus: () => Pick<
             AuthStatus,
-            'userCanUpgrade' | 'isDotCom' | 'endpoint' | 'codyApiVersion'
+            'userCanUpgrade' | 'isDotCom' | 'endpoint' | 'codyApiVersion' | 'isFireworksTracingEnabled'
         >
     ) {}
 
@@ -32,6 +32,7 @@ export class ChatClient {
         const useApiV1 = authStatus.codyApiVersion >= 1 && params.model?.includes('claude-3')
         const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
 
+        const isFireworks = params?.model?.startsWith('fireworks/')
         const augmentedMessages =
             params?.model?.startsWith('fireworks/') || useApiV1
                 ? sanitizeMessages(messages)
@@ -52,9 +53,19 @@ export class ChatClient {
             messages: messagesToSend,
         }
 
+        // Enabled Fireworks tracing for Sourcegraph teammates.
+        // https://readme.fireworks.ai/docs/enabling-tracing
+        const customHeaders: Record<string, string> =
+            isFireworks && this.getAuthStatus().isFireworksTracingEnabled
+                ? { 'X-Fireworks-Genie': 'true' }
+                : {}
+
         return this.completions.stream(
             completionParams,
-            useApiV1 ? authStatus.codyApiVersion : 0,
+            {
+                apiVersion: useApiV1 ? authStatus.codyApiVersion : 0,
+                customHeaders,
+            },
             abortSignal
         )
     }

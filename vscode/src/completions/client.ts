@@ -56,19 +56,17 @@ export function createClient(
                     FeatureFlag.CodyAutocompleteTracing
                 )
 
-                const headers = new Headers(config.customHeaders)
+                const headers = new Headers({
+                    ...config.customHeaders,
+                    ...providerOptions?.customHeaders,
+                })
+
                 // Force HTTP connection reuse to reduce latency.
                 // c.f. https://github.com/microsoft/vscode/issues/173861
                 headers.set('Connection', 'keep-alive')
                 headers.set('Content-Type', 'application/json; charset=utf-8')
                 if (config.accessToken) {
                     headers.set('Authorization', `token ${config.accessToken}`)
-                }
-
-                if (providerOptions?.customHeaders) {
-                    for (const [key, value] of Object.entries(providerOptions.customHeaders)) {
-                        headers.set(key, value)
-                    }
                 }
 
                 if (tracingFlagEnabled) {
