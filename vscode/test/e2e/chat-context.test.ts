@@ -15,6 +15,8 @@ test('chat followup context', async ({ page, sidebar }) => {
     const contextCells = getContextCell(chatFrame)
     expect(contextCells).toHaveCount(1)
     expect(contextCells.first()).toHaveText(/Context/)
+    await contextCells.first().locator('button', { hasText: 'Context' }).click() // expand
+    await expect(contextCells.first()).toHaveText(/Main\.java/)
 
     // No additional context means no context cell.
     await chatInput.fill('followup1')
@@ -27,7 +29,8 @@ test('chat followup context', async ({ page, sidebar }) => {
     await chatInput.press('Enter')
     expect(contextCells).toHaveCount(2)
     const lastContextCell = contextCells.last()
-    expect(lastContextCell).toHaveText(/new item/)
-    await lastContextCell.click() // expand
-    expect(lastContextCell).toHaveText(/prior/i)
+    expect(lastContextCell).toHaveText(/1 new item/)
+    await lastContextCell.locator('button', { hasText: 'Context' }).click() // expand
+    await expect(lastContextCell).toHaveText(/var\.go/)
+    await expect(lastContextCell).toHaveText(/Prior messages/)
 })
