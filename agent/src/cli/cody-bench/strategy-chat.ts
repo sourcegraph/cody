@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { type ContextItem, ModelsService } from '@sourcegraph/cody-shared'
+import { type ContextItem, ModelsService, PromptString } from '@sourcegraph/cody-shared'
 import { glob } from 'glob'
 import * as vscode from 'vscode'
 import YAML from 'yaml'
@@ -7,6 +7,8 @@ import type { MessageHandler } from '../../jsonrpc-alias'
 import { EvaluationDocument } from './EvaluationDocument'
 import type { CodyBenchOptions } from './cody-bench'
 import { evaluateEachFile } from './evaluateEachFile'
+import { LlmJudge, type LlmJudgeScore } from './llm-judge'
+import { llmJudgeChatTemplate } from './llm-judge-chat-template'
 
 interface ChatTask {
     question: string
@@ -27,6 +29,8 @@ export async function evaluateChatStrategy(
             'Missing cody-bench.chatModel. To fix this problem, add "customConfiguration": { "cody-bench.chatModel": "claude-3-sonnet" } to the cody-bench JSON config.'
         )
     }
+    const llm = new LlmJudge(options)
+    const scores: LlmJudgeScore[] = []
     const model = ModelsService.getModelByIDSubstringOrError(chatModel).model
     const files = absoluteFiles.map(file => path.relative(options.workspace, file))
     const yamlFiles = files.filter(file => file.endsWith('.yaml'))
@@ -57,12 +61,16 @@ export async function evaluateChatStrategy(
         if (response.type === 'transcript') {
             const reply = response.messages.at(-1)
             if (reply?.text) {
-                console.log({ reply })
+                const response = PromptString.unsafe_fromLLMResponse(reply.text)
+                const score = await llm.judge(llmJudgeChatTemplate({ response }))
                 document.pushItem({
                     range,
                     chatReply: reply.text,
                     chatQuestion: task.question,
+                    llmJudgeScore: score.scoreNumeric,
                 })
+                scores.push(score)
+                console.log({ reply, score })
             } else {
                 document.pushItem({
                     range,
@@ -75,6 +83,10 @@ export async function evaluateChatStrategy(
                 resultError: 'expected a transcript. Got ' + JSON.stringify(response, null, 2),
             })
         }
+        console.log({
+            fixture: options.fixture.name,
+            totalScore: scores.reduce((a, b) => a + (b.scoreNumeric ?? 0), 0),
+        })
         return document
     })
 }
