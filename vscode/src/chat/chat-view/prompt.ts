@@ -119,10 +119,13 @@ export class DefaultPrompter {
             const historyContext = await promptBuilder.tryAddContext('history', historyItems.reverse())
             ignoredContext.transcript += historyContext.ignored.length
 
-            logDebug(
-                'DefaultPrompter.makePrompt',
-                `Ignored context due to context limit: user=${ignoredContext.user}, enhanced=${ignoredContext.enhanced}, previous=${ignoredContext.transcript}`
-            )
+            // Log only if there are any ignored context items.
+            if (ignoredContext.user + ignoredContext.enhanced + ignoredContext.transcript > 0) {
+                logDebug(
+                    'DefaultPrompter.makePrompt',
+                    `Ignored context due to context limit: user=${ignoredContext.user}, enhanced=${ignoredContext.enhanced}, previous=${ignoredContext.transcript}`
+                )
+            }
 
             return {
                 prompt: promptBuilder.build(),
