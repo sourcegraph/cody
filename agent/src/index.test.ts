@@ -851,7 +851,7 @@ describe('Agent', () => {
     // Skip `pnpm update-agent-recording` fails with:
     // AssertionError: expected false to be truthy
     // expect(serverInfo.authStatus?.isLoggedIn).toBeTruthy()
-    describe.skip('RateLimitedAgent', () => {
+    describe('RateLimitedAgent', () => {
         const rateLimitedClient = TestClient.create({
             workspaceRootUri: workspace.rootUri,
             name: 'rateLimitedClient',
@@ -937,8 +937,7 @@ describe('Agent', () => {
 
                   it('does something else', () => {
                       // This line will error due to incorrect usage of \`performance.now\`
-                      // Record the start time using the Performance API's \`now\` method.
-                      // This captures a high resolution monotonic timestamp in milliseconds.
+                      // Record the start time using the browser's performance API.
                       const startTime = performance.now(/* CURSOR */)
                   })
               })

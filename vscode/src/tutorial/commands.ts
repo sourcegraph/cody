@@ -1,8 +1,8 @@
 import { ps, telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { executeEdit } from '../edit/execute'
+import { TERMINAL_EDIT_STATES } from '../non-stop/codelenses/constants'
 import { type TextChange, updateRangeMultipleChanges } from '../non-stop/tracked-range'
-import { CodyTaskState } from '../non-stop/utils'
 import { TODO_DECORATION } from './constants'
 import type { TutorialStep } from './content'
 
@@ -27,13 +27,6 @@ export const setFixDiagnostic = (
 }
 
 export type TutorialSource = 'link' | 'editor'
-
-/**
- * States at which we consider an Edit to be "terminated" for the purposes of the tutorial.
- * Considers both "Applied" and "Error" to be terminal, so that we can encourage the user along
- * into the next steps, even when they don't necessarily hit a happy-path
- */
-const TERMINAL_EDIT_STATES = [CodyTaskState.Applied, CodyTaskState.Finished, CodyTaskState.Error]
 
 export const registerEditTutorialCommand = (
     editor: vscode.TextEditor,

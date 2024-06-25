@@ -323,6 +323,9 @@ export class SimpleChatPanelProvider
             case 'copy':
                 await handleCopiedCode(message.text, message.eventType === 'Button')
                 break
+            case 'openURI':
+                vscode.commands.executeCommand('vscode.open', message.uri)
+                break
             case 'links':
                 void openExternalLinks(message.value)
                 break
