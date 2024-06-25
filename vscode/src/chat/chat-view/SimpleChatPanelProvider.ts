@@ -191,7 +191,7 @@ export class SimpleChatPanelProvider
         const model = await getDefaultModelID(options.authProvider, options.models)
         const chatModelInstance = new SimpleChatModel(model)
 
-        return new SimpleChatPanelProvider({ ...options, chatModel: chatModelInstance})
+        return new SimpleChatPanelProvider({ ...options, chatModel: chatModelInstance })
     }
 
     private constructor({
