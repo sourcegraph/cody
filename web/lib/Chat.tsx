@@ -58,7 +58,7 @@ export interface CodyWebChatProps {
 export const CodyWebChat: FC<CodyWebChatProps> = props => {
     const { className } = props
 
-    const { vscodeAPI, client, activeChatID } = useWebAgentClient()
+    const { vscodeAPI, client } = useWebAgentClient()
 
     const { initialContext } = useWebAgentClient()
     const rootElementRef = useRef<HTMLDivElement>(null)
@@ -185,7 +185,6 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                                 <ClientStateContextProvider value={clientState}>
                                     <WithContextProviders>
                                         <Chat
-                                            key={activeChatID}
                                             chatEnabled={true}
                                             showSnippetActions={false}
                                             userInfo={userAccountInfo}

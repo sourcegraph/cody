@@ -15,13 +15,15 @@ interface CodyAgentServer {
   @JsonRequest("shutdown")
   fun shutdown(params: Null?): CompletableFuture<Null?>
   @JsonRequest("chat/new")
-  fun chat_new(params: Null?): CompletableFuture<String>
+  fun chat_new(params: Null?): CompletableFuture<Chat_NewResult>
   @JsonRequest("chat/restore")
   fun chat_restore(params: Chat_RestoreParams): CompletableFuture<String>
   @JsonRequest("chat/models")
   fun chat_models(params: Chat_ModelsParams): CompletableFuture<Chat_ModelsResult>
   @JsonRequest("chat/export")
-  fun chat_export(params: Null?): CompletableFuture<List<ChatExportResult>>
+  fun chat_export(params: Chat_ExportParams?): CompletableFuture<List<ChatExportResult>>
+  @JsonRequest("chat/delete")
+  fun chat_delete(params: Chat_DeleteParams): CompletableFuture<List<ChatExportResult>>
   @JsonRequest("chat/remoteRepos")
   fun chat_remoteRepos(params: Chat_RemoteReposParams): CompletableFuture<Chat_RemoteReposResult>
   @JsonRequest("chat/submitMessage")

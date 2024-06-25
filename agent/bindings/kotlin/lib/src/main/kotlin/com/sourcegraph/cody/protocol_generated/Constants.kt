@@ -16,6 +16,7 @@ object Constants {
   const val `transcript-errors` = "transcript-errors"
   const val userContextFiles = "userContextFiles"
   const val clientState = "clientState"
+  const val chatHistory = "chatHistory"
   const val clientAction = "clientAction"
   const val chatModels = "chatModels"
   const val `enhanced-context` = "enhanced-context"

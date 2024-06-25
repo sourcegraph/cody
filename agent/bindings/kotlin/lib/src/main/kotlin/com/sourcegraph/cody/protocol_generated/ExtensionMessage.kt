@@ -21,6 +21,7 @@ sealed class ExtensionMessage {
           "transcript-errors" -> context.deserialize<`transcript-errorsExtensionMessage`>(element, `transcript-errorsExtensionMessage`::class.java)
           "userContextFiles" -> context.deserialize<UserContextFilesExtensionMessage>(element, UserContextFilesExtensionMessage::class.java)
           "clientState" -> context.deserialize<ClientStateExtensionMessage>(element, ClientStateExtensionMessage::class.java)
+          "chatHistory" -> context.deserialize<ChatHistoryExtensionMessage>(element, ChatHistoryExtensionMessage::class.java)
           "clientAction" -> context.deserialize<ClientActionExtensionMessage>(element, ClientActionExtensionMessage::class.java)
           "chatModels" -> context.deserialize<ChatModelsExtensionMessage>(element, ChatModelsExtensionMessage::class.java)
           "enhanced-context" -> context.deserialize<`enhanced-contextExtensionMessage`>(element, `enhanced-contextExtensionMessage`::class.java)
@@ -115,6 +116,16 @@ data class ClientStateExtensionMessage(
 
   enum class TypeEnum {
     @SerializedName("clientState") ClientState,
+  }
+}
+
+data class ChatHistoryExtensionMessage(
+  val type: TypeEnum, // Oneof: chatHistory
+  val value: ChatHistoryUpdate,
+) : ExtensionMessage() {
+
+  enum class TypeEnum {
+    @SerializedName("chatHistory") ChatHistory,
   }
 }
 
