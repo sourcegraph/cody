@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import {
+    type CodyIDE,
     type Configuration,
     type ConfigurationUseContext,
     type ConfigurationWithAccessToken,
@@ -171,7 +172,7 @@ export function getConfiguration(
         // when something goes wrong, and to suppress event logging in the agent.
         // Rely on this flag sparingly.
         isRunningInsideAgent: getHiddenSetting('advanced.agent.running', false),
-        agentIDE: getHiddenSetting<'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'>('advanced.agent.ide'),
+        agentIDE: getHiddenSetting<CodyIDE>('advanced.agent.ide'),
         agentIDEVersion: getHiddenSetting('advanced.agent.ide.version'),
         agentExtensionVersion: getHiddenSetting('advanced.agent.extension.version'),
         autocompleteTimeouts: {
@@ -186,7 +187,7 @@ export function getConfiguration(
         },
         autocompleteFirstCompletionTimeout: getHiddenSetting<number>(
             'autocomplete.advanced.timeout.firstCompletion',
-            1_500
+            3_500
         ),
         testingModelConfig:
             isTesting && hasValidLocalEmbeddingsConfig()

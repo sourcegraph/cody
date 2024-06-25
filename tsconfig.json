@@ -26,7 +26,6 @@
   },
   "references": [
     { "path": "agent" },
-    { "path": "cli" },
     { "path": "lib/shared" },
     { "path": "vscode" },
     { "path": "vscode/test/integration" },

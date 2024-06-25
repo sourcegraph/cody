@@ -36,7 +36,7 @@ describe.skipIf(isWindows())('AutocompleteMatcher', () => {
                     matcher.params,
                     match.newText,
                     vscode.Uri.file(filename),
-                    { fixture: { name: 'test', strategy: BenchStrategy.BFG } }
+                    { fixture: { name: 'test', strategy: BenchStrategy.Autocomplete } }
                 )
                 document.pushItem({
                     range: new vscode.Range(

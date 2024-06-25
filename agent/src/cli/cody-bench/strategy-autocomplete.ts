@@ -8,13 +8,7 @@ import { evaluateEachFile } from './evaluateEachFile'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { triggerAutocomplete } from './triggerAutocomplete'
 
-/**
- * Runs autocomplete evaluation. The current logic is specifically optimized
- * to evaluate BFG.  The best way to customize the logic is by changing the
- * code. Eventually, we could make the logic configurable via command-line
- * flags so that we can reuse this command for different kinds of evaluations.
- */
-export async function evaluateBfgStrategy(
+export async function evaluateAutocompleteStrategy(
     client: MessageHandler,
     options: CodyBenchOptions
 ): Promise<void> {
@@ -22,8 +16,9 @@ export async function evaluateBfgStrategy(
     const matchCounts = new Map<AutocompleteMatchKind, number>()
     const files = execSync('git ls-files', { cwd: options.workspace }).toString().split('\n')
     files.sort()
-    evaluateEachFile(files, options, async params => {
+    await evaluateEachFile(files, options, async params => {
         const { file, content, uri, queries, grammarDirectory } = params
+
         const document = EvaluationDocument.from(params, options)
         const matcher = new AutocompleteMatcher(document.params, queries, grammarDirectory)
         const matches = await matcher.matches(content)
@@ -74,20 +69,24 @@ export async function evaluateBfgStrategy(
                 continue
             }
 
-            await triggerAutocomplete({
-                parser: matcher.parser,
-                originalTree: matcher.originalTree,
-                originalTreeIsErrorFree: matcher.originalTreeIsFreeOfErrrors,
+            try {
+                await triggerAutocomplete({
+                    parser: matcher.parser,
+                    originalTree: matcher.originalTree,
+                    originalTreeIsErrorFree: matcher.originalTreeIsFreeOfErrrors,
 
-                range: match.removedRange,
-                autocompleteKind: match.kind,
-                client,
-                document,
-                options,
-                modifiedContent: match.newText,
-                removedContent: match.removedText,
-                position: match.requestPosition,
-            })
+                    range: match.removedRange,
+                    autocompleteKind: match.kind,
+                    client,
+                    document,
+                    options,
+                    modifiedContent: match.newText,
+                    removedContent: match.removedText,
+                    position: match.requestPosition,
+                })
+            } catch (error) {
+                console.error('triggerAutocomplete', error)
+            }
             remainingTests--
         }
 

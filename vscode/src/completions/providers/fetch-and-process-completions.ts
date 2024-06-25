@@ -6,11 +6,11 @@ import {
 
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { canUsePartialCompletion } from '../can-use-partial-completion'
-import * as CompletionLogger from '../logger'
 import { getFirstLine } from '../text-processing'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
 import {
     type InlineCompletionItemWithAnalytics,
+    type ProcessItemParams,
     processCompletion,
 } from '../text-processing/process-inline-completions'
 
@@ -47,7 +47,7 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
         providerOptions,
         providerSpecificPostProcess,
     } = params
-    const { hotStreak, docContext, multiline, firstCompletionTimeout, completionLogId } = providerOptions
+    const { hotStreak, docContext, multiline, firstCompletionTimeout } = providerOptions
 
     let hotStreakExtractor: undefined | HotStreakExtractor
 
@@ -90,9 +90,6 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
     const generatorStartTime = performance.now()
 
     for await (const { completion, stopReason, resolvedModel } of completionResponseGenerator) {
-        // Add the model resolved by Cody Gateway to the completion event.
-        CompletionLogger.gatewayModelResolved(completionLogId, resolvedModel)
-
         const isFirstCompletionTimeoutElapsed =
             performance.now() - generatorStartTime >= firstCompletionTimeout
         const isFullResponse = stopReason !== CompletionStopReason.StreamingChunk
@@ -118,6 +115,11 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
             continue
         }
 
+        const postProcessParams: ProcessItemParams = {
+            ...providerOptions,
+            resolvedModel,
+        }
+
         /**
          * This completion was triggered with the multiline trigger at the end of current line.
          * Process it as the usual multiline completion: continue streaming until it's truncated.
@@ -130,7 +132,7 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
             })
 
             if (completion) {
-                const completedCompletion = processCompletion(completion, providerOptions)
+                const completedCompletion = processCompletion(completion, postProcessParams)
                 yield* stopStreamingAndUsePartialResponse({
                     completedCompletion,
                     isFullResponse,
@@ -174,6 +176,7 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
                     document: providerOptions.document,
                     position: dynamicMultilineDocContext.position,
                     docContext: dynamicMultilineDocContext,
+                    resolvedModel,
                 })
 
                 yield* stopStreamingAndUsePartialResponse({
@@ -207,7 +210,7 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
                         ...completion,
                         insertText: firstLine,
                     },
-                    providerOptions
+                    postProcessParams
                 )
 
                 yield* stopStreamingAndUsePartialResponse({
