@@ -15,6 +15,7 @@ import { evaluateAutocompleteStrategy } from './strategy-autocomplete'
 import { evaluateChatStrategy } from './strategy-chat'
 import { evaluateFixStrategy } from './strategy-fix'
 import { evaluateGitLogStrategy } from './strategy-git-log'
+import {evaluateUnitTestStrategy} from "./strategy-unit-test";
 
 export interface CodyBenchOptions {
     workspace: string
@@ -64,9 +65,10 @@ interface EvaluationConfig extends Partial<CodyBenchOptions> {
 
 export enum BenchStrategy {
     Autocomplete = 'autocomplete',
-    GitLog = 'git-log',
-    Fix = 'fix',
     Chat = 'chat',
+    Fix = 'fix',
+    GitLog = 'git-log',
+    UnitTest = 'unit-test',
 }
 
 interface EvaluationFixture {
@@ -387,6 +389,9 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
                 break
             case BenchStrategy.Chat:
                 await evaluateChatStrategy(client, options)
+                break
+            case BenchStrategy.UnitTest:
+                await evaluateUnitTestStrategy(client, options)
                 break
             default:
                 throw new Error(`unknown strategy ${options.fixture.strategy}`)

@@ -139,6 +139,8 @@ export class EvaluationDocument {
                     out.push(' FIX')
                 } else if (this.options.fixture.strategy === BenchStrategy.Chat) {
                     out.push(' CHAT')
+                } else if (this.options.fixture.strategy === BenchStrategy.UnitTest) {
+                    out.push(' UNIT TEST')
                 } else {
                     throw new Error(`unknown strategy ${this.options.fixture.strategy}`)
                 }
