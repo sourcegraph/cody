@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.listeners
 
+import com.intellij.openapi.editor.EditorKind
 import com.intellij.openapi.editor.event.SelectionEvent
 import com.intellij.openapi.editor.event.SelectionListener
 import com.intellij.openapi.project.Project
@@ -12,7 +13,10 @@ class CodySelectionListener(val project: Project) : SelectionListener {
   private val inlayManager = CodySelectionInlayManager()
 
   override fun selectionChanged(event: SelectionEvent) {
-    if (!ConfigUtil.isCodyEnabled() || event.editor == null) {
+    if (!ConfigUtil.isCodyEnabled() ||
+        event.editor == null ||
+        event.editor.project != project ||
+        event.editor.editorKind != EditorKind.MAIN_EDITOR) {
       return
     }
     val editor = event.editor
