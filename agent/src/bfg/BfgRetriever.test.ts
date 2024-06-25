@@ -39,7 +39,8 @@ describe('BfgRetriever', async () => {
         await initializeVscodeExtension(
             vscode.Uri.file(process.cwd()),
             activate,
-            defaultVSCodeExtensionClient()
+            defaultVSCodeExtensionClient(),
+            'node'
         )
 
         if (shouldCreateGitDir) {

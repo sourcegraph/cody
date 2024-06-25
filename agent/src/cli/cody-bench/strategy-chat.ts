@@ -37,7 +37,7 @@ export async function evaluateChatStrategy(
     await evaluateEachFile(yamlFiles, options, async params => {
         const document = EvaluationDocument.from(params, options)
         const task: ChatTask = YAML.parse(params.content)
-        const id = await client.request('chat/new', null)
+        const { panelID: id } = await client.request('chat/new', null)
         client.request('webview/receiveMessage', { id, message: { command: 'chatModel', model } })
         const contextFiles: ContextItem[] = []
         for (const relativePath of task.files ?? []) {
