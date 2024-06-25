@@ -25,7 +25,6 @@ import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
 import java.util.function.Function
-import kotlinx.coroutines.runBlocking
 
 @Service(Service.Level.PROJECT)
 class CodyAgentService(private val project: Project) : Disposable {
@@ -253,45 +252,43 @@ class CodyAgentService(private val project: Project) : Disposable {
         restartIfNeeded: Boolean,
         callback: Consumer<CodyAgent>,
         onFailure: Consumer<Exception> = Consumer {}
-    ): CompletableFuture<Boolean> {
-      val future = CompletableFuture<Boolean>()
+    ) {
       if (CodyApplicationSettings.instance.isCodyEnabled) {
         ApplicationManager.getApplication().executeOnPooledThread {
-          runBlocking {
-            val task: suspend (CodyAgent) -> Unit = { agent ->
-              try {
-                callback.accept(agent)
-              } catch (e: Exception) {
-                logger.warn(e)
-                onFailure.accept(e)
-              }
+          try {
+            val instance = getInstance(project)
+            val isReadyButNotFunctional = instance.codyAgent.getNow(null)?.isConnected() == false
+            val agent =
+                if (isReadyButNotFunctional && restartIfNeeded) instance.restartAgent(project)
+                else instance.codyAgent
+            callback.accept(agent.get())
+            setAgentError(project, null)
+          } catch (e: Exception) {
+            logger.warn("Failed to execute call to agent", e)
+            if (restartIfNeeded && e !is ProcessCanceledException) {
+              getInstance(project).restartAgent(project)
             }
-            coWithAgent(project, restartIfNeeded, task)
+            onFailure.accept(e)
+            throw e
           }
         }
-      } else {
-        future.complete(false) // Complete the future with false indicating Cody is disabled.
       }
-      return future
     }
 
     @JvmStatic
-    fun withAgent(project: Project, callback: Consumer<CodyAgent>): CompletableFuture<Boolean> =
+    fun withAgent(project: Project, callback: Consumer<CodyAgent>) =
         withAgent(project, restartIfNeeded = false, callback = callback)
 
     @JvmStatic
-    fun withAgentRestartIfNeeded(
-        project: Project,
-        callback: Consumer<CodyAgent>
-    ): CompletableFuture<Boolean> = withAgent(project, restartIfNeeded = true, callback = callback)
+    fun withAgentRestartIfNeeded(project: Project, callback: Consumer<CodyAgent>) =
+        withAgent(project, restartIfNeeded = true, callback = callback)
 
     @JvmStatic
     fun withAgentRestartIfNeeded(
         project: Project,
         callback: Consumer<CodyAgent>,
         onFailure: Consumer<Exception>
-    ): CompletableFuture<Boolean> =
-        withAgent(project, restartIfNeeded = true, callback = callback, onFailure = onFailure)
+    ) = withAgent(project, restartIfNeeded = true, callback = callback, onFailure = onFailure)
 
     @JvmStatic
     fun isConnected(project: Project): Boolean {
@@ -299,35 +296,6 @@ class CodyAgentService(private val project: Project) : Disposable {
         getInstance(project).codyAgent.getNow(null)?.isConnected() == true
       } catch (e: Exception) {
         false
-      }
-    }
-
-    suspend fun <T> coWithAgent(project: Project, callback: suspend (CodyAgent) -> T) =
-        coWithAgent(project, false, callback)
-
-    private suspend fun <T> coWithAgent(
-        project: Project,
-        restartIfNeeded: Boolean,
-        callback: suspend (CodyAgent) -> T
-    ): T {
-      if (!CodyApplicationSettings.instance.isCodyEnabled) {
-        throw Exception("Cody is not enabled")
-      }
-      try {
-        val instance = getInstance(project)
-        val isReadyButNotFunctional = instance.codyAgent.getNow(null)?.isConnected() == false
-        val agent =
-            if (isReadyButNotFunctional && restartIfNeeded) instance.restartAgent(project)
-            else instance.codyAgent
-        val result = callback(agent.get())
-        setAgentError(project, null)
-        return result
-      } catch (e: Exception) {
-        logger.warn("Failed to execute call to agent", e)
-        if (restartIfNeeded && e !is ProcessCanceledException) {
-          getInstance(project).restartAgent(project)
-        }
-        throw e
       }
     }
   }

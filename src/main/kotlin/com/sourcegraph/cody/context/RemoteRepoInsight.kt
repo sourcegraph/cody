@@ -36,6 +36,7 @@ import com.intellij.psi.util.elementType
 import com.intellij.refactoring.suggested.endOffset
 import com.intellij.refactoring.suggested.startOffset
 import com.intellij.util.ProcessingContext
+import com.jetbrains.rd.util.CancellationException
 import com.jetbrains.rd.util.getThrowableText
 import com.sourcegraph.Icons
 import com.sourcegraph.cody.context.ui.MAX_REMOTE_REPOSITORY_COUNT
@@ -325,7 +326,7 @@ class RemoteRepoAnnotator : Annotator, DumbAware {
         val name = element.text
         val service = RemoteRepoSearcher.getInstance(element.project)
         runBlockingCancellable {
-          if (!service.has(name)) {
+          if (!service.cancellableHas(name)) {
             blockingContext {
               holder
                   .newAnnotation(
@@ -409,23 +410,20 @@ class RemoteRepoCompletionContributor : CompletionContributor(), DumbAware {
                 }
             prefixedResult.restartCompletionOnAnyPrefixChange()
             try {
-              runBlockingCancellable {
-                // TODO: Extend repo search to consult Cody Ignore and denote repositories that are
-                // ignored.
-                for (repos in searcher.search(query)) {
-                  blockingContext { // addElement uses ProgressManager.checkCancelled
-                    for (repo in repos) {
-                      prefixedResult
-                          .caseInsensitive()
-                          .addElement(
-                              LookupElementBuilder.create(repo)
-                                  .withIcon(RemoteRepo.iconForName(repo)))
-                    }
-                  }
-                }
+              // TODO: Extend repo search to consult Cody Ignore and denote repositories that are
+              // ignored.
+              for (repo in searcher.cancellableSearch(query)) {
+                prefixedResult
+                    .caseInsensitive()
+                    .addElement(
+                        LookupElementBuilder.create(repo).withIcon(RemoteRepo.iconForName(repo)))
               }
             } catch (e: Exception) {
-              prefixedResult.addLookupAdvertisement(e.getThrowableText())
+              if (e is CancellationException) {
+                throw e
+              } else {
+                prefixedResult.addLookupAdvertisement(e.getThrowableText())
+              }
             }
           }
         })
