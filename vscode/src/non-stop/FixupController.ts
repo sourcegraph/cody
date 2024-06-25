@@ -119,7 +119,7 @@ export class FixupController
 
                     // Use waitUntil to ensure that we clear the placeholder lines before any post-save
                     // actions (like formatting) happen.
-                    event.waitUntil(this.clearPlaceholderInsertions(tasksToAccept, event.document.uri))
+                    event.waitUntil(this.getPlaceholderInsertionsToDelete(tasksToAccept))
 
                     for (const task of tasksToAccept) {
                         // Finally accept all of the tasks
@@ -796,17 +796,21 @@ export class FixupController
         this.tasks.delete(task.id)
     }
 
-    private async clearPlaceholderInsertions(tasks: FixupTask[], uri: vscode.Uri): Promise<void> {
-        const placeholderLines: Edit[] = []
+    private async getPlaceholderInsertionsToDelete(tasks: FixupTask[]): Promise<vscode.TextEdit[]> {
+        const rangesToDelete: vscode.TextEdit[] = []
         for (const task of tasks) {
-            const decoratedReplacements = (task.diff || []).filter(
-                ({ type }) => type === 'decoratedReplacement'
-            )
-            placeholderLines.push(...decoratedReplacements)
+            const decoratedReplacements = (task.diff || [])
+                .filter(({ type }) => type === 'decoratedReplacement')
+                .map(({ range }) => new vscode.TextEdit(range, ''))
+            rangesToDelete.push(...decoratedReplacements)
             // Clear the diff afterwards, we want to ensure we never duplicate removing placeholder lines
             task.diff = undefined
         }
+        return rangesToDelete
+    }
 
+    private async clearPlaceholderInsertions(tasks: FixupTask[], uri: vscode.Uri): Promise<void> {
+        const placeholderLines = await this.getPlaceholderInsertionsToDelete(tasks)
         if (placeholderLines.length === 0) {
             // Nothing to clear
             return
