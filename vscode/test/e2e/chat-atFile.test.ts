@@ -313,7 +313,7 @@ test.extend<ExpectedEvents>({
     const contextCell = getContextCell(chatPanelFrame)
     await expectContextCellCounts(contextCell, { files: 1 })
     await contextCell.hover()
-    await contextCell.click()
+    await contextCell.locator('button', { hasText: 'Context' }).click() // expand
     const chatContext = getContextCell(chatPanelFrame).last()
     await chatContext.getByRole('link', { name: 'buzz.ts:2-4' }).hover()
     await chatContext.getByRole('link', { name: 'buzz.ts:2-4' }).click()
@@ -395,7 +395,7 @@ test.extend<ExpectedEvents>({
     const contextCell = getContextCell(chatPanelFrame)
     await expectContextCellCounts(contextCell, { files: 2 })
     await contextCell.hover()
-    await contextCell.click()
+    await contextCell.locator('button', { hasText: 'Context' }).click() // expand
     const chatContext = getContextCell(chatPanelFrame).last()
     await chatContext.getByRole('link', { name: 'buzz.ts:1-15' }).hover()
     await chatContext.getByRole('link', { name: 'buzz.ts:1-15' }).click()
