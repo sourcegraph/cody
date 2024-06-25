@@ -101,7 +101,11 @@ describe('Transcript', () => {
                 messageInProgress={{ speaker: 'assistant', text: undefined }}
             />
         )
-        expectCells([{ message: 'Foo' }, { context: { loading: true } }, { message: '', canSubmit: true }])
+        expectCells([
+            { message: 'Foo' },
+            { context: { loading: true } },
+            { message: '', canSubmit: true },
+        ])
     })
 
     test('human message with context, waiting for assistant message', () => {
@@ -140,7 +144,11 @@ describe('Transcript', () => {
                 messageInProgress={{ speaker: 'assistant', text: undefined }}
             />
         )
-        expectCells([{ message: 'Foo' }, { message: { loading: true } }, { message: '', canSubmit: true }])
+        expectCells([
+            { message: 'Foo' },
+            { message: { loading: true } },
+            { message: '', canSubmit: true },
+        ])
     })
 
     test('human message with context, assistant message in progress', () => {
@@ -297,7 +305,9 @@ function expectCells(expectedCells: CellMatcher[], containerElement?: HTMLElemen
         } else if ('context' in expectedCell) {
             expect(cell).toHaveAttribute('data-testid', 'context')
             if (expectedCell.context.files !== undefined) {
-                expect(cell.querySelector('button')).toHaveAccessibleDescription(`${expectedCell.context.files} item`)
+                expect(cell.querySelector('button')).toHaveAccessibleDescription(
+                    `${expectedCell.context.files} item`
+                )
             } else if (expectedCell.context.loading) {
                 expect(cell.querySelector('[role="status"]')).toHaveAttribute('aria-busy')
             }
