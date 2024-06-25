@@ -61,6 +61,7 @@ export async function evaluateChatStrategy(
                 document.pushItem({
                     range,
                     chatReply: reply.text,
+                    chatQuestion: task.question,
                 })
             } else {
                 document.pushItem({
@@ -71,7 +72,7 @@ export async function evaluateChatStrategy(
         } else {
             document.pushItem({
                 range,
-                resultError: 'expected a transcriot. Got ' + JSON.stringify(response, null, 2),
+                resultError: 'expected a transcript. Got ' + JSON.stringify(response, null, 2),
             })
         }
         return document
