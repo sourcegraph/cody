@@ -80,7 +80,6 @@ test.extend<ExpectedEvents>({
     // NOTE(sqs): It's OK if the test changes so that it's just `index.html`.
     await expect(contextCellItems(contextCell)).toHaveText(['index.html', 'index.html:1-11'])
     await expectContextCellCounts(contextCell, { files: 2 })
-    await openContextCell(contextCell)
 
     // Check if assistant responsed
     await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
@@ -98,9 +97,9 @@ test.extend<ExpectedEvents>({
     await expect(page.getByText('Explain Code')).toBeVisible()
     await page.getByText('Explain Code').click()
     const CONTEXT_ITEM_TEXTS = ['index.html', 'index.html:2-10']
-    await expect(contextCellItems(contextCell)).toHaveText(CONTEXT_ITEM_TEXTS)
     await expectContextCellCounts(contextCell, { files: 2 })
     await openContextCell(contextCell)
+    await expect(contextCellItems(contextCell)).toHaveText(CONTEXT_ITEM_TEXTS)
 
     // The mentions in the command should show up as mentions.
     const firstChatInput = chatPanel.getByRole('textbox', { name: 'Chat message' }).first()
@@ -109,8 +108,9 @@ test.extend<ExpectedEvents>({
     // When the message is resent, ensure that the same number of context items are included.
     await firstChatInput.focus()
     await firstChatInput.press('Enter')
-    await expect(contextCellItems(contextCell)).toHaveText(CONTEXT_ITEM_TEXTS)
     await expectContextCellCounts(contextCell, { files: 2 })
+    await openContextCell(contextCell)
+    await expect(contextCellItems(contextCell)).toHaveText(CONTEXT_ITEM_TEXTS)
 
     // Smell Command
     // Running a command again should reuse the current cursor position
