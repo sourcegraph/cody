@@ -78,7 +78,9 @@ export class FixupTask {
         /* The file to write the edit to. If not provided, the edit will be applied to the fixupFile. */
         public destinationFile?: vscode.Uri,
         public insertionPoint?: vscode.Position,
-        public readonly telemetryMetadata: FixupTelemetryMetadata = {}
+        public readonly telemetryMetadata: FixupTelemetryMetadata = {},
+        public attemptFixImports = false,
+        public deleteFileOnUndo = false
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, ps``).trim()

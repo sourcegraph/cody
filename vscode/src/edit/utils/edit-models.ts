@@ -31,7 +31,7 @@ export function getOverridenModelForIntent(
             // Issue: https://github.com/sourcegraph/cody/issues/3512
             return 'anthropic/claude-3-sonnet-20240229'
         case 'doc':
-            // Doc is a case where we can sacrifice LLM performnace for improved latency and get comparable results.
+            // Doc is a case where we can sacrifice LLM performance for improved latency and get comparable results.
             return 'anthropic/claude-3-haiku-20240307'
         case 'test':
         case 'add':

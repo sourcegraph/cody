@@ -22,7 +22,7 @@ import { isTestFileForOriginal } from '../utils/test-commands'
  * Checks for a testable node (e.g. function) at the position
  * using a tree-sitter query. If found, returns the range for the symbol.
  */
-function getTestableRange(editor: vscode.TextEditor): vscode.Range | undefined {
+export function getTestableRange(editor: vscode.TextEditor): vscode.Range | undefined {
     const { document } = editor
     const adjustedSelection = getEditAdjustedUserSelection(document, editor.selection)
 

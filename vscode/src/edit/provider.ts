@@ -1,4 +1,5 @@
-import { Utils } from 'vscode-uri'
+import * as vscode from 'vscode'
+import { type URI, Utils } from 'vscode-uri'
 
 import {
     BotResponseMultiplexer,
@@ -17,7 +18,6 @@ import type { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 import { isNetworkError } from '../services/AuthProvider'
 
-import { workspace } from 'vscode'
 import { doesFileExist } from '../commands/utils/workspace-files'
 import { CodyTaskState } from '../non-stop/utils'
 import { telemetryService } from '../services/telemetry'
@@ -92,10 +92,10 @@ export class EditProvider {
                 if (this.config.task.destinationFile) {
                     // We have already provided a destination file,
                     // Treat this as the test file to insert to
-                    await this.config.controller.didReceiveNewFileRequest(
-                        this.config.task.id,
-                        this.config.task.destinationFile
-                    )
+                    await this.config.controller.didReceiveNewFileRequest(this.config.task, {
+                        type: 'existing',
+                        uri: this.config.task.destinationFile,
+                    })
                 }
 
                 // Listen to test file name suggestion from responses and create the file if we don't have one.
@@ -277,41 +277,48 @@ export class EditProvider {
         // Manually create the file if no name was suggested
         if (!text.length && !isMessageInProgress) {
             // Create a new untitled file if the suggested file does not exist
-            const currentFile = task.fixupFile.uri
-            const currentDoc = await workspace.openTextDocument(currentFile)
-            const newDoc = await workspace.openTextDocument({
-                language: currentDoc?.languageId,
+            return await this.config.controller.didReceiveNewFileRequest(this.config.task, {
+                type: 'untitled',
+                guessLanguageFrom: task.fixupFile.uri,
             })
-            await this.config.controller.didReceiveNewFileRequest(this.config.task.id, newDoc.uri)
-            return
         }
 
         const opentag = `<${PROMPT_TOPICS.FILENAME}>`
         const closetag = `</${PROMPT_TOPICS.FILENAME}>`
-
-        const currentFileUri = task.fixupFile.uri
-        const currentFileName = uriBasename(currentFileUri)
         // remove open and close tags from text
         const newFilePath = text.trim().replaceAll(new RegExp(`${opentag}(.*)${closetag}`, 'g'), '$1')
-        const haveSameExtensions =
-            posixFilePaths.extname(currentFileName) === posixFilePaths.extname(newFilePath)
 
-        // Get workspace uri using the current file uri
-        const workspaceUri = workspace.getWorkspaceFolder(currentFileUri)?.uri
-        const currentDirUri = Utils.joinPath(currentFileUri, '..')
-
-        // Create a new file uri by replacing the file name of the currentFileUri with fileName
-        let newFileUri = Utils.joinPath(workspaceUri ?? currentDirUri, newFilePath)
-        if (haveSameExtensions && !task.destinationFile) {
-            const fileIsFound = await doesFileExist(newFileUri)
-            if (!fileIsFound) {
-                newFileUri = newFileUri.with({ scheme: 'untitled' })
-            }
+        if (haveSameExtensions(task.fixupFile.uri, newFilePath) && !task.destinationFile) {
+            const newFileUri = pathToWorkspaceURI(newFilePath, task.fixupFile.uri)
             try {
-                await this.config.controller.didReceiveNewFileRequest(task.id, newFileUri)
+                if (await doesFileExist(newFileUri)) {
+                    await this.config.controller.didReceiveNewFileRequest(task, {
+                        type: 'existing',
+                        uri: newFileUri,
+                    })
+                } else {
+                    await this.config.controller.didReceiveNewFileRequest(task, {
+                        type: 'create',
+                        path: newFileUri.with({ scheme: 'file' }),
+                    })
+                }
             } catch (error) {
                 this.handleError(new Error('Cody failed to generate unit tests', { cause: error }))
             }
         }
     }
+}
+
+function haveSameExtensions(currentFile: string | URI, newFile: string | URI): boolean {
+    const basename = (uri: string | URI) => (typeof uri === 'string' ? uri : uriBasename(uri))
+    return posixFilePaths.extname(basename(currentFile)) === posixFilePaths.extname(basename(newFile))
+}
+
+function pathToWorkspaceURI(path: string, current: vscode.Uri): vscode.Uri {
+    // Get workspace uri using the current file uri
+    const workspaceUri = vscode.workspace.getWorkspaceFolder(current)?.uri
+    const currentDirUri = Utils.dirname(current)
+
+    // Create a new file uri by replacing the file name of the currentFileUri with fileName
+    return Utils.joinPath(workspaceUri ?? currentDirUri, path)
 }

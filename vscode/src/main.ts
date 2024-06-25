@@ -50,6 +50,7 @@ import { BaseConfigWatcher, type ConfigWatcher } from './configwatcher'
 import { EnterpriseContextFactory } from './context/enterprise-context-factory'
 import { exposeOpenCtxClient } from './context/openctx'
 import { EditManager } from './edit/manager'
+import { getEditor } from './editor/active-editor'
 import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInfo'
 import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
@@ -62,6 +63,7 @@ import { logDebug, logError } from './log'
 import { MinionOrchestrator } from './minion/MinionOrchestrator'
 import { PoorMansBash } from './minion/environment'
 import { registerModelsFromVSCodeConfiguration, syncModels } from './models/sync'
+import { attemptFixAllImports } from './non-stop/FixupController'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
 import { initVSCodeGitApi } from './repository/git-extension-api'
@@ -364,6 +366,13 @@ const register = async (
         vscode.commands.registerCommand('cody.command.unit-tests', a => executeTestEditCommand(a)),
         vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a)),
         vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a)),
+        vscode.commands.registerCommand('cody.command.fix-imports', async () => {
+            const editor = getEditor()
+            if (!editor || !editor.active) {
+                return
+            }
+            await attemptFixAllImports(editor.active.document.uri)
+        }),
         sourceControl // Generate Commit Message command
     )
 
