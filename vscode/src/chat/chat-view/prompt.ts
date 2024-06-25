@@ -75,11 +75,17 @@ export class DefaultPrompter {
             }
 
             const transcriptLimitReached = promptBuilder.tryAddMessages(reverseTranscript)
-            if (transcriptLimitReached) {
+            if (transcriptLimitReached !== undefined) {
                 logDebug(
                     'DefaultPrompter.makePrompt',
                     `Ignored ${transcriptLimitReached} chat messages due to context limit`
                 )
+                if (transcriptLimitReached === 0) {
+                    // If no transcript was added due to limit reached, throw error.
+                    throw new Error(
+                        `Chat transcript length exceeded context window ${chat.contextWindow.input}`
+                    )
+                }
             }
 
             // Counter for context items categorized by source

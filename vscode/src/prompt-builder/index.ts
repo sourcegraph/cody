@@ -74,7 +74,7 @@ export class PromptBuilder {
      * Validates that the transcript alternates between human and assistant speakers.
      * Stops adding when the character limit would be exceeded.
      */
-    public tryAddMessages(reverseTranscript: ChatMessage[]): number {
+    public tryAddMessages(reverseTranscript: ChatMessage[]): number | undefined {
         // All Human message is expected to be followed by response from Assistant,
         // except for the Human message at the last index that Assistant hasn't responded yet.
         const lastHumanMsgIndex = reverseTranscript.findIndex(msg => msg.speaker === 'human')
@@ -93,7 +93,8 @@ export class PromptBuilder {
             }
             this.reverseMessages.push(humanMsg)
         }
-        return 0
+        // All messages were added successfully.
+        return undefined
     }
 
     public async tryAddContext(
