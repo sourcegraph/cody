@@ -86,6 +86,10 @@ export class PromptBuilder {
             }
             const withinLimit = this.tokenCounter.updateUsage('input', [humanMsg, assistantMsg])
             if (!withinLimit) {
+                // Throw error if the limit was exceeded and no message was added.
+                if (!this.reverseMessages.length) {
+                    throw new Error('Chat input exceeded token limit')
+                }
                 return reverseTranscript.length - i + (assistantMsg ? 1 : 0)
             }
             if (assistantMsg) {
