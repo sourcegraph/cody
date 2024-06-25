@@ -125,7 +125,7 @@ export async function expectContextCellCounts(
     contextCell: Locator,
     counts: { files: number; timeout?: number }
 ): Promise<void> {
-    const summary = contextCell.locator('summary', { hasText: 'Context' })
+    const summary = contextCell.locator('button', { hasText: 'Context' })
     await expect(summary).toHaveAttribute(
         'title',
         `${counts.files} item${counts.files === 1 ? '' : 's'}`,

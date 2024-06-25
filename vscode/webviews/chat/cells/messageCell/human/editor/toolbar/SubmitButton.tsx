@@ -19,6 +19,7 @@ export const SubmitButton: FunctionComponent<{
                         type="submit"
                         variant="ghostRoundedIcon"
                         className="tw-relative tw-w-[20px] tw-h-[20px] tw-bg-transparent tw-group"
+                        title="Stop"
                     >
                         <div className="tw-absolute tw-top-[0px] tw-left-[0px] tw-h-[18px] tw-w-[18px] tw-animate-spin tw-rounded-full tw-border-[1px] tw-border-solid tw-border-current tw-border-e-transparent high-contrast-dark:tw-border-button-border high-contrast-dark:tw-border-e-transparent" />
                         <div className="tw-absolute tw-top-[5.5px] tw-left-[5.5px] tw-h-[7px] tw-w-[7px] tw-rounded-[0.5px] tw-bg-current tw-opacity-80 group-hover:tw-opacity-100" />
@@ -40,6 +41,7 @@ export const SubmitButton: FunctionComponent<{
                     disabled={state === 'emptyEditorValue'}
                     type="submit"
                     className="tw-relative tw-w-[20px] tw-h-[20px]"
+                    title="Send"
                 >
                     {/* biome-ignore lint/a11y/noSvgWithoutTitle: */}
                     <svg
