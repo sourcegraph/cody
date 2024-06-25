@@ -10,7 +10,7 @@ import { evaluateEachFile } from './evaluateEachFile'
 
 interface ChatTask {
     question: string
-    files: string[]
+    files?: string[]
 }
 
 export async function evaluateChatStrategy(
@@ -36,7 +36,7 @@ export async function evaluateChatStrategy(
         const id = await client.request('chat/new', null)
         client.request('webview/receiveMessage', { id, message: { command: 'chatModel', model } })
         const contextFiles: ContextItem[] = []
-        for (const relativePath of task.files) {
+        for (const relativePath of task.files ?? []) {
             const uri = vscode.Uri.file(path.join(path.dirname(params.uri.fsPath), relativePath))
             contextFiles.push({
                 type: 'file',
