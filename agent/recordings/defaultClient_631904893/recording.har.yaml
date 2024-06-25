@@ -4776,11 +4776,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: ca3043aeedbbb77bb2376503806788fb
+    - _id: 4ec93f2674b8168d05f9bad0e7e7b1ed
       _order: 0
       cache: {}
       request:
-        bodySize: 227
+        bodySize: 341
         cookies: []
         headers:
           - _fromType: array
@@ -4798,7 +4798,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "227"
+            value: "341"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -4823,6 +4823,12 @@ log:
                       primaryEmail {
                           email
                       }
+                      organizations {
+                          nodes {
+                              id
+                              name
+                          }
+                      }
                   }
               }
             variables: {}
@@ -4840,7 +4846,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 17 Jun 2024 21:59:50 GMT
+            value: Tue, 25 Jun 2024 06:04:24 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -4868,7 +4874,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-06-17T21:59:50.485Z
+      startedDateTime: 2024-06-25T06:04:23.708Z
       time: 0
       timings:
         blocked: -1
@@ -4878,11 +4884,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 7f3ff10a39505669cb5d36145df5fa95
+    - _id: 3fec40886d87367e761715c3159e6590
       _order: 0
       cache: {}
       request:
-        bodySize: 227
+        bodySize: 341
         cookies: []
         headers:
           - _fromType: array
@@ -4900,7 +4906,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "227"
+            value: "341"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -4925,6 +4931,12 @@ log:
                       primaryEmail {
                           email
                       }
+                      organizations {
+                          nodes {
+                              id
+                              name
+                          }
+                      }
                   }
               }
             variables: {}
@@ -4933,31 +4945,21 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentUser
       response:
-        bodySize: 348
+        bodySize: 386
         content:
           encoding: base64
           mimeType: application/json
-          size: 348
-          text: "[\"H4sIAAAAAAAAA2RPy06DQBT9l7uGgmm0MEkTbW1dVImPlNTlZbiFAYbBeVQp4d8bUhMX7\
-            s7JOTmPAXK0CGwA7rSm1u4N6YmKHBikh6ThlTonj283LxVfggclmpS0OArKNxJFA8xq\
-            Rx7kwnQN9glKAgYfymlOhcauXCnrx2EYggfOkG6vBvNnyJSNa//YfksHHuAJLer9+zM\
-            wKK3tDAuCppzPCqWKhqYErlpLrZ1xJQMMHtZFpPhui1/ZJ7lVnVW3+XZz/omyQxrhQs\
-            xNmu3WyWu6eApdf6qXJr7zOXjQaSFR978nBqAr+LfsvpiEqQ3GcRwvAAAA//8DALThL\
-            hwxAQAA\"]"
-          textDecoded:
-            data:
-              currentUser:
-                avatarURL: https://lh3.googleusercontent.com/a/ACg8ocKFaqbYeuBkbj5dFEzx8bXV8a7i3sVbKCNPV7G0uyvk=s96-c
-                displayName: SourcegraphBot-9000
-                hasVerifiedEmail: true
-                id: VXNlcjozNDQ1Mjc=
-                primaryEmail:
-                  email: sourcegraphbot9k@gmail.com
-                username: sourcegraphbot9k-fnwmu
+          size: 386
+          text: "[\"H4sIAAAAAAAAA2RPy04=\",\"wkAU/Ze7bmkNUdpJSBQEF2jjIzQY4+J2emmnj5k6DxSa\
+            /jtpMHHh7pycx72nhxwtAuuBO61J2q0hPVKRA4N0lzS8Uqfk/uXqqeJz8KBEk5IWe0H\
+            5qkXRALPakQe5MF2DxwRbAgZvymlOhcauXCjrx2EYggfOkJYXg/kzZMrGtb+X360DD/\
+            CAFvX29REYlNZ2hgVBU04nhVJFQ2MDV9KStBOu2gCDu2URKb5Z41f2Tm5RZ9V1vl6df\
+            qJsl0Y4E1OTZptl8pzOHkJ3PNRzE9/4HDzotGhRH39H9EAX8O+z22IUxmsweKB0gVKc\
+            0AolzRiTKicD7ONzGIbhDAAA//8=\",\"AwBKjJM/TgEAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Mon, 17 Jun 2024 21:59:50 GMT
+            value: Tue, 25 Jun 2024 06:04:24 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -4988,7 +4990,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-17T21:59:50.714Z
+      startedDateTime: 2024-06-25T06:04:24.301Z
       time: 0
       timings:
         blocked: -1
@@ -4998,11 +5000,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 34fdd9e2bfa6ca27b8e484974dcf6e59
+    - _id: 2af9a176de37be11dff4f113b3a1f7aa
       _order: 0
       cache: {}
       request:
-        bodySize: 227
+        bodySize: 341
         cookies: []
         headers:
           - _fromType: array
@@ -5020,7 +5022,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "227"
+            value: "341"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -5045,6 +5047,12 @@ log:
                       primaryEmail {
                           email
                       }
+                      organizations {
+                          nodes {
+                              id
+                              name
+                          }
+                      }
                   }
               }
             variables: {}
@@ -5062,7 +5070,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 17 Jun 2024 21:59:51 GMT
+            value: Tue, 25 Jun 2024 06:04:25 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -5090,7 +5098,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-06-17T21:59:51.130Z
+      startedDateTime: 2024-06-25T06:04:24.780Z
       time: 0
       timings:
         blocked: -1

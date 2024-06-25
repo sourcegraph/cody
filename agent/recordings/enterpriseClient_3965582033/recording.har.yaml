@@ -60,9 +60,6 @@ log:
           size: 154
           text: |+
             event: completion
-            data: {"completion":"Yes","stopReason":""}
-
-            event: completion
             data: {"completion":"Yes","stopReason":"end_turn"}
 
             event: done
@@ -248,146 +245,6 @@ log:
           mimeType: text/event-stream
           size: 3845
           text: >+
-            event: completion
-
-            data: {"completion":"//","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Recor","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now`","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` metho","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n//","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monot","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotoni","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp in","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp in millis","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp in milliseconds","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp in milliseconds.","stopReason":""}
-
-
             event: completion
 
             data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp in milliseconds.","stopReason":"stop_sequence"}
@@ -959,11 +816,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 4cfda87e85b57b509bfb2ace58bb4847
+    - _id: 1e4155184524e985a9d3113dc68b8f02
       _order: 0
       cache: {}
       request:
-        bodySize: 227
+        bodySize: 341
         cookies: []
         headers:
           - _fromType: array
@@ -981,7 +838,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "227"
+            value: "341"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -1006,6 +863,12 @@ log:
                       primaryEmail {
                           email
                       }
+                      organizations {
+                          nodes {
+                              id
+                              name
+                          }
+                      }
                   }
               }
             variables: {}
@@ -1014,19 +877,19 @@ log:
             value: null
         url: https://demo.sourcegraph.com/.api/graphql?CurrentUser
       response:
-        bodySize: 203
+        bodySize: 263
         content:
           encoding: base64
           mimeType: application/json
-          size: 203
-          text: "[\"H4sIAAAAAAAAAzSMwQrCMBAF/+Wd8wUBj940B7HF69JsdSVJyyYRYsm/S0WPMwyzwVMh2\
-            A1TVeVUhsy6o3hYjDcXpufydtfzAQYPyiOrzML+GA==\",\"SQLsTCGzgZe8BmqOIsO\
-            mGoJBzazpy5gW3wrnIukOA3pRIR0up3+5qkTS9jvurvf+AQAA//8DAD+3K/CYAAAA\"\
-            ]"
+          size: 263
+          text: "[\"H4sIAAAAAAAAAzSOwQrCQAxE/yXnevK24NGLaAWxRRAPoRtrZJstyVassv8u1Xp8wzDz3\
+            uAxIbg3NIMqSaqMdEL24KA+laG5x1d53K2ggBtaTQ==\",\"ylcmv+6QA7grBqMCPFs\
+            fcCyxI3AyhFDAYKTyZWiiHxNZYmmhAHxgQq0O23+zV+5Qx3nxl0VtUfiFiaPYpCPRk4\
+            E7z2LH5Ub292qSmk9YjNtbsgU9sesDGeRLzjl/AAAA//8DALyqElbhAAAA\"]"
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Apr 2024 14:24:11 GMT
+            value: Tue, 25 Jun 2024 06:04:29 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1057,7 +920,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-04-26T14:24:11.102Z
+      startedDateTime: 2024-06-25T06:04:28.979Z
       time: 0
       timings:
         blocked: -1
