@@ -71,7 +71,7 @@ export const FileLink: React.FunctionComponent<
     }
 
     return (
-        <div className={clsx('tw-flex tw-items-center', className)}>
+        <div className={clsx('tw-inline-flex tw-items-center', className)}>
             {isIgnored ? (
                 <i className="codicon codicon-warning" title={IGNORE_WARNING} />
             ) : isTooLarge ? (

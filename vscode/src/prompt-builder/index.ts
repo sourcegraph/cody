@@ -1,14 +1,15 @@
 import {
     type ChatMessage,
     type ContextItem,
+    type ContextTokenUsageType,
     type Message,
     type ModelContextWindow,
     TokenCounter,
     contextFiltersProvider,
     isCodyIgnoredFile,
+    logDebug,
     ps,
 } from '@sourcegraph/cody-shared'
-import type { ContextTokenUsageType } from '@sourcegraph/cody-shared/src/token'
 import { sortContextItems } from '../chat/chat-view/agentContextSorting'
 import { getUniqueContextItems, isUniqueContextItem } from './unique-context'
 import { getContextItemTokenUsageType, renderContextItem } from './utils'
@@ -18,6 +19,8 @@ interface PromptBuilderContextResult {
     ignored: ContextItem[]
     added: ContextItem[]
 }
+
+export type PromptContextType = ContextTokenUsageType | 'history'
 
 const ASSISTANT_MESSAGE = { speaker: 'assistant', text: ps`Ok.` } as Message
 /**
@@ -97,13 +100,13 @@ export class PromptBuilder {
     }
 
     public async tryAddContext(
-        type: ContextTokenUsageType | 'history',
+        type: PromptContextType,
         contextItems: ContextItem[]
     ): Promise<PromptBuilderContextResult> {
         // Turn-based context items that are used for UI display only.
         const result = {
             limitReached: false, // Indicates if the token budget was exceeded
-            ignored: [] as ContextItem[], // The items that were ignored
+            ignored: [] as ContextItem[], // The items that were ignored/excluded
             added: [] as ContextItem[], // The items that were added as context
         }
 
@@ -150,10 +153,7 @@ export class PromptBuilder {
                 contextMessage,
             ])
 
-            // Don't update context items from the past (history items) unless undefined.
-            if (type !== 'history' || item.isTooLarge === undefined) {
-                item.isTooLarge = !isWithinLimit
-            }
+            item.isTooLarge = !isWithinLimit
 
             // Skip item that would exceed token limit & add it to the ignored list.
             if (!isWithinLimit) {
@@ -170,6 +170,8 @@ export class PromptBuilder {
             // TODO (bee) update token usage to reflect the removed context items.
             this.contextItems = getUniqueContextItems(this.contextItems)
         }
+
+        logDebug('tryAddContext', `${result.ignored.length} of ${type} context were excluded.`)
 
         result.added = this.contextItems.filter(c => result.added.includes(c))
         return result
