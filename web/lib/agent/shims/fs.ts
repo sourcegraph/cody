@@ -17,3 +17,7 @@ export function mkdirSync(): unknown {
 export function rmSync(): unknown {
     throw new Error('not implemented')
 }
+
+export function copyFileSync(): unknown {
+    return
+}
