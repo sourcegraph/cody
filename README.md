@@ -16,6 +16,8 @@ Cody is an AI coding assistant that uses search and codebase context to help you
 
 </div>
 
+fds84y7yg
+
 ## Get started
 
 [⭐ **Install Cody from the VS Code Marketplace**](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) or the [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph), then check out the [demos](#demos) to see what you can do.
