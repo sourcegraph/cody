@@ -40,7 +40,7 @@ class DocumentCodeTest : CodyIntegrationTextFixture() {
   }
 
   fun testGetsWorkingGroupLens() {
-    var assertsExecuted = AtomicInteger(0)
+    val assertsExecuted = AtomicInteger(0)
     val showWorkingGroupSessionStateListener =
         object : FixupService.ActiveFixupSessionStateListener {
           // The listener is notified by ::showLensGroup and the param is true only when we are
