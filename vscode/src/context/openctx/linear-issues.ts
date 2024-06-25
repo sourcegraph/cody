@@ -95,10 +95,21 @@ const LinearIssuesProvider: Provider & { providerUri: string } = {
 
 export default LinearIssuesProvider
 
+const LINEAR_AUTHENTICATION_EXTENSION_ID = 'linear.linear-connect'
 const LINEAR_AUTHENTICATION_PROVIDER_ID = 'linear'
 const LINEAR_AUTHENTICATION_SCOPES = ['read']
 
 async function linearApiRequest(query: string, variables: object): Promise<{ data: any }> {
+    const ext = vscode.extensions.getExtension(LINEAR_AUTHENTICATION_EXTENSION_ID)
+    if (!ext) {
+        vscode.window.showWarningMessage(
+            'Cody requires the Linear Connect extension to be installed and activated.'
+        )
+        await vscode.commands.executeCommand('workbench.extensions.action.showExtensionsWithIds', [
+            [LINEAR_AUTHENTICATION_EXTENSION_ID],
+        ])
+    }
+
     const session = await vscode.authentication.getSession(
         LINEAR_AUTHENTICATION_PROVIDER_ID,
         LINEAR_AUTHENTICATION_SCOPES,
