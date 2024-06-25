@@ -371,21 +371,13 @@ export class FixupController
         const authStatus = this.authProvider.getAuthStatus()
         const overridenModel = getOverridenModelForIntent(intent, model, authStatus)
         const fixupFile = this.files.forUri(document.uri)
-        // We always expand the range to encompass all characters from the selection lines
-        // This is so we can calculate an optimal diff, and the LLM has the best chance at understanding
-        // the indentation in the returned code.
-        const fullSelectionRange = new vscode.Range(
-            selectionRange.start.line,
-            0,
-            selectionRange.end.line,
-            document.lineAt(selectionRange.end.line).range.end.character
-        )
         const task = new FixupTask(
             fixupFile,
+            document,
             instruction,
             userContextFiles,
             intent,
-            fullSelectionRange,
+            selectionRange,
             mode,
             overridenModel,
             source,

@@ -58,6 +58,7 @@ export class FixupTask {
          * and will be updated by the FixupController for tasks using the 'new' mode
          */
         public fixupFile: FixupFile,
+        public document: vscode.TextDocument,
         public readonly instruction: PromptString,
         public readonly userContextItems: ContextItem[],
         /* The intent of the edit, derived from the source of the command. */
@@ -77,6 +78,15 @@ export class FixupTask {
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, ps``).trim()
+        // We always expand the range to encompass all characters from the selection lines
+        // This is so we can calculate an optimal diff, and the LLM has the best chance at understanding
+        // the indentation in the returned code.
+        this.selectionRange = new vscode.Range(
+            selectionRange.start.line,
+            0,
+            selectionRange.end.line,
+            document.lineAt(selectionRange.end.line).range.end.character
+        )
         this.originalRange = this.selectionRange
     }
 

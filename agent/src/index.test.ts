@@ -934,7 +934,7 @@ describe('Agent', () => {
 
                   it('does something else', () => {
                       // This line will error due to incorrect usage of \`performance.now\`
-                      // Record the start time using the browser's performance API.
+                      // Record the start time of the test using the Performance API
                       const startTime = performance.now(/* CURSOR */)
                   })
               })
