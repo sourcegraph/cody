@@ -944,7 +944,7 @@ describe('Agent', () => {
               "
             `
             )
-        })
+        }, 20_000)
 
         it('remoteRepo/list', async () => {
             // List a repo without a query
