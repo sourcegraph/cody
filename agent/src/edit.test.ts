@@ -67,11 +67,10 @@ describe('Edit', () => {
           	setChatID,
           	isLoading,
           }: {
-          	messages: Array<{ chatID: string; text: string }>
+          	messages: Message[]
           	setChatID: (chatID: string) => void
           	isLoading: boolean
-          }) {
-          	useEffect(() => {
+          }) {	useEffect(() => {
           		if (!isLoading) {
           			setChatID(messages[0].chatID);
           		}
@@ -113,8 +112,10 @@ describe('Edit', () => {
 
           export const Heading: React.FC<HeadingProps> = ({ text, level = 1 }) => {
             const HeadingTag = \`h\${level}\` as keyof JSX.IntrinsicElements
+
             return <HeadingTag>{text}</HeadingTag>
           }
+
           "
         `,
             explainPollyError
@@ -140,8 +141,7 @@ describe('Edit', () => {
                   default:
                       return a - b
               }
-          }
-          "
+          }"
         `,
             explainPollyError
         )

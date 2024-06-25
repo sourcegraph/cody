@@ -58,6 +58,7 @@ export class FixupTask {
          * and will be updated by the FixupController for tasks using the 'new' mode
          */
         public fixupFile: FixupFile,
+        public document: vscode.TextDocument,
         public readonly instruction: PromptString,
         public readonly userContextItems: ContextItem[],
         /* The intent of the edit, derived from the source of the command. */
@@ -84,7 +85,7 @@ export class FixupTask {
             selectionRange.start.line,
             0,
             selectionRange.end.line,
-            Number.MAX_SAFE_INTEGER
+            document.lineAt(selectionRange.end.line).range.end.character
         )
         this.originalRange = this.selectionRange
     }

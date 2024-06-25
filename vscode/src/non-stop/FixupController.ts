@@ -373,6 +373,7 @@ export class FixupController
         const fixupFile = this.files.forUri(document.uri)
         const task = new FixupTask(
             fixupFile,
+            document,
             instruction,
             userContextFiles,
             intent,
