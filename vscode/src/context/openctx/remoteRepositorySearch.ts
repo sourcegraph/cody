@@ -41,7 +41,7 @@ const RemoteRepositorySearch: Provider & {
         return dataOrError.map(
             node =>
                 ({
-                    url: node.uri.toString(),
+                    url: graphqlClient.endpoint + node.uri.toString(),
                     title: node.path,
                     ai: {
                         content: node.content,
@@ -55,7 +55,7 @@ export function createRemoteRepositoryMention(
     repo: RepoSearchResponse['repositories']['nodes'][number]
 ): Mention & { providerUri: string } {
     return {
-        uri: repo.url,
+        uri: graphqlClient.endpoint + repo.url,
         title: repo.name,
         // By default we show <title> <uri> in the mentions menu.
         // As repo.url and repo.name are almost same, we do not want to show the uri.

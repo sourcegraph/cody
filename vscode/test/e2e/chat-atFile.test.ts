@@ -351,11 +351,11 @@ test.extend<ExpectedEvents>({
 })('@-mention symbol in chat', async ({ page, nap, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
-    // Open chat.
-    const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
-
     // Open the buzz.ts file so that VS Code starts to populate symbols.
     await openFileInEditorTab(page, 'buzz.ts')
+
+    // Open chat.
+    const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
 
     // Wait for the tsserver to become ready: when sync icon disappears
     const langServerLoadingState = 'Editor Language Status: Loading'

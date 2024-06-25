@@ -22,6 +22,7 @@ sealed class WebviewMessage {
           "restoreHistory" -> context.deserialize<RestoreHistoryWebviewMessage>(element, RestoreHistoryWebviewMessage::class.java)
           "deleteHistory" -> context.deserialize<DeleteHistoryWebviewMessage>(element, DeleteHistoryWebviewMessage::class.java)
           "links" -> context.deserialize<LinksWebviewMessage>(element, LinksWebviewMessage::class.java)
+          "openURI" -> context.deserialize<OpenURIWebviewMessage>(element, OpenURIWebviewMessage::class.java)
           "show-page" -> context.deserialize<`show-pageWebviewMessage`>(element, `show-pageWebviewMessage`::class.java)
           "chatModel" -> context.deserialize<ChatModelWebviewMessage>(element, ChatModelWebviewMessage::class.java)
           "get-chat-models" -> context.deserialize<`get-chat-modelsWebviewMessage`>(element, `get-chat-modelsWebviewMessage`::class.java)
@@ -150,6 +151,16 @@ data class LinksWebviewMessage(
 
   enum class CommandEnum {
     @SerializedName("links") Links,
+  }
+}
+
+data class OpenURIWebviewMessage(
+  val command: CommandEnum, // Oneof: openURI
+  val uri: Uri,
+) : WebviewMessage() {
+
+  enum class CommandEnum {
+    @SerializedName("openURI") OpenURI,
   }
 }
 

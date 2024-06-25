@@ -934,8 +934,7 @@ describe('Agent', () => {
 
                   it('does something else', () => {
                       // This line will error due to incorrect usage of \`performance.now\`
-                      // Record the start time using the Performance API's \`now\` method.
-                      // This captures a high resolution monotonic timestamp in milliseconds.
+                      // Record the start time using the browser's performance API.
                       const startTime = performance.now(/* CURSOR */)
                   })
               })

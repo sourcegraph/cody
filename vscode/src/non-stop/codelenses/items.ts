@@ -29,11 +29,6 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             const cancel = getCancelLens(codeLensRange, task.id)
             return [title, cancel]
         }
-        case CodyTaskState.Formatting: {
-            const title = getFormattingLens(codeLensRange)
-            const skip = getFormattingSkipLens(codeLensRange, task.id)
-            return [title, skip]
-        }
         case CodyTaskState.Applied: {
             const accept = getAcceptLens(codeLensRange, task.id)
             const retry = getRetryLens(codeLensRange, task.id)
@@ -43,7 +38,13 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
                 return [accept, undo]
             }
             if (isEdit) {
-                return [accept, retry, undo, showDiff]
+                const actions = [accept, retry, undo]
+                if (isRunningInsideAgent()) {
+                    // We only show an inline diff in VS Code, so keep the "Show Diff"
+                    // option in other clients
+                    return [...actions, showDiff]
+                }
+                return actions
             }
             return [accept, retry, undo]
         }
@@ -115,25 +116,6 @@ function getApplyingLens(codeLensRange: vscode.Range): vscode.CodeLens {
     lens.command = {
         title: '$(sync~spin) Applying...',
         command: 'cody.chat.focus',
-    }
-    return lens
-}
-
-function getFormattingLens(codeLensRange: vscode.Range): vscode.CodeLens {
-    const lens = new vscode.CodeLens(codeLensRange)
-    lens.command = {
-        title: '$(sync~spin) Formatting...',
-        command: 'cody.chat.focus',
-    }
-    return lens
-}
-
-function getFormattingSkipLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
-    const lens = new vscode.CodeLens(codeLensRange)
-    lens.command = {
-        title: 'Skip',
-        command: 'cody.fixup.codelens.skip-formatting',
-        arguments: [id],
     }
     return lens
 }

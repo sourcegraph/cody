@@ -115,10 +115,12 @@ export const MentionMenu: FunctionComponent<
                 throw new Error(`No provider found with value ${value}`)
             }
 
+            updateMentionMenuParams({ parentItem: provider })
+
             if (params.query !== '') {
                 // Remove provider search input only and keep the rest of the query.
                 setEditorQuery(currentText => {
-                    const mentionStartIndex = currentText.indexOf(mentionQuery.text)
+                    const mentionStartIndex = currentText.lastIndexOf(mentionQuery.text)
 
                     if (mentionStartIndex !== -1) {
                         const mentionEndIndex = mentionStartIndex + mentionQuery.text.length
@@ -130,7 +132,6 @@ export const MentionMenu: FunctionComponent<
                     return ''
                 })
             }
-            updateMentionMenuParams({ parentItem: provider })
             setValue(null)
         },
         [data.providers, params.query, setEditorQuery, updateMentionMenuParams, mentionQuery]

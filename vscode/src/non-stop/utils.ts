@@ -22,11 +22,6 @@ export enum CodyTaskState {
      */
     Applying = 'Applying',
     /**
-     * The response has been applied to the document, and we are attempting to format
-     * it using the users' preferred formatter.
-     */
-    Formatting = 'Formatting',
-    /**
      * The response has been applied to the document, and we are satisfied enough to present it to the user.
      * The user hasn't technically accepted it, and they can still act on the response.
      * E.g. Undo the change, Retry the change, View the diff.
