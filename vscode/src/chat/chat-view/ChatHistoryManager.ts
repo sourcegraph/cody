@@ -1,5 +1,5 @@
-import * as vscode from 'vscode'
 import { debounce } from 'lodash'
+import * as vscode from 'vscode'
 
 import type {
     AuthStatus,
@@ -64,9 +64,9 @@ export class ChatHistoryManager implements vscode.Disposable {
     }
 
     private notifyChatHistoryChanged = debounce(
-        async (authStatus) => this.eventEmitter.fire(await this.getLocalHistory(authStatus)),
-        1000,
-        { maxWait: 10000 }
+        async authStatus => this.eventEmitter.fire(await this.getLocalHistory(authStatus)),
+        200,
+        { maxWait: 10000, leading: true }
     )
 
     public onHistoryChanged(listener: () => any): vscode.Disposable {
