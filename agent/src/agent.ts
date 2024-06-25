@@ -129,11 +129,15 @@ function copyWinCaRootsBinary(extensionPath: string): void {
 export async function initializeVscodeExtension(
     workspaceRoot: vscode.Uri,
     extensionActivate: ExtensionActivate,
-    extensionClient: ExtensionClient
+    extensionClient: ExtensionClient,
+    platform: 'node' | 'browser'
 ): Promise<void> {
     const paths = envPaths('Cody')
     const extensionPath = paths.config
-    copyWinCaRootsBinary(extensionPath)
+
+    if (platform === 'node') {
+        copyWinCaRootsBinary(extensionPath)
+    }
 
     const context: vscode.ExtensionContext = {
         asAbsolutePath(relativePath) {
@@ -343,6 +347,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
     constructor(
         private readonly params: {
             polly?: Polly | undefined
+            platform?: 'node' | 'browser'
             networkRequests?: Request[]
             requestErrors?: PollyRequestError[]
             conn: MessageConnection
@@ -416,7 +421,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 await initializeVscodeExtension(
                     this.workspace.workspaceRootUri,
                     params.extensionActivate,
-                    this
+                    this,
+                    params.platform ?? 'node'
                 )
                 this.registerWebviewHandlers()
 
