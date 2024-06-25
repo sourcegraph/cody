@@ -71,7 +71,10 @@ export const AssistantMessageCell: FunctionComponent<{
                 chatModel && ModelIcon ? (
                     <span>
                         <Tooltip>
-                            <TooltipTrigger className="tw-cursor-default">
+                            <TooltipTrigger
+                                className="tw-cursor-default"
+                                data-testid="chat-message-model-icon"
+                            >
                                 <ModelIcon size={NON_HUMAN_CELL_AVATAR_SIZE} />
                             </TooltipTrigger>
                             <TooltipContent side="bottom">{`${chatModel.title} by ${chatModel.provider}`}</TooltipContent>
