@@ -112,7 +112,7 @@ describe('HumanMessageEditor', () => {
         })
 
         test('isPendingPriorResponse', () => {
-            const { submitButton, editor, onSubmit, onStop } = renderWithMocks({
+            const { submitButton, onStop } = renderWithMocks({
                 initialEditorState: serializedPromptEditorStateFromText('abc'),
                 isPendingPriorResponse: true,
             })
