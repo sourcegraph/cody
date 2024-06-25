@@ -101,6 +101,7 @@ object Constants {
   const val restoreHistory = "restoreHistory"
   const val deleteHistory = "deleteHistory"
   const val links = "links"
+  const val openURI = "openURI"
   const val `show-page` = "show-page"
   const val chatModel = "chatModel"
   const val `get-chat-models` = "get-chat-models"
