@@ -468,7 +468,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
             this.pushPendingPromise(this.workspace.fireVisibleTextEditorsDidChange())
         })
 
-        this.registerNotification('textDocument/didOpen', this.setActiveDocument)
+        this.registerNotification('textDocument/didOpen', document => {
+            const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
+            const textDocument = this.workspace.loadDocument(documentWithUri)
+            vscode_shim.onDidOpenTextDocument.fire(textDocument)
+            this.pushPendingPromise(this.workspace.fireVisibleTextEditorsDidChange())
+            this.workspace.setActiveTextEditor(this.workspace.newTextEditor(textDocument))
+        })
 
         this.registerNotification('textDocument/didChange', async document => {
             this.handleDocumentChange(document)
@@ -1447,14 +1453,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         }
         return this.authStatus()
-    }
-
-    private setActiveDocument(document: ProtocolTextDocument) {
-        const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
-        const textDocument = this.workspace.loadDocument(documentWithUri)
-        vscode_shim.onDidOpenTextDocument.fire(textDocument)
-        this.pushPendingPromise(this.workspace.fireVisibleTextEditorsDidChange())
-        this.workspace.setActiveTextEditor(this.workspace.newTextEditor(textDocument))
     }
 
     private async authStatus(): Promise<AuthStatus | undefined> {
