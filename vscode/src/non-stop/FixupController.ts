@@ -702,15 +702,12 @@ export class FixupController
 
         if (edit instanceof vscode.WorkspaceEdit) {
             for (const change of suitableDiffForEditing) {
-                switch (change.type) {
-                    case 'deletion':
-                        edit.delete(task.fixupFile.uri, change.range)
-                        break
-                    case 'decoratedReplacement':
-                        edit.replace(task.fixupFile.uri, change.range, change.text)
-                        break
-                    default:
-                        edit.insert(task.fixupFile.uri, change.range.start, change.text)
+                if (change.type === 'deletion') {
+                    edit.delete(task.fixupFile.uri, change.range)
+                } else if (change.type === 'decoratedReplacement') {
+                    edit.replace(task.fixupFile.uri, change.range, change.text)
+                } else {
+                    edit.insert(task.fixupFile.uri, change.range.start, change.text)
                 }
             }
             return vscode.workspace.applyEdit(edit)
@@ -720,8 +717,10 @@ export class FixupController
             for (const change of suitableDiffForEditing) {
                 if (change.type === 'deletion') {
                     editBuilder.delete(change.range)
-                } else {
+                } else if (change.type === 'decoratedReplacement') {
                     editBuilder.replace(change.range, change.text)
+                } else {
+                    editBuilder.insert(change.range.start, change.text)
                 }
             }
         }, options)
@@ -797,9 +796,7 @@ export class FixupController
         this.tasks.delete(task.id)
     }
 
-    private async getPlaceholderInsertionsToDelete(
-        tasks: FixupTask[]
-    ): Promise<vscode.TextEdit[] | undefined> {
+    private async getPlaceholderInsertionsToDelete(tasks: FixupTask[]): Promise<vscode.TextEdit[]> {
         const rangesToDelete: vscode.TextEdit[] = []
         for (const task of tasks) {
             const decoratedReplacements = (task.diff || [])
@@ -814,7 +811,7 @@ export class FixupController
 
     private async clearPlaceholderInsertions(tasks: FixupTask[], uri: vscode.Uri): Promise<void> {
         const placeholderLines = await this.getPlaceholderInsertionsToDelete(tasks)
-        if (placeholderLines === undefined || placeholderLines.length === 0) {
+        if (placeholderLines.length === 0) {
             // Nothing to clear
             return
         }
