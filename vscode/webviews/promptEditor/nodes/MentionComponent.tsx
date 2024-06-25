@@ -144,20 +144,12 @@ export const MentionComponent: FunctionComponent<{
                 setSelected(true)
 
                 // metaKey is true when you press cmd on Mac while clicking.
-                if (event.metaKey) {
+                if (event.metaKey && node.contextItem.uri) {
                     const uri = URI.parse(node.contextItem.uri)
-
-                    if (uri.scheme === 'file') {
-                        getVSCodeAPI().postMessage({
-                            command: 'openFile',
-                            uri,
-                        })
-                    } else {
-                        getVSCodeAPI().postMessage({
-                            command: 'links',
-                            value: node.contextItem.uri,
-                        })
-                    }
+                    getVSCodeAPI().postMessage({
+                        command: 'openURI',
+                        uri,
+                    })
                 }
 
                 return true

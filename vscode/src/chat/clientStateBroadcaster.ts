@@ -53,7 +53,7 @@ export function startClientStateBroadcaster({
                         createRemoteRepositoryMention({
                             id: repo.id,
                             name: repo.name,
-                            url: `repo:${repo.name}`,
+                            url: repo.name,
                         })
                     ),
                     title: 'Repository',
