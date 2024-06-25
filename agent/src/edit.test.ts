@@ -8,7 +8,7 @@ import { explainPollyError } from './explainPollyError'
 import { trimEndOfLine } from './trimEndOfLine'
 
 describe('Edit', () => {
-    const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
+    const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'edit-code'))
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
         name: 'edit',
@@ -66,17 +66,11 @@ describe('Edit', () => {
           	messages,
           	setChatID,
           	isLoading,
-          }: ChatColumnProps) {
-          interface ChatColumnProps {
-            messages: ChatMessage[];
-            setChatID: (chatID: string) => void;
-            isLoading: boolean;
-          }
-
-          interface ChatMessage {
-            chatID: string;
-            text: string;
-          }
+          }: {
+          	messages: Array<{ chatID: string; text: string }>
+          	setChatID: (chatID: string) => void
+          	isLoading: boolean
+          }) {
           	useEffect(() => {
           		if (!isLoading) {
           			setChatID(messages[0].chatID);
@@ -118,11 +112,35 @@ describe('Edit', () => {
           }
 
           export const Heading: React.FC<HeadingProps> = ({ text, level = 1 }) => {
-            const HeadingTag = \`h\${level}\` as keyof JSX.IntrinsicElements;
+            const HeadingTag = \`h\${level}\` as keyof JSX.IntrinsicElements
+            return <HeadingTag>{text}</HeadingTag>
+          }
+          "
+        `,
+            explainPollyError
+        )
+    }, 20_000)
 
-            return <HeadingTag>{text}</HeadingTag>;
-          };
-
+    it('editCommand/code (adding/deleting code)', async () => {
+        const uri = workspace.file('src', 'trickyLogic.ts')
+        await client.openFile(uri, { removeCursor: true })
+        const task = await client.request('editCommands/code', {
+            instruction: 'Convert this to use a switch statement',
+            model: ModelsService.getModelByIDSubstringOrError('anthropic/claude-3-opus').model,
+        })
+        await client.acceptEditTask(uri, task)
+        expect(client.documentText(uri)).toMatchInlineSnapshot(
+            `
+          "export function trickyLogic(a: number, b: number): number {
+              switch (true) {
+                  case a === 0:
+                      return 1
+                  case b === 2:
+                      return 1
+                  default:
+                      return a - b
+              }
+          }
           "
         `,
             explainPollyError

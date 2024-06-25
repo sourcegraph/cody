@@ -216,7 +216,7 @@ test.extend<ExpectedEvents>({
     await expect(chatPanel.getByText('Add four context files from the current directory.')).toBeVisible()
     // Show the current file numbers used as context
     const contextCell = getContextCell(chatPanel)
-    await expectContextCellCounts(contextCell, { files: 5 })
+    await expectContextCellCounts(contextCell, { files: 6 })
     await contextCell.click()
     // Display the context files to confirm no hidden files are included
     await expect(chatPanel.getByRole('link', { name: '.mydotfile:1-2' })).not.toBeVisible()

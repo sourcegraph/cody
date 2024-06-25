@@ -1349,7 +1349,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "crypto-js": "^4.2.0",
-    "detect-indent": "^7.0.1",
+    "detect-indent": "7.0.0",
     "diff": "^5.2.0",
     "fast-xml-parser": "^4.3.2",
     "glob": "^7.2.3",
