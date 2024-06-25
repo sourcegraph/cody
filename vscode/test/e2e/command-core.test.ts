@@ -75,6 +75,7 @@ test.extend<ExpectedEvents>({
     // If there is no cursor position, we will use the visible content of the editor
     // NOTE: Core commands context should not start with ✨
     const contextCell = getContextCell(chatPanel)
+    contextCell.locator('button', { hasText: 'Context' }).click()
     // NOTE(sqs): It's OK if the test changes so that it's just `index.html`.
     await expect(contextCellItems(contextCell)).toHaveText(['index.html', 'index.html:1-11'])
     await expectContextCellCounts(contextCell, { files: 2 })
