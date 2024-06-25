@@ -229,7 +229,11 @@ export const test = base
 
             await waitUntil(() => app.windows().length > 0)
 
+            await app.context().tracing.start({ screenshots: true, snapshots: true })
+
             await use(app)
+
+            await app.context().tracing.stop({ path: 'trace.zip' })
 
             await app.close()
 
@@ -333,8 +337,9 @@ const attachArtifacts = async (
         path: path.join(assetsDirectory, 'screenshots', `${testSlug}.png`),
     })
     await testInfo.attach('screenshot', { body: screenshot, contentType: 'image/png' })
-    // Copy the file from the temporary video directory to the assets directory
-    // to the assets directory so it is not deleted
+
+    // Copy the file from the temporary video directory to the assets
+    // directory so it is not deleted
     const [video] = await fs.readdir(getTempVideoDir(testInfo.title))
     const oldVideoPath = path.join(getTempVideoDir(testInfo.title), video)
     const newVideoPath = path.join(assetsDirectory, 'videos', `${testSlug}.webm`)

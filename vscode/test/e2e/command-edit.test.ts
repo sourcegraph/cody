@@ -108,7 +108,7 @@ test.extend<ExpectedEvents>({
     await inputBox.fill(instruction)
     await page.keyboard.press('Enter')
     await expect(page.getByText('>Hello Cody</')).not.toBeVisible()
-    await expect(page.getByText('>Goodbye Cody</')).toBeVisible()
+    await expect(page.getByText('>Goodbye FAIL Cody</')).toBeVisible()
 
     // Retry: show the command palette with the previous instruction
     await expect(retryLens).toBeVisible()
