@@ -46,8 +46,8 @@ export const KeyboardShortut: StoryObj<
     }
 > = {
     args: {
-        macOS: 'CMD K',
-        linuxAndWindows: 'Ctrl+K',
+        macOS: 'cmd+k',
+        linuxAndWindows: 'ctrl+k',
     },
     render: ({ open, children, macOS, linuxAndWindows }) => {
         return (
