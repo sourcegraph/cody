@@ -249,8 +249,7 @@ test.extend<ExpectedEvents>({
         chatPanel.getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go:1') })
     ).toBeVisible()
     // Click on the file link should open the 'var.go file in the editor
-    const chatContext = chatPanel.locator('details').last()
-    await chatContext
+    await contextCell
         .getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go:1') })
         .click()
     await expect(page.getByRole('tab', { name: 'var.go' })).toBeVisible()
@@ -266,9 +265,9 @@ test.extend<ExpectedEvents>({
     // The files from the open tabs should be added as context
     await expectContextCellCounts(contextCell, { files: 2 })
     await openContextCell(contextCell)
-    await expect(chatContext.getByRole('link', { name: 'index.html' })).toBeVisible()
+    await expect(contextCell.getByRole('link', { name: 'index.html' })).toBeVisible()
     await expect(
-        chatContext.getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go') })
+        contextCell.getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go') })
     ).toBeVisible()
 })
 
@@ -381,6 +380,5 @@ testGitWorkspace('use terminal output as context', async ({ page, sidebar }) => 
     const contextCell = getContextCell(panel)
     await expectContextCellCounts(contextCell, { files: 2 })
     await openContextCell(contextCell)
-    const chatContext = panel.locator('details').last()
-    await expect(chatContext.getByRole('link', { name: withPlatformSlashes('/git diff') })).toBeVisible()
+    await expect(contextCell.getByRole('link', { name: withPlatformSlashes('/git diff') })).toBeVisible()
 })
