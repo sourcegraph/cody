@@ -121,6 +121,10 @@ export function contextCellItems(contextCell: Locator): Locator {
     return contextCell.locator('[data-testid="context-item"]')
 }
 
+export async function openContextCell(contextCell: Locator) {
+    contextCell.locator('button', { hasText: 'Context' }).click()
+}
+
 export async function expectContextCellCounts(
     contextCell: Locator,
     counts: { files: number; timeout?: number }

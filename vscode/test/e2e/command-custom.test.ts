@@ -5,6 +5,7 @@ import {
     expectContextCellCounts,
     getChatPanel,
     getContextCell,
+    openContextCell,
     sidebarExplorer,
     sidebarSignin,
 } from './common'
@@ -217,7 +218,7 @@ test.extend<ExpectedEvents>({
     // Show the current file numbers used as context
     const contextCell = getContextCell(chatPanel)
     await expectContextCellCounts(contextCell, { files: 6 })
-    await contextCell.click()
+    await openContextCell(contextCell)
     // Display the context files to confirm no hidden files are included
     await expect(chatPanel.getByRole('link', { name: '.mydotfile:1-2' })).not.toBeVisible()
     await expect(chatPanel.getByRole('link', { name: 'error.ts:1-9' })).toBeVisible()
@@ -243,7 +244,7 @@ test.extend<ExpectedEvents>({
     await page.keyboard.press('Enter')
     await expect(chatPanel.getByText('Directory has one context file.')).toBeVisible()
     await expectContextCellCounts(contextCell, { files: 2 })
-    await contextCell.click()
+    await openContextCell(contextCell)
     await expect(
         chatPanel.getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go:1') })
     ).toBeVisible()
@@ -264,7 +265,7 @@ test.extend<ExpectedEvents>({
     await expect(chatPanel.getByText('Open tabs as context.')).toBeVisible()
     // The files from the open tabs should be added as context
     await expectContextCellCounts(contextCell, { files: 2 })
-    await contextCell.click()
+    await openContextCell(contextCell)
     await expect(chatContext.getByRole('link', { name: 'index.html' })).toBeVisible()
     await expect(
         chatContext.getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go') })
@@ -379,7 +380,7 @@ testGitWorkspace('use terminal output as context', async ({ page, sidebar }) => 
     const panel = getChatPanel(page)
     const contextCell = getContextCell(panel)
     await expectContextCellCounts(contextCell, { files: 2 })
-    await contextCell.click()
+    await openContextCell(contextCell)
     const chatContext = panel.locator('details').last()
     await expect(chatContext.getByRole('link', { name: withPlatformSlashes('/git diff') })).toBeVisible()
 })

@@ -6,6 +6,7 @@ import {
     contextCellItems,
     expectContextCellCounts,
     getContextCell,
+    openContextCell,
     sidebarExplorer,
     sidebarSignin,
 } from './common'
@@ -75,11 +76,11 @@ test.extend<ExpectedEvents>({
     // If there is no cursor position, we will use the visible content of the editor
     // NOTE: Core commands context should not start with ✨
     const contextCell = getContextCell(chatPanel)
-    contextCell.locator('button', { hasText: 'Context' }).click()
+    await openContextCell(contextCell)
     // NOTE(sqs): It's OK if the test changes so that it's just `index.html`.
     await expect(contextCellItems(contextCell)).toHaveText(['index.html', 'index.html:1-11'])
     await expectContextCellCounts(contextCell, { files: 2 })
-    await contextCell.click()
+    await openContextCell(contextCell)
 
     // Check if assistant responsed
     await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
@@ -100,7 +101,7 @@ test.extend<ExpectedEvents>({
     const CONTEXT_ITEM_TEXTS = ['index.html', 'index.html:2-10']
     await expect(contextCellItems(contextCell)).toHaveText(CONTEXT_ITEM_TEXTS)
     await expectContextCellCounts(contextCell, { files: 2 })
-    await contextCell.click()
+    await openContextCell(contextCell)
 
     // The mentions in the command should show up as mentions.
     const firstChatInput = chatPanel.getByRole('textbox', { name: 'Chat message' }).first()
@@ -117,7 +118,7 @@ test.extend<ExpectedEvents>({
     await expect(page.getByText('Find Code Smells')).toBeVisible()
     await page.getByText('Find Code Smells').click()
     await expectContextCellCounts(contextCell, { files: 2 })
-    await contextCell.click()
+    await openContextCell(contextCell)
     await expect(chatPanel.getByRole('link', { name: 'index.html:2-10' })).toBeVisible()
     await expect(chatInputMentions(firstChatInput)).toHaveText(['index.html:2-10', 'index.html'])
 })
