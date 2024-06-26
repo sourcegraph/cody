@@ -88,7 +88,9 @@ export class PromptBuilder {
             if (!withinLimit) {
                 // Throw error if the limit was exceeded and no message was added.
                 if (!this.reverseMessages.length) {
-                    throw new Error('Chat input exceeded token limit')
+                    throw new Error(
+                        'The chat input has exceeded the token limit. If you are copying and pasting a file into the chat, try using the @-mention feature to attach the file instead.'
+                    )
                 }
                 return reverseTranscript.length - i + (assistantMsg ? 1 : 0)
             }
