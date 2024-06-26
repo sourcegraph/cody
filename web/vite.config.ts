@@ -57,21 +57,25 @@ export default defineProjectWithDefaults(__dirname, {
             },
         ],
     },
-    // TODO(sqs): Workaround for
-    // https://github.com/vitest-dev/vitest/issues/5541#issuecomment-2093886235; we only want and
-    // need to apply the `define`s when building, not when testing. The `define`s leak into the
-    // `agent` tests and cause some failures because process.env.CODY_SHIM_TESTING gets `define`d to
-    // `false`.
-    define: process.env.VITEST
-        ? null
-        : {
-              ...Object.fromEntries(
-                  Object.entries(fakeProcessEnv).map(([key, value]) => [
-                      `process.env.${key}`,
-                      JSON.stringify(value),
-                  ])
-              ),
-          },
+    define: {
+        __dirname: '"/tmp/__dirname"',
+
+        // TODO(sqs): Workaround for
+        // https://github.com/vitest-dev/vitest/issues/5541#issuecomment-2093886235; we only want
+        // and need to apply the `define`s when building, not when testing. The `define`s leak into
+        // the `agent` tests and cause some failures because process.env.CODY_SHIM_TESTING gets
+        // `define`d to `false`.
+        ...(process.env.VITEST
+            ? null
+            : {
+                  ...Object.fromEntries(
+                      Object.entries(fakeProcessEnv).map(([key, value]) => [
+                          `process.env.${key}`,
+                          JSON.stringify(value),
+                      ])
+                  ),
+              }),
+    },
     build: {
         emptyOutDir: false,
         outDir: 'dist',
