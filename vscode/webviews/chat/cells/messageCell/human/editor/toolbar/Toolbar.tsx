@@ -3,6 +3,8 @@ import clsx from 'clsx'
 import { AtSignIcon } from 'lucide-react'
 import { type FunctionComponent, useCallback } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
+import { ContextSelectField } from '../../../../../../components/contextSelectField/ContextSelectField'
+import { useContexts } from '../../../../../../components/contextSelectField/contexts'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { ToolbarButton } from '../../../../../../components/shadcn/ui/toolbar'
 import { useChatModelContext } from '../../../../../models/chatModelContext'
@@ -75,6 +77,7 @@ export const Toolbar: FunctionComponent<{
                     aria-label="Add context"
                 />
             )}
+            <ContextSelectFieldToolbarItem focusEditor={focusEditor} />
             <ModelSelectFieldToolbarItem userInfo={userInfo} focusEditor={focusEditor} />
             <div className={styles.spacer} />
             <SubmitButton
@@ -83,6 +86,27 @@ export const Toolbar: FunctionComponent<{
                 disabled={submitDisabled}
             />
         </menu>
+    )
+}
+
+const ContextSelectFieldToolbarItem: FunctionComponent<{
+    focusEditor?: () => void
+    className?: string
+}> = ({ focusEditor, className }) => {
+    const contexts = useContexts()
+    return (
+        contexts && (
+            <>
+                {toolbarItemBorder}
+                <ContextSelectField
+                    contexts={contexts.contexts}
+                    currentContext={contexts.currentContext}
+                    onCurrentContextChange={contexts.onCurrentContextChange}
+                    onCloseByEscape={focusEditor}
+                    className={className}
+                />
+            </>
+        )
     )
 }
 
@@ -107,7 +131,7 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
         userInfo &&
         userInfo.isDotComUser && (
             <>
-                <div className="tw-ml-[5px] tw-mr-[5px] tw-border-l-[1px] tw-border-white tw-h-6 tw-opacity-10" />
+                {toolbarItemBorder}
                 <ModelSelectField
                     models={chatModels}
                     onModelSelect={onModelSelect}
@@ -119,3 +143,7 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
         )
     )
 }
+
+const toolbarItemBorder = (
+    <div className="tw-ml-[5px] tw-mr-[5px] tw-border-l-[1px] tw-border-white tw-h-6 tw-opacity-10" />
+)
