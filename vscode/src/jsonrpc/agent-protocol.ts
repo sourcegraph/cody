@@ -181,7 +181,7 @@ export type ClientRequests = {
     'testing/memoryUsage': [null, { usage: MemoryUsage }]
     'testing/awaitPendingPromises': [null, null]
     // Retrieve the Agent's copy of workspace documents, for testing/validation.
-    'testing/workspaceDocuments': [GetDocumentsParams, GetDocumentsResult]
+    'testing/requestWorkspaceDocuments': [GetDocumentsParams, GetDocumentsResult]
     // Returns diagnostics for the given URI. Lives under `testing/` instead of
     // standalone `diagnostics/` because it only works for TypeScript files.
     'testing/diagnostics': [{ uri: string }, { diagnostics: ProtocolDiagnostic[] }]
