@@ -933,7 +933,7 @@ export interface ProtocolCodeAction {
  * current workspace root.
  */
 export interface GetDocumentsParams {
-    uris?: string[]
+    uris?: string[] | undefined | null
 }
 
 export interface GetDocumentsResult {
