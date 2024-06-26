@@ -22,7 +22,4 @@ export default defineProjectWithDefaults(__dirname, {
     resolve: {
         alias: { vscode: shimDirectory() },
     },
-    test: {
-        exclude: ['local-e2e/**'],
-    },
 })
