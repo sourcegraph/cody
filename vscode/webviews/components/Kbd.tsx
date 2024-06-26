@@ -16,7 +16,7 @@ function keyTextOrSvg(key: string): React.ReactElement | string {
     const iconClassName = 'tw-w-[1em] tw-h-[1em]'
 
     if (isMac) {
-        switch (key) {
+        switch (key.toLowerCase()) {
             case 'opt':
                 return <OptionIcon className={iconClassName} />
             case 'cmd':
@@ -28,7 +28,7 @@ function keyTextOrSvg(key: string): React.ReactElement | string {
         }
     }
 
-    switch (key) {
+    switch (key.toLowerCase()) {
         case 'return':
             return <CornerDownLeftIcon className={iconClassName} />
         case 'shift':

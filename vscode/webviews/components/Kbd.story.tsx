@@ -22,11 +22,11 @@ export const Default: Story = {
             <Kbd variant={variant} macOS={macOS} linuxAndWindows={linuxAndWindows} />
             <Kbd variant={variant} macOS="cmd r" linuxAndWindows="alt r" />
             <Kbd variant={variant} macOS="shift r" linuxAndWindows="shift r" />
-            <Kbd variant={variant} macOS="opt r" linuxAndWindows="shift r" />
+            <Kbd variant={variant} macOS="OPT r" linuxAndWindows="SHIFT r" />
             <Kbd variant={variant} macOS="ctrl r" linuxAndWindows="shift r" />
             <Kbd variant={variant} macOS="return" linuxAndWindows="return" />
             <Kbd variant={variant} macOS="esc" linuxAndWindows="esc" />
-            <Kbd variant={variant} macOS="cmd" linuxAndWindows="alt" />
+            <Kbd variant={variant} macOS="CMD" linuxAndWindows="ALT" />
             <Kbd variant={variant} macOS="@" linuxAndWindows="@" />
         </div>
     ),

@@ -60,7 +60,7 @@ export const SubmitButton: FunctionComponent<{
                 </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">
-                Send <Kbd macOS="RETURN" linuxAndWindows="RETURN" />
+                Send <Kbd macOS="return" linuxAndWindows="return" />
             </TooltipContent>
         </Tooltip>
     )
