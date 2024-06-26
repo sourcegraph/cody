@@ -107,7 +107,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: be1fd5f49a7a3e04e5da50f7ae4aac1c
+    - _id: 3e24e90fef96cdae9c86af2b7b65a503
       _order: 0
       cache: {}
       request:
@@ -124,7 +124,7 @@ log:
           - name: user-agent
             value: enterpriseClient / v1
           - name: traceparent
-            value: 00-c5f8eeff08dff59638567feae5e0bfaa-5b19839d801f4378-01
+            value: 00-af6d670eee6a1084f4f82f6b8bbfe122-07e6f707a0db7098-01
           - name: connection
             value: keep-alive
           - name: host
@@ -190,6 +190,7 @@ log:
                 text: >
                   Codebase context from file path src/example.test.ts: Codebase
                   context from file src/example.test.ts:
+
                       })
                   })
               - speaker: assistant
@@ -201,9 +202,7 @@ log:
 
                   The user has the following code in their selection:
 
-                  <SELECTEDCODE7662>        const startTime = performance.now(/* CURSOR */)
-
-                  </SELECTEDCODE7662>
+                  <SELECTEDCODE7662>        const startTime = performance.now(/* CURSOR */)</SELECTEDCODE7662>
 
 
                   The user wants you to generate documentation for the selected code by following their instructions.
@@ -231,10 +230,10 @@ log:
             value: v1
         url: https://demo.sourcegraph.com/.api/completions/stream?client-name=enterpriseclient&client-version=v1
       response:
-        bodySize: 1380
+        bodySize: 814
         content:
           mimeType: text/event-stream
-          size: 1380
+          size: 814
           text: >+
             event: completion
 
@@ -247,7 +246,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 20 Jun 2024 12:16:50 GMT
+            value: Tue, 25 Jun 2024 15:48:09 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -276,7 +275,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-20T12:16:48.110Z
+      startedDateTime: 2024-06-25T15:48:06.929Z
       time: 0
       timings:
         blocked: -1

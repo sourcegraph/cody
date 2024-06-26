@@ -5,11 +5,11 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: a8fc9c4aed1634e20a570e9905d8a410
+    - _id: 281086a3fa49ce7164441b752dad6975
       _order: 0
       cache: {}
       request:
-        bodySize: 2566
+        bodySize: 2564
         cookies: []
         headers:
           - name: content-type
@@ -22,7 +22,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-fc8aad374f92ec5d1717974853eedc16-320bef368636435f-01
+            value: 00-b76a1fc8bf1050d34d28748a08f659f5-039a2b2a46c20620-01
           - name: connection
             value: keep-alive
           - name: host
@@ -66,9 +66,7 @@ log:
 
                   <SELECTEDCODE7662>export function sum(a: number, b: number): number {
                       /* CURSOR */
-                  }
-
-                  </SELECTEDCODE7662>
+                  }</SELECTEDCODE7662>
 
 
                   The user wants you to generate documentation for the selected code by following their instructions.
@@ -98,14 +96,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 8438
+        bodySize: 3509
         content:
           mimeType: text/event-stream
-          size: 8438
+          size: 3509
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Calculates the sum of two numbers.\n *\n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum of `a` and `b`.\n */\n","stopReason":"stop_sequence"}
+            data: {"completion":"/**\n * Adds two numbers and returns the result.\n *\n * @param a - The first number to add.\n * @param b - The second number to add.\n * @returns The sum of `a` and `b`.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -115,7 +113,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 20 Jun 2024 12:16:53 GMT
+            value: Tue, 25 Jun 2024 15:48:14 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -144,7 +142,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-20T12:16:52.726Z
+      startedDateTime: 2024-06-25T15:48:13.412Z
       time: 0
       timings:
         blocked: -1
@@ -154,7 +152,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 5d0c94931189d2f2610aeed59ac99dc2
+    - _id: fc0903de93eca781b72e62b368106cb4
       _order: 0
       cache: {}
       request:
@@ -171,7 +169,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-62223cbddc7c3b142260593815f08bd7-7141124ea334b6e4-01
+            value: 00-1fe34d59b104c5f37e6975a11bac87a9-d019202fcf4d5a40-01
           - name: connection
             value: keep-alive
           - name: host
@@ -236,6 +234,7 @@ log:
                   Codebase context from file path src/TestClass.ts: Codebase
                   context from file src/TestClass.ts:
 
+
                   }
 
 
@@ -263,9 +262,7 @@ log:
                           if (this.shouldGreet) {
                               console.log(/* CURSOR */ 'Hello World!')
                           }
-                      }
-                  </SELECTEDCODE7662>
-
+                      }</SELECTEDCODE7662>
 
                   The user wants you to generate documentation for the selected code by following their instructions.
 
@@ -294,14 +291,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 2560
+        bodySize: 1232
         content:
           mimeType: text/event-stream
-          size: 2560
+          size: 1232
           text: >+
             event: completion
 
-            data: {"completion":"\n/**\n * Logs \"Hello World!\" to the console if `shouldGreet` is true.\n */\n","stopReason":"stop_sequence"}
+            data: {"completion":"\n/**\n * Outputs 'Hello World!' to the console if the `shouldGreet` flag is true.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -311,7 +308,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 20 Jun 2024 12:16:54 GMT
+            value: Tue, 25 Jun 2024 15:48:15 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -340,7 +337,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-20T12:16:53.932Z
+      startedDateTime: 2024-06-25T15:48:14.806Z
       time: 0
       timings:
         blocked: -1
@@ -350,7 +347,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: d7f2b01871529d8bacd1b7abd33071ba
+    - _id: fb4e007414e648770bfed8766c6ae4e2
       _order: 0
       cache: {}
       request:
@@ -367,7 +364,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-039c9b170801aba541cf7294f957b361-05b29da91336c3bb-01
+            value: 00-e404c4732356b5e324e061c7f3206de9-097686ed5b1020fe-01
           - name: connection
             value: keep-alive
           - name: host
@@ -420,6 +417,7 @@ log:
                   Codebase context from file path src/TestLogger.ts: Codebase
                   context from file src/TestLogger.ts:
 
+
                           recordLog()
                       },
                   }
@@ -434,9 +432,7 @@ log:
 
                   <SELECTEDCODE7662>        function recordLog() {
                               console.log(/* CURSOR */ 'Recording the log')
-                          }
-                  </SELECTEDCODE7662>
-
+                          }</SELECTEDCODE7662>
 
                   The user wants you to generate documentation for the selected code by following their instructions.
 
@@ -465,14 +461,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 1262
+        bodySize: 524
         content:
           mimeType: text/event-stream
-          size: 1262
+          size: 524
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Records a log message to the console.\n */","stopReason":"stop_sequence"}
+            data: {"completion":"/**\n * Records a log message.\n */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -482,7 +478,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 20 Jun 2024 12:16:56 GMT
+            value: Tue, 25 Jun 2024 15:48:16 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -511,7 +507,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-20T12:16:55.037Z
+      startedDateTime: 2024-06-25T15:48:15.786Z
       time: 0
       timings:
         blocked: -1
@@ -521,7 +517,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 7eddf1a3608f35f4b5866ef2f0d21def
+    - _id: 0ef085b47c48ffa3491207b6ae008437
       _order: 0
       cache: {}
       request:
@@ -538,7 +534,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-0bf71be821e8b115f05b27b4a2cae6e6-9813de74e34b319a-01
+            value: 00-f31366e0dbafc629567794fd1659f537-57d314f416693e68-01
           - name: connection
             value: keep-alive
           - name: host
@@ -602,6 +598,7 @@ log:
                 text: >
                   Codebase context from file path src/example.test.ts: Codebase
                   context from file src/example.test.ts:
+
                       })
                   })
               - speaker: assistant
@@ -613,9 +610,7 @@ log:
 
                   The user has the following code in their selection:
 
-                  <SELECTEDCODE7662>        const startTime = performance.now(/* CURSOR */)
-
-                  </SELECTEDCODE7662>
+                  <SELECTEDCODE7662>        const startTime = performance.now(/* CURSOR */)</SELECTEDCODE7662>
 
 
                   The user wants you to generate documentation for the selected code by following their instructions.
@@ -645,14 +640,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 8406
+        bodySize: 1992
         content:
           mimeType: text/event-stream
-          size: 8406
+          size: 1992
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Measure the starting time of a performance-sensitive operation.\n * This value should be compared against the result of `performance.now()`\n * at the end of the operation to calculate the elapsed time.\n */","stopReason":"stop_sequence"}
+            data: {"completion":"/**\n * Records the current time in milliseconds since the page was loaded.\n * This can be used to measure the duration of an operation.\n */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -662,7 +657,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 20 Jun 2024 12:16:56 GMT
+            value: Tue, 25 Jun 2024 15:48:17 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -691,7 +686,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-20T12:16:55.986Z
+      startedDateTime: 2024-06-25T15:48:16.698Z
       time: 0
       timings:
         blocked: -1
@@ -701,11 +696,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: a076f12473e6df0834509ffe95ff8d7c
+    - _id: 6bff6fcdac8bc5c3f75d93df20de8557
       _order: 0
       cache: {}
       request:
-        bodySize: 2569
+        bodySize: 2567
         cookies: []
         headers:
           - name: content-type
@@ -718,7 +713,7 @@ log:
           - name: user-agent
             value: document-code / v1
           - name: traceparent
-            value: 00-230ff39cf9bd5f8bc9ffc02642c36ae5-9a06af832b6f3788-01
+            value: 00-60022d72d107aee5b764720cc2c91349-74bf34a8273cc2b4-01
           - name: connection
             value: keep-alive
           - name: host
@@ -764,9 +759,7 @@ log:
                       fun greeting(): String {
                           return "Hello, world!"
                       }
-                  }
-
-                  </SELECTEDCODE7662>
+                  }</SELECTEDCODE7662>
 
 
                   The user wants you to generate documentation for the selected code by following their instructions.
@@ -796,14 +789,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=document-code&client-version=v1
       response:
-        bodySize: 1190
+        bodySize: 563
         content:
           mimeType: text/event-stream
-          size: 1190
+          size: 563
           text: >+
             event: completion
 
-            data: {"completion":"/**\n * Provides a simple greeting message.\n */\n","stopReason":"stop_sequence"}
+            data: {"completion":"/**\n * Provides a simple greeting message.\n */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -813,7 +806,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 20 Jun 2024 12:16:58 GMT
+            value: Tue, 25 Jun 2024 15:48:18 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -842,7 +835,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-20T12:16:57.344Z
+      startedDateTime: 2024-06-25T15:48:17.985Z
       time: 0
       timings:
         blocked: -1
