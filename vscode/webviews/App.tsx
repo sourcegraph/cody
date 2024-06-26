@@ -23,6 +23,7 @@ import { LoginSimplified } from './OnboardingExperiment'
 import { ConnectionIssuesPage } from './Troubleshooting'
 import { type ChatModelContext, ChatModelContextProvider } from './chat/models/chatModelContext'
 import { ClientStateContextProvider, useClientActionDispatcher } from './client/clientState'
+import { ContextsContextProvider, useContextsValue } from './components/contextSelectField/contexts'
 import { WithContextProviders } from './mentions/providers'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
@@ -57,6 +58,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         initialContext: [],
     })
     const dispatchClientAction = useClientActionDispatcher()
+    const contexts = useContextsValue()
 
     const guardrails = useMemo(() => {
         return new GuardrailsPost((snippet: string) => {
@@ -146,6 +148,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                 new Error(message.error)
                             )
                         }
+                        break
+                    case 'contexts':
+                        contexts.setContextsData({
+                            contexts: message.contexts,
+                            currentContext: message.currentContext,
+                        })
                         break
                 }
             }),
@@ -254,16 +262,18 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     <WithContextProviders>
                         <TelemetryRecorderContext.Provider value={telemetryRecorder}>
                             <ClientStateContextProvider value={clientState}>
-                                <Chat
-                                    chatEnabled={chatEnabled}
-                                    userInfo={userAccountInfo}
-                                    messageInProgress={messageInProgress}
-                                    transcript={transcript}
-                                    vscodeAPI={vscodeAPI}
-                                    telemetryService={telemetryService}
-                                    isTranscriptError={isTranscriptError}
-                                    guardrails={attributionEnabled ? guardrails : undefined}
-                                />
+                                <ContextsContextProvider value={contexts.contextValue}>
+                                    <Chat
+                                        chatEnabled={chatEnabled}
+                                        userInfo={userAccountInfo}
+                                        messageInProgress={messageInProgress}
+                                        transcript={transcript}
+                                        vscodeAPI={vscodeAPI}
+                                        telemetryService={telemetryService}
+                                        isTranscriptError={isTranscriptError}
+                                        guardrails={attributionEnabled ? guardrails : undefined}
+                                    />
+                                </ContextsContextProvider>
                             </ClientStateContextProvider>
                         </TelemetryRecorderContext.Provider>
                     </WithContextProviders>

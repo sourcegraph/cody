@@ -225,6 +225,26 @@ query ContextFilters {
     }
 }`
 
+export const CONTEXTS_QUERY = `
+query UserSearchContexts($userID: ID!) {
+    searchContexts(first: 100) {
+        nodes {
+            id
+            name
+            spec
+            description
+            query
+            viewerHasAsDefault
+            viewerHasStarred
+        }
+        totalCount
+        pageInfo {
+            hasNextPage
+            endCursor
+        }
+    }
+}`
+
 export const REPO_NAME_QUERY = `
 query ResolveRepoName($cloneURL: String!) {
     repository(cloneURL: $cloneURL) {

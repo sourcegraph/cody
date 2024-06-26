@@ -1,10 +1,11 @@
+import type { Context } from '@sourcegraph/cody-shared'
 import { SettingsIcon } from 'lucide-react'
 import { useCallback } from 'react'
 import { useTelemetryRecorder } from '../../utils/telemetry'
 import { Command, CommandGroup, CommandItem, CommandLink, CommandList } from '../shadcn/ui/command'
 import { ToolbarPopoverItem } from '../shadcn/ui/toolbar'
 import { cn } from '../shadcn/utils'
-import type { Context, ContextsContext } from './contexts'
+import type { ContextsContext } from './contexts'
 
 const NULL_CONTEXT_ID = '<null-context>'
 
