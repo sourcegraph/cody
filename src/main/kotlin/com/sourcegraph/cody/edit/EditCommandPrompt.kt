@@ -14,6 +14,7 @@ import com.intellij.openapi.editor.impl.EditorFactoryImpl
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
+import com.intellij.openapi.keymap.KeymapManager
 import com.intellij.openapi.keymap.KeymapUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectRootManager
@@ -616,20 +617,16 @@ class EditCommandPrompt(
       return when (actionId) {
         "cody.editCodeAction",
         "cody.inlineEditRetryAction" -> {
-          val keyStroke =
-              KeyStroke.getKeyStroke(
-                  KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK or InputEvent.SHIFT_DOWN_MASK)
-          val shortcut = KeyboardShortcut(keyStroke, null)
-          KeymapUtil.getShortcutText(shortcut)
+          KeymapUtil.getShortcutText(
+              KeymapManager.getInstance().activeKeymap.getShortcuts("cody.editCodeAction")[0])
         }
         "cody.inlineEditCancelAction",
         "cody.inlineEditUndoAction",
         "cody.inlineEditDismissAction" -> {
-          val keyStroke =
-              KeyStroke.getKeyStroke(
-                  KeyEvent.VK_BACK_SPACE, InputEvent.CTRL_DOWN_MASK or InputEvent.SHIFT_DOWN_MASK)
-          val shortcut = KeyboardShortcut(keyStroke, null)
-          KeymapUtil.getShortcutText(shortcut)
+          KeymapUtil.getShortcutText(
+              KeymapManager.getInstance()
+                  .activeKeymap
+                  .getShortcuts("cody.editCancelOrUndoAction")[0])
         }
         else -> null
       }

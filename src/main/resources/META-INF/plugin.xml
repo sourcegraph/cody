@@ -105,6 +105,11 @@
                   topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
     </applicationListeners>
 
+    <!--
+        N.B. You have to declare all the Mac keystrokes with ctrl or alt separately,
+        even if their definition is identical to $default, because otherwise it will
+        result in the actual keybindings switching to command/meta and/or shift.
+    -->
     <actions>
         <action id="sourcegraph.openFile"
                 class="com.sourcegraph.website.OpenFileAction"
@@ -135,9 +140,9 @@
         <action id="sourcegraph.openFindPopup"
                 class="com.sourcegraph.find.OpenFindAction"
                 icon="/icons/sourcegraphLogo.svg">
-            <keyboard-shortcut first-keystroke="alt s" keymap="$default"/>
-            <add-to-group group-id="FindMenuGroup" anchor="after"
-                          relative-to-action="ReplaceInPath"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="alt s" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="alt s" keymap="Mac OS X 10.5+"/>
+            <add-to-group group-id="FindMenuGroup" anchor="after" relative-to-action="ReplaceInPath"/>
         </action>
         <action id="sourcegraph.login"
                 class="com.sourcegraph.config.OpenPluginSettingsAction"
@@ -147,33 +152,34 @@
         <!-- autocomplete -->
         <action id="cody.acceptAutocompleteAction"
                 class="com.sourcegraph.cody.autocomplete.action.AcceptCodyAutocompleteAction">
-            <keyboard-shortcut first-keystroke="TAB" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="TAB" keymap="$default"/>
         </action>
         <action id="cody.cycleForwardAutocompleteAction"
                 class="com.sourcegraph.cody.autocomplete.action.CycleForwardAutocompleteAction">
-            <keyboard-shortcut first-keystroke="alt OPEN_BRACKET"
-                               keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="alt OPEN_BRACKET" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="alt OPEN_BRACKET" keymap="Mac OS X 10.5+"/>
         </action>
         <action id="cody.cycleBackAutocompleteAction"
                 class="com.sourcegraph.cody.autocomplete.action.CycleBackwardAutocompleteAction">
-            <keyboard-shortcut first-keystroke="alt CLOSE_BRACKET"
-                               keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="alt CLOSE_BRACKET" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="alt CLOSE_BRACKET" keymap="Mac OS X 10.5+"/>
         </action>
 
         <action id="cody.disposeInlays"
                 class="com.sourcegraph.cody.autocomplete.action.DisposeInlaysAction">
-            <keyboard-shortcut first-keystroke="ESCAPE" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ESCAPE" keymap="$default"/>
         </action>
 
         <action id="cody.triggerAutocomplete"
                 class="com.sourcegraph.cody.autocomplete.action.TriggerAutocompleteAction">
-            <keyboard-shortcut first-keystroke="alt BACK_SLASH"
-                               keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt P" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt P" keymap="Mac OS X 10.5+"/>
         </action>
 
         <action id="cody.newChat" icon="/icons/chat/newChat.svg"
                 class="com.sourcegraph.cody.chat.actions.NewChatAction">
-            <keyboard-shortcut first-keystroke="alt EQUALS" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt 0" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt 0" keymap="Mac OS X 10.5+"/>
         </action>
 
         <action id="cody.exportChats" icon="/icons/chat/download.svg"
@@ -182,7 +188,8 @@
 
         <action id="cody.openChat"
                 class="com.sourcegraph.cody.chat.OpenChatAction">
-            <keyboard-shortcut first-keystroke="alt MINUS" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt 9" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt 9" keymap="Mac OS X 10.5+"/>
         </action>
 
         <group id="CodyEditorActions" popup="true"
@@ -195,16 +202,16 @@
         <action id="cody.command.Explain"
                 icon="/icons/chat/chat_command.svg"
                 class="com.sourcegraph.cody.chat.actions.ExplainCommand">
-            <keyboard-shortcut replace-all="true" first-keystroke="control shift E" keymap="Mac OS X 10.5+"/>
-            <keyboard-shortcut replace-all="true" first-keystroke="alt shift 1" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt 1" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt 1" keymap="Mac OS X 10.5+"/>
             <add-to-group group-id="CodyEditorActions" anchor="last"/>
         </action>
 
         <action id="cody.command.Smell"
                 icon="/icons/chat/chat_command.svg"
                 class="com.sourcegraph.cody.chat.actions.SmellCommand">
-            <keyboard-shortcut replace-all="true" first-keystroke="control shift S" keymap="Mac OS X 10.5+"/>
-            <keyboard-shortcut replace-all="true" first-keystroke="alt shift 2" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt 2" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt 2" keymap="Mac OS X 10.5+"/>
             <add-to-group group-id="CodyEditorActions" anchor="last"/>
         </action>
 
@@ -219,16 +226,16 @@
                 icon="/icons/edit/generate_test.svg"
                 class="com.sourcegraph.cody.edit.actions.TestCodeAction">
             <add-to-group group-id="CodyEditorActions" anchor="first"/>
-            <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift T" keymap="$default"/>
-            <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift T" keymap="Mac OS X 10.5+"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt G" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt G" keymap="Mac OS X 10.5+"/>
         </action>
 
         <action id="cody.documentCodeAction"
                 icon="/icons/edit/document_code.svg"
                 class="com.sourcegraph.cody.edit.actions.DocumentCodeAction">
             <add-to-group group-id="CodyEditorActions" anchor="first"/>
-            <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift H" keymap="$default"/>
-            <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift H" keymap="Mac OS X 10.5+"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt H" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt H" keymap="Mac OS X 10.5+"/>
         </action>
 
         <action id="cody.editCodeAction"
@@ -236,8 +243,8 @@
                 class="com.sourcegraph.cody.edit.actions.EditOpenOrRetryAction"
                 description="Opens the Edit Code dialog">
             <add-to-group group-id="CodyEditorActions" anchor="first"/>
-            <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift ENTER" keymap="$default"/>
-            <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift ENTER" keymap="Mac OS X 10.5+"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt COMMA" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt ENTER" keymap="Mac OS X 10.5+"/>
         </action>
 
         <!-- Lens widget actions -->
@@ -260,6 +267,7 @@
                 class="com.sourcegraph.cody.edit.actions.EditRetryAction"
                 text="Retry Edit"
                 description="Retry the fixup">
+          <!-- Key shortcut is handled by cody.editCodeAction, which converts to a Retry if Accept is showing. -->
         </action>
 
         <action id="cody.inlineEditUndoAction"
@@ -272,8 +280,8 @@
                 class="com.sourcegraph.cody.edit.EditShowDiffAction"
                 text="Show Diff"
                 description="Show a diff view of the fixup">
-            <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift QUOTE" keymap="$default"/>
-            <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift QUOTE" keymap="Mac OS X 10.5+"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt D" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt K" keymap="Mac OS X 10.5+"/>
         </action>
 
         <action id="cody.inlineEditDismissAction"
@@ -290,12 +298,13 @@
             <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift L" keymap="Mac OS X 10.5+"/>
         </action>
 
+        <!-- also now dismisses error lens, if showing -->
         <action id="cody.editCancelOrUndoAction"
                 class="com.sourcegraph.cody.edit.actions.EditCancelOrUndoAction"
                 text="Cancel or Undo Current Edit"
                 description="Activates the cancel or undo lens, whichever is showing.">
-            <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift BACK_SPACE" keymap="$default"/>
-            <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift BACK_SPACE" keymap="Mac OS X 10.5+"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt BACK_SPACE" keymap="$default"/>
+            <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt BACK_SPACE" keymap="Mac OS X 10.5+"/>
         </action>
 
         <group id="SourcegraphEditor" popup="true" searchable="false">
