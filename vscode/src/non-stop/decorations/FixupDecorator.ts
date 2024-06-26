@@ -91,10 +91,27 @@ export class FixupDecorator {
             removedDecorations.push(...decorations.linesRemoved)
         }
 
-        const editors = vscode.window.visibleTextEditors.filter(
-            editor => editor.document.uri.toString() === file.uri.toString()
-        )
-        for (const editor of editors) {
+        const visibleEditors = vscode.window.visibleTextEditors.filter(editor => {
+            return editor.document.uri.toString() === file.uri.toString()
+        })
+        const editorsToDecorate: vscode.TextEditor[] = []
+        // VS Code doesn't have a useful way to determine if a `visibleEditor` is part of the diff view
+        // So we need to iterate through the `tabGroups` API, and match `TabInputText` tabs against the visible editors.
+        for (const group of vscode.window.tabGroups.all) {
+            // Only the activeTab can be visible, so we only use that
+            const tab = group.activeTab
+            if (!tab || !(tab.input instanceof vscode.TabInputText)) {
+                continue
+            }
+
+            const tabUri = tab.input.uri
+            const matchingEditors = visibleEditors.filter(
+                editor => editor.document.uri.toString() === tabUri.toString()
+            )
+            editorsToDecorate.push(...matchingEditors)
+        }
+
+        for (const editor of editorsToDecorate) {
             editor.setDecorations(CURRENT_LINE_DECORATION, currentLineDecorations)
             editor.setDecorations(UNVISITED_LINE_DECORATION, unvisitedLinesDecorations)
             editor.setDecorations(INSERTED_CODE_DECORATION, addedDecorations)
