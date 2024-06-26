@@ -140,7 +140,7 @@ export const ContextSelectField: React.FunctionComponent<
                 },
             }}
         >
-            {currentContext !== null ? currentContext.name : 'Context'}
+            {currentContext !== null ? currentContext.name : 'Template'}
         </ToolbarPopoverItem>
     )
 }

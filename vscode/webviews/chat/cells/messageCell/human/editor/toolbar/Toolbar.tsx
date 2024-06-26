@@ -1,4 +1,4 @@
-import type { Model } from '@sourcegraph/cody-shared'
+import type { Context, Model } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import { AtSignIcon } from 'lucide-react'
 import { type FunctionComponent, useCallback } from 'react'
@@ -28,6 +28,7 @@ export const Toolbar: FunctionComponent<{
     onGapClick?: () => void
 
     focusEditor?: () => void
+    appendTextToEditor: (text: string) => void
 
     hidden?: boolean
     className?: string
@@ -39,6 +40,7 @@ export const Toolbar: FunctionComponent<{
     submitDisabled,
     onGapClick,
     focusEditor,
+    appendTextToEditor,
     hidden,
     className,
 }) => {
@@ -77,7 +79,10 @@ export const Toolbar: FunctionComponent<{
                     aria-label="Add context"
                 />
             )}
-            <ContextSelectFieldToolbarItem focusEditor={focusEditor} />
+            <ContextSelectFieldToolbarItem
+                focusEditor={focusEditor}
+                appendTextToEditor={appendTextToEditor}
+            />
             <ModelSelectFieldToolbarItem userInfo={userInfo} focusEditor={focusEditor} />
             <div className={styles.spacer} />
             <SubmitButton
@@ -91,9 +96,22 @@ export const Toolbar: FunctionComponent<{
 
 const ContextSelectFieldToolbarItem: FunctionComponent<{
     focusEditor?: () => void
+    appendTextToEditor: (text: string) => void
     className?: string
-}> = ({ focusEditor, className }) => {
+}> = ({ focusEditor, appendTextToEditor, className }) => {
     const contexts = useContexts()
+
+    const onCurrentContextChange = useCallback(
+        (context: Context | null) => {
+            if (context) {
+                appendTextToEditor(context.description ?? '')
+                focusEditor?.()
+            }
+            contexts?.onCurrentContextChange(context)
+        },
+        [appendTextToEditor, focusEditor, contexts?.onCurrentContextChange]
+    )
+
     return (
         contexts && (
             <>
@@ -101,7 +119,7 @@ const ContextSelectFieldToolbarItem: FunctionComponent<{
                 <ContextSelectField
                     contexts={contexts.contexts}
                     currentContext={contexts.currentContext}
-                    onCurrentContextChange={contexts.onCurrentContextChange}
+                    onCurrentContextChange={onCurrentContextChange}
                     onCloseByEscape={focusEditor}
                     className={className}
                 />

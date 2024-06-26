@@ -227,7 +227,7 @@ query ContextFilters {
 
 export const CONTEXTS_QUERY = `
 query UserSearchContexts {
-    searchContexts(first: 100) {
+    searchContexts(first: 100, query: "test") {
         nodes {
             id
             name
