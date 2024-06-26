@@ -212,7 +212,7 @@ export class FixupController
      * If the change restores an applied task to its original state, we discard the task
      * meaning any associated UI and behaviour is updated.
      */
-    public registerDiscardOnUndoListener(task: FixupTask): void {
+    public registerDiscardOnRestoreListener(task: FixupTask): void {
         // Triggering an auto-discard or auto-accept can lead to race conditions in the Agent, as the
         // Agent doesn't get notified when the Accept lens is displayed, so it doesn't actually know when it
         // is safe to discard/accept.
@@ -1078,7 +1078,7 @@ export class FixupController
 
         if (task.state === CodyTaskState.Applied) {
             this.decorator.didApplyTask(task)
-            this.registerDiscardOnUndoListener(task)
+            this.registerDiscardOnRestoreListener(task)
         }
     }
 
