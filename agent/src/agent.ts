@@ -471,7 +471,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerRequest('textDocument/change', async document => {
-            await this.handleDocumentChange(document)
+            // We don't await the promise here, as it's got a fragile implicit contract.
+            // Call testing/awaitPendingPromises if you want to wait for changes to settle.
+            this.handleDocumentChange(document)
             return { success: true }
         })
 
@@ -1431,34 +1433,31 @@ export class Agent extends MessageHandler implements ExtensionClient {
         return result
     }
 
-    private async handleDocumentChange(document: ProtocolTextDocument): Promise<void> {
+    private async handleDocumentChange(document: ProtocolTextDocument) {
         const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
         const { document: textDocument, contentChanges } =
             this.workspace.loadDocumentWithChanges(documentWithUri)
         const textEditor = this.workspace.newTextEditor(textDocument)
         this.workspace.setActiveTextEditor(textEditor)
 
-        let lastPromise: Promise<any> | undefined
-
         if (contentChanges.length > 0) {
-            lastPromise = vscode_shim.onDidChangeTextDocument.cody_fireAsync({
-                document: textDocument,
-                contentChanges,
-                reason: undefined,
-            })
-            this.pushPendingPromise(lastPromise)
+            this.pushPendingPromise(
+                vscode_shim.onDidChangeTextDocument.cody_fireAsync({
+                    document: textDocument,
+                    contentChanges,
+                    reason: undefined,
+                })
+            )
         }
-
         if (document.selection) {
-            lastPromise = vscode_shim.onDidChangeTextEditorSelection.cody_fireAsync({
-                textEditor,
-                kind: undefined,
-                selections: [textEditor.selection],
-            })
-            this.pushPendingPromise(lastPromise)
+            this.pushPendingPromise(
+                vscode_shim.onDidChangeTextEditorSelection.cody_fireAsync({
+                    textEditor,
+                    kind: undefined,
+                    selections: [textEditor.selection],
+                })
+            )
         }
-
-        return lastPromise || Promise.resolve()
     }
 
     private registerWebviewHandlers(): void {
