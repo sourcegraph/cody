@@ -64,6 +64,7 @@ export function computeAppliedDecorations(task: FixupTask): Decorations | undefi
                     renderOptions: {
                         after: { contentText: decorationText },
                     },
+                    hoverMessage: edit.oldText,
                 })
             }
         } else if (edit.type === 'insertion') {
