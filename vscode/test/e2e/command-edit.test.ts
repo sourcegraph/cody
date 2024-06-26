@@ -136,10 +136,7 @@ test('edit (fixup) input - range selection', async ({ page, sidebar }) => {
     expect(updatedRangeItem).toBeVisible()
 })
 
-// TODO: This test is flaky.
-// The `modelItem` and `selectedModelItem` can resolve to 2 elements
-// Fix this.
-test.skip('edit (fixup) input - model selection', async ({ page, nap, sidebar }) => {
+test('edit (fixup) input - model selection', async ({ page, nap, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
