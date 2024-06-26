@@ -35,7 +35,7 @@ test.extend<ExpectedEvents>({
         'cody.fixup.reverted:clicked',
         'cody.sidebar.edit:clicked',
     ],
-})('edit (fixup) task', async ({ page, sidebar, expectedEvents }) => {
+})('edit (fixup) task', async ({ page, sidebar, expectedEvents, nap }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -74,11 +74,13 @@ test.extend<ExpectedEvents>({
     await expect(undoLens).toBeVisible()
 
     // The text in the doc should be replaced
+    await nap()
     await expect(page.getByText('appleName')).not.toBeVisible()
     await expect(page.getByText('bananaName')).toBeVisible()
 
     // Undo: remove all the changes made by edit
     await undoLens.click()
+    await nap()
     await expect(page.getByText('appleName')).toBeVisible()
     await expect(page.getByText('bananaName')).not.toBeVisible()
 
@@ -90,6 +92,8 @@ test.extend<ExpectedEvents>({
     await inputBox.focus()
     await inputBox.fill(instruction)
     await page.keyboard.press('Enter')
+
+    await nap()
     await expect(page.getByText('appleName')).not.toBeVisible()
     await expect(page.getByText('bananaName')).toBeVisible()
 })
