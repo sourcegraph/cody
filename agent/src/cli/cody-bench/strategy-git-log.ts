@@ -5,7 +5,7 @@ import * as path from 'node:path'
 import parseGitDiff, { type AddedLine } from 'parse-git-diff'
 import * as vscode from 'vscode'
 
-import type { MessageHandler } from '../../jsonrpc-alias'
+import type { RpcMessageHandler } from '../../jsonrpc-alias'
 import { getLanguageForFileName } from '../../language'
 
 import { EvaluationDocument } from './EvaluationDocument'
@@ -16,7 +16,7 @@ import { testCleanup, testInstall } from './testTypecheck'
 import { triggerAutocomplete } from './triggerAutocomplete'
 
 export async function evaluateGitLogStrategy(
-    client: MessageHandler,
+    client: RpcMessageHandler,
     options: CodyBenchOptions
 ): Promise<void> {
     const { workspace } = options

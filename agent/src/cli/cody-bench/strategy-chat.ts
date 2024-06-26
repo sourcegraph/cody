@@ -3,7 +3,7 @@ import { type ContextItem, ModelsService, PromptString } from '@sourcegraph/cody
 import { glob } from 'glob'
 import * as vscode from 'vscode'
 import YAML from 'yaml'
-import type { MessageHandler } from '../../jsonrpc-alias'
+import type { RpcMessageHandler } from '../../jsonrpc-alias'
 import { EvaluationDocument } from './EvaluationDocument'
 import type { CodyBenchOptions } from './cody-bench'
 import { evaluateEachFile } from './evaluateEachFile'
@@ -16,7 +16,7 @@ interface ChatTask {
 }
 
 export async function evaluateChatStrategy(
-    client: MessageHandler,
+    client: RpcMessageHandler,
     options: CodyBenchOptions
 ): Promise<void> {
     const absoluteFiles = glob.sync(`${options.workspace}/**`, {

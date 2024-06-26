@@ -343,7 +343,7 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
         baseGlobalState.editModel = provider.model
     }
 
-    const client = await newAgentClient({
+    const { client } = await newAgentClient({
         name: 'cody-bench',
         version: '0.1.0',
         workspaceRootUri: workspaceRootUri.toString(),
