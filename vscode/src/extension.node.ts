@@ -74,7 +74,6 @@ export function activate(
             ? (...args) => new OpenTelemetryService(...args)
             : undefined,
         startTokenReceiver: (...args) => startTokenReceiver(...args),
-
         onConfigurationChange: setCustomAgent,
         extensionClient,
     })

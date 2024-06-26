@@ -74,14 +74,13 @@ export class DefaultPrompter {
                 reverseTranscript[0] = PromptMixin.mixInto(reverseTranscript[0])
             }
 
-            const transcriptLimitReached = promptBuilder.tryAddMessages(reverseTranscript)
-            if (transcriptLimitReached) {
+            const messagesIgnored = promptBuilder.tryAddMessages(reverseTranscript)
+            if (messagesIgnored) {
                 logDebug(
                     'DefaultPrompter.makePrompt',
-                    `Ignored ${transcriptLimitReached} chat messages due to context limit`
+                    `Ignored ${messagesIgnored} chat messages due to context limit`
                 )
             }
-
             // Counter for context items categorized by source
             const ignoredContext = { user: 0, enhanced: 0, transcript: 0 }
 
@@ -119,10 +118,13 @@ export class DefaultPrompter {
             const historyContext = await promptBuilder.tryAddContext('history', historyItems.reverse())
             ignoredContext.transcript += historyContext.ignored.length
 
-            logDebug(
-                'DefaultPrompter.makePrompt',
-                `Ignored context due to context limit: user=${ignoredContext.user}, enhanced=${ignoredContext.enhanced}, previous=${ignoredContext.transcript}`
-            )
+            // Log only if there are any ignored context items.
+            if (ignoredContext.user + ignoredContext.enhanced + ignoredContext.transcript > 0) {
+                logDebug(
+                    'DefaultPrompter.makePrompt',
+                    `Ignored context due to context limit: user=${ignoredContext.user}, enhanced=${ignoredContext.enhanced}, previous=${ignoredContext.transcript}`
+                )
+            }
 
             return {
                 prompt: promptBuilder.build(),

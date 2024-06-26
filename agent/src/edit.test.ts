@@ -54,7 +54,8 @@ describe('Edit', () => {
         await client.openFile(uri)
         const task = await client.request('editCommands/code', {
             instruction: 'Add types to these props. Introduce new interfaces as necessary',
-            model: ModelsService.getModelByIDSubstringOrError('anthropic/claude-3-opus').model,
+            model: ModelsService.getModelByIDSubstringOrError('anthropic/claude-3-5-sonnet-20240620')
+                .model,
         })
         await client.acceptEditTask(uri, task)
         expect(client.documentText(uri)).toMatchInlineSnapshot(
@@ -62,15 +63,22 @@ describe('Edit', () => {
           "import { useEffect } from "react";
           import React = require("react");
 
+          interface Message {
+          	chatID: string
+          	text: string
+          }
+
+          interface ChatColumnProps {
+          	messages: Message[]
+          	setChatID: (chatID: string) => void
+          	isLoading: boolean
+          }
+
           export default function ChatColumn({
           	messages,
           	setChatID,
           	isLoading,
-          }: {
-          	messages: Message[]
-          	setChatID: (chatID: string) => void
-          	isLoading: boolean
-          }) {	useEffect(() => {
+          }: ChatColumnProps) {	useEffect(() => {
           		if (!isLoading) {
           			setChatID(messages[0].chatID);
           		}
@@ -98,7 +106,8 @@ describe('Edit', () => {
         const task = await client.request('editCommands/code', {
             instruction:
                 'Create and export a Heading component that uses these props. Do not use default exports',
-            model: ModelsService.getModelByIDSubstringOrError('anthropic/claude-3-opus').model,
+            model: ModelsService.getModelByIDSubstringOrError('anthropic/claude-3-5-sonnet-20240620')
+                .model,
         })
         await client.acceptEditTask(uri, task)
         expect(client.documentText(uri)).toMatchInlineSnapshot(
@@ -111,9 +120,9 @@ describe('Edit', () => {
           }
 
           export const Heading: React.FC<HeadingProps> = ({ text, level = 1 }) => {
-            const HeadingTag = \`h\${level}\` as keyof JSX.IntrinsicElements
+              const HeadingTag = \`h\${level}\` as keyof JSX.IntrinsicElements
 
-            return <HeadingTag>{text}</HeadingTag>
+              return <HeadingTag>{text}</HeadingTag>
           }
 
           "

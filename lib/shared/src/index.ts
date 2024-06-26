@@ -151,13 +151,9 @@ export {
     type CompletionResponseGenerator,
 } from './inferenceClient/misc'
 export type {
-    ContextResult,
-    FilenameContextFetcher,
     IndexedKeywordContextFetcher,
     LocalEmbeddingsFetcher,
     Result,
-    SearchPanelFile,
-    SearchPanelSnippet,
 } from './local-context'
 export { logDebug, logError, setLogger } from './logger'
 export {
@@ -193,6 +189,7 @@ export { SourcegraphCompletionsClient } from './sourcegraph-api/completions/clie
 export type {
     CompletionLogger,
     CompletionsClientConfig,
+    CompletionRequestParameters,
 } from './sourcegraph-api/completions/client'
 export * from './sourcegraph-api/completions/types'
 export {

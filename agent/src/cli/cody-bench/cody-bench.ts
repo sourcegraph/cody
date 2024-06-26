@@ -355,6 +355,7 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
             customHeaders: {},
             customConfiguration: {
                 'cody.experimental.symf.enabled': false, // fixes errors in Polly.js related to fetchin the symf binary
+                'cody.experimental.telemetry.enabled': false,
                 ...options.fixture.customConfiguration,
             },
             baseGlobalState,
