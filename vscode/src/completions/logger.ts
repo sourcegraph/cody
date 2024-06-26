@@ -24,7 +24,6 @@ import type {
     PersistencePresentEventPayload,
     PersistenceRemovedEventPayload,
 } from '../common/persistence-tracker/types'
-import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import { RepoMetadatafromGitApi } from '../repository/repo-metadata-from-git-api'
 import { upstreamHealthProvider } from '../services/UpstreamHealthProvider'
 import { completionProviderConfig } from './completion-provider-config'
@@ -733,7 +732,7 @@ export function accepted(
     })
     statistics.logAccepted()
 
-    if (trackedRange === undefined || isRunningInsideAgent()) {
+    if (trackedRange === undefined) {
         return
     }
     if (persistenceTracker === null) {
