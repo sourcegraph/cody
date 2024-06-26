@@ -1439,15 +1439,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
         return result
     }
 
-
     private async handleDocumentChange(document: ProtocolTextDocument) {
         const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
         const { document: textDocument, contentChanges } =
             this.workspace.loadDocumentWithChanges(documentWithUri)
         const textEditor = this.workspace.newTextEditor(textDocument)
         this.workspace.setActiveTextEditor(textEditor)
-
-        let lastPromise: Promise<any> | undefined
 
         if (contentChanges.length > 0) {
             this.pushPendingPromise(
@@ -1467,8 +1464,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 })
             )
         }
-
-        return lastPromise || Promise.resolve()
     }
 
     private registerWebviewHandlers(): void {
