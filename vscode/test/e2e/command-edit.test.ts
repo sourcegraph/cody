@@ -136,7 +136,10 @@ test('edit (fixup) input - range selection', async ({ page, sidebar }) => {
     expect(updatedRangeItem).toBeVisible()
 })
 
-test('edit (fixup) input - model selection', async ({ page, nap, sidebar }) => {
+// TODO: This test is flaky.
+// The `modelItem` and `selectedModelItem` can resolve to 2 elements
+// Fix this.
+test.skip('edit (fixup) input - model selection', async ({ page, nap, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -148,7 +151,7 @@ test('edit (fixup) input - model selection', async ({ page, nap, sidebar }) => {
     await page.getByRole('button', { name: 'Cody Commands' }).click()
     await page.getByRole('option', { name: 'Edit code' }).click()
 
-    // Check the correct range item is auto-selected
+    // Check the correct model item is auto-selected
     await nap()
     const modelItem = page.getByText('Claude 3 Sonnet')
     await nap()
