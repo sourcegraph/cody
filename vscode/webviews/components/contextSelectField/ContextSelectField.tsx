@@ -1,4 +1,4 @@
-import { ExternalLinkIcon } from 'lucide-react'
+import { SettingsIcon } from 'lucide-react'
 import { useCallback } from 'react'
 import { useTelemetryRecorder } from '../../utils/telemetry'
 import { Command, CommandGroup, CommandItem, CommandLink, CommandList } from '../shadcn/ui/command'
@@ -97,7 +97,7 @@ export const ContextSelectField: React.FunctionComponent<
                                         onChange(currentValue)
                                         close()
                                     }}
-                                    className="tw-flex tw-items-center tw-gap-2"
+                                    className="tw-flex tw-items-baseline tw-gap-4"
                                 >
                                     {context.name}{' '}
                                     {context.description && (
@@ -114,14 +114,10 @@ export const ContextSelectField: React.FunctionComponent<
                                 href="https://sourcegraph.test:3443/contexts"
                                 target="_blank"
                                 rel="noreferrer"
-                                className="tw-flex tw-items-center tw-justify-between"
+                                className="tw-flex tw-items-center tw-gap-3"
                             >
-                                Documentation
-                                <ExternalLinkIcon
-                                    size={16}
-                                    strokeWidth={1.25}
-                                    className="tw-opacity-80"
-                                />
+                                <SettingsIcon size={16} strokeWidth={1.25} className="tw-opacity-80" />
+                                Edit contexts...
                             </CommandLink>
                         </CommandGroup>
                     </CommandList>
@@ -138,7 +134,7 @@ export const ContextSelectField: React.FunctionComponent<
                 },
             }}
         >
-            {currentContext !== null ? currentContext.name : 'Context...'}
+            {currentContext !== null ? currentContext.name : 'Context'}
         </ToolbarPopoverItem>
     )
 }
