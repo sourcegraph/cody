@@ -64,7 +64,7 @@ export const CodyWebChatContext = createContext<CodyWebChatContextData>({
 interface CodyWebChatProviderProps {
     serverEndpoint: string
     accessToken: string | null
-    chatID?: string
+    chatID?: string | null
     initialContext?: InitialContext
     onNewChatCreated?: (chatId: string) => void
 }
@@ -118,7 +118,7 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
 
                 // In case of no chats we should create initial empty chat
                 // Also when we have a context
-                if (chatHistory.length === 0) {
+                if (chatHistory.length === 0 || initialChatId === null) {
                     await createChat(client)
                 } else {
                     // Activate either last active chat by ID from local storage or

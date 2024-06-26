@@ -1,6 +1,8 @@
-.context-item-mention-node {
+:root {
     --mention-color-opacity: 70%;
+}
 
+.context-item-mention-node {
     color: color-mix(in lch, var(--vscode-inputOption-activeForeground) calc(1.2*var(--mention-color-opacity)), transparent);
     background-color: color-mix(in lch, var(--vscode-inputOption-activeBackground) var(--mention-color-opacity), transparent);
 

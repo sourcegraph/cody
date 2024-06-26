@@ -35,6 +35,5 @@
 
     & a {
         text-decoration: none;
-        color: var(--vscode-textLink-foreground);
     }
 }

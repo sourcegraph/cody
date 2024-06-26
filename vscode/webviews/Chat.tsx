@@ -24,6 +24,8 @@ interface ChatboxProps {
     guardrails?: Guardrails
     scrollableParent?: HTMLElement | null
     showSnippetActions?: boolean
+    showWelcomeMessage?: boolean
+    className?: string
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -31,13 +33,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     transcript,
     vscodeAPI,
     telemetryService,
-
     isTranscriptError,
     chatEnabled = true,
     userInfo,
     guardrails,
     scrollableParent,
     showSnippetActions = true,
+    showWelcomeMessage = true,
+    className,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -158,7 +161,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     }, [])
 
     return (
-        <div className={clsx(styles.container, 'tw-relative')}>
+        <div className={clsx(styles.container, className, 'tw-relative')}>
             {!chatEnabled && (
                 <div className={styles.chatDisabled}>
                     Cody chat is disabled by your Sourcegraph site administrator
@@ -177,7 +180,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 guardrails={guardrails}
                 showSnippetActions={showSnippetActions}
             />
-            {transcript.length === 0 && <WelcomeMessage />}
+            {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage />}
             <ScrollDown scrollableParent={scrollableParent} onClick={focusLastHumanMessageEditor} />
         </div>
     )

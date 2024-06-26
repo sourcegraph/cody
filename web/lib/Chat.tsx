@@ -35,6 +35,7 @@ import {
 import { useWebAgentClient } from './Provider'
 
 import './styles.css'
+import styles from './Chat.module.css'
 
 // Internal API mock call in order to set up web version of
 // the cody agent properly (completely mock data)
@@ -187,6 +188,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                                         <Chat
                                             chatEnabled={true}
                                             showSnippetActions={false}
+                                            showWelcomeMessage={false}
                                             userInfo={userAccountInfo}
                                             messageInProgress={messageInProgress}
                                             transcript={transcript}
@@ -194,6 +196,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                                             telemetryService={telemetryService}
                                             isTranscriptError={isTranscriptError}
                                             scrollableParent={rootElementRef.current}
+                                            className={styles.chat}
                                         />
                                     </WithContextProviders>
                                 </ClientStateContextProvider>
@@ -202,7 +205,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                     </ChatMentionContext.Provider>
                 )
             ) : (
-                <>Loading...</>
+                <div className={styles.loading}>Loading Cody Agent...</div>
             )}
         </div>
     )
