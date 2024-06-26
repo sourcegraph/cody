@@ -6,6 +6,7 @@ import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.event.*;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.ide.CopyPasteManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.util.ui.JBInsets;
@@ -17,11 +18,15 @@ import com.sourcegraph.cody.ui.TransparentButton;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.io.IOException;
 import java.time.Duration;
+import java.util.Objects;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import org.jetbrains.annotations.NotNull;
@@ -148,6 +153,26 @@ public class CodeEditorFactory {
             codeEditorButtons.setVisible(false);
           }
         };
+
+    CopyPasteManager.getInstance()
+        .addContentChangedListener(
+            (oldTransferable, newTransferable) -> {
+              try {
+                String copiedString =
+                    newTransferable.getTransferData(DataFlavor.stringFlavor).toString();
+                String selectedText = editor.getSelectionModel().getSelectedText();
+                // Unfortunately there is no easy way to check if origin of the copied text, so we
+                // are checking if copied text is matching a text selected in the component
+                if (Objects.equals(selectedText, copiedString)) {
+                  lastCopiedText = selectedText;
+                  TelemetryV2.Companion.sendCodeGenerationEvent(
+                      project, "keyDown.Copy", "clicked", lastCopiedText);
+                }
+              } catch (UnsupportedFlavorException | IOException e) {
+                logger.warn("Unable to process copied text", e);
+              }
+            },
+            project);
 
     editor.addEditorMouseMotionListener(editorMouseMotionListener);
     editor.addEditorMouseListener(editorMouseListener);
