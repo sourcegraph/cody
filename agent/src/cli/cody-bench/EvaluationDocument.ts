@@ -142,7 +142,9 @@ export class EvaluationDocument {
                 } else {
                     throw new Error(`unknown strategy ${this.options.fixture.strategy}`)
                 }
-
+                if (item.chatQuestion) {
+                    pushMultilineText('CHAT_QUESTION', item.chatQuestion)
+                }
                 if (item.chatReply) {
                     pushMultilineText('CHAT_REPLY', item.chatReply)
                 }
@@ -259,6 +261,7 @@ interface EvaluationItem {
     resultCharacterCount?: number
     editDiff?: string
     chatReply?: string
+    chatQuestion?: string
     fixBeforeDiagnostic?: string
     fixAfterDiagnostic?: string
     llmJudgeScore?: number
@@ -293,6 +296,7 @@ export const autocompleteItemHeaders: ObjectHeaderItem[] = [
     { id: 'resultNonInsertPatch', title: 'RESULT_NON_INSERT_PATCH' },
     { id: 'editDiff', title: 'EDIT_DIFF' },
     { id: 'chatReply', title: 'CHAT_REPLY' },
+    { id: 'chatQuestion', title: 'CHAT_QUESTION' },
     { id: 'fixAfterDiagnostic', title: 'FIX_AFTER_DIAGNOSTIC' },
     { id: 'fixBeforeDiagnostic', title: 'FIX_BEFORE_DIAGNOSTIC' },
     { id: 'llmJudgeScore', title: 'LLM_JUDGE_SCORE' },

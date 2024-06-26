@@ -20,7 +20,9 @@ import {
     SELECTION_CHANGE_COMMAND,
 } from 'lexical'
 import { type FunctionComponent, useCallback, useEffect, useMemo, useRef } from 'react'
+import { URI } from 'vscode-uri'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/shadcn/ui/tooltip'
+import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { $isContextItemMentionNode, type ContextItemMentionNode } from './ContextItemMentionNode'
 import { IS_IOS, useIsFocused } from './mentionUtils'
 
@@ -140,11 +142,21 @@ export const MentionComponent: FunctionComponent<{
                     clearSelection()
                 }
                 setSelected(true)
+
+                // metaKey is true when you press cmd on Mac while clicking.
+                if (event.metaKey && node.contextItem.uri) {
+                    const uri = URI.parse(node.contextItem.uri)
+                    getVSCodeAPI().postMessage({
+                        command: 'openURI',
+                        uri,
+                    })
+                }
+
                 return true
             }
             return false
         },
-        [clearSelection, setSelected]
+        [clearSelection, setSelected, node.contextItem.uri]
     )
 
     const onBlur = useCallback(() => {

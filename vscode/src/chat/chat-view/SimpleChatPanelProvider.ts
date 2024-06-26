@@ -324,6 +324,9 @@ export class SimpleChatPanelProvider
             case 'copy':
                 await handleCopiedCode(message.text, message.eventType === 'Button')
                 break
+            case 'openURI':
+                vscode.commands.executeCommand('vscode.open', message.uri)
+                break
             case 'links':
                 void openExternalLinks(message.value)
                 break
@@ -561,7 +564,6 @@ export class SimpleChatPanelProvider
 
     private initDoer = new InitDoer<boolean | undefined>()
     private async handleInitialized(): Promise<void> {
-        logDebug('SimpleChatPanelProvider', 'handleInitialized')
         // HACK: this call is necessary to get the webview to set the chatID state,
         // which is necessary on deserialization. It should be invoked before the
         // other initializers run (otherwise, it might interfere with other view
@@ -1506,7 +1508,6 @@ export class SimpleChatPanelProvider
     private async resolveWebviewViewOrPanel(
         viewOrPanel: vscode.WebviewView | vscode.WebviewPanel
     ): Promise<vscode.WebviewView | vscode.WebviewPanel> {
-        logDebug('SimpleChatPanelProvider:resolveWebviewViewOrPanel', 'registering webview view/panel')
         if (this.webviewPanelOrView) {
             throw new Error('webview already created')
         }

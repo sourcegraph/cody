@@ -25,6 +25,11 @@ export interface CompletionLogger {
           }
 }
 
+export interface CompletionRequestParameters {
+    apiVersion: number
+    customHeaders?: Record<string, string>
+}
+
 export type CompletionsClientConfig = Pick<
     ConfigurationWithAccessToken,
     'serverEndpoint' | 'accessToken' | 'customHeaders'
@@ -84,14 +89,14 @@ export abstract class SourcegraphCompletionsClient {
 
     protected abstract _streamWithCallbacks(
         params: CompletionParameters,
-        apiVersion: number,
+        requestParams: CompletionRequestParameters,
         cb: CompletionCallbacks,
         signal?: AbortSignal
     ): Promise<void>
 
     public async *stream(
         params: CompletionParameters,
-        apiVersion: number,
+        requestParams: CompletionRequestParameters,
         signal?: AbortSignal
     ): AsyncGenerator<CompletionGeneratorValue> {
         // Provide default stop sequence for starchat models.
@@ -138,7 +143,7 @@ export abstract class SourcegraphCompletionsClient {
         })
 
         if (!isNonSourcegraphProvider) {
-            await this._streamWithCallbacks(params, apiVersion, callbacks, signal)
+            await this._streamWithCallbacks(params, requestParams, callbacks, signal)
         }
 
         for (let i = 0; ; i++) {
