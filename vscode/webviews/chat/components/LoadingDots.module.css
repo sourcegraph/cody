@@ -1,3 +1,12 @@
+:root {
+    --vscode-loading-dot-color: #fff;
+}
+
+body[data-vscode-theme-kind='vscode-light'] .dot,
+body[data-vscode-theme-kind='vscode-high-contrast-light'] .dot {
+    --vscode-loading-dot-color: black;
+}
+
 .dots-holder {
     display: flex;
     gap: 0.2rem;
@@ -10,13 +19,8 @@
     width: 0.25rem !important;
     height: 0.25rem !important;
     border-radius: 100%;
-    background-color: #fff;
+    background-color: var(--vscode-loading-dot-color);
     opacity: 0.25;
-}
-
-body[data-vscode-theme-kind='vscode-light'] .dot,
-body[data-vscode-theme-kind='vscode-high-contrast-light'] .dot {
-    background-color: black;
 }
 
 .dot:nth-child(2) {
