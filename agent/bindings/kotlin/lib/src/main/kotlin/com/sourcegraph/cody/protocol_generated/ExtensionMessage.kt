@@ -14,7 +14,6 @@ sealed class ExtensionMessage {
       JsonDeserializer { element: JsonElement, _: Type, context: JsonDeserializationContext ->
         when (element.getAsJsonObject().get("type").getAsString()) {
           "config" -> context.deserialize<ConfigExtensionMessage>(element, ConfigExtensionMessage::class.java)
-          "search:config" -> context.deserialize<Search_configExtensionMessage>(element, Search_configExtensionMessage::class.java)
           "history" -> context.deserialize<HistoryExtensionMessage>(element, HistoryExtensionMessage::class.java)
           "transcript" -> context.deserialize<TranscriptExtensionMessage>(element, TranscriptExtensionMessage::class.java)
           "view" -> context.deserialize<ViewExtensionMessage>(element, ViewExtensionMessage::class.java)
@@ -24,11 +23,8 @@ sealed class ExtensionMessage {
           "clientState" -> context.deserialize<ClientStateExtensionMessage>(element, ClientStateExtensionMessage::class.java)
           "clientAction" -> context.deserialize<ClientActionExtensionMessage>(element, ClientActionExtensionMessage::class.java)
           "chatModels" -> context.deserialize<ChatModelsExtensionMessage>(element, ChatModelsExtensionMessage::class.java)
-          "update-search-results" -> context.deserialize<`update-search-resultsExtensionMessage`>(element, `update-search-resultsExtensionMessage`::class.java)
-          "index-updated" -> context.deserialize<`index-updatedExtensionMessage`>(element, `index-updatedExtensionMessage`::class.java)
           "enhanced-context" -> context.deserialize<`enhanced-contextExtensionMessage`>(element, `enhanced-contextExtensionMessage`::class.java)
           "attribution" -> context.deserialize<AttributionExtensionMessage>(element, AttributionExtensionMessage::class.java)
-          "setChatEnabledConfigFeature" -> context.deserialize<SetChatEnabledConfigFeatureExtensionMessage>(element, SetChatEnabledConfigFeatureExtensionMessage::class.java)
           "context/remote-repos" -> context.deserialize<`context_remote-reposExtensionMessage`>(element, `context_remote-reposExtensionMessage`::class.java)
           "setConfigFeatures" -> context.deserialize<SetConfigFeaturesExtensionMessage>(element, SetConfigFeaturesExtensionMessage::class.java)
           "allMentionProvidersMetadata" -> context.deserialize<AllMentionProvidersMetadataExtensionMessage>(element, AllMentionProvidersMetadataExtensionMessage::class.java)
@@ -47,16 +43,6 @@ data class ConfigExtensionMessage(
 
   enum class TypeEnum {
     @SerializedName("config") Config,
-  }
-}
-
-data class Search_configExtensionMessage(
-  val type: TypeEnum, // Oneof: search:config
-  val workspaceFolderUris: List<String>,
-) : ExtensionMessage() {
-
-  enum class TypeEnum {
-    @SerializedName("search:config") Search_config,
   }
 }
 
@@ -152,27 +138,6 @@ data class ChatModelsExtensionMessage(
   }
 }
 
-data class `update-search-resultsExtensionMessage`(
-  val type: TypeEnum, // Oneof: update-search-results
-  val results: List<SearchPanelFile>,
-  val query: String,
-) : ExtensionMessage() {
-
-  enum class TypeEnum {
-    @SerializedName("update-search-results") `Update-search-results`,
-  }
-}
-
-data class `index-updatedExtensionMessage`(
-  val type: TypeEnum, // Oneof: index-updated
-  val scopeDir: String,
-) : ExtensionMessage() {
-
-  enum class TypeEnum {
-    @SerializedName("index-updated") `Index-updated`,
-  }
-}
-
 data class `enhanced-contextExtensionMessage`(
   val type: TypeEnum, // Oneof: enhanced-context
   val enhancedContextStatus: EnhancedContextContextT,
@@ -192,16 +157,6 @@ data class AttributionExtensionMessage(
 
   enum class TypeEnum {
     @SerializedName("attribution") Attribution,
-  }
-}
-
-data class SetChatEnabledConfigFeatureExtensionMessage(
-  val type: TypeEnum, // Oneof: setChatEnabledConfigFeature
-  val data: Boolean,
-) : ExtensionMessage() {
-
-  enum class TypeEnum {
-    @SerializedName("setChatEnabledConfigFeature") SetChatEnabledConfigFeature,
   }
 }
 
