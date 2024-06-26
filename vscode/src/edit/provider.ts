@@ -88,8 +88,8 @@ export class EditProvider {
                     return Promise.resolve()
                 },
             })
-
-            if (this.config.task.intent === 'test') {
+            // 5 == test, enum editIntent
+            if (this.config.task.intent === 5) {
                 if (this.config.task.destinationFile) {
                     // We have already provided a destination file,
                     // Treat this as the test file to insert to
@@ -183,7 +183,8 @@ export class EditProvider {
 
         // If the response finished and we didn't receive a test file name suggestion,
         // we will create one manually before inserting the response to the new test file
-        if (this.config.task.intent === 'test' && !this.config.task.destinationFile) {
+        // enum EditIntent, 5 == test
+        if (this.config.task.intent === 5 && !this.config.task.destinationFile) {
             if (isMessageInProgress) {
                 return
             }

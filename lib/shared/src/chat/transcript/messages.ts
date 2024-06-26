@@ -75,21 +75,22 @@ export interface ChatHistory {
  */
 export const DEFAULT_EVENT_SOURCE = 'editor'
 
-export type EventSource =
-    | typeof DEFAULT_EVENT_SOURCE
-    | 'chat'
-    | 'menu' // Cody command palette
-    | 'sidebar'
-    | 'code-action:explain'
-    | 'code-action:document'
-    | 'code-action:edit'
-    | 'code-action:fix'
-    | 'code-action:generate'
-    | 'code-action:test'
-    | 'custom-commands'
-    | 'code-lens'
-    | 'hover'
-    | 'terminal'
+export enum EventSource {
+    Editor = 1,
+    Chat = 2,
+    Menu = 3, // Cody command palette
+    Sidebar = 4,
+    CodeActionExplain = 5,
+    CodeActionDocument = 6,
+    CodeActionEdit = 7,
+    CodeActionFix = 8,
+    CodeActionGenerate = 9,
+    CodeActionTest = 10,
+    CustomCommands = 11,
+    CodeLens = 12,
+    Hover = 13,
+    Terminal = 14,
+}
 
 /**
  * Converts an Error to a ChatError. Note that this cannot be done naively,

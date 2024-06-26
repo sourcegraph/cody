@@ -87,7 +87,8 @@ export const getInput = async (
     const initialCursorPosition = editor.selection.active
     let activeRange = initialValues.initialExpandedRange || initialValues.initialRange
     let activeRangeItem =
-        initialValues.initialIntent === 'add'
+        // 1 == add, enum EditIntent
+        initialValues.initialIntent === 1
             ? CURSOR_RANGE_ITEM
             : initialValues.initialExpandedRange
               ? EXPANDED_RANGE_ITEM
@@ -304,7 +305,8 @@ export const getInput = async (
                     showModelSelector
                 ),
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
-            ...(source === 'menu'
+            // 3 == menu, enum EventSource
+            ...(source === 3
                 ? {
                       buttons: [vscode.QuickInputButtons.Back],
                       onDidTriggerButton: target => {
@@ -423,10 +425,12 @@ export const getInput = async (
                         return
                     case DOCUMENT_ITEM.label:
                         input.hide()
-                        return executeDocCommand({ range: activeRange, source: 'menu' })
+                        // 3 == menu, enum EventSource
+                        return executeDocCommand({ range: activeRange, source: 3 })
                     case TEST_ITEM.label:
                         input.hide()
-                        return executeTestEditCommand({ range: activeRange, source: 'menu' })
+                        // 3 == menu, enum EventSource
+                        return executeTestEditCommand({ range: activeRange, source: 3 })
                     case FILE_CONTEXT_MENTION_PROVIDER.queryLabel:
                     case FILE_CONTEXT_MENTION_PROVIDER.emptyLabel:
                     case SYMBOL_CONTEXT_MENTION_PROVIDER.queryLabel:
@@ -465,8 +469,10 @@ export const getInput = async (
                         .map(([, value]) => value),
                     model: activeModel,
                     range: activeRange,
-                    intent: isGenerate ? 'add' : 'edit',
-                    mode: isGenerate ? 'insert' : 'edit',
+                    // 1 == add, 2 == edit, enum EditIntent
+                    intent: isGenerate ? 1 : 2,
+                    // 1 == insert, 2 == edit, enum EditMode
+                    mode: isGenerate ? 1 : 2,
                 })
             },
         })

@@ -284,7 +284,7 @@ export class SimpleChatPanelProvider
                     message.editorState as SerializedPromptEditorState,
                     message.addEnhancedContext ?? false,
                     this.startNewSubmitOrEditOperation(),
-                    'chat'
+                    2 // 2 == chat, enum EventSource
                 )
                 break
             }
@@ -697,7 +697,8 @@ export class SimpleChatPanelProvider
                 this.postEmptyMessageInProgress()
 
                 // Add user's current selection as context for chat messages.
-                const selectionContext = source === 'chat' ? await getContextFileFromSelection() : []
+                // 2 == chat, enum EventSource
+                const selectionContext = source === 2 ? await getContextFileFromSelection() : []
                 abortSignal.throwIfAborted()
 
                 const userContextItems: ContextItemWithContent[] = await resolveContextItems(
@@ -856,7 +857,7 @@ export class SimpleChatPanelProvider
                 editorState,
                 addEnhancedContext,
                 abortSignal,
-                'chat'
+                2 // 2 == chat, enum EventSource
             )
         } catch {
             this.postError(new Error('Failed to edit prompt'), 'transcript')
@@ -909,12 +910,18 @@ export class SimpleChatPanelProvider
         this.contextFilesQueryCancellation = cancellation
 
         const source = 'chat'
+
+        // Use enum to send source values to metadata, making this data available on all instances.
+        enum atMentionSourceMapping {
+            chat = 1,
+        }
         const scopedTelemetryRecorder: Parameters<typeof getChatContextItemsForMention>[2] = {
             empty: () => {
                 telemetryService.log('CodyVSCodeExtension:at-mention:executed', {
                     source,
                 })
                 telemetryRecorder.recordEvent('cody.at-mention', 'executed', {
+                    metadata: { source: atMentionSourceMapping[source] },
                     privateMetadata: { source },
                 })
             },
@@ -924,6 +931,7 @@ export class SimpleChatPanelProvider
                     providerMetadata,
                 })
                 telemetryRecorder.recordEvent(`cody.at-mention.${provider}`, 'executed', {
+                    metadata: { source: atMentionSourceMapping[source] },
                     privateMetadata: { source, providerMetadata },
                 })
             },
