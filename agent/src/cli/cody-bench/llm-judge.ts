@@ -34,7 +34,7 @@ export class LlmJudge {
                 fast: true,
                 model: ModelsService.getModelByIDSubstringOrError('claude-3-opus').model,
             },
-            0
+            { apiVersion: 0 }
         )
         const streamingText: string[] = []
         for await (const message of stream) {

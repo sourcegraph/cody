@@ -87,6 +87,9 @@ interface CurrentUserInfoResponse {
         avatarURL: string
         codyProEnabled: boolean
         primaryEmail?: { email: string } | null
+        organizations: {
+            nodes: { name: string; id: string }[]
+        }
     } | null
 }
 interface CodyConfigFeatures {
@@ -318,13 +321,16 @@ export interface CurrentUserCodySubscription {
     currentPeriodEndAt: Date
 }
 
-interface CurrentUserInfo {
+export interface CurrentUserInfo {
     id: string
     hasVerifiedEmail: boolean
     username: string
     displayName?: string
     avatarURL: string
     primaryEmail?: { email: string } | null
+    organizations: {
+        nodes: { name: string; id: string }[]
+    }
 }
 
 interface EvaluatedFeatureFlag {

@@ -27,7 +27,10 @@ import {
 
 import { SpanStatusCode } from '@opentelemetry/api'
 import { contextFiltersProvider, fetch } from '@sourcegraph/cody-shared'
-import type { CompletionResponseWithMetaData } from '@sourcegraph/cody-shared/src/inferenceClient/misc'
+import type {
+    CodeCompletionProviderOptions,
+    CompletionResponseWithMetaData,
+} from '@sourcegraph/cody-shared/src/inferenceClient/misc'
 
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.
@@ -38,7 +41,8 @@ export function createClient(
 ): CodeCompletionsClient {
     function complete(
         params: CodeCompletionsParams,
-        abortController: AbortController
+        abortController: AbortController,
+        providerOptions: CodeCompletionProviderOptions
     ): CompletionResponseGenerator {
         const query = new URLSearchParams(getClientInfoParams())
         const url = new URL(`/.api/completions/code?${query.toString()}`, config.serverEndpoint).href
@@ -52,7 +56,11 @@ export function createClient(
                     FeatureFlag.CodyAutocompleteTracing
                 )
 
-                const headers = new Headers(config.customHeaders)
+                const headers = new Headers({
+                    ...config.customHeaders,
+                    ...providerOptions?.customHeaders,
+                })
+
                 // Force HTTP connection reuse to reduce latency.
                 // c.f. https://github.com/microsoft/vscode/issues/173861
                 headers.set('Connection', 'keep-alive')
@@ -60,6 +68,7 @@ export function createClient(
                 if (config.accessToken) {
                     headers.set('Authorization', `token ${config.accessToken}`)
                 }
+
                 if (tracingFlagEnabled) {
                     headers.set('X-Sourcegraph-Should-Trace', '1')
 

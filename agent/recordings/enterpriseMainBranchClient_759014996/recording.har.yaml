@@ -682,11 +682,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 3b264f5dfebedf94af5a84a4dc45b762
+    - _id: 350edf6da2666f3846b30731d7d8c2f7
       _order: 0
       cache: {}
       request:
-        bodySize: 227
+        bodySize: 341
         cookies: []
         headers:
           - _fromType: array
@@ -704,7 +704,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "227"
+            value: "341"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -729,6 +729,12 @@ log:
                       primaryEmail {
                           email
                       }
+                      organizations {
+                          nodes {
+                              id
+                              name
+                          }
+                      }
                   }
               }
             variables: {}
@@ -737,19 +743,19 @@ log:
             value: null
         url: https://sourcegraph.sourcegraph.com/.api/graphql?CurrentUser
       response:
-        bodySize: 203
+        bodySize: 231
         content:
           encoding: base64
           mimeType: application/json
-          size: 203
-          text: "[\"H4sIAAAAAAAAAzSMwQrCMBAF/+Wdc/Ac8OhNKogtXpdkq6tJWjZpIZT8u1T0OMMwGzwVg\
-            t3gFlVOpc+sO4qHxXDvgntNh8vtfYTBk/LAKqOw\",\"P0WSADtSyGzgJc+BakeRYdM\
-            SgsGSWdOX4SZfC+ci6QEDWqmQ9tfzv5xVImn9HXfXWvsAAAD//wMA40oNT5gAAAA=\"\
-            ]"
+          size: 231
+          text: "[\"H4sIAAAAAAAAAzSOuwrCQBBF/2XqLawXLO0kgpggiMWQncTRzWyY2Qgx7L9LfJTncricB\
+            QJmBL9AO6mS5NpIV+QAHppzFdt72hxOjy04uKE1\",\"pNwxhd2AHMF3GI0cBLYx4lz\
+            hQOBlitHBZKTyYWhTmDNZZunBAT4xo9bH/d8clQfU+ff43ZL2KPzCzElszZEUyMBfrq\
+            WU8gYAAP//AwAAXh5NtQAAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Wed, 01 May 2024 09:57:28 GMT
+            value: Tue, 25 Jun 2024 06:04:33 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -780,7 +786,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-05-01T09:57:28.713Z
+      startedDateTime: 2024-06-25T06:04:32.398Z
       time: 0
       timings:
         blocked: -1

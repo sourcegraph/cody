@@ -329,7 +329,8 @@ export class AuthProvider implements AuthStatusProvider {
             userInfo.username,
             userInfo.displayName,
             userInfo.primaryEmail?.email,
-            configOverwrites
+            configOverwrites,
+            userInfo.organizations
         )
     }
 

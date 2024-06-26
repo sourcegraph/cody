@@ -35,8 +35,19 @@ export type CompletionResponseWithMetaData = CompletionResponse & {
 
 export type CompletionResponseGenerator = AsyncGenerator<CompletionResponseWithMetaData>
 
-export interface CodeCompletionsClient<T = CodeCompletionsParams> {
+export interface CodeCompletionProviderOptions {
+    customHeaders?: Record<string, string>
+}
+
+export interface CodeCompletionsClient<
+    T = CodeCompletionsParams,
+    ProviderSpecificOptions = CodeCompletionProviderOptions,
+> {
     logger: CompletionLogger | undefined
-    complete(params: T, abortController: AbortController): CompletionResponseGenerator
+    complete(
+        params: T,
+        abortController: AbortController,
+        providerOptions?: ProviderSpecificOptions
+    ): CompletionResponseGenerator
     onConfigurationChange(newConfig: CompletionsClientConfig): void
 }

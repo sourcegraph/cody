@@ -7,18 +7,17 @@ import http from 'node:http'
 import https from 'node:https'
 
 import {
-    NetworkError,
-    agent,
-    getActiveTraceAndSpanId,
-    getSerializedParams,
-} from '@sourcegraph/cody-shared'
-import {
     type CompletionCallbacks,
     type CompletionParameters,
+    type CompletionRequestParameters,
+    NetworkError,
     RateLimitError,
     SourcegraphCompletionsClient,
     addClientInfoParams,
+    agent,
     customUserAgent,
+    getActiveTraceAndSpanId,
+    getSerializedParams,
     getTraceparentHeaders,
     isError,
     logError,
@@ -34,10 +33,12 @@ const isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
     protected _streamWithCallbacks(
         params: CompletionParameters,
-        apiVersion: number,
+        requestParams: CompletionRequestParameters,
         cb: CompletionCallbacks,
         signal?: AbortSignal
     ): Promise<void> {
+        const { apiVersion } = requestParams
+
         const url = new URL(this.completionsEndpoint)
         if (apiVersion >= 1) {
             url.searchParams.append('api-version', '' + apiVersion)
@@ -99,6 +100,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                             : null),
                         ...(customUserAgent ? { 'User-Agent': customUserAgent } : null),
                         ...this.config.customHeaders,
+                        ...requestParams.customHeaders,
                         ...getTraceparentHeaders(),
                         Connection: 'keep-alive',
                     },
