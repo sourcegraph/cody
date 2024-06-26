@@ -1,6 +1,7 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import { clsx } from 'clsx'
 import { useCallback, useState } from 'react'
+import { OllamaLogo } from '../icons/LLMProviderIcons'
 import type { VSCodeWrapper } from '../utils/VSCodeApi'
 import styles from './ConnectionIssuesPage.module.css'
 
@@ -79,6 +80,7 @@ export const ConnectionIssuesPage: React.FunctionComponent<
                     </VSCodeButton>
                 </div>
                 <div className={styles.actions}>
+                    <OllamaLogo size={50} className={styles.icon} />
                     <VSCodeButton
                         className={clsx(styles.actionButton)}
                         type="button"
