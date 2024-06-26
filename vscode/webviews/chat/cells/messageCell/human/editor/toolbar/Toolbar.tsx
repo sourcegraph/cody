@@ -1,10 +1,11 @@
 import type { Model } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
-import { AtSignIcon } from 'lucide-react'
+import { AtSignIcon, PaperclipIcon } from 'lucide-react'
 import { type FunctionComponent, useCallback } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { ToolbarButton } from '../../../../../../components/shadcn/ui/toolbar'
+import { getVSCodeAPI } from '../../../../../../utils/VSCodeApi'
 import { useChatModelContext } from '../../../../../models/chatModelContext'
 import { SubmitButton, type SubmitButtonDisabled } from './SubmitButton'
 import styles from './Toolbar.module.css'
@@ -56,6 +57,11 @@ export const Toolbar: FunctionComponent<{
         [onGapClick]
     )
 
+    const { chatModels } = useChatModelContext()
+    const currentModel = chatModels?.find(m => m.default)
+    const isOllamaMultiModal =
+        currentModel?.provider === 'Ollama' && currentModel?.model.includes('llava')
+
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
         <menu
@@ -73,6 +79,15 @@ export const Toolbar: FunctionComponent<{
                     iconStart={AtSignIcon}
                     onClick={onMentionClick}
                     aria-label="Add context"
+                />
+            )}
+            {isOllamaMultiModal && (
+                <ToolbarButton
+                    variant="secondary"
+                    tooltip="Upload an image"
+                    iconStart={PaperclipIcon}
+                    onClick={() => getVSCodeAPI().postMessage({ command: 'chat/upload-image' })}
+                    aria-label="Upload image"
                 />
             )}
             <ModelSelectFieldToolbarItem userInfo={userInfo} focusEditor={focusEditor} />

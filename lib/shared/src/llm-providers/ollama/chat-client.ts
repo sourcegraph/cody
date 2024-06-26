@@ -1,4 +1,4 @@
-import { Ollama } from 'ollama/browser'
+import { Ollama, type Message as OllamaMessage } from 'ollama/browser'
 import type { ChatNetworkClientParams } from '..'
 import { getCompletionsModelConfig } from '../..'
 import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
@@ -36,12 +36,20 @@ export async function ollamaChatClient({
     onAbort(signal, () => ollama.abort())
 
     try {
-        const messages = await Promise.all(
+        const messages: OllamaMessage[] = await Promise.all(
             params.messages.map(async msg => ({
                 role: msg.speaker === 'human' ? 'user' : 'assistant',
                 content: (await msg.text?.toFilteredString(contextFiltersProvider)) ?? '',
             }))
         )
+
+        // Add images to the last user message.
+        if (params.images?.length) {
+            const lastUserMessage = messages.findLast(msg => msg.role === 'user')
+            if (lastUserMessage) {
+                lastUserMessage.images = params.images
+            }
+        }
 
         ollama
             .chat({

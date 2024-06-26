@@ -499,6 +499,21 @@ export class SimpleChatPanelProvider
                 })
                 break
             }
+            case 'chat/upload-image': {
+                const files = await vscode.window.showOpenDialog({
+                    canSelectMany: false,
+                    openLabel: 'Show Cody',
+                    title: 'Select an Image',
+                    filters: {
+                        Images: ['png', 'jpg', 'jpeg', 'svg'],
+                    },
+                })
+                if (files?.[0]) {
+                    this.chatModel.addImages([files[0]])
+                }
+                break
+            }
+
             default:
                 this.postError(new Error(`Invalid request type from Webview Panel: ${message.command}`))
         }
@@ -1290,6 +1305,7 @@ export class SimpleChatPanelProvider
                 {
                     model: this.chatModel.modelID,
                     maxTokensToSample: this.chatModel.contextWindow.output,
+                    images: this.chatModel.getAndResetImages(),
                 },
                 abortSignal
             )
