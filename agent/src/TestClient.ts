@@ -494,6 +494,22 @@ export class TestClient extends MessageHandler {
         return this.workspace.getDocument(uri)?.content ?? ''
     }
 
+    public async generateUnitTestFor(uri: vscode.Uri): Promise<TextDocumentEditParams | undefined> {
+        const existingEdits = new Set(this.textDocumentEditParams)
+        await this.openFile(uri, { removeCursor: false })
+        const task = await this.request('editCommands/test', null)
+        await this.taskHasReachedAppliedPhase(task)
+        const lenses = this.codeLenses.get(uri.toString()) ?? []
+        if (lenses.length > 0) {
+            throw new Error(
+                `Code lenses are not supported in this mode ${JSON.stringify(lenses, null, 2)}`
+            )
+        }
+
+        await this.request('editTask/accept', { id: task.id })
+        return this.textDocumentEditParams.find(edit => !existingEdits.has(edit))
+    }
+
     public async autocompleteText(params?: Partial<AutocompleteParams>): Promise<string[]> {
         const result = await this.autocomplete(params)
         return result.items.map(item => item.insertText)
