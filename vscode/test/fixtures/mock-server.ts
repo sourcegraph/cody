@@ -394,20 +394,6 @@ export class MockServer {
                             })
                         )
                         break
-                    case 'Repositories':
-                        res.send(
-                            JSON.stringify({
-                                data: {
-                                    repositories: {
-                                        nodes: []
-                                    },
-                                    pageInfo: {
-                                        endCursor: null
-                                    }
-                                }
-                            })
-                        )
-                        break
                     case 'CurrentUserCodyProEnabled':
                         res.send(
                             JSON.stringify({
