@@ -27,6 +27,10 @@ export const ConnectionIssuesPage: React.FunctionComponent<
         }
     }, [vscodeAPI])
 
+    const onOfflineClick = useCallback(() => {
+        vscodeAPI.postMessage({ command: 'auth', authKind: 'offline' })
+    }, [vscodeAPI])
+
     const onSignOut = useCallback(() => {
         vscodeAPI.postMessage({ command: 'auth', authKind: 'signout' })
     }, [vscodeAPI])
@@ -72,6 +76,15 @@ export const ConnectionIssuesPage: React.FunctionComponent<
                         onClick={onSignOut}
                     >
                         Sign Out
+                    </VSCodeButton>
+                </div>
+                <div className={styles.actions}>
+                    <VSCodeButton
+                        className={clsx(styles.actionButton)}
+                        type="button"
+                        onClick={onOfflineClick}
+                    >
+                        Use Cody Offline with Ollama
                     </VSCodeButton>
                 </div>
             </div>

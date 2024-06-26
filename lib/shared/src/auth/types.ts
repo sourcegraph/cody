@@ -34,6 +34,8 @@ export interface AuthStatus {
      * buttons in the UI.
      */
     userCanUpgrade: boolean
+
+    isOfflineMode?: boolean
 }
 
 export interface AuthStatusProvider {
@@ -96,3 +98,23 @@ export const networkErrorAuthStatus = {
     avatarURL: '',
     codyApiVersion: 0,
 } satisfies Omit<AuthStatus, 'endpoint'>
+
+export const offlineModeAuthStatus = {
+    endpoint: '',
+    isDotCom: true,
+    isLoggedIn: true,
+    isOfflineMode: true,
+    isFireworksTracingEnabled: false,
+    showInvalidAccessTokenError: false,
+    authenticated: true,
+    hasVerifiedEmail: true,
+    requiresVerifiedEmail: true,
+    siteHasCodyEnabled: true,
+    siteVersion: '',
+    userCanUpgrade: false,
+    username: 'offline',
+    primaryEmail: '',
+    displayName: '',
+    avatarURL: '',
+    codyApiVersion: 0,
+} satisfies AuthStatus
