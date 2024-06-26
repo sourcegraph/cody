@@ -12,6 +12,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Fixed
 
 - Edit: Fixed incorrect codelens for "Generate Code". [pull/4525](https://github.com/sourcegraph/cody/pull/4525)
+- Chat: Display the appropriate error message when input has exceeded the model's context window, instead of "Chat token usage must be updated before Context". [pull/4674](https://github.com/sourcegraph/cody/pull/4674)
 
 ### Changed
 
