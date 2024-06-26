@@ -14,12 +14,15 @@ function shimDirectory(): string {
         if (statSync(shimFromRootDirectory + '.ts').isFile()) {
             return shimFromRootDirectory
         }
-    } catch {}
+    } catch { }
     return shimFromAgentDirectory
 }
 
 export default defineProjectWithDefaults(__dirname, {
     resolve: {
         alias: { vscode: shimDirectory() },
+    },
+    test: {
+        exclude: ['local-e2e/**'],
     },
 })
