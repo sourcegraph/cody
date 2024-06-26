@@ -87,7 +87,12 @@ export const ContextSelectField: React.FunctionComponent<
             tooltip="Select shared context"
             aria-label="Select shared context"
             popoverContent={close => (
-                <Command loop={true} defaultValue={value} tabIndex={0} className="focus:tw-outline-none">
+                <Command
+                    loop={true}
+                    defaultValue={value}
+                    tabIndex={0}
+                    className="focus:tw-outline-none tw-max-w-[min(500px,90vw)]"
+                >
                     <CommandList>
                         <CommandGroup>
                             {contexts.map(context => (
@@ -98,11 +103,11 @@ export const ContextSelectField: React.FunctionComponent<
                                         onChange(currentValue)
                                         close()
                                     }}
-                                    className="tw-flex tw-items-baseline tw-gap-4"
+                                    className="tw-flex tw-items-baseline tw-gap-4 tw-whitespace-nowrap"
                                 >
-                                    {context.name}{' '}
+                                    {context.spec}{' '}
                                     {context.description && (
-                                        <span className="tw-text-muted-foreground tw-text-sm">
+                                        <span className="tw-text-muted-foreground tw-text-sm tw-overflow-hidden tw-overflow-ellipsis">
                                             {context.description}
                                         </span>
                                     )}

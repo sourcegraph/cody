@@ -226,7 +226,7 @@ query ContextFilters {
 }`
 
 export const CONTEXTS_QUERY = `
-query UserSearchContexts($userID: ID!) {
+query UserSearchContexts {
     searchContexts(first: 100) {
         nodes {
             id

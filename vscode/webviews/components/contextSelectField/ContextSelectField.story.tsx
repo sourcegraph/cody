@@ -4,7 +4,7 @@ import { useArgs } from '@storybook/preview-api'
 import type { ComponentProps } from 'react'
 import { VSCodeStandaloneComponent } from '../../storybook/VSCodeStoryDecorator'
 import { ContextSelectField } from './ContextSelectField'
-import { FIXTURE_CONTEXTS } from './fixture'
+import { FIXTURE_CONTEXTS } from './fixtures'
 
 const meta: Meta<typeof ContextSelectField> = {
     title: 'cody/ContextSelectField',

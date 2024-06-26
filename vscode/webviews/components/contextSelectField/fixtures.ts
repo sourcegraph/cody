@@ -38,6 +38,9 @@ export const FIXTURE_CONTEXTS: Context[] = [
     {
         id: '5',
         name: 'vite-examples',
+        // Long text to test wrapping.
+        description:
+            'Some examples of Vite configs. Some examples of Vite configs. Some examples of Vite configs. Some examples of Vite configs. ',
         spec: '@sourcegraph/vite-examples',
         query: 'repo:^github\\.com/sourcegraph/ file:vite(st)?\\.config\\.ts$',
         default: false,

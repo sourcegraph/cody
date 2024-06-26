@@ -18,7 +18,7 @@ import {
     type ContextsContext,
     ContextsContextProvider,
 } from '../components/contextSelectField/contexts'
-import { FIXTURE_CONTEXTS } from '../components/contextSelectField/fixture'
+import { FIXTURE_CONTEXTS } from '../components/contextSelectField/fixtures'
 import { WithContextProviders } from '../mentions/providers'
 import { WithChatContextClient } from '../promptEditor/plugins/atMentions/chatContextClient'
 import { dummyChatContextClient } from '../promptEditor/plugins/atMentions/fixtures'

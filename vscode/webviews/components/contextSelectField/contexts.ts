@@ -24,7 +24,7 @@ export function useContextsValue(): {
     contextValue: ContextsContext | null
     setContextsData: (data: Pick<ContextsContext, 'contexts' | 'currentContext'> | null) => void
 } {
-    const [contexts, setContexts] = useState<Context[] | null>([])
+    const [contexts, setContexts] = useState<Context[] | null>(null)
     const [currentContext, setCurrentContext] = useState<Context | null>(null)
     return useMemo(
         () => ({
