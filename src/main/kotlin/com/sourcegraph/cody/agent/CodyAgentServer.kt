@@ -65,8 +65,6 @@ interface CodyAgentServer {
   @JsonRequest("featureFlags/getFeatureFlag")
   fun evaluateFeatureFlag(flagName: GetFeatureFlag): CompletableFuture<Boolean?>
 
-  @JsonRequest("graphql/currentUserIsPro") fun isCurrentUserPro(): CompletableFuture<Boolean>
-
   @JsonRequest("graphql/getCurrentUserCodySubscription")
   fun getCurrentUserCodySubscription(): CompletableFuture<CurrentUserCodySubscription?>
 

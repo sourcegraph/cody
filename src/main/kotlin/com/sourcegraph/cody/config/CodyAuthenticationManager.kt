@@ -42,6 +42,11 @@ enum class AccountTier(val value: Int) {
   ENTERPRISE(2)
 }
 
+data class AuthenticationState(
+    val tier: CompletableFuture<AccountTier>,
+    val isTokenInvalid: CompletableFuture<Boolean>
+)
+
 /** Entry point for interactions with Sourcegraph authentication subsystem */
 @Service(Service.Level.PROJECT)
 class CodyAuthenticationManager(val project: Project) : Disposable {
@@ -50,16 +55,13 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
 
   private val publisher = project.messageBus.syncPublisher(AccountSettingChangeActionNotifier.TOPIC)
 
-  @Volatile private var activeAccountTier: CompletableFuture<AccountTier?>? = null
+  @Volatile private var tier: CompletableFuture<AccountTier>? = null
 
-  @Volatile private var isTokenInvalid: CompletableFuture<Boolean?>? = null
+  @Volatile private var isTokenInvalid: CompletableFuture<Boolean>? = null
 
   init {
     scheduler.scheduleAtFixedRate(
-        /* command = */ {
-          getActiveAccountTier(forceRefresh = true)
-          getIsTokenInvalid(forceRefresh = true)
-        },
+        /* command = */ { getAuthenticationState() },
         /* initialDelay = */ 2,
         /* period = */ 2,
         /* unit = */ TimeUnit.HOURS)
@@ -69,8 +71,7 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
         object : WindowAdapter() {
           override fun windowActivated(e: WindowEvent?) {
             super.windowActivated(e)
-            getActiveAccountTier(forceRefresh = true)
-            getIsTokenInvalid(forceRefresh = true)
+            getAuthenticationState()
           }
         }
     frame?.addWindowListener(listener)
@@ -83,74 +84,58 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
   @CalledInAny fun getAccounts(): Set<CodyAccount> = accountManager.accounts
 
   @CalledInAny
-  fun getActiveAccountTier(): CompletableFuture<AccountTier?> =
-      getActiveAccountTier(forceRefresh = false)
+  private fun getAuthenticationState(): AuthenticationState {
+    val previousIsTokenInvalid = isTokenInvalid?.getNow(null)
+    val previousTier = tier?.getNow(null)
+    val isTokenInvalidFuture = CompletableFuture<Boolean>()
+    val tierFuture = CompletableFuture<AccountTier>()
+    val authenticationState = AuthenticationState(tierFuture, isTokenInvalidFuture)
+    val account = getActiveAccount() ?: return authenticationState
+    val token = account.let(::getTokenForAccount)
 
-  @CalledInAny
-  fun getIsTokenInvalid(): CompletableFuture<Boolean?> = getIsTokenInvalid(forceRefresh = false)
+    isTokenInvalid = isTokenInvalidFuture
+    tier = tierFuture
 
-  /**
-   * User account type can change because users can renew or cancel their subscriptions at any time.
-   * Components which state depends on this property should be checking state of
-   * `getActiveAccountTier` in non-blocking way or listen for `AccountSettingChangeContext` events
-   * to update their state accordingly later.
-   */
-  @CalledInAny
-  private fun getActiveAccountTier(forceRefresh: Boolean): CompletableFuture<AccountTier?> {
-    activeAccountTier?.let { if (!forceRefresh) return it }
-
-    val account = getActiveAccount() ?: return CompletableFuture.completedFuture(null)
-    val previousAccountTier = activeAccountTier?.getNow(null)
-    val accountTierFuture = CompletableFuture<AccountTier?>()
-    activeAccountTier = accountTierFuture
-
-    accountTierFuture.thenApply { currentAccountTier ->
-      if (previousAccountTier != currentAccountTier) {
+    tierFuture.thenApply { currentAccountTier ->
+      if (previousTier != currentAccountTier) {
         if (!project.isDisposed) {
           publisher.afterAction(AccountSettingChangeContext(accountTierChanged = true))
         }
       }
     }
 
-    if (account.isEnterpriseAccount()) {
-      accountTierFuture.complete(AccountTier.ENTERPRISE)
-    } else {
-      CodyAgentService.withAgent(project) { agent ->
-        val isCurrentUserPro = agent.server.isCurrentUserPro().get()
-        val currentAccountType =
-            if (isCurrentUserPro) AccountTier.DOTCOM_PRO else AccountTier.DOTCOM_FREE
-        accountTierFuture.complete(currentAccountType)
-      }
-    }
-
-    return accountTierFuture
-  }
-
-  @CalledInAny
-  private fun getIsTokenInvalid(forceRefresh: Boolean): CompletableFuture<Boolean?> {
-    isTokenInvalid?.let { if (!forceRefresh) return it }
-
-    val previousIsTokenInvalid = isTokenInvalid?.getNow(null)
-    val isTokenInvalidFuture = CompletableFuture<Boolean?>()
-    isTokenInvalid = isTokenInvalidFuture
-
-    isTokenInvalidFuture.thenApply { isTokenInvalid ->
-      if (previousIsTokenInvalid != isTokenInvalid) {
+    isTokenInvalidFuture.thenApply { isInvalid ->
+      if (previousIsTokenInvalid != isInvalid) {
         if (!project.isDisposed) {
           publisher.afterAction(AccountSettingChangeContext(isTokenInvalidChanged = true))
         }
       }
     }
 
-    val activeAccount = getActiveAccount()
-    val token = activeAccount?.let(::getTokenForAccount)
-    if (activeAccount != null && token != null) {
-      val executor =
-          SourcegraphApiRequestExecutor.Factory.instance.create(activeAccount.server, token)
+    if (token != null) {
+      val executor = SourcegraphApiRequestExecutor.Factory.instance.create(account.server, token)
       val progressIndicator = EmptyProgressIndicator(ModalityState.NON_MODAL)
       val submitIOTask =
           service<ProgressManager>().submitIOTask(progressIndicator) {
-            SourcegraphApiRequests.CurrentUser(executor, progressIndicator).getDetails()
+            if (account.isEnterpriseAccount()) {
+              // We ignore the result, but we need to make sure the request is executed
+              // successfully. Otherwise, the token will be invalidated and the user will be
+              // prompted to re-authenticate.
+              SourcegraphApiRequests.CurrentUser(executor, progressIndicator).getDetails()
+              tierFuture.complete(AccountTier.ENTERPRISE)
+            } else {
+              // We need a separate request to check if the user is on Cody Pro.
+              val codyProEnabled =
+                  SourcegraphApiRequests.CurrentUser(executor, progressIndicator)
+                      .getCodyProEnabled()
+              val currentAccountType =
+                  if (codyProEnabled.codyProEnabled == true) {
+                    AccountTier.DOTCOM_PRO
+                  } else {
+                    AccountTier.DOTCOM_FREE
+                  }
+              tierFuture.complete(currentAccountType)
+            }
           }
 
       submitIOTask.exceptionally { error ->
@@ -159,7 +144,23 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
       }
     }
 
-    return isTokenInvalidFuture
+    return authenticationState
+  }
+
+  /**
+   * User account type can change because users can renew or cancel their subscriptions at any time.
+   * Components which state depends on this property should be checking state of
+   * `getActiveAccountTier` in non-blocking way or listen for `AccountSettingChangeContext` events
+   * to update their state accordingly later.
+   */
+  @CalledInAny
+  fun getActiveAccountTier(): CompletableFuture<AccountTier> {
+    return tier ?: getAuthenticationState().tier
+  }
+
+  @CalledInAny
+  fun getIsTokenInvalid(): CompletableFuture<Boolean> {
+    return isTokenInvalid ?: getAuthenticationState().isTokenInvalid
   }
 
   @CalledInAny
@@ -179,8 +180,8 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
     accountManager.updateAccount(account, newToken)
     if (oldToken != newToken && account == getActiveAccount()) {
       CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
-        agent.server.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
         if (!project.isDisposed) {
+          agent.server.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
           publisher.afterAction(AccountSettingChangeContext(accessTokenChanged = true))
         }
       }
@@ -199,19 +200,22 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
       val previousTier = previousAccount?.isDotcomAccount()
 
       CodyProjectActiveAccountHolder.getInstance(project).account = account
-      activeAccountTier = null
+      tier = null
       isTokenInvalid = null
 
       val serverUrlChanged = previousUrl != account?.server?.url
       val tierChanged = previousTier != account?.isDotcomAccount()
+      val accountChanged = previousAccount != account
 
-      if (serverUrlChanged || tierChanged) {
-        CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
+      CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
+        if (!project.isDisposed) {
           agent.server.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
-          if (!project.isDisposed) {
+          if (serverUrlChanged || tierChanged || accountChanged) {
             publisher.afterAction(
                 AccountSettingChangeContext(
-                    serverUrlChanged = serverUrlChanged, accountTierChanged = tierChanged))
+                    serverUrlChanged = serverUrlChanged,
+                    accountTierChanged = tierChanged,
+                    accessTokenChanged = accountChanged))
           }
         }
       }

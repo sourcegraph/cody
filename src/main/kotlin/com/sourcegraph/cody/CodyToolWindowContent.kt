@@ -74,7 +74,7 @@ class CodyToolWindowContent(private val project: Project) {
     AgentChatSessionService.getInstance(project).removeAllSessions()
     val codyAuthenticationManager = CodyAuthenticationManager.getInstance(project)
     if (codyAuthenticationManager.hasActiveAccount()) {
-      switchToChatSession(AgentChatSession.createNew(project))
+      switchToChatSession(AgentChatSession.createNew(project), showChatWindow = false)
     }
   }
 
@@ -102,6 +102,9 @@ class CodyToolWindowContent(private val project: Project) {
       }
       myAccountPanel.update()
     } else if (isMyAccountTabVisible) {
+      if (tabbedPane.selectedIndex == MY_ACCOUNT_TAB_INDEX) {
+        tabbedPane.selectedIndex = CHAT_TAB_INDEX
+      }
       tabbedPane.removeTabAt(MY_ACCOUNT_TAB_INDEX)
     }
   }
@@ -125,7 +128,6 @@ class CodyToolWindowContent(private val project: Project) {
       allContentLayout.show(allContentPanel, ONBOARDING_PANEL)
       return
     }
-    allContentLayout.show(allContentPanel, MAIN_PANEL)
   }
 
   @RequiresEdt

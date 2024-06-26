@@ -108,7 +108,7 @@ class MyAccountTabPanel(val project: Project) : JPanel() {
     if (chatLimitError != null || autocompleteLimitError != null) {
       this.add(createRateLimitPanel(), BorderLayout.PAGE_START)
     }
-    var accountTier =
+    val accountTier =
         CodyAuthenticationManager.getInstance(project).getActiveAccountTier().getNow(null)
     this.add(createCenterPanel(accountTier))
 

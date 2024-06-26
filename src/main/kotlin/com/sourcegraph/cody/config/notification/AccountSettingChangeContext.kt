@@ -13,6 +13,6 @@ class AccountSettingChangeContext(
   fun accountSwitched(): Boolean = serverUrlChanged || accessTokenChanged
 
   companion object {
-    val UNAUTHORIZED_ERROR_MESSAGE = "Request response: 401 Unauthorized"
+    const val UNAUTHORIZED_ERROR_MESSAGE = "Request response: 401 Unauthorized"
   }
 }
