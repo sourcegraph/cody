@@ -2,7 +2,7 @@ import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 import { TriggerKind } from './get-inline-completions'
 import type { RequestParams } from './request-manager'
-import { forkSignal, sleep } from './utils'
+import { forkSignal } from './utils'
 
 // The throttle timeout is relatively high so that we do not keep a lot of concurrent requests. 250
 // is chosen as it will keep about 2 requests concurrent with our current median latency of about
@@ -67,7 +67,6 @@ export class SmartThrottleDebounceService implements vscode.Disposable {
             const newRequestParams = throttledRequest.updatedRequestParams()
 
             if (triggerKind === TriggerKind.Automatic) {
-                await sleep(25)
                 if (newRequestParams.abortSignal?.aborted) {
                     return null
                 }
