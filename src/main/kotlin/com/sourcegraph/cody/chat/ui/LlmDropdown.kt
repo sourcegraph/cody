@@ -1,6 +1,5 @@
 package com.sourcegraph.cody.chat.ui
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
@@ -10,7 +9,6 @@ import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.ChatModelsParams
 import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
 import com.sourcegraph.cody.agent.protocol.ModelUsage
-import com.sourcegraph.cody.config.AccountTier
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.edit.EditCommandPrompt
 import com.sourcegraph.cody.history.HistoryService
@@ -25,7 +23,7 @@ class LlmDropdown(
     private val project: Project,
     private val onSetSelectedItem: (ChatModelsResponse.ChatModelProvider) -> Unit,
     val parentDialog: EditCommandPrompt?,
-    chatModelProviderFromState: ChatModelsResponse.ChatModelProvider?,
+    val chatModelProviderFromState: ChatModelsResponse.ChatModelProvider?,
 ) : ComboBox<ChatModelsResponse.ChatModelProvider>(MutableCollectionComboBoxModel()) {
 
   var isCurrentUserFree = true
@@ -35,11 +33,7 @@ class LlmDropdown(
     isVisible = false
     isOpaque = false
 
-    if (chatModelProviderFromState != null) {
-      updateModelsInUI(listOf(chatModelProviderFromState))
-    } else {
-      updateModels()
-    }
+    updateModels()
   }
 
   private fun updateModels() {
@@ -56,26 +50,20 @@ class LlmDropdown(
   private fun updateModelsInUI(models: List<ChatModelsResponse.ChatModelProvider>) {
     if (project.isDisposed) return
 
-    models.sortedBy { it.codyProOnly }.forEach(::addItem)
+    models.filterNot { it.deprecated }.sortedBy { it.codyProOnly }.forEach(::addItem)
 
-    CodyAuthenticationManager.getInstance(project).getActiveAccountTier().thenApply { accountTier ->
-      if (accountTier == null) return@thenApply
-      isCurrentUserFree = accountTier == AccountTier.DOTCOM_FREE
-
-      val selectedModel = HistoryService.getInstance(project).getDefaultLlm()
-      val defaultModel =
-          if (accountTier == AccountTier.DOTCOM_PRO)
-              models.find { it.model == selectedModel?.model } ?: models.find { it.default }
-          else models.find { it.default }
-
-      ApplicationManager.getApplication().invokeLater { selectedItem = defaultModel }
-    }
+    val selectedFromState = chatModelProviderFromState
+    val selectedFromHistory = HistoryService.getInstance(project).getDefaultLlm()
+    selectedItem =
+        models.find { it.model == selectedFromState?.model && !it.deprecated }
+            ?: models.find { it.model == selectedFromHistory?.model && !it.deprecated }
+            ?: models.find { it.default }
 
     val isEnterpriseAccount =
         CodyAuthenticationManager.getInstance(project).getActiveAccount()?.isEnterpriseAccount()
             ?: false
 
-    if (model.size <= 1) isEnabled = false
+    isEnabled = chatModelProviderFromState == null
     isVisible = !isEnterpriseAccount
     revalidate()
   }

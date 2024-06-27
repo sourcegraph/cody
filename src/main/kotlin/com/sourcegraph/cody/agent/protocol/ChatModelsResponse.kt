@@ -9,7 +9,8 @@ data class ChatModelsResponse(val models: List<ChatModelProvider>) {
       val codyProOnly: Boolean,
       val provider: String?,
       val title: String?,
-      val model: String
+      val model: String,
+      val deprecated: Boolean = false
   ) {
     fun getIcon(): Icon? =
         when (provider) {

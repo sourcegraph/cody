@@ -3,7 +3,10 @@ package com.sourcegraph.cody.config
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.testFramework.registerServiceInstance
 import com.sourcegraph.cody.agent.protocol.ChatModelsResponse
+import com.sourcegraph.cody.config.migration.DeprecatedChatLlmMigration
+import com.sourcegraph.cody.config.migration.SettingsMigration
 import com.sourcegraph.cody.history.HistoryService
+import com.sourcegraph.cody.history.state.AccountData
 import com.sourcegraph.cody.history.state.ChatState
 import com.sourcegraph.cody.history.state.EnhancedContextState
 import com.sourcegraph.cody.history.state.HistoryState
@@ -11,6 +14,7 @@ import com.sourcegraph.cody.history.state.LLMState
 import com.sourcegraph.cody.history.state.MessageState
 import com.sourcegraph.cody.history.state.MessageState.SpeakerState
 import com.sourcegraph.cody.history.state.RemoteRepositoryState
+import kotlin.test.assertContains
 
 class SettingsMigrationTest : BasePlatformTestCase() {
 
@@ -180,6 +184,71 @@ class SettingsMigrationTest : BasePlatformTestCase() {
     migratedHistory.accountData[1].let {
       assertEquals("dave", it.accountId)
       assertEquals(mutableListOf(originalHistory.chats[2]), it.chats)
+    }
+  }
+
+  fun `test DeprecatedChatLlmMigration`() {
+    fun createLlmModel(
+        version: String,
+        isDefault: Boolean,
+        isDeprecated: Boolean
+    ): ChatModelsResponse.ChatModelProvider {
+      return ChatModelsResponse.ChatModelProvider(
+          isDefault,
+          false,
+          "Anthropic",
+          "Claude $version",
+          "anthropic/claude-$version",
+          isDeprecated)
+    }
+
+    val claude20 = createLlmModel("2.0", isDefault = false, isDeprecated = true)
+    val claude21 = createLlmModel("2.1", isDefault = false, isDeprecated = true)
+    val claude30 = createLlmModel("3.0", isDefault = true, isDeprecated = false)
+    val models = listOf(claude20, claude21, claude30)
+
+    val accountData =
+        mutableListOf(
+            AccountData().also {
+              it.accountId = "first"
+              it.chats =
+                  mutableListOf(
+                      ChatState("chat1").also {
+                        it.messages = mutableListOf()
+                        it.llm = LLMState.fromChatModel(claude20)
+                      },
+                      ChatState("chat2").also {
+                        it.messages = mutableListOf()
+                        it.llm = LLMState.fromChatModel(claude21)
+                      })
+            },
+            AccountData().also {
+              it.accountId = "second"
+              it.chats =
+                  mutableListOf(
+                      ChatState("chat1").also {
+                        it.messages = mutableListOf()
+                        it.llm = LLMState.fromChatModel(claude20)
+                      },
+                      ChatState("chat2").also {
+                        it.messages = mutableListOf()
+                        it.llm = LLMState.fromChatModel(claude30)
+                      })
+            })
+
+    fun verifyDeprecatedModels(migratedLlms: Set<String>) {
+      assertEquals(2, migratedLlms.size)
+      assertContains(migratedLlms, "Claude 2.0")
+      assertContains(migratedLlms, "Claude 2.1")
+    }
+
+    DeprecatedChatLlmMigration.migrateHistory(accountData, models, ::verifyDeprecatedModels)
+    assertEquals(2, accountData.size)
+    accountData.forEach { ad ->
+      ad.chats.forEach { chat ->
+        assertEquals(claude30.model, chat.llm?.model)
+        assertEquals(claude30.title, chat.llm?.title)
+      }
     }
   }
 }

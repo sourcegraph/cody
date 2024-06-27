@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.config
+package com.sourcegraph.cody.config.migration
 
 import com.intellij.collaboration.async.CompletableFutureUtil.submitIOTask
 import com.intellij.collaboration.async.CompletableFutureUtil.successOnEdt
@@ -15,6 +15,12 @@ import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphApiRequests
+import com.sourcegraph.cody.config.CodyAccount
+import com.sourcegraph.cody.config.CodyAccountDetails
+import com.sourcegraph.cody.config.CodyApplicationSettings
+import com.sourcegraph.cody.config.CodyAuthenticationManager
+import com.sourcegraph.cody.config.CodyProjectSettings
+import com.sourcegraph.cody.config.SourcegraphServerPath
 import com.sourcegraph.cody.history.HistoryService
 import com.sourcegraph.cody.history.state.AccountData
 import com.sourcegraph.cody.history.state.ChatState
@@ -56,6 +62,8 @@ class SettingsMigration : Activity {
     RunOnceUtil.runOnceForApp("CodyAssignOrphanedChatsToActiveAccount") {
       migrateOrphanedChatsToActiveAccount(project)
     }
+
+    DeprecatedChatLlmMigration.migrate(project)
   }
 
   private fun migrateOrphanedChatsToActiveAccount(project: Project) {

@@ -7,7 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.auth.SelectOneOfTheAccountsAsActive
-import com.sourcegraph.cody.config.SettingsMigration
+import com.sourcegraph.cody.config.migration.SettingsMigration
 import com.sourcegraph.cody.config.ui.CheckUpdatesTask
 import com.sourcegraph.cody.listeners.CodyCaretListener
 import com.sourcegraph.cody.listeners.CodyDocumentListener
