@@ -43,6 +43,7 @@ import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 import type { ProviderConfig } from './providers/provider'
 import { RequestManager, type RequestParams } from './request-manager'
 import { getRequestParamsFromLastCandidate } from './reuse-last-candidate'
+import { SmartThrottleDebounceService } from './smart-throttle-debounce'
 import {
     type AutocompleteInlineAcceptedCommandArgs,
     type AutocompleteItem,
@@ -110,6 +111,7 @@ export class InlineCompletionItemProvider
 
     private requestManager: RequestManager
     private contextMixer: ContextMixer
+    private smartThrottleDebounceService: SmartThrottleDebounceService | null = null
 
     /** Mockable (for testing only). */
     protected getInlineCompletions = getInlineCompletions
@@ -172,6 +174,11 @@ export class InlineCompletionItemProvider
                 createBfgRetriever
             )
         )
+
+        if (completionProviderConfig.smartThrottle) {
+            this.smartThrottleDebounceService = new SmartThrottleDebounceService()
+            this.disposables.push(this.smartThrottleDebounceService)
+        }
 
         const chatHistory = localStorage.getChatHistory(this.config.authStatus)?.chat
         this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0
@@ -366,6 +373,7 @@ export class InlineCompletionItemProvider
                     docContext,
                     providerConfig: this.config.providerConfig,
                     contextMixer: this.contextMixer,
+                    smartThrottleDebounceService: this.smartThrottleDebounceService,
                     requestManager: this.requestManager,
                     lastCandidate: this.lastCandidate,
                     debounceInterval: {

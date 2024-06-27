@@ -17,6 +17,7 @@ class CompletionProviderConfig {
         FeatureFlag.CodyAutocompleteTracing,
         FeatureFlag.CodyAutocompleteReducedDebounce,
         FeatureFlag.CodyAutocompleteContextExtendLanguagePool,
+        FeatureFlag.CodyAutocompleteSmartThrottleDebounce,
     ] as const
 
     private get config() {
@@ -78,6 +79,13 @@ class CompletionProviderConfig {
                     ? 'bfg-mixed'
                     : 'jaccard-similarity'
         }
+    }
+
+    public get smartThrottle(): boolean {
+        return (
+            this.config.autocompleteExperimentalSmartThrottleDebounce ||
+            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteSmartThrottleDebounce)
+        )
     }
 }
 
