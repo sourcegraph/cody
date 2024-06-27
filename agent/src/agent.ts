@@ -34,17 +34,11 @@ import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocume
 import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 
 import { copyFileSync, mkdirSync, statSync } from 'node:fs'
+import { PassThrough } from 'node:stream'
 import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
-import {
-    AbstractMessageReader,
-    AbstractMessageWriter,
-    type Disposable,
-    type MessageConnection,
-    type MessageReader,
-    type MessageWriter,
-} from 'vscode-jsonrpc'
+import type { MessageConnection } from 'vscode-jsonrpc'
 import { ModelUsage } from '../../lib/shared/src/models/types'
 import type { CommandResult } from '../../vscode/src/CommandResult'
 import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
@@ -236,30 +230,29 @@ export interface InitializedClient {
 export async function newEmbeddedAgentClient(
     clientInfo: ClientInfo,
     extensionActivate: ExtensionActivate
-): Promise<InitializedClient & { agent: Agent }> {
+): Promise<InitializedClient & { agent: Agent; messageHandler: MessageHandler }> {
     process.env.ENABLE_SENTRY = 'false'
-
-    // Create noop MessageConnection because we're just using clientForThisInstance.
-    const conn = createMessageConnection(
-        new (class extends AbstractMessageReader implements MessageReader {
-            listen(): Disposable {
-                return { dispose: () => {} }
-            }
-        })(),
-        new (class extends AbstractMessageWriter implements MessageWriter {
-            async write(): Promise<void> {}
-            end(): void {}
-        })()
+    const serverToClient = new PassThrough()
+    const clientToServer = new PassThrough()
+    const serverConnection = createMessageConnection(
+        new StreamMessageReader(clientToServer),
+        new StreamMessageWriter(serverToClient)
     )
-
-    const agent = new Agent({ conn, extensionActivate })
+    const clientConnection = createMessageConnection(
+        new StreamMessageReader(serverToClient),
+        new StreamMessageWriter(clientToServer)
+    )
+    const agent = new Agent({ conn: serverConnection, extensionActivate })
+    serverConnection.listen()
+    const messageHandler = new MessageHandler(clientConnection)
+    clientConnection.listen()
     agent.registerNotification('debug/message', params => {
         console.error(`${params.channel}: ${params.message}`)
     })
     const client = agent.clientForThisInstance()
     const serverInfo = await client.request('initialize', clientInfo)
     client.notify('initialized', null)
-    return { agent, serverInfo, client }
+    return { agent, serverInfo, client, messageHandler }
 }
 
 export function errorToCodyError(error?: Error): CodyError | undefined {
