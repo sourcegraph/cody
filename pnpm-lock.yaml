@@ -366,8 +366,8 @@ importers:
         specifier: ^7.2.96
         version: 7.2.96
       '@openctx/vscode-lib':
-        specifier: ^0.0.11
-        version: 0.0.11
+        specifier: ^0.0.13
+        version: 0.0.13
       '@opentelemetry/api':
         specifier: ^1.7.0
         version: 1.7.0
@@ -3220,8 +3220,8 @@ packages:
       xss: 1.0.15
     dev: false
 
-  /@openctx/vscode-lib@0.0.11:
-    resolution: {integrity: sha512-G5V+0Bw37zE0PZqC/O2QlC5IKzDlEsD1YHx1+W5BkzUDh8yRRDmA0kBI7SU48CbHJkI7KJD9MujzBH07J52NMA==}
+  /@openctx/vscode-lib@0.0.13:
+    resolution: {integrity: sha512-lE26bXFVV8FQgayhBcFgdq+W4PrksB07TZmW/E3s9CTaEVUqMh/OW8o0Zo6R928Zsph+VibYsh/DTRHaavBGHA==}
     dependencies:
       '@openctx/client': 0.0.19
       '@openctx/ui-common': 0.0.11
