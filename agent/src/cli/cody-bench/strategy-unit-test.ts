@@ -24,6 +24,17 @@ export async function evaluateUnitTestStrategy(
         return
     }
 
+    const parseInputUri = (content: string): [vscode.Uri, number] => {
+        if (!content.match(/:\d+$/)) {
+            content += ':0'
+        }
+        const [filename, lineNumber] = content.split(':')
+        return [
+            vscode.Uri.parse(path.join(workspace, filename)),
+            Math.max(Number.parseInt(lineNumber) - 1, 0),
+        ]
+    }
+
     const client = new TestClient(messageHandler.conn, {
         workspaceRootUri: vscode.Uri.file(workspace),
         name: options.fixture.name,
@@ -44,8 +55,8 @@ export async function evaluateUnitTestStrategy(
             // Run npm install only when `node_modules` doesn't exist.
             await runVoidCommand(options.installCommand, workspace)
         }
-        const inputFile = vscode.Uri.file(path.join(workspace, task.input))
-        const editParams = await client.generateUnitTestFor(inputFile)
+        const [inputUri, line] = parseInputUri(task.input)
+        const editParams = await client.generateUnitTestFor(inputUri, line)
 
         const test = getTestValue(editParams)
         if (!test) {
@@ -68,8 +79,9 @@ export async function evaluateUnitTestStrategy(
         }
         const document = EvaluationDocument.from(params, options)
 
-        // normalized test file name
+        // normalized test files
         const testFile = path.relative(workspace, test.uri.path)
+        const testInputFile = path.relative(workspace, inputUri.path)
         // check if it matches the test regex
         const matchesTestRegex = task.importRegex ? !!test.value.match(task.importRegex) : false
 
@@ -78,7 +90,7 @@ export async function evaluateUnitTestStrategy(
             testFile,
             testName: task.name,
             testLanguage: task.language,
-            testInputFile: task.input,
+            testInputFile,
             testGenerated: test.value,
             testHasTypescriptErrors: typescriptErrors.length > 0,
             testDiagnostics: typescriptErrors.map(prettyDiagnostic).join('\n').replaceAll(workspace, ''),

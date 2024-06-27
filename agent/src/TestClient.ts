@@ -43,6 +43,7 @@ import type {
     ProgressStartParams,
     ProtocolCodeLens,
     ProtocolTextDocument,
+    Range,
     RenameFileOperation,
     ServerInfo,
     ShowWindowMessageParams,
@@ -445,7 +446,7 @@ export class TestClient extends MessageHandler {
             content = content.replace('/* CURSOR */', '')
         }
 
-        const document = AgentTextDocument.from(uri, content)
+        const document = AgentTextDocument.from(uri, content, params)
         const start =
             cursor >= 0
                 ? document.positionAt(cursor)
@@ -457,7 +458,7 @@ export class TestClient extends MessageHandler {
         const protocolDocument: ProtocolTextDocument = {
             uri: uri.toString(),
             content,
-            selection: start && end ? { start, end } : undefined,
+            selection: params?.selection ?? (start && end ? { start, end } : undefined),
         }
         const clientDocument = this.workspace.loadDocument(
             ProtocolTextDocumentWithUri.fromDocument(protocolDocument)
@@ -494,9 +495,19 @@ export class TestClient extends MessageHandler {
         return this.workspace.getDocument(uri)?.content ?? ''
     }
 
-    public async generateUnitTestFor(uri: vscode.Uri): Promise<TextDocumentEditParams | undefined> {
+    public async generateUnitTestFor(
+        uri: vscode.Uri,
+        line: number
+    ): Promise<TextDocumentEditParams | undefined> {
         const existingEdits = new Set(this.textDocumentEditParams)
-        await this.openFile(uri, { removeCursor: false })
+        await this.openFile(uri, {
+            removeCursor: false,
+            selection: {
+                start: { line, character: 0 },
+                end: { line, character: 0 },
+            },
+        })
+
         const task = await this.request('editCommands/test', null)
         await this.taskHasReachedAppliedPhase(task)
         const lenses = this.codeLenses.get(uri.toString()) ?? []
@@ -968,4 +979,5 @@ interface TextDocumentEventParams {
     text?: string
     selectionName?: string
     removeCursor?: boolean
+    selection?: Range | undefined | null
 }
