@@ -258,7 +258,8 @@ export class AuthProvider implements AuthStatusProvider {
         const endpoint = config.serverEndpoint
         const token = config.accessToken
         if (isOfflineMode) {
-            return { ...offlineModeAuthStatus, endpoint }
+            const lastUser = localStorage.getLastStoredUser()
+            return { ...offlineModeAuthStatus, ...lastUser }
         }
         if (!token || !endpoint) {
             return { ...defaultAuthStatus, endpoint }
