@@ -124,6 +124,18 @@ describe('matchIndentation', () => {
             const updated = matchIndentation(incoming, original)
             expect(updated).toBe(original)
         })
+
+        // Some edits may occur on files where there is not any indentation yet.
+        // This test covers those cases and ensures we do not attempt to match any indentation (as it's likely wrong).
+        it('returns correct when we cannot detect indentation in the original code', () => {
+            // Original text with any indentation stripped
+            const strippedIndentationOriginal = EXAMPLE_WHITESPACE_RESPONSE.split('\n')
+                .map(line => line.trimStart())
+                .join('\n')
+            const incoming = EXAMPLE_WHITESPACE_RESPONSE
+            const updated = matchIndentation(incoming, strippedIndentationOriginal)
+            expect(updated).toBe(incoming)
+        })
     })
 
     describe('detect-indent', () => {
