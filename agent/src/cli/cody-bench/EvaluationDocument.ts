@@ -273,9 +273,24 @@ interface EvaluationItem {
     info?: CompletionItemInfo
     event?: CompletionBookkeepingEvent
     eventJSON?: string
+    testName?: string
+    testExpectedFile?: string
+    testFile?: string
+    testInputFile?: string
+    testLanguage?: string
+    testGenerated?: string
+    testMatchesExpectedTestFile?: boolean
+    testHasTypescriptErrors?: boolean
+    testUsedExpectedTestFramework?: boolean
+    testUsedCorrectAppendOperation?: boolean
+    testDiagnostics?: string
 }
 
-export const headerItems: ObjectHeaderItem[] = [
+interface EvaluationItemHeader extends ObjectHeaderItem {
+    id: keyof EvaluationItem
+}
+
+export const headerItems: EvaluationItemHeader[] = [
     { id: 'languageid', title: 'LANGUAGEID' },
     { id: 'workspace', title: 'WORKSPACE' },
     { id: 'fixture', title: 'FIXTURE' },
@@ -314,6 +329,17 @@ export const headerItems: ObjectHeaderItem[] = [
     { id: 'contextBfgSuggestedCount', title: 'CONTEXT_BFG_SUGGESTED_COUNT' },
     { id: 'contextBfgDurationMs', title: 'CONTEXT_BFG_DURATION_MS' },
     { id: 'eventJSON', title: 'EVENT' },
+    { id: 'testFile', title: 'TEST_FILE' },
+    { id: 'testExpectedFile', title: 'TEST_EXPECTED_FILE' },
+    { id: 'testGenerated', title: 'TEST_GENERATED' },
+    { id: 'testMatchesExpectedTestFile', title: 'TEST_MATCHES_EXPECTED_TEST_FILE' },
+    { id: 'testHasTypescriptErrors', title: 'TEST_HAS_TYPESCRIPT_ERRORS' },
+    { id: 'testUsedExpectedTestFramework', title: 'TEST_USED_EXPECTED_TEST_FRAMEWORK' },
+    { id: 'testUsedCorrectAppendOperation', title: 'TEST_USED_CORRECT_APPEND_OPERATION' },
+    { id: 'testInputFile', title: 'TEST_INPUT_FILE' },
+    { id: 'testLanguage', title: 'TEST_LANGUAGE' },
+    { id: 'testName', title: 'TEST_NAME' },
+    { id: 'testDiagnostics', title: 'TEST_DIAGNOSTICS' },
 ]
 
 function commentSyntaxForLanguage(languageid: string): string {

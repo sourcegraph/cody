@@ -1,5 +1,4 @@
 import path from 'node:path'
-import { glob } from 'glob'
 import * as vscode from 'vscode'
 import yaml from 'yaml'
 import type { MessageHandler } from '../../../../vscode/src/jsonrpc/jsonrpc'
@@ -7,20 +6,26 @@ import { fileExists } from '../../../../vscode/src/local-context/download-symf'
 import { redactAuthorizationHeader } from '../../../../vscode/src/testutils/CodyPersister'
 import { TestClient } from '../../TestClient'
 import { getLanguageForFileName } from '../../language'
-import type { TextDocumentEditParams } from '../../protocol-alias'
+import type { ProtocolDiagnostic, TextDocumentEditParams } from '../../protocol-alias'
 import { EvaluationDocument } from './EvaluationDocument'
 import type { CodyBenchOptions } from './cody-bench'
 import { evaluateEachFile } from './evaluateEachFile'
+import { prettyDiagnostic } from './prettyDiagnostic'
 import { runVoidCommand } from './testTypecheck'
 
 export async function evaluateUnitTestStrategy(
     messageHandler: MessageHandler,
     options: CodyBenchOptions
 ): Promise<void> {
-    console.log('running unit test strategy')
+    const workspace = options.absolutePath ?? options.workspace
+    const metadataPath = path.join(workspace, 'test.yaml')
+    if (!(await fileExists(metadataPath))) {
+        console.log(`no test.yaml found in ${workspace}, skipping unit test strategy`)
+        return
+    }
 
     const client = new TestClient(messageHandler.conn, {
-        workspaceRootUri: vscode.Uri.file(options.workspace),
+        workspaceRootUri: vscode.Uri.file(workspace),
         name: options.fixture.name,
         credentials: {
             redactedToken: redactAuthorizationHeader(`token ${options.srcAccessToken}`),
@@ -28,43 +33,60 @@ export async function evaluateUnitTestStrategy(
             token: options.srcAccessToken,
         },
     })
-    if (!(await fileExists(path.join(options.workspace, 'node_modules')))) {
-        // Run pnpm install only when `node_modules` doesn't exist.
-        await runVoidCommand(options.installCommand, options.workspace)
-    }
 
-    const absoluteFiles = glob.sync(`${options.workspace}/**`, {
-        ignore: ['node_modules/**'],
-        nodir: true,
-    })
-
-    const files = absoluteFiles.map(file => path.relative(options.workspace, file))
-    const yamlFiles = files.filter(file => file.endsWith('.yaml'))
-    await evaluateEachFile(yamlFiles, options, async params => {
+    await evaluateEachFile([path.relative(workspace, metadataPath)], options, async params => {
+        console.log(`evaluating ${params.uri.fsPath}`)
         const task: TestTask = yaml.parse(params.content)
-        const document = EvaluationDocument.from(params, options)
-        const editParams = await client.generateUnitTestFor(vscode.Uri.parse(task.input))
+        if (
+            (await fileExists(path.join(workspace, 'package.json'))) &&
+            !(await fileExists(path.join(workspace, 'node_modules')))
+        ) {
+            // Run npm install only when `node_modules` doesn't exist.
+            await runVoidCommand(options.installCommand, workspace)
+        }
+        const inputFile = vscode.Uri.file(path.join(workspace, task.input))
+        const editParams = await client.generateUnitTestFor(inputFile)
 
         const test = getTestValue(editParams)
-        const range = new vscode.Range(0, 0, 0, 0)
-        if (test && getLanguageForFileName(params.uri.fsPath) === 'typescript') {
-            const diagnostics = await client.request('testing/diagnostics', {
-                uri: params.uri.toString(),
-            })
-            diagnostics
+        if (!test) {
+            return
         }
+
+        let typescriptErrors: ProtocolDiagnostic[] = []
+        if (test && getLanguageForFileName(test.uri.path) === 'typescript') {
+            // Open the test file so that the typescript server can typecheck it
+            // without this we get empty diagnostics
+            client.notify('textDocument/didOpen', {
+                uri: test.uri.toString(),
+                content: test.value,
+            })
+
+            const { diagnostics } = await client.request('testing/diagnostics', {
+                uri: test.uri.toString(),
+            })
+            typescriptErrors = diagnostics
+        }
+        const document = EvaluationDocument.from(params, options)
+
+        // normalized test file name
+        const testFile = path.relative(workspace, test.uri.path)
+        // check if it matches the test regex
+        const matchesTestRegex = task.importRegex ? !!test.value.match(task.importRegex) : false
+
         document.pushItem({
-            range,
-            resultEmpty: test?.value === '',
-            resultText: test?.value,
-            multiline: true,
+            range: new vscode.Range(0, 0, 0, 0),
+            testFile,
+            testName: task.name,
+            testLanguage: task.language,
+            testInputFile: task.input,
+            testGenerated: test.value,
+            testHasTypescriptErrors: typescriptErrors.length > 0,
+            testDiagnostics: typescriptErrors.map(prettyDiagnostic).join('\n').replaceAll(workspace, ''),
+            testExpectedFile: task.expectedTestFilename,
+            testMatchesExpectedTestFile: testFile === task.expectedTestFilename,
+            testUsedExpectedTestFramework: matchesTestRegex,
         })
         return document
-    })
-
-    console.log({
-        fixture: options.fixture.name,
-        totalScore: 0,
     })
 }
 
@@ -76,19 +98,21 @@ function getTestValue(editParams: TextDocumentEditParams | undefined): TestInfo 
     switch (edit.type) {
         case 'insert':
         case 'replace':
-            return { file: editParams.uri, value: edit.value }
+            return { uri: vscode.Uri.parse(editParams.uri).with({ scheme: 'file' }), value: edit.value }
         default:
             return undefined
     }
 }
 
 interface TestInfo {
-    file: string
+    uri: vscode.Uri
     value: string
 }
 
 interface TestTask {
     input: string
-    context?: string[]
-    expectedTestFile: string
+    name: string
+    expectedTestFilename: string
+    language: string
+    importRegex?: string
 }

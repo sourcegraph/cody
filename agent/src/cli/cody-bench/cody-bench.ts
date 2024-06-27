@@ -1,5 +1,6 @@
 import * as fspromises from 'node:fs/promises'
 import * as path from 'node:path'
+import glob from 'glob'
 
 import * as commander from 'commander'
 import * as vscode from 'vscode'
@@ -15,10 +16,11 @@ import { evaluateAutocompleteStrategy } from './strategy-autocomplete'
 import { evaluateChatStrategy } from './strategy-chat'
 import { evaluateFixStrategy } from './strategy-fix'
 import { evaluateGitLogStrategy } from './strategy-git-log'
-import {evaluateUnitTestStrategy} from "./strategy-unit-test";
+import { evaluateUnitTestStrategy } from './strategy-unit-test'
 
 export interface CodyBenchOptions {
     workspace: string
+    absolutePath?: string
     worktree?: string
     treeSitterGrammars: string
     queriesDirectory: string
@@ -85,14 +87,14 @@ async function loadEvaluationConfig(options: CodyBenchOptions): Promise<CodyBenc
     const configBuffer = await fspromises.readFile(options.evaluationConfig)
     const config = JSON.parse(configBuffer.toString()) as EvaluationConfig
     const result: CodyBenchOptions[] = []
-    for (const test of config?.workspaces ?? []) {
+    const rootDir = path.dirname(options.evaluationConfig)
+    for (const test of expandWorkspaces(config.workspaces, rootDir) ?? []) {
         if (!test.workspace) {
             console.error(
                 `skipping test, missing required property 'workspace': ${JSON.stringify(test)}`
             )
             continue
         }
-        const rootDir = path.dirname(options.evaluationConfig)
         const workspace = path.normalize(path.join(rootDir, test.workspace))
         const fixtures: EvaluationFixture[] = config.fixtures ?? [
             { name: 'default', strategy: BenchStrategy.Autocomplete },
@@ -403,4 +405,31 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
     console.log('cody-bench completed, shutting down...')
     await client.request('shutdown', null)
     client.notify('exit', null)
+}
+
+function expandWorkspaces(
+    workspaces: CodyBenchOptions[] | undefined,
+    rootDir: string
+): CodyBenchOptions[] {
+    if (!workspaces) {
+        return []
+    }
+    return workspaces.flatMap(workspace => {
+        workspace.absolutePath = path.normalize(path.join(rootDir, workspace.workspace))
+
+        if (!workspace.workspace.endsWith('/*')) {
+            return [workspace]
+        }
+        return glob
+            .sync(workspace.workspace, {
+                cwd: rootDir,
+            })
+            .flatMap(workspacePath => {
+                return {
+                    ...workspace,
+                    workspace: workspacePath,
+                    absolutePath: path.normalize(path.join(rootDir, workspacePath)),
+                }
+            })
+    })
 }
