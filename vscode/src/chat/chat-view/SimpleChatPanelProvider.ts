@@ -576,14 +576,14 @@ export class SimpleChatPanelProvider
         await this.saveSession()
         this.initDoer.signalInitialized()
 
-        // Set the theme provided by the Agent IDE to replace the default VS Code
-        // webview styles.
-        const currentIDE = await getCurrentIDE()
-        const themesByIDE = await getWebviewThemeByIDE(currentIDE, '')
+        // Replace the default VS Code webview styles with the theme provided by the agentIDE.
+        const agentIDE = await getCurrentIDE()
+        const themesByIDE = await getWebviewThemeByIDE(agentIDE, '')
         if (themesByIDE) {
             await this.postMessage({
                 type: 'ui/theme',
                 css: themesByIDE,
+                agentIDE,
             })
         }
     }

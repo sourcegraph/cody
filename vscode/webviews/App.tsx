@@ -6,6 +6,7 @@ import {
     type AuthStatus,
     type ChatMessage,
     type ClientStateForWebview,
+    CodyIDE,
     GuardrailsPost,
     type Model,
     PromptString,
@@ -72,10 +73,13 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             vscodeAPI.onMessage(message => {
                 switch (message.type) {
                     case 'ui/theme': {
+                        // Set data-ide attribute to match the agent IDE
+                        if (message.agentIDE === CodyIDE.JetBrains) {
+                            document.getElementById('root')?.setAttribute('data-ide', 'jb')
+                        }
                         if (message.css) {
                             // Inject the theme to the root
                             const cssVariables = message.css
-
                             // Add the style to the root element
                             document.getElementById('root')?.setAttribute('style', cssVariables)
                         }
