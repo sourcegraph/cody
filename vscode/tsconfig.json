@@ -5,12 +5,18 @@
     "rootDir": ".",
     "outDir": "dist/tsc",
     "jsx": "react-jsx",
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "types": [
       "@testing-library/jest-dom"
     ],
     "paths": {
-      "@/*": ["./webviews/*"],
+      "@/*": [
+        "./webviews/*"
+      ],
     },
   },
   "include": [
@@ -22,8 +28,8 @@
     "test/e2e/utils/commands.json",
     "webviews",
     "webviews/*.d.ts",
+    "../lib/shared/src/themes/*.json",
     "package.json",
-
   ],
   "exclude": [
     "typehacks",

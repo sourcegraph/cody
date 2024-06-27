@@ -14,7 +14,6 @@ import {
 import type { UserAccountInfo } from './Chat'
 
 import type { AuthMethod, ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
-
 import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
 import type { View } from './NavBar'
@@ -72,6 +71,16 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         () =>
             vscodeAPI.onMessage(message => {
                 switch (message.type) {
+                    case 'ui/theme': {
+                        if (message.css) {
+                            // Inject the theme to the root
+                            const cssVariables = message.css
+
+                            // Add the style to the root element
+                            document.getElementById('root')?.setAttribute('style', cssVariables)
+                        }
+                        break
+                    }
                     case 'transcript': {
                         const deserializedMessages = message.messages.map(
                             PromptString.unsafe_deserializeChatMessage

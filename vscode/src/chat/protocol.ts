@@ -151,6 +151,7 @@ export type ExtensionMessage =
           authStatus: AuthStatus
           workspaceFolderUris: string[]
       }
+    | { type: 'ui/theme'; css: string }
     | { type: 'history'; localHistory?: UserLocalHistory | undefined | null }
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; view: View }

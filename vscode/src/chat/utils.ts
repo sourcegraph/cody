@@ -2,11 +2,13 @@ import semver from 'semver'
 
 import {
     type AuthStatus,
+    CodyIDE,
     defaultAuthStatus,
     offlineModeAuthStatus,
     unauthenticatedStatus,
 } from '@sourcegraph/cody-shared'
 import type { CurrentUserInfo } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { getFullConfig } from '../configuration'
 
 /**
  * Checks a user's authentication status.
@@ -121,4 +123,14 @@ function inferCodyApiVersion(version: string, isDotCom: boolean): 0 | 1 {
     }
 
     return 0 // zero refers to the legacy, unversioned, Cody API
+}
+
+/**
+ * Retrieves the current IDE that the application is running in.
+ *
+ * @returns {Promise<CodyIDE>} A promise that resolves to the current IDE.
+ */
+export async function getCurrentIDE(): Promise<CodyIDE> {
+    const config = await getFullConfig()
+    return (config.isRunningInsideAgent && config.agentIDE) || CodyIDE.VSCode
 }
