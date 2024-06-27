@@ -2,7 +2,12 @@ import { spawn } from 'node:child_process'
 import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
-import { getDotComDefaultModels, isWindows, telemetryRecorder } from '@sourcegraph/cody-shared'
+import {
+    type CodyCommand,
+    getDotComDefaultModels,
+    isWindows,
+    telemetryRecorder,
+} from '@sourcegraph/cody-shared'
 import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
@@ -755,6 +760,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('command/execute', async params => {
             await vscode.commands.executeCommand(params.command, ...(params.arguments ?? []))
+        })
+
+        this.registerAuthenticatedRequest('customCommands/list', async () => {
+            const commands = await vscode.commands.executeCommand('cody.commands.get-custom-commands')
+            return (commands as CodyCommand[]) ?? []
         })
 
         this.registerAuthenticatedRequest('autocomplete/execute', async (params, token) => {

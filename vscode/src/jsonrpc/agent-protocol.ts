@@ -2,6 +2,7 @@ import type {
     AuthStatus,
     BillingCategory,
     BillingProduct,
+    CodyCommand,
     ContextFilters,
     CurrentUserCodySubscription,
     Model,
@@ -84,6 +85,9 @@ export type ClientRequests = {
 
     // Trigger custom commands that could be a chat-based command or an edit command.
     'commands/custom': [{ key: string }, CustomCommandResult]
+
+    // A list of available custom commands stored in .cody/commands.json.
+    'customCommands/list': [null, CodyCommand[]]
 
     // Trigger commands that edit the code.
     'editCommands/code': [
