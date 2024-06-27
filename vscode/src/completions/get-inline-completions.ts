@@ -108,10 +108,10 @@ export interface InlineCompletionsResult {
  * The source of the inline completions result. Using numerical values so telemetry can be recorded on `metadata`
  */
 export enum InlineCompletionsResultSource {
-    Network = 1,
-    Cache = 2,
-    HotStreak = 3,
-    CacheAfterRequestStart = 4,
+    Network = 'Network',
+    Cache = 'Cache',
+    HotStreak = 'HotStreak',
+    CacheAfterRequestStart = 'CacheAfterRequestStart',
 
     /**
      * The user is typing as suggested by the currently visible ghost text. For example, if the
@@ -120,25 +120,40 @@ export enum InlineCompletionsResultSource {
      *
      * The last suggestion is passed in {@link InlineCompletionsParams.lastCandidate}.
      */
+    LastCandidate = 'LastCandidate',
+}
+/**
+ * Create a mapping of all inline completion sources to numerical values, so telemetry can be recorded on `metadata`.
+ */
+export enum InlineCompletionsResultSourceMetadataMapping {
+    Network = 1,
+    Cache = 2,
+    HotStreak = 3,
+    CacheAfterRequestStart = 4,
     LastCandidate = 5,
 }
-
 /**
  * Extends the default VS Code trigger kind to distinguish between manually invoking a completion
- * via the keyboard shortcut and invoking a completion via hovering over ghost text. Using numerical values
- * so telemetry can be recorded on `metadata`
+ * via the keyboard shortcut and invoking a completion via hovering over ghost text.
  */
 export enum TriggerKind {
     /** Completion was triggered explicitly by a user hovering over ghost text. */
-    Hover = 1,
+    Hover = 'Hover',
 
     /** Completion was triggered automatically while editing. */
-    Automatic = 2,
+    Automatic = 'Automatic',
 
     /** Completion was triggered manually by the user invoking the keyboard shortcut. */
-    Manual = 3,
+    Manual = 'Manual',
 
     /** When the user uses the suggest widget to cycle through different completions. */
+    SuggestWidget = 'SuggestWidget',
+}
+
+export enum TriggerKindMetadataMapping {
+    Hover = 1,
+    Automatic = 2,
+    Manual = 3,
     SuggestWidget = 4,
 }
 

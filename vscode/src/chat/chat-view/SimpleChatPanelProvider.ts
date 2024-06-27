@@ -284,7 +284,7 @@ export class SimpleChatPanelProvider
                     message.editorState as SerializedPromptEditorState,
                     message.addEnhancedContext ?? false,
                     this.startNewSubmitOrEditOperation(),
-                    2 // 2 == chat, enum EventSource
+                    'chat'
                 )
                 break
             }
@@ -697,8 +697,7 @@ export class SimpleChatPanelProvider
                 this.postEmptyMessageInProgress()
 
                 // Add user's current selection as context for chat messages.
-                // 2 == chat, enum EventSource
-                const selectionContext = source === 2 ? await getContextFileFromSelection() : []
+                const selectionContext = source === 'chat' ? await getContextFileFromSelection() : []
                 abortSignal.throwIfAborted()
 
                 const userContextItems: ContextItemWithContent[] = await resolveContextItems(
@@ -857,7 +856,7 @@ export class SimpleChatPanelProvider
                 editorState,
                 addEnhancedContext,
                 abortSignal,
-                2 // 2 == chat, enum EventSource
+                'chat'
             )
         } catch {
             this.postError(new Error('Failed to edit prompt'), 'transcript')

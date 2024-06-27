@@ -17,6 +17,7 @@ import type { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
 import { isNetworkError } from '../services/AuthProvider'
 
+import { EventSourceMetadataMapping } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { workspace } from 'vscode'
 import { doesFileExist } from '../commands/utils/workspace-files'
 import { CodyTaskState } from '../non-stop/utils'
@@ -27,6 +28,7 @@ import type { EditManagerOptions } from './manager'
 import { responseTransformer } from './output/response-transformer'
 import { buildInteraction } from './prompt'
 import { PROMPT_TOPICS } from './prompt/constants'
+import { EditIntentMetadataMapping, EditModeMetadataMapping } from './types'
 import { isStreamedIntent } from './utils/edit-intent'
 
 interface EditProviderOptions extends EditManagerOptions {
@@ -88,8 +90,7 @@ export class EditProvider {
                     return Promise.resolve()
                 },
             })
-            // 5 == test, enum editIntent
-            if (this.config.task.intent === 5) {
+            if (this.config.task.intent === 'test') {
                 if (this.config.task.destinationFile) {
                     // We have already provided a destination file,
                     // Treat this as the test file to insert to
@@ -183,8 +184,7 @@ export class EditProvider {
 
         // If the response finished and we didn't receive a test file name suggestion,
         // we will create one manually before inserting the response to the new test file
-        // enum EditIntent, 5 == test
-        if (this.config.task.intent === 5 && !this.config.task.destinationFile) {
+        if (this.config.task.intent === 'test' && !this.config.task.destinationFile) {
             if (isMessageInProgress) {
                 return
             }
@@ -194,9 +194,15 @@ export class EditProvider {
         if (!isMessageInProgress) {
             const { task } = this.config
             const legacyMetadata = {
-                intent: task.intent,
-                mode: task.mode,
-                source: task.source,
+                intent:
+                    EditIntentMetadataMapping[task.intent as keyof typeof EditIntentMetadataMapping] ||
+                    task.intent,
+                mode:
+                    EditModeMetadataMapping[task.mode as keyof typeof EditModeMetadataMapping] ||
+                    task.mode,
+                source:
+                    EventSourceMetadataMapping[task.source as keyof typeof EventSourceMetadataMapping] ||
+                    task.source,
                 ...countCode(response),
             }
             telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', legacyMetadata, {

@@ -13,6 +13,7 @@ import {
 import * as vscode from 'vscode'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
+import { EventSourceMetadataMapping } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { GENERAL_HELP_LABEL, LARGE_FILE_WARNING_LABEL } from '../../chat/context/constants'
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 import { executeDocCommand, executeTestEditCommand } from '../../commands/execute'
@@ -82,13 +83,17 @@ export const getInput = async (
     }
 
     telemetryService.log('CodyVSCodeExtension:menu:edit:clicked', { source }, { hasV2Event: true })
-    telemetryRecorder.recordEvent('cody.menu.edit', 'clicked', { privateMetadata: { source } })
+    telemetryRecorder.recordEvent('cody.menu.edit', 'clicked', {
+        metadata: {
+            source: EventSourceMetadataMapping[source as keyof typeof EventSourceMetadataMapping],
+        },
+        privateMetadata: { source },
+    })
 
     const initialCursorPosition = editor.selection.active
     let activeRange = initialValues.initialExpandedRange || initialValues.initialRange
     let activeRangeItem =
-        // 1 == add, enum EditIntent
-        initialValues.initialIntent === 1
+        initialValues.initialIntent === 'add'
             ? CURSOR_RANGE_ITEM
             : initialValues.initialExpandedRange
               ? EXPANDED_RANGE_ITEM
@@ -305,8 +310,7 @@ export const getInput = async (
                     showModelSelector
                 ),
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
-            // 3 == menu, enum EventSource
-            ...(source === 3
+            ...(source === 'menu'
                 ? {
                       buttons: [vscode.QuickInputButtons.Back],
                       onDidTriggerButton: target => {
@@ -425,12 +429,10 @@ export const getInput = async (
                         return
                     case DOCUMENT_ITEM.label:
                         input.hide()
-                        // 3 == menu, enum EventSource
-                        return executeDocCommand({ range: activeRange, source: 3 })
+                        return executeDocCommand({ range: activeRange, source: 'menu' })
                     case TEST_ITEM.label:
                         input.hide()
-                        // 3 == menu, enum EventSource
-                        return executeTestEditCommand({ range: activeRange, source: 3 })
+                        return executeTestEditCommand({ range: activeRange, source: 'menu' })
                     case FILE_CONTEXT_MENTION_PROVIDER.queryLabel:
                     case FILE_CONTEXT_MENTION_PROVIDER.emptyLabel:
                     case SYMBOL_CONTEXT_MENTION_PROVIDER.queryLabel:
@@ -469,10 +471,8 @@ export const getInput = async (
                         .map(([, value]) => value),
                     model: activeModel,
                     range: activeRange,
-                    // 1 == add, 2 == edit, enum EditIntent
-                    intent: isGenerate ? 1 : 2,
-                    // 1 == insert, 2 == edit, enum EditMode
-                    mode: isGenerate ? 1 : 2,
+                    intent: isGenerate ? 'add' : 'edit',
+                    mode: isGenerate ? 'insert' : 'edit',
                 })
             },
         })
