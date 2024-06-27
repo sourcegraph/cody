@@ -170,7 +170,10 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
 
                     // Include all enhanced context by default for Cody Web if the initial context
                     // is presented (mostly used by context-based chat usage like blob UI in Sourcegraph)
-                    if (contextRepositoriesCount > 0 && (message.command === 'submit' || message.command === 'edit')) {
+                    if (
+                        contextRepositoriesCount > 0 &&
+                        (message.command === 'submit' || message.command === 'edit')
+                    ) {
                         message.addEnhancedContext = true
                     }
 
@@ -205,7 +208,7 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
         // components will have access to the mocked/synthetic VSCode API
         setVSCodeWrapper(vscodeAPI)
         return vscodeAPI
-    }, [client])
+    }, [client, initialContext])
 
     const createChat = useCallback(
         async (agent = client) => {

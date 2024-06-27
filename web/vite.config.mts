@@ -82,12 +82,12 @@ export default defineProjectWithDefaults(__dirname, {
         // and need to apply the `define`s when building, not when testing. The `define`s leak into
         // the `agent` tests and cause some failures because process.env.CODY_SHIM_TESTING gets
         // `define`d to `false`.
-        ...( process.env.VITEST
-        ? {}
-        : {
-              process: { env: {} },
-              ...Object.fromEntries(
-                  Object.entries(FAKE_PROCESS_ENV).map(([key, value]) => [
+        ...(process.env.VITEST
+            ? {}
+            : {
+                  process: { env: {} },
+                  ...Object.fromEntries(
+                      Object.entries(FAKE_PROCESS_ENV).map(([key, value]) => [
                           `process.env.${key}`,
                           JSON.stringify(value),
                       ])
