@@ -1456,6 +1456,9 @@ export class SimpleChatPanelProvider
     ): Promise<vscode.WebviewView | vscode.WebviewPanel> {
         // Checks if the webview view or panel already exists and is visible.
         // If so, returns early to avoid creating a duplicate.
+        // NOTE: This check is necessary because the webview view and panel
+        //       instances are not destroyed when the user closes the chat panel.
+
         if (this.webviewPanelOrView) {
             return this.webviewPanelOrView
         }
@@ -1476,6 +1479,7 @@ export class SimpleChatPanelProvider
                 enableFindWidget: true,
                 localResourceRoots: [webviewPath],
                 enableCommandUris: true,
+                // Enable the webview to be reloaded when the window reloads.
             }
         )
 

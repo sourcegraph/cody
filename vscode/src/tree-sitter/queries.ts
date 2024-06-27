@@ -40,6 +40,25 @@ export const intentPriority = [
     'string',
 ] as const
 
+export enum CompletionIntentMetadataMapping {
+    'function.name' = 1,
+    'function.parameters' = 2,
+    'function.body' = 3,
+    'type_declaration.name' = 4,
+    'type_declaration.body' = 5,
+    arguments = 6,
+    'import.source' = 7,
+    comment = 8,
+    'pair.value' = 9,
+    argument = 10,
+    parameter = 11,
+    parameters = 12,
+    'jsx_attribute.value' = 13,
+    'return_statement.value' = 14,
+    return_statement = 15,
+    string = 16,
+}
+
 /**
  * Completion intent label derived from the AST nodes before the cursor.
  */

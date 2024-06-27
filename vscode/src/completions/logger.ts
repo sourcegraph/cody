@@ -16,7 +16,6 @@ import { getConfiguration } from '../configuration'
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
 import { getExtensionDetails, logPrefix, telemetryService } from '../services/telemetry'
 import { splitSafeMetadata } from '../services/telemetry-v2'
-import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import type { Span } from '@opentelemetry/api'
 import { PersistenceTracker } from '../common/persistence-tracker'
@@ -26,9 +25,15 @@ import type {
 } from '../common/persistence-tracker/types'
 import { RepoMetadatafromGitApi } from '../repository/repo-metadata-from-git-api'
 import { upstreamHealthProvider } from '../services/UpstreamHealthProvider'
+import { type CompletionIntent, CompletionIntentMetadataMapping } from '../tree-sitter/queries'
 import { completionProviderConfig } from './completion-provider-config'
 import type { ContextSummary } from './context/context-mixer'
-import type { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
+import {
+    InlineCompletionsResultSource,
+    InlineCompletionsResultSourceMetadataMapping,
+    TriggerKind,
+    TriggerKindMetadataMapping,
+} from './get-inline-completions'
 import type { RequestParams } from './request-manager'
 import * as statistics from './statistics'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
@@ -385,6 +390,68 @@ function writeCompletionEvent<SubFeature extends string, Action extends string, 
     if (params && hasInteractionID(legacyParams)) {
         params.interactionID = legacyParams.id?.toString()
     }
+    /**
+     * Helper function to convert privateMetadata string values to numerical based on enum lookup. Enables data collection on `metadata`
+     */
+    function mapEnumToMetadata<
+        T extends Record<string, number>,
+        U extends string | number,
+        V extends Record<string, U>,
+    >(
+        value: U | undefined,
+        enumType: V,
+        metadataMapping: T | { [key: string]: number } | { [key: number]: string | number }
+    ): number | undefined {
+        if (value === undefined) return undefined
+
+        const enumKey = Object.keys(enumType).find(key => enumType[key] === value)
+        if (!enumKey) return undefined
+
+        const mappingValue = (metadataMapping as any)[enumKey]
+        return typeof mappingValue === 'number' ? mappingValue : undefined
+    }
+
+    if (params?.metadata) {
+        const mappedTriggerKind = mapEnumToMetadata(
+            params.privateMetadata?.triggerKind,
+            TriggerKind,
+            TriggerKindMetadataMapping
+        )
+
+        if (mappedTriggerKind !== undefined) {
+            params.metadata.triggerKind = mappedTriggerKind
+        }
+
+        const mappedSource = mapEnumToMetadata(
+            params.privateMetadata?.source,
+            InlineCompletionsResultSource,
+            InlineCompletionsResultSourceMetadataMapping
+        )
+        if (mappedSource !== undefined) {
+            params.metadata.source = mappedSource
+        }
+
+        // Need to convert since CompletionIntent only refers to a type
+        const CompletionIntentEnum: Record<CompletionIntent, CompletionIntent> = Object.keys(
+            CompletionIntentMetadataMapping
+        ).reduce(
+            (acc, key) => {
+                acc[key as CompletionIntent] = key as CompletionIntent
+                return acc
+            },
+            {} as Record<CompletionIntent, CompletionIntent>
+        )
+
+        const mappedCompletionIntent = mapEnumToMetadata(
+            params.privateMetadata?.completionIntent,
+            CompletionIntentEnum,
+            CompletionIntentMetadataMapping
+        )
+        if (mappedCompletionIntent !== undefined) {
+            params.metadata.completionIntent = mappedCompletionIntent
+        }
+    }
+
     /**
      * New telemetry automatically adds extension context - we do not need to
      * include platform in the name of the event. However, we MUST prefix the
