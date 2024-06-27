@@ -2,15 +2,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { TriggerKind } from './get-inline-completions'
 import type { RequestParams } from './request-manager'
-import { SmartThrottleDebounceService, THROTTLE_TIMEOUT } from './smart-throttle-debounce'
+import { SmartThrottleService, THROTTLE_TIMEOUT } from './smart-throttle'
 import { documentAndPosition } from './test-helpers'
 
-describe('SmartThrottleDebounceService', () => {
-    let service: SmartThrottleDebounceService
+describe('SmartThrottleService', () => {
+    let service: SmartThrottleService
 
     beforeEach(() => {
         vi.useFakeTimers()
-        service = new SmartThrottleDebounceService()
+        service = new SmartThrottleService()
     })
 
     it('keeps one start-of-line request per line and immediately starts it', async () => {

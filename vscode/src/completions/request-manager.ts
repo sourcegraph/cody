@@ -5,7 +5,6 @@ import type * as vscode from 'vscode'
 import {
     type AutocompleteContextSnippet,
     type DocumentContext,
-    FeatureFlag,
     isDefined,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -91,16 +90,13 @@ export class RequestManager {
     }
 
     public async request(params: RequestsManagerParams): Promise<RequestManagerResult> {
-        const eagerCancellation = completionProviderConfig.getPrefetchedFlag(
-            FeatureFlag.CodyAutocompleteEagerCancellation
-        )
         this.latestRequestParams = params
 
         const { requestParams, provider, context, tracer } = params
 
         addAutocompleteDebugEvent('RequestManager.request')
 
-        const shouldHonorCancellation = eagerCancellation || completionProviderConfig.smartThrottle
+        const shouldHonorCancellation = completionProviderConfig.smartThrottle
 
         // When request recycling is enabled, we do not pass the original abort signal forward as to
         // not interrupt requests that are no longer relevant. Instead, we let all previous requests
@@ -114,6 +110,7 @@ export class RequestManager {
         this.inflightRequests.add(request)
 
         const generateCompletions = async (): Promise<void> => {
+            console.log('MAKING REQUEST')
             try {
                 for await (const fetchCompletionResults of provider.generateCompletions(
                     request.abortController.signal,
@@ -155,7 +152,7 @@ export class RequestManager {
 
                         request.lastCompletions = processedCompletions
 
-                        if (!eagerCancellation) {
+                        if (!shouldHonorCancellation) {
                             this.testIfResultCanBeRecycledForInflightRequests(
                                 request,
                                 processedCompletions
@@ -179,7 +176,7 @@ export class RequestManager {
                         )
                     }
 
-                    if (!eagerCancellation) {
+                    if (!shouldHonorCancellation) {
                         this.cancelIrrelevantRequests()
                     }
                 }
@@ -190,7 +187,7 @@ export class RequestManager {
             }
         }
 
-        if (!eagerCancellation) {
+        if (!shouldHonorCancellation) {
             this.cancelIrrelevantRequests()
         }
 
@@ -276,6 +273,7 @@ export class RequestManager {
 
             if (shouldAbort) {
                 logDebug('CodyCompletionProvider', 'Irrelevant request aborted')
+                console.log('ABORTING REQUEST')
                 request.abortController.abort()
                 this.inflightRequests.delete(request)
             }

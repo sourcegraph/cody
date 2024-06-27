@@ -166,8 +166,8 @@ export function getConfiguration(
             'autocomplete.experimental.multiModelCompletions',
             undefined
         ),
-        autocompleteExperimentalSmartThrottleDebounce: getHiddenSetting(
-            'autocomplete.experimental.smartThrottleDebounce',
+        autocompleteExperimentalSmartThrottle: getHiddenSetting(
+            'autocomplete.experimental.smartThrottle',
             false
         ),
 

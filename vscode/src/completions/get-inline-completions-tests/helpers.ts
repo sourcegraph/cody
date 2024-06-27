@@ -186,7 +186,7 @@ export function params(
             DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
         requestManager: new RequestManager(),
         contextMixer: new ContextMixer(new DefaultContextStrategyFactory('none')),
-        smartThrottleDebounceService: null,
+        smartThrottleService: null,
         completionIntent: getCompletionIntent({
             document,
             position,

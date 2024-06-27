@@ -18,7 +18,7 @@ export const THROTTLE_TIMEOUT = 250
 //   1. Those at the start of a line (when the currentLinePrefix is only whitespace)
 //   2. The latest request (tail)
 //   3. As well as one throttled by a timeout or number of characters.
-export class SmartThrottleDebounceService implements vscode.Disposable {
+export class SmartThrottleService implements vscode.Disposable {
     // The latest start-of-line request. Will be cancelled when a new start-of-line request is
     // enqueued.
     private startOfLineRequest: null | ThrottledRequest = null

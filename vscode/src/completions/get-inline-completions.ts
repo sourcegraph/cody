@@ -23,7 +23,7 @@ import type { CompletionLogID } from './logger'
 import type { CompletionProviderTracer, ProviderConfig } from './providers/provider'
 import type { RequestManager, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
-import type { SmartThrottleDebounceService } from './smart-throttle-debounce'
+import type { SmartThrottleService } from './smart-throttle'
 import type { AutocompleteItem } from './suggested-autocomplete-items-cache'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import type { ProvideInlineCompletionsItemTraceData } from './tracer'
@@ -45,7 +45,7 @@ export interface InlineCompletionsParams {
     // Shared
     requestManager: RequestManager
     contextMixer: ContextMixer
-    smartThrottleDebounceService: SmartThrottleDebounceService | null
+    smartThrottleService: SmartThrottleService | null
 
     // UI state
     isDotComUser: boolean
@@ -190,7 +190,7 @@ async function doGetInlineCompletions(
         docContext: { multilineTrigger, currentLineSuffix, currentLinePrefix },
         providerConfig,
         contextMixer,
-        smartThrottleDebounceService,
+        smartThrottleService,
         requestManager,
         lastCandidate,
         debounceInterval,
@@ -331,8 +331,8 @@ async function doGetInlineCompletions(
     autocompleteStageCounterLogger.record('preDebounce')
 
     let remainingInterval: number
-    if (smartThrottleDebounceService) {
-        const throttledRequest = await smartThrottleDebounceService.throttle(requestParams, triggerKind)
+    if (smartThrottleService) {
+        const throttledRequest = await smartThrottleService.throttle(requestParams, triggerKind)
         if (throttledRequest === null) {
             // aborted
             return null
@@ -359,8 +359,6 @@ async function doGetInlineCompletions(
             }
         }
     }
-
-    // TODO: Should be implemented by smartThrottleDebounceService
 
     setIsLoading?.(true)
     CompletionLogger.start(logId)

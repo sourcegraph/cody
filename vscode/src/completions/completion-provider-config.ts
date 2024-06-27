@@ -13,11 +13,9 @@ class CompletionProviderConfig {
         FeatureFlag.CodyAutocompleteContextBfgMixed,
         FeatureFlag.CodyAutocompleteHotStreak,
         FeatureFlag.CodyAutocompleteUserLatency,
-        FeatureFlag.CodyAutocompleteEagerCancellation,
         FeatureFlag.CodyAutocompleteTracing,
-        FeatureFlag.CodyAutocompleteReducedDebounce,
         FeatureFlag.CodyAutocompleteContextExtendLanguagePool,
-        FeatureFlag.CodyAutocompleteSmartThrottleDebounce,
+        FeatureFlag.CodyAutocompleteSmartThrottle,
     ] as const
 
     private get config() {
@@ -83,8 +81,8 @@ class CompletionProviderConfig {
 
     public get smartThrottle(): boolean {
         return (
-            this.config.autocompleteExperimentalSmartThrottleDebounce ||
-            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteSmartThrottleDebounce)
+            this.config.autocompleteExperimentalSmartThrottle ||
+            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteSmartThrottle)
         )
     }
 }

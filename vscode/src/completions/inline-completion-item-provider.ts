@@ -43,7 +43,7 @@ import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 import type { ProviderConfig } from './providers/provider'
 import { RequestManager, type RequestParams } from './request-manager'
 import { getRequestParamsFromLastCandidate } from './reuse-last-candidate'
-import { SmartThrottleDebounceService } from './smart-throttle-debounce'
+import { SmartThrottleService } from './smart-throttle'
 import {
     type AutocompleteInlineAcceptedCommandArgs,
     type AutocompleteItem,
@@ -111,7 +111,7 @@ export class InlineCompletionItemProvider
 
     private requestManager: RequestManager
     private contextMixer: ContextMixer
-    private smartThrottleDebounceService: SmartThrottleDebounceService | null = null
+    private smartThrottleService: SmartThrottleService | null = null
 
     /** Mockable (for testing only). */
     protected getInlineCompletions = getInlineCompletions
@@ -176,8 +176,8 @@ export class InlineCompletionItemProvider
         )
 
         if (completionProviderConfig.smartThrottle) {
-            this.smartThrottleDebounceService = new SmartThrottleDebounceService()
-            this.disposables.push(this.smartThrottleDebounceService)
+            this.smartThrottleService = new SmartThrottleService()
+            this.disposables.push(this.smartThrottleService)
         }
 
         const chatHistory = localStorage.getChatHistory(this.config.authStatus)?.chat
@@ -350,19 +350,7 @@ export class InlineCompletionItemProvider
             )
 
             const isLocalProvider = isLocalCompletionsProvider(this.config.providerConfig.identifier)
-            const isEagerCancellationEnabled = completionProviderConfig.getPrefetchedFlag(
-                FeatureFlag.CodyAutocompleteEagerCancellation
-            )
-            const isReducedDebounceEnabled = completionProviderConfig.getPrefetchedFlag(
-                FeatureFlag.CodyAutocompleteReducedDebounce
-            )
-            const debounceInterval = isLocalProvider
-                ? 125
-                : isEagerCancellationEnabled
-                  ? 10
-                  : isReducedDebounceEnabled
-                    ? 25
-                    : 75
+            const debounceInterval = isLocalProvider ? 125 : 75
 
             try {
                 const result = await this.getInlineCompletions({
@@ -373,7 +361,7 @@ export class InlineCompletionItemProvider
                     docContext,
                     providerConfig: this.config.providerConfig,
                     contextMixer: this.contextMixer,
-                    smartThrottleDebounceService: this.smartThrottleDebounceService,
+                    smartThrottleService: this.smartThrottleService,
                     requestManager: this.requestManager,
                     lastCandidate: this.lastCandidate,
                     debounceInterval: {
