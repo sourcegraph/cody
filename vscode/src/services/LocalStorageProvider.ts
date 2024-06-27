@@ -13,6 +13,28 @@ import {
 
 import { isSourcegraphToken } from '../chat/protocol'
 
+export interface AsyncMemento {
+    keys(): Promise<readonly string[]>
+    get<T>(key: string, defaultValue: T): Promise<T>
+    update(key: string, value: any): Promise<void>
+}
+
+function convertToAsyncStore(store: Memento | AsyncMemento): AsyncMemento {
+    return {
+        keys: (): Promise<readonly string[]> => {
+            return Promise.resolve(store.keys())
+        },
+        get<T>(key: string, defaultValue?: T): Promise<T> {
+            return Promise.resolve(store.get(key, defaultValue) as T)
+        },
+        update(key: string, value: any): Promise<void> {
+            store.update(key, value)
+
+            return Promise.resolve()
+        },
+    }
+}
+
 type ChatHistoryKey = `${string}-${string}`
 type AccountKeyedChatHistory = {
     [key: ChatHistoryKey]: PersistedUserLocalHistory
@@ -37,9 +59,9 @@ class LocalStorage {
      * Done to avoid passing the local storage around as a parameter and instead
      * access it as a singleton via the module import.
      */
-    private _storage: Memento | null = null
+    private _storage: AsyncMemento | null = null
 
-    private get storage(): Memento {
+    private get storage(): AsyncMemento {
         if (!this._storage) {
             throw new Error('LocalStorage not initialized')
         }
@@ -47,15 +69,17 @@ class LocalStorage {
         return this._storage
     }
 
-    public setStorage(storage: Memento): void {
-        this._storage = storage
+    public setStorage(storage: Memento | AsyncMemento): void {
+        // We don't know in runtime which store time we have sync/async
+        // convert it to async (it has no effect on already sync store)
+        this._storage = convertToAsyncStore(storage)
     }
 
-    public getEndpoint(): string | null {
-        const endpoint = this.storage.get<string | null>(this.LAST_USED_ENDPOINT, null)
+    public async getEndpoint(): Promise<string | null> {
+        const endpoint = await this.storage.get<string | null>(this.LAST_USED_ENDPOINT, null)
         // Clear last used endpoint if it is a Sourcegraph token
         if (endpoint && isSourcegraphToken(endpoint)) {
-            this.deleteEndpoint()
+            void this.deleteEndpoint()
             return null
         }
         return endpoint
@@ -83,7 +107,7 @@ class LocalStorage {
         await this.storage.update(this.LAST_USED_ENDPOINT, null)
     }
 
-    public getEndpointHistory(): string[] | null {
+    public getEndpointHistory(): Promise<string[] | null> {
         return this.storage.get<string[] | null>(this.CODY_ENDPOINT_HISTORY, null)
     }
 
@@ -93,15 +117,18 @@ class LocalStorage {
             return
         }
 
-        const history = this.storage.get<string[] | null>(this.CODY_ENDPOINT_HISTORY, null)
+        const history = await this.storage.get<string[] | null>(this.CODY_ENDPOINT_HISTORY, null)
         const historySet = new Set(history)
         historySet.delete(endpoint)
         historySet.add(endpoint)
         await this.storage.update(this.CODY_ENDPOINT_HISTORY, [...historySet])
     }
 
-    public getChatHistory(authStatus: AuthStatus): UserLocalHistory {
-        const history = this.storage.get<AccountKeyedChatHistory | null>(this.KEY_LOCAL_HISTORY, null)
+    public async getChatHistory(authStatus: AuthStatus): Promise<UserLocalHistory> {
+        const history = await this.storage.get<AccountKeyedChatHistory | null>(
+            this.KEY_LOCAL_HISTORY,
+            null
+        )
         const accountKey = getKeyForAuthStatus(authStatus)
 
         // Migrate chat history to set the `ChatMessage.model` property on each assistant message
@@ -118,7 +145,7 @@ class LocalStorage {
     public async setChatHistory(authStatus: AuthStatus, history: UserLocalHistory): Promise<void> {
         try {
             const key = getKeyForAuthStatus(authStatus)
-            let fullHistory = this.storage.get<{ [key: ChatHistoryKey]: UserLocalHistory } | null>(
+            let fullHistory = await this.storage.get<{ [key: ChatHistoryKey]: UserLocalHistory } | null>(
                 this.KEY_LOCAL_HISTORY,
                 null
             )
@@ -138,7 +165,7 @@ class LocalStorage {
     }
 
     public async deleteChatHistory(authStatus: AuthStatus, chatID: string): Promise<void> {
-        const userHistory = this.getChatHistory(authStatus)
+        const userHistory = await this.getChatHistory(authStatus)
         if (userHistory) {
             try {
                 delete userHistory.chat[chatID]
@@ -154,7 +181,7 @@ class LocalStorage {
         await this.storage.update(this.KEY_LOCAL_MINION_HISTORY, serializedHistory)
     }
 
-    public getMinionHistory(authStatus: AuthStatus): string | null {
+    public async getMinionHistory(authStatus: AuthStatus): Promise<string | null> {
         // TODO(beyang): SECURITY - use authStatus
         return this.storage.get<string | null>(this.KEY_LOCAL_MINION_HISTORY, null)
     }
@@ -176,14 +203,16 @@ class LocalStorage {
      * If not, add the feature to the memory, but return false after adding the feature
      * so that the caller can log the first enrollment event.
      */
-    public getEnrollmentHistory(featureName: string): boolean {
-        const history = this.storage.get<string[]>(this.CODY_ENROLLMENT_HISTORY, [])
+    public async getEnrollmentHistory(featureName: string): Promise<boolean> {
+        const history = await this.storage.get<string[]>(this.CODY_ENROLLMENT_HISTORY, [])
         const hasEnrolled = history.includes(featureName)
+
         // Log the first enrollment event
         if (!hasEnrolled) {
             history.push(featureName)
-            this.storage.update(this.CODY_ENROLLMENT_HISTORY, history)
+            void this.storage.update(this.CODY_ENROLLMENT_HISTORY, history)
         }
+
         return hasEnrolled
     }
 
@@ -192,7 +221,7 @@ class LocalStorage {
      * occurs on a fresh installation).
      */
     public async anonymousUserID(): Promise<{ anonymousUserID: string; created: boolean }> {
-        let id = this.storage.get<string>(this.ANONYMOUS_USER_ID_KEY)
+        let id = await this.storage.get<string | null>(this.ANONYMOUS_USER_ID_KEY, null)
         let created = false
         if (!id) {
             created = true
@@ -210,11 +239,11 @@ class LocalStorage {
         return this.set(this.KEY_CONFIG, config)
     }
 
-    public getConfig(): ConfigurationWithAccessToken | null {
+    public getConfig(): Promise<ConfigurationWithAccessToken | null> {
         return this.get(this.KEY_CONFIG)
     }
 
-    public get<T>(key: string): T | null {
+    public get<T>(key: string): Promise<T | null> {
         return this.storage.get(key, null)
     }
 

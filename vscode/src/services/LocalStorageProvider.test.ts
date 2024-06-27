@@ -25,7 +25,7 @@ describe('LocalStorageProvider', () => {
             chat: { a: { id: 'a', lastInteractionTimestamp: '123', interactions: [] } },
         })
 
-        const loadedHistory = localStorage.getChatHistory(DUMMY_AUTH_STATUS)
+        const loadedHistory = await localStorage.getChatHistory(DUMMY_AUTH_STATUS)
         expect(loadedHistory).toEqual<UserLocalHistory>({
             chat: { a: { id: 'a', lastInteractionTimestamp: '123', interactions: [] } },
         })
@@ -48,7 +48,7 @@ describe('LocalStorageProvider', () => {
             },
         }
         await localStorage.setChatHistory(DUMMY_AUTH_STATUS, chatHistory)
-        const loadedHistory = localStorage.getChatHistory(DUMMY_AUTH_STATUS)
+        const loadedHistory = await localStorage.getChatHistory(DUMMY_AUTH_STATUS)
         expect(loadedHistory).toEqual<UserLocalHistory>({
             chat: {
                 a: {

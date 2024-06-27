@@ -60,7 +60,6 @@ export class ChatPanelsManager implements vscode.Disposable {
     // Chat views in editor panels
     private activePanelProvider: SimpleChatPanelProvider | undefined = undefined
     private panelProviders: SimpleChatPanelProvider[] = []
-    private sidebarProvider: SimpleChatPanelProvider
 
     private options: ChatPanelProviderOptions & SidebarViewOptions
 
@@ -75,9 +74,49 @@ export class ChatPanelsManager implements vscode.Disposable {
 
     protected disposables: vscode.Disposable[] = []
 
-    constructor(
+    static async create(
+        options: SidebarViewOptions,
+        chatClient: ChatClient,
+        localEmbeddings: LocalEmbeddingsController | null,
+        contextRanking: ContextRankingController | null,
+        symf: SymfRunner | null,
+        enterpriseContext: EnterpriseContextFactory | null,
+        guardrails: Guardrails
+    ): Promise<ChatPanelsManager> {
+        const authStatus = options.authProvider.getAuthStatus()
+        const isConsumer = authStatus.isDotCom
+        const isCodyProUser = !authStatus.userCanUpgrade
+        const models = ModelsService.getModels(ModelUsage.Chat, isCodyProUser)
+
+        const simpleChatProvider = await SimpleChatPanelProvider.create({
+            ...options,
+            featureFlagProvider,
+            chatClient: chatClient,
+            localEmbeddings: isConsumer ? localEmbeddings : null,
+            contextRanking: isConsumer ? contextRanking : null,
+            symf: isConsumer ? symf : null,
+            enterpriseContext: isConsumer ? null : enterpriseContext,
+            models,
+            guardrails: guardrails,
+            startTokenReceiver: options.startTokenReceiver,
+        })
+
+        return new ChatPanelsManager(
+            options,
+            chatClient,
+            simpleChatProvider,
+            localEmbeddings,
+            contextRanking,
+            symf,
+            enterpriseContext,
+            guardrails
+        )
+    }
+
+    private constructor(
         { extensionUri, ...options }: SidebarViewOptions,
         private chatClient: ChatClient,
+        private readonly sidebarProvider: SimpleChatPanelProvider,
         private readonly localEmbeddings: LocalEmbeddingsController | null,
         private readonly contextRanking: ContextRankingController | null,
         private readonly symf: SymfRunner | null,
@@ -107,7 +146,6 @@ export class ChatPanelsManager implements vscode.Disposable {
             )
         )
 
-        this.sidebarProvider = this.createProvider()
         this.disposables.push(
             vscode.window.registerWebviewViewProvider('cody.chat', this.sidebarProvider, {
                 webviewOptions: { retainContextWhenHidden: true },
@@ -184,7 +222,7 @@ export class ChatPanelsManager implements vscode.Disposable {
             ? webviewViewOrPanelViewColumn(this.activePanelProvider?.webviewPanelOrView)
             : undefined
 
-        const provider = this.createProvider()
+        const provider = await this.createProvider()
         if (chatID) {
             await provider.restoreSession(chatID)
         } else {
@@ -225,13 +263,13 @@ export class ChatPanelsManager implements vscode.Disposable {
     /**
      * Creates a provider for a chat view.
      */
-    private createProvider(): SimpleChatPanelProvider {
+    private createProvider(): Promise<SimpleChatPanelProvider> {
         const authStatus = this.options.authProvider.getAuthStatus()
         const isConsumer = authStatus.isDotCom
         const isCodyProUser = !authStatus.userCanUpgrade
         const models = ModelsService.getModels(ModelUsage.Chat, isCodyProUser)
 
-        return new SimpleChatPanelProvider({
+        return SimpleChatPanelProvider.create({
             ...this.options,
             chatClient: this.chatClient,
             localEmbeddings: isConsumer ? this.localEmbeddings : null,

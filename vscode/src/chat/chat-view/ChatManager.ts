@@ -37,36 +37,41 @@ export const CodyChatPanelViewType = 'cody.chatPanel'
  * TODO(sqs): rename from its legacy name ChatManager
  */
 export class ChatManager implements vscode.Disposable {
-    public readonly chatPanelsManager: ChatPanelsManager
-
-    private options: SidebarViewOptions
-
     private disposables: vscode.Disposable[] = []
 
-    constructor(
-        { extensionUri, ...options }: SidebarViewOptions,
-        private chatClient: ChatClient,
-        private enterpriseContext: EnterpriseContextFactory | null,
-        private localEmbeddings: LocalEmbeddingsController | null,
-        private contextRanking: ContextRankingController | null,
-        private symf: SymfRunner | null,
-        private guardrails: Guardrails
+    static async create(
+        options: SidebarViewOptions,
+        chatClient: ChatClient,
+        enterpriseContext: EnterpriseContextFactory | null,
+        localEmbeddings: LocalEmbeddingsController | null,
+        contextRanking: ContextRankingController | null,
+        symf: SymfRunner | null,
+        guardrails: Guardrails
+    ): Promise<ChatManager> {
+        return new ChatManager(
+            options,
+            await ChatPanelsManager.create(
+                options,
+                chatClient,
+                localEmbeddings,
+                contextRanking,
+                symf,
+                enterpriseContext,
+                guardrails
+            ),
+            localEmbeddings
+        )
+    }
+
+    private constructor(
+        private options: SidebarViewOptions,
+        public readonly chatPanelsManager: ChatPanelsManager,
+        localEmbeddings: LocalEmbeddingsController | null
     ) {
         logDebug(
             'ChatManager:constructor',
             'init',
             localEmbeddings ? 'has local embeddings controller' : 'no local embeddings'
-        )
-        this.options = { extensionUri, ...options }
-
-        this.chatPanelsManager = new ChatPanelsManager(
-            this.options,
-            this.chatClient,
-            this.localEmbeddings,
-            this.contextRanking,
-            this.symf,
-            this.enterpriseContext,
-            this.guardrails
         )
 
         // Register Commands
@@ -185,7 +190,9 @@ export class ChatManager implements vscode.Disposable {
             hasV2Event: true,
         })
         telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked')
-        const historyJson = localStorage.getChatHistory(this.options.authProvider.getAuthStatus())?.chat
+        const historyJson = (
+            await localStorage.getChatHistory(this.options.authProvider.getAuthStatus())
+        )?.chat
         const exportPath = await vscode.window.showSaveDialog({
             filters: { 'Chat History': ['json'] },
         })

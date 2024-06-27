@@ -118,6 +118,7 @@ interface SimpleChatPanelProviderOptions {
     featureFlagProvider: FeatureFlagProvider
     models: Model[]
     guardrails: Guardrails
+    defaultModelId: string
     startTokenReceiver?: typeof startTokenReceiver
 }
 
@@ -174,12 +175,16 @@ export class SimpleChatPanelProvider
     private allMentionProvidersMetadataQueryCancellation?: vscode.CancellationTokenSource
 
     private disposables: vscode.Disposable[] = []
-    public dispose(): void {
-        vscode.Disposable.from(...this.disposables).dispose()
-        this.disposables = []
+
+    static async create(
+        config: Omit<SimpleChatPanelProviderOptions, 'defaultModelId'>
+    ): Promise<SimpleChatPanelProvider> {
+        const defaultModelId = await getDefaultModelID(config.authProvider, config.models)
+
+        return new SimpleChatPanelProvider({ ...config, defaultModelId })
     }
 
-    constructor({
+    private constructor({
         extensionUri,
         authProvider,
         chatClient,
@@ -191,6 +196,7 @@ export class SimpleChatPanelProvider
         guardrails,
         enterpriseContext,
         startTokenReceiver,
+        defaultModelId,
     }: SimpleChatPanelProviderOptions) {
         this.extensionUri = extensionUri
         this.authProvider = authProvider
@@ -202,7 +208,7 @@ export class SimpleChatPanelProvider
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
 
-        this.chatModel = new SimpleChatModel(getDefaultModelID(authProvider, models))
+        this.chatModel = new SimpleChatModel(defaultModelId)
 
         this.guardrails = guardrails
         this.startTokenReceiver = startTokenReceiver
@@ -262,6 +268,11 @@ export class SimpleChatPanelProvider
                 chatModel: this.chatModel,
             })
         )
+    }
+
+    public dispose(): void {
+        vscode.Disposable.from(...this.disposables).dispose()
+        this.disposables = []
     }
 
     /**
@@ -1382,7 +1393,7 @@ export class SimpleChatPanelProvider
     // current in-progress completion. If the chat does not exist, then this
     // is a no-op.
     public async restoreSession(sessionID: string): Promise<void> {
-        const oldTranscript = chatHistory.getChat(this.authProvider.getAuthStatus(), sessionID)
+        const oldTranscript = await chatHistory.getChat(this.authProvider.getAuthStatus(), sessionID)
         if (!oldTranscript) {
             return this.newSession()
         }
@@ -1452,7 +1463,7 @@ export class SimpleChatPanelProvider
 
         const viewType = CodyChatPanelViewType
         const panelTitle =
-            chatHistory.getChat(this.authProvider.getAuthStatus(), this.chatModel.sessionID)
+            (await chatHistory.getChat(this.authProvider.getAuthStatus(), this.chatModel.sessionID))
                 ?.chatTitle || getChatPanelTitle(lastQuestion)
         const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')
@@ -1644,9 +1655,9 @@ function isAbortErrorOrSocketHangUp(error: unknown): error is Error {
     return Boolean(isAbortError(error) || (error && (error as any).message === 'socket hang up'))
 }
 
-function getDefaultModelID(authProvider: AuthProvider, models: Model[]): string {
+async function getDefaultModelID(authProvider: AuthProvider, models: Model[]): Promise<string> {
     try {
-        return chatModel.get(authProvider, models)
+        return await chatModel.get(authProvider, models)
     } catch {
         return '(pending)'
     }

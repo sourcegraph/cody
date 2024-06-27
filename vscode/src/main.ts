@@ -98,7 +98,10 @@ export async function start(
     platform: PlatformContext
 ): Promise<vscode.Disposable> {
     // Set internal storage fields for storage provider singletons
-    localStorage.setStorage(context.globalState)
+    localStorage.setStorage(
+        platform.createStorage ? await platform.createStorage() : context.globalState
+    )
+
     if (secretStorage instanceof VSCodeSecretStorage) {
         secretStorage.setStorage(context.secrets)
     }
@@ -135,7 +138,7 @@ const register = async (
         context.extensionMode === vscode.ExtensionMode.Test
 
     setClientNameVersion(platform.extensionClient.clientName, platform.extensionClient.clientVersion)
-    const authProvider = AuthProvider.create(initialConfig)
+    const authProvider = await AuthProvider.create(initialConfig)
 
     // Initialize `displayPath` first because it might be used to display paths in error messages
     // from the subsequent initialization.
@@ -230,7 +233,7 @@ const register = async (
         await localEmbeddings?.setAccessToken(config.serverEndpoint, config.accessToken)
     }, disposables)
 
-    const { chatManager, editorManager } = registerChat(
+    const { chatManager, editorManager } = await registerChat(
         {
             context,
             platform,
@@ -694,7 +697,7 @@ interface RegisterChatOptions {
     symfRunner?: SymfRunner
 }
 
-function registerChat(
+async function registerChat(
     {
         context,
         platform,
@@ -708,10 +711,10 @@ function registerChat(
         symfRunner,
     }: RegisterChatOptions,
     disposables: vscode.Disposable[]
-): {
+): Promise<{
     chatManager: ChatManager
     editorManager: EditManager
-} {
+}> {
     // Shared configuration that is required for chat views to send and receive messages
     const messageProviderOptions: MessageProviderOptions = {
         chat: chatClient,
@@ -719,7 +722,7 @@ function registerChat(
         editor,
         authProvider,
     }
-    const chatManager = new ChatManager(
+    const chatManager = await ChatManager.create(
         {
             ...messageProviderOptions,
             extensionUri: context.extensionUri,

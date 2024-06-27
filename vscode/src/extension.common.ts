@@ -21,6 +21,7 @@ import type { ContextRankerConfig, ContextRankingController } from './local-cont
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
+import type { AsyncMemento } from './services/LocalStorageProvider'
 import type {
     OpenTelemetryService,
     OpenTelemetryServiceConfig,
@@ -34,6 +35,7 @@ type Constructor<T extends new (...args: any) => any> = T extends new (
     : never
 
 export interface PlatformContext {
+    createStorage?: () => Promise<vscode.Memento | AsyncMemento>
     createCommandsProvider?: Constructor<typeof CommandsProvider>
     createLocalEmbeddingsController?: (
         config: LocalEmbeddingsConfig

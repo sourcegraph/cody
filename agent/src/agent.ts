@@ -1108,7 +1108,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('chat/export', async () => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            const localHistory = chatHistory.getLocalHistory(authStatus)
+            const localHistory = await chatHistory.getLocalHistory(authStatus)
 
             if (localHistory != null) {
                 return Object.entries(localHistory?.chat)

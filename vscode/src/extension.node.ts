@@ -83,7 +83,7 @@ export function activate(
 // so that it can be sent with Telemetry when the post-uninstall script runs.
 // The vscode API is not available in the post-uninstall script.
 export async function deactivate(): Promise<void> {
-    const config = localStorage.getConfig() ?? (await getFullConfig())
+    const config = (await localStorage.getConfig()) ?? (await getFullConfig())
     const authStatus = authProvider?.getAuthStatus() ?? defaultAuthStatus
     const { anonymousUserID } = await localStorage.anonymousUserID()
     serializeConfigSnapshot({
