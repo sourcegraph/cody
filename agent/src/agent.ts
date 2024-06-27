@@ -1071,12 +1071,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                       authStatus.isDotCom && !authStatus.userCanUpgrade
                   ).at(0)?.model
             if (!theModel) {
-                // When user is not loggeed in, set the default to the default dotcom model,
-                // as we only sync the model list on login.
-                if (!authStatus.isLoggedIn) {
-                    theModel = getDotComDefaultModels()[0].model
-                }
-                throw new Error('No default chat model found')
+                theModel = getDotComDefaultModels()[0].model
             }
 
             const chatModel = new SimpleChatModel(modelID!, [], chatID)
