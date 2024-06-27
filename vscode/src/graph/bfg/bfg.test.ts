@@ -2,18 +2,17 @@ import { mkdtemp, open, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
-import { getOSArch } from '../os'
-import { _config, _getNamesForPlatform, _upsertSymfForPlatform } from './download-symf'
-import { downloadFile } from './utils'
+import { downloadFile } from '../../local-context/utils'
+import { getOSArch } from '../../os'
+import { _config, _getNamesForPlatform, _upsertBfgForPlatform, defaultBfgVersion } from './download-bfg'
 
 //@ts-ignore
 _config.FILE_DOWNLOAD_LOCK_DURATION = 10
 //@ts-ignore
 _config.FILE_LOCK_RETRY_DELAY = 1
 
-vi.mock('./utils', async importOriginal => {
-    //use the vscode mock inside this mock too
-    const mod = await importOriginal<typeof import('./utils')>()
+vi.mock('../../local-context/utils', async importOriginal => {
+    const mod = await importOriginal<typeof import('../../local-context/utils')>()
     let firstDownload = true
     return {
         ...mod,
@@ -36,39 +35,37 @@ vi.mock('./utils', async importOriginal => {
             }
             // we ensure that at leats the expected file exists
             const { platform, arch } = getOSArch()
-            const { symfUnzippedFilename } = _getNamesForPlatform(platform!, arch!)
-            const symfUnzippedPath = path.join(dest, symfUnzippedFilename)
-            await makeEmptyFile(symfUnzippedPath)
+            const { bfgUnzippedFilename } = _getNamesForPlatform(platform!, arch!, defaultBfgVersion)
+            const bfgUnzippedPath = path.join(dest, bfgUnzippedFilename)
+            await makeEmptyFile(bfgUnzippedPath)
         }),
     }
 })
 
-describe('upsertSymfForPlatform', () => {
+describe('upsertBfgForPlatform', () => {
     // NOTE: This really only checks downloads in the same Node process Instead
     // we probably want to mock the fs and network layer directly and ensure
     // that this works regardless of Mutex locks
     it('prevents parallel downloads', async () => {
-        const dir = await mkdtemp(path.join(tmpdir(), 'symf-'))
+        const dir = await mkdtemp(path.join(tmpdir(), 'bfg-'))
         try {
             // we first create a "abandoned" download so that we can ensure that
             // after some expiration time one of the processes will forcefully
             // download regardless
-            const abandonedDownload = _upsertSymfForPlatform(dir)
+            const abandonedDownload = _upsertBfgForPlatform(dir, defaultBfgVersion)
             expect(await abandonedDownload).toBeNull()
-
             vi.mocked(downloadFile).mockClear()
 
-            // we now start parallel async functions
+            // // we now start parallel async functions
             const results = await Promise.all([
-                _upsertSymfForPlatform(dir),
-                _upsertSymfForPlatform(dir),
-                _upsertSymfForPlatform(dir),
-                _upsertSymfForPlatform(dir),
+                _upsertBfgForPlatform(dir, defaultBfgVersion),
+                _upsertBfgForPlatform(dir, defaultBfgVersion),
+                _upsertBfgForPlatform(dir, defaultBfgVersion),
+                _upsertBfgForPlatform(dir, defaultBfgVersion),
             ])
-            // only one actual download should have happened
+            // // only one actual download should have happened
             expect(downloadFile).toHaveBeenCalledOnce()
-
-            // expect all results to be the same and valid strings
+            // // expect all results to be the same and valid strings
             expect(new Set(results).size).toBe(1)
             expect(results[0]).toBeTruthy()
         } finally {
