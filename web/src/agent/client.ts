@@ -6,6 +6,7 @@ import {
     createMessageConnection,
 } from 'vscode-jsonrpc/browser'
 import type { ServerInfo } from '../../../vscode/src/jsonrpc/agent-protocol'
+import type { ChatExportResult } from '../../../vscode/src/jsonrpc/agent-protocol'
 
 // TODO(sqs): dedupe with agentClient.ts in [experimental Cody CLI](https://github.com/sourcegraph/cody/pull/3418)
 
@@ -72,7 +73,23 @@ export async function createAgentClient({
     })
     rpc.sendNotification('initialized', null)
 
-    const webviewPanelID: string = await rpc.sendRequest('chat/new', null)
+    let webviewPanelID = ''
+
+    const chatHistory = await rpc.sendRequest<ChatExportResult[]>('chat/export', null)
+
+    if (chatHistory.length > 0) {
+        const chat = chatHistory[chatHistory.length - 1]
+        webviewPanelID = await rpc.sendRequest('chat/restore', {
+            chatID: chat.chatID,
+            messages: chat.transcript.interactions.flatMap(interaction =>
+                // Ignore incomplete messages from bot, this might be possible
+                // if chat was closed before LLM responded with a final message chunk
+                [interaction.humanMessage, interaction.assistantMessage].filter(message => message)
+            ),
+        })
+    } else {
+        webviewPanelID = await rpc.sendRequest('chat/new', null)
+    }
 
     return {
         serverInfo,
