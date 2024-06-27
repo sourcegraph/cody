@@ -101,7 +101,7 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         return 1
     }
 
-    const id = await client.request('chat/new', null)
+    const { panelID: id } = await client.request('chat/new', null)
 
     if (options.model) {
         await client.request('webview/receiveMessage', {
