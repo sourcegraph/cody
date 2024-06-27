@@ -547,7 +547,7 @@ export function isNetworkError(error: Error): boolean {
     )
 }
 
-function formatURL(uri: string): string | null {
+export function formatURL(uri: string): string | null {
     try {
         if (!uri) {
             return null
