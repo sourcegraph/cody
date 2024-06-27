@@ -118,6 +118,7 @@ object Constants {
   const val support = "support"
   const val callback = "callback"
   const val `simplified-onboarding` = "simplified-onboarding"
+  const val offline = "offline"
   const val dotcom = "dotcom"
   const val github = "github"
   const val gitlab = "gitlab"

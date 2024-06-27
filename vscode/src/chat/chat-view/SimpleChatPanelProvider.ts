@@ -407,6 +407,10 @@ export class SimpleChatPanelProvider
                     this.authProvider.redirectToEndpointLogin(message.endpoint)
                     break
                 }
+                if (message.authKind === 'offline') {
+                    this.authProvider.auth({ endpoint: '', token: '', isOfflineMode: true })
+                    break
+                }
                 if (message.authKind === 'simplified-onboarding') {
                     const endpoint = DOTCOM_URL.href
 

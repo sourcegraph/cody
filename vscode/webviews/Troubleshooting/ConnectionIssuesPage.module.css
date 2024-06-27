@@ -34,6 +34,7 @@ ul.causes {
 
 .icon {
     display: flex;
+    align-items: center;
 
     & > :global(i.codicon) { /* we need this specificity because codicons hardcodes the fontsize */
         display: block;
