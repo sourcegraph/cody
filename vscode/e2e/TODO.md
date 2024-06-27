@@ -1,0 +1,6 @@
+- [ ] Fail test on proxy failure
+- [ ] Credentials loading
+- [ ] Configurable endpoint proxies
+- [ ] Migrate existing e2e tests
+- [ ] Fixutres repo
+- [ ] Wait for Cody progress-bars
