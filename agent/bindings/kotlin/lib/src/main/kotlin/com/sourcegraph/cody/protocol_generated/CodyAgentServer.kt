@@ -98,8 +98,8 @@ interface CodyAgentServer {
   fun testing_memoryUsage(params: Null?): CompletableFuture<Testing_MemoryUsageResult>
   @JsonRequest("testing/awaitPendingPromises")
   fun testing_awaitPendingPromises(params: Null?): CompletableFuture<Null?>
-  @JsonRequest("testing/requestWorkspaceDocuments")
-  fun testing_requestWorkspaceDocuments(params: GetDocumentsParams): CompletableFuture<GetDocumentsResult>
+  @JsonRequest("testing/workspaceDocuments")
+  fun testing_workspaceDocuments(params: GetDocumentsParams): CompletableFuture<GetDocumentsResult>
   @JsonRequest("testing/diagnostics")
   fun testing_diagnostics(params: Testing_DiagnosticsParams): CompletableFuture<Testing_DiagnosticsResult>
   @JsonRequest("testing/progressCancelation")

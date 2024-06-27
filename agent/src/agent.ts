@@ -1447,6 +1447,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
         const textEditor = this.workspace.newTextEditor(textDocument)
         this.workspace.setActiveTextEditor(textEditor)
 
+        let lastPromise: Promise<any> | undefined
+
         if (contentChanges.length > 0) {
             this.pushPendingPromise(
                 vscode_shim.onDidChangeTextDocument.cody_fireAsync({
@@ -1465,6 +1467,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 })
             )
         }
+
+        return lastPromise || Promise.resolve()
     }
 
     private registerWebviewHandlers(): void {
