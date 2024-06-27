@@ -11,9 +11,9 @@ vi.mock('../../../vscode/src/models', () => ({
     },
 }))
 
-describe('agent web worker', () => {
-    // Unmute this test when we add support mocks for idb (index-db api)
-    test.skip(
+// Unmute this test when we add support mocks for idb (index-db api)
+describe.skip('agent web worker', () => {
+    test(
         'creates',
         async () => {
             const agent = await createAgentClient({
