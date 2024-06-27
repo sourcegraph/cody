@@ -113,7 +113,7 @@ abstract class FixupSession(
         fixupService.startNewSession(this)
         // Spend a turn to get folding ranges before showing lenses.
         ensureSelectionRange(agent, textFile)
-        runInEdt { showWorkingGroup() }
+        showWorkingGroup()
 
         makeEditingRequest(agent)
             .handle { result, error ->
@@ -195,42 +195,41 @@ abstract class FixupSession(
   // N.B. Blocks calling thread until the lens group is shown,
   // which may require switching to the EDT. This is primarily to help smooth
   // integration testing, but also because there's no real harm blocking pool threads.
+  @RequiresEdt
   private fun showLensGroup(group: LensWidgetGroup) {
-    runInEdt {
-      try {
-        lensGroup?.let { if (!it.isDisposed.get()) Disposer.dispose(it) }
-      } catch (x: Exception) {
-        logger.warn("Error disposing previous lens group", x)
-      }
-      lensGroup = group
-
-      var range =
-          selectionRange?.let {
-            val position = Position(Range.fromRangeMarker(it).start.line, character = 0)
-            Range(start = position, end = position)
-          }
-
-      if (range == null) {
-        // Be defensive, as the protocol has been fragile with respect to selection ranges.
-        logger.warn("No selection range for session: $this")
-        // Last-ditch effort to show it somewhere other than top of file.
-        val position = Position(editor.caretModel.currentCaret.logicalPosition.line, 0)
-        range = Range(start = position, end = position)
-      }
-      val future = group.show(range)
-      // Make sure the lens is visible.
-      ApplicationManager.getApplication().invokeLater {
-        if (!editor.isDisposed) {
-          val logicalPosition = range.start.toLogicalPosition(editor.document)
-          editor.scrollingModel.scrollTo(logicalPosition, ScrollType.CENTER)
-        }
-      }
-      if (!ApplicationManager.getApplication().isDispatchThread) { // integration test
-        future.get()
-      }
-
-      controller.notifySessionStateChanged()
+    try {
+      lensGroup?.let { if (!it.isDisposed.get()) Disposer.dispose(it) }
+    } catch (x: Exception) {
+      logger.warn("Error disposing previous lens group", x)
     }
+    lensGroup = group
+
+    var range =
+        selectionRange?.let {
+          val position = Position(Range.fromRangeMarker(it).start.line, character = 0)
+          Range(start = position, end = position)
+        }
+
+    if (range == null) {
+      // Be defensive, as the protocol has been fragile with respect to selection ranges.
+      logger.warn("No selection range for session: $this")
+      // Last-ditch effort to show it somewhere other than top of file.
+      val position = Position(editor.caretModel.currentCaret.logicalPosition.line, 0)
+      range = Range(start = position, end = position)
+    }
+    val future = group.show(range)
+    // Make sure the lens is visible.
+    ApplicationManager.getApplication().invokeLater {
+      if (!editor.isDisposed) {
+        val logicalPosition = range.start.toLogicalPosition(editor.document)
+        editor.scrollingModel.scrollTo(logicalPosition, ScrollType.CENTER)
+      }
+    }
+    if (!ApplicationManager.getApplication().isDispatchThread) { // integration test
+      future.get()
+    }
+
+    controller.notifySessionStateChanged()
   }
 
   // An optimization to avoid recomputing widget indentation in a tight loop.
@@ -238,8 +237,7 @@ abstract class FixupSession(
     lensGroup?.reset()
   }
 
-  @RequiresEdt
-  private fun showWorkingGroup() {
+  private fun showWorkingGroup() = runInEdt {
     showLensGroup(LensGroupFactory(this).createTaskWorkingGroup())
     documentListener.setAcceptLensGroupShown(false)
     publishProgress(CodyInlineEditActionNotifier.TOPIC_DISPLAY_WORKING_GROUP)
@@ -248,18 +246,16 @@ abstract class FixupSession(
   // Create an abstract val for command name
   abstract val commandName: String
 
-  private fun showAcceptGroup() {
+  private fun showAcceptGroup() = runInEdt {
     val isUnitTestCommand = commandName == "Test"
     showLensGroup(LensGroupFactory(this).createAcceptGroup(isUnitTestCommand))
     postAcceptActions()
     publishProgress(CodyInlineEditActionNotifier.TOPIC_DISPLAY_ACCEPT_GROUP)
   }
 
-  fun showErrorGroup(hoverText: String) {
-    runInEdt {
-      showLensGroup(LensGroupFactory(this).createErrorGroup(hoverText))
-      publishProgress(CodyInlineEditActionNotifier.TOPIC_DISPLAY_ERROR_GROUP)
-    }
+  fun showErrorGroup(hoverText: String) = runInEdt {
+    showLensGroup(LensGroupFactory(this).createErrorGroup(hoverText))
+    publishProgress(CodyInlineEditActionNotifier.TOPIC_DISPLAY_ERROR_GROUP)
   }
 
   /** Subclass sends a fixup command to the agent, and returns the initial task. */
@@ -312,7 +308,7 @@ abstract class FixupSession(
   }
 
   fun undo() {
-    runInEdt { showWorkingGroup() }
+    showWorkingGroup()
     CodyAgentService.withAgentRestartIfNeeded(
         project,
         callback = { agent: CodyAgent ->
@@ -390,7 +386,7 @@ abstract class FixupSession(
       CodyAgentService.withAgent(project) { agent ->
         ensureSelectionRange(agent, textFile)
         document.addDocumentListener(documentListener, /* parentDisposable= */ this)
-        runInEdt { showWorkingGroup() }
+        showWorkingGroup()
       }
     }
   }

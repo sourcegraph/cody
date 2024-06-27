@@ -77,12 +77,14 @@ class DocumentCodeTest : CodyIntegrationTextFixture() {
             }
           }
         }
-
-    FixupService.getInstance(project).addListener(showWorkingGroupSessionStateListener)
-    runAndWaitForNotifications(DocumentCodeAction.ID, TOPIC_DISPLAY_WORKING_GROUP)
-    FixupService.getInstance(project).removeListener(showWorkingGroupSessionStateListener)
-    TestCase.assertEquals(
-        "Asserts not executed or executed more than once", 1, assertsExecuted.get())
+    try {
+      FixupService.getInstance(project).addListener(showWorkingGroupSessionStateListener)
+      runAndWaitForNotifications(DocumentCodeAction.ID, TOPIC_DISPLAY_WORKING_GROUP)
+      TestCase.assertEquals(
+          "Asserts not executed or executed more than once", 1, assertsExecuted.get())
+    } finally {
+      FixupService.getInstance(project).removeListener(showWorkingGroupSessionStateListener)
+    }
   }
 
   fun testShowsAcceptLens() {
