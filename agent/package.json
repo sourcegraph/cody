@@ -58,6 +58,7 @@
     "@types/minimatch": "^5.1.2",
     "@types/uuid": "^9.0.2",
     "@types/vscode": "^1.80.0",
+    "@types/win-ca": "^3.5.4",
     "@types/ws": "^8.5.10",
     "diff": "^5.2.0",
     "esbuild": "^0.18.19",

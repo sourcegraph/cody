@@ -7,7 +7,7 @@ import { fileExists } from '../../../../vscode/src/local-context/download-symf'
 import { redactAuthorizationHeader } from '../../../../vscode/src/testutils/CodyPersister'
 import { AgentTextDocument } from '../../AgentTextDocument'
 import { TestClient } from '../../TestClient'
-import type { MessageHandler } from '../../jsonrpc-alias'
+import type { RpcMessageHandler } from '../../jsonrpc-alias'
 import { renderUnifiedDiff } from '../../renderUnifiedDiff'
 import { vscodeRange } from '../../vscode-type-converters'
 import { EvaluationDocument } from './EvaluationDocument'
@@ -19,7 +19,7 @@ import { prettyDiagnostic, prettyDiagnosticMessage } from './prettyDiagnostic'
 import { runVoidCommand } from './testTypecheck'
 
 export async function evaluateFixStrategy(
-    messageHandler: MessageHandler,
+    messageHandler: RpcMessageHandler,
     options: CodyBenchOptions
 ): Promise<void> {
     const client = new TestClient(messageHandler.conn, {

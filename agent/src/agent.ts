@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process'
 import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
-import { telemetryRecorder } from '@sourcegraph/cody-shared'
+import { getDotComDefaultModels, isWindows, telemetryRecorder } from '@sourcegraph/cody-shared'
 import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
@@ -33,7 +33,7 @@ import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/pro
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 
-import { copyFileSync, mkdirSync } from 'node:fs'
+import { copyFileSync, mkdirSync, statSync } from 'node:fs'
 import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
@@ -64,7 +64,12 @@ import { AgentProviders } from './AgentProviders'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import type { PollyRequestError } from './cli/jsonrpc'
-import { MessageHandler, type RequestCallback, type RequestMethodName } from './jsonrpc-alias'
+import {
+    MessageHandler,
+    type RequestCallback,
+    type RequestMethodName,
+    type RpcMessageHandler,
+} from './jsonrpc-alias'
 import { getLanguageForFileName } from './language'
 import type {
     AutocompleteItem,
@@ -100,6 +105,17 @@ type ExtensionActivate = (
 function copyWinCaRootsBinary(extensionPath: string): void {
     const source = path.join(__dirname, 'win-ca-roots.exe')
     const target = path.join(extensionPath, 'dist', 'win-ca-roots.exe')
+    try {
+        const stat = statSync(source)
+        if (!stat.isFile()) {
+            return
+        }
+    } catch {
+        if (isWindows()) {
+            logDebug('win-ca', `Failed to find ${source}, skipping copy`)
+        }
+        return
+    }
     try {
         mkdirSync(path.dirname(target), { recursive: true })
         copyFileSync(source, target)
@@ -163,8 +179,8 @@ export async function newAgentClient(
         inheritStderr?: boolean
         extraEnvVariables?: Record<string, string>
     }
-): Promise<MessageHandler> {
-    const asyncHandler = async (reject: (reason?: any) => void): Promise<MessageHandler> => {
+): Promise<InitializedClient> {
+    const asyncHandler = async (reject: (reason?: any) => void): Promise<InitializedClient> => {
         const nodeArguments = process.argv0.endsWith('node')
             ? ['--enable-source-maps', ...process.argv.slice(1, 2)]
             : []
@@ -199,22 +215,26 @@ export async function newAgentClient(
         })
         conn.listen()
         serverHandler.conn.onClose(() => reject())
-        await serverHandler.request('initialize', clientInfo)
+        const serverInfo = await serverHandler.request('initialize', clientInfo)
         serverHandler.notify('initialized', null)
-        return serverHandler
+        return { client: serverHandler, serverInfo }
     }
-    return new Promise<MessageHandler>((resolve, reject) => {
+    return new Promise<InitializedClient>((resolve, reject) => {
         asyncHandler(reject).then(
             handler => resolve(handler),
             error => reject(error)
         )
     })
 }
+export interface InitializedClient {
+    serverInfo: agent_protocol.ServerInfo
+    client: RpcMessageHandler
+}
 
 export async function newEmbeddedAgentClient(
     clientInfo: ClientInfo,
     extensionActivate: ExtensionActivate
-): Promise<Agent> {
+): Promise<InitializedClient & { agent: Agent }> {
     process.env.ENABLE_SENTRY = 'false'
 
     // Create noop MessageConnection because we're just using clientForThisInstance.
@@ -235,9 +255,9 @@ export async function newEmbeddedAgentClient(
         console.error(`${params.channel}: ${params.message}`)
     })
     const client = agent.clientForThisInstance()
-    await client.request('initialize', clientInfo)
+    const serverInfo = await client.request('initialize', clientInfo)
     client.notify('initialized', null)
-    return agent
+    return { agent, serverInfo, client }
 }
 
 export function errorToCodyError(error?: Error): CodyError | undefined {
@@ -1036,13 +1056,18 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            const theModel = modelID
+            let theModel = modelID
                 ? modelID
                 : ModelsService.getModels(
                       ModelUsage.Chat,
                       authStatus.isDotCom && !authStatus.userCanUpgrade
                   ).at(0)?.model
             if (!theModel) {
+                // When user is not loggeed in, set the default to the default dotcom model,
+                // as we only sync the model list on login.
+                if (!authStatus.isLoggedIn) {
+                    theModel = getDotComDefaultModels()[0].model
+                }
                 throw new Error('No default chat model found')
             }
 

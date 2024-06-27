@@ -42,8 +42,6 @@ sealed class WebviewMessage {
           "simplified-onboarding" -> context.deserialize<`simplified-onboardingWebviewMessage`>(element, `simplified-onboardingWebviewMessage`::class.java)
           "getUserContext" -> context.deserialize<GetUserContextWebviewMessage>(element, GetUserContextWebviewMessage::class.java)
           "queryContextItems" -> context.deserialize<QueryContextItemsWebviewMessage>(element, QueryContextItemsWebviewMessage::class.java)
-          "search" -> context.deserialize<SearchWebviewMessage>(element, SearchWebviewMessage::class.java)
-          "show-search-result" -> context.deserialize<`show-search-resultWebviewMessage`>(element, `show-search-resultWebviewMessage`::class.java)
           "reset" -> context.deserialize<ResetWebviewMessage>(element, ResetWebviewMessage::class.java)
           "attribution-search" -> context.deserialize<`attribution-searchWebviewMessage`>(element, `attribution-searchWebviewMessage`::class.java)
           "troubleshoot/reloadAuth" -> context.deserialize<Troubleshoot_reloadAuthWebviewMessage>(element, Troubleshoot_reloadAuthWebviewMessage::class.java)
@@ -314,7 +312,7 @@ data class CopyWebviewMessage(
 
 data class AuthWebviewMessage(
   val command: CommandEnum, // Oneof: auth
-  val authKind: AuthKindEnum, // Oneof: signin, signout, support, callback, simplified-onboarding
+  val authKind: AuthKindEnum, // Oneof: signin, signout, support, callback, simplified-onboarding, offline
   val endpoint: String? = null,
   val value: String? = null,
   val authMethod: AuthMethod? = null, // Oneof: dotcom, github, gitlab, google
@@ -330,6 +328,7 @@ data class AuthWebviewMessage(
     @SerializedName("support") Support,
     @SerializedName("callback") Callback,
     @SerializedName("simplified-onboarding") `Simplified-onboarding`,
+    @SerializedName("offline") Offline,
   }
 }
 
@@ -373,27 +372,6 @@ data class QueryContextItemsWebviewMessage(
 
   enum class CommandEnum {
     @SerializedName("queryContextItems") QueryContextItems,
-  }
-}
-
-data class SearchWebviewMessage(
-  val command: CommandEnum, // Oneof: search
-  val query: String,
-) : WebviewMessage() {
-
-  enum class CommandEnum {
-    @SerializedName("search") Search,
-  }
-}
-
-data class `show-search-resultWebviewMessage`(
-  val command: CommandEnum, // Oneof: show-search-result
-  val uri: Uri,
-  val range: RangeData,
-) : WebviewMessage() {
-
-  enum class CommandEnum {
-    @SerializedName("show-search-result") `Show-search-result`,
   }
 }
 

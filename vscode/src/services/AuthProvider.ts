@@ -12,6 +12,7 @@ import {
     isError,
     logError,
     networkErrorAuthStatus,
+    offlineModeAuthStatus,
     unauthenticatedStatus,
 } from '@sourcegraph/cody-shared'
 
@@ -251,10 +252,14 @@ export class AuthProvider implements AuthStatusProvider {
 
     // Create Auth Status
     private async makeAuthStatus(
-        config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
+        config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
+        isOfflineMode?: boolean
     ): Promise<AuthStatus> {
         const endpoint = config.serverEndpoint
         const token = config.accessToken
+        if (isOfflineMode) {
+            return { ...offlineModeAuthStatus, endpoint }
+        }
         if (!token || !endpoint) {
             return { ...defaultAuthStatus, endpoint }
         }
@@ -344,11 +349,13 @@ export class AuthProvider implements AuthStatusProvider {
         token,
         customHeaders,
         isExtensionStartup = false,
+        isOfflineMode = false,
     }: {
         endpoint: string
         token: string | null
         customHeaders?: Record<string, string> | null
         isExtensionStartup?: boolean
+        isOfflineMode?: boolean
     }): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean }> {
         const config = {
             serverEndpoint: formatURL(endpoint) ?? '',
@@ -357,11 +364,14 @@ export class AuthProvider implements AuthStatusProvider {
         }
 
         try {
-            const authStatus = await this.makeAuthStatus(config)
+            const authStatus = await this.makeAuthStatus(config, isOfflineMode)
             const isLoggedIn = isAuthenticated(authStatus)
             authStatus.isLoggedIn = isLoggedIn
 
-            await this.storeAuthInfo(config.serverEndpoint, config.accessToken)
+            if (!isOfflineMode) {
+                await this.storeAuthInfo(config.serverEndpoint, config.accessToken)
+            }
+
             this.syncAuthStatus(authStatus)
             await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn)
 

@@ -266,12 +266,14 @@ interface EvaluationItem {
     fixAfterDiagnostic?: string
     llmJudgeScore?: number
     llmJudgeReasoning?: string
+    concisenessScore?: number
+    hedges?: boolean
     info?: CompletionItemInfo
     event?: CompletionBookkeepingEvent
     eventJSON?: string
 }
 
-export const autocompleteItemHeaders: ObjectHeaderItem[] = [
+export const headerItems: ObjectHeaderItem[] = [
     { id: 'languageid', title: 'LANGUAGEID' },
     { id: 'workspace', title: 'WORKSPACE' },
     { id: 'fixture', title: 'FIXTURE' },
@@ -301,6 +303,8 @@ export const autocompleteItemHeaders: ObjectHeaderItem[] = [
     { id: 'fixBeforeDiagnostic', title: 'FIX_BEFORE_DIAGNOSTIC' },
     { id: 'llmJudgeScore', title: 'LLM_JUDGE_SCORE' },
     { id: 'llmJudgeReasoning', title: 'LLM_JUDGE_REASONING' },
+    { id: 'concisenessScore', title: 'CONCISENESS_SCORE' },
+    { id: 'hedges', title: 'HEDGES' },
     { id: 'providerIdentifier', title: 'PROVIDER_IDENTIFIER' },
     { id: 'providerModel', title: 'PROVIDER_MODEL' },
     { id: 'stopReason', title: 'STOP_REASON' },

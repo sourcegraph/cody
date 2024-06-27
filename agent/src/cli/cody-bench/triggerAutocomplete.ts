@@ -4,7 +4,7 @@ import type { Tree } from 'web-tree-sitter'
 
 import { ProtocolTextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { AgentTextDocument } from '../../AgentTextDocument'
-import type { MessageHandler } from '../../jsonrpc-alias'
+import type { RpcMessageHandler } from '../../jsonrpc-alias'
 import type { AutocompleteResult } from '../../protocol-alias'
 
 import type { WrappedParser } from '../../../../vscode/src/tree-sitter/parser'
@@ -19,7 +19,7 @@ export interface AutocompleteParameters {
     parser?: WrappedParser
     originalTree?: Tree
     originalTreeIsErrorFree?: boolean
-    client: MessageHandler
+    client: RpcMessageHandler
     document: EvaluationDocument
 
     options: CodyBenchOptions
