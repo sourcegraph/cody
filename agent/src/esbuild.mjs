@@ -29,7 +29,7 @@ async function verifyShim() {
         write: false,
         outfile: path.join('dist', 'shim.js'),
         plugins: shimPlugins,
-        external: ['typescript'],
+        external: ['typescript', 'react-devtools-core'],
         alias: {
             // Build from TypeScript sources so we don't need to run `tsc -b` in the background
             // during dev.
@@ -56,7 +56,7 @@ async function buildAgent(minify) {
         platform: 'node',
         sourcemap: true,
         logLevel: 'error',
-        external: ['typescript'],
+        external: ['typescript', 'react-devtools-core'],
         minify: minify,
         alias: {
             vscode: path.resolve(process.cwd(), 'src', 'vscode-shim.ts'),

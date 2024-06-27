@@ -351,6 +351,7 @@ export class PromptString {
             repoName: contextItem.repoName
                 ? internal_createPromptString(contextItem.repoName, ref)
                 : undefined,
+            title: contextItem.title ? internal_createPromptString(contextItem.title, ref) : undefined,
         }
     }
 

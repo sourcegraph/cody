@@ -11,7 +11,7 @@ import {
 import type { EditIntent, EditMode } from '../edit/types'
 
 import type { FixupFile } from './FixupFile'
-import type { Diff } from './diff'
+import type { Edit } from './line-diff'
 import { CodyTaskState } from './utils'
 
 export type FixupTaskID = string
@@ -47,15 +47,9 @@ export class FixupTask {
      * If text has been received from the LLM and a diff has been computed,
      * it is cached here. Diffs are recomputed lazily and may be stale.
      */
-    public diff: Diff | undefined
+    public diff: Edit[] | undefined
     /** The number of times we've submitted this to the LLM. */
     public spinCount = 0
-    /**
-     * A callback to skip formatting.
-     * We use the users' default editor formatter so it is possible that
-     * they may run into an error that we can't anticipate
-     */
-    public formattingResolver: ((value: boolean) => void) | null = null
 
     constructor(
         /**
@@ -64,6 +58,7 @@ export class FixupTask {
          * and will be updated by the FixupController for tasks using the 'new' mode
          */
         public fixupFile: FixupFile,
+        public document: vscode.TextDocument,
         public readonly instruction: PromptString,
         public readonly userContextItems: ContextItem[],
         /* The intent of the edit, derived from the source of the command. */
@@ -77,12 +72,22 @@ export class FixupTask {
         public source?: EventSource,
         /* The file to write the edit to. If not provided, the edit will be applied to the fixupFile. */
         public destinationFile?: vscode.Uri,
-        public insertionPoint?: vscode.Position,
+        /* The position where the Edit should start. Defaults to the start of the selection range. */
+        public insertionPoint: vscode.Position = selectionRange.start,
         public readonly telemetryMetadata: FixupTelemetryMetadata = {}
     ) {
         this.id = Date.now().toString(36).replaceAll(/\d+/g, '')
         this.instruction = instruction.replace(/^\/(edit|fix)/, ps``).trim()
-        this.originalRange = selectionRange
+        // We always expand the range to encompass all characters from the selection lines
+        // This is so we can calculate an optimal diff, and the LLM has the best chance at understanding
+        // the indentation in the returned code.
+        this.selectionRange = new vscode.Range(
+            selectionRange.start.line,
+            0,
+            selectionRange.end.line,
+            document.lineAt(selectionRange.end.line).range.end.character
+        )
+        this.originalRange = this.selectionRange
     }
 
     /**

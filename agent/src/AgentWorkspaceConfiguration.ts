@@ -1,6 +1,6 @@
 import type * as vscode from 'vscode'
 
-import type { Configuration } from '@sourcegraph/cody-shared'
+import { CodyIDE, type Configuration } from '@sourcegraph/cody-shared'
 
 import { defaultConfigurationValue } from '../../vscode/src/configuration-keys'
 
@@ -33,13 +33,13 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
     private clientNameToIDE(value: string): Configuration['agentIDE'] | undefined {
         switch (value.toLowerCase()) {
             case 'vscode':
-                return 'VSCode'
+                return CodyIDE.VSCode
             case 'jetbrains':
-                return 'JetBrains'
+                return CodyIDE.JetBrains
             case 'emacs':
-                return 'Emacs'
+                return CodyIDE.Emacs
             case 'neovim':
-                return 'Neovim'
+                return CodyIDE.Neovim
             default:
                 return undefined
         }

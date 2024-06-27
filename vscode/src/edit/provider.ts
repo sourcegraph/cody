@@ -27,6 +27,7 @@ import type { EditManagerOptions } from './manager'
 import { responseTransformer } from './output/response-transformer'
 import { buildInteraction } from './prompt'
 import { PROMPT_TOPICS } from './prompt/constants'
+import { isStreamedIntent } from './utils/edit-intent'
 
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
@@ -215,8 +216,7 @@ export class EditProvider {
             })
         }
 
-        const intentsForInsert = ['add', 'test']
-        if (intentsForInsert.includes(this.config.task.intent)) {
+        if (isStreamedIntent(this.config.task.intent)) {
             this.queueInsertion(response, isMessageInProgress)
         } else {
             this.handleFixupEdit(response, isMessageInProgress)

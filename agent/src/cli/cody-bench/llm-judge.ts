@@ -34,7 +34,7 @@ export class LlmJudge {
                 fast: true,
                 model: ModelsService.getModelByIDSubstringOrError('claude-3-opus').model,
             },
-            0
+            { apiVersion: 0 }
         )
         const streamingText: string[] = []
         for await (const message of stream) {
@@ -65,10 +65,12 @@ export class LlmJudge {
 function scoreNumeric(score?: string): number | undefined {
     switch (score) {
         case 'bad':
+        case 'negative':
             return 0
         case 'acceptable':
             return 1
         case 'amazing':
+        case 'positive':
             return 2
         default:
             return undefined

@@ -24,7 +24,6 @@ import type {
     PersistencePresentEventPayload,
     PersistenceRemovedEventPayload,
 } from '../common/persistence-tracker/types'
-import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import { RepoMetadatafromGitApi } from '../repository/repo-metadata-from-git-api'
 import { upstreamHealthProvider } from '../services/UpstreamHealthProvider'
 import { completionProviderConfig } from './completion-provider-config'
@@ -62,6 +61,7 @@ export interface InlineCompletionItemRetrievedContext {
 
 export interface InlineContextItemsParams {
     context: AutocompleteContextSnippet[]
+    filePath: string | undefined
     gitUrl: string | undefined
     commit: string | undefined
 }
@@ -69,11 +69,12 @@ export interface InlineContextItemsParams {
 export interface InlineCompletionItemContext {
     gitUrl: string
     commit?: string
-    prefix: string
-    suffix: string
-    triggerLine: number
-    triggerCharacter: number
-    context: InlineCompletionItemRetrievedContext[]
+    filePath?: string
+    prefix?: string
+    suffix?: string
+    triggerLine?: number
+    triggerCharacter?: number
+    context?: InlineCompletionItemRetrievedContext[]
 }
 
 interface InteractionIDPayload {
@@ -252,7 +253,8 @@ function logCompletionSuggestedEvent(
             version: 0,
             metadata: {
                 ...metadata,
-                recordsPrivateMetadataTranscript: isDotComUser ? 1 : 0,
+                recordsPrivateMetadataTranscript:
+                    isDotComUser && inlineCompletionItemContext !== undefined ? 1 : 0,
             },
             privateMetadata,
         },
@@ -475,10 +477,12 @@ const activeSuggestionRequests = new LRUCache<CompletionLogID, CompletionBookkee
 
 // Maintain a history of the last n displayed completions and their generated completion IDs. This
 // allows us to reuse the completion ID across multiple suggestions.
-const recentCompletions = new LRUCache<string, CompletionAnalyticsID>({
+const recentCompletions = new LRUCache<RecentCompletionKey, CompletionAnalyticsID>({
     max: 20,
 })
-function getRecentCompletionsKey(params: RequestParams, completion: string): string {
+
+type RecentCompletionKey = string
+function getRecentCompletionsKey(params: RequestParams, completion: string): RecentCompletionKey {
     return `${params.docContext.prefix}█${completion}█${params.docContext.nextNonEmptyLine}`
 }
 
@@ -541,13 +545,6 @@ export function networkRequestStarted(
     }
 }
 
-export function gatewayModelResolved(id: CompletionLogID, resolvedModel?: string): void {
-    const event = activeSuggestionRequests.get(id)
-    if (event && !event.params.resolvedModel && resolvedModel) {
-        event.params.resolvedModel = resolvedModel
-    }
-}
-
 export function loaded(
     id: CompletionLogID,
     params: RequestParams,
@@ -564,17 +561,24 @@ export function loaded(
     event.params.source = source
 
     // Check if we already have a completion id for the loaded completion item
-    const key = items.length > 0 ? getRecentCompletionsKey(params, items[0].insertText) : ''
-    const completionId: CompletionAnalyticsID =
-        recentCompletions.get(key) ?? (uuid.v4() as CompletionAnalyticsID)
-    recentCompletions.set(key, completionId)
-    event.params.id = completionId
+    const recentCompletionKey =
+        items.length > 0 ? getRecentCompletionsKey(params, items[0].insertText) : ''
+
+    const completionAnalyticsId =
+        recentCompletions.get(recentCompletionKey) ?? (uuid.v4() as CompletionAnalyticsID)
+
+    recentCompletions.set(recentCompletionKey, completionAnalyticsId)
+    event.params.id = completionAnalyticsId
 
     if (!event.loadedAt) {
         event.loadedAt = performance.now()
     }
     if (event.items.length === 0) {
         event.items = items.map(item => completionItemToItemInfo(item, isDotComUser))
+    }
+
+    if (!event.params.resolvedModel && items[0]?.resolvedModel) {
+        event.params.resolvedModel = items[0]?.resolvedModel
     }
 
     // 🚨 SECURITY: included only for DotCom users & Public github Repos.
@@ -587,11 +591,17 @@ export function loaded(
         // Get the metadata only if already cached, We don't wait for the network call here.
         const gitRepoMetadata = instance.getRepoMetadataIfCached(inlineContextParams.gitUrl)
         if (gitRepoMetadata === undefined || gitRepoMetadata.isPublic === false) {
+            // 🚨 SECURITY: For Non-Public git Repos, We cannot log any code related information, just git url and commit.
+            event.params.inlineCompletionItemContext = {
+                gitUrl: inlineContextParams.gitUrl,
+                commit: inlineContextParams.commit,
+            }
             return
         }
         event.params.inlineCompletionItemContext = {
             gitUrl: inlineContextParams.gitUrl,
             commit: inlineContextParams.commit,
+            filePath: inlineContextParams.filePath,
             prefix: params.docContext.prefix,
             suffix: params.docContext.suffix,
             triggerLine: params.position.line,
@@ -722,7 +732,7 @@ export function accepted(
     })
     statistics.logAccepted()
 
-    if (trackedRange === undefined || isRunningInsideAgent()) {
+    if (trackedRange === undefined) {
         return
     }
     if (persistenceTracker === null) {
@@ -815,9 +825,9 @@ function getInlineContextItemToLog(
     const MAX_CHARACTERS = 20_000
     return {
         ...inlineCompletionItemContext,
-        prefix: inlineCompletionItemContext.prefix.slice(-MAX_CHARACTERS),
-        suffix: inlineCompletionItemContext.suffix.slice(0, MAX_CHARACTERS),
-        context: inlineCompletionItemContext.context.slice(0, MAX_CONTEXT_ITEMS).map(c => ({
+        prefix: inlineCompletionItemContext.prefix?.slice(-MAX_CHARACTERS),
+        suffix: inlineCompletionItemContext.suffix?.slice(0, MAX_CHARACTERS),
+        context: inlineCompletionItemContext.context?.slice(0, MAX_CONTEXT_ITEMS).map(c => ({
             ...c,
             content: c.content.slice(0, MAX_CHARACTERS),
         })),
