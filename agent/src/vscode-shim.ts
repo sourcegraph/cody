@@ -83,6 +83,7 @@ export {
     Location,
     MarkdownString,
     OverviewRulerLane,
+    DecorationRangeBehavior,
     Position,
     ProgressLocation,
     QuickInputButtons,
