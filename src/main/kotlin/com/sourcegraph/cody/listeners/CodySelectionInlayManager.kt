@@ -137,11 +137,12 @@ class CodySelectionInlayManager(val project: Project) {
         val isMac = System.getProperty("os.name").lowercase(Locale.getDefault()).contains("mac")
         val separator = " + "
 
+        val altName = if (isMac) "Option$separator" else "Alt$separator"
         val modText = buildString {
           append(" ") // Add some separation from the end of the source code.
           if (modifiers and KeyEvent.CTRL_DOWN_MASK != 0) append("Ctrl$separator")
           if (modifiers and KeyEvent.SHIFT_DOWN_MASK != 0) append("Shift$separator")
-          if (modifiers and KeyEvent.ALT_DOWN_MASK != 0) append("Alt$separator")
+          if (modifiers and KeyEvent.ALT_DOWN_MASK != 0) append(altName)
           if (isMac && modifiers and KeyEvent.META_DOWN_MASK != 0) append("Cmd$separator")
         }
         return (modText + key).removeSuffix(separator)
