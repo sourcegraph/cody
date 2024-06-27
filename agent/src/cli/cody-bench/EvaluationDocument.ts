@@ -300,7 +300,7 @@ export const headerItems: ObjectHeaderItem[] = [
     { id: 'editDiff', title: 'EDIT_DIFF' },
     { id: 'chatReply', title: 'CHAT_REPLY' },
     { id: 'chatQuestion', title: 'CHAT_QUESTION' },
-    { id: 'questionClass', title: 'QUESTION_CLASS'},
+    { id: 'questionClass', title: 'QUESTION_CLASS' },
     { id: 'fixAfterDiagnostic', title: 'FIX_AFTER_DIAGNOSTIC' },
     { id: 'fixBeforeDiagnostic', title: 'FIX_BEFORE_DIAGNOSTIC' },
     { id: 'llmJudgeScore', title: 'LLM_JUDGE_SCORE' },
