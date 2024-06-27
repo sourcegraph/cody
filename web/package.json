@@ -1,6 +1,6 @@
 {
   "name": "cody-web-experimental",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Cody standalone web app",
   "license": "Apache-2.0",
   "main": "dist/index.js",
