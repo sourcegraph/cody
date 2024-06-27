@@ -1,12 +1,16 @@
+import ora, { spinners } from 'ora'
+
 import path from 'node:path'
+
 import type { Polly } from '@pollyjs/core'
-import type { ContextItem } from '@sourcegraph/cody-shared'
+import { type ContextItem, ModelUsage, TokenCounter } from '@sourcegraph/cody-shared'
 import { Command } from 'commander'
+
 import * as vscode from 'vscode'
 import { activate } from '../../../vscode/src/extension.node'
 import { startPollyRecording } from '../../../vscode/src/testutils/polly'
 import packageJson from '../../package.json'
-import { type InitializedClient, newAgentClient, newEmbeddedAgentClient } from '../agent'
+import { newEmbeddedAgentClient } from '../agent'
 import type { ClientInfo } from '../protocol-alias'
 import { Streams } from './Streams'
 
@@ -21,9 +25,9 @@ export interface ChatOptions {
     contextFile?: string[]
     showContext: boolean
     debug: boolean
-    clientKind?: 'embedded' | 'ipc'
+    silent: boolean
     isTesting?: boolean
-    streams: Streams
+    streams?: Streams
 }
 
 export const chatCommand = () =>
@@ -48,6 +52,7 @@ export const chatCommand = () =>
         )
         .option('--context-file <files...>', 'Local files to include in the context')
         .option('--show-context', 'Show context items in reply', false)
+        .option('--silent', 'Disable streaming reply', false)
         .option('--debug', 'Enable debug logging', false)
         .action(async (options: ChatOptions) => {
             let polly: Polly | undefined
@@ -67,7 +72,14 @@ export const chatCommand = () =>
         })
 const createAccessTokenInstruction =
     'Create a new access token at https://sourcegraph.com/user/settings/tokens/new'
-function newClient(options: ChatOptions): Promise<InitializedClient> {
+
+export async function chatAction(options: ChatOptions): Promise<number> {
+    const streams = options.streams ?? Streams.default()
+    const spinner = ora({
+        spinner: spinners.fistBump,
+        isSilent: options.silent,
+        stream: streams.stderr,
+    }).start()
     const workspaceRootUri = vscode.Uri.file(path.resolve(options.dir))
     const clientInfo: ClientInfo = {
         name: 'cody-cli',
@@ -83,28 +95,37 @@ function newClient(options: ChatOptions): Promise<InitializedClient> {
             },
         },
     }
-    if (options.clientKind === 'ipc') {
-        return newAgentClient({ ...clientInfo, inheritStderr: options.debug })
-    }
-    return newEmbeddedAgentClient(clientInfo, activate)
-}
+    spinner.text = 'Initializing...'
+    const { serverInfo, client, messageHandler } = await newEmbeddedAgentClient(clientInfo, activate)
+    const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
 
-export async function chatAction(options: ChatOptions): Promise<number> {
-    const streams = options.streams ?? Streams.default()
-    const { serverInfo, client } = await newClient(options)
+    messageHandler.registerNotification('webview/postMessage', message => {
+        if (message.message.type === 'transcript') {
+            const lastMessage = message.message.messages.at(-1)
+            if (lastMessage?.model && !spinner.text.startsWith('Model')) {
+                const modelName =
+                    models.find(model => model.model === lastMessage.model)?.title ?? lastMessage.model
+                spinner.text = modelName
+                spinner.spinner = spinners.dots
+            }
+            spinner.prefixText = (lastMessage?.text ?? '') + '\n'
+        }
+    })
+
     if (!serverInfo.authStatus?.isLoggedIn) {
-        streams.error(
-            'not logged in. To fix this problem, set the SRC_ACCESS_TOKEN environment ' +
+        spinner.fail(
+            'Not logged in. To fix this problem, set the SRC_ACCESS_TOKEN environment ' +
                 'variable to an access token. ' +
                 createAccessTokenInstruction
         )
         return 1
     }
 
+    spinner.text = 'Asking Cody...'
     const id = await client.request('chat/new', null)
 
     if (options.model) {
-        await client.request('webview/receiveMessage', {
+        void client.request('webview/receiveMessage', {
             id,
             message: {
                 command: 'chatModel',
@@ -134,6 +155,7 @@ export async function chatAction(options: ChatOptions): Promise<number> {
             uri: toUri(options.dir, relativeOrAbsolutePath),
         })
     }
+    const start = performance.now()
     const response = await client.request('chat/submitMessage', {
         id,
         message: {
@@ -141,13 +163,13 @@ export async function chatAction(options: ChatOptions): Promise<number> {
             submitType: 'user',
             text: options.message,
             contextFiles,
-            addEnhancedContext: true,
+            addEnhancedContext: false,
         },
     })
 
     if (response.type !== 'transcript') {
-        streams.error(
-            `unexpected chat reply. Expected type "transcript", got "${response.type}"` +
+        spinner.fail(
+            `Unexpected chat reply. Expected type "transcript", got "${response.type}"` +
                 JSON.stringify(response, null, 2)
         )
         return 1
@@ -155,16 +177,25 @@ export async function chatAction(options: ChatOptions): Promise<number> {
 
     const reply = response.messages.at(-1)
     if (!reply) {
-        streams.error(
-            'unexpected chat reply. Expected non-empty messages, got' + JSON.stringify(response, null, 2)
+        spinner.fail(
+            'Unexpected chat reply. Expected non-empty messages, got' + JSON.stringify(response, null, 2)
         )
         return 1
     }
 
     if (reply.error) {
-        streams.error(`error reply: ${reply.error.message}`)
+        spinner.fail(`Unexpected error: ${JSON.stringify(reply, null, 2)}`)
         return 1
     }
+
+    spinner.spinner = spinners.triangle
+    spinner.prefixText = ''
+    const elapsed = performance.now() - start
+    const replyText = reply.text ?? ''
+    const tokens = TokenCounter.encode(replyText).length
+    const tokensPerSecond = tokens / (elapsed / 1000)
+    spinner.text = spinner.text.trim() + ` (${Math.round(tokensPerSecond)} tokens/second)`
+    spinner.clear()
 
     if (options.showContext) {
         const contextFiles = reply.contextFiles ?? []
@@ -174,13 +205,12 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         }
         streams.log('\n')
     }
-    streams.log(reply.text ?? '' + '\n')
+    streams.log(replyText + '\n')
     await client.request('shutdown', null)
-    if (options.clientKind === 'ipc') {
-        client.notify('exit', null)
-    }
+    spinner.succeed()
     return 0
 }
+
 function toUri(dir: string, relativeOrAbsolutePath: string): vscode.Uri {
     const absolutePath = path.isAbsolute(relativeOrAbsolutePath)
         ? relativeOrAbsolutePath
