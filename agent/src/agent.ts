@@ -78,6 +78,8 @@ import type {
     CustomCommandResult,
     EditTask,
     ExtensionConfiguration,
+    GetDocumentsParams,
+    GetDocumentsResult,
     GetFoldingRangeResult,
     ProtocolCommand,
     ProtocolTextDocument,
@@ -464,30 +466,15 @@ export class Agent extends MessageHandler implements ExtensionClient {
             this.workspace.setActiveTextEditor(this.workspace.newTextEditor(textDocument))
         })
 
-        this.registerNotification('textDocument/didChange', document => {
-            const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
-            const { document: textDocument, contentChanges } =
-                this.workspace.loadDocumentWithChanges(documentWithUri)
-            const textEditor = this.workspace.newTextEditor(textDocument)
-            this.workspace.setActiveTextEditor(textEditor)
+        this.registerNotification('textDocument/didChange', async document => {
+            this.handleDocumentChange(document)
+        })
 
-            if (contentChanges.length > 0) {
-                this.pushPendingPromise(
-                    vscode_shim.onDidChangeTextDocument.cody_fireAsync({
-                        document: textDocument,
-                        contentChanges,
-                        reason: undefined,
-                    })
-                )
-            }
-
-            if (document.selection) {
-                vscode_shim.onDidChangeTextEditorSelection.fire({
-                    textEditor,
-                    kind: undefined,
-                    selections: [textEditor.selection],
-                })
-            }
+        this.registerRequest('textDocument/change', async document => {
+            // We don't await the promise here, as it's got a fragile implicit contract.
+            // Call testing/awaitPendingPromises if you want to wait for changes to settle.
+            this.handleDocumentChange(document)
+            return { success: true }
         })
 
         this.registerNotification('textDocument/didClose', document => {
@@ -637,7 +624,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('testing/awaitPendingPromises', async () => {
-            if (!vscode_shim.isTesting) {
+            if (!(vscode_shim.isTesting || vscode_shim.isIntegrationTesting)) {
                 throw new Error(
                     'testing/awaitPendingPromises can only be called from tests. ' +
                         'To fix this problem, set the environment variable CODY_SHIM_TESTING=true.'
@@ -751,6 +738,27 @@ export class Agent extends MessageHandler implements ExtensionClient {
             globalState.reset()
             return null
         })
+
+        this.registerAuthenticatedRequest(
+            'testing/requestWorkspaceDocuments',
+            async (params: GetDocumentsParams): Promise<GetDocumentsResult> => {
+                const uris = params?.uris ?? this.workspace.allDocuments().map(doc => doc.uri.toString())
+
+                const documents: ProtocolTextDocument[] = []
+                for (const uri of uris) {
+                    const document = this.workspace.getDocument(vscode.Uri.parse(uri))
+                    if (document) {
+                        documents.push({
+                            uri: document.uri.toString(),
+                            content: document.content ?? undefined,
+                            selection: document.protocolDocument?.selection ?? undefined,
+                        })
+                    }
+                }
+
+                return { documents }
+            }
+        )
 
         this.registerAuthenticatedRequest('command/execute', async params => {
             await vscode.commands.executeCommand(params.command, ...(params.arguments ?? []))
@@ -1063,12 +1071,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                       authStatus.isDotCom && !authStatus.userCanUpgrade
                   ).at(0)?.model
             if (!theModel) {
-                // When user is not loggeed in, set the default to the default dotcom model,
-                // as we only sync the model list on login.
-                if (!authStatus.isLoggedIn) {
-                    theModel = getDotComDefaultModels()[0].model
-                }
-                throw new Error('No default chat model found')
+                theModel = getDotComDefaultModels()[0].model
             }
 
             const chatModel = new SimpleChatModel(modelID!, [], chatID)
@@ -1245,11 +1248,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
     }
 
     private pushPendingPromise(pendingPromise: Promise<unknown>): void {
-        if (!vscode_shim.isTesting) {
-            return
+        if (vscode_shim.isTesting || vscode_shim.isIntegrationTesting) {
+            this.pendingPromises.add(pendingPromise)
+            pendingPromise.finally(() => this.pendingPromises.delete(pendingPromise))
         }
-        this.pendingPromises.add(pendingPromise)
-        pendingPromise.finally(() => this.pendingPromises.delete(pendingPromise))
     }
 
     // ExtensionClient callbacks.
@@ -1424,6 +1426,33 @@ export class Agent extends MessageHandler implements ExtensionClient {
             'cody.auth.status'
         )
         return result
+    }
+
+    private async handleDocumentChange(document: ProtocolTextDocument) {
+        const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
+        const { document: textDocument, contentChanges } =
+            this.workspace.loadDocumentWithChanges(documentWithUri)
+        const textEditor = this.workspace.newTextEditor(textDocument)
+        this.workspace.setActiveTextEditor(textEditor)
+
+        if (contentChanges.length > 0) {
+            this.pushPendingPromise(
+                vscode_shim.onDidChangeTextDocument.cody_fireAsync({
+                    document: textDocument,
+                    contentChanges,
+                    reason: undefined,
+                })
+            )
+        }
+        if (document.selection) {
+            this.pushPendingPromise(
+                vscode_shim.onDidChangeTextEditorSelection.cody_fireAsync({
+                    textEditor,
+                    kind: undefined,
+                    selections: [textEditor.selection],
+                })
+            )
+        }
     }
 
     private registerWebviewHandlers(): void {
