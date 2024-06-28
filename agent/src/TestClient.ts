@@ -272,11 +272,8 @@ export class TestClient extends MessageHandler {
             const createdFiles: CreateFileOperation[] = []
             for (const operation of params.operations) {
                 if (operation.type === 'edit-file') {
-                    const { success, protocolDocument } = this.editDocument(operation)
-                    result ||= success
-                    if (protocolDocument) {
-                        this.notify('textDocument/didChange', protocolDocument.underlying)
-                    }
+                    const protocolDocument = await this.editDocument(operation)
+                    this.notify('textDocument/didChange', protocolDocument.underlying)
                 } else if (operation.type === 'create-file') {
                     const fileExists = await doesFileExist(vscode.Uri.parse(operation.uri))
                     if (operation.options?.ignoreIfExists && fileExists) {
@@ -345,13 +342,11 @@ export class TestClient extends MessageHandler {
             this.notify('textDocument/didOpen', params)
             return Promise.resolve(true)
         })
-        this.registerRequest('textDocument/edit', params => {
+        this.registerRequest('textDocument/edit', async params => {
             this.textDocumentEditParams.push(params)
-            const { success, protocolDocument } = this.editDocument(params)
-            if (protocolDocument) {
-                this.notify('textDocument/didChange', protocolDocument.underlying)
-            }
-            return Promise.resolve(success)
+            const protocolDocument = await this.editDocument(params)
+            this.notify('textDocument/didChange', protocolDocument.underlying)
+            return Promise.resolve(true)
         })
         this.registerRequest('textDocument/show', () => {
             return Promise.resolve(true)
@@ -376,15 +371,8 @@ export class TestClient extends MessageHandler {
         })
     }
 
-    private editDocument(params: TextDocumentEditParams): {
-        success: boolean
-        protocolDocument?: ProtocolTextDocumentWithUri
-    } {
-        const document = this.workspace.getDocument(vscode.Uri.parse(params.uri))
-        if (!document) {
-            logError('textDocument/edit: document not found', params.uri)
-            return { success: false }
-        }
+    private async editDocument(params: TextDocumentEditParams): Promise<ProtocolTextDocumentWithUri> {
+        const document = await this.workspace.openTextDocument(vscode.Uri.parse(params.uri))
         const patches = params.edits.map<[number, number, string]>(edit => {
             switch (edit.type) {
                 case 'delete':
@@ -408,7 +396,7 @@ export class TestClient extends MessageHandler {
             content: updatedContent,
         })
         this.workspace.loadDocument(protocolDocument)
-        return { success: true, protocolDocument }
+        return protocolDocument
     }
     private logMessage(params: DebugMessage): void {
         // Uncomment below to see `logDebug` messages.
@@ -522,13 +510,14 @@ export class TestClient extends MessageHandler {
         // first check if a new text file was created in the workspace
         if (this.textDocumentEditParams.length === 1) {
             const [editParams] = this.textDocumentEditParams
-            const insert = editParams.edits.find(edit => edit.type === 'replace')
-            if (insert) {
-                return {
-                    uri: vscode.Uri.parse(editParams.uri).with({ scheme: 'file' }),
-                    value: insert.value,
-                    fullFile: insert.value,
-                    isUpdate: false,
+            for (const edit of editParams.edits) {
+                if (edit.type === 'replace') {
+                    return {
+                        uri: vscode.Uri.parse(editParams.uri).with({ scheme: 'file' }),
+                        value: edit.value,
+                        fullFile: edit.value,
+                        isUpdate: false,
+                    }
                 }
             }
         }

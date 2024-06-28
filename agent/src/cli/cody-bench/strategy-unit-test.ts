@@ -1,7 +1,8 @@
 import path from 'node:path'
+import _ from 'lodash'
 import * as vscode from 'vscode'
 import yaml from 'yaml'
-import type { MessageHandler } from '../../../../vscode/src/jsonrpc/jsonrpc'
+import type { RpcMessageHandler } from '../../../../vscode/src/jsonrpc/jsonrpc'
 import { fileExists } from '../../../../vscode/src/local-context/download-symf'
 import { redactAuthorizationHeader } from '../../../../vscode/src/testutils/CodyPersister'
 import { TestClient } from '../../TestClient'
@@ -14,7 +15,7 @@ import { prettyDiagnostic } from './prettyDiagnostic'
 import { runVoidCommand } from './testTypecheck'
 
 export async function evaluateUnitTestStrategy(
-    messageHandler: MessageHandler,
+    messageHandler: RpcMessageHandler,
     options: CodyBenchOptions
 ): Promise<void> {
     const workspace = options.absolutePath ?? options.workspace
@@ -45,15 +46,6 @@ export async function evaluateUnitTestStrategy(
             // Run npm install only when `node_modules` doesn't exist.
             await runVoidCommand(options.installCommand, workspace)
         }
-        if (task.shouldAppend) {
-            // When we are adding to an existing test file we must open it in the
-            // test client so that it can make changes
-            client.openFile(
-                vscode.Uri.parse(path.join(workspace, task.expectedTestFilename)).with({
-                    scheme: 'file',
-                })
-            )
-        }
         const test = await client.generateUnitTestFor(testenv.inputUri, testenv.testLineNumber)
 
         if (!test) {
@@ -77,24 +69,28 @@ export async function evaluateUnitTestStrategy(
         const document = EvaluationDocument.from(params, options)
 
         // normalized test files
-        const testFile = testenv.relative(test.uri)
-        const testInputFile = testenv.relative(testenv.inputUri)
+        const testFilename = testenv.relative(test.uri)
+        const testInputFilename = testenv.relative(testenv.inputUri)
         // check if it matches the test regex
         const matchesTestRegex = task.importRegex ? !!test.fullFile.match(task.importRegex) : false
-        const testMatchesExpectedTestFile = testFile === task.expectedTestFilename
 
         document.pushItem({
             range: new vscode.Range(0, 0, 0, 0),
-            testFile,
+            testFilename,
             testName: task.name,
             testLanguage: task.language,
-            testInputFile,
+            testInputFilename,
             testGenerated: test.value,
             testHasTypescriptErrors: typescriptErrors.length > 0,
-            testDiagnostics: typescriptErrors.map(prettyDiagnostic).join('\n').replaceAll(workspace, ''),
-            testExpectedFile: task.expectedTestFilename,
-            testMatchesExpectedTestFile,
-            testUsedCorrectAppendOperation: task.shouldAppend && testMatchesExpectedTestFile,
+            testDiagnostics: _.chain(typescriptErrors)
+                .uniqBy(d => d.message)
+                .map(prettyDiagnostic)
+                .value()
+                .join('\n\n')
+                .replaceAll(workspace, ''),
+            testExpectedFilename: task.expectedTestFilename,
+            testUsedCorrectAppendOperation:
+                task.shouldAppend && testFilename === task.expectedTestFilename,
             testUsedExpectedTestFramework: matchesTestRegex,
         })
         return document

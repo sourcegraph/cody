@@ -9,6 +9,7 @@ import { newAgentClient } from '../../agent'
 
 import { ModelsService, getDotComDefaultModels, graphqlClient } from '@sourcegraph/cody-shared'
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
+import { dotcomCredentials } from '../../../../vscode/src/testutils/testing-credentials'
 import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled'
 import { arrayOption, booleanOption, intOption } from './cli-parsers'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
@@ -206,7 +207,9 @@ export const codyBenchCommand = new commander.Command('cody-bench')
         new commander.Option(
             '--src-endpoint <url>',
             'The Sourcegraph URL endpoint to use for authentication'
-        ).env('SRC_ENDPOINT')
+        )
+            .env('SRC_ENDPOINT')
+            .default('https://sourcegraph.com')
     )
     .option(
         '--include-workspace <glob>',
@@ -282,6 +285,19 @@ export const codyBenchCommand = new commander.Command('cody-bench')
         true
     )
     .action(async (options: CodyBenchOptions) => {
+        if (!options.srcAccessToken) {
+            const { token } = dotcomCredentials()
+            if (!token) {
+                console.error('environment variable SRC_ACCESS_TOKEN must be non-empty')
+                process.exit(1)
+            }
+            options.srcAccessToken = token
+        }
+        if (!options.srcEndpoint) {
+            console.error('environment variable SRC_ENDPOINT must be non-empty')
+            process.exit(1)
+        }
+
         const testOptions = await loadEvaluationConfig(options)
         const workspacesToRun = testOptions.filter(
             testOptions =>
@@ -325,15 +341,6 @@ export const codyBenchCommand = new commander.Command('cody-bench')
 
 async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: string): Promise<void> {
     console.log(`starting evaluation: fixture=${options.fixture.name} workspace=${options.workspace}`)
-
-    if (!options.srcAccessToken) {
-        console.error('environment variable SRC_ACCESS_TOKEN must be non-empty')
-        process.exit(1)
-    }
-    if (!options.srcEndpoint) {
-        console.error('environment variable SRC_ENDPOINT must be non-empty')
-        process.exit(1)
-    }
 
     const workspaceRootUri = vscode.Uri.from({ scheme: 'file', path: options.workspace })
 

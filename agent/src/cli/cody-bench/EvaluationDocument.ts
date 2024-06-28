@@ -275,12 +275,11 @@ interface EvaluationItem {
     event?: CompletionBookkeepingEvent
     eventJSON?: string
     testName?: string
-    testExpectedFile?: string
-    testFile?: string
-    testInputFile?: string
+    testExpectedFilename?: string
+    testFilename?: string
+    testInputFilename?: string
     testLanguage?: string
     testGenerated?: string
-    testMatchesExpectedTestFile?: boolean
     testHasTypescriptErrors?: boolean
     testUsedExpectedTestFramework?: boolean
     testUsedCorrectAppendOperation?: boolean
@@ -331,14 +330,13 @@ export const headerItems: EvaluationItemHeader[] = [
     { id: 'contextBfgSuggestedCount', title: 'CONTEXT_BFG_SUGGESTED_COUNT' },
     { id: 'contextBfgDurationMs', title: 'CONTEXT_BFG_DURATION_MS' },
     { id: 'eventJSON', title: 'EVENT' },
-    { id: 'testFile', title: 'TEST_FILE' },
-    { id: 'testExpectedFile', title: 'TEST_EXPECTED_FILE' },
+    { id: 'testFilename', title: 'TEST_FILENAME' },
+    { id: 'testExpectedFilename', title: 'TEST_EXPECTED_FILENAME' },
     { id: 'testGenerated', title: 'TEST_GENERATED' },
-    { id: 'testMatchesExpectedTestFile', title: 'TEST_MATCHES_EXPECTED_TEST_FILE' },
     { id: 'testHasTypescriptErrors', title: 'TEST_HAS_TYPESCRIPT_ERRORS' },
     { id: 'testUsedExpectedTestFramework', title: 'TEST_USED_EXPECTED_TEST_FRAMEWORK' },
     { id: 'testUsedCorrectAppendOperation', title: 'TEST_USED_CORRECT_APPEND_OPERATION' },
-    { id: 'testInputFile', title: 'TEST_INPUT_FILE' },
+    { id: 'testInputFilename', title: 'TEST_INPUT_FILENAME' },
     { id: 'testLanguage', title: 'TEST_LANGUAGE' },
     { id: 'testName', title: 'TEST_NAME' },
     { id: 'testDiagnostics', title: 'TEST_DIAGNOSTICS' },
