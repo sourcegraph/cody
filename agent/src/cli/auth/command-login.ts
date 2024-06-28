@@ -80,12 +80,26 @@ export const loginCommand = new Command('login')
         }
     })
 
+// "web-login" is when we open the browser via --web
+// "cli-login" is when the user provides the access token via --access-token or
+// environment variable
+type LoginMethod = 'web-login' | 'cli-login'
+
 export async function loginAction(
     options: LoginOptions,
     spinner: Ora
 ): Promise<AuthenticatedAccount | undefined> {
+    const loginMethod: LoginMethod =
+        options.web && options.accessToken
+            ? // Ambiguous, the user provided both --web and --access-token
+              await promptUserAboutLoginMethod(spinner, options)
+            : options.web
+              ? 'web-login'
+              : 'cli-login'
+    const isCliLogin = loginMethod === 'cli-login'
+
     const serverEndpoint =
-        options.accessToken && options.endpoint
+        isCliLogin && options.accessToken && options.endpoint
             ? options.endpoint
             : await promptUserForServerEndpoint(spinner)
     if (!serverEndpoint) {
@@ -95,7 +109,7 @@ export async function loginAction(
         spinner.start('Authenticating')
     }
     const token =
-        options.endpoint && options.accessToken
+        isCliLogin && options.endpoint && options.accessToken
             ? options.accessToken
             : await captureAccessTokenViaBrowserRedirect(serverEndpoint, spinner)
     const client = new SourcegraphGraphQLAPIClient({
@@ -221,4 +235,31 @@ async function promptUserForServerEndpoint(spinner: Ora): Promise<string | undef
         return undefined
     }
     return serverEndpoint
+}
+
+async function promptUserAboutLoginMethod(spinner: Ora, options: LoginOptions): Promise<LoginMethod> {
+    if (!options.accessToken || !options.endpoint) {
+        return 'web-login'
+    }
+    try {
+        const client = new SourcegraphGraphQLAPIClient({
+            accessToken: options.accessToken,
+            serverEndpoint: options.endpoint,
+            customHeaders: {},
+        })
+        const userInfo = await client.getCurrentUserInfo()
+        const isValidAccessToken = !isError(userInfo)
+        if (isValidAccessToken) {
+            spinner.stopAndPersist()
+            const cliLogin = `Yes, log in as ${userInfo.username} on ${options.endpoint}`
+            const webLogin = 'No, log in with my browser via --web'
+
+            const result = await select({
+                message: `You are already authenticated as ${userInfo.username} on ${options.endpoint}. Do you want to login with these credentials?`,
+                choices: [{ value: cliLogin }, { value: webLogin }],
+            })
+            return result === webLogin ? 'web-login' : 'cli-login'
+        }
+    } catch {}
+    return 'web-login'
 }
