@@ -22,15 +22,41 @@ interface PersistedUserLocalHistory {
     chat: ChatHistory
 }
 
-class LocalStorage {
+/**
+ * Defines the keys used to store various data in the local storage.
+ *
+ * NOTE: Only accessible within the LocalStorage module.
+ */
+const keys = {
     // Bump this on storage changes so we don't handle incorrectly formatted data
-    protected readonly KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
-    protected readonly KEY_CONFIG = 'cody-config'
-    protected readonly KEY_LOCAL_MINION_HISTORY = 'cody-local-minionHistory-v0'
-    public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
-    public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
-    protected readonly CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
-    protected readonly CODY_ENROLLMENT_HISTORY = 'SOURCEGRAPH_CODY_ENROLLMENTS'
+    CHAT_HISTORY: 'cody-local-chatHistory-v2',
+    CONFIG: 'cody-config',
+    ANONYMOUS_USER_ID: 'sourcegraphAnonymousUid',
+    // Last saved and used endpoint.
+    LAST_USED_ENDPOINT: 'SOURCEGRAPH_CODY_ENDPOINT',
+    // All used and saved endpoints.
+    ENDPOINT_HISTORY: 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY',
+    // All A/B test features that have been enrolled in.
+    ENROLLMENT_HISTORY: 'SOURCEGRAPH_CODY_ENROLLMENTS',
+    LOCAL_MINION_HISTORY: 'cody-local-minionHistory-v0',
+}
+
+class LocalStorage {
+    // Only include keys that need to be accessed outside of the LocalStorage module.
+    public readonly ANONYMOUS_USER_ID_KEY = keys.ANONYMOUS_USER_ID
+    public readonly LAST_USED_ENDPOINT_KEY = keys.LAST_USED_ENDPOINT
+
+    /**
+     * Clears the local storage, excluding the anonymous user ID.
+     */
+    public async clear(): Promise<void> {
+        for (const key of Object.values(keys)) {
+            // NOTE: Keep the anonymous user ID.
+            if (key !== keys.ANONYMOUS_USER_ID) {
+                await this.delete(key)
+            }
+        }
+    }
 
     /**
      * Should be set on extension activation via `localStorage.setStorage(context.globalState)`
@@ -52,7 +78,7 @@ class LocalStorage {
     }
 
     public getEndpoint(): string | null {
-        const endpoint = this.storage.get<string | null>(this.LAST_USED_ENDPOINT, null)
+        const endpoint = this.storage.get<string | null>(keys.LAST_USED_ENDPOINT, null)
         // Clear last used endpoint if it is a Sourcegraph token
         if (endpoint && isSourcegraphToken(endpoint)) {
             this.deleteEndpoint()
@@ -72,7 +98,7 @@ class LocalStorage {
             }
 
             const uri = new URL(endpoint).href
-            await this.storage.update(this.LAST_USED_ENDPOINT, uri)
+            await this.storage.update(keys.LAST_USED_ENDPOINT, uri)
             await this.addEndpointHistory(uri)
         } catch (error) {
             console.error(error)
@@ -80,11 +106,11 @@ class LocalStorage {
     }
 
     public async deleteEndpoint(): Promise<void> {
-        await this.storage.update(this.LAST_USED_ENDPOINT, null)
+        await this.storage.update(keys.LAST_USED_ENDPOINT, null)
     }
 
     public getEndpointHistory(): string[] | null {
-        return this.storage.get<string[] | null>(this.CODY_ENDPOINT_HISTORY, null)
+        return this.storage.get<string[] | null>(keys.ENDPOINT_HISTORY, null)
     }
 
     private async addEndpointHistory(endpoint: string): Promise<void> {
@@ -93,15 +119,15 @@ class LocalStorage {
             return
         }
 
-        const history = this.storage.get<string[] | null>(this.CODY_ENDPOINT_HISTORY, null)
+        const history = this.storage.get<string[] | null>(keys.ENDPOINT_HISTORY, null)
         const historySet = new Set(history)
         historySet.delete(endpoint)
         historySet.add(endpoint)
-        await this.storage.update(this.CODY_ENDPOINT_HISTORY, [...historySet])
+        await this.storage.update(keys.ENDPOINT_HISTORY, [...historySet])
     }
 
     public getChatHistory(authStatus: AuthStatus): UserLocalHistory {
-        const history = this.storage.get<AccountKeyedChatHistory | null>(this.KEY_LOCAL_HISTORY, null)
+        const history = this.storage.get<AccountKeyedChatHistory | null>(keys.CHAT_HISTORY, null)
         const accountKey = getKeyForAuthStatus(authStatus)
 
         // Migrate chat history to set the `ChatMessage.model` property on each assistant message
@@ -109,7 +135,7 @@ class LocalStorage {
         // `SerializedChatTranscript.chatModel` property is removed in v1.22.
         const migratedHistory = migrateHistoryForChatModelProperty(history)
         if (history !== migratedHistory) {
-            this.storage.update(this.KEY_LOCAL_HISTORY, migratedHistory).then(() => {}, console.error)
+            this.storage.update(keys.CHAT_HISTORY, migratedHistory).then(() => {}, console.error)
         }
 
         return migratedHistory?.[accountKey] ?? { chat: {} }
@@ -119,7 +145,7 @@ class LocalStorage {
         try {
             const key = getKeyForAuthStatus(authStatus)
             let fullHistory = this.storage.get<{ [key: ChatHistoryKey]: UserLocalHistory } | null>(
-                this.KEY_LOCAL_HISTORY,
+                keys.CHAT_HISTORY,
                 null
             )
 
@@ -131,7 +157,7 @@ class LocalStorage {
                 }
             }
 
-            await this.storage.update(this.KEY_LOCAL_HISTORY, fullHistory)
+            await this.storage.update(keys.CHAT_HISTORY, fullHistory)
         } catch (error) {
             console.error(error)
         }
@@ -151,12 +177,12 @@ class LocalStorage {
 
     public async setMinionHistory(authStatus: AuthStatus, serializedHistory: string): Promise<void> {
         // TODO(beyang): SECURITY - use authStatus
-        await this.storage.update(this.KEY_LOCAL_MINION_HISTORY, serializedHistory)
+        await this.storage.update(keys.LOCAL_MINION_HISTORY, serializedHistory)
     }
 
     public getMinionHistory(authStatus: AuthStatus): string | null {
         // TODO(beyang): SECURITY - use authStatus
-        return this.storage.get<string | null>(this.KEY_LOCAL_MINION_HISTORY, null)
+        return this.storage.get<string | null>(keys.LOCAL_MINION_HISTORY, null)
     }
 
     public async removeChatHistory(authStatus: AuthStatus): Promise<void> {
@@ -177,12 +203,12 @@ class LocalStorage {
      * so that the caller can log the first enrollment event.
      */
     public getEnrollmentHistory(featureName: string): boolean {
-        const history = this.storage.get<string[]>(this.CODY_ENROLLMENT_HISTORY, [])
+        const history = this.storage.get<string[]>(keys.ENROLLMENT_HISTORY, [])
         const hasEnrolled = history.includes(featureName)
         // Log the first enrollment event
         if (!hasEnrolled) {
             history.push(featureName)
-            this.storage.update(this.CODY_ENROLLMENT_HISTORY, history)
+            this.storage.update(keys.ENROLLMENT_HISTORY, history)
         }
         return hasEnrolled
     }
@@ -192,13 +218,13 @@ class LocalStorage {
      * occurs on a fresh installation).
      */
     public async anonymousUserID(): Promise<{ anonymousUserID: string; created: boolean }> {
-        let id = this.storage.get<string>(this.ANONYMOUS_USER_ID_KEY)
+        let id = this.storage.get<string>(keys.ANONYMOUS_USER_ID)
         let created = false
         if (!id) {
             created = true
             id = uuid.v4()
             try {
-                await this.storage.update(this.ANONYMOUS_USER_ID_KEY, id)
+                await this.storage.update(keys.ANONYMOUS_USER_ID, id)
             } catch (error) {
                 console.error(error)
             }
@@ -207,11 +233,11 @@ class LocalStorage {
     }
 
     public async setConfig(config: ConfigurationWithAccessToken): Promise<void> {
-        return this.set(this.KEY_CONFIG, config)
+        return this.set(keys.CONFIG, config)
     }
 
     public getConfig(): ConfigurationWithAccessToken | null {
-        return this.get(this.KEY_CONFIG)
+        return this.get(keys.CONFIG)
     }
 
     public get<T>(key: string): T | null {

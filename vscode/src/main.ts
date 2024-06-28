@@ -385,6 +385,24 @@ const register = async (
                         'Failed to parse context filters policy. Please check your JSON syntax.'
                     )
                 }
+            }),
+
+            // Clear access token and local storage.
+            vscode.commands.registerCommand('cody.test.clear-storage', async () => {
+                // Remove current access token.
+                await secretStorage.deleteLastSavedToken()
+
+                // Remove Access Tokens for each stored endpoint.
+                const endpointHistory = localStorage.getEndpointHistory() ?? []
+                for (const endpoint of endpointHistory) {
+                    await secretStorage.delete(endpoint)
+                }
+
+                // Clear local storage, including all chat history and configuration.
+                await localStorage.clear()
+
+                // Restart VS Code.
+                vscode.commands.executeCommand('workbench.action.reloadWindow')
             })
         )
     }
@@ -428,6 +446,7 @@ const register = async (
                 ).authStatus
             }
         ),
+
         // Chat
         vscode.commands.registerCommand('cody.settings.extension', () =>
             vscode.commands.executeCommand('workbench.action.openSettings', {
