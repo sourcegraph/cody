@@ -2,6 +2,7 @@ package com.sourcegraph.cody.error
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.actions.AboutDialog
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.diagnostic.ErrorReportSubmitter
 import com.intellij.openapi.diagnostic.IdeaLoggingEvent
 import com.intellij.openapi.diagnostic.SubmittedReportInfo
@@ -10,6 +11,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.Consumer
 import java.awt.Component
 import java.net.URLEncoder
+import java.util.concurrent.CompletableFuture
 
 class CodyErrorSubmitter : ErrorReportSubmitter() {
 
@@ -49,7 +51,7 @@ class CodyErrorSubmitter : ErrorReportSubmitter() {
         "&labels=bug" +
         "&projects=sourcegraph/381" +
         (throwableText?.let { "&title=${encode(getTitle(throwableText))}" } ?: "") +
-        "&about=${encode(getAboutText(project))}" +
+        "&about=${encode(getAboutText(project).get())}" +
         "&logs=${encode(formatLogs(throwableText, additionalInfo))}"
   }
 
@@ -58,7 +60,11 @@ class CodyErrorSubmitter : ErrorReportSubmitter() {
     return "bug: $title"
   }
 
-  private fun getAboutText(project: Project?) = AboutDialog(project).extendedAboutText
+  private fun getAboutText(project: Project?): CompletableFuture<String> {
+    val result = CompletableFuture<String>()
+    runInEdt { result.complete(AboutDialog(project).extendedAboutText) }
+    return result
+  }
 
   private fun formatLogs(throwableText: String?, additionalInfo: String?) =
       formatAttributes(
