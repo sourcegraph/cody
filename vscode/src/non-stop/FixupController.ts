@@ -264,8 +264,7 @@ export class FixupController
                 return
             }
 
-            const updatedText = event.document.getText(task.selectionRange)
-            if (updatedText === task.original) {
+            if (event.document.getText(task.selectionRange) === task.original) {
                 // The user has undone the edit, discard the task
                 task.diff = undefined
                 this.discard(task)
@@ -1101,7 +1100,6 @@ export class FixupController
 
         if (task.state === CodyTaskState.Applied) {
             this.decorator.didApplyTask(task)
-            // TODO: Fix
             this.registerDiscardOnRestoreListener(task)
         }
     }
