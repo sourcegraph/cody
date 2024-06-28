@@ -14,7 +14,7 @@ function shimDirectory(): string {
         if (statSync(shimFromRootDirectory + '.ts').isFile()) {
             return shimFromRootDirectory
         }
-    } catch { }
+    } catch {}
     return shimFromAgentDirectory
 }
 
