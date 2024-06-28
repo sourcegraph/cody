@@ -40,6 +40,9 @@
     "storybook": "storybook dev -p 6007 --no-open --no-version-updates",
     "test:e2e": "playwright install && tsc --build && node dist/tsc/test/e2e/install-deps.js && pnpm run -s build:dev:desktop && pnpm run -s test:e2e:run",
     "test:e2e:run": "playwright test",
+    "test:e2e2": "pnpm -s test:e2e2:deps && pnpm -s build:dev:desktop && pnpm -s test:e2e2:run",
+    "test:e2e2:run": "playwright test -c playwright.v2.config.ts",
+    "test:e2e2:deps": "playwright install chromium",
     "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
     "test:unit": "vitest",
     "bench": "vitest bench",
@@ -1388,7 +1391,9 @@
   },
   "devDependencies": {
     "@google-cloud/pubsub": "^3.7.3",
+    "@npmcli/promise-spawn": "^7.0.2",
     "@playwright/test": "1.44.1",
+    "@pollyjs/adapter": "^6.0.6",
     "@pollyjs/adapter-node-http": "^6.0.6",
     "@pollyjs/core": "^6.0.6",
     "@pollyjs/persister": "^6.0.6",
@@ -1406,6 +1411,7 @@
     "@types/lodash": "^4.14.195",
     "@types/marked": "^5.0.0",
     "@types/mocha": "^10.0.6",
+    "@types/npmcli__promise-spawn": "^6.0.3",
     "@types/pako": "^2.0.3",
     "@types/progress": "^2.0.5",
     "@types/semver": "^7.5.0",
@@ -1418,6 +1424,7 @@
     "ajv": "^8.14.0",
     "ajv-errors": "^3.0.0",
     "ajv-formats": "^3.0.1",
+    "chokidar": "^3.6.0",
     "concurrently": "^8.2.0",
     "dedent": "^0.7.0",
     "express": "^4.18.2",
@@ -1425,6 +1432,7 @@
     "franc-min": "^6.2.0",
     "fs-extra": "^11.2.0",
     "fuzzysort": "^2.0.4",
+    "http-proxy-middleware": "^3.0.0",
     "mocha": "^10.2.0",
     "ovsx": "^0.8.2",
     "pako": "^2.1.0",
@@ -1437,6 +1445,7 @@
     "vite-plugin-svgr": "^4.2.0",
     "vscode-jsonrpc": "^8.2.0",
     "vscode-languageserver-protocol": "^3.17.5",
-    "yaml": "^2.3.4"
+    "yaml": "^2.3.4",
+    "zod": "^3.23.8"
   }
 }

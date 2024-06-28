@@ -704,6 +704,12 @@ export enum UIKind {
     Web = 2,
 }
 
+export enum ProgressLocation {
+    SourceControl = 1,
+    Window = 10,
+    Notification = 15,
+}
+
 export class FileSystemError extends Error {
     public code = 'FileSystemError'
 }
@@ -753,6 +759,16 @@ export const vsCodeMocks = {
             key: 'foo',
             dispose: () => {},
         }),
+        withProgress: async (
+            options: vscode_types.ProgressOptions,
+            task: (
+                progress: vscode_types.Progress<{ message?: string; increment?: number }>,
+                token: CancellationToken
+            ) => Thenable<unknown>
+        ) => {
+            const cancel = new CancellationTokenSource()
+            return await task({ report: () => {} }, cancel.token)
+        },
         visibleTextEditors: [],
         tabGroups: { all: [] },
     },
@@ -804,13 +820,8 @@ export const vsCodeMocks = {
     DiagnosticSeverity,
     ViewColumn,
     TextDocumentChangeReason,
+    ProgressLocation,
 } as const
-
-export enum ProgressLocation {
-    SourceControl = 1,
-    Window = 10,
-    Notification = 15,
-}
 
 export class MockFeatureFlagProvider extends FeatureFlagProvider {
     constructor(private readonly enabledFlags: Set<FeatureFlag>) {

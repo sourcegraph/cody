@@ -4,8 +4,9 @@ import {
     ConsoleReporter,
     type ProgressReport,
     ProgressReportStage,
-    downloadAndUnzipVSCode,
+    downloadAndUnzipVSCode as _downloadAndUnzipVSCode,
 } from '@vscode/test-electron'
+import type { DownloadOptions } from '@vscode/test-electron/out/download'
 
 // The VS Code version to use for e2e tests (there is also a version in ../integration/main.ts used for integration tests).
 //
@@ -24,8 +25,24 @@ class CustomConsoleReporter extends ConsoleReporter {
     }
 }
 
+/**
+ * Patches the default logger but otherwise leaves all options available
+ * @param opts
+ */
+export function downloadAndUnzipVSCode(opts: Partial<DownloadOptions>) {
+    return _downloadAndUnzipVSCode(
+        Object.assign(
+            {
+                version: vscodeVersion,
+                reporter: new CustomConsoleReporter(process.stdout.isTTY),
+            } satisfies Partial<DownloadOptions>,
+            opts
+        )
+    )
+}
+
 export function installVsCode(): Promise<string> {
-    return downloadAndUnzipVSCode(
+    return _downloadAndUnzipVSCode(
         vscodeVersion,
         undefined,
         new CustomConsoleReporter(process.stdout.isTTY)

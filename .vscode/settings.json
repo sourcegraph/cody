@@ -26,6 +26,9 @@
   },
   "editor.insertSpaces": true,
   "cSpell.words": ["Supercompletion", "Supercompletions"],
+  "[json]": {
+    "editor.defaultFormatter": "biomejs.biome",
+  },
   "[typescript]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
