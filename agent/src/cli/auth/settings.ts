@@ -28,6 +28,7 @@ export function userSettingsPath(): string {
 
 export function writeUserSettings(userSettings: UserSettings): void {
     const settingsPath = userSettingsPath()
+    fs.mkdirSync(path.dirname(settingsPath), { recursive: true })
     fs.writeFileSync(settingsPath, JSON.stringify(userSettings, null, 2))
 }
 
