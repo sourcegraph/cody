@@ -3,6 +3,7 @@ import {
     type Guardrails,
     type SerializedPromptEditorValue,
     deserializeContextItem,
+    isAbortErrorOrSocketHangUp,
 } from '@sourcegraph/cody-shared'
 import { type ComponentProps, type FunctionComponent, useCallback, useMemo, useRef } from 'react'
 import type { UserAccountInfo } from '../Chat'
@@ -34,6 +35,7 @@ export const Transcript: React.FunctionComponent<{
         () => transcriptToInteractionPairs(transcript, messageInProgress),
         [transcript, messageInProgress]
     )
+
     return (
         <>
             {interactions.map((interaction, i) => (
@@ -71,32 +73,38 @@ export function transcriptToInteractionPairs(
     assistantMessageInProgress: ChatMessage | null
 ): Interaction[] {
     const pairs: Interaction[] = []
-    for (const [i, message] of transcript.entries()) {
-        if (i % 2 === 1) {
-            continue
-        }
-        const humanMessage = message
-        const isLastPairInTranscript = transcript.length === i + 1
-        const assistantMessage = isLastPairInTranscript ? assistantMessageInProgress : transcript[i + 1]
-        if (humanMessage.speaker === 'human') {
-            pairs.push({
-                humanMessage: { ...humanMessage, index: i, isUnsentFollowup: false },
-                assistantMessage: assistantMessage
-                    ? {
-                          ...assistantMessage,
-                          index: i + 1,
-                          isLoading:
-                              assistantMessage.error === undefined &&
-                              !!assistantMessageInProgress &&
-                              (isLastPairInTranscript || assistantMessage.text === undefined),
-                      }
-                    : null,
-            })
-        }
+    const transcriptLength = transcript.length
+
+    for (let i = 0; i < transcriptLength; i += 2) {
+        const humanMessage = transcript[i]
+        if (humanMessage.speaker !== 'human') continue
+
+        const isLastPair = i === transcriptLength - 1
+        const assistantMessage = isLastPair ? assistantMessageInProgress : transcript[i + 1]
+
+        const isLoading =
+            assistantMessage &&
+            assistantMessage.error === undefined &&
+            assistantMessageInProgress &&
+            (isLastPair || assistantMessage.text === undefined)
+
+        pairs.push({
+            humanMessage: { ...humanMessage, index: i, isUnsentFollowup: false },
+            assistantMessage: assistantMessage
+                ? { ...assistantMessage, index: i + 1, isLoading: !!isLoading }
+                : null,
+        })
     }
 
-    const lastAssistantMessageIsError = Boolean(pairs.at(-1)?.assistantMessage?.error)
-    if (!lastAssistantMessageIsError) {
+    const lastAssistantMessage = pairs[pairs.length - 1]?.assistantMessage
+    const isAborted = isAbortErrorOrSocketHangUp(lastAssistantMessage?.error)
+    const shouldAddFollowup =
+        lastAssistantMessage &&
+        (!lastAssistantMessage.error ||
+            (isAborted && lastAssistantMessage.text) ||
+            (!assistantMessageInProgress && lastAssistantMessage.text))
+
+    if (shouldAddFollowup) {
         pairs.push({
             humanMessage: { index: pairs.length * 2, speaker: 'human', isUnsentFollowup: true },
             assistantMessage: null,

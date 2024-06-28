@@ -101,21 +101,30 @@ export const AssistantMessageCell: FunctionComponent<{
             }
             footer={
                 ((showFeedbackButtons && feedbackButtonsOnSubmit) || humanMessage) && (
-                    <div className="tw-flex tw-items-center tw-py-3 tw-divide-x tw-transition tw-divide-muted tw-opacity-65 hover:tw-opacity-100">
+                    <div className="tw-py-3 tw-flex tw-flex-col tw-gap-2">
                         {isAborted && (
-                            <div className="tw-text-sm tw-text-muted-foreground">
-                                Output stream stopped.
+                            <div className="tw-text-sm tw-text-muted-foreground tw-mt-4">
+                                Output stream stopped
                             </div>
                         )}
-                        {showFeedbackButtons && feedbackButtonsOnSubmit && (
-                            <FeedbackButtons
-                                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                                className="tw-pr-4"
-                            />
-                        )}
-                        {humanMessage && !isLoading && (!message.error || isAborted) && (
-                            <ContextFocusActions humanMessage={humanMessage} className="tw-pl-5" />
-                        )}
+                        <div className="tw-flex tw-items-center tw-divide-x tw-transition tw-divide-muted tw-opacity-65 hover:tw-opacity-100">
+                            {showFeedbackButtons && feedbackButtonsOnSubmit && (
+                                <FeedbackButtons
+                                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                                    className="tw-pr-4"
+                                />
+                            )}
+                            {humanMessage && !isLoading && (!message.error || isAborted) && (
+                                <ContextFocusActions
+                                    humanMessage={humanMessage}
+                                    className={
+                                        showFeedbackButtons && feedbackButtonsOnSubmit
+                                            ? 'tw-pl-5'
+                                            : undefined
+                                    }
+                                />
+                            )}
+                        </div>
                     </div>
                 )
             }
