@@ -1106,17 +1106,25 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return { models: providers ?? [] }
         })
 
-        this.registerAuthenticatedRequest('chat/export', async () => {
+        this.registerAuthenticatedRequest('chat/export', async input => {
+            const { fullHistory = false } = input ?? {}
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
             const localHistory = chatHistory.getLocalHistory(authStatus)
 
             if (localHistory != null) {
-                return Object.entries(localHistory?.chat)
-                    .filter(([chatID, chatTranscript]) => chatTranscript.interactions.length > 0)
-                    .map(([chatID, chatTranscript]) => ({
-                        chatID: chatID,
-                        transcript: chatTranscript,
-                    }))
+                return (
+                    Object.entries(localHistory?.chat)
+                        // Return filtered (non-empty) chats by default, but if requests has fullHistory: true
+                        // return the full list of chats from the storage, empty chats included
+                        .filter(
+                            ([chatID, chatTranscript]) =>
+                                chatTranscript.interactions.length > 0 || fullHistory
+                        )
+                        .map(([chatID, chatTranscript]) => ({
+                            chatID: chatID,
+                            transcript: chatTranscript,
+                        }))
+                )
             }
 
             return []

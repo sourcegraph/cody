@@ -63,7 +63,7 @@ export type ClientRequests = {
     ]
 
     'chat/models': [{ modelUsage: ModelUsage }, { models: Model[] }]
-    'chat/export': [null, ChatExportResult[]]
+    'chat/export': [null | { fullHistory: boolean }, ChatExportResult[]]
     'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] | undefined | null }]
 
     // High-level wrapper around webview/receiveMessage and webview/postMessage
