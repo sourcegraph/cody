@@ -66,6 +66,13 @@ export const CodyCommandMenuItems: MenuCommandAccessor[] = [
         mode: 'ask',
     },
     {
+        key: 'lucky',
+        description: 'One Click Edit (Experimental)',
+        icon: 'surround-with',
+        command: { command: 'cody.command.one-click' },
+        keybinding: '',
+    },
+    {
         key: 'commit',
         description: 'Generate Commit Message (Experimental)',
         icon: 'git-commit',

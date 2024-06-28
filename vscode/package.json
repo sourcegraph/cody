@@ -349,6 +349,14 @@
         "enablement": "cody.activated && config.cody.experimental.noodle"
       },
       {
+        "command": "cody.command.one-click",
+        "category": "Cody Command",
+        "group": "Cody Command",
+        "title": "Edit At Cursor",
+        "icon": "$(surround-with)",
+        "enablement": "cody.activated"
+      },
+      {
         "command": "cody.command.generate-commit",
         "category": "Cody Command",
         "group": "Commit",
@@ -635,6 +643,11 @@
       {
         "command": "cody.command.document-code",
         "key": "alt+d",
+        "when": "cody.activated && !editorReadonly"
+      },
+      {
+        "command": "cody.command.one-click",
+        "key": "alt+j",
         "when": "cody.activated && !editorReadonly"
       },
       {
