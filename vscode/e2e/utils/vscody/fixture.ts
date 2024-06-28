@@ -521,7 +521,7 @@ function waitForVSCodeUI(stdout: NodeJS.ReadableStream): Promise<string | undefi
         const timeout = setTimeout(() => {
             stdout.removeListener('data', listener)
             reject(new Error('Could not start code process'))
-        }, 30_000 /*TODO(rnauta): make this configurable*/)
+        }, 10_000 /*TODO(rnauta): make this configurable*/)
         stdout.on('data', listener)
     })
 }
