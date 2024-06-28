@@ -32,3 +32,13 @@ class Agent:
     def test(self):
     #    |
         pass
+
+# ------------------------------------
+
+# The Agent class ...
+# |
+# Note: this agent may become sentient
+class Agent:
+    def __init__(self, name):
+        self.name = name
+

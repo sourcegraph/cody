@@ -73,3 +73,12 @@
 # symbol.function[1]: identifier
 # range.function[1]: function_definition
 
+# ------------------------------------
+
+# The Agent class ...
+# |
+# Note: this agent may become sentient
+class Agent:
+    def __init__(self, name):
+        self.name = name
+

@@ -5,8 +5,27 @@ func nestedVar() {
 
 // ------------------------------------
 
+func function() {
+    var nestedFunction = func(name string) {
+        fmt.Println("Hello,", name)
+        //  |
+    }
+}
+
+// ------------------------------------
+
 func greet() {
 	//  |
+}
+
+// ------------------------------------
+
+func meet() {
+    //  |
+}
+
+func greet() {
+	pass
 }
 
 // ------------------------------------

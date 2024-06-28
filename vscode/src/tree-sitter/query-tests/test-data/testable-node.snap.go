@@ -17,12 +17,43 @@
 
 // ------------------------------------
 
+  func function() {
+      var nestedFunction = func(name string) {
+//                         ^ start range.function[1]
+          fmt.Println("Hello,", name)
+//            █
+      }
+//    ^ end range.function[1]
+  }
+
+// Nodes types:
+// range.function[1]: func_literal
+
+// ------------------------------------
+
   func greet() {
 //^ start range.function[1]
 //     ^^^^^ symbol.function[1]
 //        █
   }
 //^ end range.function[1]
+
+// Nodes types:
+// symbol.function[1]: identifier
+// range.function[1]: function_declaration
+
+// ------------------------------------
+
+  func meet() {
+//^ start range.function[1]
+//     ^^^^ symbol.function[1]
+//        █
+  }
+//^ end range.function[1]
+
+  func greet() {
+      pass
+  }
 
 // Nodes types:
 // symbol.function[1]: identifier

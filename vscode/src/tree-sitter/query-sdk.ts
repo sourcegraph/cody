@@ -181,7 +181,7 @@ function getLanguageSpecificQueryWrappers(
             const symbol = findLast(symbolCaptures, ({ node }) => {
                 return (
                     node.startPosition.row === start.row &&
-                    (node.startPosition.column <= start.column || node.startPosition.row < start.row) &&
+                    node.startPosition.column <= start.column &&
                     (start.column <= node.endPosition.column || start.row < node.endPosition.row)
                 )
             })
@@ -293,8 +293,7 @@ function getLanguageSpecificQueryWrappers(
 
             const symbol = findLast(symbolCaptures, ({ node }) => {
                 return (
-                    node.startPosition.row === start.row &&
-                    (node.startPosition.column <= start.column || node.startPosition.row < start.row) &&
+                    node.startPosition.row === start.row && node.startPosition.column <= start.column &&
                     (start.column <= node.endPosition.column || start.row < node.endPosition.row)
                 )
             })
