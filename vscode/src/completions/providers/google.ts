@@ -8,12 +8,7 @@ import {
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 
-import {
-    MULTILINE_STOP_SEQUENCE,
-    type PrefixComponents,
-    fixBadCompletionStart,
-    getHeadAndTail,
-} from '../text-processing'
+import { type PrefixComponents, fixBadCompletionStart, getHeadAndTail } from '../text-processing'
 import { forkSignal, generatorWithTimeout, messagesToText, zipGenerators } from '../utils'
 
 import {
@@ -33,11 +28,16 @@ import {
     standardContextSizeHints,
 } from './provider'
 
-const AT_CURSOR = '<|fim_middle|>'
+const DEFAULT_GEMINI_MODEL = 'google/gemini-1.5-flash-latest'
+
+const RESPONSE_CODE = '<|fim|>'
+const AT_CURSOR = ps`<|cursor|>`
+const PRE_CURSOR = ps`<|fim_start|>`
+const AFTER_CURSOR = ps`<|fim_end|>`
 
 const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopSequences: [MULTILINE_STOP_SEQUENCE, AT_CURSOR],
-    multilineStopSequences: [MULTILINE_STOP_SEQUENCE, AT_CURSOR],
+    singlelineStopSequences: [RESPONSE_CODE],
+    multilineStopSequences: [RESPONSE_CODE],
 })
 
 interface GoogleGeminiOptions {
@@ -56,7 +56,7 @@ class GoogleGeminiProvider extends Provider {
     private promptChars: number
 
     private instructions =
-        ps`You are a code completion AI designed to autofill code at the <|fim_middle|> location based on its surrounding context.`
+        ps`You are a code completion AI designed to autofill code at the ${AT_CURSOR} location based on its surrounding context. Your goal is to generate the COMPLETED code I can replace '${AT_CURSOR}' with.`
 
     constructor(
         options: ProviderOptions,
@@ -116,12 +116,13 @@ class GoogleGeminiProvider extends Provider {
             groupedSnippets = ps`CONTEXT:\n${groupedSnippets}\n---\n`
         }
 
-        const infillPrompt = ps`<|fim_start|>${prefix}<|fim_middle|>${suffix}<|fim_end|>`
+        const infillPrompt = ps`<|task|>${prefix}${AT_CURSOR}${suffix.trimEnd()}<|task|>`
 
-        const humanText = ps`${this.instructions}\n---${groupedSnippets}\n\nTASK:\nFILE: ${relativeFilePath}\nRULE: Enclose your response with <|fim_middle|> without backticks and nothing else.\nEnsure to follow its surrounding coding styles, format, and spacings without repeating.\nCODE:\n${infillPrompt}\n---`
+        const humanText = ps`${this.instructions}\n---${groupedSnippets}\nHere is your task:\nFileName: ${relativeFilePath}\nCode:${infillPrompt}\n\n\nInstruction: Ensure to follow the surrounding coding styles, format, and spacings without repeating.\nYour response should contains only the completed code, and the code must be enclosed WITHOUT backticks between '${PRE_CURSOR}' and '${AFTER_CURSOR}'.`
 
         const messages: Message[] = [
-            { speaker: 'human', text: humanText.replace('{context}', ps`\n${groupedSnippets}\n`) },
+            { speaker: 'human', text: humanText },
+            { speaker: 'assistant', text: ps`${PRE_CURSOR}` },
         ]
 
         return { messages, prefix: { head, tail, overlap } }
@@ -140,8 +141,9 @@ class GoogleGeminiProvider extends Provider {
         const requestParams: CodeCompletionsParams = {
             ...partialRequestParams,
             messages: this.createPrompt(snippets).messages,
-            topP: 0.5,
+            topP: 0.95,
             model: this.model,
+            stopSequences: [RESPONSE_CODE],
         }
 
         tracer?.params(requestParams)
@@ -169,9 +171,12 @@ class GoogleGeminiProvider extends Provider {
     private postProcess = (rawResponse: string): string => {
         let completion = rawResponse.trim()
 
-        // We asked the model to enclose their response with AT_CURSOR & FILE_SEPARATOR for consistency,
-        // so we will remove them here.
-        completion = completion.replace(AT_CURSOR, '')
+        // Because the response should be enclosed with RESPONSE_CODE for consistency.
+        completion = completion
+            .replaceAll(RESPONSE_CODE, '')
+            .trim()
+            .replaceAll(`${PRE_CURSOR}`, '')
+            .replaceAll(`${AFTER_CURSOR}`, '')
 
         // Remove bad symbols from the start of the completion string.
         completion = fixBadCompletionStart(completion)
@@ -182,11 +187,11 @@ class GoogleGeminiProvider extends Provider {
 
 export function createProviderConfig({
     model,
-    maxContextTokens = 2048,
+    maxContextTokens = 5000,
     ...otherOptions
 }: GoogleGeminiOptions & { model?: string }): ProviderConfig {
     if (!model) {
-        model = 'google/gemini-1.5-flash'
+        model = DEFAULT_GEMINI_MODEL
     }
 
     return {

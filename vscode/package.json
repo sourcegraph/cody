@@ -1085,7 +1085,7 @@
             null,
             "anthropic",
             "fireworks",
-            "google",
+            "unstable-google",
             "unstable-openai",
             "experimental-ollama",
             "experimental-openaicompatible"
