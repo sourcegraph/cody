@@ -51,13 +51,27 @@ export const ContextFocusActions: FunctionComponent<{
                               },
                           }
                         : null,
-                    humanMessage.hasInitialContext.repositories && humanMessage.hasInitialContext.files
+                    !humanMessage.hasInitialContext.repositories
                         ? {
-                              label: 'Current file only',
+                              label: 'Current repository',
+                              tooltip: 'Try again with context from across your repository',
+                              onClick: () => {
+                                  const options: InitialContextInfo = {
+                                      repositories: true,
+                                      files: humanMessage.hasInitialContext.files,
+                                  }
+                                  logRerunWithDifferentContext(options)
+                                  humanMessage.rerunWithDifferentContext(options)
+                              },
+                          }
+                        : null,
+                    !humanMessage.hasInitialContext.files
+                        ? {
+                              label: 'Current file',
                               tooltip: 'Try again, focused on the current file',
                               onClick: () => {
                                   const options: InitialContextInfo = {
-                                      repositories: false,
+                                      repositories: humanMessage.hasInitialContext.repositories,
                                       files: true,
                                   }
                                   logRerunWithDifferentContext(options)
