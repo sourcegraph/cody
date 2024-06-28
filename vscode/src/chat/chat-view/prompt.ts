@@ -42,7 +42,13 @@ export class DefaultPrompter {
     //
     // Returns the reverse prompt and the new context that was used in the prompt for the current message.
     // If user-context added at the last message is ignored, returns the items in the newContextIgnored array.
-    public async makePrompt(chat: SimpleChatModel, codyApiVersion: number): Promise<PromptInfo> {
+    public async makePrompt(
+        chat: SimpleChatModel,
+        codyApiVersion: number
+    ): Promise<{
+        promptInfo: PromptInfo
+        tokenCounter: { chat: number; user: number; enhanced: number }
+    }> {
         return wrapInActiveSpan('chat.prompter', async () => {
             const promptBuilder = new PromptBuilder(chat.contextWindow)
             const preInstruction: PromptString | undefined = PromptString.fromConfig(
@@ -127,8 +133,11 @@ export class DefaultPrompter {
             }
 
             return {
-                prompt: promptBuilder.build(),
-                context,
+                promptInfo: {
+                    prompt: promptBuilder.build(),
+                    context,
+                },
+                tokenCounter: promptBuilder.getRemainingTokensForDisplay(),
             }
         })
     }

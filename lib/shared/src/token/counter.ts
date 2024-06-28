@@ -6,6 +6,24 @@ import type { Message, PromptString } from '..'
 import { ENHANCED_CONTEXT_ALLOCATION } from './constants'
 
 /**
+ * Represents the limits on token usage for different types of chat interactions.
+ * @property {number} chat - The number of tokens remaining for the current chat session.
+ * @property {number} user - The number of tokens remaining for the current user.
+ * @property {number} enhanced - The number of tokens remaining for enhanced chat features.
+ * @property {number} maxChat - The maximum number of tokens allowed for the current chat session.
+ * @property {number} maxUser - The maximum number of tokens allowed for the current user.
+ * @property {number} maxEnhanced - The maximum number of tokens allowed for enhanced chat features.
+ */
+export interface TokenUsageLimits {
+    chat: number
+    user: number
+    enhanced: number
+    maxChat: number
+    maxUser: number
+    maxEnhanced: number
+}
+
+/**
  * A class to manage the token allocation during prompt building.
  */
 export class TokenCounter {
@@ -56,6 +74,14 @@ export class TokenCounter {
             this.usedTokens[type] = this.usedTokens[type] + count
         }
         return isWithinLimit
+    }
+
+    /**
+     * Returns the remaining token counts for different token types for displaying it in the UI.
+     * @returns An object with the remaining token counts for chat, user, and enhanced token types.
+     */
+    public getRemainingTokensForDisplay(): { chat: number; user: number; enhanced: number } {
+        return this.remainingTokens
     }
 
     /**

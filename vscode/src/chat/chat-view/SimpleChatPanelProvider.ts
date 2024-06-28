@@ -15,6 +15,7 @@ import {
     type ContextItemWithContent,
     DOTCOM_URL,
     type DefaultChatCommands,
+    ENHANCED_CONTEXT_ALLOCATION,
     type EventSource,
     type FeatureFlagProvider,
     type Guardrails,
@@ -573,6 +574,7 @@ export class SimpleChatPanelProvider
 
         this.postChatModels()
         await this.saveSession()
+        this.postRemainingTokensToWebview()
         this.initDoer.signalInitialized()
     }
 
@@ -782,9 +784,14 @@ export class SimpleChatPanelProvider
                 }
 
                 try {
-                    const prompt = await this.buildPrompt(prompter, abortSignal, sendTelemetry)
+                    const { prompt, tokenCounter } = await this.buildPrompt(
+                        prompter,
+                        abortSignal,
+                        sendTelemetry
+                    )
                     abortSignal.throwIfAborted()
                     this.streamAssistantResponse(requestID, prompt, span, firstTokenSpan, abortSignal)
+                    this.postRemainingTokensToWebview(tokenCounter)
                 } catch (error) {
                     if (isAbortErrorOrSocketHangUp(error as Error)) {
                         return
@@ -871,6 +878,7 @@ export class SimpleChatPanelProvider
     private async handleSetChatModel(modelID: string): Promise<void> {
         this.chatModel.updateModel(modelID)
         await chatModel.set(modelID)
+        this.postRemainingTokensToWebview()
     }
 
     private async handleGetAllMentionProvidersMetadata(): Promise<void> {
@@ -1122,6 +1130,39 @@ export class SimpleChatPanelProvider
         }
     }
 
+    private postRemainingTokensToWebview(remainingTokens?: {
+        chat: number
+        user: number
+        enhanced: number
+    }): void {
+        const { input, context } = this.chatModel.contextWindow
+        const maxTokens: {
+            maxChat: number
+            maxUser: number
+            maxEnhanced: number
+        } = {
+            maxChat: input,
+            maxUser: context?.user ?? input,
+            maxEnhanced: Math.floor(input * ENHANCED_CONTEXT_ALLOCATION),
+        }
+
+        // If we don't have a token counter, we take the maxTokens values
+        const mergedRemainingTokens = {
+            chat: remainingTokens?.chat ?? maxTokens.maxChat,
+            user: remainingTokens?.user ?? maxTokens.maxUser,
+            enhanced: remainingTokens?.enhanced ?? maxTokens.maxEnhanced,
+        }
+
+        // Send the remaining token counts to the webview
+        void this.postMessage({
+            type: 'remainingTokens',
+            remainingTokens: {
+                ...mergedRemainingTokens,
+                ...maxTokens,
+            },
+        })
+    }
+
     /**
      * Low-level utility to post a message to the webview, pending initialization.
      *
@@ -1150,8 +1191,8 @@ export class SimpleChatPanelProvider
         prompter: DefaultPrompter,
         abortSignal: AbortSignal,
         sendTelemetry?: (contextSummary: any, privateContextStats?: any) => void
-    ): Promise<Message[]> {
-        const { prompt, context } = await prompter.makePrompt(
+    ): Promise<{ prompt: Message[]; tokenCounter: { chat: number; user: number; enhanced: number } }> {
+        const { promptInfo, tokenCounter } = await prompter.makePrompt(
             this.chatModel,
             this.authProvider.getAuthStatus().codyApiVersion
         )
@@ -1159,13 +1200,13 @@ export class SimpleChatPanelProvider
 
         // Update UI based on prompt construction
         // Includes the excluded context items to display in the UI
-        this.chatModel.setLastMessageContext([...context.used, ...context.ignored])
+        this.chatModel.setLastMessageContext([...promptInfo.context.used, ...promptInfo.context.ignored])
 
         if (sendTelemetry) {
             // Create a summary of how many code snippets of each context source are being
             // included in the prompt
             const contextSummary: { [key: string]: number } = {}
-            for (const { source } of context.used) {
+            for (const { source } of promptInfo.context.used) {
                 if (!source) {
                     continue
                 }
@@ -1185,13 +1226,16 @@ export class SimpleChatPanelProvider
                 }
             // NOTE: The private context stats are only logged for DotCom users
             const privateContextStats = {
-                included: getContextStats(context.used.filter(f => f.source === 'user')),
-                excluded: getContextStats(context.ignored.filter(f => f.source === 'user')),
+                included: getContextStats(promptInfo.context.used.filter(f => f.source === 'user')),
+                excluded: getContextStats(promptInfo.context.ignored.filter(f => f.source === 'user')),
             }
             sendTelemetry(contextSummary, privateContextStats)
         }
-
-        return prompt
+        const prompt = promptInfo.prompt
+        return {
+            prompt,
+            tokenCounter: tokenCounter,
+        }
     }
 
     private streamAssistantResponse(
@@ -1423,6 +1467,9 @@ export class SimpleChatPanelProvider
 
         this.chatModel = new SimpleChatModel(this.chatModel.modelID)
         this.postViewTranscript()
+        this.postRemainingTokensToWebview()
+
+        vscode.commands.executeCommand('setContext', 'cody.hasNewChatOpened', true)
     }
 
     // #endregion

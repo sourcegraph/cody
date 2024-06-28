@@ -41,6 +41,14 @@ export class PromptBuilder {
         this.tokenCounter = new TokenCounter(contextWindow)
     }
 
+    /**
+     * Gets the remaining token usage limits for the 'chat', 'user', and 'enhanced' usage types.
+     * @returns An object containing the remaining token usage limits for the specified usage types.
+     */
+    public getRemainingTokensForDisplay(): { chat: number; user: number; enhanced: number } {
+        return this.tokenCounter.getRemainingTokensForDisplay()
+    }
+
     public build(): Message[] {
         if (this.contextItems.length > 0) {
             this.buildContextMessages()

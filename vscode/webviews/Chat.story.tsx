@@ -26,6 +26,14 @@ const meta: Meta<typeof Chat> = {
         },
         telemetryService: null as any,
         isTranscriptError: false,
+        remainingTokens: {
+            chat: 6000,
+            user: 5000,
+            enhanced: 300,
+            maxChat: 7000,
+            maxUser: 7000,
+            maxEnhanced: 4200,
+        },
     } satisfies React.ComponentProps<typeof Chat>,
 
     decorators: [VSCodeWebview, ContextProvidersDecorator],

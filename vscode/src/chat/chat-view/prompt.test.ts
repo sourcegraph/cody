@@ -26,7 +26,10 @@ describe('DefaultPrompter', () => {
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
 
-        const { prompt, context } = await new DefaultPrompter([]).makePrompt(chat, 0)
+        const { promptInfo } = await new DefaultPrompter([], () => Promise.resolve([])).makePrompt(
+            chat,
+            0
+        )
 
         expect(prompt).toEqual<Message[]>([
             {
@@ -42,8 +45,8 @@ describe('DefaultPrompter', () => {
                 text: ps`Hello`,
             },
         ])
-        expect(context.used).toEqual([])
-        expect(context.ignored).toEqual([])
+        expect(promptInfo.context.used).toEqual([])
+        expect(promptInfo.context.ignored).toEqual([])
     })
 
     it('adds the cody.chat.preInstruction vscode setting if set', async () => {
@@ -61,7 +64,10 @@ describe('DefaultPrompter', () => {
         const chat = new SimpleChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
 
-        const { prompt, context } = await new DefaultPrompter([]).makePrompt(chat, 0)
+        const { promptInfo } = await new DefaultPrompter([], () => Promise.resolve([])).makePrompt(
+            chat,
+            0
+        )
 
         expect(prompt).toEqual<Message[]>([
             {
@@ -77,8 +83,8 @@ describe('DefaultPrompter', () => {
                 text: ps`Hello`,
             },
         ])
-        expect(context.used).toEqual([])
-        expect(context.ignored).toEqual([])
+        expect(promptInfo.context.used).toEqual([])
+        expect(promptInfo.context.ignored).toEqual([])
     })
 
     it('prefers latest enhanced context', async () => {
@@ -108,11 +114,11 @@ describe('DefaultPrompter', () => {
                 ])
         ).makePrompt(chat, 0)
 
-        chat.setLastMessageContext(info.context.used)
+        chat.setLastMessageContext(info.promptInfo.context.used)
         chat.addBotMessage({ text: ps`Oh hello there.` })
         chat.addHumanMessage({ text: ps`Hello again!` })
 
-        checkPrompt(info.prompt, [
+        checkPrompt(info.promptInfo.prompt, [
             'You are Cody, an AI coding assistant from Sourcegraph.',
             'I am Cody, an AI coding assistant from Sourcegraph.',
             'enhanced1.ts',
@@ -142,7 +148,7 @@ describe('DefaultPrompter', () => {
                 ])
         ).makePrompt(chat, 0)
 
-        checkPrompt(info.prompt, [
+        checkPrompt(info.promptInfo.prompt, [
             'You are Cody, an AI coding assistant from Sourcegraph.',
             'I am Cody, an AI coding assistant from Sourcegraph.',
             'enhanced1.ts',

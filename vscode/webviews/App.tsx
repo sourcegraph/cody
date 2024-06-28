@@ -4,8 +4,11 @@ import styles from './App.module.css'
 
 import {
     type AuthStatus,
+    CHAT_INPUT_TOKEN_BUDGET,
     type ChatMessage,
     type ClientStateForWebview,
+    EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
+    EXTENDED_USER_CONTEXT_TOKEN_BUDGET,
     GuardrailsPost,
     type Model,
     PromptString,
@@ -15,6 +18,7 @@ import type { UserAccountInfo } from './Chat'
 
 import type { AuthMethod, ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
 
+import type { TokenUsageLimits } from '@sourcegraph/cody-shared/src/token/counter'
 import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
 import type { View } from './NavBar'
@@ -66,6 +70,28 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             })
         })
     }, [vscodeAPI])
+
+    const [remainingTokens, setRemainingTokens] = useState<TokenUsageLimits>(() => {
+        const currentModel = chatModels?.find(model => model.default)
+        const isExtendedModel = currentModel?.contextWindow?.context?.user !== undefined
+
+        const chatTokenBudget = isExtendedModel
+            ? EXTENDED_CHAT_INPUT_TOKEN_BUDGET
+            : CHAT_INPUT_TOKEN_BUDGET
+        const userTokenBudget = isExtendedModel
+            ? EXTENDED_USER_CONTEXT_TOKEN_BUDGET
+            : CHAT_INPUT_TOKEN_BUDGET
+        const enhancedTokenBudget = Math.floor(chatTokenBudget * 0.6)
+
+        return {
+            chat: chatTokenBudget,
+            user: userTokenBudget,
+            enhanced: enhancedTokenBudget,
+            maxChat: chatTokenBudget,
+            maxUser: userTokenBudget,
+            maxEnhanced: enhancedTokenBudget,
+        }
+    })
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally refresh on `view`
     useEffect(
@@ -146,6 +172,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                 new Error(message.error)
                             )
                         }
+                        break
+                    case 'remainingTokens':
+                        setRemainingTokens(message.remainingTokens)
                         break
                 }
             }),
@@ -263,6 +292,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                     telemetryService={telemetryService}
                                     isTranscriptError={isTranscriptError}
                                     guardrails={attributionEnabled ? guardrails : undefined}
+                                    remainingTokens={remainingTokens}
                                 />
                             </ClientStateContextProvider>
                         </TelemetryRecorderContext.Provider>

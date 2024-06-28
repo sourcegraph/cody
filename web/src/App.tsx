@@ -7,6 +7,7 @@ import {
     isErrorLike,
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
+import type { TokenUsageLimits } from '@sourcegraph/cody-shared/src/token/counter'
 import { type FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import { URI } from 'vscode-uri'
 import type { ExtensionMessage } from '../../vscode/src/chat/protocol'
@@ -60,6 +61,14 @@ export const App: FunctionComponent = () => {
     const [chatModels, setChatModels] = useState<Model[]>()
     const [clientState, setClientState] = useState<ClientStateForWebview>({
         initialContext: [],
+    })
+    const [remainingTokens] = useState<TokenUsageLimits>({
+        chat: 0,
+        user: 0,
+        enhanced: 0,
+        maxChat: 7000,
+        maxUser: 7000,
+        maxEnhanced: 4200,
     })
     const dispatchClientAction = useClientActionDispatcher()
 
@@ -207,6 +216,7 @@ export const App: FunctionComponent = () => {
                             vscodeAPI={vscodeAPI}
                             telemetryService={telemetryService}
                             isTranscriptError={isTranscriptError}
+                            remainingTokens={remainingTokens}
                         />
                     </ClientStateContextProvider>
                 </TelemetryRecorderContext.Provider>

@@ -8,9 +8,11 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
+import type { TokenUsageLimits } from '@sourcegraph/cody-shared/src/token/counter'
 import styles from './Chat.module.css'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
+import { TokenIndicators } from './components/TokenIndicators'
 import { useTelemetryRecorder } from './utils/telemetry'
 
 interface ChatboxProps {
@@ -22,6 +24,7 @@ interface ChatboxProps {
     isTranscriptError: boolean
     userInfo: UserAccountInfo
     guardrails?: Guardrails
+    remainingTokens: TokenUsageLimits
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -34,6 +37,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     chatEnabled = true,
     userInfo,
     guardrails,
+    remainingTokens,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -174,6 +178,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             />
             {transcript.length === 0 && <WelcomeMessage />}
             <ScrollDown onClick={focusLastHumanMessageEditor} />
+            <div className={clsx(styles.tokenIndicators)}>
+                {remainingTokens && <TokenIndicators remainingTokens={remainingTokens} />}
+            </div>
         </div>
     )
 }
@@ -185,3 +192,4 @@ export interface UserAccountInfo {
 }
 
 export type ApiPostMessage = (message: any) => void
+export { TokenIndicators }
