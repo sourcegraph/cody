@@ -416,6 +416,8 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
             ]
             //TODO(rnauta): better typing
             const env = {
+                // inherit environment
+                ...process.env,
                 //TODO: all env variables
                 TESTING_DOTCOM_URL: sourcegraphMitM.endpoint,
             }
