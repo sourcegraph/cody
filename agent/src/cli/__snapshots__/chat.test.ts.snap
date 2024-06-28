@@ -4,7 +4,7 @@ exports[`--context-file (animal test) 1`] = `
 "command: cody chat chat --context-file animal.ts -m implement a cow. Only print
   the code without any explanation.
 exitCode: 0
-stdout: |
+stdout: |+
   \`\`\`typescript
   class Cow implements StrangeAnimal {
       makesSound(): 'moo' {
@@ -12,6 +12,7 @@ stdout: |
       }
   }
   \`\`\`
+
 stderr: ""
 "
 `;
@@ -20,11 +21,12 @@ exports[`--context-repo (squirrel test) 1`] = `
 "command: cody chat chat --context-repo github.com/sourcegraph/sourcegraph -m
   what is squirrel? Explain as briefly as possible.
 exitCode: 0
-stdout: >
-  Squirrel is a caching and structuring layer for Sourcegraph that sits between
-  the frontend and backend services. It caches and structures data from various
-  backend services to efficiently serve queries from the frontend. Squirrel aims
-  to reduce load on backend services and improve performance for common queries.
+stdout: >+
+  Squirrel is a high-performance, open-source object-relational database (ORD)
+  that provides a SQL interface for working with structured and semi-structured
+  data stored in modern cloud data stores like Amazon S3, Azure Blob Storage,
+  and Google Cloud Storage.
+
 stderr: ""
 "
 `;
@@ -32,8 +34,9 @@ stderr: ""
 exports[`--message (hello world test) 1`] = `
 "command: cody chat chat -m respond with "hello" and nothing else
 exitCode: 0
-stdout: |
+stdout: |+
   hello
+
 stderr: ""
 "
 `;

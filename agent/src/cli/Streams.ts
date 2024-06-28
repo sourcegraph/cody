@@ -14,9 +14,12 @@ export class Streams {
         public readonly stdout: Writable,
         public readonly stderr: Writable
     ) {}
-    public log(message: string): void {
+    public write(message: string): void {
         this.stdout.write(message)
-        this.stdout.write('\n')
+    }
+    public log(message: string): void {
+        this.write(message)
+        this.write('\n')
     }
     public error(message: string): void {
         this.stderr.write(message)
@@ -34,5 +37,4 @@ export class StringBufferStream extends Writable {
         this.buffer += chunk.toString()
         callback()
     }
-    fd = 1
 }
