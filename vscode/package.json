@@ -1331,6 +1331,7 @@
     "@opentelemetry/sdk-trace-base": "^1.18.1",
     "@opentelemetry/sdk-trace-node": "^1.18.1",
     "@opentelemetry/semantic-conventions": "^1.18.1",
+    "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-popover": "^1.0.7",
     "@radix-ui/react-slot": "^1.0.2",

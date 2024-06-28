@@ -28,16 +28,16 @@ describe('HumanMessageEditor', () => {
 
     describe('states', () => {
         function expectState(
-            { mentionButton, submitButton }: ReturnType<typeof renderWithMocks>,
+            { addContextButton, submitButton }: ReturnType<typeof renderWithMocks>,
             expected: {
                 toolbarVisible?: boolean
                 submitButtonVisible?: boolean
                 submitButtonEnabled?: boolean
-                submitButtonText?: string
+                submitButtonText?: string | RegExp
             }
         ): void {
             if (expected.toolbarVisible !== undefined) {
-                notUnless(expect.soft(mentionButton), expected.toolbarVisible).toBeVisible()
+                notUnless(expect.soft(addContextButton), expected.toolbarVisible).toBeVisible()
             }
             if (expected.submitButtonVisible !== undefined) {
                 notUnless(expect.soft(submitButton), expected.submitButtonVisible).toBeVisible()
@@ -60,7 +60,7 @@ describe('HumanMessageEditor', () => {
                     initialEditorState: serializedPromptEditorStateFromText('abc'),
                     isSent: false,
                 }),
-                { toolbarVisible: true, submitButtonEnabled: true, submitButtonText: 'Send' }
+                { toolbarVisible: true, submitButtonEnabled: true, submitButtonText: /send/i }
             )
         })
 
@@ -75,11 +75,13 @@ describe('HumanMessageEditor', () => {
         })
 
         test('isPendingPriorResponse', () => {
-            const rendered = renderWithMocks({
-                initialEditorState: undefined,
-                isPendingPriorResponse: true,
-            })
-            expectState(rendered, { toolbarVisible: true })
+            expectState(
+                renderWithMocks({
+                    initialEditorState: undefined,
+                    isPendingPriorResponse: true,
+                }),
+                { toolbarVisible: true, submitButtonEnabled: true, submitButtonText: /stop/i }
+            )
         })
     })
 
@@ -110,12 +112,16 @@ describe('HumanMessageEditor', () => {
         })
 
         test('isPendingPriorResponse', () => {
-            testNoSubmitting(
-                renderWithMocks({
-                    initialEditorState: serializedPromptEditorStateFromText('abc'),
-                    isPendingPriorResponse: true,
-                })
-            )
+            const { submitButton, onStop } = renderWithMocks({
+                initialEditorState: serializedPromptEditorStateFromText('abc'),
+                isPendingPriorResponse: true,
+            })
+
+            expect(submitButton).toBeEnabled()
+
+            // Click
+            fireEvent.click(submitButton!)
+            expect(onStop).toHaveBeenCalledTimes(1)
         })
 
         test('submit', async () => {
@@ -140,13 +146,15 @@ type EditorHTMLElement = HTMLDivElement & { dataset: { lexicalEditor: 'true' } }
 function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor>>): {
     container: HTMLElement
     editor: EditorHTMLElement
-    mentionButton: HTMLElement | null
+    addContextButton: HTMLElement | null
     submitButton: HTMLElement | null
     onChange: Mock
     onSubmit: Mock
+    onStop: Mock
 } {
     const onChange = vi.fn()
     const onSubmit = vi.fn()
+    const onStop = vi.fn()
 
     const DEFAULT_PROPS: React.ComponentProps<typeof HumanMessageEditor> = {
         userInfo: FIXTURE_USER_ACCOUNT_INFO,
@@ -157,6 +165,7 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
         isSent: false,
         onChange,
         onSubmit,
+        onStop,
     }
 
     const { container } = render(<HumanMessageEditor {...DEFAULT_PROPS} {...props} />, {
@@ -165,12 +174,13 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
     return {
         container,
         editor: container.querySelector<EditorHTMLElement>('[data-lexical-editor="true"]')!,
-        mentionButton: screen.queryByRole('button', { name: 'Add context', hidden: true }),
+        addContextButton: screen.queryByRole('button', { name: 'Add context', hidden: true }),
         submitButton: screen.queryByRole('button', {
-            name: 'Send',
+            name: /send|stop/i,
             hidden: true,
         }),
         onChange,
         onSubmit,
+        onStop,
     }
 }

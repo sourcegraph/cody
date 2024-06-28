@@ -104,7 +104,7 @@ describe('Transcript', () => {
         expectCells([
             { message: 'Foo' },
             { context: { loading: true } },
-            { message: '', canSubmit: false },
+            { message: '', canSubmit: true },
         ])
     })
 
@@ -126,7 +126,7 @@ describe('Transcript', () => {
             { message: 'Foo' },
             { context: { files: 1 } },
             { message: { loading: true } },
-            { message: '', canSubmit: false },
+            { message: '', canSubmit: true },
         ])
     })
 
@@ -147,7 +147,7 @@ describe('Transcript', () => {
         expectCells([
             { message: 'Foo' },
             { message: { loading: true } },
-            { message: '', canSubmit: false },
+            { message: '', canSubmit: true },
         ])
     })
 
@@ -169,7 +169,7 @@ describe('Transcript', () => {
             { message: 'Foo' },
             { context: { files: 1 } },
             { message: 'Bar' },
-            { message: '', canSubmit: false },
+            { message: '', canSubmit: true },
         ])
     })
 
@@ -187,7 +187,7 @@ describe('Transcript', () => {
                 messageInProgress={{ speaker: 'assistant', text: ps`Bar` }}
             />
         )
-        expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: '', canSubmit: false }])
+        expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: '', canSubmit: true }])
     })
 
     test('assistant message with error', () => {
@@ -214,7 +214,7 @@ describe('Transcript', () => {
             '[role="row"]:last-child [data-lexical-editor="true"]'
         )! as EditorHTMLElement
         await typeInEditor(editor, 'qux')
-        expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: 'qux', canSubmit: false }])
+        expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: 'qux', canSubmit: true }])
 
         rerender(
             <Transcript
@@ -305,7 +305,7 @@ function expectCells(expectedCells: CellMatcher[], containerElement?: HTMLElemen
         } else if ('context' in expectedCell) {
             expect(cell).toHaveAttribute('data-testid', 'context')
             if (expectedCell.context.files !== undefined) {
-                expect(cell.querySelector('summary')).toHaveAccessibleDescription(
+                expect(cell.querySelector('button')).toHaveAccessibleDescription(
                     `${expectedCell.context.files} item`
                 )
             } else if (expectedCell.context.loading) {

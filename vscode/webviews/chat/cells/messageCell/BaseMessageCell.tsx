@@ -25,4 +25,4 @@ export const BaseMessageCell: FunctionComponent<{
     </Cell>
 )
 
-export const MESSAGE_CELL_AVATAR_SIZE = 27.5
+export const MESSAGE_CELL_AVATAR_SIZE = 24
