@@ -26,7 +26,7 @@
     "test:unit": "vitest run",
     "test:integration": "pnpm -C vscode test:integration",
     "test:e2e": "pnpm -C vscode test:e2e",
-    "test:local-e2e": "pnpm test agent/src/local-e2e/template.test.ts",
+    "test:local-e2e": "RUN_LOCAL_E2E_TESTS=true pnpm test agent/src/local-e2e/template.test.ts",
     "generate-agent-kotlin-bindings": "./agent/scripts/generate-agent-kotlin-bindings.sh",
     "update-agent-recordings": "pnpm build && CODY_KEEP_UNUSED_RECORDINGS=false CODY_RECORD_IF_MISSING=true vitest agent/src",
     "update-rewrite-recordings": "rm -rf recordings && CODY_RECORD_IF_MISSING=true vitest vscode/src/local-context/rewrite-keyword-query.test.ts",

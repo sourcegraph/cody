@@ -5,6 +5,9 @@ import { SourcegraphGraphQLAPIClient, isError } from '@sourcegraph/cody-shared'
 import type { TestingCredentials } from '../../../vscode/src/testutils/testing-credentials'
 import { registerLocalCertificates } from '../certs'
 
+// We don't want to run those tests anywhere else than locally.
+export const isLocal = process.env.RUN_LOCAL_E2E_TESTS === 'true'
+
 // Endpoint as defined by `sg setup` and `sg start dotcom`
 const defaultEndpoint = 'https://sourcegraph.test:3443'
 

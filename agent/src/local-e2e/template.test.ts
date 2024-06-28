@@ -5,9 +5,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { ModelsService, getDotComDefaultModels } from '@sourcegraph/cody-shared'
 import { TestClient } from '../TestClient'
 import { TestWorkspace } from '../TestWorkspace'
-import { LocalSGInstance } from './helpers'
+import { LocalSGInstance, isLocal } from './helpers'
 
-describe('E2E-local', () => {
+describe.runIf(isLocal)('E2E-local', () => {
     const workspace = new TestWorkspace(path.join(__dirname, '..', '__tests__', 'example-ts'))
     let client: TestClient
     const sg = new LocalSGInstance()
