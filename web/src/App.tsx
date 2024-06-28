@@ -19,6 +19,10 @@ import {
     ClientStateContextProvider,
     useClientActionDispatcher,
 } from '../../vscode/webviews/client/clientState'
+import {
+    ContextsContextProvider,
+    useContextsValue,
+} from '../../vscode/webviews/components/contextSelectField/contexts'
 import { type VSCodeWrapper, setVSCodeWrapper } from '../../vscode/webviews/utils/VSCodeApi'
 import {
     TelemetryRecorderContext,
@@ -62,6 +66,7 @@ export const App: FunctionComponent = () => {
         initialContext: [],
     })
     const dispatchClientAction = useClientActionDispatcher()
+    const contexts = useContextsValue()
 
     const [client, setClient] = useState<AgentClient | Error | null>(null)
     useEffect(() => {
@@ -158,9 +163,15 @@ export const App: FunctionComponent = () => {
                 case 'clientAction':
                     dispatchClientAction(message)
                     break
+                case 'contexts':
+                    contexts.setContextsData({
+                        contexts: message.contexts,
+                        currentContext: message.currentContext,
+                    })
+                    break
             }
         })
-    }, [vscodeAPI, dispatchClientAction])
+    }, [vscodeAPI, dispatchClientAction, contexts.setContextsData])
     useEffect(() => {
         // Notify the extension host that we are ready to receive events.
         vscodeAPI.postMessage({ command: 'ready' })
@@ -199,15 +210,17 @@ export const App: FunctionComponent = () => {
             <ChatModelContextProvider value={chatModelContext}>
                 <TelemetryRecorderContext.Provider value={telemetryRecorder}>
                     <ClientStateContextProvider value={clientState}>
-                        <Chat
-                            chatEnabled={true}
-                            userInfo={userAccountInfo}
-                            messageInProgress={messageInProgress}
-                            transcript={transcript}
-                            vscodeAPI={vscodeAPI}
-                            telemetryService={telemetryService}
-                            isTranscriptError={isTranscriptError}
-                        />
+                        <ContextsContextProvider value={contexts.contextValue}>
+                            <Chat
+                                chatEnabled={true}
+                                userInfo={userAccountInfo}
+                                messageInProgress={messageInProgress}
+                                transcript={transcript}
+                                vscodeAPI={vscodeAPI}
+                                telemetryService={telemetryService}
+                                isTranscriptError={isTranscriptError}
+                            />
+                        </ContextsContextProvider>
                     </ClientStateContextProvider>
                 </TelemetryRecorderContext.Provider>
             </ChatModelContextProvider>

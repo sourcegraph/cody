@@ -4,6 +4,7 @@ import type {
     AuthStatus,
     ClientStateForWebview,
     ConfigurationWithAccessToken,
+    Context,
     ContextItem,
     ContextMentionProviderMetadata,
     EnhancedContextContextT,
@@ -180,6 +181,7 @@ export type ExtensionMessage =
           type: 'allMentionProvidersMetadata'
           providers: ContextMentionProviderMetadata[]
       }
+    | { type: 'contexts'; contexts: Context[]; currentContext: Context | null }
 
 interface ExtensionAttributionMessage {
     snippet: string

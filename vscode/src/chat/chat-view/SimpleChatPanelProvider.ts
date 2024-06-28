@@ -10,6 +10,7 @@ import {
     type ChatMessage,
     CodyIDE,
     ConfigFeaturesSingleton,
+    type Context,
     type ContextItem,
     ContextItemSource,
     type ContextItemWithContent,
@@ -29,6 +30,7 @@ import {
     type SerializedPromptEditorState,
     Typewriter,
     allMentionProvidersMetadata,
+    graphqlClient,
     hydrateAfterPostMessage,
     isAbortError,
     isDefined,
@@ -552,6 +554,22 @@ export class SimpleChatPanelProvider
             config: configForWebview,
             authStatus,
             workspaceFolderUris,
+        })
+        await this.postMessage({
+            type: 'contexts',
+            contexts: (await graphqlClient.getContexts()).map(
+                c =>
+                    ({
+                        id: c.id,
+                        name: c.name,
+                        description: c.description || undefined,
+                        spec: c.spec,
+                        query: c.query,
+                        default: c.viewerHasAsDefault,
+                        starred: c.viewerHasStarred,
+                    }) satisfies Context
+            ),
+            currentContext: null,
         })
         logDebug('SimpleChatPanelProvider', 'updateViewConfig', {
             verbose: configForWebview,
