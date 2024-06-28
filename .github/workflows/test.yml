@@ -53,5 +53,40 @@ jobs:
           name: test-report
           path: build/reports/tests/
       - run: ./gradlew buildPlugin
-      - run: ./gradlew runPluginVerifier -Pvalidation=lite
       - run: ./gradlew --stop
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin.zip
+          path: './build/distributions/Sourcegraph-*.zip'
+  plugin-verifier:
+    name: IntelliJ Plugin Verifier
+    runs-on: ubuntu-latest
+    needs:
+      - test
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: plugin.zip
+      - name: Verify Plugin on IntelliJ Platforms
+        id: verify
+        uses: ChrisCarini/intellij-platform-plugin-verifier-action@v2.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          plugin-location: '*.zip'
+          ide-versions: |
+            ideaIC:2021.1
+            ideaIC:2024.1
+          failure-levels: |
+            COMPATIBILITY_WARNINGS
+            INTERNAL_API_USAGES
+            OVERRIDE_ONLY_API_USAGES
+            NON_EXTENDABLE_API_USAGES
+            PLUGIN_STRUCTURE_WARNINGS
+            MISSING_DEPENDENCIES
+            INVALID_PLUGIN
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin-verifier-reports
+          path: 'verification-*'
+        
