@@ -72,11 +72,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             vscodeAPI.onMessage(message => {
                 switch (message.type) {
                     case 'ui/theme': {
-                        if (message.css) {
-                            // Inject the theme to the root
-                            const cssVariables = message.css
-                            // Add the style to the root element
-                            document.getElementById('root')?.setAttribute('style', cssVariables)
+                        document.documentElement.dataset.ide = message.agentIDE
+                        const rootStyle = document.documentElement.style
+                        for (const [name, value] of Object.entries(message.cssVariables || {})) {
+                            rootStyle.setProperty(name, value)
                         }
                         break
                     }
