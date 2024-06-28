@@ -8,7 +8,6 @@ import {
     isWindows,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 
@@ -63,6 +62,7 @@ import { AgentProviders } from './AgentProviders'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import type { PollyRequestError } from './cli/jsonrpc'
+import { codyPaths } from './codyPaths'
 import {
     MessageHandler,
     type RequestCallback,
@@ -130,7 +130,7 @@ export async function initializeVscodeExtension(
     extensionActivate: ExtensionActivate,
     extensionClient: ExtensionClient
 ): Promise<void> {
-    const paths = envPaths('Cody')
+    const paths = codyPaths()
     const extensionPath = paths.config
     copyWinCaRootsBinary(extensionPath)
 
