@@ -39,6 +39,7 @@ import type {
     EditTask,
     ExtensionConfiguration,
     NetworkRequest,
+    Position,
     ProgressReportParams,
     ProgressStartParams,
     ProtocolCodeLens,
@@ -495,11 +496,7 @@ export class TestClient extends MessageHandler {
         return this.workspace.getDocument(uri)?.content ?? ''
     }
 
-    public async generateUnitTestFor(
-        uri: vscode.Uri,
-        line: number
-    ): Promise<TextDocumentEditParams | undefined> {
-        const existingEdits = new Set(this.textDocumentEditParams)
+    public async generateUnitTestFor(uri: vscode.Uri, line: number): Promise<TestInfo | undefined> {
         await this.openFile(uri, {
             removeCursor: false,
             selection: {
@@ -518,7 +515,48 @@ export class TestClient extends MessageHandler {
         }
 
         await this.request('editTask/accept', { id: task.id })
-        return this.textDocumentEditParams.find(edit => !existingEdits.has(edit))
+        return this.getTestEdit()
+    }
+
+    private async getTestEdit(): Promise<TestInfo | undefined> {
+        // first check if a new text file was created in the workspace
+        if (this.textDocumentEditParams.length === 1) {
+            const [editParams] = this.textDocumentEditParams
+            const insert = editParams.edits.find(edit => edit.type === 'replace')
+            if (insert) {
+                return {
+                    uri: vscode.Uri.parse(editParams.uri).with({ scheme: 'file' }),
+                    value: insert.value,
+                    fullFile: insert.value,
+                    isUpdate: false,
+                }
+            }
+        }
+        // Otherwise it is an update to test file so it should
+        for (const param of this.workspaceEditParams) {
+            for (const operation of param.operations) {
+                if (operation.type === 'edit-file') {
+                    for (const edit of operation.edits) {
+                        // looks for a replace with an appropriate range
+                        if (
+                            edit.type === 'replace' &&
+                            !isPositionEqual(edit.range.start, edit.range.end)
+                        ) {
+                            const uri = vscode.Uri.parse(operation.uri).with({ scheme: 'file' })
+                            await this.openFile(uri)
+                            return {
+                                uri,
+                                value: edit.value,
+                                fullFile: this.documentText(uri),
+                                isUpdate: true,
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return undefined
     }
 
     public async autocompleteText(params?: Partial<AutocompleteParams>): Promise<string[]> {
@@ -980,4 +1018,20 @@ interface TextDocumentEventParams {
     selectionName?: string
     removeCursor?: boolean
     selection?: Range | undefined | null
+}
+
+function isPositionEqual(a: Position, b: Position): boolean {
+    return a.line === b.line && a.character === b.character
+}
+
+interface TestInfo {
+    // Test files "on disk" URI (not actually written about but uses "file" protocol)
+    uri: vscode.Uri
+
+    // Test content
+    value: string
+    fullFile: string
+
+    // Was this an update to an exisiting test file or a new file
+    isUpdate: boolean
 }

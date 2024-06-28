@@ -6,7 +6,7 @@ import { fileExists } from '../../../../vscode/src/local-context/download-symf'
 import { redactAuthorizationHeader } from '../../../../vscode/src/testutils/CodyPersister'
 import { TestClient } from '../../TestClient'
 import { getLanguageForFileName } from '../../language'
-import type { ProtocolDiagnostic, TextDocumentEditParams } from '../../protocol-alias'
+import type { ProtocolDiagnostic } from '../../protocol-alias'
 import { EvaluationDocument } from './EvaluationDocument'
 import type { CodyBenchOptions } from './cody-bench'
 import { evaluateEachFile } from './evaluateEachFile'
@@ -24,6 +24,7 @@ export async function evaluateUnitTestStrategy(
         return
     }
 
+    // The input file path may contain a line number, so we parse them accordingly
     const parseInputUri = (content: string): [vscode.Uri, number] => {
         if (!content.match(/:\d+$/)) {
             content += ':0'
@@ -46,7 +47,6 @@ export async function evaluateUnitTestStrategy(
     })
 
     await evaluateEachFile([path.relative(workspace, metadataPath)], options, async params => {
-        console.log(`evaluating ${params.uri.fsPath}`)
         const task: TestTask = yaml.parse(params.content)
         if (
             (await fileExists(path.join(workspace, 'package.json'))) &&
@@ -56,9 +56,17 @@ export async function evaluateUnitTestStrategy(
             await runVoidCommand(options.installCommand, workspace)
         }
         const [inputUri, line] = parseInputUri(task.input)
-        const editParams = await client.generateUnitTestFor(inputUri, line)
+        if (task.shouldAppend) {
+            // When we are adding to an existing test file we must open it in the
+            // test client so that it can make changes
+            client.openFile(
+                vscode.Uri.parse(path.join(workspace, task.expectedTestFilename)).with({
+                    scheme: 'file',
+                })
+            )
+        }
+        const test = await client.generateUnitTestFor(inputUri, line)
 
-        const test = getTestValue(editParams)
         if (!test) {
             return
         }
@@ -83,7 +91,8 @@ export async function evaluateUnitTestStrategy(
         const testFile = path.relative(workspace, test.uri.path)
         const testInputFile = path.relative(workspace, inputUri.path)
         // check if it matches the test regex
-        const matchesTestRegex = task.importRegex ? !!test.value.match(task.importRegex) : false
+        const matchesTestRegex = task.importRegex ? !!test.fullFile.match(task.importRegex) : false
+        const testMatchesExpectedTestFile = testFile === task.expectedTestFilename
 
         document.pushItem({
             range: new vscode.Range(0, 0, 0, 0),
@@ -95,30 +104,12 @@ export async function evaluateUnitTestStrategy(
             testHasTypescriptErrors: typescriptErrors.length > 0,
             testDiagnostics: typescriptErrors.map(prettyDiagnostic).join('\n').replaceAll(workspace, ''),
             testExpectedFile: task.expectedTestFilename,
-            testMatchesExpectedTestFile: testFile === task.expectedTestFilename,
+            testMatchesExpectedTestFile,
+            testUsedCorrectAppendOperation: task.shouldAppend && testMatchesExpectedTestFile,
             testUsedExpectedTestFramework: matchesTestRegex,
         })
         return document
     })
-}
-
-function getTestValue(editParams: TextDocumentEditParams | undefined): TestInfo | undefined {
-    if (!editParams || editParams.edits.length !== 1) {
-        throw new Error('Expected a single edit')
-    }
-    const edit = editParams.edits[0]
-    switch (edit.type) {
-        case 'insert':
-        case 'replace':
-            return { uri: vscode.Uri.parse(editParams.uri).with({ scheme: 'file' }), value: edit.value }
-        default:
-            return undefined
-    }
-}
-
-interface TestInfo {
-    uri: vscode.Uri
-    value: string
 }
 
 interface TestTask {
@@ -127,4 +118,5 @@ interface TestTask {
     expectedTestFilename: string
     language: string
     importRegex?: string
+    shouldAppend: boolean
 }
