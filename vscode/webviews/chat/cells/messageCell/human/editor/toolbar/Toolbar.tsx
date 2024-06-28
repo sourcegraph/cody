@@ -1,4 +1,4 @@
-import type { Model } from '@sourcegraph/cody-shared'
+import { type Model, ModelsService } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import { AtSignIcon, PaperclipIcon } from 'lucide-react'
 import { type FunctionComponent, useCallback } from 'react'
@@ -59,9 +59,6 @@ export const Toolbar: FunctionComponent<{
 
     const { chatModels } = useChatModelContext()
     const currentModel = chatModels?.find(m => m.default)
-    const isOllamaMultiModal =
-        currentModel?.provider === 'Ollama' && currentModel?.model.includes('llava')
-
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
         <menu
@@ -81,7 +78,7 @@ export const Toolbar: FunctionComponent<{
                     aria-label="Add context"
                 />
             )}
-            {isOllamaMultiModal && (
+            {currentModel && ModelsService.isMultiModalModel(currentModel?.model) && (
                 <ToolbarButton
                     variant="secondary"
                     tooltip="Upload an image"

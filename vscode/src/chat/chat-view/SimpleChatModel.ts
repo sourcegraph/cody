@@ -45,13 +45,16 @@ export class SimpleChatModel {
      * @returns A Promise that resolves when the image upload is complete.
      */
     public async addImages(imageUris: vscode.Uri[]): Promise<void> {
+        // Clear the existing images before adding new ones.
         this.images = []
-        this.images = await Promise.all(
-            imageUris.map(async uri => {
-                const imageFile = await vscode.workspace.fs.readFile(uri)
-                return Buffer.from(imageFile).toString('base64')
-            })
-        )
+        if (ModelsService.isMultiModalModel(this.modelID)) {
+            this.images = await Promise.all(
+                imageUris.map(async uri => {
+                    const imageFile = await vscode.workspace.fs.readFile(uri)
+                    return Buffer.from(imageFile).toString('base64')
+                })
+            )
+        }
     }
 
     public getAndResetImages(): string[] | undefined {
