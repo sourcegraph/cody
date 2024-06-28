@@ -329,18 +329,29 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                 }
             )
 
-            const cliExecutableDir = path.resolve(
-                path.dirname(electronExecutable),
-                '../Resources/app/bin/'
-            )
-            //find either a code or code.exe file
-            const vscodeExecutableName = (await fs.readdir(cliExecutableDir)).find(
-                file => file.endsWith('code-tunnel') || file.endsWith('code-tunnel.exe')
-            )
-            if (!vscodeExecutableName) {
-                throw new Error(`Could not find a vscode executable in ${cliExecutableDir}`)
-            }
-            const vscodeExecutable = path.join(cliExecutableDir, vscodeExecutableName)
+            // The location of the executable is platform dependent, try the
+            // first location that works.
+            const vscodeExecutable = await Promise.any(
+                [
+                    '../Resources/app/bin', // darwin
+                    'bin', // linux
+                ].map(async binPath => {
+                    const cliExecutableDir = path.resolve(path.dirname(electronExecutable), binPath)
+
+                    // find either a code or code.exe file
+                    const vscodeExecutableName = (await fs.readdir(cliExecutableDir)).find(
+                        file => file.endsWith('code-tunnel') || file.endsWith('code-tunnel.exe')
+                    )
+                    if (!vscodeExecutableName) {
+                        throw new Error(`Could not find a vscode executable in ${cliExecutableDir}`)
+                    }
+                    return path.join(cliExecutableDir, vscodeExecutableName)
+                })
+            ).catch(async () => {
+                throw new Error(
+                    `Could not find a vscode executable under ${path.dirname(electronExecutable)}`
+                )
+            })
 
             // Machine settings should simply serve as a baseline to ensure
             // tests by default work smoothly. Any test specific preferences
