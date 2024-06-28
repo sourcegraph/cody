@@ -53,18 +53,9 @@ While you can totally edit those over https://sourcegraph.test:3443/site-admin/c
 recommended method is through the escape hatch: `~/.sourcegraph/site-config.json`. Once the local
 instance is running, saving that file will reload the instance.
 
-### `sg.config.overwrite.yaml`
-
-Cody Gateway env must have: 
-
-```
-CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: 'sgp_local_f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0'
-CODY_GATEWAY_SOURCEGRAPH_EMBEDDINGS_API_TOKEN: sgp_local_f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0
-```
-
 ## Running the tests 
 
-1. In your Sourcegraph folder, run `sg start dotcom`.
+1. In your Sourcegraph folder, run `sg start dotcom-cody-e2e`.
 1. Back to the Cody repo, run `pnpm run test:local-e2e`
 
 ## FAQ 
