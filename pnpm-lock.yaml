@@ -368,9 +368,12 @@ importers:
       '@mdi/js':
         specifier: ^7.2.96
         version: 7.2.96
+      '@openctx/provider-linear-issues':
+        specifier: ^0.0.6
+        version: 0.0.6
       '@openctx/vscode-lib':
-        specifier: ^0.0.11
-        version: 0.0.11
+        specifier: ^0.0.13
+        version: 0.0.13
       '@opentelemetry/api':
         specifier: ^1.7.0
         version: 1.7.0
@@ -3202,6 +3205,16 @@ packages:
       '@openctx/schema': 0.0.12
     dev: false
 
+  /@openctx/provider-linear-issues@0.0.6:
+    resolution: {integrity: sha512-h1N8OtATRDIVB/VJ/m3WBFdVQBwFpa1RHlDiNhg8znCAK9qhw6Y/GMTl89Q6IBZwIdFQ2uxxzF7d8bkyBIiEDQ==}
+    dependencies:
+      '@openctx/provider': 0.0.14
+      dedent: 1.5.3
+      fast-xml-parser: 4.4.0
+    transitivePeerDependencies:
+      - babel-plugin-macros
+    dev: false
+
   /@openctx/provider@0.0.14:
     resolution: {integrity: sha512-jROzpxMIzh4qmLGIfPa+7iwFwrb28gEa2gdveTTIOYGYuAzqcmzURjDofrLM5i32ftxbk/gyWxJbv5bXe31l2w==}
     dependencies:
@@ -3223,8 +3236,8 @@ packages:
       xss: 1.0.15
     dev: false
 
-  /@openctx/vscode-lib@0.0.11:
-    resolution: {integrity: sha512-G5V+0Bw37zE0PZqC/O2QlC5IKzDlEsD1YHx1+W5BkzUDh8yRRDmA0kBI7SU48CbHJkI7KJD9MujzBH07J52NMA==}
+  /@openctx/vscode-lib@0.0.13:
+    resolution: {integrity: sha512-lE26bXFVV8FQgayhBcFgdq+W4PrksB07TZmW/E3s9CTaEVUqMh/OW8o0Zo6R928Zsph+VibYsh/DTRHaavBGHA==}
     dependencies:
       '@openctx/client': 0.0.19
       '@openctx/ui-common': 0.0.11
@@ -7637,6 +7650,15 @@ packages:
   /dedent@0.7.0:
     resolution: {integrity: sha512-Q6fKUPqnAHAyhiUgFU7BUzLiv0kd8saH9al7tnu5Q/okj6dnupxyTgFIBjVzJATdfIAm9NAsvXNzjaKa+bxVyA==}
 
+  /dedent@1.5.3:
+    resolution: {integrity: sha512-NHQtfOOW68WD8lgypbLA5oT+Bt0xXJhiYvoR6SmmNXZfpzOGXwdKWmcwG8N7PwVVWV3eF/68nmD9BaJSsTBhyQ==}
+    peerDependencies:
+      babel-plugin-macros: ^3.1.0
+    peerDependenciesMeta:
+      babel-plugin-macros:
+        optional: true
+    dev: false
+
   /deep-eql@4.1.3:
     resolution: {integrity: sha512-WaEtAOpRA1MQ0eohqZjpGD8zdI0Ovsm8mmFhaDN8dvDZzyoUMcYDnf5Y6iu7HTXxf8JDS23qWa4a+hKCDyOPzw==}
     engines: {node: '>=6'}
@@ -8467,6 +8489,13 @@ packages:
 
   /fast-xml-parser@4.3.2:
     resolution: {integrity: sha512-rmrXUXwbJedoXkStenj1kkljNF7ugn5ZjR9FJcwmCfcCbtOMDghPajbc+Tck6vE6F5XsDmx+Pr2le9fw8+pXBg==}
+    hasBin: true
+    dependencies:
+      strnum: 1.0.5
+    dev: false
+
+  /fast-xml-parser@4.4.0:
+    resolution: {integrity: sha512-kLY3jFlwIYwBNDojclKsNAC12sfD6NwW74QB2CoNGPvtVxjliYehVunB3HYyNi+n4Tt1dAcgwYvmKF/Z18flqg==}
     hasBin: true
     dependencies:
       strnum: 1.0.5
