@@ -18,27 +18,19 @@ describe('AutocompleteStageCounter', () => {
         vi.clearAllTimers()
     })
 
-    it('returns initial state after LOG_INTERVAL', () => {
+    it('does not log empty counter events', () => {
+        logger.setProviderModel('test-model')
         vi.advanceTimersByTime(LOG_INTERVAL - 1)
 
         expect(recordSpy).not.toHaveBeenCalled()
 
         vi.advanceTimersByTime(1)
 
-        expect(recordSpy).toHaveBeenCalledWith('cody.completion.stageCounter', 'flush', {
-            metadata: {
-                preLastCandidate: 0,
-                preCache: 0,
-                preDebounce: 0,
-                preContextRetrieval: 0,
-                preNetworkRequest: 0,
-                preFinalCancellationCheck: 0,
-                preVisibilityCheck: 0,
-            },
-        })
+        expect(recordSpy).not.toHaveBeenCalled()
     })
 
     it('records state changes', () => {
+        logger.setProviderModel('test-model')
         logger.record('preLastCandidate')
         logger.record('preCache')
         logger.record('preSmartThrottle')
@@ -61,10 +53,12 @@ describe('AutocompleteStageCounter', () => {
                 preFinalCancellationCheck: 1,
                 preVisibilityCheck: 1,
             },
+            privateMetadata: { providerModel: 'test-model' },
         })
     })
 
     it('resets state after flushing', () => {
+        logger.setProviderModel('test-model')
         logger.record('preLastCandidate')
         logger.record('preCache')
         logger.record('preCache')
@@ -82,6 +76,7 @@ describe('AutocompleteStageCounter', () => {
                 preFinalCancellationCheck: 0,
                 preVisibilityCheck: 0,
             },
+            privateMetadata: { providerModel: 'test-model' },
         })
 
         logger.record('preDebounce')
@@ -125,7 +120,6 @@ describe('AutocompleteStageCounter', () => {
             metadata: {
                 preLastCandidate: 1,
                 preCache: 0,
-                preSmartThrottle: 0,
                 preDebounce: 0,
                 preContextRetrieval: 0,
                 preNetworkRequest: 0,
@@ -159,7 +153,6 @@ describe('AutocompleteStageCounter', () => {
             metadata: {
                 preLastCandidate: 0,
                 preCache: 1,
-                preSmartThrottle: 0,
                 preDebounce: 0,
                 preContextRetrieval: 0,
                 preNetworkRequest: 0,
