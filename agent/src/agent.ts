@@ -1065,6 +1065,18 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
         })
 
+        this.registerAuthenticatedRequest('chat/web/new', async () => {
+            const panelId = await this.createChatPanel(
+                Promise.resolve({
+                    type: 'chat',
+                    session: await vscode.commands.executeCommand('cody.chat.panel.new'),
+                })
+            )
+
+            const chatId = this.webPanels.panels.get(panelId)?.chatID ?? ''
+            return { panelId, chatId }
+        })
+
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
             let theModel = modelID
