@@ -9,6 +9,7 @@ data class AutocompleteParams(
   val position: Position,
   val triggerKind: TriggerKindEnum? = null, // Oneof: Automatic, Invoke
   val selectedCompletionInfo: SelectedCompletionInfo? = null,
+  val forceMultiline: Boolean? = null,
 ) {
 
   enum class TriggerKindEnum {
