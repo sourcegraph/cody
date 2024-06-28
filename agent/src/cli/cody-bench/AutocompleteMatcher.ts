@@ -58,7 +58,7 @@ export class AutocompleteMatcher {
             this.params,
             text,
             vscode.Uri.file(this.params.filepath),
-            { fixture: { name: 'autocomplete-matcher', strategy: BenchStrategy.BFG } }
+            { fixture: { name: 'autocomplete-matcher', strategy: BenchStrategy.Autocomplete } }
         )
         for (const queryMatch of query.matches(this.originalTree.rootNode)) {
             for (const capture of queryMatch.captures) {

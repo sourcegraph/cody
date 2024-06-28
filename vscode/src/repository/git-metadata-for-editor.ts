@@ -5,6 +5,7 @@ import { repoNameResolver } from '../repository/repo-name-resolver'
 import { gitCommitIdFromGitExtension } from './git-extension-api'
 
 export interface GitIdentifiersForFile {
+    filePath?: string
     gitUrl?: string
     commit?: string
 }
@@ -36,6 +37,7 @@ class GitMetadataForCurrentEditor {
         if (currentFile) {
             const commit = gitCommitIdFromGitExtension(currentFile)
             newGitIdentifiersForFile = {
+                filePath: currentFile.fsPath,
                 gitUrl: gitUrl,
                 commit: commit,
             }

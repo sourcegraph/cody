@@ -85,9 +85,7 @@ export class VSCodeEditor implements Editor {
             range = new vscode.Range(startLine, 0, endLine, 0)
         }
 
-        // Get the text from document by file Uri
-        const vscodeUri = vscode.Uri.file(fileUri.fsPath)
-        const doc = await vscode.workspace.openTextDocument(vscodeUri)
+        const doc = await vscode.workspace.openTextDocument(fileUri)
         return doc.getText(range)
     }
 

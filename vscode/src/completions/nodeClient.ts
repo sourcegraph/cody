@@ -6,14 +6,18 @@
 import http from 'node:http'
 import https from 'node:https'
 
-import { agent, getSerializedParams } from '@sourcegraph/cody-shared'
 import {
     type CompletionCallbacks,
     type CompletionParameters,
+    type CompletionRequestParameters,
+    NetworkError,
     RateLimitError,
     SourcegraphCompletionsClient,
     addClientInfoParams,
+    agent,
     customUserAgent,
+    getActiveTraceAndSpanId,
+    getSerializedParams,
     getTraceparentHeaders,
     isError,
     logError,
@@ -29,10 +33,12 @@ const isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
     protected _streamWithCallbacks(
         params: CompletionParameters,
-        apiVersion: number,
+        requestParams: CompletionRequestParameters,
         cb: CompletionCallbacks,
         signal?: AbortSignal
     ): Promise<void> {
+        const { apiVersion } = requestParams
+
         const url = new URL(this.completionsEndpoint)
         if (apiVersion >= 1) {
             url.searchParams.append('api-version', '' + apiVersion)
@@ -94,6 +100,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                             : null),
                         ...(customUserAgent ? { 'User-Agent': customUserAgent } : null),
                         ...this.config.customHeaders,
+                        ...requestParams.customHeaders,
                         ...getTraceparentHeaders(),
                         Connection: 'keep-alive',
                     },
@@ -108,7 +115,8 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         status: res.statusCode,
                     })
 
-                    if (res.statusCode === undefined) {
+                    const statusCode = res.statusCode
+                    if (statusCode === undefined) {
                         throw new Error('no status code present')
                     }
 
@@ -119,7 +127,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     function handleError(e: Error): void {
                         log?.onError(e.message, e)
 
-                        if (res.statusCode === 429) {
+                        if (statusCode === 429) {
                             // Check for explicit false, because if the header is not set, there
                             // is no upgrade available.
                             const upgradeIsAvailable =
@@ -138,15 +146,15 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                                 limit ? Number.parseInt(limit, 10) : undefined,
                                 retryAfter
                             )
-                            onErrorOnce(error, res.statusCode)
+                            onErrorOnce(error, statusCode)
                         } else {
-                            onErrorOnce(e, res.statusCode)
+                            onErrorOnce(e, statusCode)
                         }
                     }
 
                     // For failed requests, we just want to read the entire body and
                     // ultimately return it to the error callback.
-                    if (res.statusCode >= 400) {
+                    if (statusCode >= 400) {
                         // Bytes which have not been decoded as UTF-8 text
                         let bufferBin = Buffer.of()
                         // Text which has not been decoded as a server-sent event (SSE)
@@ -163,7 +171,19 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         })
 
                         res.on('error', e => handleError(e))
-                        res.on('end', () => handleError(new Error(errorMessage)))
+                        res.on('end', () =>
+                            handleError(
+                                new NetworkError(
+                                    {
+                                        url: url.toString(),
+                                        status: statusCode,
+                                        statusText: res.statusMessage ?? '',
+                                    },
+                                    errorMessage,
+                                    getActiveTraceAndSpanId()?.traceId
+                                )
+                            )
+                        )
                         return
                     }
 

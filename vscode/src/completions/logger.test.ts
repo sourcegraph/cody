@@ -56,13 +56,16 @@ describe('logger', () => {
     })
 
     it('logs a suggestion life cycle', () => {
-        const item = { id: completionItemId, insertText: 'foo' }
+        const item = {
+            id: completionItemId,
+            insertText: 'foo',
+            resolvedModel: 'blazing-fast-llm-resolved',
+        }
         const id = CompletionLogger.create(defaultArgs)
         expect(typeof id).toBe('string')
 
         CompletionLogger.start(id)
         CompletionLogger.networkRequestStarted(id, defaultContextSummary)
-        CompletionLogger.gatewayModelResolved(id, 'gateway-model')
         CompletionLogger.loaded(
             id,
             defaultRequestParams,
@@ -85,7 +88,7 @@ describe('logger', () => {
             otherCompletionProviders: [],
             providerIdentifier: 'bfl',
             providerModel: 'blazing-fast-llm',
-            resolvedModel: 'gateway-model',
+            resolvedModel: 'blazing-fast-llm-resolved',
             medianUpstreamLatency: undefined,
             contextSummary: {
                 retrieverStats: {},

@@ -80,13 +80,20 @@ export interface Configuration {
      * Hidden settings
      */
     isRunningInsideAgent?: boolean
-    agentIDE?: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
+    agentIDE?: CodyIDE
     agentIDEVersion?: string
     agentExtensionVersion?: string
     autocompleteTimeouts: AutocompleteTimeouts
     autocompleteFirstCompletionTimeout: number
 
     testingModelConfig: EmbeddingsModelConfig | undefined
+}
+
+export enum CodyIDE {
+    VSCode = 'VSCode',
+    JetBrains = 'JetBrains',
+    Neovim = 'Neovim',
+    Emacs = 'Emacs',
 }
 
 export interface AutocompleteTimeouts {

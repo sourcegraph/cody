@@ -1,10 +1,10 @@
 import { useState } from 'react'
 
-import { version as packageVersion } from '../../package.json'
-import { majorMinorVersion, releaseNotesURL } from '../../src/release'
+import { getReleaseNotesURLByIDE, majorMinorVersion } from '../../src/release'
 
 import { Notice } from './Notice'
 
+import type { CodyIDE } from '@sourcegraph/cody-shared'
 import styles from './VersionUpdatedNotice.module.css'
 
 const key = 'notices.last-dismissed-version'
@@ -37,15 +37,16 @@ const useShowNotice = (currentVersion: string, probablyNewInstall: boolean): [bo
 
 interface VersionUpdateNoticeProps {
     probablyNewInstall: boolean
+    IDE: CodyIDE
+    version: string
 }
 
 export const VersionUpdatedNotice: React.FunctionComponent<VersionUpdateNoticeProps> = ({
+    IDE,
+    version,
     probablyNewInstall,
 }) => {
-    const [showNotice, setDismissed] = useShowNotice(
-        majorMinorVersion(packageVersion),
-        probablyNewInstall
-    )
+    const [showNotice, setDismissed] = useShowNotice(majorMinorVersion(version), probablyNewInstall)
 
     if (!showNotice) {
         return undefined
@@ -54,8 +55,8 @@ export const VersionUpdatedNotice: React.FunctionComponent<VersionUpdateNoticePr
     return (
         <Notice
             icon={<Icon />}
-            title={`Cody updated to v${majorMinorVersion(packageVersion)}`}
-            linkHref={releaseNotesURL(packageVersion)}
+            title={`Cody updated to v${majorMinorVersion(version)}`}
+            linkHref={getReleaseNotesURLByIDE(version, IDE)}
             linkText="See what’s new →"
             linkTarget="_blank"
             onDismiss={setDismissed}

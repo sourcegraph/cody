@@ -48,8 +48,6 @@ export function isNodeResponse(response: BrowserOrNodeResponse): response is Nod
     return Boolean(response.body && !('getReader' in response.body))
 }
 
-const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
-
 interface APIResponse<T> {
     data?: T
     errors?: { message: string; path?: string[] }[]
@@ -87,6 +85,9 @@ interface CurrentUserInfoResponse {
         avatarURL: string
         codyProEnabled: boolean
         primaryEmail?: { email: string } | null
+        organizations: {
+            nodes: { name: string; id: string }[]
+        }
     } | null
 }
 interface CodyConfigFeatures {
@@ -318,13 +319,16 @@ export interface CurrentUserCodySubscription {
     currentPeriodEndAt: Date
 }
 
-interface CurrentUserInfo {
+export interface CurrentUserInfo {
     id: string
     hasVerifiedEmail: boolean
     username: string
     displayName?: string
     avatarURL: string
     primaryEmail?: { email: string } | null
+    organizations: {
+        nodes: { name: string; id: string }[]
+    }
 }
 
 interface EvaluatedFeatureFlag {
@@ -404,6 +408,8 @@ export class SourcegraphGraphQLAPIClient {
 
         return this._config
     }
+
+    private isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 
     constructor(config: GraphQLAPIClientConfig | null = null) {
         this._config = config
@@ -829,7 +835,7 @@ export class SourcegraphGraphQLAPIClient {
         if (process.env.CODY_TESTING === 'true') {
             return this.sendEventLogRequestToTestingAPI(event)
         }
-        if (isAgentTesting) {
+        if (this.isAgentTesting) {
             return {}
         }
         if (this.config?.telemetryLevel === 'off') {
@@ -906,7 +912,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     private anonymizeTelemetryEventInput(event: TelemetryEventInput): void {
-        if (isAgentTesting) {
+        if (this.isAgentTesting) {
             event.timestamp = undefined
             event.parameters.interactionID = undefined
             event.parameters.billingMetadata = undefined
@@ -917,7 +923,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     private anonymizeEvent(event: event): void {
-        if (isAgentTesting) {
+        if (this.isAgentTesting) {
             event.publicArgument = undefined
             event.argument = undefined
             event.userCookieID = 'ANONYMOUS_USER_COOKIE_ID'

@@ -60,9 +60,6 @@ log:
           size: 154
           text: |+
             event: completion
-            data: {"completion":"Yes","stopReason":""}
-
-            event: completion
             data: {"completion":"Yes","stopReason":"end_turn"}
 
             event: done
@@ -110,11 +107,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: aa5a490815f3b012a231fac93bac2881
+    - _id: 3e24e90fef96cdae9c86af2b7b65a503
       _order: 0
       cache: {}
       request:
-        bodySize: 3364
+        bodySize: 3380
         cookies: []
         headers:
           - name: content-type
@@ -127,7 +124,7 @@ log:
           - name: user-agent
             value: enterpriseClient / v1
           - name: traceparent
-            value: 00-7d15437aa1ec215ec24d5a3df74ff329-7e53116b613d91e6-01
+            value: 00-af6d670eee6a1084f4f82f6b8bbfe122-07e6f707a0db7098-01
           - name: connection
             value: keep-alive
           - name: host
@@ -165,10 +162,11 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: "Codebase context from file path src/example.test.ts: Codebase context
-                  from file src/example.test.ts:
+                text: >
+                  Codebase context from file path src/example.test.ts: Codebase
+                  context from file src/example.test.ts:
 
-                  \ expect } from 'vitest'
+                  import { expect } from 'vitest'
 
                   import { it } from 'vitest'
 
@@ -176,27 +174,16 @@ log:
 
 
                   describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
 
-                  \    it('does 1', () => {
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
 
-                  \        expect(true).toBe(true)
-
-                  \    })
-
-
-                  \    it('does 2', () => {
-
-                  \        expect(true).toBe(true)
-
-                  \    })
-
-
-                  \    it('does something else', () => {
-
-                  \        // This line will error due to
-                  incorrect usage of `performance.now`
-
-                  \        "
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of `performance.now`
               - speaker: assistant
                 text: Ok.
               - speaker: human
@@ -215,7 +202,7 @@ log:
 
                   The user has the following code in their selection:
 
-                  <SELECTEDCODE7662>const startTime = performance.now(/* CURSOR */)</SELECTEDCODE7662>
+                  <SELECTEDCODE7662>        const startTime = performance.now(/* CURSOR */)</SELECTEDCODE7662>
 
 
                   The user wants you to generate documentation for the selected code by following their instructions.
@@ -232,7 +219,7 @@ log:
             model: anthropic/claude-3-opus-20240229
             stopSequences:
               - </CODE5711>
-              - const startTime = performance.now(/* CURSOR */)
+              - "        const startTime = performance.now(/* CURSOR */)"
             temperature: 0
             topK: -1
             topP: -1
@@ -243,155 +230,14 @@ log:
             value: v1
         url: https://demo.sourcegraph.com/.api/completions/stream?client-name=enterpriseclient&client-version=v1
       response:
-        bodySize: 3845
+        bodySize: 814
         content:
           mimeType: text/event-stream
-          size: 3845
+          size: 814
           text: >+
             event: completion
 
-            data: {"completion":"//","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Recor","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now`","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` metho","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n//","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monot","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotoni","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp in","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp in millis","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp in milliseconds","stopReason":""}
-
-
-            event: completion
-
-            data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp in milliseconds.","stopReason":""}
-
-
-            event: completion
-
             data: {"completion":"// Record the start time using the Performance API's `now` method.\n// This captures a high resolution monotonic timestamp in milliseconds.","stopReason":"stop_sequence"}
-
 
             event: done
 
@@ -400,7 +246,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 03 Jun 2024 08:21:51 GMT
+            value: Tue, 25 Jun 2024 15:48:09 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -429,7 +275,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-03T08:21:48.468Z
+      startedDateTime: 2024-06-25T15:48:06.929Z
       time: 0
       timings:
         blocked: -1
@@ -475,7 +321,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {
@@ -580,7 +426,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query ContextFilters {
                   site {
                       codyContextFilters(version: V1) {
@@ -683,7 +529,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -791,7 +637,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -894,7 +740,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -959,11 +805,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 4cfda87e85b57b509bfb2ace58bb4847
+    - _id: 1e4155184524e985a9d3113dc68b8f02
       _order: 0
       cache: {}
       request:
-        bodySize: 227
+        bodySize: 341
         cookies: []
         headers:
           - _fromType: array
@@ -981,7 +827,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "227"
+            value: "341"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -995,7 +841,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -1006,6 +852,12 @@ log:
                       primaryEmail {
                           email
                       }
+                      organizations {
+                          nodes {
+                              id
+                              name
+                          }
+                      }
                   }
               }
             variables: {}
@@ -1014,19 +866,19 @@ log:
             value: null
         url: https://demo.sourcegraph.com/.api/graphql?CurrentUser
       response:
-        bodySize: 203
+        bodySize: 263
         content:
           encoding: base64
           mimeType: application/json
-          size: 203
-          text: "[\"H4sIAAAAAAAAAzSMwQrCMBAF/+Wd8wUBj940B7HF69JsdSVJyyYRYsm/S0WPMwyzwVMh2\
-            A1TVeVUhsy6o3hYjDcXpufydtfzAQYPyiOrzML+GA==\",\"SQLsTCGzgZe8BmqOIsO\
-            mGoJBzazpy5gW3wrnIukOA3pRIR0up3+5qkTS9jvurvf+AQAA//8DAD+3K/CYAAAA\"\
-            ]"
+          size: 263
+          text: "[\"H4sIAAAAAAAAAzSOwQrCQAxE/yXnevK24NGLaAWxRRAPoRtrZJstyVassv8u1Xp8wzDz3\
+            uAxIbg3NIMqSaqMdEL24KA+laG5x1d53K2ggBtaTQ==\",\"ylcmv+6QA7grBqMCPFs\
+            fcCyxI3AyhFDAYKTyZWiiHxNZYmmhAHxgQq0O23+zV+5Qx3nxl0VtUfiFiaPYpCPRk4\
+            E7z2LH5Ub292qSmk9YjNtbsgU9sesDGeRLzjl/AAAA//8DALyqElbhAAAA\"]"
         cookies: []
         headers:
           - name: date
-            value: Fri, 26 Apr 2024 14:24:11 GMT
+            value: Tue, 25 Jun 2024 06:04:29 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1057,7 +909,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-04-26T14:24:11.102Z
+      startedDateTime: 2024-06-25T06:04:28.979Z
       time: 0
       timings:
         blocked: -1
@@ -1103,7 +955,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               query Repositories($first: Int!, $after: String) {
                   repositories(first: $first, after: $after) {
                       nodes {
@@ -1460,7 +1312,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               query Repositories($first: Int!, $after: String) {
                   repositories(first: $first, after: $after) {
                       nodes {
@@ -1811,7 +1663,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               query Repositories($first: Int!, $after: String) {
                   repositories(first: $first, after: $after) {
                       nodes {
@@ -2164,7 +2016,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               query Repositories($first: Int!, $after: String) {
                   repositories(first: $first, after: $after) {
                       nodes {
@@ -2504,7 +2356,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               query Repositories($first: Int!, $after: String) {
                   repositories(first: $first, after: $after) {
                       nodes {
@@ -2867,7 +2719,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               query Repositories($first: Int!, $after: String) {
                   repositories(first: $first, after: $after) {
                       nodes {
@@ -3232,7 +3084,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               query Repositories($first: Int!, $after: String) {
                   repositories(first: $first, after: $after) {
                       nodes {
@@ -3591,7 +3443,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               query Repositories($first: Int!, $after: String) {
                   repositories(first: $first, after: $after) {
                       nodes {
@@ -3861,7 +3713,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               query Repositories($first: Int!, $after: String) {
                   repositories(first: $first, after: $after) {
                       nodes {
@@ -3974,7 +3826,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               query Repositories($names: [String!]!, $first: Int!) {
                   repositories(names: $names, first: $first) {
                     nodes {
@@ -4076,7 +3928,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query Repository($name: String!) {
               	repository(name: $name) {
               		id
@@ -4172,7 +4024,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query Repository($name: String!) {
               	repository(name: $name) {
               		id
@@ -4276,7 +4128,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               query ResolveRepoName($cloneURL: String!) {
                   repository(cloneURL: $cloneURL) {
                       name
@@ -4376,7 +4228,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteGraphQLFields {
                   __type(name: "Site") {
                       fields {
@@ -4484,7 +4336,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteHasCodyEnabled {
                   site {
                       isCodyEnabled
@@ -4575,7 +4427,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteIdentification {
               	site {
               		siteID
@@ -4675,7 +4527,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteIdentification {
               	site {
               		siteID
@@ -4781,7 +4633,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -4880,7 +4732,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion

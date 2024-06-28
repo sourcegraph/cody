@@ -21,6 +21,10 @@ describe('Custom Commands', () => {
         await workspace.beforeAll()
         await client.beforeAll()
         await client.request('command/execute', { command: 'cody.search.index-update' })
+        const customCommands = await client.request('customCommands/list', null)
+        // The number of custom commands we are testing
+        const expectedCommands = 5
+        expect(customCommands.length).toBeGreaterThan(expectedCommands)
     })
 
     afterAll(async () => {

@@ -13,6 +13,7 @@ import { LexicalTypeaheadMenuPlugin, type MenuOption } from '@lexical/react/Lexi
 import {
     $createTextNode,
     $getSelection,
+    $isTextNode,
     BLUR_COMMAND,
     COMMAND_PRIORITY_NORMAL,
     KEY_ESCAPE_COMMAND,
@@ -110,17 +111,24 @@ export default function MentionsPlugin({
         (getNewQuery: (currentText: string) => string): void => {
             if (editor) {
                 editor.update(() => {
-                    const selection = $getSelection()
-
-                    if (selection) {
-                        const lastNode = selection.getNodes().at(-1)
-                        if (lastNode) {
-                            const currentText = lastNode.getTextContent()
-                            const textNode = $createTextNode(getNewQuery(currentText))
-                            lastNode.replace(textNode)
-                            textNode.selectEnd()
-                        }
+                    const node = $getSelection()?.getNodes().at(-1)
+                    if (!node || !$isTextNode(node)) {
+                        return
                     }
+
+                    const currentText = node.getTextContent()
+                    const newText = getNewQuery(currentText)
+                    if (currentText === newText) {
+                        return
+                    }
+
+                    node.setTextContent(newText)
+
+                    // If our old text was "prefix @bar baz" and the new text is
+                    // "prefix @ baz" then our cursor should be just after @
+                    // (which is at the common prefix position)
+                    const offset = sharedPrefixLength(currentText, newText)
+                    node.select(offset, offset)
                 })
             }
         },
@@ -271,6 +279,14 @@ export default function MentionsPlugin({
             }}
         />
     )
+}
+
+function sharedPrefixLength(s1: string, s2: string): number {
+    let i = 0
+    while (i < s1.length && i < s2.length && s1[i] === s2[i]) {
+        i += 1
+    }
+    return i
 }
 
 /**

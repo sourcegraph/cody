@@ -20,6 +20,7 @@ interface ProcessInlineCompletionsParams {
 
 export interface InlineCompletionItemWithAnalytics extends ItemPostProcessingInfo, InlineCompletionItem {
     stopReason?: string
+    resolvedModel?: string
 }
 
 /**
@@ -52,17 +53,18 @@ export function processInlineCompletions(
     return rankedResults.map(dropParserFields)
 }
 
-interface ProcessItemParams {
+export interface ProcessItemParams {
     document: TextDocument
     position: Position
     docContext: DocumentContext
+    resolvedModel?: string
 }
 
 export function processCompletion(
     completion: ParsedCompletion,
     params: ProcessItemParams
 ): ParsedCompletion {
-    const { document, position, docContext } = params
+    const { document, position, docContext, resolvedModel } = params
     const { prefix, suffix, currentLineSuffix, multilineTrigger, multilineTriggerPosition } = docContext
     let { insertText } = completion
 
@@ -99,6 +101,10 @@ export function processCompletion(
         parseTree: completion.tree,
         multilineTriggerPosition,
     })
+
+    // Assign the resolved model to `InlineCompletionItemWithAnalytics` to make it available
+    // for analytics events when completions are synthesized from cache.
+    completion.resolvedModel = resolvedModel
 
     if (multilineTrigger) {
         insertText = removeTrailingWhitespace(insertText)

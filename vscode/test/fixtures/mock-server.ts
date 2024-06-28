@@ -39,7 +39,7 @@ const responses = {
         '',
         'Hope this helps!',
     ].join('\n'),
-    fixup: '<CODE5711><title>Goodbye Cody</title></CODE5711>',
+    fixup: '<CODE5711>interface Fruit {\n    bananaName: string\n    bananaAge: number\n}</CODE5711>',
     code: {
         template: { completion: '', stopReason: 'stop_sequence' },
         mockResponses: ['myFirstCompletion', 'myNotFirstCompletion'],

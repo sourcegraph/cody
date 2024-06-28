@@ -36,6 +36,12 @@ query CurrentUser {
         primaryEmail {
             email
         }
+        organizations {
+            nodes {
+                id
+                name
+            }
+        }
     }
 }`
 
