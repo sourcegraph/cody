@@ -3,22 +3,28 @@ import { CodyIDE } from '..'
 import { getWebviewThemeByIDE } from './index'
 import { getJetBrainsThemeString } from './jetbrains'
 
-describe('getWebviewThemeByIDE', () => {
-    it('should return JetBrains theme string when IDE is JetBrains', () => {
+describe('getWebviewThemeByIDE', async () => {
+    it('should return JetBrains theme string when IDE is JetBrains', async () => {
         const theme = 'dark'
-        const result = getWebviewThemeByIDE(CodyIDE.JetBrains, theme)
+        const result = await getWebviewThemeByIDE(CodyIDE.JetBrains, theme)
         expect(result).toBe(getJetBrainsThemeString(theme))
     })
 
-    it('should return an empty string for unsupported IDEs', () => {
+    it('should return undefined for unsupported IDEs', async () => {
         const theme = 'dark'
-        const result = getWebviewThemeByIDE(CodyIDE.VSCode, theme)
-        expect(result).toBe('')
+        const result = await getWebviewThemeByIDE(CodyIDE.Emacs, theme)
+        expect(result).toBe(undefined)
     })
 
-    it('should handle empty theme string', () => {
+    it('should return undefined for empty theme string', async () => {
         const theme = ''
-        const result = getWebviewThemeByIDE(CodyIDE.JetBrains, theme)
-        expect(result).toBe(getJetBrainsThemeString(theme))
+        const result = await getWebviewThemeByIDE(CodyIDE.JetBrains, theme)
+        expect(result).toBe(undefined)
+    })
+
+    it('should return undefined when IDE is VS Code', async () => {
+        const result = await getWebviewThemeByIDE(CodyIDE.VSCode, '')
+        // undefined so that it falls back to use the default theme.
+        expect(result).toBe(undefined)
     })
 })
