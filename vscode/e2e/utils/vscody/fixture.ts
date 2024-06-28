@@ -392,7 +392,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                     '--install-extension',
                     ...validOptions.vscodeExtensions,
                 ]
-                await pspawn(vscodeExecutable, args)
+                await pspawn(vscodeExecutable, args, { stdio: ['ignore', 'inherit', 'inherit'] })
                 //we now read all the folders in the shared cache dir and
                 //symlink the relevant ones to our isolated extension dir
                 for (const sharedExtensionDir of await fs.readdir(sharedCacheDir)) {
