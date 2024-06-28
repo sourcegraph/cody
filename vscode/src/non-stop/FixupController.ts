@@ -139,6 +139,22 @@ export class FixupController
         this.setTaskState(task, CodyTaskState.Finished)
     }
 
+    private async acceptOverlappingTasks(primaryTask: FixupTask): Promise<void> {
+        const tasksForFile = [...this.tasks.values()].filter(
+            task => primaryTask.fixupFile.uri.toString === task.fixupFile.uri.toString
+        )
+        for (const task of tasksForFile) {
+            if (
+                task.state === CodyTaskState.Applied &&
+                task.selectionRange.intersection(primaryTask.selectionRange) !== undefined
+            ) {
+                await this.clearPlaceholderInsertions([task], task.fixupFile.uri)
+                task.diff = undefined
+                this.accept(task)
+            }
+        }
+    }
+
     public cancel(task: FixupTask): void {
         this.setTaskState(
             task,
@@ -690,6 +706,11 @@ export class FixupController
         if (task.state !== CodyTaskState.Applying) {
             return
         }
+
+        // Before applying this task, we should auto-accept any other tasks
+        // that have an overlapping range. This is so we don't end up in a scenario
+        // where we have two overlapping diffs shown in the document.
+        await this.acceptOverlappingTasks(task)
 
         let edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit
         let document: vscode.TextDocument

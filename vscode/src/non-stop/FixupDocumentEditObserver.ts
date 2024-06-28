@@ -9,10 +9,18 @@ function updateAppliedDiff(changes: TextChange[], diff: Edit[]): Edit[] {
     const result: Edit[] = []
 
     for (const edit of diff) {
-        const updatedRange = updateRangeMultipleChanges(edit.range, changes, { supportRangeAffix: true })
-        if (updatedRange.start.character !== 0 || updatedRange.end.character !== 0) {
-            // The updated range is invalid, so remove it.
-            // TODO: Better comemnt here
+        const updatedRange = updateRangeMultipleChanges(edit.range, changes)
+        if (
+            edit.type === 'decoratedReplacement' &&
+            (updatedRange.start.character !== 0 || updatedRange.end.character !== 0)
+        ) {
+            // If the range of a `decoratedReplacement` line no longer encompasses a full line,
+            // then we can longer be confident that it should definitely be removed.
+            // It may now contain new code that the user does not want to be discarded.
+            //
+            // Instead, we will discard this edit from the diff. This has some implications:
+            // 1. We no longer show a decoration for this line, so the previous `oldText` will no longer show.
+            // 2. We will not delete this line when the task is accepted.
             continue
         }
         edit.range = updatedRange
