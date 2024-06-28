@@ -64,6 +64,9 @@ export function computeAppliedDecorations(task: FixupTask): Decorations | undefi
                     renderOptions: {
                         after: { contentText: decorationText },
                     },
+                    // Add a `hoverMessage` so users' can still select and copy the deleted
+                    // text as `contentText` is not selectable.
+                    hoverMessage: edit.oldText,
                 })
             }
         } else if (edit.type === 'insertion') {

@@ -82,6 +82,13 @@ export enum OverviewRulerLane {
     Full = 7,
 }
 
+export enum DecorationRangeBehavior {
+    OpenOpen = 0,
+    ClosedClosed = 1,
+    OpenClosed = 2,
+    ClosedOpen = 3,
+}
+
 export class CodeLens {
     public readonly isResolved = true
     constructor(

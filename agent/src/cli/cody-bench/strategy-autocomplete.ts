@@ -1,4 +1,4 @@
-import type { MessageHandler } from '../../jsonrpc-alias'
+import type { RpcMessageHandler } from '../../jsonrpc-alias'
 
 import { execSync } from 'node:child_process'
 import { type AutocompleteMatchKind, AutocompleteMatcher } from './AutocompleteMatcher'
@@ -9,7 +9,7 @@ import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { triggerAutocomplete } from './triggerAutocomplete'
 
 export async function evaluateAutocompleteStrategy(
-    client: MessageHandler,
+    client: RpcMessageHandler,
     options: CodyBenchOptions
 ): Promise<void> {
     let remainingTests = options.testCount

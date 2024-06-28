@@ -73,7 +73,7 @@ interface ProgressEndMessage {
     message: Record<string, never>
 }
 
-function getAgentDir(): string {
+export function getAgentDir(): string {
     const cwd = process.cwd()
     return path.basename(cwd) === 'agent' ? cwd : path.join(cwd, 'agent')
 }
@@ -91,7 +91,7 @@ interface TestClientParams {
 }
 
 let isBuilt = false
-function buildAgentBinary(): void {
+export function buildAgentBinary(): void {
     if (isBuilt) {
         return
     }
