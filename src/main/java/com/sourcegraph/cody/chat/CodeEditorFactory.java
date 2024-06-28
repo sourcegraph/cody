@@ -20,11 +20,9 @@ import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
-import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.io.IOException;
 import java.time.Duration;
 import java.util.Objects;
 import javax.swing.*;
@@ -168,7 +166,7 @@ public class CodeEditorFactory {
                   TelemetryV2.Companion.sendCodeGenerationEvent(
                       project, "keyDown.Copy", "clicked", lastCopiedText);
                 }
-              } catch (UnsupportedFlavorException | IOException e) {
+              } catch (Exception e) {
                 logger.warn("Unable to process copied text", e);
               }
             },
