@@ -911,7 +911,7 @@ export class SimpleChatPanelProvider
         const source = 'chat'
 
         // Use enum to send source values to metadata, making this data available on all instances.
-        enum atMentionSourceMapping {
+        enum atMentionSourceMetadataMapping {
             chat = 1,
         }
         const scopedTelemetryRecorder: Parameters<typeof getChatContextItemsForMention>[2] = {
@@ -920,7 +920,7 @@ export class SimpleChatPanelProvider
                     source,
                 })
                 telemetryRecorder.recordEvent('cody.at-mention', 'executed', {
-                    metadata: { source: atMentionSourceMapping[source] },
+                    metadata: { source: atMentionSourceMetadataMapping[source] },
                     privateMetadata: { source },
                 })
             },
@@ -930,7 +930,7 @@ export class SimpleChatPanelProvider
                     providerMetadata,
                 })
                 telemetryRecorder.recordEvent(`cody.at-mention.${provider}`, 'executed', {
-                    metadata: { source: atMentionSourceMapping[source] },
+                    metadata: { source: atMentionSourceMetadataMapping[source] },
                     privateMetadata: { source, providerMetadata },
                 })
             },
@@ -1456,9 +1456,6 @@ export class SimpleChatPanelProvider
     ): Promise<vscode.WebviewView | vscode.WebviewPanel> {
         // Checks if the webview view or panel already exists and is visible.
         // If so, returns early to avoid creating a duplicate.
-        // NOTE: This check is necessary because the webview view and panel
-        //       instances are not destroyed when the user closes the chat panel.
-
         if (this.webviewPanelOrView) {
             return this.webviewPanelOrView
         }
@@ -1479,7 +1476,6 @@ export class SimpleChatPanelProvider
                 enableFindWidget: true,
                 localResourceRoots: [webviewPath],
                 enableCommandUris: true,
-                // Enable the webview to be reloaded when the window reloads.
             }
         )
 

@@ -23,9 +23,9 @@ let insertInProgress = false
 let lastClipboardText = ''
 
 /**
- * SourceMapping is used to map the source to a numerical value, so telemetry can be recorded on `metadata`.
+ * SourceMetadataMapping is used to map the source to a numerical value, so telemetry can be recorded on `metadata`.
  **/
-enum SourceMapping {
+enum SourceMetadataMapping {
     chat = 1,
 }
 
@@ -62,7 +62,7 @@ function setLastStoredCode(
 
     telemetryRecorder.recordEvent(`cody.${eventName}`, 'clicked', {
         metadata: {
-            source: SourceMapping[source as keyof typeof SourceMapping] || 0, // Use 0 as default if source is not found
+            source: SourceMetadataMapping[source as keyof typeof SourceMetadataMapping] || 0, // Use 0 as default if source is not found
             lineCount,
             charCount,
         },
@@ -163,7 +163,7 @@ export async function onTextDocumentChange(newCode: string): Promise<void> {
             metadata: {
                 lineCount,
                 charCount,
-                source: SourceMapping[source as keyof typeof SourceMapping] || 0, // Use 0 as default if source is not found
+                source: SourceMetadataMapping[source as keyof typeof SourceMetadataMapping] || 0, // Use 0 as default if source is not found
             },
             interactionID: requestID,
             privateMetadata: {
