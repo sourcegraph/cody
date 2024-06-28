@@ -7,11 +7,21 @@ export default defineConfig({
     workers: 1,
     retries: isWin ? 4 : isCI ? 1 : 0, // give flaky tests more chances, but we should fix flakiness when we see it
     forbidOnly: isCI,
-    testDir: 'test/e2e',
     timeout: isWin || isCI ? 30000 : 20000,
     expect: {
         timeout: isWin || isCI ? 5000 : 2000,
     },
+    projects: [
+        {
+            name: 'e2e',
+            testDir: './test/e2e',
+        },
+        {
+            name: 'issues',
+            testDir: './test/issues/e2e',
+            retries: 0,
+        },
+    ],
     reporter: isCI ? 'github' : 'list',
     globalSetup: require.resolve('./test/e2e/utils/setup'),
     globalTeardown: require.resolve('./test/e2e/utils/teardown'),
