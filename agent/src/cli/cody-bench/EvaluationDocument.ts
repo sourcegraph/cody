@@ -280,7 +280,6 @@ interface EvaluationItem {
     testInputFilename?: string
     testLanguage?: string
     testGenerated?: string
-    testHasTypescriptErrors?: boolean
     testUsedExpectedTestFramework?: boolean
     testUsedCorrectAppendOperation?: boolean
     testDiagnostics?: string
@@ -333,7 +332,6 @@ export const headerItems: EvaluationItemHeader[] = [
     { id: 'testFilename', title: 'TEST_FILENAME' },
     { id: 'testExpectedFilename', title: 'TEST_EXPECTED_FILENAME' },
     { id: 'testGenerated', title: 'TEST_GENERATED' },
-    { id: 'testHasTypescriptErrors', title: 'TEST_HAS_TYPESCRIPT_ERRORS' },
     { id: 'testUsedExpectedTestFramework', title: 'TEST_USED_EXPECTED_TEST_FRAMEWORK' },
     { id: 'testUsedCorrectAppendOperation', title: 'TEST_USED_CORRECT_APPEND_OPERATION' },
     { id: 'testInputFilename', title: 'TEST_INPUT_FILENAME' },

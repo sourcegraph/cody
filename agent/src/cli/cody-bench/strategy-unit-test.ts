@@ -81,7 +81,6 @@ export async function evaluateUnitTestStrategy(
             testLanguage: task.language,
             testInputFilename,
             testGenerated: test.value,
-            testHasTypescriptErrors: typescriptErrors.length > 0,
             testDiagnostics: _.chain(typescriptErrors)
                 .uniqBy(d => d.message)
                 .map(prettyDiagnostic)
