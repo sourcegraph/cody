@@ -1,9 +1,26 @@
 import * as vscode from 'vscode'
 
+import type { Edit } from './line-diff'
 import type { FixupActor, FixupFileCollection, FixupTextChanged } from './roles'
 import { type TextChange, updateFixedRange, updateRangeMultipleChanges } from './tracked-range'
 import { CodyTaskState } from './utils'
-import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
+
+function updateAppliedDiff(changes: TextChange[], diff: Edit[]): Edit[] {
+    const result: Edit[] = []
+
+    for (const edit of diff) {
+        const updatedRange = updateRangeMultipleChanges(edit.range, changes, { supportRangeAffix: true })
+        if (updatedRange.start.character !== 0 || updatedRange.end.character !== 0) {
+            // The updated range is invalid, so remove it.
+            // TODO: Better comemnt here
+            continue
+        }
+        edit.range = updatedRange
+        result.push(edit)
+    }
+
+    return result
+}
 
 /**
  * Observes text document changes and updates the regions with active fixups.
@@ -42,35 +59,17 @@ export class FixupDocumentEditObserver {
             )
 
             if (changeWithinRange) {
-                // Note that we would like to auto-accept at this point if task.state == Applied.
-                // But it led to race conditions and bad bugs, because the Agent doesn't get
-                // notified when the Accept lens is displayed, so it doesn't actually know when it
-                // is safe to auto-accept. Fixing it properly will require us to send some sort of
-                // notification back to the Agent after we finish applying the
-                // changes. https://github.com/sourcegraph/cody-issues/issues/315 is one example
-                // of a bug caused by auto-accepting here, but there were others as well.
-                if (task.state === CodyTaskState.Applied && !isRunningInsideAgent()) {
-                    this.provider_.accept(task)
-                    continue
-                }
                 this.provider_.textDidChange(task)
             }
 
             const changes = new Array<TextChange>(...event.contentChanges)
+            if (task.state === CodyTaskState.Applied && task.diff) {
+                task.diff = updateAppliedDiff(changes, task.diff)
+            }
+
             const updatedRange = updateRangeMultipleChanges(task.selectionRange, changes, {
                 supportRangeAffix: true,
             })
-            const decoratedReplacements = (task.diff || []).filter(
-                ({ type }) => type === 'decoratedReplacement'
-            )
-            if (task.state === CodyTaskState.Applied && decoratedReplacements.length > 0) {
-                // For applied tasks, we ensure we always keep the decoratedReplacements up to date in the diff
-                // This is so we know exactly where they are so we can remove them accurately on save/undo
-                for (const edit of decoratedReplacements) {
-                    edit.range = updateRangeMultipleChanges(edit.range, changes, {}, updateFixedRange)
-                }
-            }
-
             if (!updatedRange.isEqual(task.selectionRange)) {
                 task.selectionRange = updatedRange
                 this.provider_.rangeDidChange(task)
