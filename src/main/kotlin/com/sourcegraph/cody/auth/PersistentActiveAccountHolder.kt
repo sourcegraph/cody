@@ -23,17 +23,10 @@ abstract class PersistentActiveAccountHolder<A : Account> :
   }
 
   override fun loadState(state: AccountState) {
-    account =
-        state.activeAccountId?.let { id ->
-          accountManager.accounts
-              .find { it.id == id }
-              .also { if (it == null) notifyActiveAccountMissing() }
-        }
+    account = state.activeAccountId?.let { id -> accountManager.accounts.find { it.id == id } }
   }
 
   protected abstract fun accountManager(): AccountManager<A, *>
-
-  protected abstract fun notifyActiveAccountMissing()
 
   override fun dispose() {}
 

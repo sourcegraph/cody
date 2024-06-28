@@ -17,8 +17,6 @@ class CodyProjectActiveAccountHolder : PersistentActiveAccountHolder<CodyAccount
 
   override fun accountManager() = service<CodyAccountManager>()
 
-  override fun notifyActiveAccountMissing() {}
-
   companion object {
     @JvmStatic
     fun getInstance(project: Project): CodyProjectActiveAccountHolder {
