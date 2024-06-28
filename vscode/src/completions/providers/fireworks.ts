@@ -63,7 +63,10 @@ export interface FireworksOptions {
         ConfigurationWithAccessToken,
         'accessToken' | 'autocompleteExperimentalFireworksOptions'
     >
-    authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>
+    authStatus: Pick<
+        AuthStatus,
+        'userCanUpgrade' | 'isDotCom' | 'endpoint' | 'isFireworksTracingEnabled'
+    >
 }
 
 const PROVIDER_IDENTIFIER = 'fireworks'
@@ -151,7 +154,10 @@ class FireworksProvider extends Provider {
     private client: CodeCompletionsClient
     private timeouts?: AutocompleteTimeouts
     private fastPathAccessToken?: string
-    private authStatus: Pick<AuthStatus, 'userCanUpgrade' | 'isDotCom' | 'endpoint'>
+    private authStatus: Pick<
+        AuthStatus,
+        'userCanUpgrade' | 'isDotCom' | 'endpoint' | 'isFireworksTracingEnabled'
+    >
     private isLocalInstance: boolean
     private fireworksConfig?: ConfigurationWithAccessToken['autocompleteExperimentalFireworksOptions']
     private promptExtractor: FIMModelSpecificPromptExtractor
@@ -422,11 +428,19 @@ class FireworksProvider extends Provider {
         return content
     }
 
+    private getCustomHeaders = (): Record<string, string> => {
+        // Enabled Fireworks tracing for Sourcegraph teammates.
+        // https://readme.fireworks.ai/docs/enabling-tracing
+        return this.authStatus.isFireworksTracingEnabled ? { 'X-Fireworks-Genie': 'true' } : {}
+    }
+
     private createDefaultClient(
         requestParams: CodeCompletionsParams,
         abortController: AbortController
     ): CompletionResponseGenerator {
-        return this.client.complete(requestParams, abortController)
+        return this.client.complete(requestParams, abortController, {
+            customHeaders: this.getCustomHeaders(),
+        })
     }
 
     // When using the fast path, the Cody client talks directly to Cody Gateway. Since CG only
@@ -491,7 +505,7 @@ class FireworksProvider extends Provider {
                     languageId: self.options.document.languageId,
                 }
 
-                const headers = new Headers()
+                const headers = new Headers(self.getCustomHeaders())
                 // Force HTTP connection reuse to reduce latency.
                 // c.f. https://github.com/microsoft/vscode/issues/173861
                 headers.set('Connection', 'keep-alive')

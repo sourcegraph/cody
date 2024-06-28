@@ -46,6 +46,7 @@ import {
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
+import { isContextWindowLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import type { URI } from 'vscode-uri'
 import { version as VSCEVersion } from '../../../package.json'
@@ -323,6 +324,9 @@ export class SimpleChatPanelProvider
             case 'copy':
                 await handleCopiedCode(message.text, message.eventType === 'Button')
                 break
+            case 'openURI':
+                vscode.commands.executeCommand('vscode.open', message.uri)
+                break
             case 'links':
                 void openExternalLinks(message.value)
                 break
@@ -401,6 +405,10 @@ export class SimpleChatPanelProvider
             case 'auth': {
                 if (message.authKind === 'callback' && message.endpoint) {
                     this.authProvider.redirectToEndpointLogin(message.endpoint)
+                    break
+                }
+                if (message.authKind === 'offline') {
+                    this.authProvider.auth({ endpoint: '', token: '', isOfflineMode: true })
                     break
                 }
                 if (message.authKind === 'simplified-onboarding') {
@@ -539,23 +547,17 @@ export class SimpleChatPanelProvider
     public syncAuthStatus(): void {
         // Run this async because this method may be called during initialization
         // and awaiting on this.postMessage may result in a deadlock
-        const runAsync = async () => {
-            const authStatus = this.authProvider.getAuthStatus()
-            const configForWebview = await this.getConfigForWebview()
-            const workspaceFolderUris =
-                vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
-            await this.postMessage({
-                type: 'config',
-                config: configForWebview,
-                authStatus,
-                workspaceFolderUris,
-            })
-        }
-        void runAsync()
+        void this.sendConfig()
     }
 
     // When the webview sends the 'ready' message, respond by posting the view config
     private async handleReady(): Promise<void> {
+        await this.sendConfig()
+        // Update the chat model providers again to ensure the correct token limit is set on ready
+        this.handleSetChatModel(this.chatModel.modelID)
+    }
+
+    private async sendConfig(): Promise<void> {
         const authStatus = this.authProvider.getAuthStatus()
         const configForWebview = await this.getConfigForWebview()
         const workspaceFolderUris =
@@ -569,13 +571,10 @@ export class SimpleChatPanelProvider
         logDebug('SimpleChatPanelProvider', 'updateViewConfig', {
             verbose: configForWebview,
         })
-        // Update the chat model providers again to ensure the correct token limit is set on ready
-        this.handleSetChatModel(this.chatModel.modelID)
     }
 
     private initDoer = new InitDoer<boolean | undefined>()
     private async handleInitialized(): Promise<void> {
-        logDebug('SimpleChatPanelProvider', 'handleInitialized')
         // HACK: this call is necessary to get the webview to set the chatID state,
         // which is necessary on deserialization. It should be invoked before the
         // other initializers run (otherwise, it might interfere with other view
@@ -805,7 +804,7 @@ export class SimpleChatPanelProvider
                     if (isAbortErrorOrSocketHangUp(error as Error)) {
                         return
                     }
-                    if (isRateLimitError(error)) {
+                    if (isRateLimitError(error) || isContextWindowLimitError(error)) {
                         this.postError(error, 'transcript')
                     } else {
                         this.postError(
@@ -1521,7 +1520,6 @@ export class SimpleChatPanelProvider
     private async resolveWebviewViewOrPanel(
         viewOrPanel: vscode.WebviewView | vscode.WebviewPanel
     ): Promise<vscode.WebviewView | vscode.WebviewPanel> {
-        logDebug('SimpleChatPanelProvider:resolveWebviewViewOrPanel', 'registering webview view/panel')
         if (this.webviewPanelOrView) {
             throw new Error('webview already created')
         }

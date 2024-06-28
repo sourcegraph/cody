@@ -1,3 +1,4 @@
+/* SELECTION_START */
 export function trickyLogic(a: number, b: number): number {
     if (a === 0) {
         return 1
@@ -8,5 +9,4 @@ export function trickyLogic(a: number, b: number): number {
 
     return a - b
 }
-
-/* CURSOR */
+/* SELECTION_END */

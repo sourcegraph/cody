@@ -19,7 +19,6 @@ test('chat keyboard shortcuts', async ({ page, sidebar }) => {
 
     // Alt+L with no selection opens a new chat (with file mention).
     await openFileInEditorTab(page, 'buzz.ts')
-    await selectLineRangeInEditorTab(page, 3)
     await page.keyboard.press('Alt+L')
     await expect(chatInput).toHaveText('buzz.ts ')
 

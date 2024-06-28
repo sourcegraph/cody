@@ -8,7 +8,7 @@ import { explainPollyError } from './explainPollyError'
 import { trimEndOfLine } from './trimEndOfLine'
 
 describe('Edit', () => {
-    const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
+    const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'edit-code'))
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
         name: 'edit',
@@ -54,7 +54,8 @@ describe('Edit', () => {
         await client.openFile(uri)
         const task = await client.request('editCommands/code', {
             instruction: 'Add types to these props. Introduce new interfaces as necessary',
-            model: ModelsService.getModelByIDSubstringOrError('anthropic/claude-3-opus').model,
+            model: ModelsService.getModelByIDSubstringOrError('anthropic/claude-3-5-sonnet-20240620')
+                .model,
         })
         await client.acceptEditTask(uri, task)
         expect(client.documentText(uri)).toMatchInlineSnapshot(
@@ -62,22 +63,22 @@ describe('Edit', () => {
           "import { useEffect } from "react";
           import React = require("react");
 
+          interface Message {
+          	chatID: string
+          	text: string
+          }
+
+          interface ChatColumnProps {
+          	messages: Message[]
+          	setChatID: (chatID: string) => void
+          	isLoading: boolean
+          }
+
           export default function ChatColumn({
           	messages,
           	setChatID,
           	isLoading,
-          }: ChatColumnProps) {
-          interface ChatColumnProps {
-            messages: ChatMessage[];
-            setChatID: (chatID: string) => void;
-            isLoading: boolean;
-          }
-
-          interface ChatMessage {
-            chatID: string;
-            text: string;
-          }
-          	useEffect(() => {
+          }: ChatColumnProps) {	useEffect(() => {
           		if (!isLoading) {
           			setChatID(messages[0].chatID);
           		}
@@ -105,7 +106,8 @@ describe('Edit', () => {
         const task = await client.request('editCommands/code', {
             instruction:
                 'Create and export a Heading component that uses these props. Do not use default exports',
-            model: ModelsService.getModelByIDSubstringOrError('anthropic/claude-3-opus').model,
+            model: ModelsService.getModelByIDSubstringOrError('anthropic/claude-3-5-sonnet-20240620')
+                .model,
         })
         await client.acceptEditTask(uri, task)
         expect(client.documentText(uri)).toMatchInlineSnapshot(
@@ -118,12 +120,37 @@ describe('Edit', () => {
           }
 
           export const Heading: React.FC<HeadingProps> = ({ text, level = 1 }) => {
-            const HeadingTag = \`h\${level}\` as keyof JSX.IntrinsicElements;
+              const HeadingTag = \`h\${level}\` as keyof JSX.IntrinsicElements
 
-            return <HeadingTag>{text}</HeadingTag>;
-          };
+              return <HeadingTag>{text}</HeadingTag>
+          }
 
           "
+        `,
+            explainPollyError
+        )
+    }, 20_000)
+
+    it('editCommand/code (adding/deleting code)', async () => {
+        const uri = workspace.file('src', 'trickyLogic.ts')
+        await client.openFile(uri, { removeCursor: true })
+        const task = await client.request('editCommands/code', {
+            instruction: 'Convert this to use a switch statement',
+            model: ModelsService.getModelByIDSubstringOrError('anthropic/claude-3-opus').model,
+        })
+        await client.acceptEditTask(uri, task)
+        expect(client.documentText(uri)).toMatchInlineSnapshot(
+            `
+          "export function trickyLogic(a: number, b: number): number {
+              switch (true) {
+                  case a === 0:
+                      return 1
+                  case b === 2:
+                      return 1
+                  default:
+                      return a - b
+              }
+          }"
         `,
             explainPollyError
         )

@@ -133,14 +133,21 @@ export class EvaluationDocument {
                 if (!item.range.isSingleLine) {
                     out.push(` ${item.range.end.line}:${item.range.end.character}`)
                 }
-                if (this.options.fixture.strategy === BenchStrategy.BFG) {
+                if (this.options.fixture.strategy === BenchStrategy.Autocomplete) {
                     out.push(' AUTOCOMPLETE')
                 } else if (this.options.fixture.strategy === BenchStrategy.Fix) {
                     out.push(' FIX')
+                } else if (this.options.fixture.strategy === BenchStrategy.Chat) {
+                    out.push(' CHAT')
                 } else {
                     throw new Error(`unknown strategy ${this.options.fixture.strategy}`)
                 }
-
+                if (item.chatQuestion) {
+                    pushMultilineText('CHAT_QUESTION', item.chatQuestion)
+                }
+                if (item.chatReply) {
+                    pushMultilineText('CHAT_REPLY', item.chatReply)
+                }
                 if (item.resultExact) {
                     out.push(' EXACT_MATCH')
                 }
@@ -253,16 +260,21 @@ interface EvaluationItem {
     contextBfgDurationMs?: number
     resultCharacterCount?: number
     editDiff?: string
+    chatReply?: string
+    chatQuestion?: string
+    questionClass?: string
     fixBeforeDiagnostic?: string
     fixAfterDiagnostic?: string
     llmJudgeScore?: number
     llmJudgeReasoning?: string
+    concisenessScore?: number
+    hedges?: boolean
     info?: CompletionItemInfo
     event?: CompletionBookkeepingEvent
     eventJSON?: string
 }
 
-export const autocompleteItemHeaders: ObjectHeaderItem[] = [
+export const headerItems: ObjectHeaderItem[] = [
     { id: 'languageid', title: 'LANGUAGEID' },
     { id: 'workspace', title: 'WORKSPACE' },
     { id: 'fixture', title: 'FIXTURE' },
@@ -286,10 +298,15 @@ export const autocompleteItemHeaders: ObjectHeaderItem[] = [
     { id: 'resultCharacterCount', title: 'RESULT_CHAR_COUNT' },
     { id: 'resultNonInsertPatch', title: 'RESULT_NON_INSERT_PATCH' },
     { id: 'editDiff', title: 'EDIT_DIFF' },
+    { id: 'chatReply', title: 'CHAT_REPLY' },
+    { id: 'chatQuestion', title: 'CHAT_QUESTION' },
+    { id: 'questionClass', title: 'QUESTION_CLASS' },
     { id: 'fixAfterDiagnostic', title: 'FIX_AFTER_DIAGNOSTIC' },
     { id: 'fixBeforeDiagnostic', title: 'FIX_BEFORE_DIAGNOSTIC' },
     { id: 'llmJudgeScore', title: 'LLM_JUDGE_SCORE' },
     { id: 'llmJudgeReasoning', title: 'LLM_JUDGE_REASONING' },
+    { id: 'concisenessScore', title: 'CONCISENESS_SCORE' },
+    { id: 'hedges', title: 'HEDGES' },
     { id: 'providerIdentifier', title: 'PROVIDER_IDENTIFIER' },
     { id: 'providerModel', title: 'PROVIDER_MODEL' },
     { id: 'stopReason', title: 'STOP_REASON' },

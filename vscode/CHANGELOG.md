@@ -6,11 +6,32 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+- Ollama: Added support for running Cody offline with local Ollama models. [pull/4691](https://github.com/sourcegraph/cody/pull/4691)
+- Edit: Added support for users' to edit the applied edit before the diff view is removed. [pull/4684](https://github.com/sourcegraph/cody/pull/4684)
+
 ### Fixed
+
+- Edit: Fixed an issue where, when unable to detect the indentation of a file, Cody would remove all indentation from a response. [pull/4704](https://github.com/sourcegraph/cody/pull/4704)
+
+### Changed
+
+## 1.24.0
+
+### Added
+
+- Edit: Added a new visual inline diff output for applied edits. [pull/4525](https://github.com/sourcegraph/cody/pull/4525)
+- Edit: Added a visual animation showing the progress of the LLM as it produces a final output. [pull/4525](https://github.com/sourcegraph/cody/pull/4525)
+
+### Fixed
+
+- Edit: Fixed incorrect codelens for "Generate Code". [pull/4525](https://github.com/sourcegraph/cody/pull/4525)
+- Chat: Display the appropriate error message when input has exceeded the model's context window, instead of "Chat token usage must be updated before Context". [pull/4674](https://github.com/sourcegraph/cody/pull/4674)
 
 ### Changed
 
 - Chat: @-mentions are shown as chips instead of text. [pull/4539](https://github.com/sourcegraph/cody/pull/4539)
+- Edit: Removed usage of the users' default formatter, instead choosing to apply basic formatting and indentation matching before the edit is applied to the document. [pull/4525](https://github.com/sourcegraph/cody/pull/4525)
+- Edit: Removed the manual "Show Diff" option, in favour of showing the diff directly in the editor. [pull/4525](https://github.com/sourcegraph/cody/pull/4525)
 
 ## 1.22.4
 

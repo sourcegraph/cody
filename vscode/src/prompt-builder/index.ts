@@ -74,7 +74,7 @@ export class PromptBuilder {
      * Validates that the transcript alternates between human and assistant speakers.
      * Stops adding when the character limit would be exceeded.
      */
-    public tryAddMessages(reverseTranscript: ChatMessage[]): number {
+    public tryAddMessages(reverseTranscript: ChatMessage[]): number | undefined {
         // All Human message is expected to be followed by response from Assistant,
         // except for the Human message at the last index that Assistant hasn't responded yet.
         const lastHumanMsgIndex = reverseTranscript.findIndex(msg => msg.speaker === 'human')
@@ -86,6 +86,12 @@ export class PromptBuilder {
             }
             const withinLimit = this.tokenCounter.updateUsage('input', [humanMsg, assistantMsg])
             if (!withinLimit) {
+                // Throw error if the limit was exceeded and no message was added.
+                if (!this.reverseMessages.length) {
+                    throw new Error(
+                        'The chat input has exceeded the token limit. If you are copying and pasting a file into the chat, try using the @-mention feature to attach the file instead.'
+                    )
+                }
                 return reverseTranscript.length - i + (assistantMsg ? 1 : 0)
             }
             if (assistantMsg) {
@@ -93,7 +99,8 @@ export class PromptBuilder {
             }
             this.reverseMessages.push(humanMsg)
         }
-        return 0
+        // All messages were added successfully.
+        return undefined
     }
 
     public async tryAddContext(

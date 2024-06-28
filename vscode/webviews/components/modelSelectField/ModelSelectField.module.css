@@ -55,13 +55,3 @@ button > .model-title-with-icon {
         display: none;
     }
 }
-
-/* Show link as normal text in popover. */
-[cmdk-list] [role="option"] {
-    &:not([aria-selected="true"]) .model-title-with-icon:is(a) {
-        color: var(--vscode-foreground) !important;
-    }
-    &[aria-selected="true"] .model-title-with-icon:is(a) {
-        color: var(--vscode-list-activeSelectionForeground) !important;
-    }
-}

@@ -14,6 +14,15 @@ export interface RangeData {
 }
 
 /**
+ * A specialization of RangeData such that character is always 0. This is a
+ * 0-indexed line range [start, end).
+ */
+export interface LineRangeData {
+    start: { line: number; character: 0 }
+    end: { line: number; character: 0 }
+}
+
+/**
  * Return the plain {@link RangeData} for a rich instance of the class {@link vscode.Range}.
  */
 export function toRangeData<R extends RangeData>(range: R): RangeData
@@ -47,13 +56,26 @@ export function toRangeData<R extends RangeData>(
  * `RangeData` is 0-indexed but humans use 1-indexed line ranges.
  */
 export function displayLineRange(range: RangeData): PromptString {
-    const startLine = range.start.line + 1
-    const endLine =
-        range.end.line + (range.end.line !== range.start.line && range.end.character === 0 ? 0 : 1)
+    const lineRange = expandToLineRange(range)
+    const startLine = lineRange.start.line + 1
+    const endLine = lineRange.end.line
     if (endLine === startLine) {
         return ps`${startLine}`
     }
     return ps`${startLine}-${endLine}`
+}
+
+/**
+ * Returns range such that it is expanded to be the whole line (character is
+ * always zero).
+ */
+export function expandToLineRange(range: RangeData): LineRangeData {
+    const hasEndLineCharacters = range.end.line === range.start.line || range.end.character !== 0
+    const endLine = range.end.line + (hasEndLineCharacters ? 1 : 0)
+    return {
+        start: { line: range.start.line, character: 0 },
+        end: { line: endLine, character: 0 },
+    }
 }
 
 /**
@@ -74,15 +96,4 @@ export function displayRange(range: RangeData): PromptString {
     return ps`${range.start.line + 1}:${range.start.character + 1}-${range.end.line + 1}:${
         range.end.character + 1
     }`
-}
-
-/**
- * Report whether {@link range} spans multiple lines. Note that a range of 1:0-2:0 only spans a
- * single line because no characters on the end line are included in the range.
- */
-export function isMultiLineRange(range: RangeData): boolean {
-    const singleLine =
-        range.start.line === range.end.line ||
-        (range.end.line === range.start.line + 1 && range.end.character === 0)
-    return !singleLine
 }

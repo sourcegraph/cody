@@ -2,7 +2,7 @@
   "version": "0.1.0",
   "configurations": [
     {
-      "name": "Launch VS Code Extension (Desktop)",
+      "name": "Launch VS Code Extension (Desktop, recommended)",
       "type": "extensionHost",
       "request": "launch",
       "runtimeExecutable": "${execPath}",
@@ -25,7 +25,7 @@
       }
     },
     {
-      "name": "Launch VS Code Extension (Desktop; Separate Instance)",
+      "name": "Launch VS Code Extension (Desktop; Separate Instance, rarely used because it requires signing in each time)",
       "type": "extensionHost",
       "request": "launch",
       "runtimeExecutable": "${execPath}",

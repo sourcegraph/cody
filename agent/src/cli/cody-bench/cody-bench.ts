@@ -11,7 +11,8 @@ import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
 import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled'
 import { arrayOption, booleanOption, intOption } from './cli-parsers'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
-import { evaluateBfgStrategy } from './strategy-bfg'
+import { evaluateAutocompleteStrategy } from './strategy-autocomplete'
+import { evaluateChatStrategy } from './strategy-chat'
 import { evaluateFixStrategy } from './strategy-fix'
 import { evaluateGitLogStrategy } from './strategy-git-log'
 
@@ -62,9 +63,10 @@ interface EvaluationConfig extends Partial<CodyBenchOptions> {
 }
 
 export enum BenchStrategy {
-    BFG = 'bfg',
+    Autocomplete = 'autocomplete',
     GitLog = 'git-log',
     Fix = 'fix',
+    Chat = 'chat',
 }
 
 interface EvaluationFixture {
@@ -91,7 +93,7 @@ async function loadEvaluationConfig(options: CodyBenchOptions): Promise<CodyBenc
         const rootDir = path.dirname(options.evaluationConfig)
         const workspace = path.normalize(path.join(rootDir, test.workspace))
         const fixtures: EvaluationFixture[] = config.fixtures ?? [
-            { name: 'default', strategy: BenchStrategy.BFG },
+            { name: 'default', strategy: BenchStrategy.Autocomplete },
         ]
         for (const fixture of fixtures) {
             if (!fixture.strategy) {
@@ -137,7 +139,8 @@ export const codyBenchCommand = new commander.Command('cody-bench')
     .option(
         '--test-count <number>',
         'The number of autocomplete requests to run in this evaluation',
-        intOption
+        intOption,
+        10_000
     )
     .option(
         '--max-file-test-count <number>',
@@ -257,7 +260,11 @@ export const codyBenchCommand = new commander.Command('cody-bench')
         'Path to a directory containing tree-sitter grammars',
         path.resolve(__dirname, '../../vscode/dist')
     )
-    .option('--queries-directory <path>', 'Path to a directory containing tree-sitter queries')
+    .option(
+        '--queries-directory <path>',
+        'Path to a directory containing tree-sitter queries',
+        path.resolve(__dirname, '../src/cli/cody-bench/queries')
+    )
     .option(
         '--test-typecheck',
         'If enabled, runs the test command to typecheck the generated code',
@@ -327,14 +334,16 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
     const workspaceRootUri = vscode.Uri.from({ scheme: 'file', path: options.workspace })
 
     const baseGlobalState: Record<string, any> = {}
-    try {
-        const model = ModelsService.getModelByIDSubstringOrError(options.fixture.name)
-        baseGlobalState.editModel = model.model
-    } catch (error) {
-        console.log(options.fixture.name, error)
+    const editModel = options.fixture.customConfiguration?.['cody-bench.editModel']
+    if (typeof editModel === 'string') {
+        // There is no VSC setting yet to configure the base edit model. Users
+        // can only modify this setting by changing it through the quickpick
+        // menu in VSC.
+        const provider = ModelsService.getModelByIDSubstringOrError(editModel)
+        baseGlobalState.editModel = provider.model
     }
 
-    const client = await newAgentClient({
+    const { client } = await newAgentClient({
         name: 'cody-bench',
         version: '0.1.0',
         workspaceRootUri: workspaceRootUri.toString(),
@@ -342,7 +351,11 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
             accessToken: options.srcAccessToken,
             serverEndpoint: options.srcEndpoint,
             customHeaders: {},
-            customConfiguration: options.fixture.customConfiguration,
+            customConfiguration: {
+                'cody.experimental.symf.enabled': false, // fixes errors in Polly.js related to fetchin the symf binary
+                'cody.experimental.telemetry.enabled': false,
+                ...options.fixture.customConfiguration,
+            },
             baseGlobalState,
         },
         codyAgentPath: options.codyAgentBinary,
@@ -354,17 +367,18 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
             CODY_RECORDING_MODE: 'replay',
             CODY_RECORD_IF_MISSING: 'true',
             CODY_KEEP_UNUSED_RECORDINGS: 'true',
+            CODY_DISABLE_FASTPATH: 'true',
         },
     })
     try {
-        if (options.fixture.strategy === BenchStrategy.BFG) {
-            await evaluateBfgStrategy(client, options)
+        if (options.fixture.strategy === BenchStrategy.Autocomplete) {
+            await evaluateAutocompleteStrategy(client, options)
         } else if (options.fixture.strategy === BenchStrategy.GitLog) {
             await evaluateGitLogStrategy(client, options)
         }
         switch (options.fixture.strategy) {
-            case BenchStrategy.BFG:
-                await evaluateBfgStrategy(client, options)
+            case BenchStrategy.Autocomplete:
+                await evaluateAutocompleteStrategy(client, options)
                 break
             case BenchStrategy.GitLog:
                 await evaluateGitLogStrategy(client, options)
@@ -372,12 +386,16 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
             case BenchStrategy.Fix:
                 await evaluateFixStrategy(client, options)
                 break
+            case BenchStrategy.Chat:
+                await evaluateChatStrategy(client, options)
+                break
             default:
                 throw new Error(`unknown strategy ${options.fixture.strategy}`)
         }
     } catch (error) {
         console.error('unexpected error running cody-bench', error)
     }
+    console.log('cody-bench completed, shutting down...')
     await client.request('shutdown', null)
     client.notify('exit', null)
 }

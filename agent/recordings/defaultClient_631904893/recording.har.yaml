@@ -757,410 +757,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 6ddade320efbeb9efb4014306bbc287a
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2380
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - name: user-agent
-            value: defaultClient / v1
-          - name: traceparent
-            value: 00-ee34bdedcc68a49f63e86a83d78db4f0-16d57744c4038a40-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 415
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/squirrel.ts:
-
-                  ```typescript
-
-                  /**
-                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
-                   * It is related to the implementation of precise code navigation in Sourcegraph.
-                   */
-                  export interface Squirrel {}
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/multiple-selections.ts:
-                  ```typescript
-                  function outer() {
-                      /* SELECTION_START */
-                      return function inner() {}
-                      /* SELECTION_END */
-                  }
-
-                  /* SELECTION_2_START */
-                  function anotherFunction() {}
-                  /* SELECTION_2_END */
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/Heading.tsx:
-                  ```typescript
-                  import React = require("react");
-
-                  interface HeadingProps {
-                      text: string;
-                      level?: number;
-                  }
-
-                  /* CURSOR */
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/ChatColumn.tsx:
-                  ```typescript
-                  import { useEffect } from "react";
-                  import React = require("react");
-
-                  /* SELECTION_START */ export default function ChatColumn({
-                  	messages,
-                  	setChatID,
-                  	isLoading,
-                  }) {
-                  	/* SELECTION_END */
-                  	useEffect(() => {
-                  		if (!isLoading) {
-                  			setChatID(messages[0].chatID);
-                  		}
-                  	}, [messages]);
-                  	return (
-                  		<>
-                  			<h1>Messages</h1>
-                  			<ul>
-                  				{messages.map((message) => (
-                  					<li>{message.text}</li>```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/animal.ts:
-                  ```typescript
-                  /* SELECTION_START */
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-                  /* SELECTION_END */
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  My selected code from codebase file
-                  src/multiple-selections.ts:7-8:
-
-                  ```
-
-
-                  function anotherFunction() {}
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: "You have access to the provided codebase context. Do not make any
-                  assumptions. Question: What is the name of the function that I
-                  have selected? Only answer with the name of the function,
-                  nothing else"
-            model: anthropic/claude-3-sonnet-20240229
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 367
-        content:
-          mimeType: text/event-stream
-          size: 367
-          text: |+
-            event: completion
-            data: {"completion":"anotherFunction","stopReason":"end_turn"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Mon, 17 Jun 2024 22:00:17 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-06-17T22:00:16.403Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 38fd82f9fffa17ca59d770fcd47f5dcf
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2385
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - name: user-agent
-            value: defaultClient / v1
-          - name: traceparent
-            value: 00-c7ba6409615d19397d8ef5b698e0fb08-fae6edc16c6a5bea-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 415
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/squirrel.ts:
-
-                  ```typescript
-
-                  /**
-                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
-                   * It is related to the implementation of precise code navigation in Sourcegraph.
-                   */
-                  export interface Squirrel {}
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/multiple-selections.ts:
-                  ```typescript
-                  function outer() {
-                      /* SELECTION_START */
-                      return function inner() {}
-                      /* SELECTION_END */
-                  }
-
-                  /* SELECTION_2_START */
-                  function anotherFunction() {}
-                  /* SELECTION_2_END */
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/Heading.tsx:
-                  ```typescript
-                  import React = require("react");
-
-                  interface HeadingProps {
-                      text: string;
-                      level?: number;
-                  }
-
-                  /* CURSOR */
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/ChatColumn.tsx:
-                  ```typescript
-                  import { useEffect } from "react";
-                  import React = require("react");
-
-                  /* SELECTION_START */ export default function ChatColumn({
-                  	messages,
-                  	setChatID,
-                  	isLoading,
-                  }) {
-                  	/* SELECTION_END */
-                  	useEffect(() => {
-                  		if (!isLoading) {
-                  			setChatID(messages[0].chatID);
-                  		}
-                  	}, [messages]);
-                  	return (
-                  		<>
-                  			<h1>Messages</h1>
-                  			<ul>
-                  				{messages.map((message) => (
-                  					<li>{message.text}</li>```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/animal.ts:
-                  ```typescript
-                  /* SELECTION_START */
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-                  /* SELECTION_END */
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  My selected code from codebase file
-                  src/multiple-selections.ts:2-4:
-
-                  ```
-
-                      return function inner() {}
-                      ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: "You have access to the provided codebase context. Do not make any
-                  assumptions. Question: What is the name of the function that I
-                  have selected? Only answer with the name of the function,
-                  nothing else"
-            model: anthropic/claude-3-sonnet-20240229
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 158
-        content:
-          mimeType: text/event-stream
-          size: 158
-          text: |+
-            event: completion
-            data: {"completion":"inner","stopReason":"end_turn"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Mon, 17 Jun 2024 22:00:18 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-06-17T22:00:17.761Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: e6ea250dcd68695172953805fee0a6b1
       _order: 0
       cache: {}
@@ -1631,11 +1227,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: a200939f876676488e018158108617e0
+    - _id: 7acdd370ef86765f8b64d9fb41167881
       _order: 0
       cache: {}
       request:
-        bodySize: 2442
+        bodySize: 2413
         cookies: []
         headers:
           - name: content-type
@@ -1648,7 +1244,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-e51ae3b7191a84db4c865561248548e2-debb5ea33212cceb-01
+            value: 00-0704ffed2f03010beccc7d89ec43fe5f-c679cf2ad7232462-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1764,10 +1360,9 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: "You have access to the provided codebase context. Do not make any
-                  assumptions. Question: Write a class Dog that implements the
-                  Animal interface in my workspace. Show the code only, no
-                  explanation needed."
+                text: "You have access to the provided codebase context. Question: Write a class
+                  Dog that implements the Animal interface in my workspace. Show
+                  the code only, no explanation needed."
             model: anthropic/claude-3-sonnet-20240229
             temperature: 0
             topK: -1
@@ -1781,10 +1376,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 11260
+        bodySize: 4051
         content:
           mimeType: text/event-stream
-          size: 11260
+          size: 4051
           text: >+
             event: completion
 
@@ -1798,13 +1393,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 17 Jun 2024 22:14:29 GMT
+            value: Tue, 25 Jun 2024 02:41:55 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
+          - name: retry-after
+            value: "14"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1822,12 +1419,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
+        headersSize: 1405
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-17T22:14:28.069Z
+      startedDateTime: 2024-06-25T02:41:54.336Z
       time: 0
       timings:
         blocked: -1
@@ -1837,11 +1434,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 505ee547a1cfaad72afea263ac164a0e
+    - _id: c09de3c7d158f2f7db2db05ef8251479
       _order: 0
       cache: {}
       request:
-        bodySize: 2110
+        bodySize: 2081
         cookies: []
         headers:
           - name: content-type
@@ -1854,7 +1451,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-194eaf67f0ca0514b9558ca1f70c1d7d-7a225cef157c08b5-01
+            value: 00-a6626caadd3e88b82a553aa2df1fd250-855558f0da6a45b8-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1957,8 +1554,8 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: "You have access to the provided codebase context. Do not make any
-                  assumptions. Question: What is Squirrel?"
+                text: "You have access to the provided codebase context. Question: What is
+                  Squirrel?"
             model: anthropic/claude-3-sonnet-20240229
             temperature: 0
             topK: -1
@@ -1972,14 +1569,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 39060
+        bodySize: 5054
         content:
           mimeType: text/event-stream
-          size: 39060
+          size: 5054
           text: >+
             event: completion
 
-            data: {"completion":"Based on the provided context from the file `src/squirrel.ts`, Squirrel is an interface that is not actually related to squirrels, the animal. The comment states that \"Squirrel is an interface that mocks something completely unrelated to squirrels\" and that \"It is related to the implementation of precise code navigation in Sourcegraph.\"\n\nSo, Squirrel appears to be an interface used in the implementation of Sourcegraph's precise code navigation feature, but its purpose or the details of what it represents are not clear from the given context.","stopReason":"end_turn"}
+            data: {"completion":"According to the comments in the `src/squirrel.ts` file, `Squirrel` is an interface that \"mocks something completely unrelated to squirrels\". It is related to the implementation of precise code navigation in Sourcegraph, although the specific details are not provided.","stopReason":"end_turn"}
 
 
             event: done
@@ -1989,7 +1586,616 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 17 Jun 2024 22:15:51 GMT
+            value: Tue, 25 Jun 2024 02:41:58 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: retry-after
+            value: "11"
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1405
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-06-25T02:41:56.695Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: a9f966ae0aec20506bc7b5c317c011e0
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2351
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-4c0a3d8ae299e6f0eeb860804f9d5687-fc6c0fefa028d760-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 415
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/squirrel.ts:
+
+                  ```typescript
+
+                  /**
+                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                   * It is related to the implementation of precise code navigation in Sourcegraph.
+                   */
+                  export interface Squirrel {}
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/multiple-selections.ts:
+                  ```typescript
+                  function outer() {
+                      /* SELECTION_START */
+                      return function inner() {}
+                      /* SELECTION_END */
+                  }
+
+                  /* SELECTION_2_START */
+                  function anotherFunction() {}
+                  /* SELECTION_2_END */
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/Heading.tsx:
+                  ```typescript
+                  import React = require("react");
+
+                  interface HeadingProps {
+                      text: string;
+                      level?: number;
+                  }
+
+                  /* CURSOR */
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/ChatColumn.tsx:
+                  ```typescript
+                  import { useEffect } from "react";
+                  import React = require("react");
+
+                  /* SELECTION_START */ export default function ChatColumn({
+                  	messages,
+                  	setChatID,
+                  	isLoading,
+                  }) {
+                  	/* SELECTION_END */
+                  	useEffect(() => {
+                  		if (!isLoading) {
+                  			setChatID(messages[0].chatID);
+                  		}
+                  	}, [messages]);
+                  	return (
+                  		<>
+                  			<h1>Messages</h1>
+                  			<ul>
+                  				{messages.map((message) => (
+                  					<li>{message.text}</li>```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/animal.ts:
+                  ```typescript
+                  /* SELECTION_START */
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  /* SELECTION_END */
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  My selected code from codebase file
+                  src/multiple-selections.ts:7-8:
+
+                  ```
+
+
+                  function anotherFunction() {}
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: "You have access to the provided codebase context. Question: What is the
+                  name of the function that I have selected? Only answer with
+                  the name of the function, nothing else"
+            model: anthropic/claude-3-sonnet-20240229
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 238
+        content:
+          mimeType: text/event-stream
+          size: 238
+          text: |+
+            event: completion
+            data: {"completion":"anotherFunction","stopReason":"end_turn"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 25 Jun 2024 02:42:00 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: retry-after
+            value: "9"
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1404
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-06-25T02:41:59.144Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 0d128e2e1dd7db9b200cb4647bed7a3a
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2356
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-e75027668f4df0993a2d8ea4220c9d2e-13e4f7214a752ebe-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 415
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/squirrel.ts:
+
+                  ```typescript
+
+                  /**
+                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                   * It is related to the implementation of precise code navigation in Sourcegraph.
+                   */
+                  export interface Squirrel {}
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/multiple-selections.ts:
+                  ```typescript
+                  function outer() {
+                      /* SELECTION_START */
+                      return function inner() {}
+                      /* SELECTION_END */
+                  }
+
+                  /* SELECTION_2_START */
+                  function anotherFunction() {}
+                  /* SELECTION_2_END */
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/Heading.tsx:
+                  ```typescript
+                  import React = require("react");
+
+                  interface HeadingProps {
+                      text: string;
+                      level?: number;
+                  }
+
+                  /* CURSOR */
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/ChatColumn.tsx:
+                  ```typescript
+                  import { useEffect } from "react";
+                  import React = require("react");
+
+                  /* SELECTION_START */ export default function ChatColumn({
+                  	messages,
+                  	setChatID,
+                  	isLoading,
+                  }) {
+                  	/* SELECTION_END */
+                  	useEffect(() => {
+                  		if (!isLoading) {
+                  			setChatID(messages[0].chatID);
+                  		}
+                  	}, [messages]);
+                  	return (
+                  		<>
+                  			<h1>Messages</h1>
+                  			<ul>
+                  				{messages.map((message) => (
+                  					<li>{message.text}</li>```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/animal.ts:
+                  ```typescript
+                  /* SELECTION_START */
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  /* SELECTION_END */
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  My selected code from codebase file
+                  src/multiple-selections.ts:2-4:
+
+                  ```
+
+                      return function inner() {}
+                      ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: "You have access to the provided codebase context. Question: What is the
+                  name of the function that I have selected? Only answer with
+                  the name of the function, nothing else"
+            model: anthropic/claude-3-sonnet-20240229
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 158
+        content:
+          mimeType: text/event-stream
+          size: 158
+          text: |+
+            event: completion
+            data: {"completion":"inner","stopReason":"end_turn"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 25 Jun 2024 02:42:01 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: retry-after
+            value: "8"
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1404
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-06-25T02:42:00.432Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: ecd1710b0f5e1bb8050e3e57189f41eb
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 3190
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-fe632636a15479426f09b060e6384050-b1cd339271928904-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 415
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/TestLogger.ts: const foo =
+                  42
+
+                  export const TestLogger = {
+                      startLogging: () => {
+                          // Do some stuff
+
+                          function recordLog() {
+                              console.log(/* CURSOR */ 'Recording the log')
+                          }
+
+                          recordLog()
+                      },
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/TestClass.ts: const foo =
+                  42
+
+
+                  export class TestClass {
+                      constructor(private shouldGreet: boolean) {}
+
+                      public functionName() {
+                          if (this.shouldGreet) {
+                              console.log(/* CURSOR */ 'Hello World!')
+                          }
+                      }
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example.test.ts: import {
+                  expect } from 'vitest'
+
+                  import { it } from 'vitest'
+
+                  import { describe } from 'vitest'
+
+
+                  describe('test block', () => {
+                      it('does 1', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does 2', () => {
+                          expect(true).toBe(true)
+                      })
+
+                      it('does something else', () => {
+                          // This line will error due to incorrect usage of `performance.now`
+                          const startTime = performance.now(/* CURSOR */)
+                      })
+                  })
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  My selected code from codebase file src/animal.ts:1-6:
+                  ```
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: Review the shared code context and configurations to identify the test
+                  framework and libraries in use. Then, generate a suite of
+                  multiple unit tests for the functions in <selected> using the
+                  detected test framework and libraries. Be sure to import the
+                  function being tested. Follow the same patterns as any shared
+                  context. Only add packages, imports, dependencies, and
+                  assertions if they are used in the shared code. Pay attention
+                  to the file path of each shared context to see if test for
+                  <selected> already exists. If one exists, focus on generating
+                  new unit tests for uncovered cases. If none are detected,
+                  import common unit test libraries for {languageName}. Focus on
+                  validating key functionality with simple and complete
+                  assertions. Only include mocks if one is detected in the
+                  shared code. Before writing the tests, identify which test
+                  libraries and frameworks to import, e.g. 'No new imports
+                  needed - using existing libs' or 'Importing test framework
+                  that matches shared context usage' or 'Importing the defined
+                  framework', etc. Then briefly summarize test coverage and any
+                  limitations. At the end, enclose the full completed code for
+                  the new unit tests, including all necessary imports, in a
+                  single markdown codeblock. No fragments or TODO. The new tests
+                  should validate expected functionality and cover edge cases
+                  for <selected> with all required imports, including importing
+                  the function being tested. Do not repeat existing tests.
+            model: anthropic/claude-3-sonnet-20240229
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 639548
+        content:
+          mimeType: text/event-stream
+          size: 639548
+          text: >+
+            event: completion
+
+            data: {"completion":"Based on the shared code context, the test framework being used is Vitest. No additional imports are needed as Vitest is already being used in the shared context.\n\nThe `Animal` interface defines the structure for an object representing an animal. The key functionalities to test are:\n\n1. Ensuring that an object implementing the `Animal` interface has the required properties (`name`, `makeAnimalSound`, `isMammal`).\n2. Validating the `makeAnimalSound` method returns the expected animal sound.\n3. Verifying the `isMammal` property is set correctly.\n\nHere's a suite of unit tests for the `Animal` interface:\n\n```typescript\nimport { describe, it, expect } from 'vitest';\nimport { Animal } from './animal';\n\nclass Dog implements Animal {\n  name = 'Buddy';\n  isMammal = true;\n\n  makeAnimalSound(): string {\n    return 'Woof!';\n  }\n}\n\nclass Bird implements Animal {\n  name = 'Tweety';\n  isMammal = false;\n\n  makeAnimalSound(): string {\n    return 'Chirp!';\n  }\n}\n\ndescribe('Animal', () =\u003e {\n  it('should have the required properties', () =\u003e {\n    const dog = new Dog();\n    expect(dog).toHaveProperty('name');\n    expect(dog).toHaveProperty('makeAnimalSound');\n    expect(dog).toHaveProperty('isMammal');\n  });\n\n  it('should make the correct animal sound', () =\u003e {\n    const dog = new Dog();\n    const bird = new Bird();\n\n    expect(dog.makeAnimalSound()).toBe('Woof!');\n    expect(bird.makeAnimalSound()).toBe('Chirp!');\n  });\n\n  it('should have the correct isMammal value', () =\u003e {\n    const dog = new Dog();\n    const bird = new Bird();\n\n    expect(dog.isMammal).toBe(true);\n    expect(bird.isMammal).toBe(false);\n  });\n});\n```\n\nThis suite covers the basic functionality of the `Animal` interface by creating concrete implementations (`Dog` and `Bird` classes) and testing the required properties and methods. It ensures that objects implementing the `Animal` interface have the correct properties, make the expected animal sound, and have the correct value for the `isMammal` property.\n\nPlease note that these tests assume the existence of concrete implementations of the `Animal` interface. If there are no concrete implementations provided, the tests may need to be adjusted accordingly.","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 17 Jun 2024 14:06:02 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2018,7 +2224,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-17T22:15:50.341Z
+      startedDateTime: 2024-06-17T14:06:00.057Z
       time: 0
       timings:
         blocked: -1
@@ -4776,11 +4982,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: ca3043aeedbbb77bb2376503806788fb
+    - _id: 4ec93f2674b8168d05f9bad0e7e7b1ed
       _order: 0
       cache: {}
       request:
-        bodySize: 227
+        bodySize: 341
         cookies: []
         headers:
           - _fromType: array
@@ -4798,7 +5004,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "227"
+            value: "341"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -4823,6 +5029,12 @@ log:
                       primaryEmail {
                           email
                       }
+                      organizations {
+                          nodes {
+                              id
+                              name
+                          }
+                      }
                   }
               }
             variables: {}
@@ -4840,7 +5052,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 17 Jun 2024 21:59:50 GMT
+            value: Tue, 25 Jun 2024 06:04:24 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -4868,7 +5080,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-06-17T21:59:50.485Z
+      startedDateTime: 2024-06-25T06:04:23.708Z
       time: 0
       timings:
         blocked: -1
@@ -4878,11 +5090,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 7f3ff10a39505669cb5d36145df5fa95
+    - _id: 3fec40886d87367e761715c3159e6590
       _order: 0
       cache: {}
       request:
-        bodySize: 227
+        bodySize: 341
         cookies: []
         headers:
           - _fromType: array
@@ -4900,7 +5112,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "227"
+            value: "341"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -4925,6 +5137,12 @@ log:
                       primaryEmail {
                           email
                       }
+                      organizations {
+                          nodes {
+                              id
+                              name
+                          }
+                      }
                   }
               }
             variables: {}
@@ -4933,31 +5151,21 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentUser
       response:
-        bodySize: 348
+        bodySize: 386
         content:
           encoding: base64
           mimeType: application/json
-          size: 348
-          text: "[\"H4sIAAAAAAAAA2RPy06DQBT9l7uGgmm0MEkTbW1dVImPlNTlZbiFAYbBeVQp4d8bUhMX7\
-            s7JOTmPAXK0CGwA7rSm1u4N6YmKHBikh6ThlTonj283LxVfggclmpS0OArKNxJFA8xq\
-            Rx7kwnQN9glKAgYfymlOhcauXCnrx2EYggfOkG6vBvNnyJSNa//YfksHHuAJLer9+zM\
-            wKK3tDAuCppzPCqWKhqYErlpLrZ1xJQMMHtZFpPhui1/ZJ7lVnVW3+XZz/omyQxrhQs\
-            xNmu3WyWu6eApdf6qXJr7zOXjQaSFR978nBqAr+LfsvpiEqQ3GcRwvAAAA//8DALThL\
-            hwxAQAA\"]"
-          textDecoded:
-            data:
-              currentUser:
-                avatarURL: https://lh3.googleusercontent.com/a/ACg8ocKFaqbYeuBkbj5dFEzx8bXV8a7i3sVbKCNPV7G0uyvk=s96-c
-                displayName: SourcegraphBot-9000
-                hasVerifiedEmail: true
-                id: VXNlcjozNDQ1Mjc=
-                primaryEmail:
-                  email: sourcegraphbot9k@gmail.com
-                username: sourcegraphbot9k-fnwmu
+          size: 386
+          text: "[\"H4sIAAAAAAAAA2RPy04=\",\"wkAU/Ze7bmkNUdpJSBQEF2jjIzQY4+J2emmnj5k6DxSa\
+            /jtpMHHh7pycx72nhxwtAuuBO61J2q0hPVKRA4N0lzS8Uqfk/uXqqeJz8KBEk5IWe0H\
+            5qkXRALPakQe5MF2DxwRbAgZvymlOhcauXCjrx2EYggfOkJYXg/kzZMrGtb+X360DD/\
+            CAFvX29REYlNZ2hgVBU04nhVJFQ2MDV9KStBOu2gCDu2URKb5Z41f2Tm5RZ9V1vl6df\
+            qJsl0Y4E1OTZptl8pzOHkJ3PNRzE9/4HDzotGhRH39H9EAX8O+z22IUxmsweKB0gVKc\
+            0AolzRiTKicD7ONzGIbhDAAA//8=\",\"AwBKjJM/TgEAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Mon, 17 Jun 2024 21:59:50 GMT
+            value: Tue, 25 Jun 2024 06:04:24 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -4988,7 +5196,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-17T21:59:50.714Z
+      startedDateTime: 2024-06-25T06:04:24.301Z
       time: 0
       timings:
         blocked: -1
@@ -4998,11 +5206,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 34fdd9e2bfa6ca27b8e484974dcf6e59
+    - _id: 2af9a176de37be11dff4f113b3a1f7aa
       _order: 0
       cache: {}
       request:
-        bodySize: 227
+        bodySize: 341
         cookies: []
         headers:
           - _fromType: array
@@ -5020,7 +5228,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "227"
+            value: "341"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -5045,6 +5253,12 @@ log:
                       primaryEmail {
                           email
                       }
+                      organizations {
+                          nodes {
+                              id
+                              name
+                          }
+                      }
                   }
               }
             variables: {}
@@ -5062,7 +5276,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 17 Jun 2024 21:59:51 GMT
+            value: Tue, 25 Jun 2024 06:04:25 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -5090,7 +5304,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-06-17T21:59:51.130Z
+      startedDateTime: 2024-06-25T06:04:24.780Z
       time: 0
       timings:
         blocked: -1
