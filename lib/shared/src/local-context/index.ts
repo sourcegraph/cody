@@ -1,19 +1,6 @@
 import type { URI } from 'vscode-uri'
-
-import type { RangeData } from '..'
-import type { ContextItem } from '../codebase-context/messages'
 import type { PromptString } from '../prompt/prompt-string'
 import type { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
-
-export type ContextResult = ContextItem & {
-    repoName?: string
-    revision?: string
-    content: string
-}
-
-export interface FilenameContextFetcher {
-    getContext(query: PromptString, numResults: number): Promise<ContextResult[]>
-}
 
 export interface LocalEmbeddingsFetcher {
     getContext(query: PromptString, numResults: number): Promise<EmbeddingsSearchResult[]>
@@ -44,20 +31,4 @@ export interface Result {
 
 export interface IndexedKeywordContextFetcher {
     getResults(query: PromptString, scopeDirs: URI[]): Promise<Promise<Result[]>[]>
-}
-
-/**
- * File result that renders in the search panel webview
- */
-export interface SearchPanelFile {
-    uri: URI
-    snippets: SearchPanelSnippet[]
-}
-
-/**
- * Snippet result that renders in the search panel webview
- */
-export interface SearchPanelSnippet {
-    contents: string
-    range: RangeData
 }

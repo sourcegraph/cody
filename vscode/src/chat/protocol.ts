@@ -10,7 +10,6 @@ import type {
     MentionQuery,
     Model,
     RangeData,
-    SearchPanelFile,
     SerializedChatMessage,
     TelemetryEventProperties,
     UserLocalHistory,
@@ -109,7 +108,7 @@ export type WebviewMessage =
       }
     | {
           command: 'auth'
-          authKind: 'signin' | 'signout' | 'support' | 'callback' | 'simplified-onboarding'
+          authKind: 'signin' | 'signout' | 'support' | 'callback' | 'simplified-onboarding' | 'offline'
           endpoint?: string | undefined | null
           value?: string | undefined | null
           authMethod?: AuthMethod | undefined | null
@@ -127,12 +126,6 @@ export type WebviewMessage =
     | {
           command: 'queryContextItems'
           query: MentionQuery
-      }
-    | { command: 'search'; query: string }
-    | {
-          command: 'show-search-result'
-          uri: URI
-          range: RangeData
       }
     | {
           command: 'reset'
@@ -158,10 +151,6 @@ export type ExtensionMessage =
           authStatus: AuthStatus
           workspaceFolderUris: string[]
       }
-    | {
-          type: 'search:config'
-          workspaceFolderUris: string[]
-      }
     | { type: 'history'; localHistory?: UserLocalHistory | undefined | null }
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; view: View }
@@ -177,15 +166,8 @@ export type ExtensionMessage =
     | { type: 'clientState'; value: ClientStateForWebview }
     | { type: 'clientAction'; addContextItemsToLastHumanInput: ContextItem[] }
     | { type: 'chatModels'; models: Model[] }
-    | {
-          type: 'update-search-results'
-          results: SearchPanelFile[]
-          query: string
-      }
-    | { type: 'index-updated'; scopeDir: string }
     | { type: 'enhanced-context'; enhancedContextStatus: EnhancedContextContextT }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
-    | { type: 'setChatEnabledConfigFeature'; data: boolean }
     | { type: 'context/remote-repos'; repos: Repo[] }
     | {
           type: 'setConfigFeatures'

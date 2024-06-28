@@ -66,7 +66,7 @@ async function doRewrite(
             topK: 1,
             fast: true,
         },
-        0 // Use legacy API version for now
+        { apiVersion: 0 } // Use legacy API version for now
     )
 
     const streamingText: string[] = []

@@ -784,7 +784,7 @@ log:
               - speaker: human
                 text: >
                   You have access to the provided codebase context. Question:
-                  what does this regex do? 
+                  what does this regex do?
 
                   /a|e|i|o|u/
             model: anthropic/claude-3-haiku-20240307
@@ -8137,7 +8137,7 @@ log:
               - speaker: human
                 text: >
                   You have access to the provided codebase context. Question:
-                  what does this regex do? 
+                  what does this regex do?
 
                   /a|e|i|o|u/
             model: anthropic/claude-3-sonnet-20240620
@@ -15193,7 +15193,7 @@ log:
               - speaker: human
                 text: >
                   You have access to the provided codebase context. Question:
-                  what does this regex do? 
+                  what does this regex do?
 
                   /a|e|i|o|u/
             model: anthropic/claude-3-5-sonnet-20240620
@@ -26696,7 +26696,7 @@ log:
               - speaker: human
                 text: >
                   You have access to the provided codebase context. Question:
-                  what does this regex do? 
+                  what does this regex do?
 
                   /a|e|i|o|u/
               - speaker: assistant
@@ -33475,7 +33475,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {
@@ -33578,7 +33578,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query ContextFilters {
                   site {
                       codyContextFilters(version: V1) {
@@ -33686,7 +33686,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query ContextFilters {
                   site {
                       codyContextFilters(version: V1) {
@@ -33794,7 +33794,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -33914,7 +33914,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -34018,7 +34018,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -34085,11 +34085,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 7f3ff10a39505669cb5d36145df5fa95
+    - _id: 3fec40886d87367e761715c3159e6590
       _order: 0
       cache: {}
       request:
-        bodySize: 227
+        bodySize: 341
         cookies: []
         headers:
           - _fromType: array
@@ -34107,7 +34107,7 @@ log:
             value: "*/*"
           - _fromType: array
             name: content-length
-            value: "227"
+            value: "341"
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -34121,7 +34121,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -34132,6 +34132,12 @@ log:
                       primaryEmail {
                           email
                       }
+                      organizations {
+                          nodes {
+                              id
+                              name
+                          }
+                      }
                   }
               }
             variables: {}
@@ -34140,17 +34146,17 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentUser
       response:
-        bodySize: 348
+        bodySize: 376
         content:
           encoding: base64
           mimeType: application/json
-          size: 348
-          text: "[\"H4sIAAAAAAAAA2RPy06DQBT9l7uGgmm0MEkTbW1dVImPlNTlZbiFAYbBeVQp4d8bUhMX7\
-            s7JOTmPAXK0CGwA7rSm1u4N6YmKHBikh6ThlTonj283LxVfggclmpS0OArKNxJFA8xq\
-            Rx7kwnQN9glKAgYfymlOhcauXCnrx2EYggfOkG6vBvNnyJSNa//YfksHHuAJLer9+zM\
-            wKK3tDAuCppzPCqWKhqYErlpLrZ1xJQMMHtZFpPhui1/ZJ7lVnVW3+XZz/omyQxrhQs\
-            xNmu3WyWu6eApdf6qXJr7zOXjQaSFR978nBqAr+LfsvpiEqQ3GcRwvAAAA//8DALThL\
-            hwxAQAA\"]"
+          size: 376
+          text: "[\"H4sIAAAAAAAAA2RPy07CQBT9l7tuaQ1R2klIFAQXaOMjNBjj4nZ6aaePmToPFJr+O2kwc\
+            eHunJzHvaeHHC0C64E7rUnarSE9UpEDg3SXNLxSp+T+5eqp4nPwoESTkhZ7QfmqRdEA\
+            s9qRB7kwXYPHBFsCBm/KaU6Fxq5cKOvHYRiCB86QlheD+TNkysa1v5ffrQMP8IAW9fb\
+            1ERiU1naGBUFTTieFUkVDYwNX0pK0E67aAIO7ZREpvlnjV/ZOblFn1XW+Xp1+omyXRj\
+            gTU5Nmm2XynM4eQnc81HMT3/gcPOi0aFEff0f0QBfw77PbYhTGazB4oHSBUpzQCiXNG\
+            JMqJwPs43MYhuEMAAD//wMASoyTP04BAAA=\"]"
           textDecoded:
             data:
               currentUser:
@@ -34158,13 +34164,15 @@ log:
                 displayName: SourcegraphBot-9000
                 hasVerifiedEmail: true
                 id: VXNlcjozNDQ1Mjc=
+                organizations:
+                  nodes: []
                 primaryEmail:
                   email: sourcegraphbot9k@gmail.com
                 username: sourcegraphbot9k-fnwmu
         cookies: []
         headers:
           - name: date
-            value: Mon, 24 Jun 2024 23:37:37 GMT
+            value: Tue, 25 Jun 2024 06:04:24 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -34197,7 +34205,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-24T23:37:37.250Z
+      startedDateTime: 2024-06-25T06:04:24.268Z
       time: 0
       timings:
         blocked: -1
@@ -34243,7 +34251,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUserCodySubscription {
                   currentUser {
                       codySubscription {
@@ -34348,7 +34356,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query Repository($name: String!) {
               	repository(name: $name) {
               		id
@@ -34446,7 +34454,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteIdentification {
               	site {
               		siteID
@@ -34561,7 +34569,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteIdentification {
               	site {
               		siteID
@@ -34672,7 +34680,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -34777,7 +34785,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion

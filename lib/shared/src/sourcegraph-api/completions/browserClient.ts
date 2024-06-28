@@ -4,17 +4,18 @@ import { dependentAbortController } from '../../common/abortController'
 import { addCustomUserAgent } from '../graphql/client'
 
 import { addClientInfoParams } from '../client-name-version'
-import { SourcegraphCompletionsClient } from './client'
+import { type CompletionRequestParameters, SourcegraphCompletionsClient } from './client'
 import type { CompletionCallbacks, CompletionParameters, Event } from './types'
 import { getSerializedParams } from './utils'
 
 export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsClient {
     protected async _streamWithCallbacks(
         params: CompletionParameters,
-        apiVersion: number,
+        requestParams: CompletionRequestParameters,
         cb: CompletionCallbacks,
         signal?: AbortSignal
     ): Promise<void> {
+        const { apiVersion } = requestParams
         const serializedParams = await getSerializedParams(params)
 
         const url = new URL(this.completionsEndpoint)
@@ -24,7 +25,10 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
         addClientInfoParams(url.searchParams)
 
         const abort = dependentAbortController(signal)
-        const headersInstance = new Headers(this.config.customHeaders as HeadersInit)
+        const headersInstance = new Headers({
+            ...this.config.customHeaders,
+            ...requestParams.customHeaders,
+        } as HeadersInit)
         addCustomUserAgent(headersInstance)
         headersInstance.set('Content-Type', 'application/json; charset=utf-8')
         if (this.config.accessToken) {

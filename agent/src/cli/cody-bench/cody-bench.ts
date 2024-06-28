@@ -343,7 +343,7 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
         baseGlobalState.editModel = provider.model
     }
 
-    const client = await newAgentClient({
+    const { client } = await newAgentClient({
         name: 'cody-bench',
         version: '0.1.0',
         workspaceRootUri: workspaceRootUri.toString(),
@@ -353,6 +353,7 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
             customHeaders: {},
             customConfiguration: {
                 'cody.experimental.symf.enabled': false, // fixes errors in Polly.js related to fetchin the symf binary
+                'cody.experimental.telemetry.enabled': false,
                 ...options.fixture.customConfiguration,
             },
             baseGlobalState,

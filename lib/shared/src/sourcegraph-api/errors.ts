@@ -55,6 +55,10 @@ export function isRateLimitError(error: unknown): error is RateLimitError {
     return error instanceof RateLimitError || (error as any)?.name === RateLimitError.errorName
 }
 
+export function isContextWindowLimitError(error: unknown): error is Error {
+    return error instanceof Error && error.message.includes('token limit')
+}
+
 export class TracedError extends Error {
     constructor(
         message: string,

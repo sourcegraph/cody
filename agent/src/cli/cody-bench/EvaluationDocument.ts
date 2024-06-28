@@ -262,16 +262,19 @@ interface EvaluationItem {
     editDiff?: string
     chatReply?: string
     chatQuestion?: string
+    questionClass?: string
     fixBeforeDiagnostic?: string
     fixAfterDiagnostic?: string
     llmJudgeScore?: number
     llmJudgeReasoning?: string
+    concisenessScore?: number
+    hedges?: boolean
     info?: CompletionItemInfo
     event?: CompletionBookkeepingEvent
     eventJSON?: string
 }
 
-export const autocompleteItemHeaders: ObjectHeaderItem[] = [
+export const headerItems: ObjectHeaderItem[] = [
     { id: 'languageid', title: 'LANGUAGEID' },
     { id: 'workspace', title: 'WORKSPACE' },
     { id: 'fixture', title: 'FIXTURE' },
@@ -297,10 +300,13 @@ export const autocompleteItemHeaders: ObjectHeaderItem[] = [
     { id: 'editDiff', title: 'EDIT_DIFF' },
     { id: 'chatReply', title: 'CHAT_REPLY' },
     { id: 'chatQuestion', title: 'CHAT_QUESTION' },
+    { id: 'questionClass', title: 'QUESTION_CLASS' },
     { id: 'fixAfterDiagnostic', title: 'FIX_AFTER_DIAGNOSTIC' },
     { id: 'fixBeforeDiagnostic', title: 'FIX_BEFORE_DIAGNOSTIC' },
     { id: 'llmJudgeScore', title: 'LLM_JUDGE_SCORE' },
     { id: 'llmJudgeReasoning', title: 'LLM_JUDGE_REASONING' },
+    { id: 'concisenessScore', title: 'CONCISENESS_SCORE' },
+    { id: 'hedges', title: 'HEDGES' },
     { id: 'providerIdentifier', title: 'PROVIDER_IDENTIFIER' },
     { id: 'providerModel', title: 'PROVIDER_MODEL' },
     { id: 'stopReason', title: 'STOP_REASON' },
