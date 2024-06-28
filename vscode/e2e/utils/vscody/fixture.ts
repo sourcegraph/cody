@@ -334,7 +334,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
             const vscodeExecutable = await Promise.any(
                 [
                     '../Resources/app/bin', // darwin
-                    'bin', // linux
+                    'bin', // linux and windows
                 ].map(async binPath => {
                     const cliExecutableDir = path.resolve(path.dirname(electronExecutable), binPath)
 
