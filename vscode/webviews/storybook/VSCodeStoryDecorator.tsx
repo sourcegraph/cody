@@ -13,6 +13,12 @@ import '../../node_modules/@vscode/codicons/dist/codicon.css'
 import { AppWrapper } from '../AppWrapper'
 import { type ChatModelContext, ChatModelContextProvider } from '../chat/models/chatModelContext'
 import { ClientStateContextProvider } from '../client/clientState'
+import {
+    type Context,
+    type ContextsContext,
+    ContextsContextProvider,
+} from '../components/contextSelectField/contexts'
+import { FIXTURE_CONTEXTS } from '../components/contextSelectField/fixtures'
 import { WithContextProviders } from '../mentions/providers'
 import { WithChatContextClient } from '../promptEditor/plugins/atMentions/chatContextClient'
 import { dummyChatContextClient } from '../promptEditor/plugins/atMentions/fixtures'
@@ -92,7 +98,9 @@ export function VSCodeDecorator(className: string | undefined, style?: CSSProper
                         <ChatModelContextProvider value={useDummyChatModelContext()}>
                             <TelemetryRecorderContext.Provider value={telemetryRecorder}>
                                 <ClientStateContextProvider value={{ initialContext: [] }}>
-                                    {story()}
+                                    <ContextsContextProvider value={useDummyContextsContext()}>
+                                        {story()}
+                                    </ContextsContextProvider>
                                 </ClientStateContextProvider>
                             </TelemetryRecorderContext.Provider>
                         </ChatModelContextProvider>
@@ -111,6 +119,15 @@ function useDummyChatModelContext(): ChatModelContext {
         )
     }
     return { chatModels, onCurrentChatModelChange }
+}
+
+function useDummyContextsContext(): ContextsContext {
+    const contexts = FIXTURE_CONTEXTS
+    const [currentContext, setCurrentContext] = useState<Context | null>(null)
+    const onCurrentContextChange = (value: Context | null): void => {
+        setCurrentContext(value)
+    }
+    return { contexts, currentContext, onCurrentContextChange }
 }
 
 const acquireVsCodeApi = () => ({

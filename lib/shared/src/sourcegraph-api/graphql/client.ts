@@ -11,6 +11,7 @@ import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
 import {
+    CONTEXTS_QUERY,
     CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_QUERY,
     CURRENT_SITE_CODY_CONFIG_FEATURES,
@@ -257,6 +258,32 @@ export interface ContextSearchResult {
     startLine: number
     endLine: number
     content: string
+}
+
+export interface SearchContext {
+    id: string
+    name: string
+    namespace: {
+        __typename: string
+        id: string
+    } | null
+    description: string
+    spec: string
+    public: boolean
+    autoDefined: boolean
+    query: string
+    repositories: {
+        repository: {
+            __typename: string
+            id: string
+            name: string
+        }
+        revisions: string[]
+    }[]
+    updatedAt: string
+    viewerCanManage: boolean
+    viewerHasAsDefault: boolean
+    viewerHasStarred: boolean
 }
 
 interface ContextFiltersResponse {
@@ -760,6 +787,18 @@ export class SourcegraphGraphQLAPIClient {
             return EXCLUDE_EVERYTHING_CONTEXT_FILTERS
         }
 
+        return result
+    }
+
+    public async getContexts(): Promise<SearchContext[]> {
+        const response =
+            await this.fetchSourcegraphAPI<APIResponse<{ searchContexts: { nodes: SearchContext[] } }>>(
+                CONTEXTS_QUERY
+            )
+        const result = extractDataOrError(response, data => data.searchContexts.nodes)
+        if (result instanceof Error) {
+            throw result
+        }
         return result
     }
 

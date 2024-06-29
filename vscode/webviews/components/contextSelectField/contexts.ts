@@ -1,4 +1,5 @@
-import { createContext, useContext } from 'react'
+import type { Context } from '@sourcegraph/cody-shared'
+import { createContext, useContext, useMemo, useState } from 'react'
 
 /**
  * React context data for {@link Context}s.
@@ -11,24 +12,35 @@ export interface ContextsContext {
     onCurrentContextChange: (currentContext: Context | null) => void
 }
 
-/**
- * Pinnable, saved contexts. You can define a context on Sourcegraph, which is basically a reusable
- * snippet of text and some @-mentions that you can prepend to your chat message.
- *
- */
-export interface Context {
-    id: string
-    name: string
-    description?: string
-    query: string
-    default: boolean
-    starred: boolean
-}
-
 const context = createContext<ContextsContext | null>(null)
 
 export const ContextsContextProvider = context.Provider
 
 export function useContexts(): ContextsContext | null {
     return useContext(context)
+}
+
+export function useContextsValue(): {
+    contextValue: ContextsContext | null
+    setContextsData: (data: Pick<ContextsContext, 'contexts' | 'currentContext'> | null) => void
+} {
+    const [contexts, setContexts] = useState<Context[] | null>(null)
+    const [currentContext, setCurrentContext] = useState<Context | null>(null)
+    return useMemo(
+        () => ({
+            contextValue:
+                contexts !== null
+                    ? {
+                          contexts,
+                          currentContext,
+                          onCurrentContextChange: setCurrentContext,
+                      }
+                    : null,
+            setContextsData: data => {
+                setContexts(data ? data.contexts : null)
+                setCurrentContext(data ? data.currentContext : null)
+            },
+        }),
+        [contexts, currentContext]
+    )
 }

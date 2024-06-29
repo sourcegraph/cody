@@ -304,3 +304,4 @@ export {
     UNKNOWN_NODES_EDITOR_STATE_FIXTURE,
 } from './lexicalEditor/fixtures'
 export { getSerializedParams } from './sourcegraph-api/completions/utils'
+export { type Context } from './context/contexts/contexts'

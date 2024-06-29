@@ -1,10 +1,11 @@
-import { ExternalLinkIcon } from 'lucide-react'
+import type { Context } from '@sourcegraph/cody-shared'
+import { SettingsIcon } from 'lucide-react'
 import { useCallback } from 'react'
 import { useTelemetryRecorder } from '../../utils/telemetry'
 import { Command, CommandGroup, CommandItem, CommandLink, CommandList } from '../shadcn/ui/command'
 import { ToolbarPopoverItem } from '../shadcn/ui/toolbar'
 import { cn } from '../shadcn/utils'
-import type { Context, ContextsContext } from './contexts'
+import type { ContextsContext } from './contexts'
 
 const NULL_CONTEXT_ID = '<null-context>'
 
@@ -86,7 +87,12 @@ export const ContextSelectField: React.FunctionComponent<
             tooltip="Select shared context"
             aria-label="Select shared context"
             popoverContent={close => (
-                <Command loop={true} defaultValue={value} tabIndex={0} className="focus:tw-outline-none">
+                <Command
+                    loop={true}
+                    defaultValue={value}
+                    tabIndex={0}
+                    className="focus:tw-outline-none tw-max-w-[min(500px,90vw)]"
+                >
                     <CommandList>
                         <CommandGroup>
                             {contexts.map(context => (
@@ -97,11 +103,11 @@ export const ContextSelectField: React.FunctionComponent<
                                         onChange(currentValue)
                                         close()
                                     }}
-                                    className="tw-flex tw-items-center tw-gap-2"
+                                    className="tw-flex tw-items-baseline tw-gap-4 tw-whitespace-nowrap"
                                 >
-                                    {context.name}{' '}
+                                    {context.spec}{' '}
                                     {context.description && (
-                                        <span className="tw-text-muted-foreground tw-text-sm">
+                                        <span className="tw-text-muted-foreground tw-text-sm tw-overflow-hidden tw-overflow-ellipsis">
                                             {context.description}
                                         </span>
                                     )}
@@ -114,14 +120,10 @@ export const ContextSelectField: React.FunctionComponent<
                                 href="https://sourcegraph.test:3443/contexts"
                                 target="_blank"
                                 rel="noreferrer"
-                                className="tw-flex tw-items-center tw-justify-between"
+                                className="tw-flex tw-items-center tw-gap-3"
                             >
-                                Documentation
-                                <ExternalLinkIcon
-                                    size={16}
-                                    strokeWidth={1.25}
-                                    className="tw-opacity-80"
-                                />
+                                <SettingsIcon size={16} strokeWidth={1.25} className="tw-opacity-80" />
+                                Edit contexts...
                             </CommandLink>
                         </CommandGroup>
                     </CommandList>
@@ -138,7 +140,7 @@ export const ContextSelectField: React.FunctionComponent<
                 },
             }}
         >
-            {currentContext !== null ? currentContext.name : 'Context...'}
+            {currentContext !== null ? currentContext.name : 'Template'}
         </ToolbarPopoverItem>
     )
 }
