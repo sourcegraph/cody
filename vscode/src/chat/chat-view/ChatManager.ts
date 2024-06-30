@@ -73,8 +73,12 @@ export class ChatManager implements vscode.Disposable {
         this.disposables.push(
             vscode.commands.registerCommand('cody.action.chat', args => this.executeChat(args)),
             vscode.commands.registerCommand(
-                'cody.chat.panel.moveFromSideBarToEditor',
+                'cody.chat.panel.moveFromSidebarToEditor',
                 async () => await this.chatPanelsManager.moveSidebarChatToEditor()
+            ),
+            vscode.commands.registerCommand(
+                'cody.chat.panel.moveFromEditorToSidebar',
+                async () => await this.chatPanelsManager.moveEditorChatToSidebar()
             ),
             vscode.commands.registerCommand(
                 'cody.chat.panel.sidebar.new',

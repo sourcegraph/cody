@@ -290,6 +290,18 @@ export class ChatPanelsManager implements vscode.Disposable {
         await Promise.all([this.createWebviewPanel(sessionID), this.resetSidebar()])
     }
 
+    public async moveEditorChatToSidebar(): Promise<void> {
+        const sessionID = this.activePanelProvider?.sessionID
+        if (!sessionID) {
+            return
+        }
+        await Promise.all([
+            this.sidebarProvider.restoreSession(sessionID),
+            vscode.commands.executeCommand('workbench.action.closeActiveEditor'),
+        ])
+        await vscode.commands.executeCommand('cody.chat.focus')
+    }
+
     public async restorePanel(
         chatID: string,
         chatQuestion?: string
