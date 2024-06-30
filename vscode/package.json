@@ -450,6 +450,22 @@
         "icon": "$(new-comment-icon)"
       },
       {
+        "command": "cody.chat.panel.sidebar.new",
+        "category": "Cody",
+        "title": "New Chat",
+        "enablement": "cody.activated",
+        "group": "Cody",
+        "icon": "$(new-comment-icon)"
+      },
+      {
+        "command": "cody.chat.panel.moveFromSideBarToEditor",
+        "category": "Cody",
+        "title": "Move chat to an editor panel",
+        "enablement": "cody.activated",
+        "group": "Cody",
+        "icon": "$(editor-layout)"
+      },
+      {
         "command": "cody.minion.panel.new",
         "category": "Cody",
         "title": "New Minion Panel",
@@ -851,6 +867,16 @@
           "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
           "enablement": "cody.hasChatHistory",
           "group": "navigation@3"
+        },
+        {
+          "command": "cody.chat.panel.sidebar.new",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation@1"
+        },
+        {
+          "command": "cody.chat.panel.moveFromSideBarToEditor",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation@2"
         },
         {
           "command": "cody.welcome",
