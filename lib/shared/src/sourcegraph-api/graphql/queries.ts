@@ -194,6 +194,14 @@ query Repositories($names: [String!]!, $first: Int!) {
   }
 `
 
+export const CHAT_INTENT_QUERY = `
+query ChatIntent($query: String!) {
+    chatIntent(query: $query) {
+        intent
+        score
+    }
+}`
+
 export const CONTEXT_SEARCH_QUERY = `
 query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
 	getCodyContext(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {

@@ -11,6 +11,7 @@ import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
 import {
+    CHAT_INTENT_QUERY,
     CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_QUERY,
     CURRENT_SITE_CODY_CONFIG_FEATURES,
@@ -221,6 +222,13 @@ interface SearchAttributionResponse {
 
 type LogEventResponse = unknown
 
+interface ChatIntentResponse {
+    chatIntent: {
+        intent: string
+        score: number
+    }
+}
+
 interface ContextSearchResponse {
     getCodyContext: {
         blob: {
@@ -247,6 +255,20 @@ export interface EmbeddingsSearchResult {
     startLine: number
     endLine: number
     content: string
+}
+
+const VALID_INTENTS = {
+    'Fix Linear Issue': null,
+    'General Query': null,
+} as const
+
+/**
+ * Experimental API. Based on
+ * https://sourcegraph.sourcegraph.com/github.com/sourcegraph/cody-chat-intent@5119901b2ad3dd538458f405e4b371bc13cb9db2/-/blob/deploy/app.py?L96-102
+ */
+export interface ChatIntentResult {
+    intent: keyof typeof VALID_INTENTS
+    score: number
 }
 
 export interface ContextSearchResult {
@@ -691,6 +713,25 @@ export class SourcegraphGraphQLAPIClient {
 
         const result = extractDataOrError(response, data => data.repository?.name ?? null)
         return isError(result) ? null : result
+    }
+
+    /** Experimental API */
+    public async chatIntent(query: string): Promise<ChatIntentResult | Error> {
+        const response = await this.fetchSourcegraphDotcomAPI<APIResponse<ChatIntentResponse>>(
+            CHAT_INTENT_QUERY,
+            {
+                query: { query },
+            }
+        )
+        return extractDataOrError(response, data => {
+            if (data.chatIntent.intent in VALID_INTENTS) {
+                return {
+                    ...data.chatIntent,
+                    intent: data.chatIntent.intent as keyof typeof VALID_INTENTS,
+                }
+            }
+            throw new Error('Invalid chat intent:' + data.chatIntent.intent)
+        })
     }
 
     public async contextSearch(
