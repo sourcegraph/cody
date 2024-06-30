@@ -452,18 +452,26 @@
       {
         "command": "cody.chat.panel.sidebar.new",
         "category": "Cody",
-        "title": "New Chat",
+        "title": "New Chat in sidebar",
         "enablement": "cody.activated",
         "group": "Cody",
         "icon": "$(new-comment-icon)"
       },
       {
-        "command": "cody.chat.panel.moveFromSideBarToEditor",
+        "command": "cody.chat.panel.moveFromSidebarToEditor",
         "category": "Cody",
-        "title": "Move chat to an editor panel",
+        "title": "Move this chat to an editor panel",
         "enablement": "cody.activated",
         "group": "Cody",
-        "icon": "$(editor-layout)"
+        "icon": "$(layout-sidebar-left-off)"
+      },
+      {
+        "command": "cody.chat.panel.moveFromEditorToSidebar",
+        "category": "Cody",
+        "title": "Move this chat to the sidebar",
+        "enablement": "cody.activated",
+        "group": "Cody",
+        "icon": "$(layout-sidebar-left)"
       },
       {
         "command": "cody.minion.panel.new",
@@ -861,7 +869,7 @@
           "group": "navigation@1"
         },
         {
-          "command": "cody.chat.panel.moveFromSideBarToEditor",
+          "command": "cody.chat.panel.moveFromSidebarToEditor",
           "when": "view == cody.chat && cody.activated",
           "group": "navigation@2"
         },
@@ -899,27 +907,33 @@
           "visibility": "visible"
         },
         {
-          "command": "cody.chat.panel.new",
+          "command": "cody.chat.panel.moveFromEditorToSidebar",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
           "group": "navigation@1",
           "visibility": "visible"
         },
         {
-          "command": "cody.chat.history.panel",
+          "command": "cody.chat.panel.new",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
           "group": "navigation@2",
           "visibility": "visible"
         },
         {
+          "command": "cody.chat.history.panel",
+          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
+          "group": "navigation@3",
+          "visibility": "visible"
+        },
+        {
           "command": "cody.chat.view.popOut",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated && !isAuxiliaryEditorPart",
-          "group": "navigation@3",
+          "group": "navigation@4",
           "visibility": "visible"
         },
         {
           "command": "cody.settings.extension.chat",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
-          "group": "navigation@4",
+          "group": "navigation@5",
           "visibility": "visible"
         }
       ],
