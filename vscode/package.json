@@ -552,14 +552,6 @@
         "enablement": "cody.activated && resourceSet && cody.hasChatPanelsOpened"
       },
       {
-        "command": "cody.chat.panel.reset",
-        "category": "Cody",
-        "title": "New Chat Session",
-        "group": "Cody",
-        "icon": "$(clear-all)",
-        "enablement": "cody.activated && cody.hasChatHistory"
-      },
-      {
         "command": "cody.embeddings.resolveIssue",
         "title": "Cody Embeddings",
         "enablement": "cody.activated && cody.embeddings.hasIssue"
@@ -780,11 +772,6 @@
           "command": "cody.chat.view.popOut",
           "when": "false",
           "_comment": "Hidden because it is only a wrapper around the workspace pop out command and would place any editor tab (not just Cody chat) in a new window."
-        },
-        {
-          "command": "cody.chat.panel.reset",
-          "when": "false",
-          "_comment": "Hidden because it only needs to be usable in the chat toolbar."
         }
       ],
       "editor/context": [
