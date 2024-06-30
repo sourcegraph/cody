@@ -18,6 +18,7 @@ import {
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
 export const Transcript: React.FunctionComponent<{
+    chatID: string
     transcript: ChatMessage[]
     messageInProgress: ChatMessage | null
     feedbackButtonsOnSubmit: (text: string) => void
@@ -28,7 +29,7 @@ export const Transcript: React.FunctionComponent<{
     chatEnabled: boolean
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
-}> = ({ transcript, messageInProgress, ...props }) => {
+}> = ({ chatID, transcript, messageInProgress, ...props }) => {
     const interactions = useMemo(
         () => transcriptToInteractionPairs(transcript, messageInProgress),
         [transcript, messageInProgress]
@@ -37,8 +38,9 @@ export const Transcript: React.FunctionComponent<{
         <div className="tw-px-8 tw-pt-8 tw-pb-14 tw-flex tw-flex-col tw-gap-10">
             {interactions.map((interaction, i) => (
                 <TranscriptInteraction
-                    // biome-ignore lint/suspicious/noArrayIndexKey:
-                    key={i}
+                    chatID={chatID}
+                    // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                    key={`${chatID}-${i}`}
                     {...props}
                     transcript={transcript}
                     messageInProgress={messageInProgress}

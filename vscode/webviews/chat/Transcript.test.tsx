@@ -8,6 +8,7 @@ import { type Interaction, Transcript, transcriptToInteractionPairs } from './Tr
 import { FIXTURE_USER_ACCOUNT_INFO } from './fixtures'
 
 const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
+    chatID: 'test',
     messageInProgress: null,
     feedbackButtonsOnSubmit: () => {},
     copyButtonOnSubmit: () => {},
