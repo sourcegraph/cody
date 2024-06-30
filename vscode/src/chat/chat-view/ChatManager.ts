@@ -87,9 +87,6 @@ export class ChatManager implements vscode.Disposable {
             vscode.commands.registerCommand('cody.chat.panel.restore', (id, chat) =>
                 this.restorePanel(id, chat)
             ),
-            vscode.commands.registerCommand('cody.chat.panel.reset', () =>
-                this.chatPanelsManager.resetPanel()
-            ),
             vscode.commands.registerCommand(CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID, (...args) =>
                 this.passthroughVsCodeOpen(...args)
             ),
