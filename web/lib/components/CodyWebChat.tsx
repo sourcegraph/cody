@@ -112,6 +112,10 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
         // Notify the extension host that we are ready to receive events.
         vscodeAPI.postMessage({ command: 'ready' })
         vscodeAPI.postMessage({ command: 'initialized' })
+
+        if (activeChatID) {
+            vscodeAPI.postMessage({ command: 'restoreHistory', chatID: activeChatID })
+        }
     }, [vscodeAPI])
 
     // Deprecated V1 telemetry
