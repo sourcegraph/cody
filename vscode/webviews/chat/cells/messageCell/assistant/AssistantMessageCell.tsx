@@ -113,7 +113,13 @@ export const AssistantMessageCell: FunctionComponent<{
             footer={
                 chatEnabled &&
                 ((showFeedbackButtons && feedbackButtonsOnSubmit) || humanMessage) && (
-                    <div className="tw-py-3 tw-flex tw-flex-col tw-gap-2">
+                    <div
+                        className={
+                            isAborted
+                                ? 'tw-py-3 tw-flex tw-flex-col tw-gap-2'
+                                : 'tw-py-3 tw-flex tw-gap-2'
+                        }
+                    >
                         {isAborted && (
                             <div className="tw-text-sm tw-text-muted-foreground tw-mt-4">
                                 Output stream stopped

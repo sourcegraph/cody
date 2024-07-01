@@ -106,7 +106,7 @@ export function transcriptToInteractionPairs(
             (isAborted && lastAssistantMessage.text) ||
             (!assistantMessageInProgress && lastAssistantMessage.text))
 
-    if (shouldAddFollowup) {
+    if (!transcript.length || shouldAddFollowup) {
         pairs.push({
             humanMessage: { index: pairs.length * 2, speaker: 'human', isUnsentFollowup: true },
             assistantMessage: null,

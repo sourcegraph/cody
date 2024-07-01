@@ -324,7 +324,12 @@ function expectCells(expectedCells: CellMatcher[], containerElement?: HTMLElemen
 
 describe('transcriptToInteractionPairs', () => {
     test('empty transcript', () => {
-        expect(transcriptToInteractionPairs([], null)).toEqual<Interaction[]>([])
+        expect(transcriptToInteractionPairs([], null)).toEqual<Interaction[]>([
+            {
+                humanMessage: { index: 0, speaker: 'human', isUnsentFollowup: true },
+                assistantMessage: null,
+            },
+        ])
     })
 
     test('finished response pairs', () => {
