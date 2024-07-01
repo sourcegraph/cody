@@ -452,7 +452,7 @@
       {
         "command": "cody.chat.panel.sidebar.new",
         "category": "Cody",
-        "title": "New Chat in sidebar",
+        "title": "New Chat in Sidebar",
         "enablement": "cody.activated",
         "group": "Cody",
         "icon": "$(new-comment-icon)"
@@ -460,7 +460,7 @@
       {
         "command": "cody.chat.panel.moveFromSidebarToEditor",
         "category": "Cody",
-        "title": "Move this chat to an editor panel",
+        "title": "Move Chat to Editor Panel",
         "enablement": "cody.activated",
         "group": "Cody",
         "icon": "$(layout-sidebar-left-off)"
@@ -468,7 +468,7 @@
       {
         "command": "cody.chat.panel.moveFromEditorToSidebar",
         "category": "Cody",
-        "title": "Move this chat to the sidebar",
+        "title": "Move Chat to Sidebar",
         "enablement": "cody.activated",
         "group": "Cody",
         "icon": "$(layout-sidebar-left)"
