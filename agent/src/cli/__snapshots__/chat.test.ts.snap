@@ -23,9 +23,10 @@ exports[`--context-repo (squirrel test) 1`] = `
 exitCode: 0
 stdout: >+
   Squirrel is a high-performance, open-source object-relational database (ORD)
-  that provides a SQL interface for working with structured and semi-structured
-  data stored in modern cloud data stores like Amazon S3, Azure Blob Storage,
-  and Google Cloud Storage.
+  that uses an SQL dialect and is embedded within applications. It is designed
+  to be lightweight, fast, and easy to use, making it suitable for applications
+  that require a database but do not need the complexity and overhead of a
+  traditional client-server database management system (DBMS).
 
 stderr: ""
 "

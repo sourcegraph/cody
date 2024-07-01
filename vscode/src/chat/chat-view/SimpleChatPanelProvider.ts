@@ -262,6 +262,14 @@ export class SimpleChatPanelProvider
                 chatModel: this.chatModel,
             })
         )
+
+        // Observe any changes in chat history and send client notifications to
+        // the consumer
+        this.disposables.push(
+            chatHistory.onHistoryChanged(chatHistory => {
+                this.postMessage({ type: 'history', localHistory: chatHistory })
+            })
+        )
     }
 
     /**

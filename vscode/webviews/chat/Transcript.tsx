@@ -11,7 +11,6 @@ import type { ApiPostMessage } from '../Chat'
 import type { PromptEditorRefAPI } from '../promptEditor/PromptEditor'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
-import styles from './Transcript.module.css'
 import { ContextCell } from './cells/contextCell/ContextCell'
 import {
     AssistantMessageCell,
@@ -20,6 +19,7 @@ import {
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
 export const Transcript: React.FunctionComponent<{
+    chatID: string
     transcript: ChatMessage[]
     messageInProgress: ChatMessage | null
     feedbackButtonsOnSubmit: (text: string) => void
@@ -30,22 +30,24 @@ export const Transcript: React.FunctionComponent<{
     chatEnabled: boolean
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
-}> = ({ transcript, messageInProgress, ...props }) => {
+}> = ({ chatID, transcript, messageInProgress, ...props }) => {
     const interactions = useMemo(
         () => transcriptToInteractionPairs(transcript, messageInProgress),
         [transcript, messageInProgress]
     )
 
     return (
-        <>
+        <div className="tw-px-8 tw-pt-8 tw-pb-14 tw-flex tw-flex-col tw-gap-10">
             {interactions.map((interaction, i) => (
                 <TranscriptInteraction
-                    // biome-ignore lint/suspicious/noArrayIndexKey:
-                    key={i}
+                    chatID={chatID}
+                    // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                    key={`${chatID}-${i}`}
                     {...props}
                     transcript={transcript}
                     messageInProgress={messageInProgress}
                     interaction={interaction}
+                    isFirstInteraction={i === 0}
                     isLastInteraction={i === interactions.length - 1}
                     isLastSentInteraction={
                         i === interactions.length - 2 && interaction.assistantMessage !== null
@@ -55,7 +57,7 @@ export const Transcript: React.FunctionComponent<{
                     )}
                 />
             ))}
-        </>
+        </div>
     )
 }
 
@@ -117,12 +119,14 @@ export function transcriptToInteractionPairs(
 const TranscriptInteraction: FunctionComponent<
     ComponentProps<typeof Transcript> & {
         interaction: Interaction
+        isFirstInteraction: boolean
         isLastInteraction: boolean
         isLastSentInteraction: boolean
         priorAssistantMessageIsLoading: boolean
     }
 > = ({
     interaction: { humanMessage, assistantMessage },
+    isFirstInteraction,
     isLastInteraction,
     isLastSentInteraction,
     priorAssistantMessageIsLoading,
@@ -136,6 +140,12 @@ const TranscriptInteraction: FunctionComponent<
         },
         [humanMessage]
     )
+
+    const onStop = useCallback(() => {
+        getVSCodeAPI().postMessage({
+            command: 'abort',
+        })
+    }, [])
 
     const isContextLoading = Boolean(
         humanMessage.contextFiles === undefined &&
@@ -153,9 +163,11 @@ const TranscriptInteraction: FunctionComponent<
                 isSent={!humanMessage.isUnsentFollowup}
                 isPendingPriorResponse={priorAssistantMessageIsLoading}
                 onSubmit={humanMessage.isUnsentFollowup ? onFollowupSubmit : onEditSubmit}
+                onStop={onStop}
+                isFirstInteraction={isFirstInteraction}
+                isLastInteraction={isLastInteraction}
                 isEditorInitiallyFocused={isLastInteraction}
                 editorRef={humanEditorRef}
-                className={isLastInteraction ? styles.lastHumanMessage : undefined}
             />
             {((humanMessage.contextFiles && humanMessage.contextFiles.length > 0) ||
                 isContextLoading) && (
@@ -177,7 +189,10 @@ const TranscriptInteraction: FunctionComponent<
                     )}
                     isLoading={assistantMessage.isLoading}
                     showFeedbackButtons={
-                        !assistantMessage.isLoading && !isTranscriptError && !assistantMessage.error
+                        !assistantMessage.isLoading &&
+                        !isTranscriptError &&
+                        !assistantMessage.error &&
+                        isLastSentInteraction
                     }
                 />
             )}
@@ -214,4 +229,5 @@ function onFollowupSubmit(editorValue: SerializedPromptEditorValue): void {
         editorState: editorValue.editorState,
         contextFiles: editorValue.contextItems.map(deserializeContextItem),
     })
+    focusLastHumanMessageEditor()
 }

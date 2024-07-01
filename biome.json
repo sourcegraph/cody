@@ -75,6 +75,9 @@
       "__snapshots__/",
       "__mocks__/",
       ".vscode-test/",
+      ".vscode-test-web/",
+      ".test/",
+      ".test-reports/",
       "**/.tsconfig.json",
       "**/tsconfig.json",
       ".vscode/*.json",
@@ -91,5 +94,10 @@
         }
       }
     }
-  ]
+  ],
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  }
 }
