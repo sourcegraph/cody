@@ -53,7 +53,8 @@ export async function evaluateUnitTestStrategy(
         }
 
         let typescriptErrors: ProtocolDiagnostic[] = []
-        if (test && getLanguageForFileName(test.uri.path) === 'typescript') {
+        const isTypescript = getLanguageForFileName(test.uri.path) === 'typescript'
+        if (isTypescript) {
             // Open the test file so that the typescript server can typecheck it
             // without this we get empty diagnostics
             client.notify('textDocument/didOpen', {
@@ -87,6 +88,7 @@ export async function evaluateUnitTestStrategy(
                 .value()
                 .join('\n\n')
                 .replaceAll(workspace, ''),
+            resultTypechecks: typescriptErrors.length === 0,
             testExpectedFilename: task.expectedTestFilename,
             testUsedCorrectAppendOperation:
                 task.shouldAppend && testFilename === task.expectedTestFilename,
