@@ -93,12 +93,13 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
     val account = getActiveAccount() ?: return authenticationState
     val token = account.let(::getTokenForAccount)
 
-    isTokenInvalid = isTokenInvalidFuture
-    tier = tierFuture
+    if (isTokenInvalid == null) isTokenInvalid = isTokenInvalidFuture
+    if (tier == null) tier = tierFuture
 
     tierFuture.thenApply { currentAccountTier ->
       if (previousTier != currentAccountTier) {
         if (!project.isDisposed) {
+          tier = tierFuture
           publisher.afterAction(AccountSettingChangeContext(accountTierChanged = true))
         }
       }
@@ -107,6 +108,7 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
     isTokenInvalidFuture.thenApply { isInvalid ->
       if (previousIsTokenInvalid != isInvalid) {
         if (!project.isDisposed) {
+          isTokenInvalid = isTokenInvalidFuture
           publisher.afterAction(AccountSettingChangeContext(isTokenInvalidChanged = true))
         }
       }
