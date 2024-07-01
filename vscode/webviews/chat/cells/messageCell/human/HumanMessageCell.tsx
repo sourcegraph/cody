@@ -29,7 +29,10 @@ export const HumanMessageCell: FunctionComponent<{
 
     onChange?: (editorState: SerializedPromptEditorValue) => void
     onSubmit: (editorValue: SerializedPromptEditorValue) => void
+    onStop: () => void
 
+    isFirstInteraction?: boolean
+    isLastInteraction?: boolean
     isEditorInitiallyFocused?: boolean
 
     className?: string
@@ -46,6 +49,9 @@ export const HumanMessageCell: FunctionComponent<{
     isPendingPriorResponse,
     onChange,
     onSubmit,
+    onStop,
+    isFirstInteraction,
+    isLastInteraction,
     isEditorInitiallyFocused,
     className,
     editorRef,
@@ -60,7 +66,13 @@ export const HumanMessageCell: FunctionComponent<{
     return (
         <BaseMessageCell
             speaker="human"
-            speakerIcon={<UserAvatar user={userInfo.user} size={MESSAGE_CELL_AVATAR_SIZE} />}
+            speakerIcon={
+                <UserAvatar
+                    user={userInfo.user}
+                    size={MESSAGE_CELL_AVATAR_SIZE}
+                    className="tw-mt-[2px]"
+                />
+            }
             content={
                 <HumanMessageEditor
                     userInfo={userInfo}
@@ -71,7 +83,10 @@ export const HumanMessageCell: FunctionComponent<{
                     isPendingPriorResponse={isPendingPriorResponse}
                     onChange={onChange}
                     onSubmit={onSubmit}
+                    onStop={onStop}
                     disabled={!chatEnabled}
+                    isFirstInteraction={isFirstInteraction}
+                    isLastInteraction={isLastInteraction}
                     isEditorInitiallyFocused={isEditorInitiallyFocused}
                     editorRef={editorRef}
                     __storybook__focus={__storybook__focus}

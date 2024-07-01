@@ -8,7 +8,6 @@ import {
     LOCAL_APP_URL,
     SourcegraphGraphQLAPIClient,
     defaultAuthStatus,
-    isDotCom,
     isError,
     logError,
     networkErrorAuthStatus,
@@ -23,6 +22,7 @@ import { getFullConfig } from '../configuration'
 import { logDebug } from '../log'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
+import { AccountMenuOptions, openAccountMenu } from '../auth/account-menu'
 import { closeAuthProgressIndicator } from '../auth/auth-progress-indicator'
 import { maybeStartInteractiveTutorial } from '../tutorial/helpers'
 import { AuthMenu, showAccessTokenInputBox, showInstanceURLInputBox } from './AuthMenus'
@@ -187,43 +187,13 @@ export class AuthProvider implements AuthStatusProvider {
     }
 
     public async accountMenu(): Promise<void> {
-        if (!this.authStatus.authenticated || !this.authStatus.endpoint) {
+        const selected = await openAccountMenu(this.authStatus)
+        if (selected === undefined) {
             return
         }
 
-        if (!isDotCom(this.authStatus.endpoint)) {
-            const username = this.authStatus.username || this.authStatus.displayName
-            const option = await vscode.window.showInformationMessage(
-                `Signed in as @${username}`,
-                {
-                    modal: true,
-                    detail: `Enterprise Instance:\n${this.authStatus.endpoint}`,
-                },
-                'Switch Account...',
-                'Sign Out'
-            )
-            switch (option) {
-                case 'Switch Account...':
-                    await this.signinMenu()
-                    break
-                case 'Sign Out':
-                    await this.signoutMenu()
-                    break
-            }
-            return
-        }
-
-        const detail = `Plan: ${this.authStatus.userCanUpgrade ? 'Cody Free' : 'Cody Pro'}`
-        const options = ['Manage Account', 'Switch Account...', 'Sign Out']
-        const displayName = this.authStatus.displayName || this.authStatus.username
-        const email = this.authStatus.primaryEmail || 'No Email'
-        const option = await vscode.window.showInformationMessage(
-            `Signed in as ${displayName} (${email})`,
-            { modal: true, detail },
-            ...options
-        )
-        switch (option) {
-            case 'Manage Account': {
+        switch (selected) {
+            case AccountMenuOptions.Manage: {
                 // Add the username to the web can warn if the logged in session on web is different from VS Code
                 const uri = vscode.Uri.parse(ACCOUNT_USAGE_URL.toString()).with({
                     query: `cody_client_user=${encodeURIComponent(this.authStatus.username)}`,
@@ -231,10 +201,10 @@ export class AuthProvider implements AuthStatusProvider {
                 void vscode.env.openExternal(uri)
                 break
             }
-            case 'Switch Account...':
+            case AccountMenuOptions.Switch:
                 await this.signinMenu()
                 break
-            case 'Sign Out':
+            case AccountMenuOptions.SignOut:
                 await this.signoutMenu()
                 break
         }
@@ -258,7 +228,8 @@ export class AuthProvider implements AuthStatusProvider {
         const endpoint = config.serverEndpoint
         const token = config.accessToken
         if (isOfflineMode) {
-            return { ...offlineModeAuthStatus, endpoint }
+            const lastUser = localStorage.getLastStoredUser()
+            return { ...offlineModeAuthStatus, ...lastUser }
         }
         if (!token || !endpoint) {
             return { ...defaultAuthStatus, endpoint }
@@ -547,7 +518,7 @@ export function isNetworkError(error: Error): boolean {
     )
 }
 
-function formatURL(uri: string): string | null {
+export function formatURL(uri: string): string | null {
     try {
         if (!uri) {
             return null

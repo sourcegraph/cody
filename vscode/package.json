@@ -450,6 +450,22 @@
         "icon": "$(new-comment-icon)"
       },
       {
+        "command": "cody.chat.panel.sidebar.new",
+        "category": "Cody",
+        "title": "New Chat",
+        "enablement": "cody.activated",
+        "group": "Cody",
+        "icon": "$(new-comment-icon)"
+      },
+      {
+        "command": "cody.chat.panel.moveFromSideBarToEditor",
+        "category": "Cody",
+        "title": "Move chat to an editor panel",
+        "enablement": "cody.activated",
+        "group": "Cody",
+        "icon": "$(editor-layout)"
+      },
+      {
         "command": "cody.minion.panel.new",
         "category": "Cody",
         "title": "New Minion Panel",
@@ -851,6 +867,16 @@
           "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
           "enablement": "cody.hasChatHistory",
           "group": "navigation@3"
+        },
+        {
+          "command": "cody.chat.panel.sidebar.new",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation@1"
+        },
+        {
+          "command": "cody.chat.panel.moveFromSideBarToEditor",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation@2"
         },
         {
           "command": "cody.welcome",
@@ -1319,7 +1345,8 @@
     "@lexical/text": "^0.16.0",
     "@lexical/utils": "^0.16.0",
     "@mdi/js": "^7.2.96",
-    "@openctx/vscode-lib": "^0.0.11",
+    "@openctx/provider-linear-issues": "^0.0.6",
+    "@openctx/vscode-lib": "^0.0.13",
     "@opentelemetry/api": "^1.7.0",
     "@opentelemetry/core": "^1.18.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",
@@ -1330,6 +1357,7 @@
     "@opentelemetry/sdk-trace-base": "^1.18.1",
     "@opentelemetry/sdk-trace-node": "^1.18.1",
     "@opentelemetry/semantic-conventions": "^1.18.1",
+    "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-popover": "^1.0.7",
     "@radix-ui/react-slot": "^1.0.2",
