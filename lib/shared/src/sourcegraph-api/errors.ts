@@ -111,4 +111,13 @@ export function isAbortError(error: unknown): error is AbortError {
     )
 }
 
+export function isAbortErrorOrSocketHangUp(error: unknown): error is Error {
+    return Boolean(
+        isAbortError(error) ||
+            (error && (error as any).message === 'socket hang up') ||
+            (error && (error as any).message === 'aborted') ||
+            error === 'aborted'
+    )
+}
+
 export class TimeoutError extends Error {}

@@ -33,3 +33,8 @@
     color: var(--vscode-input-foreground);
     cursor: pointer;
 }
+
+/* Undo the UA stylesheet set by vscode */
+kbd {
+    all: unset;
+}

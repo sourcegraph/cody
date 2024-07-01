@@ -1,14 +1,14 @@
 import { type Model, ModelsService } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
-import { AtSignIcon, PaperclipIcon } from 'lucide-react'
+import { PaperclipIcon } from 'lucide-react'
 import { type FunctionComponent, useCallback } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { ToolbarButton } from '../../../../../../components/shadcn/ui/toolbar'
 import { getVSCodeAPI } from '../../../../../../utils/VSCodeApi'
 import { useChatModelContext } from '../../../../../models/chatModelContext'
-import { SubmitButton, type SubmitButtonDisabled } from './SubmitButton'
-import styles from './Toolbar.module.css'
+import { AddContextButton } from './AddContextButton'
+import { SubmitButton, type SubmitButtonState } from './SubmitButton'
 
 /**
  * The toolbar for the human message editor.
@@ -21,7 +21,7 @@ export const Toolbar: FunctionComponent<{
     onMentionClick?: () => void
 
     onSubmitClick: () => void
-    submitDisabled: SubmitButtonDisabled
+    submitState: SubmitButtonState
 
     /** Handler for clicks that are in the "gap" (dead space), not any toolbar items. */
     onGapClick?: () => void
@@ -35,7 +35,7 @@ export const Toolbar: FunctionComponent<{
     isEditorFocused,
     onMentionClick,
     onSubmitClick,
-    submitDisabled,
+    submitState,
     onGapClick,
     focusEditor,
     hidden,
@@ -65,34 +65,32 @@ export const Toolbar: FunctionComponent<{
             role="toolbar"
             aria-hidden={hidden}
             hidden={hidden}
-            className={clsx(styles.container, className)}
+            className={clsx('tw-flex tw-items-center', className)}
             onMouseDown={onMaybeGapClick}
             onClick={onMaybeGapClick}
         >
-            {onMentionClick && (
-                <ToolbarButton
-                    variant="secondary"
-                    tooltip="Add files and other context"
-                    iconStart={AtSignIcon}
-                    onClick={onMentionClick}
-                    aria-label="Add context"
-                />
-            )}
-            {currentModel && ModelsService.isMultiModalModel(currentModel?.model) && (
-                <ToolbarButton
-                    variant="secondary"
-                    tooltip="Upload an image"
-                    iconStart={PaperclipIcon}
-                    onClick={() => getVSCodeAPI().postMessage({ command: 'chat/upload-image' })}
-                    aria-label="Upload image"
-                />
-            )}
-            <ModelSelectFieldToolbarItem userInfo={userInfo} focusEditor={focusEditor} />
-            <div className={styles.spacer} />
+            <div className="tw-flex tw-gap-1 tw-items-center">
+                {onMentionClick && (
+                    <AddContextButton onClick={onMentionClick} className="tw-opacity-60" />
+                )}
+                {currentModel && ModelsService.isMultiModalModel(currentModel?.model) && (
+                    <ToolbarButton
+                        variant="secondary"
+                        tooltip="Upload an image"
+                        iconStart={PaperclipIcon}
+                        onClick={() => getVSCodeAPI().postMessage({ command: 'chat/upload-image' })}
+                        aria-label="Upload image"
+                    />
+                )}
+                <span>
+                    <ModelSelectFieldToolbarItem userInfo={userInfo} focusEditor={focusEditor} />
+                </span>
+            </div>
+            <div className="tw-flex-1" />
             <SubmitButton
                 onClick={onSubmitClick}
                 isEditorFocused={isEditorFocused}
-                disabled={submitDisabled}
+                state={submitState}
             />
         </menu>
     )
@@ -118,16 +116,13 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
         onCurrentChatModelChange &&
         userInfo &&
         userInfo.isDotComUser && (
-            <>
-                <div className="tw-ml-[5px] tw-mr-[5px] tw-border-l-[1px] tw-border-white tw-h-6 tw-opacity-10" />
-                <ModelSelectField
-                    models={chatModels}
-                    onModelSelect={onModelSelect}
-                    userInfo={userInfo}
-                    onCloseByEscape={focusEditor}
-                    className={className}
-                />
-            </>
+            <ModelSelectField
+                models={chatModels}
+                onModelSelect={onModelSelect}
+                userInfo={userInfo}
+                onCloseByEscape={focusEditor}
+                className={className}
+            />
         )
     )
 }

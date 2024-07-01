@@ -13,6 +13,8 @@ import packageJson from '../../package.json'
 import { newEmbeddedAgentClient } from '../agent'
 import type { ClientInfo } from '../protocol-alias'
 import { Streams } from './Streams'
+import { AuthenticatedAccount } from './auth/AuthenticatedAccount'
+import { notLoggedIn } from './auth/messages'
 
 declare const process: { pkg: { entrypoint: string } } & NodeJS.Process
 export interface ChatOptions {
@@ -41,7 +43,7 @@ export const chatCommand = () =>
         )
         .option(
             '--access-token',
-            'Sourcegraph access token. ' + createAccessTokenInstruction,
+            'Sourcegraph access token. ' + loginInstruction,
             process.env.SRC_ACCESS_TOKEN ?? ''
         )
         .option('-C, --dir <dir>', 'Run in directory <dir>', process.cwd())
@@ -55,6 +57,13 @@ export const chatCommand = () =>
         .option('--silent', 'Disable streaming reply', false)
         .option('--debug', 'Enable debug logging', false)
         .action(async (options: ChatOptions) => {
+            if (!options.accessToken) {
+                const account = await AuthenticatedAccount.fromUserSettings()
+                if (account) {
+                    options.accessToken = account.accessToken
+                    options.endpoint = account.serverEndpoint
+                }
+            }
             let polly: Polly | undefined
             if (process.env.CODY_RECORDING_DIRECTORY && process.env.CODY_RECORDING_NAME) {
                 polly = startPollyRecording({
@@ -70,8 +79,8 @@ export const chatCommand = () =>
             }
             process.exit(exitCode)
         })
-const createAccessTokenInstruction =
-    'Create a new access token at https://sourcegraph.com/user/settings/tokens/new'
+
+const loginInstruction = 'Sign in with the command: cody auth login --web'
 
 export async function chatAction(options: ChatOptions): Promise<number> {
     const streams = options.streams ?? Streams.default()
@@ -113,11 +122,7 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     })
 
     if (!serverInfo.authStatus?.isLoggedIn) {
-        spinner.fail(
-            'Not logged in. To fix this problem, set the SRC_ACCESS_TOKEN environment ' +
-                'variable to an access token. ' +
-                createAccessTokenInstruction
-        )
+        notLoggedIn(spinner)
         return 1
     }
 

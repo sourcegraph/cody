@@ -204,6 +204,7 @@ export {
     TimeoutError,
     TracedError,
     isAbortError,
+    isAbortErrorOrSocketHangUp,
     isAuthError,
     isNetworkError,
     isRateLimitError,
