@@ -4,6 +4,7 @@ import {
     type Guardrails,
     contextItemsFromPromptEditorValue,
     filterContextItemsFromPromptEditorValue,
+    isAbortErrorOrSocketHangUp,
     ps,
     reformatBotMessageForChat,
     serializedPromptEditorStateFromChatMessage,
@@ -63,6 +64,7 @@ export const AssistantMessageCell: FunctionComponent<{
 
     const chatModel = useChatModelByID(message.model)
     const ModelIcon = chatModel ? chatModelIconComponent(chatModel.model) : null
+    const isAborted = isAbortErrorOrSocketHangUp(message.error)
 
     return (
         <BaseMessageCell
@@ -84,7 +86,7 @@ export const AssistantMessageCell: FunctionComponent<{
             }
             content={
                 <>
-                    {message.error ? (
+                    {message.error && !isAborted ? (
                         typeof message.error === 'string' ? (
                             <RequestErrorItem error={message.error} />
                         ) : (
@@ -110,18 +112,31 @@ export const AssistantMessageCell: FunctionComponent<{
             }
             footer={
                 chatEnabled &&
-                showFeedbackButtons &&
-                feedbackButtonsOnSubmit && (
-                    <div className="tw-flex tw-items-center tw-pt-4 tw-divide-x tw-divide-muted tw-opacity-80">
-                        {showFeedbackButtons && feedbackButtonsOnSubmit && (
-                            <FeedbackButtons
-                                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                                className="tw-pr-3"
-                            />
+                humanMessage && (
+                    <div className="tw-py-3 tw-flex tw-flex-col tw-gap-2">
+                        {isAborted && (
+                            <div className="tw-text-sm tw-text-muted-foreground tw-mt-4">
+                                Output stream stopped
+                            </div>
                         )}
-                        {humanMessage && !isLoading && !message.error && (
-                            <ContextFocusActions humanMessage={humanMessage} className="tw-pl-5" />
-                        )}
+                        <div className="tw-flex tw-items-center tw-divide-x tw-transition tw-divide-muted tw-opacity-65 hover:tw-opacity-100">
+                            {showFeedbackButtons && feedbackButtonsOnSubmit && (
+                                <FeedbackButtons
+                                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                                    className="tw-pr-4"
+                                />
+                            )}
+                            {!isLoading && (!message.error || isAborted) && (
+                                <ContextFocusActions
+                                    humanMessage={humanMessage}
+                                    className={
+                                        showFeedbackButtons && feedbackButtonsOnSubmit
+                                            ? 'tw-pl-5'
+                                            : undefined
+                                    }
+                                />
+                            )}
+                        </div>
                     </div>
                 )
             }

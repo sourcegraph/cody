@@ -30,7 +30,7 @@ import {
     Typewriter,
     allMentionProvidersMetadata,
     hydrateAfterPostMessage,
-    isAbortError,
+    isAbortErrorOrSocketHangUp,
     isDefined,
     isError,
     isFileURI,
@@ -1243,10 +1243,10 @@ export class SimpleChatPanelProvider
                     this.addBotMessage(requestID, PromptString.unsafe_fromLLMResponse(content))
                 },
                 error: (partialResponse, error) => {
+                    this.postError(error, 'transcript')
                     if (isAbortErrorOrSocketHangUp(error)) {
                         abortSignal.throwIfAborted()
                     }
-                    this.postError(error, 'transcript')
                     try {
                         // We should still add the partial response if there was an error
                         // This'd throw an error if one has already been added
@@ -1646,10 +1646,6 @@ export function revealWebviewViewOrPanel(viewOrPanel: vscode.WebviewView | vscod
     if ('reveal' in viewOrPanel) {
         viewOrPanel.reveal()
     }
-}
-
-function isAbortErrorOrSocketHangUp(error: unknown): error is Error {
-    return Boolean(isAbortError(error) || (error && (error as any).message === 'socket hang up'))
 }
 
 function getDefaultModelID(authProvider: AuthProvider, models: Model[]): string {
