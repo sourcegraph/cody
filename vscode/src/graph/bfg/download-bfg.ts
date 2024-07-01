@@ -1,10 +1,10 @@
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { lockfile } from '@sourcegraph/cody-shared'
 import { SemverString } from '@sourcegraph/cody-shared/src/utils'
 import * as vscode from 'vscode'
 import { downloadFile, fileExists, unzip } from '../../local-context/utils'
+import { waitForLock } from '../../lockfile'
 import { logDebug, logError } from '../../log'
 import { Arch, Platform, getOSArch } from '../../os'
 import { captureException } from '../../services/sentry/sentry'
@@ -143,7 +143,7 @@ async function downloadBfgBinary({
 
             const bfgDir = path.dirname(bfgPath)
             await fs.mkdir(bfgDir, { recursive: true })
-            const unlockFn = await lockfile.waitForLock(bfgDir, {
+            const unlockFn = await waitForLock(bfgDir, {
                 delay: _config.FILE_LOCK_RETRY_DELAY,
                 lockfilePath: `${bfgPath}.lock`,
             })

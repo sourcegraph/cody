@@ -27,7 +27,6 @@
     "dedent": "^0.7.0",
     "diff": "^5.2.0",
     "fast-xml-parser": "^4.3.2",
-    "graceful-fs": "^4.2.11",
     "isomorphic-fetch": "^3.0.0",
     "js-tiktoken": "^1.0.10",
     "lexical": "^0.16.0",
@@ -37,7 +36,6 @@
     "ollama": "^0.5.1",
     "re2js": "^0.4.1",
     "semver": "^7.5.4",
-    "signal-exit": "^4.1.0",
     "vscode-uri": "^3.0.7",
     "win-ca": "^3.5.1"
   },
@@ -46,12 +44,10 @@
     "@types/crypto-js": "^4.2.2",
     "@types/dedent": "^0.7.0",
     "@types/diff": "^5.0.9",
-    "@types/graceful-fs": "^4.1.9",
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/lodash": "^4.14.195",
     "@types/node-fetch": "^2.6.4",
     "@types/semver": "^7.5.0",
-    "@types/signal-exit": "^3.0.4",
     "@types/vscode": "^1.80.0"
   }
 }

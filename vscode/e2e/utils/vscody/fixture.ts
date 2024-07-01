@@ -25,7 +25,7 @@ import type { loggerPlugin as ProxyMiddlewarePlugin } from 'http-proxy-middlewar
 import zod from 'zod'
 
 import { EventEmitter } from 'node:stream'
-import { waitForLock } from '@sourcegraph/cody-shared/src/lockfile'
+import { waitForLock } from '../../../src/lockfile'
 import { CodyPersister } from '../../../src/testutils/CodyPersister'
 import { defaultMatchRequestsBy } from '../../../src/testutils/polly'
 import { retry, stretchTimeout } from '../helpers'
@@ -339,7 +339,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
 
             // We nullify the time it takes to download VSCode as it can vary wildly!
             const electronExecutable = await stretchTimeout(
-                async () => downloadOrWaitForVSCode({ validOptions, executableDir }),
+                () => downloadOrWaitForVSCode({ validOptions, executableDir }),
                 {
                     max: DOWNLOAD_GRACE_TIME,
                     testInfo,
@@ -374,7 +374,6 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                     `Could not find a vscode executable under ${path.dirname(electronExecutable)}`
                 )
             })
-
             // Machine settings should simply serve as a baseline to ensure
             // tests by default work smoothly. Any test specific preferences
             // should be set in workspace settings instead.
@@ -449,7 +448,8 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
             //TODO(rnauta): better typing
             const env = {
                 // inherit environment
-                ...process.env,
+                // TODO: Check why this was necessary. Shouldn't be needed
+                // ...process.env,
                 //TODO: all env variables
                 TESTING_DOTCOM_URL: sourcegraphMitM.endpoint,
                 CODY_TESTING_BFG_DIR: path.resolve(process.cwd(), validOptions.binaryTmpDir),
@@ -474,31 +474,10 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
             const port = await getPortForPid(codeProcess.pid)
             const config = { url: `http://127.0.0.1:${port}/`, token: token }
 
-            // we now need to wait for the server to be downloaded
-            const releaseServerDownloadLock = await waitForLock(serverExecutableDir, {
-                delay: 1000,
-                lockfilePath: path.join(serverExecutableDir, '.lock'),
+            await stretchTimeout(() => waitForVSCodeServer({ url: config.url, serverExecutableDir }), {
+                max: DOWNLOAD_GRACE_TIME,
+                testInfo,
             })
-            try {
-                stretchTimeout(
-                    async () => {
-                        while (true) {
-                            try {
-                                const res = await fetch(config.url)
-                                if (res.status === 202) {
-                                    // we are still downloading here
-                                } else if (res.status === 200 || res.status === 401) {
-                                    return
-                                }
-                            } catch {}
-                            await new Promise(resolve => setTimeout(resolve, 1000))
-                        }
-                    },
-                    { max: 60_000, testInfo }
-                )
-            } finally {
-                releaseServerDownloadLock()
-            }
 
             await use(config)
 
@@ -523,7 +502,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
             codeProcess.kill()
             await exitPromise
         },
-        { scope: 'test', timeout: 15 * 1000 },
+        { scope: 'test' },
     ],
     // This exposes some bare-bones VSCode APIs in the browser context. You can
     // now simply execute a command from the chrome debugger which is a lot less
@@ -569,6 +548,37 @@ fixture.beforeAll(async () => {
         Polly.register(CodyPersister)
     })
 })
+
+/**
+ * Waits for server components to be downloaded and that the server is ready to
+ * accept connections
+ */
+async function waitForVSCodeServer(config: { url: string; serverExecutableDir: string }) {
+    const releaseServerDownloadLock = await waitForLock(config.serverExecutableDir, {
+        delay: 1000,
+        lockfilePath: path.join(config.serverExecutableDir, '.lock'),
+    })
+    try {
+        while (true) {
+            try {
+                const res = await fetch(config.url)
+                if (res.status === 202) {
+                    // we are still downloading here
+                } else if (res.status === 200 || res.status === 403) {
+                    // 403 simply means we haven't supplied the token
+                    // 200 probably means we didn't require a token
+                    // either way we are ready to accept connections
+                    return
+                } else {
+                    console.error(`Unexpected status code ${res.status}`)
+                }
+            } catch {}
+            await new Promise(resolve => setTimeout(resolve, 1000))
+        }
+    } finally {
+        releaseServerDownloadLock()
+    }
+}
 
 function waitForVSCodeUI(stdout: NodeJS.ReadableStream): Promise<string | undefined> {
     return new Promise((resolve, reject) => {

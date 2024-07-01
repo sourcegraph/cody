@@ -291,8 +291,6 @@ export * from './sourcegraph-api/utils'
 export * from './token'
 export * from './token/constants'
 export * from './configuration'
-import * as lockfile from './lockfile'
-export { lockfile }
 export {
     setOpenCtxClient,
     openCtx,

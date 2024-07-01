@@ -1,9 +1,9 @@
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { lockfile } from '@sourcegraph/cody-shared'
 import type { SemverString } from '@sourcegraph/cody-shared/src/utils'
 import * as vscode from 'vscode'
+import { waitForLock } from '../lockfile'
 import { logDebug, logError } from '../log'
 import { type Arch, Platform, getOSArch } from '../os'
 import { captureException } from '../services/sentry/sentry'
@@ -135,7 +135,7 @@ async function downloadSymfBinary({
 
             const symfDir = path.dirname(symfPath)
             await fs.mkdir(symfDir, { recursive: true })
-            const unlockFn = await lockfile.waitForLock(symfDir, {
+            const unlockFn = await waitForLock(symfDir, {
                 delay: _config.FILE_LOCK_RETRY_DELAY,
                 lockfilePath: `${symfPath}.lock`,
             })
