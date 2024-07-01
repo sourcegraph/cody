@@ -42,9 +42,10 @@ import * as CompletionLogger from './logger'
 import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 import type { ProviderConfig } from './providers/provider'
 import { RequestManager, type RequestParams } from './request-manager'
-import { getRequestParamsFromLastCandidate } from './reuse-last-candidate'
-import { canReuseLastCandidateInDocumentContext } from './reuse-last-candidate'
-import { SmartThrottleService } from './smart-throttle'
+import {
+    canReuseLastCandidateInDocumentContext,
+    getRequestParamsFromLastCandidate,
+} from './reuse-last-candidate'
 import {
     type AutocompleteInlineAcceptedCommandArgs,
     type AutocompleteItem,
@@ -413,7 +414,21 @@ export class InlineCompletionItemProvider
                 const lastTriggeredPrefix = this.lastCandidate?.lastTriggerDocContext.currentLinePrefix
                 if (
                     this.lastCandidate &&
+                    // Remove the last candidate from cache only if it can be
+                    // used in the current document context.
+                    canReuseLastCandidateInDocumentContext({
+                        document,
+                        position,
+                        selectedCompletionInfo: context?.selectedCompletionInfo,
+                        lastCandidate: this.lastCandidate,
+                        docContext,
+                    }) &&
                     lastTriggeredPrefix !== undefined &&
+                    // TODO: consider changing this to the trigger point that users observe.
+                    // Currently, if the request is synthesized from the inflight requests with an earlier
+                    // trigger point, it is used here to decide if users wants to cancel the completion
+                    // but it's not obvious to the user where the trigger point is, which makes this
+                    // behavior opaque and hard to understand.
                     currentPrefix.length < lastTriggeredPrefix.length
                 ) {
                     this.handleUnwantedCompletionItem(
