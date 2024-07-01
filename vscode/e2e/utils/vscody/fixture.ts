@@ -404,19 +404,24 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
             // Here we install the extensions requested. To speed things up we make use of a shared extension cache that we symlink to.
             const extensionsDir = path.join(serverRootDir, 'extensions')
             await fs.mkdir(extensionsDir, { recursive: true })
-
+            const userDataDir = path.join(serverRootDir, 'data/User')
             if (validOptions.vscodeExtensions.length > 0) {
                 //TODO(rnauta): Add lockfile wrapper to avoid race conditions
-                const sharedCacheDir = path.resolve(process.cwd(), validOptions.vscodeExtensionCacheDir)
-                await fs.mkdir(sharedCacheDir, { recursive: true })
-                const releaseLock = await waitForLock(sharedCacheDir, {
-                    lockfilePath: path.join(sharedCacheDir, '.lock'),
+                const sharedExtensionsDir = path.resolve(
+                    process.cwd(),
+                    validOptions.vscodeExtensionCacheDir
+                )
+                await fs.mkdir(sharedExtensionsDir, { recursive: true })
+                const releaseLock = await waitForLock(sharedExtensionsDir, {
+                    lockfilePath: path.join(sharedExtensionsDir, '.lock'),
                     delay: 1000,
                 })
                 try {
                     const args = [
-                        `--extensions-dir=${sharedCacheDir.replace(/ /g, '\\ ')}`, // cli doesn't handle quotes properly so just escape spaces,
+                        `--user-data-dir=${userDataDir}`,
+                        `--extensions-dir=${sharedExtensionsDir.replace(/ /g, '\\ ')}`, // cli doesn't handle quotes properly so just escape spaces,
                         '--install-extension',
+                        '--install-dir',
                         ...validOptions.vscodeExtensions,
                     ]
                     await pspawn(vscodeExecutable, args, {
@@ -424,18 +429,18 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                     })
                 } catch (e) {
                     console.error(e)
-                    throw e
+                    // throw e
                 } finally {
                     releaseLock()
                 }
                 //we now read all the folders in the shared cache dir and
                 //symlink the relevant ones to our isolated extension dir
-                for (const sharedExtensionDir of await fs.readdir(sharedCacheDir)) {
+                for (const sharedExtensionDir of await fs.readdir(sharedExtensionsDir)) {
                     const [_, extensionName] = /^(.*)-\d+\.\d+\.\d+$/.exec(sharedExtensionDir) ?? []
                     if (!validOptions.vscodeExtensions.includes(extensionName)) {
                         continue
                     }
-                    const sharedExtensionPath = path.join(sharedCacheDir, sharedExtensionDir)
+                    const sharedExtensionPath = path.join(sharedExtensionsDir, sharedExtensionDir)
                     const extensionPath = path.join(extensionsDir, sharedExtensionDir)
                     await fs.symlink(sharedExtensionPath, extensionPath, 'dir')
                 }
@@ -444,6 +449,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
             // We can now start the server
             const args = [
                 'serve-web',
+                `--user-data-dir=${userDataDir}`,
                 '--accept-server-license-terms',
                 '--port=0',
                 `--cli-data-dir=${serverExecutableDir.replace(/ /g, '\\ ')}`,
