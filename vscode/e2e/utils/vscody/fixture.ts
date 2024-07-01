@@ -16,7 +16,12 @@ import { test as _test, expect, mergeTests } from '@playwright/test'
 import NodeHttpAdapter from '@pollyjs/adapter-node-http'
 import { type EXPIRY_STRATEGY, type MODE, Polly } from '@pollyjs/core'
 import type { ArrayContainsAll } from '@sourcegraph/cody-shared/src/utils'
-import { ConsoleReporter, type ProgressReport, ProgressReportStage } from '@vscode/test-electron'
+import {
+    ConsoleReporter,
+    type ProgressReport,
+    ProgressReportStage,
+    resolveCliArgsFromVSCodeExecutablePath,
+} from '@vscode/test-electron'
 import { downloadAndUnzipVSCode } from '@vscode/test-electron/out/download'
 import express from 'express'
 import { copy as copyExt } from 'fs-extra'
@@ -374,6 +379,8 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                     `Could not find a vscode executable under ${path.dirname(electronExecutable)}`
                 )
             })
+            const [cliPath, ...cliArgs] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutable)
+            console.log(cliPath, cliArgs)
             // Machine settings should simply serve as a baseline to ensure
             // tests by default work smoothly. Any test specific preferences
             // should be set in workspace settings instead.
@@ -419,17 +426,18 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                 })
                 try {
                     const args = [
+                        ...cliArgs,
                         `--user-data-dir=${userDataDir.replace(/ /g, '\\ ')}`,
                         `--extensions-dir=${sharedExtensionsDir.replace(/ /g, '\\ ')}`, // cli doesn't handle quotes properly so just escape spaces,
                         '--install-extension',
                         ...validOptions.vscodeExtensions,
                     ]
-                    await pspawn(vscodeExecutable, args, {
+                    await pspawn(cliPath, args, {
                         stdio: ['inherit', 'inherit', 'inherit'],
                     })
                 } catch (e) {
                     console.error(e)
-                    // throw e
+                    throw e
                 } finally {
                     releaseLock()
                 }
@@ -455,6 +463,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                 `--cli-data-dir=${serverExecutableDir.replace(/ /g, '\\ ')}`,
                 `--server-data-dir=${serverRootDir.replace(/ /g, '\\ ')}`,
                 `--extensions-dir=${extensionsDir.replace(/ /g, '\\ ')}`, // cli doesn't handle quotes properly so just escape spaces,
+                ...cliArgs,
             ]
             //TODO(rnauta): better typing
             const env = {
@@ -466,7 +475,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                 CODY_TESTING_BFG_DIR: path.resolve(process.cwd(), validOptions.binaryTmpDir),
                 CODY_TESTING_SYMF_DIR: path.resolve(process.cwd(), validOptions.binaryTmpDir),
             }
-            const codeProcess = spawn(vscodeExecutable, args, {
+            const codeProcess = spawn(cliPath, args, {
                 env,
                 stdio: ['inherit', 'pipe', 'pipe'],
                 detached: false,
