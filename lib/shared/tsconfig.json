@@ -12,8 +12,7 @@
     "moduleResolution": "Bundler",
   },
   "include": [
-    "src",
-    "src/themes/*.json"
+    "src"
   ],
   "exclude": [
     "dist",

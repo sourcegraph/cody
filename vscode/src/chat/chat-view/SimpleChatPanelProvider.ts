@@ -47,7 +47,6 @@ import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { isContextWindowLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { getWebviewThemeByIDE } from '@sourcegraph/cody-shared/src/themes'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import type { URI } from 'vscode-uri'
 import { version as VSCEVersion } from '../../../package.json'
@@ -97,7 +96,7 @@ import type {
     LocalEnv,
     WebviewMessage,
 } from '../protocol'
-import { countGeneratedCode, getCurrentIDE } from '../utils'
+import { countGeneratedCode } from '../utils'
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatPanelViewType, addWebviewViewHTML } from './ChatManager'
 import { CodebaseStatusProvider } from './CodebaseStatusProvider'
@@ -575,17 +574,6 @@ export class SimpleChatPanelProvider
         this.postChatModels()
         await this.saveSession()
         this.initDoer.signalInitialized()
-
-        // Replace the default VS Code webview styles with the theme provided by the agentIDE.
-        const agentIDE = await getCurrentIDE()
-        const themesByIDE = await getWebviewThemeByIDE(agentIDE, '')
-        if (themesByIDE) {
-            await this.postMessage({
-                type: 'ui/theme',
-                css: themesByIDE,
-                agentIDE,
-            })
-        }
     }
 
     private async getRepoMetadataIfPublic(): Promise<string> {
