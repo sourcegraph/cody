@@ -548,7 +548,7 @@ async function downloadOrWaitForVSCode({
     while (!electronExecutable) {
         const downloadLockFilePath = path.join(
             executableDir,
-            `${process.env.RUN_ID}.${validOptions.vscodeVersion}.lock`
+            `${process.env.RUN_ID}.${validOptions.vscodeVersion}.lock`.replace(/[^A-Za-z0-9-.]/g, '')
         )
         const createdLockFilePath = await createFileIfNotExists(downloadLockFilePath)
         if (!createdLockFilePath) {
