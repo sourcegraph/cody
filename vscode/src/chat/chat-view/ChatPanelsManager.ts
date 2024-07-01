@@ -285,6 +285,15 @@ export class ChatPanelsManager implements vscode.Disposable {
         this.treeViewProvider.reset()
     }
 
+    public async resetSidebar(): Promise<void> {
+        this.sidebarProvider.clearAndRestartSession()
+    }
+
+    public async moveSidebarChatToEditor(): Promise<void> {
+        const sessionID = this.sidebarProvider.sessionID
+        await Promise.all([this.createWebviewPanel(sessionID), this.resetSidebar()])
+    }
+
     /**
      * Clear the current chat view and start a new chat session in the active panel
      */

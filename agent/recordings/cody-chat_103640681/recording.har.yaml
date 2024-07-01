@@ -5,7 +5,208 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: 4fe42a1c9c355d44a5f049b1bafd12a4
+    - _id: 3977a0844deafca78dab5498c249731c
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 276
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: user-agent
+            value: cody-cli / 0.1.0
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 341
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: respond with "hello" and nothing else
+            model: anthropic/claude-3-sonnet-20240229
+            temperature: 0.2
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+          - name: client-name
+            value: cody-cli
+          - name: client-version
+            value: 0.1.0
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=cody-cli&client-version=0.1.0
+      response:
+        bodySize: 158
+        content:
+          mimeType: text/event-stream
+          size: 158
+          text: |+
+            event: completion
+            data: {"completion":"hello","stopReason":"end_turn"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Sat, 29 Jun 2024 00:12:56 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-06-29T00:12:54.673Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: ecca79497457a4c2bc7dadf6f0d89230
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 286
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: user-agent
+            value: cody-cli / 0.1.0
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 341
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: what is squirrel? Explain as briefly as possible.
+            model: anthropic/claude-3-sonnet-20240229
+            temperature: 0.2
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+          - name: client-name
+            value: cody-cli
+          - name: client-version
+            value: 0.1.0
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=cody-cli&client-version=0.1.0
+      response:
+        bodySize: 8172
+        content:
+          mimeType: text/event-stream
+          size: 8172
+          text: >+
+            event: completion
+
+            data: {"completion":"Squirrel is a high-performance, open-source object-relational database (ORD) that uses an SQL dialect and is embedded within applications. It is designed to be lightweight, fast, and easy to use, making it suitable for applications that require a database but do not need the complexity and overhead of a traditional client-server database management system (DBMS).","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Sat, 29 Jun 2024 00:12:57 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-06-29T00:12:56.274Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 886c0117d06168cf2c5ef71692212297
       _order: 0
       cache: {}
       request:
@@ -20,12 +221,12 @@ log:
             value: token
               REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
           - name: user-agent
-            value: cody-cli / 0.0.5b
+            value: cody-cli / 0.1.0
           - name: connection
             value: keep-alive
           - name: host
             value: sourcegraph.com
-        headersSize: 343
+        headersSize: 341
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -59,8 +260,8 @@ log:
           - name: client-name
             value: cody-cli
           - name: client-version
-            value: 0.0.5b
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=cody-cli&client-version=0.0.5b
+            value: 0.1.0
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=cody-cli&client-version=0.1.0
       response:
         bodySize: 1729
         content:
@@ -79,15 +280,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 27 Jun 2024 01:53:55 GMT
+            value: Sat, 29 Jun 2024 00:12:59 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "599"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -105,217 +304,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-27T01:53:54.068Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 50a44fdcf63a11719b8abd35f78e8ba2
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 276
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - name: user-agent
-            value: cody-cli / 0.0.5b
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 343
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: respond with "hello" and nothing else
-            model: anthropic/claude-3-sonnet-20240229
-            temperature: 0.2
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-          - name: client-name
-            value: cody-cli
-          - name: client-version
-            value: 0.0.5b
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=cody-cli&client-version=0.0.5b
-      response:
-        bodySize: 158
-        content:
-          mimeType: text/event-stream
-          size: 158
-          text: |+
-            event: completion
-            data: {"completion":"hello","stopReason":"end_turn"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Thu, 27 Jun 2024 20:22:51 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: retry-after
-            value: "89"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1405
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-06-27T20:22:50.091Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 33b24867e8f21213899ab8ad5847a82a
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 286
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - name: user-agent
-            value: cody-cli / 0.0.5b
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 343
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: what is squirrel? Explain as briefly as possible.
-            model: anthropic/claude-3-sonnet-20240229
-            temperature: 0.2
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-          - name: client-name
-            value: cody-cli
-          - name: client-version
-            value: 0.0.5b
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=cody-cli&client-version=0.0.5b
-      response:
-        bodySize: 5434
-        content:
-          mimeType: text/event-stream
-          size: 5434
-          text: >+
-            event: completion
-
-            data: {"completion":"Squirrel is a high-performance, open-source object-relational database (ORD) that provides a SQL interface for working with structured and semi-structured data stored in modern cloud data stores like Amazon S3, Azure Blob Storage, and Google Cloud Storage.","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Thu, 27 Jun 2024 20:22:53 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: retry-after
-            value: "88"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1405
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-06-27T20:22:51.566Z
+      startedDateTime: 2024-06-29T00:12:58.735Z
       time: 0
       timings:
         blocked: -1
