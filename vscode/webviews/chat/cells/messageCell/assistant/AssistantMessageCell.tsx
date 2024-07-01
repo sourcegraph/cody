@@ -11,6 +11,7 @@ import {
 import { type FunctionComponent, type RefObject, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
 import { chatModelIconComponent } from '../../../../components/ChatModelIcon'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../components/shadcn/ui/tooltip'
 import type { PromptEditorRefAPI } from '../../../../promptEditor/PromptEditor'
 import { ChatMessageContent, type CodeBlockActionsProps } from '../../../ChatMessageContent'
 import { ErrorItem, RequestErrorItem } from '../../../ErrorItem'
@@ -31,6 +32,7 @@ export const AssistantMessageCell: FunctionComponent<{
     humanMessage: PriorHumanMessageInfo | null
 
     userInfo: UserAccountInfo
+    chatEnabled: boolean
     isLoading: boolean
 
     showFeedbackButtons: boolean
@@ -45,6 +47,7 @@ export const AssistantMessageCell: FunctionComponent<{
     message,
     humanMessage,
     userInfo,
+    chatEnabled,
     isLoading,
     showFeedbackButtons,
     feedbackButtonsOnSubmit,
@@ -66,8 +69,16 @@ export const AssistantMessageCell: FunctionComponent<{
             speaker={message.speaker}
             speakerIcon={
                 chatModel && ModelIcon ? (
-                    <span title={`${chatModel.title} by ${chatModel.provider}`}>
-                        <ModelIcon size={NON_HUMAN_CELL_AVATAR_SIZE} />
+                    <span>
+                        <Tooltip>
+                            <TooltipTrigger
+                                className="tw-cursor-default"
+                                data-testid="chat-message-model-icon"
+                            >
+                                <ModelIcon size={NON_HUMAN_CELL_AVATAR_SIZE} />
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom">{`${chatModel.title} by ${chatModel.provider}`}</TooltipContent>
+                        </Tooltip>
                     </span>
                 ) : null
             }
@@ -98,12 +109,14 @@ export const AssistantMessageCell: FunctionComponent<{
                 </>
             }
             footer={
-                ((showFeedbackButtons && feedbackButtonsOnSubmit) || humanMessage) && (
-                    <div className="tw-flex tw-items-center tw-py-3 tw-divide-x tw-transition tw-divide-muted tw-opacity-65 hover:tw-opacity-100">
+                chatEnabled &&
+                showFeedbackButtons &&
+                feedbackButtonsOnSubmit && (
+                    <div className="tw-flex tw-items-center tw-pt-4 tw-divide-x tw-divide-muted tw-opacity-80">
                         {showFeedbackButtons && feedbackButtonsOnSubmit && (
                             <FeedbackButtons
                                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                                className="tw-pr-4"
+                                className="tw-pr-3"
                             />
                         )}
                         {humanMessage && !isLoading && !message.error && (

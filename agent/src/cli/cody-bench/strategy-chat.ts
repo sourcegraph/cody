@@ -12,6 +12,7 @@ import { concisenessPrompt, helpfulnessPrompt } from './llm-judge-chat-template'
 
 interface ChatTask {
     question: string
+    class: string
     files?: string[]
 }
 
@@ -68,6 +69,7 @@ export async function evaluateChatStrategy(
                     range,
                     chatReply: reply.text,
                     chatQuestion: task.question,
+                    questionClass: task.class,
                     llmJudgeScore: score.scoreNumeric,
                     concisenessScore: concisenessScore.scoreNumeric,
                     hedges: checkHedging(reply.text),

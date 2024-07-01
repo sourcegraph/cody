@@ -2,8 +2,12 @@ import { spawn } from 'node:child_process'
 import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
-import { getDotComDefaultModels, isWindows, telemetryRecorder } from '@sourcegraph/cody-shared'
-import envPaths from 'env-paths'
+import {
+    type CodyCommand,
+    getDotComDefaultModels,
+    isWindows,
+    telemetryRecorder,
+} from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 
@@ -34,17 +38,11 @@ import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocume
 import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 
 import { copyFileSync, mkdirSync, statSync } from 'node:fs'
+import { PassThrough } from 'node:stream'
 import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
-import {
-    AbstractMessageReader,
-    AbstractMessageWriter,
-    type Disposable,
-    type MessageConnection,
-    type MessageReader,
-    type MessageWriter,
-} from 'vscode-jsonrpc'
+import type { MessageConnection } from 'vscode-jsonrpc'
 import { ModelUsage } from '../../lib/shared/src/models/types'
 import type { CommandResult } from '../../vscode/src/CommandResult'
 import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
@@ -64,6 +62,7 @@ import { AgentProviders } from './AgentProviders'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import type { PollyRequestError } from './cli/jsonrpc'
+import { codyPaths } from './codyPaths'
 import {
     MessageHandler,
     type RequestCallback,
@@ -78,6 +77,8 @@ import type {
     CustomCommandResult,
     EditTask,
     ExtensionConfiguration,
+    GetDocumentsParams,
+    GetDocumentsResult,
     GetFoldingRangeResult,
     ProtocolCommand,
     ProtocolTextDocument,
@@ -129,7 +130,7 @@ export async function initializeVscodeExtension(
     extensionActivate: ExtensionActivate,
     extensionClient: ExtensionClient
 ): Promise<void> {
-    const paths = envPaths('Cody')
+    const paths = codyPaths()
     const extensionPath = paths.config
     copyWinCaRootsBinary(extensionPath)
 
@@ -234,30 +235,29 @@ export interface InitializedClient {
 export async function newEmbeddedAgentClient(
     clientInfo: ClientInfo,
     extensionActivate: ExtensionActivate
-): Promise<InitializedClient & { agent: Agent }> {
+): Promise<InitializedClient & { agent: Agent; messageHandler: MessageHandler }> {
     process.env.ENABLE_SENTRY = 'false'
-
-    // Create noop MessageConnection because we're just using clientForThisInstance.
-    const conn = createMessageConnection(
-        new (class extends AbstractMessageReader implements MessageReader {
-            listen(): Disposable {
-                return { dispose: () => {} }
-            }
-        })(),
-        new (class extends AbstractMessageWriter implements MessageWriter {
-            async write(): Promise<void> {}
-            end(): void {}
-        })()
+    const serverToClient = new PassThrough()
+    const clientToServer = new PassThrough()
+    const serverConnection = createMessageConnection(
+        new StreamMessageReader(clientToServer),
+        new StreamMessageWriter(serverToClient)
     )
-
-    const agent = new Agent({ conn, extensionActivate })
+    const clientConnection = createMessageConnection(
+        new StreamMessageReader(serverToClient),
+        new StreamMessageWriter(clientToServer)
+    )
+    const agent = new Agent({ conn: serverConnection, extensionActivate })
+    serverConnection.listen()
+    const messageHandler = new MessageHandler(clientConnection)
+    clientConnection.listen()
     agent.registerNotification('debug/message', params => {
         console.error(`${params.channel}: ${params.message}`)
     })
     const client = agent.clientForThisInstance()
     const serverInfo = await client.request('initialize', clientInfo)
     client.notify('initialized', null)
-    return { agent, serverInfo, client }
+    return { agent, serverInfo, client, messageHandler }
 }
 
 export function errorToCodyError(error?: Error): CodyError | undefined {
@@ -464,30 +464,15 @@ export class Agent extends MessageHandler implements ExtensionClient {
             this.workspace.setActiveTextEditor(this.workspace.newTextEditor(textDocument))
         })
 
-        this.registerNotification('textDocument/didChange', document => {
-            const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
-            const { document: textDocument, contentChanges } =
-                this.workspace.loadDocumentWithChanges(documentWithUri)
-            const textEditor = this.workspace.newTextEditor(textDocument)
-            this.workspace.setActiveTextEditor(textEditor)
+        this.registerNotification('textDocument/didChange', async document => {
+            this.handleDocumentChange(document)
+        })
 
-            if (contentChanges.length > 0) {
-                this.pushPendingPromise(
-                    vscode_shim.onDidChangeTextDocument.cody_fireAsync({
-                        document: textDocument,
-                        contentChanges,
-                        reason: undefined,
-                    })
-                )
-            }
-
-            if (document.selection) {
-                vscode_shim.onDidChangeTextEditorSelection.fire({
-                    textEditor,
-                    kind: undefined,
-                    selections: [textEditor.selection],
-                })
-            }
+        this.registerRequest('textDocument/change', async document => {
+            // We don't await the promise here, as it's got a fragile implicit contract.
+            // Call testing/awaitPendingPromises if you want to wait for changes to settle.
+            this.handleDocumentChange(document)
+            return { success: true }
         })
 
         this.registerNotification('textDocument/didClose', document => {
@@ -637,7 +622,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('testing/awaitPendingPromises', async () => {
-            if (!vscode_shim.isTesting) {
+            if (!(vscode_shim.isTesting || vscode_shim.isIntegrationTesting)) {
                 throw new Error(
                     'testing/awaitPendingPromises can only be called from tests. ' +
                         'To fix this problem, set the environment variable CODY_SHIM_TESTING=true.'
@@ -752,8 +737,34 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return null
         })
 
+        this.registerAuthenticatedRequest(
+            'testing/workspaceDocuments',
+            async (params: GetDocumentsParams): Promise<GetDocumentsResult> => {
+                const uris = params?.uris ?? this.workspace.allDocuments().map(doc => doc.uri.toString())
+
+                const documents: ProtocolTextDocument[] = []
+
+                for (const uri of uris) {
+                    const document = this.workspace.getDocument(vscode.Uri.parse(uri))
+                    if (document) {
+                        documents.push({
+                            uri: document.uri.toString(),
+                            content: document.content ?? undefined,
+                            selection: document.protocolDocument?.selection ?? undefined,
+                        })
+                    }
+                }
+                return { documents }
+            }
+        )
+
         this.registerAuthenticatedRequest('command/execute', async params => {
             await vscode.commands.executeCommand(params.command, ...(params.arguments ?? []))
+        })
+
+        this.registerAuthenticatedRequest('customCommands/list', async () => {
+            const commands = await vscode.commands.executeCommand('cody.commands.get-custom-commands')
+            return (commands as CodyCommand[]) ?? []
         })
 
         this.registerAuthenticatedRequest('autocomplete/execute', async (params, token) => {
@@ -1054,6 +1065,18 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
         })
 
+        this.registerAuthenticatedRequest('chat/web/new', async () => {
+            const panelId = await this.createChatPanel(
+                Promise.resolve({
+                    type: 'chat',
+                    session: await vscode.commands.executeCommand('cody.chat.panel.new'),
+                })
+            )
+
+            const chatId = this.webPanels.panels.get(panelId)?.chatID ?? ''
+            return { panelId, chatId }
+        })
+
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
             let theModel = modelID
@@ -1063,12 +1086,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                       authStatus.isDotCom && !authStatus.userCanUpgrade
                   ).at(0)?.model
             if (!theModel) {
-                // When user is not loggeed in, set the default to the default dotcom model,
-                // as we only sync the model list on login.
-                if (!authStatus.isLoggedIn) {
-                    theModel = getDotComDefaultModels()[0].model
-                }
-                throw new Error('No default chat model found')
+                theModel = getDotComDefaultModels()[0].model
             }
 
             const chatModel = new SimpleChatModel(modelID!, [], chatID)
@@ -1100,17 +1118,25 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return { models: providers ?? [] }
         })
 
-        this.registerAuthenticatedRequest('chat/export', async () => {
+        this.registerAuthenticatedRequest('chat/export', async input => {
+            const { fullHistory = false } = input ?? {}
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
             const localHistory = chatHistory.getLocalHistory(authStatus)
 
             if (localHistory != null) {
-                return Object.entries(localHistory?.chat)
-                    .filter(([chatID, chatTranscript]) => chatTranscript.interactions.length > 0)
-                    .map(([chatID, chatTranscript]) => ({
-                        chatID: chatID,
-                        transcript: chatTranscript,
-                    }))
+                return (
+                    Object.entries(localHistory?.chat)
+                        // Return filtered (non-empty) chats by default, but if requests has fullHistory: true
+                        // return the full list of chats from the storage, empty chats included
+                        .filter(
+                            ([chatID, chatTranscript]) =>
+                                chatTranscript.interactions.length > 0 || fullHistory
+                        )
+                        .map(([chatID, chatTranscript]) => ({
+                            chatID: chatID,
+                            transcript: chatTranscript,
+                        }))
+                )
             }
 
             return []
@@ -1245,11 +1271,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
     }
 
     private pushPendingPromise(pendingPromise: Promise<unknown>): void {
-        if (!vscode_shim.isTesting) {
-            return
+        if (vscode_shim.isTesting || vscode_shim.isIntegrationTesting) {
+            this.pendingPromises.add(pendingPromise)
+            pendingPromise.finally(() => this.pendingPromises.delete(pendingPromise))
         }
-        this.pendingPromises.add(pendingPromise)
-        pendingPromise.finally(() => this.pendingPromises.delete(pendingPromise))
     }
 
     // ExtensionClient callbacks.
@@ -1424,6 +1449,33 @@ export class Agent extends MessageHandler implements ExtensionClient {
             'cody.auth.status'
         )
         return result
+    }
+
+    private async handleDocumentChange(document: ProtocolTextDocument) {
+        const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
+        const { document: textDocument, contentChanges } =
+            this.workspace.loadDocumentWithChanges(documentWithUri)
+        const textEditor = this.workspace.newTextEditor(textDocument)
+        this.workspace.setActiveTextEditor(textEditor)
+
+        if (contentChanges.length > 0) {
+            this.pushPendingPromise(
+                vscode_shim.onDidChangeTextDocument.cody_fireAsync({
+                    document: textDocument,
+                    contentChanges,
+                    reason: undefined,
+                })
+            )
+        }
+        if (document.selection) {
+            this.pushPendingPromise(
+                vscode_shim.onDidChangeTextEditorSelection.cody_fireAsync({
+                    textEditor,
+                    kind: undefined,
+                    selections: [textEditor.selection],
+                })
+            )
+        }
     }
 
     private registerWebviewHandlers(): void {
