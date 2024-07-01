@@ -404,7 +404,8 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
             // Here we install the extensions requested. To speed things up we make use of a shared extension cache that we symlink to.
             const extensionsDir = path.join(serverRootDir, 'extensions')
             await fs.mkdir(extensionsDir, { recursive: true })
-            const userDataDir = path.join(serverRootDir, 'data/User')
+            const userDataDir = path.join(serverRootDir, 'user-data')
+            await fs.mkdir(userDataDir, { recursive: true })
             if (validOptions.vscodeExtensions.length > 0) {
                 //TODO(rnauta): Add lockfile wrapper to avoid race conditions
                 const sharedExtensionsDir = path.resolve(
@@ -418,10 +419,9 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                 })
                 try {
                     const args = [
-                        `--user-data-dir=${userDataDir}`,
+                        `--user-data-dir=${userDataDir.replace(/ /g, '\\ ')}`,
                         `--extensions-dir=${sharedExtensionsDir.replace(/ /g, '\\ ')}`, // cli doesn't handle quotes properly so just escape spaces,
                         '--install-extension',
-                        '--install-dir',
                         ...validOptions.vscodeExtensions,
                     ]
                     await pspawn(vscodeExecutable, args, {
