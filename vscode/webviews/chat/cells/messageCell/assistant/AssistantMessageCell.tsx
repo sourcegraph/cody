@@ -112,14 +112,8 @@ export const AssistantMessageCell: FunctionComponent<{
             }
             footer={
                 chatEnabled &&
-                ((showFeedbackButtons && feedbackButtonsOnSubmit) || humanMessage) && (
-                    <div
-                        className={
-                            isAborted
-                                ? 'tw-py-3 tw-flex tw-flex-col tw-gap-2'
-                                : 'tw-py-3 tw-flex tw-gap-2'
-                        }
-                    >
+                humanMessage && (
+                    <div className="tw-py-3 tw-flex tw-flex-col tw-gap-2">
                         {isAborted && (
                             <div className="tw-text-sm tw-text-muted-foreground tw-mt-4">
                                 Output stream stopped
@@ -132,10 +126,14 @@ export const AssistantMessageCell: FunctionComponent<{
                                     className="tw-pr-4"
                                 />
                             )}
-                            {humanMessage && !isLoading && (!message.error || isAborted) && (
+                            {!isLoading && (!message.error || isAborted) && (
                                 <ContextFocusActions
                                     humanMessage={humanMessage}
-                                    className={showFeedbackButtons ? 'tw-pl-5' : undefined}
+                                    className={
+                                        showFeedbackButtons && feedbackButtonsOnSubmit
+                                            ? 'tw-pl-5'
+                                            : undefined
+                                    }
                                 />
                             )}
                         </div>
