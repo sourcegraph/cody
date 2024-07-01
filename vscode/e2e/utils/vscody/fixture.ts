@@ -345,6 +345,11 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                     testInfo,
                 }
             )
+            const serverExecutableDir = path.join(
+                executableDir,
+                path.relative(executableDir, electronExecutable).split(path.sep)[0],
+                'server'
+            )
 
             // The location of the executable is platform dependent, try the
             // first location that works.
@@ -437,6 +442,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                 'serve-web',
                 '--accept-server-license-terms',
                 '--port=0',
+                `--cli-data-dir=${serverExecutableDir.replace(/ /g, '\\ ')}`,
                 `--server-data-dir=${serverRootDir.replace(/ /g, '\\ ')}`,
                 `--extensions-dir=${extensionsDir.replace(/ /g, '\\ ')}`, // cli doesn't handle quotes properly so just escape spaces,
             ]
@@ -466,8 +472,34 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
             // so we need to do some magic to get the actual port.
             // TODO: this might not be very cross-platform
             const port = await getPortForPid(codeProcess.pid)
-
             const config = { url: `http://127.0.0.1:${port}/`, token: token }
+
+            // we now need to wait for the server to be downloaded
+            const releaseServerDownloadLock = await waitForLock(serverExecutableDir, {
+                delay: 1000,
+                lockfilePath: path.join(serverExecutableDir, '.lock'),
+            })
+            try {
+                stretchTimeout(
+                    async () => {
+                        while (true) {
+                            try {
+                                const res = await fetch(config.url)
+                                if (res.status === 202) {
+                                    // we are still downloading here
+                                } else if (res.status === 200 || res.status === 401) {
+                                    return
+                                }
+                            } catch {}
+                            await new Promise(resolve => setTimeout(resolve, 1000))
+                        }
+                    },
+                    { max: 60_000, testInfo }
+                )
+            } finally {
+                releaseServerDownloadLock()
+            }
+
             await use(config)
 
             // Turn of logging browser logging and navigate away from the UI
