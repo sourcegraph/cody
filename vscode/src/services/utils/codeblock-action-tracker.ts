@@ -68,8 +68,8 @@ function setLastStoredCode(
         },
         interactionID: requestID,
         privateMetadata: {
-            op,
             source,
+            op,
         },
     })
 
@@ -167,8 +167,8 @@ export async function onTextDocumentChange(newCode: string): Promise<void> {
             },
             interactionID: requestID,
             privateMetadata: {
-                op,
                 source,
+                op,
             },
         })
     }
