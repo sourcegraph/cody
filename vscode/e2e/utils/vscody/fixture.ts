@@ -419,7 +419,12 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                         '--install-extension',
                         ...validOptions.vscodeExtensions,
                     ]
-                    await pspawn(vscodeExecutable, args)
+                    await pspawn(vscodeExecutable, args, {
+                        stdio: ['inherit', 'inherit', 'inherit'],
+                    })
+                } catch (e) {
+                    console.error(e)
+                    throw e
                 } finally {
                     releaseLock()
                 }
