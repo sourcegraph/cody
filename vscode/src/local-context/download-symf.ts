@@ -1,23 +1,20 @@
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import { lockfile } from '@sourcegraph/cody-shared'
 import type { SemverString } from '@sourcegraph/cody-shared/src/utils'
-import { Mutex } from 'async-mutex'
 import * as vscode from 'vscode'
-import { sleep } from '../completions/utils'
 import { logDebug, logError } from '../log'
 import { type Arch, Platform, getOSArch } from '../os'
 import { captureException } from '../services/sentry/sentry'
-import { downloadFile, fileExists, unzip, upsertFile } from './utils'
+import { downloadFile, fileExists, unzip } from './utils'
 
 export type SymfVersionString = SemverString<'v'>
 const symfVersion: SymfVersionString = 'v0.0.12'
 
 export const _config = {
-    //how long to consider a file "active" before we consider it "stale"
-    FILE_DOWNLOAD_LOCK_DURATION: 5000,
     //delay before trying to re-lock a active file
-    FILE_LOCK_RETRY_DELAY: 1000,
+    FILE_LOCK_RETRY_DELAY: 500,
 } as const
 
 /**
@@ -48,10 +45,6 @@ export async function getSymfPath(context: vscode.ExtensionContext): Promise<str
     return symfPath
 }
 
-// this protects agains multiple async functions in the same node process from
-// starting a download
-const processDownloadLock = new Mutex()
-
 /**
  * Returns the platform specific symf path or downloads it if needed
  * @param containingDir the directory in which the symf binary will be stored
@@ -76,26 +69,23 @@ export async function _upsertSymfForPlatform(containingDir: string): Promise<str
     }
 
     const symfURL = `https://github.com/sourcegraph/symf/releases/download/${symfVersion}/symf-${arch}-${zigPlatform}.zip`
-
     // Download symf binary with vscode progress api
-    return await processDownloadLock.runExclusive(async () => {
-        try {
-            const wasDownloaded = await downloadSymfBinary({
-                symfPath,
-                symfURL,
-                symfFilename,
-                symfUnzippedFilename,
-            })
-            if (wasDownloaded) {
-                void removeOldSymfBinaries(containingDir, symfFilename)
-            }
-            return symfPath
-        } catch (error) {
-            captureException(error)
-            void vscode.window.showErrorMessage(`Failed to download symf: ${error}`)
-            return null
+    try {
+        const wasDownloaded = await downloadSymfBinary({
+            symfPath,
+            symfURL,
+            symfFilename,
+            symfUnzippedFilename,
+        })
+        if (wasDownloaded) {
+            void removeOldSymfBinaries(containingDir, symfFilename)
         }
-    })
+        return symfPath
+    } catch (error) {
+        captureException(error)
+        void vscode.window.showErrorMessage(`Failed to download symf: ${error}`)
+        return null
+    }
 }
 
 export function _getNamesForPlatform(
@@ -139,27 +129,29 @@ async function downloadSymfBinary({
             cancellable: false,
         },
         async (progress, cancel) => {
-            progress.report({ message: 'Downloading symf' })
-            while (!cancel.isCancellationRequested) {
+            progress.report({ message: 'Checking symf status' })
+            const abortController = new AbortController()
+            cancel.onCancellationRequested(() => abortController.abort())
+
+            const symfDir = path.dirname(symfPath)
+            await fs.mkdir(symfDir, { recursive: true })
+            const unlockFn = await lockfile.waitForLock(symfDir, {
+                delay: _config.FILE_LOCK_RETRY_DELAY,
+                lockfilePath: `${symfPath}.lock`,
+            })
+
+            try {
                 if (await fileExists(symfPath)) {
                     logDebug('symf', 'symf already downloaded, reusing')
                     return false
                 }
+                progress.report({ message: 'Downloading symf' })
+
                 const symfTmpDir = `${symfPath}.tmp`
                 await fs.mkdir(symfTmpDir, { recursive: true })
                 const symfZipFile = path.join(symfTmpDir, `${symfFilename}.zip`)
 
-                // try and acquire a file lock, giving another process some grace to write data to it
-                const symfZipFileLock = await upsertFile(
-                    symfZipFile,
-                    _config.FILE_DOWNLOAD_LOCK_DURATION
-                )
-                if (!symfZipFileLock) {
-                    logDebug('symf', 'Another process is already downloading symf, waiting...')
-                    await sleep(_config.FILE_LOCK_RETRY_DELAY)
-                    continue
-                }
-                await downloadFile(symfURL, symfZipFile, cancel)
+                await downloadFile(symfURL, symfZipFile, abortController.signal)
                 progress.report({ message: 'Extracting symf' })
                 await unzip(symfZipFile, symfTmpDir)
                 logDebug('symf', `downloaded symf to ${symfTmpDir}`)
@@ -171,8 +163,9 @@ async function downloadSymfBinary({
 
                 logDebug('symf', `extracted symf to ${symfPath}`)
                 return true
+            } finally {
+                unlockFn?.()
             }
-            return false
         }
     )
 }

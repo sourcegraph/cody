@@ -7,8 +7,6 @@ import { _config, _getNamesForPlatform, _upsertSymfForPlatform } from './downloa
 import { downloadFile } from './utils'
 
 //@ts-ignore
-_config.FILE_DOWNLOAD_LOCK_DURATION = 10
-//@ts-ignore
 _config.FILE_LOCK_RETRY_DELAY = 1
 
 vi.mock('./utils', async importOriginal => {
