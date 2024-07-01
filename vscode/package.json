@@ -288,6 +288,13 @@
         "icon": "$(feedback)"
       },
       {
+        "command": "cody.views.focusView",
+        "title": "Show the main Cody view",
+        "category": "Cody",
+        "group": "Cody",
+        "enablement": "cody.activated"
+      },
+      {
         "command": "cody.command.explain-output",
         "title": "Ask Cody to Explain",
         "category": "Cody Command",
@@ -780,6 +787,10 @@
           "command": "cody.chat.view.popOut",
           "when": "false",
           "_comment": "Hidden because it is only a wrapper around the workspace pop out command and would place any editor tab (not just Cody chat) in a new window."
+        },
+        {
+          "command": "cody.views.focusView",
+          "when": "cody.activated"
         }
       ],
       "editor/context": [

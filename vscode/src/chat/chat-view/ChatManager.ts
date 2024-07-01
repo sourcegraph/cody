@@ -81,6 +81,10 @@ export class ChatManager implements vscode.Disposable {
                 async () => await this.chatPanelsManager.moveEditorChatToSidebar()
             ),
             vscode.commands.registerCommand(
+                'cody.views.focusView',
+                async () => await vscode.commands.executeCommand('cody.chat.focus')
+            ),
+            vscode.commands.registerCommand(
                 'cody.chat.panel.sidebar.new',
                 async () => await this.chatPanelsManager.resetSidebar()
             ),
