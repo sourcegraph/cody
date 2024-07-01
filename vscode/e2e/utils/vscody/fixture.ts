@@ -1,7 +1,7 @@
 // TODO/WARNING/APOLOGY: I know that this is an unreasonably large file right
 // now. I'll refactor and cut it down this down once everything is working
 // first.
-import { exec as _exec, spawn } from 'node:child_process'
+import { type StdioOptions, exec as _exec, spawn } from 'node:child_process'
 import type { Dirent } from 'node:fs'
 import fs from 'node:fs/promises'
 import 'node:http'
@@ -402,6 +402,25 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                 )
             )
 
+            // code cli can complain it can't find a version. So explicitly set it the downloaded vscode to it.
+            const cliDataDir = path.join(serverRootDir, 'cli')
+            await fs.mkdir(cliDataDir, { recursive: true })
+            const env = {
+                // inherit environment
+                ...process.env,
+                VSCODE_CLI_DATA_DIR: cliDataDir,
+                PATH: path.dirname(vscodeExecutable) + path.delimiter + process.env.PATH,
+                //TODO: all env variables
+                TESTING_DOTCOM_URL: sourcegraphMitM.endpoint,
+                CODY_TESTING_BFG_DIR: path.resolve(process.cwd(), validOptions.binaryTmpDir),
+                CODY_TESTING_SYMF_DIR: path.resolve(process.cwd(), validOptions.binaryTmpDir),
+            }
+            await pspawn(
+                vscodeExecutable,
+                ['version', 'use', 'stable', '--install-dir', path.dirname(electronExecutable)],
+                { env }
+            )
+
             // Here we install the extensions requested. To speed things up we make use of a shared extension cache that we symlink to.
             const extensionsDir = path.join(serverRootDir, 'extensions')
             await fs.mkdir(extensionsDir, { recursive: true })
@@ -420,7 +439,11 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                         '--install-extension',
                         ...validOptions.vscodeExtensions,
                     ]
-                    await pspawn(vscodeExecutable, args)
+                    const opts = {
+                        env,
+                        stdio: ['ignore', 'inherit', 'inherit'] as StdioOptions,
+                    }
+                    await pspawn(vscodeExecutable, args, opts)
                 } finally {
                     releaseLock()
                 }
@@ -447,14 +470,6 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                 `--extensions-dir=${extensionsDir.replace(/ /g, '\\ ')}`, // cli doesn't handle quotes properly so just escape spaces,
             ]
             //TODO(rnauta): better typing
-            const env = {
-                // inherit environment
-                ...process.env,
-                //TODO: all env variables
-                TESTING_DOTCOM_URL: sourcegraphMitM.endpoint,
-                CODY_TESTING_BFG_DIR: path.resolve(process.cwd(), validOptions.binaryTmpDir),
-                CODY_TESTING_SYMF_DIR: path.resolve(process.cwd(), validOptions.binaryTmpDir),
-            }
             const codeProcess = spawn(vscodeExecutable, args, {
                 env,
                 stdio: ['inherit', 'pipe', 'pipe'],
