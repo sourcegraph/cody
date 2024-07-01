@@ -938,8 +938,15 @@ export class SimpleChatPanelProvider
             const items = await getChatContextItemsForMention(
                 query,
                 cancellation.token,
-                scopedTelemetryRecorder
+                scopedTelemetryRecorder,
+                // Pass possible remote repository context in order to resolve files
+                // for this remote repositories and not for local one, Cody Web case
+                // when we have only remote repositories as context
+                query.includeRemoteRepositories
+                    ? this.remoteSearch?.getRepos('all')?.map(repo => repo.name)
+                    : undefined
             )
+
             if (cancellation.token.isCancellationRequested) {
                 return
             }
