@@ -62,7 +62,9 @@ class LlmDropdown(
         CodyAuthenticationManager.getInstance(project).getActiveAccount()?.isEnterpriseAccount()
             ?: false
 
-    isEnabled = chatModelProviderFromState == null
+    // If the dropdown is already disabled, don't change it. It can happen
+    // in the case of the legacy commands (updateAfterFirstMessage happens before this call).
+    isEnabled = isEnabled && chatModelProviderFromState == null
     isVisible = !isEnterpriseAccount
     setMaximumRowCount(15)
 
