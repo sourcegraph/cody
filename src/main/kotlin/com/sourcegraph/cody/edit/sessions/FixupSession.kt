@@ -19,7 +19,6 @@ import com.intellij.util.messages.Topic
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentCodebase
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.EditingNotAvailableNotification
 import com.sourcegraph.cody.agent.protocol.CodyTaskState
 import com.sourcegraph.cody.agent.protocol.EditTask
 import com.sourcegraph.cody.agent.protocol.GetFoldingRangeParams
@@ -367,12 +366,8 @@ abstract class FixupSession(
   }
 
   internal fun updateEditorIfNeeded(path: String) {
-    val vf = CodyEditorUtil.findFileOrScratch(project, path)
-    if (vf == null) {
-      runInEdt { EditingNotAvailableNotification().notify(project) }
-      cancel()
-      return
-    }
+    val vf =
+        CodyEditorUtil.findFileOrScratch(project, path) ?: throw CodyEditingNotAvailableException()
 
     val documentForFile = FileDocumentManager.getInstance().getDocument(vf)
 

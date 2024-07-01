@@ -2,6 +2,7 @@ package com.sourcegraph.cody.agent
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
@@ -12,6 +13,7 @@ import com.sourcegraph.cody.chat.AgentChatSessionService
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.context.RemoteRepoSearcher
 import com.sourcegraph.cody.edit.FixupService
+import com.sourcegraph.cody.edit.sessions.CodyEditingNotAvailableException
 import com.sourcegraph.cody.error.CodyConsole
 import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.cody.listeners.CodyFileEditorListener
@@ -83,6 +85,10 @@ class CodyAgentService(private val project: Project) : Disposable {
         try {
           activeSession?.performWorkspaceEdit(params)
           true
+        } catch (e: CodyEditingNotAvailableException) {
+          runInEdt { EditingNotAvailableNotification().notify(project) }
+          activeSession?.dispose()
+          false
         } catch (e: RuntimeException) {
           activeSession?.dispose()
           logger.error(e)
@@ -96,6 +102,10 @@ class CodyAgentService(private val project: Project) : Disposable {
           activeSession?.updateEditorIfNeeded(params.uri)
           activeSession?.performInlineEdits(params.edits)
           true
+        } catch (e: CodyEditingNotAvailableException) {
+          runInEdt { EditingNotAvailableNotification().notify(project) }
+          activeSession?.dispose()
+          false
         } catch (e: RuntimeException) {
           activeSession?.dispose()
           logger.error(e)
