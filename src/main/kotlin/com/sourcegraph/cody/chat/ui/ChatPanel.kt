@@ -106,7 +106,7 @@ class ChatPanel(
   }
 
   private fun setLlmForAgentSession(chatModelProvider: ChatModelsResponse.ChatModelProvider) {
-    val activeAccountType = CodyAuthenticationManager.getInstance(project).getActiveAccount()
+    val activeAccountType = CodyAuthenticationManager.getInstance(project).account
     if (activeAccountType?.isEnterpriseAccount() == true) {
       // no need to send the webview message since the chat model is set by default
     } else {

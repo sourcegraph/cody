@@ -50,9 +50,7 @@ class CodyStatusService(val project: Project) : Disposable {
       val isTokenInvalid = authManager.getIsTokenInvalid().getNow(null) == true
 
       val token =
-          CodyAuthenticationManager.getInstance(project)
-              .getActiveAccount()
-              ?.let(service::findCredentials)
+          CodyAuthenticationManager.getInstance(project).account?.let(service::findCredentials)
       status =
           if (!ConfigUtil.isCodyEnabled()) {
             CodyStatus.CodyDisabled

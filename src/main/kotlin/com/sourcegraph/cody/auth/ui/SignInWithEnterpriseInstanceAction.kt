@@ -18,7 +18,7 @@ class SignInWithEnterpriseInstanceAction(
     val project = e.project ?: return
     val accountsHost = CodyPersistentAccountsHost(project)
     val authManager = CodyAuthenticationManager.getInstance(project)
-    val serverUrl = authManager.getActiveAccount()?.server?.url ?: defaultServer
+    val serverUrl = authManager.account?.server?.url ?: defaultServer
     val dialog =
         signInWithSourcegraphDialog(project, e.getData(PlatformCoreDataKeys.CONTEXT_COMPONENT))
             .apply {

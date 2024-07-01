@@ -59,8 +59,7 @@ class LlmDropdown(
             ?: models.find { it.default }
 
     val isEnterpriseAccount =
-        CodyAuthenticationManager.getInstance(project).getActiveAccount()?.isEnterpriseAccount()
-            ?: false
+        CodyAuthenticationManager.getInstance(project).account?.isEnterpriseAccount() ?: false
 
     // If the dropdown is already disabled, don't change it. It can happen
     // in the case of the legacy commands (updateAfterFirstMessage happens before this call).
@@ -102,7 +101,7 @@ class LlmDropdown(
   fun updateAfterFirstMessage() {
     isEnabled = false
 
-    val activeAccountType = CodyAuthenticationManager.getInstance(project).getActiveAccount()
+    val activeAccountType = CodyAuthenticationManager.getInstance(project).account
     if (activeAccountType?.isDotcomAccount() == true) {
       toolTipText = CodyBundle.getString("LlmDropdown.disabled.text")
     }

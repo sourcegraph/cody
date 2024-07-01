@@ -92,7 +92,7 @@ object ConfigUtil {
 
   @JvmStatic
   fun getServerPath(project: Project): SourcegraphServerPath {
-    val activeAccount = CodyAuthenticationManager.getInstance(project).getActiveAccount()
+    val activeAccount = CodyAuthenticationManager.getInstance(project).account
     return activeAccount?.server ?: from(DOTCOM_URL, "")
   }
 

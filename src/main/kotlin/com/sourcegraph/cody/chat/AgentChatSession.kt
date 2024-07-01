@@ -271,8 +271,7 @@ private constructor(
     connectionId.getAndSet(newConnectionId)
 
     // Update the context view, controller, and Agent-side state.
-    if (CodyAuthenticationManager.getInstance(project).getActiveAccount()?.isDotcomAccount() ==
-        false) {
+    if (CodyAuthenticationManager.getInstance(project).account?.isDotcomAccount() == false) {
       chatPanel.contextView.updateFromSavedState(state.enhancedContext ?: EnhancedContextState())
     }
   }

@@ -65,8 +65,7 @@ constructor(protected val project: Project, protected val chatSession: ChatSessi
     /** Creates an EnhancedContextPanel for `chatSession`. */
     fun create(project: Project, chatSession: ChatSession): EnhancedContextPanel {
       val isDotcomAccount =
-          CodyAuthenticationManager.getInstance(project).getActiveAccount()?.isDotcomAccount()
-              ?: false
+          CodyAuthenticationManager.getInstance(project).account?.isDotcomAccount() ?: false
       return if (isDotcomAccount) {
         ConsumerEnhancedContextPanel(project, chatSession)
       } else {
@@ -96,7 +95,7 @@ constructor(protected val project: Project, protected val chatSession: ChatSessi
 
   /** Gets the chat session's enhanced context state. */
   protected fun getContextState(): EnhancedContextState? {
-    if (CodyAuthenticationManager.getInstance(project).getActiveAccount() == null) {
+    if (CodyAuthenticationManager.getInstance(project).hasNoActiveAccount()) {
       // There is no active account, so there is no enhanced context either
       return null
     }
@@ -338,7 +337,7 @@ class EnterpriseEnhancedContextPanel(project: Project, chatSession: ChatSession)
   init {
     controller.loadFromChatState(getContextState()?.remoteRepositories)
     endpointName =
-        CodyAuthenticationManager.getInstance(project).getActiveAccount()?.server?.displayName
+        CodyAuthenticationManager.getInstance(project).account?.server?.displayName
             ?: CodyBundle.getString("context-panel.remote-repo.generic-endpoint-name")
 
     treeRoot.add(contextRoot)

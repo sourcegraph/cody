@@ -95,8 +95,7 @@ class CodyToolWindowContent(private val project: Project) {
 
   fun refreshMyAccountTab() {
     val isMyAccountTabVisible = tabbedPane.tabCount > MY_ACCOUNT_TAB_INDEX
-    if (CodyAuthenticationManager.getInstance(project).getActiveAccount()?.isDotcomAccount() ==
-        true) {
+    if (CodyAuthenticationManager.getInstance(project).account?.isDotcomAccount() == true) {
       if (!isMyAccountTabVisible) {
         tabbedPane.insertSimpleTab("My Account", myAccountPanel, MY_ACCOUNT_TAB_INDEX)
       }
@@ -119,7 +118,7 @@ class CodyToolWindowContent(private val project: Project) {
       allContentLayout.show(allContentPanel, SIGN_IN_PANEL)
       return
     }
-    val activeAccount = codyAuthenticationManager.getActiveAccount()
+    val activeAccount = codyAuthenticationManager.account
     if (!CodyApplicationSettings.instance.isOnboardingGuidanceDismissed) {
       val displayName = activeAccount?.let(CodyAccount::displayName)
       allContentPanel.getComponent(ONBOARDING_PANEL_INDEX)?.let {

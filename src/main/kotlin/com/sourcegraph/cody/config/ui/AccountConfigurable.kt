@@ -23,7 +23,6 @@ import com.sourcegraph.cody.config.CodyAccountManager
 import com.sourcegraph.cody.config.CodyAccountsHost
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.config.CodyAuthenticationManager
-import com.sourcegraph.cody.config.CodyProjectActiveAccountHolder
 import com.sourcegraph.cody.config.SettingsModel
 import com.sourcegraph.cody.config.getFirstAccountOrNull
 import com.sourcegraph.config.ConfigUtil
@@ -33,7 +32,6 @@ class AccountConfigurable(val project: Project) :
     BoundConfigurable(ConfigUtil.SOURCEGRAPH_DISPLAY_NAME) {
   private val accountManager = service<CodyAccountManager>()
   private val accountsModel = CodyAccountListModel(project)
-  private val activeAccountHolder = project.service<CodyProjectActiveAccountHolder>()
   private lateinit var dialogPanel: DialogPanel
   private var channel: UpdateChannel = findConfiguredChannel()
   private val codyApplicationSettings = service<CodyApplicationSettings>()
@@ -45,7 +43,7 @@ class AccountConfigurable(val project: Project) :
   private val initialToken: String?
 
   init {
-    initialActiveAccount = authManager.getActiveAccount()
+    initialActiveAccount = authManager.account
     initialToken =
         initialActiveAccount?.let { authManager.getTokenForAccount(initialActiveAccount) }
   }
@@ -56,7 +54,7 @@ class AccountConfigurable(val project: Project) :
         row {
           customAccountsPanel(
                   accountManager,
-                  activeAccountHolder,
+                  authManager,
                   accountsModel,
                   CodyAccountDetailsProvider(
                       ProgressIndicatorsProvider().also { Disposer.register(disposable!!, it) },

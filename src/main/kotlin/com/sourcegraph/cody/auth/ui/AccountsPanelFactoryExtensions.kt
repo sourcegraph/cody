@@ -22,7 +22,8 @@ import com.intellij.util.ui.UIUtil
 import com.sourcegraph.cody.auth.Account
 import com.sourcegraph.cody.auth.AccountManager
 import com.sourcegraph.cody.auth.AccountsListener
-import com.sourcegraph.cody.auth.PersistentActiveAccountHolder
+import com.sourcegraph.cody.config.CodyAccount
+import com.sourcegraph.cody.config.CodyAuthenticationManager
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.MouseListener
@@ -116,15 +117,15 @@ private fun <A : Account, Cred, R> create(
  * Accounts panel with context menu actions displayed when right-clicked on menu elements This is a
  * custom version of a [com.intellij.collaboration.auth.ui.AccountsPanelFactory.accountsPanel]
  */
-fun <A : Account, Cred> Row.customAccountsPanel(
-    accountManager: AccountManager<A, Cred>,
-    activeAccountHolder: PersistentActiveAccountHolder<A>,
-    accountsModel: AccountsListModel.WithActive<A, Cred>,
-    detailsProvider: AccountsDetailsProvider<A, *>,
+fun <Cred> Row.customAccountsPanel(
+    accountManager: AccountManager<CodyAccount, Cred>,
+    authManager: CodyAuthenticationManager,
+    accountsModel: AccountsListModel.WithActive<CodyAccount, Cred>,
+    detailsProvider: AccountsDetailsProvider<CodyAccount, *>,
     disposable: Disposable,
     needAddBtnWithDropdown: Boolean,
     defaultAvatarIcon: Icon = EmptyIcon.ICON_16,
-    copyAccount: (A) -> A = { it },
+    copyAccount: (CodyAccount) -> CodyAccount = { it },
 ): Cell<JComponent> {
 
   accountsModel.addCredentialsChangeListener(detailsProvider::reset)
@@ -133,10 +134,10 @@ fun <A : Account, Cred> Row.customAccountsPanel(
   fun isModified() =
       accountsModel.newCredentials.isNotEmpty() ||
           accountsModel.accounts != accountManager.accounts ||
-          accountsModel.activeAccount != activeAccountHolder.account
+          accountsModel.activeAccount != authManager.account
 
   fun reset() {
-    val activeAccount = activeAccountHolder.account
+    val activeAccount = authManager.account
     val accountsWithoutActive =
         if (activeAccount != null) accountManager.accounts - activeAccount
         else accountManager.accounts
@@ -166,8 +167,8 @@ fun <A : Account, Cred> Row.customAccountsPanel(
 
   accountManager.addListener(
       disposable,
-      object : AccountsListener<A> {
-        override fun onAccountCredentialsChanged(account: A) {
+      object : AccountsListener<CodyAccount> {
+        override fun onAccountCredentialsChanged(account: CodyAccount) {
           if (!isModified()) reset()
         }
       })

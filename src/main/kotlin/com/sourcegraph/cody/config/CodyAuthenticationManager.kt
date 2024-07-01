@@ -3,7 +3,11 @@ package com.sourcegraph.cody.config
 import com.intellij.collaboration.async.CompletableFutureUtil.submitIOTask
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.State
+import com.intellij.openapi.components.Storage
+import com.intellij.openapi.components.StoragePathMacros
 import com.intellij.openapi.components.service
 import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
@@ -12,6 +16,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.util.AuthData
 import com.intellij.util.concurrency.annotations.RequiresEdt
+import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphApiRequests
@@ -48,8 +53,16 @@ data class AuthenticationState(
 )
 
 /** Entry point for interactions with Sourcegraph authentication subsystem */
+@State(
+    name = "CodyActiveAccount",
+    storages = [Storage(StoragePathMacros.WORKSPACE_FILE)],
+    reportStatistic = false)
 @Service(Service.Level.PROJECT)
-class CodyAuthenticationManager(val project: Project) : Disposable {
+class CodyAuthenticationManager(val project: Project) :
+    PersistentStateComponent<CodyAuthenticationManager.AccountState>, Disposable {
+
+  var account: CodyAccount? = null
+    private set
 
   private val scheduler = Executors.newScheduledThreadPool(1)
 
@@ -90,8 +103,8 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
     val isTokenInvalidFuture = CompletableFuture<Boolean>()
     val tierFuture = CompletableFuture<AccountTier>()
     val authenticationState = AuthenticationState(tierFuture, isTokenInvalidFuture)
-    val account = getActiveAccount() ?: return authenticationState
-    val token = account.let(::getTokenForAccount)
+    val theAccount = account ?: return authenticationState
+    val token = theAccount.let(::getTokenForAccount)
 
     if (isTokenInvalid == null) isTokenInvalid = isTokenInvalidFuture
     if (tier == null) tier = tierFuture
@@ -115,11 +128,11 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
     }
 
     if (token != null) {
-      val executor = SourcegraphApiRequestExecutor.Factory.instance.create(account.server, token)
+      val executor = SourcegraphApiRequestExecutor.Factory.instance.create(theAccount.server, token)
       val progressIndicator = EmptyProgressIndicator(ModalityState.NON_MODAL)
       val submitIOTask =
           service<ProgressManager>().submitIOTask(progressIndicator) {
-            if (account.isEnterpriseAccount()) {
+            if (theAccount.isEnterpriseAccount()) {
               // We ignore the result, but we need to make sure the request is executed
               // successfully. Otherwise, the token will be invalidated and the user will be
               // prompted to re-authenticate.
@@ -177,10 +190,10 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
       request.loginWithToken(project, parentComponent)
 
   @RequiresEdt
-  internal fun updateAccountToken(account: CodyAccount, newToken: String) {
-    val oldToken = getTokenForAccount(account)
-    accountManager.updateAccount(account, newToken)
-    if (oldToken != newToken && account == getActiveAccount()) {
+  internal fun updateAccountToken(newAccount: CodyAccount, newToken: String) {
+    val oldToken = getTokenForAccount(newAccount)
+    accountManager.updateAccount(newAccount, newToken)
+    if (oldToken != newToken && newAccount == account) {
       CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
         if (!project.isDisposed) {
           agent.server.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
@@ -190,24 +203,19 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
     }
   }
 
-  fun getActiveAccount(): CodyAccount? {
-    return if (!project.isDisposed) CodyProjectActiveAccountHolder.getInstance(project).account
-    else null
-  }
-
-  fun setActiveAccount(account: CodyAccount?) {
+  fun setActiveAccount(newAccount: CodyAccount?) {
     if (!project.isDisposed) {
-      val previousAccount = getActiveAccount()
+      val previousAccount = account
       val previousUrl = previousAccount?.server?.url
       val previousTier = previousAccount?.isDotcomAccount()
 
-      CodyProjectActiveAccountHolder.getInstance(project).account = account
+      this.account = newAccount
       tier = null
       isTokenInvalid = null
 
-      val serverUrlChanged = previousUrl != account?.server?.url
-      val tierChanged = previousTier != account?.isDotcomAccount()
-      val accountChanged = previousAccount != account
+      val serverUrlChanged = previousUrl != newAccount?.server?.url
+      val tierChanged = previousTier != newAccount?.isDotcomAccount()
+      val accountChanged = previousAccount != newAccount
 
       CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
         if (!project.isDisposed) {
@@ -224,14 +232,35 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
     }
   }
 
-  fun hasActiveAccount() = getActiveAccount() != null
+  fun hasActiveAccount() = !hasNoActiveAccount()
 
-  fun hasNoActiveAccount() = !hasActiveAccount()
+  fun hasNoActiveAccount() = account == null
 
   fun showInvalidAccessTokenError() = getIsTokenInvalid().getNow(null) == true
 
   override fun dispose() {
     scheduler.shutdown()
+  }
+
+  override fun getState(): AccountState {
+    return AccountState().apply { activeAccountId = account?.id }
+  }
+
+  override fun loadState(state: AccountState) {
+    val initialAccount =
+        state.activeAccountId?.let { id -> accountManager.accounts.find { it.id == id } }
+            ?: getAccounts().firstOrNull()
+    if (initialAccount == null) {
+      // The call to refreshPanelsVisibility() is needed to update the UI when there is no account.
+      CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) { refreshPanelsVisibility() }
+    } else {
+      setActiveAccount(initialAccount)
+    }
+  }
+
+  override fun noStateLoaded() {
+    super.noStateLoaded()
+    loadState(AccountState())
   }
 
   companion object {
@@ -240,5 +269,9 @@ class CodyAuthenticationManager(val project: Project) : Disposable {
     fun getInstance(project: Project): CodyAuthenticationManager {
       return project.service<CodyAuthenticationManager>()
     }
+  }
+
+  class AccountState {
+    var activeAccountId: String? = null
   }
 }
