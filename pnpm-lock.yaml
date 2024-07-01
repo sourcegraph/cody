@@ -280,6 +280,9 @@ importers:
       fast-xml-parser:
         specifier: ^4.3.2
         version: 4.3.2
+      graceful-fs:
+        specifier: ^4.2.11
+        version: 4.2.11
       isomorphic-fetch:
         specifier: ^3.0.0
         version: 3.0.0
@@ -307,6 +310,9 @@ importers:
       semver:
         specifier: ^7.5.4
         version: 7.5.4
+      signal-exit:
+        specifier: ^4.1.0
+        version: 4.1.0
       vscode-uri:
         specifier: ^3.0.7
         version: 3.0.7
@@ -326,6 +332,9 @@ importers:
       '@types/diff':
         specifier: ^5.0.9
         version: 5.0.9
+      '@types/graceful-fs':
+        specifier: ^4.1.9
+        version: 4.1.9
       '@types/isomorphic-fetch':
         specifier: ^0.0.39
         version: 0.0.39
@@ -338,6 +347,9 @@ importers:
       '@types/semver':
         specifier: ^7.5.0
         version: 7.5.8
+      '@types/signal-exit':
+        specifier: ^3.0.4
+        version: 3.0.4
       '@types/vscode':
         specifier: ^1.80.0
         version: 1.80.0
@@ -5675,6 +5687,12 @@ packages:
     resolution: {integrity: sha512-40um9QqwHjRS92qnOaDpL7RmDK15NuZYo9HihiJRbYkMQZlWnuH8AdvbMy8/o6lgLmKbDUKa+OALCltHdbOTpQ==}
     dev: true
 
+  /@types/graceful-fs@4.1.9:
+    resolution: {integrity: sha512-olP3sd1qOEe5dXTSaFvQG+02VdRXcdytWLAZsAq1PecU8uqQAhkrnbli7DagjtXKW/Bl7YJbUsa8MPcuc8LHEQ==}
+    dependencies:
+      '@types/node': 20.12.7
+    dev: true
+
   /@types/hast@2.3.10:
     resolution: {integrity: sha512-McWspRw8xx8J9HurkVBfYj0xKoE25tOFlHGdx4MJ5xORQrMGZNqJhVQWaIbm6Oyla5kYOXtDiopzKRJzEOkwJw==}
     dependencies:
@@ -5891,6 +5909,10 @@ packages:
   /@types/shimmer@1.0.5:
     resolution: {integrity: sha512-9Hp0ObzwwO57DpLFF0InUjUm/II8GmKAvzbefxQTihCb7KI6yc9yzf0nLc4mVdby5N4DRCgQM2wCup9KTieeww==}
     dev: false
+
+  /@types/signal-exit@3.0.4:
+    resolution: {integrity: sha512-e7EUPfU9afHyWc5CXtlqbvVHEshrb05uPlDCenWIbMgtWoFrTuTDVYNLKk6o4X2/4oHTfNqrJX/vaJ3uBhtXTg==}
+    dev: true
 
   /@types/svg2ttf@5.0.3:
     resolution: {integrity: sha512-hL+/A4qMISvDbDTtdY73R0zuvsdc7YRYnV5FyAfKVGk8OsluXu/tCFxop7IB5Sgr+ZCS0hHtFxylD0REmm+abA==}

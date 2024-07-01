@@ -7,8 +7,6 @@ import { getOSArch } from '../../os'
 import { _config, _getNamesForPlatform, _upsertBfgForPlatform, defaultBfgVersion } from './download-bfg'
 
 //@ts-ignore
-_config.FILE_DOWNLOAD_LOCK_DURATION = 10
-//@ts-ignore
 _config.FILE_LOCK_RETRY_DELAY = 1
 
 vi.mock('../../local-context/utils', async importOriginal => {

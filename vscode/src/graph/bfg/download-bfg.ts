@@ -1,11 +1,10 @@
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import { lockfile } from '@sourcegraph/cody-shared'
 import { SemverString } from '@sourcegraph/cody-shared/src/utils'
-import { Mutex } from 'async-mutex'
 import * as vscode from 'vscode'
-import { sleep } from '../../completions/utils'
-import { downloadFile, fileExists, unzip, upsertFile } from '../../local-context/utils'
+import { downloadFile, fileExists, unzip } from '../../local-context/utils'
 import { logDebug, logError } from '../../log'
 import { Arch, Platform, getOSArch } from '../../os'
 import { captureException } from '../../services/sentry/sentry'
@@ -15,8 +14,8 @@ export type BfgVersionString = SemverString<''>
 export const defaultBfgVersion: BfgVersionString = '5.4.6040'
 
 export const _config = {
-    FILE_DOWNLOAD_LOCK_DURATION: 5000,
-    FILE_LOCK_RETRY_DELAY: 1000,
+    //delay before trying to re-lock a active file
+    FILE_LOCK_RETRY_DELAY: 500,
 } as const
 
 /**
@@ -50,10 +49,6 @@ export async function getBfgPath(context: vscode.ExtensionContext): Promise<stri
     return bfgPath
 }
 
-// this protects agains multiple async functions in the same node process from
-// starting a download
-const processDownloadLock = new Mutex()
-
 export async function _upsertBfgForPlatform(
     containingDir: string,
     version: BfgVersionString
@@ -81,24 +76,23 @@ export async function _upsertBfgForPlatform(
 
     const bfgURL = `https://github.com/sourcegraph/bfg/releases/download/v${version}/bfg-${platform}-${rfc795Arch}.zip`
 
-    return await processDownloadLock.runExclusive(async () => {
-        try {
-            const wasDownloaded = await downloadBfgBinary({
-                bfgPath,
-                bfgURL,
-                bfgFilename,
-                bfgUnzippedFilename,
-            })
-            if (wasDownloaded) {
-                void removeOldBfgBinaries(containingDir, bfgFilename)
-            }
-            return bfgPath
-        } catch (error) {
-            captureException(error)
-            void vscode.window.showErrorMessage(`Failed to download bfg: ${error}`)
-            return null
+    try {
+        const wasDownloaded = await downloadBfgBinary({
+            bfgPath,
+            bfgURL,
+            bfgFilename,
+            bfgUnzippedFilename,
+        })
+        if (wasDownloaded) {
+            //TODO: we can't always assume that nobody is using these still
+            void removeOldBfgBinaries(containingDir, bfgFilename)
         }
-    })
+        return bfgPath
+    } catch (error) {
+        captureException(error)
+        void vscode.window.showErrorMessage(`Failed to download bfg: ${error}`)
+        return null
+    }
 }
 
 export function _getNamesForPlatform(
@@ -143,24 +137,30 @@ async function downloadBfgBinary({
             cancellable: false,
         },
         async (progress, cancel) => {
-            progress.report({ message: 'Downloading bfg' })
-            while (!cancel.isCancellationRequested) {
+            progress.report({ message: 'Checking bfg status' })
+            const abortController = new AbortController()
+            cancel.onCancellationRequested(() => abortController.abort())
+
+            const bfgDir = path.dirname(bfgPath)
+            await fs.mkdir(bfgDir, { recursive: true })
+            const unlockFn = await lockfile.waitForLock(bfgDir, {
+                delay: _config.FILE_LOCK_RETRY_DELAY,
+                lockfilePath: `${bfgPath}.lock`,
+            })
+            try {
                 if (await fileExists(bfgPath)) {
                     logDebug('CodyEngine', 'bfg already downloaded, reusing')
                     return false
                 }
+
+                progress.report({ message: 'Downloading bfg' })
+
                 const bfgTmpDir = `${bfgPath}.tmp`
                 await fs.mkdir(bfgTmpDir, { recursive: true })
 
                 const bfgZipFile = path.join(bfgTmpDir, `${bfgFilename}.zip`)
-                // try and acquire a file lock, giving another process some grace to write data to it
-                const bfgZipFileLock = await upsertFile(bfgZipFile, _config.FILE_DOWNLOAD_LOCK_DURATION)
-                if (!bfgZipFileLock) {
-                    logDebug('CodyEngine', 'Another process is already downloading bfg, waiting...')
-                    await sleep(_config.FILE_DOWNLOAD_LOCK_DURATION)
-                    continue
-                }
-                await downloadFile(bfgURL, bfgZipFile, cancel)
+
+                await downloadFile(bfgURL, bfgZipFile, abortController.signal)
                 progress.report({ message: 'Extracting bfg' })
                 await unzip(bfgZipFile, bfgTmpDir)
                 logDebug('CodyEngine', `downloaded bfg to ${bfgTmpDir}`)
@@ -172,8 +172,9 @@ async function downloadBfgBinary({
 
                 logDebug('CodyEngine', `extracted bfg to ${bfgPath}`)
                 return true
+            } finally {
+                unlockFn?.()
             }
-            return false
         }
     )
 }

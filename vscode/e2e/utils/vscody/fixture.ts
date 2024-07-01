@@ -1,3 +1,6 @@
+// TODO/WARNING/APOLOGY: I know that this is an unreasonably large file right
+// now. I'll refactor and cut it down this down once everything is working
+// first.
 import { type StdioOptions, exec as _exec, spawn } from 'node:child_process'
 import type { Dirent } from 'node:fs'
 import fs from 'node:fs/promises'
@@ -15,12 +18,14 @@ import { type EXPIRY_STRATEGY, type MODE, Polly } from '@pollyjs/core'
 import type { ArrayContainsAll } from '@sourcegraph/cody-shared/src/utils'
 import { ConsoleReporter, type ProgressReport, ProgressReportStage } from '@vscode/test-electron'
 import { downloadAndUnzipVSCode } from '@vscode/test-electron/out/download'
-import chokidar from 'chokidar'
 import express from 'express'
 import { copy as copyExt } from 'fs-extra'
 import { createProxyMiddleware } from 'http-proxy-middleware'
+import type { loggerPlugin as ProxyMiddlewarePlugin } from 'http-proxy-middleware'
 import zod from 'zod'
 
+import { EventEmitter } from 'node:stream'
+import { waitForLock } from '@sourcegraph/cody-shared/src/lockfile'
 import { CodyPersister } from '../../../src/testutils/CodyPersister'
 import { defaultMatchRequestsBy } from '../../../src/testutils/polly'
 import { retry, stretchTimeout } from '../helpers'
@@ -223,9 +228,15 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
             //config but it's not a super smooth experience yet. If you run into
             //this please give me a ping so we can brainstorm.
             const target = 'https://sourcegraph.com'
+            const testFailureSignal = new EventEmitter<{ error: [Error] }>()
+            testFailureSignal.on('error', err => {
+                throw err
+            })
             const middleware = createProxyMiddleware({
                 target,
                 changeOrigin: true,
+                ejectPlugins: true,
+                plugins: [failOrRetryRecordingOnError(testFailureSignal)],
             })
             app.use(middleware)
             let server: ReturnType<typeof app.listen> = null as any
@@ -252,13 +263,18 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
     ],
     polly: [
         async ({ validOptions, sourcegraphMitM }, use, testInfo) => {
-            const polly = new Polly(`${testInfo.project}`, {
+            const relativeTestPath = path.relative(
+                path.resolve(process.cwd(), testInfo.project.testDir),
+                testInfo.file
+            )
+            const polly = new Polly(`${testInfo.project.name}/${relativeTestPath}/${testInfo.title}`, {
                 flushRequestsOnStop: true,
                 recordIfMissing: validOptions.recordIfMissing ?? validOptions.recordingMode === 'record',
                 mode: validOptions.recordingMode,
                 persister: 'fs',
                 adapters: ['node-http'],
                 recordFailedRequests: true,
+                logLevel: 'SILENT',
                 matchRequestsBy: defaultMatchRequestsBy,
                 persisterOptions: {
                     keepUnusedRequests: validOptions.keepUnusedRecordings ?? true,
@@ -300,7 +316,8 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                         req => 'RecordTelemetryEvents' in req.query || 'LogEventMutation' in req.query
                     )
                     .intercept((req, res, interceptor) => {
-                        res.sendStatus(200)
+                        res.send('{}')
+                        res.status(200)
                     })
 
                 polly.server.get('/healthz').intercept((req, res, interceptor) => {
@@ -390,6 +407,8 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                 PATH: path.dirname(vscodeExecutable) + path.delimiter + process.env.PATH,
                 //TODO: all env variables
                 TESTING_DOTCOM_URL: sourcegraphMitM.endpoint,
+                CODY_TESTING_BFG_DIR: path.resolve(process.cwd(), validOptions.binaryTmpDir),
+                CODY_TESTING_SYMF_DIR: path.resolve(process.cwd(), validOptions.binaryTmpDir),
             }
             await pspawn(
                 vscodeExecutable,
@@ -404,16 +423,25 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
             if (validOptions.vscodeExtensions.length > 0) {
                 //TODO(rnauta): Add lockfile wrapper to avoid race conditions
                 const sharedCacheDir = path.resolve(process.cwd(), validOptions.vscodeExtensionCacheDir)
-                const args = [
-                    `--extensions-dir=${sharedCacheDir.replace(/ /g, '\\ ')}`, // cli doesn't handle quotes properly so just escape spaces,
-                    '--install-extension',
-                    ...validOptions.vscodeExtensions,
-                ]
-                const opts = {
-                    env,
-                    stdio: ['ignore', 'inherit', 'inherit'] as StdioOptions,
+                await fs.mkdir(sharedCacheDir, { recursive: true })
+                const releaseLock = await waitForLock(sharedCacheDir, {
+                    lockfilePath: path.join(sharedCacheDir, '.lock'),
+                    delay: 1000,
+                })
+                try {
+                    const args = [
+                        `--extensions-dir=${sharedCacheDir.replace(/ /g, '\\ ')}`, // cli doesn't handle quotes properly so just escape spaces,
+                        '--install-extension',
+                        ...validOptions.vscodeExtensions,
+                    ]
+                    const opts = {
+                        env,
+                        stdio: ['ignore', 'inherit', 'inherit'] as StdioOptions,
+                    }
+                    await pspawn(vscodeExecutable, args, opts)
+                } finally {
+                    releaseLock()
                 }
-                await pspawn(vscodeExecutable, args, opts)
                 //we now read all the folders in the shared cache dir and
                 //symlink the relevant ones to our isolated extension dir
                 for (const sharedExtensionDir of await fs.readdir(sharedCacheDir)) {
@@ -551,70 +579,19 @@ async function downloadOrWaitForVSCode({
     validOptions,
 }: Pick<TestContext, 'validOptions'> & { executableDir: string }) {
     let electronExecutable = ''
-    while (!electronExecutable) {
-        const downloadLockFilePath = path.join(
-            executableDir,
-            `${process.env.RUN_ID}.${validOptions.vscodeVersion}.lock`.replace(/[^A-Za-z0-9-.]/g, '')
-        )
-        const createdLockFilePath = await createFileIfNotExists(downloadLockFilePath)
-        if (!createdLockFilePath) {
-            // Someone else is downloading, let's just wait for the file to no longer exist.
-            const watcher = chokidar.watch(downloadLockFilePath)
-            try {
-                await Promise.all([
-                    new Promise(resolve => {
-                        watcher.on('unlink', resolve)
-                        watcher.on('change', resolve)
-                    }),
-                    //the file might have been removed as we were starting the wathcer
-                    fileExists(downloadLockFilePath).then(exists => {
-                        if (!exists) {
-                            throw new Error('Abort')
-                        }
-                    }),
-                ])
-            } catch {
-            } finally {
-                await watcher.close()
-            }
-            continue
-        }
-        try {
-            electronExecutable = await downloadAndUnzipVSCode({
-                cachePath: executableDir,
-                version: validOptions.vscodeVersion,
-                reporter: new CustomConsoleReporter(process.stdout.isTTY),
-            })
-        } finally {
-            await fs.unlink(downloadLockFilePath)
-        }
+    const lockfilePath = path.join(executableDir, `${validOptions.vscodeVersion}.lock`)
+    const releaseLock = await waitForLock(executableDir, { lockfilePath, delay: 500 })
+
+    try {
+        electronExecutable = await downloadAndUnzipVSCode({
+            cachePath: executableDir,
+            version: validOptions.vscodeVersion,
+            reporter: new CustomConsoleReporter(process.stdout.isTTY),
+        })
+    } finally {
+        releaseLock()
     }
     return electronExecutable
-}
-
-async function createFileIfNotExists(p: string): Promise<string | null> {
-    const openFileHandle = await fs.open(p, 'wx').catch(err => {
-        if (err.code === 'EEXIST') {
-            return null
-        }
-        throw err
-    })
-    await openFileHandle?.close()
-    return openFileHandle ? p : null
-}
-
-function fileExists(p: string): Promise<boolean> {
-    return fs
-        .stat(p)
-        .then(s => {
-            return s.isFile()
-        })
-        .catch(err => {
-            if (err.code === 'ENOENT') {
-                return false
-            }
-            throw err
-        })
 }
 
 async function getPortForPid(pid: number): Promise<number> {
@@ -669,6 +646,23 @@ async function getFilesRecursive(dir: string): Promise<Array<Dirent>> {
         }
     }
     return files
+}
+
+function failOrRetryRecordingOnError(
+    emitter: EventEmitter<{ error: [Error] }>
+): typeof ProxyMiddlewarePlugin {
+    return (proxyServer, options) => {
+        proxyServer.on('error', (err, req, res) => {
+            if (
+                err.name === 'PollyError' &&
+                err.message.includes('Recording for the following request is not found')
+            ) {
+                //TODO: allow re-trying with recording temporarily enabled
+                err.message = `Polly recording missing for ${[req.method]}${req.url}`
+            }
+            emitter.emit('error', err)
+        })
+    }
 }
 
 // A custom version of the VS Code download reporter that silences matching installation
