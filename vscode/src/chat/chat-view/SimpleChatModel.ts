@@ -1,5 +1,4 @@
 import { findLast } from 'lodash'
-import * as vscode from 'vscode'
 
 import {
     type ChatMessage,
@@ -37,24 +36,8 @@ export class SimpleChatModel {
 
     private images: string[] = []
 
-    /**
-     * Adds a list of image URIs to the `images` array, converting each image to a base64-encoded string.
-     * This method resets the `images` array before adding the new images as we only supports uploading a single image at a time.
-     *
-     * @param imageUris - An array of `vscode.Uri` objects representing the image files to be uploaded.
-     * @returns A Promise that resolves when the image upload is complete.
-     */
-    public async addImages(imageUris: vscode.Uri[]): Promise<void> {
-        // Clear the existing images before adding new ones.
-        this.images = []
-        if (ModelsService.isMultiModalModel(this.modelID)) {
-            this.images = await Promise.all(
-                imageUris.map(async uri => {
-                    const imageFile = await vscode.workspace.fs.readFile(uri)
-                    return Buffer.from(imageFile).toString('base64')
-                })
-            )
-        }
+    public addImageFile(base64: string): void {
+        this.images.push(base64)
     }
 
     public getAndResetImages(): string[] | undefined {

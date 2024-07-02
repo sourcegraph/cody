@@ -515,18 +515,8 @@ export class SimpleChatPanelProvider
                 })
                 break
             }
-            case 'chat/upload-image': {
-                const files = await vscode.window.showOpenDialog({
-                    canSelectMany: false,
-                    openLabel: 'Show Cody',
-                    title: 'Select an Image',
-                    filters: {
-                        Images: ['png', 'jpg', 'jpeg', 'svg'],
-                    },
-                })
-                if (files?.[0]) {
-                    this.chatModel.addImages([files[0]])
-                }
+            case 'chat/upload-file': {
+                this.chatModel.addImageFile(message.base64)
                 break
             }
 

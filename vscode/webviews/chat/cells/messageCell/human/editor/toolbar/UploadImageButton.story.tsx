@@ -8,7 +8,7 @@ const meta: Meta<typeof UploadImageButton> = {
     component: UploadImageButton,
 
     args: {
-        uploadedImageUri: undefined,
+        imageFile: undefined,
     },
 
     decorators: [VSCodeStandaloneComponent],
@@ -35,6 +35,8 @@ export const Default: StoryObj<typeof meta> = {
 
 export const WithImageAttached: StoryObj<typeof meta> = {
     args: {
-        uploadedImageUri: 'some/image/image-with-a-super-super-super-long-path.svg',
+        imageFile: {
+            name: 'some/image/image-with-a-super-super-super-long-path.svg',
+        } as File,
     },
 }

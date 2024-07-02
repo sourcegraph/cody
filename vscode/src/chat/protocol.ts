@@ -141,7 +141,8 @@ export type WebviewMessage =
           command: 'getAllMentionProvidersMetadata'
       }
     | {
-          command: 'chat/upload-image'
+          command: 'chat/upload-file'
+          base64: string
       }
 
 /**
