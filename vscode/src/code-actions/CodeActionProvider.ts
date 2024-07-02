@@ -5,7 +5,7 @@ import { getConfiguration } from '../configuration'
 import { DocumentCodeAction } from './document'
 import { EditCodeAction } from './edit'
 import { ExplainCodeAction } from './explain'
-import { FixupCodeAction } from './fixup'
+import { FixupCodeAction } from './fix'
 import { TestCodeAction } from './test'
 
 export class CodeActionProvider implements vscode.Disposable {

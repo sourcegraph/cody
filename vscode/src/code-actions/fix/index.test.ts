@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 
 import { ps, psDedent, testFileUri } from '@sourcegraph/cody-shared'
 
-import { FixupCodeAction } from './fixup'
+import { FixupCodeAction } from './'
 
 describe('fixup code action', () => {
     test('produces correct prompt for code with a single diagnostic', async () => {
