@@ -914,12 +914,18 @@ export class SimpleChatPanelProvider
         this.contextFilesQueryCancellation = cancellation
 
         const source = 'chat'
+
+        // Use enum to send source values to metadata, making this data available on all instances.
+        enum atMentionSourceMetadataMapping {
+            chat = 1,
+        }
         const scopedTelemetryRecorder: Parameters<typeof getChatContextItemsForMention>[2] = {
             empty: () => {
                 telemetryService.log('CodyVSCodeExtension:at-mention:executed', {
                     source,
                 })
                 telemetryRecorder.recordEvent('cody.at-mention', 'executed', {
+                    metadata: { source: atMentionSourceMetadataMapping[source] },
                     privateMetadata: { source },
                 })
             },
@@ -929,6 +935,7 @@ export class SimpleChatPanelProvider
                     providerMetadata,
                 })
                 telemetryRecorder.recordEvent(`cody.at-mention.${provider}`, 'executed', {
+                    metadata: { source: atMentionSourceMetadataMapping[source] },
                     privateMetadata: { source, providerMetadata },
                 })
             },
