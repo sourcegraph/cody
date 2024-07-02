@@ -32,6 +32,7 @@ object Constants {
   const val `not-a-git-repo` = "not-a-git-repo"
   const val `git-repo-has-no-remote` = "git-repo-has-no-remote"
   const val sourcegraph = "sourcegraph"
+  const val openai = "openai"
   const val search = "search"
   const val local = "local"
   const val unindexed = "unindexed"
