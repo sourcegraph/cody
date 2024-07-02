@@ -5,7 +5,7 @@ import { PromptString, ps } from './prompt-string'
 /**
  * The preamble we add to the start of the last human open-end chat message that has context items.
  */
-const CONTEXT_PREAMBLE = ps`You have access to my codebase context.`
+const CONTEXT_PREAMBLE = ps`You have access to the provided codebase context. `
 /**
  * The preamble for preventing known models from hedging.
  */
@@ -21,7 +21,7 @@ export class PromptMixin {
 
     /**
      * Prepends all mixins to `humanMessage`. Modifies and returns `humanMessage`.
-     * Add headges prevention prompt to known models.
+     * Add hedging prevention prompt to specific models who need this.
      */
     public static mixInto(humanMessage: ChatMessage, modelID: string): ChatMessage {
         // Default Mixin is added at the end so that it cannot be overriden by other mixins.
