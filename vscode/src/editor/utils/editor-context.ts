@@ -14,18 +14,24 @@ import {
     type SymbolKind,
     TokenCounter,
     contextFiltersProvider,
+    createRemoteFileURI,
     displayPath,
+    graphqlClient,
     isCodyIgnoredFile,
     isDefined,
+    isErrorLike,
+    isRemoteFileURI,
     isWindows,
     logError,
     openCtx,
+    parseRemoteFileURI,
     toRangeData,
 } from '@sourcegraph/cody-shared'
 
 import { URI } from 'vscode-uri'
 import { getOpenTabsUris } from '.'
 import { toVSCodeRange } from '../../common/range'
+import { debouncePromise } from './debounce-promise'
 import { findWorkspaceFiles } from './findWorkspaceFiles'
 
 // Some matches we don't want to ignore because they might be valid code (for example `bin/` in Dart)
@@ -44,6 +50,12 @@ const lowScoringPathSegments = ['bin']
  */
 const throttledFindFiles = throttle(() => findWorkspaceFiles(), 10000)
 
+const debouncedRemoteFindFiles = debouncePromise(graphqlClient.getRemoteFiles.bind(graphqlClient), 500)
+const debouncedRemoteFindSymbols = debouncePromise(
+    graphqlClient.getRemoteSymbols.bind(graphqlClient),
+    500
+)
+
 /**
  * Searches all workspaces for files matching the given string. VS Code doesn't
  * provide an API for fuzzy file searching, only precise globs, so we recreate
@@ -52,10 +64,27 @@ const throttledFindFiles = throttle(() => findWorkspaceFiles(), 10000)
  */
 export async function getFileContextFiles(
     query: string,
-    maxResults: number
+    maxResults: number,
+    repositoriesNames?: string[]
 ): Promise<ContextItemFile[]> {
     if (!query.trim()) {
         return []
+    }
+
+    // TODO [VK] Support fuzzy find logic that we have for local file resolution
+    if (repositoriesNames) {
+        const filesOrError = await debouncedRemoteFindFiles(repositoriesNames, query)
+
+        if (isErrorLike(filesOrError) || filesOrError === 'skipped') {
+            return []
+        }
+
+        return filesOrError.map<ContextItemFile>(item => ({
+            type: 'file',
+            size: item.file.byteSize,
+            source: ContextItemSource.User,
+            uri: createRemoteFileURI(item.repository.name, item.file.path),
+        }))
     }
 
     const uris = await throttledFindFiles()
@@ -127,11 +156,31 @@ export async function getFileContextFiles(
 
 export async function getSymbolContextFiles(
     query: string,
-    maxResults = 20
+    maxResults = 20,
+    remoteRepositoriesNames?: string[]
 ): Promise<ContextItemSymbol[]> {
     query = query.trim()
     if (query.startsWith('#')) {
         query = query.slice(1)
+    }
+
+    if (remoteRepositoriesNames) {
+        const symbolsOrError = await debouncedRemoteFindSymbols(remoteRepositoriesNames, query)
+
+        if (symbolsOrError === 'skipped' || isErrorLike(symbolsOrError)) {
+            return []
+        }
+
+        return symbolsOrError.flatMap<ContextItemSymbol>(item =>
+            item.symbols.map(symbol => ({
+                type: 'symbol',
+                uri: createRemoteFileURI(item.repository.name, symbol.location.resource.path),
+                source: ContextItemSource.User,
+                symbolName: symbol.name,
+                // TODO [VK] Support other symbols kind
+                kind: 'function',
+            }))
+        )
     }
 
     // doesn't support cancellation tokens :(
@@ -368,9 +417,30 @@ async function resolveFileOrSymbolContextItem(
     contextItem: ContextItemFile | ContextItemSymbol,
     editor: Editor
 ): Promise<ContextItemWithContent> {
+    if (isRemoteFileURI(contextItem.uri)) {
+        const { repository, path } = parseRemoteFileURI(contextItem.uri)
+
+        // TODO [VK]: Support ranges for symbol context items
+        const resultOrError = await graphqlClient.getFileContent(repository, path)
+
+        if (!isErrorLike(resultOrError)) {
+            return {
+                ...contextItem,
+                uri: URI.from({
+                    scheme: '',
+                    authority: '',
+                    path: `${repository}${path}`,
+                }),
+                content: resultOrError,
+                size: contextItem.size ?? TokenCounter.countTokens(resultOrError),
+            }
+        }
+    }
+
     const content =
         contextItem.content ??
         (await editor.getTextEditorContentForFile(contextItem.uri, toVSCodeRange(contextItem.range)))
+
     return {
         ...contextItem,
         content,
