@@ -32,14 +32,12 @@ export class SmartThrottleService implements vscode.Disposable {
 
     async throttle(request: RequestParams, triggerKind: TriggerKind): Promise<RequestParams | null> {
         return wrapInActiveSpan('autocomplete.smartThrottle', async () => {
-            console.log('UMPOX: START----------------')
             const throttledRequest = new ThrottledRequest(request)
             const now = Date.now()
 
             // Case 1: If this is a start-of-line request, cancel any previous start-of-line requests
             //         and immediately continue with the execution.
             if (this.isNewStartOfLineRequest(request)) {
-                console.log('UMPOX: START OF LINE, NO THROTTLE')
                 this.startOfLineRequest?.abort()
                 this.startOfLineRequest = throttledRequest
                 this.startOfLineLocation = { uri: request.document.uri, line: request.position.line }
@@ -56,20 +54,15 @@ export class SmartThrottleService implements vscode.Disposable {
             //         promote the last tail request to a throttled request and continue with the third
             //         case.
             if (now - this.lastThrottlePromotion > THROTTLE_TIMEOUT && this.tailRequest) {
-                console.log('UMPOX: PAST THE THROTTLE TIME OUT, PROMOTING THE TAIL REQUEST')
                 // Setting tailRequest to null will make sure the throttled request can no longer be
                 // cancelled by this logic.
                 this.tailRequest = null
                 this.lastThrottlePromotion = now
-                console.log('UMPOX: SET DELAY TO', now - this.lastThrottlePromotion)
             }
 
             // Case 3: Handle the latest request as the new tail request and require a small debounce
             //         time before continuing.
-            if (this.tailRequest) {
-                console.log('UMPOX: ABORTING TAIL REQUEST')
-                this.tailRequest?.abort()
-            }
+            this.tailRequest?.abort()
             this.tailRequest = throttledRequest
             const newRequestParams = throttledRequest.updatedRequestParams()
 
@@ -77,15 +70,12 @@ export class SmartThrottleService implements vscode.Disposable {
                 // If we have bypassed the throttle timeout, we don't need to wait for the
                 // debounce either.
                 const debounceTime = Math.min(now - this.lastThrottlePromotion, 25)
-                console.log('UMPOX: SMART THROTTLE, SLEEPING MS:...', debounceTime)
                 await sleep(debounceTime)
                 if (newRequestParams.abortSignal?.aborted) {
-                    console.log('UMPOX: NEW REQUEST ABORTED? RETURNING NULL')
                     return null
                 }
             }
 
-            console.log('UMPOX: SMART THROTTLE, RETURNING NEW REQUEST')
             return newRequestParams
         })
     }
@@ -99,7 +89,6 @@ export class SmartThrottleService implements vscode.Disposable {
     }
 
     dispose() {
-        console.log('UMPOX: DISPOSING..............!!')
         this.startOfLineRequest?.abort()
         this.tailRequest?.abort()
     }
