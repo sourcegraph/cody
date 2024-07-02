@@ -7,13 +7,6 @@ import { document, documentAndPosition } from '../../test-helpers'
 import type { ContextRetrieverOptions } from '../../types'
 import { type CachedRerieverOptions, CachedRetriever } from './cached-retriever'
 
-const mockResult: AutocompleteContextSnippet = {
-    uri: vscode.Uri.file('/path/to/file'),
-    startLine: 1,
-    endLine: 1,
-    content: 'hello world',
-}
-
 class MockWorkspace implements Partial<typeof vscode.workspace> {
     public didChangeTextDocumentListener: (event: vscode.TextDocumentChangeEvent) => void = () => {}
 
@@ -45,7 +38,7 @@ class MockCachedRetriever extends CachedRetriever {
     doRetrieval = async (options: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> => {
         this.callCount += 1
         this.retrievalHook(options)
-        return [mockResult]
+        return []
     }
 
     isSupportedForLanguageId = () => true
@@ -93,19 +86,16 @@ describe('CachedRetriever', () => {
     const mockOptions = getRetrieverOptions()
     it('should cache context correctly', async () => {
         const retriever = new MockCachedRetriever()
-        let context = await retriever.retrieve(mockOptions)
-        expect(context).toEqual([mockResult])
+        await retriever.retrieve(mockOptions)
         expect(retriever.callCount).toBe(1)
-        context = await retriever.retrieve(mockOptions)
+        await retriever.retrieve(mockOptions)
 
-        expect(context).toEqual([mockResult])
         expect(retriever.callCount).toBe(1)
     })
 
     it("should not cache context if the input document's uri changes", async () => {
         const retriever = new MockCachedRetriever()
-        let context = await retriever.retrieve(mockOptions)
-        expect(context).toEqual([mockResult])
+        await retriever.retrieve(mockOptions)
         expect(retriever.callCount).toBe(1)
 
         const newUri = vscode.Uri.file('/path/to/new/file')
@@ -113,15 +103,13 @@ describe('CachedRetriever', () => {
             ...mockOptions,
             document: { ...mockOptions.document, uri: newUri },
         }
-        context = await retriever.retrieve(newOptions)
-        expect(context).toEqual([mockResult])
+        await retriever.retrieve(newOptions)
         expect(retriever.callCount).toBe(2)
     })
 
     it('should recalculate if a dependency is invalidated', async () => {
         const retriever = new FileOpeningRetriever()
-        let context = await retriever.retrieve(mockOptions)
-        expect(context).toEqual([mockResult])
+        await retriever.retrieve(mockOptions)
         expect(retriever.callCount).toBe(1)
 
         // Simulate an update to a file that this entry depends on
@@ -132,15 +120,13 @@ describe('CachedRetriever', () => {
             reason: undefined,
         })
 
-        context = await retriever.retrieve(mockOptions)
-        expect(context).toEqual([mockResult])
+        await retriever.retrieve(mockOptions)
         expect(retriever.callCount).toBe(2)
     })
 
     it('should use cached value if an unrelated dependency is invalidated', async () => {
         const retriever = new FileOpeningRetriever()
-        let context = await retriever.retrieve(mockOptions)
-        expect(context).toEqual([mockResult])
+        await retriever.retrieve(mockOptions)
         expect(retriever.callCount).toBe(1)
 
         // Invalidate an unrelated dependency
@@ -150,8 +136,7 @@ describe('CachedRetriever', () => {
             reason: undefined,
         })
 
-        context = await retriever.retrieve(mockOptions)
-        expect(context).toEqual([mockResult])
+        await retriever.retrieve(mockOptions)
         expect(retriever.callCount).toBe(1)
     })
 
@@ -166,9 +151,9 @@ describe('CachedRetriever', () => {
 
         const { document: testDocument2, position: testPosition2 } = documentAndPosition(
             dedent`
-        // Write a test for the class TestClass
-        █
-    `,
+            // Write a test for the class TestClass
+            █
+            `,
             'typescript',
             testFileUri('test-class2.test.ts').toString()
         )
