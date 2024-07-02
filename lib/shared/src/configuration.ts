@@ -43,7 +43,7 @@ export interface Configuration {
     autocompleteAdvancedProvider:
         | 'anthropic'
         | 'fireworks'
-        | 'unstable-google'
+        | 'unstable-gemini'
         | 'unstable-openai'
         | 'experimental-openaicompatible'
         | 'experimental-ollama'

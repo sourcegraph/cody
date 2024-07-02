@@ -1111,7 +1111,7 @@
             null,
             "anthropic",
             "fireworks",
-            "unstable-google",
+            "unstable-gemini",
             "unstable-openai",
             "experimental-ollama",
             "experimental-openaicompatible"

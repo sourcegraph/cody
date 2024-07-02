@@ -52,8 +52,7 @@ export async function createProviderConfigFromVSCodeConfig(
         case 'anthropic': {
             return createAnthropicProviderConfig({ client, model })
         }
-        case 'unstable-google':
-        case 'google': {
+        case 'unstable-gemini': {
             return createGeminiProviderConfig({ client, model })
         }
         case 'experimental-openaicompatible': {
@@ -147,8 +146,7 @@ export async function createProviderConfig(
                             ? authStatus.configOverwrites.completionModel
                             : undefined,
                 })
-            case 'google':
-            case 'unstable-google':
+            case 'unstable-gemini':
                 if (authStatus.configOverwrites.completionModel?.includes('claude')) {
                     return createAnthropicProviderConfig({
                         client, // Model name for google provider is a deployment name. It shouldn't appear in logs.
