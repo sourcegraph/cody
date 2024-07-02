@@ -5,6 +5,32 @@ import type { FixupActor, FixupFileCollection, FixupTextChanged } from './roles'
 import { type TextChange, updateFixedRange, updateRangeMultipleChanges } from './tracked-range'
 import { CodyTaskState } from './utils'
 
+/**
+ * Determines of a range, even if it uses different positions, exactly matches
+ * the dimensions of another range.
+ *
+ * This is used to determine if a range has materially changed in terms of content, rather than just position.
+ * This is useful information as it tells us if a user modified the range in some way.
+ */
+function matchesRangeDimensions(originalRange: vscode.Range, incomingRange: vscode.Range): boolean {
+    const originalLength = originalRange.end.line - originalRange.start.line
+    const incomingLength = incomingRange.end.line - incomingRange.start.line
+    if (originalLength !== incomingLength) {
+        // Range shifted vertically
+        return false
+    }
+
+    if (
+        originalRange.start.character !== incomingRange.start.character ||
+        originalRange.end.character !== incomingRange.end.character
+    ) {
+        // Range shifted horizontally
+        return false
+    }
+
+    return true
+}
+
 function updateAppliedDiff(changes: TextChange[], diff: Edit[]): Edit[] {
     const result: Edit[] = []
 
@@ -12,10 +38,11 @@ function updateAppliedDiff(changes: TextChange[], diff: Edit[]): Edit[] {
         const updatedRange = updateRangeMultipleChanges(edit.range, changes)
         if (
             edit.type === 'decoratedReplacement' &&
-            (updatedRange.start.character !== 0 || updatedRange.end.character !== 0)
+            // Check if the dimensions of the replacement are unchanged, this tells us if the replacement
+            // line was modified in any way. If it has, we must discard this as we cannot reliably delete it later.
+            !matchesRangeDimensions(edit.range, updatedRange)
         ) {
-            // If the range of a `decoratedReplacement` line no longer encompasses a full line,
-            // then we can longer be confident that it should definitely be removed.
+            // We can longer be confident that it should definitely be removed.
             // It may now contain new code that the user does not want to be discarded.
             //
             // Instead, we will discard this edit from the diff. This has some implications:
