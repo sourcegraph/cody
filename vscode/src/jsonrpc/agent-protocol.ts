@@ -53,6 +53,10 @@ export type ClientRequests = {
     // chat id. Main difference compared to the chat/new is that we return chatId.
     'chat/web/new': [null, { panelId: string; chatId: string }]
 
+    // Deletes chat by its ID and returns newly updated chat history list
+    // Primary is used only in cody web client
+    'chat/delete': [{ chatId: string }, ChatExportResult[]]
+
     // Similar to `chat/new` except it starts a new chat session from an
     // existing transcript. The chatID matches the `chatID` property of the
     // `type: 'transcript'` ExtensionMessage that is sent via

@@ -1,10 +1,11 @@
+import { Agent } from '@sourcegraph/cody-agent/src/agent'
 import {
     BrowserMessageReader,
     BrowserMessageWriter,
     createMessageConnection,
 } from 'vscode-jsonrpc/browser'
-import { Agent } from '../../../agent/src/agent'
-import { createActivation } from '../../../vscode/src/extension.web'
+
+import { createActivation } from 'cody-ai/src/extension.web'
 import { IndexDBStorage } from './index-db-storage'
 
 const conn = createMessageConnection(new BrowserMessageReader(self), new BrowserMessageWriter(self))
@@ -22,4 +23,5 @@ const agent = new Agent({
 agent.registerNotification('debug/message', params => {
     console.error(`debug/message: ${params.channel}: ${params.message}`)
 })
+
 conn.listen()
