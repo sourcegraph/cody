@@ -49,6 +49,7 @@ export const ConnectionIssuesPage: React.FunctionComponent<
                     <ul className={styles.causes}>
                         <li>You don't have internet access</li>
                         <li>Proxy settings might need to be configured</li>
+                        <li>An internal error preventing the connection</li>
                         <li>
                             The configured endpoint{' '}
                             {configuredEndpoint && (
@@ -58,7 +59,6 @@ export const ConnectionIssuesPage: React.FunctionComponent<
                             )}{' '}
                             is not reachable
                         </li>
-                        <li>An internal error preventing the connection</li>
                     </ul>
                 </div>
                 <div className={styles.actions}>

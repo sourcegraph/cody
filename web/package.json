@@ -22,6 +22,7 @@
     "@vscode/codicons": "^0.0.35",
     "buffer": "^6.0.3",
     "events": "^3.3.0",
+    "idb": "^8.0.0",
     "path-browserify": "^1.0.1",
     "stream-browserify": "^3.0.0",
     "util": "^0.12.5",

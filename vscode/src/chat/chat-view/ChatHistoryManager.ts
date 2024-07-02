@@ -1,11 +1,12 @@
 import type { AuthStatus, SerializedChatTranscript, UserLocalHistory } from '@sourcegraph/cody-shared'
 
+import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 import { localStorage } from '../../services/LocalStorageProvider'
 
 export class ChatHistoryManager implements vscode.Disposable {
-    private historyChanged: vscode.EventEmitter<void> = new vscode.EventEmitter<void>()
     private disposables: vscode.Disposable[] = []
+    private historyChanged = new vscode.EventEmitter<UserLocalHistory | null>()
 
     constructor() {
         this.disposables.push(this.historyChanged)
@@ -33,22 +34,30 @@ export class ChatHistoryManager implements vscode.Disposable {
         const history = localStorage.getChatHistory(authStatus)
         history.chat[chat.id] = chat
         await localStorage.setChatHistory(authStatus, history)
-        this.historyChanged.fire()
+        this.notifyChatHistoryChanged(authStatus)
         return history
-    }
-
-    public onHistoryChanged(listener: () => any): vscode.Disposable {
-        return this.historyChanged.event(listener)
     }
 
     public async deleteChat(authStatus: AuthStatus, chatID: string): Promise<void> {
         await localStorage.deleteChatHistory(authStatus, chatID)
+        this.notifyChatHistoryChanged(authStatus)
     }
 
     // Remove chat history and input history
     public async clear(authStatus: AuthStatus): Promise<void> {
         await localStorage.removeChatHistory(authStatus)
+        this.notifyChatHistoryChanged(authStatus)
     }
+
+    public onHistoryChanged(listener: (chatHistory: UserLocalHistory | null) => any): vscode.Disposable {
+        return this.historyChanged.event(listener)
+    }
+
+    private notifyChatHistoryChanged = debounce(
+        authStatus => this.historyChanged.fire(this.getLocalHistory(authStatus)),
+        100,
+        { leading: true, trailing: true }
+    )
 }
 
 export const chatHistory = new ChatHistoryManager()
