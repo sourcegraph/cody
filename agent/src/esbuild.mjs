@@ -58,7 +58,6 @@ async function buildAgent(minify) {
         logLevel: 'error',
         external: ['typescript'],
         minify: minify,
-        loader: { '.node': 'copy' },
 
         alias: {
             vscode: path.resolve(process.cwd(), 'src', 'vscode-shim.ts'),

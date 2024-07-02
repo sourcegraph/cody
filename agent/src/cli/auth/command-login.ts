@@ -124,7 +124,7 @@ export async function loginAction(
     }
     const oldSettings = loadUserSettings()
     const id = uniqueID(userInfo.username, oldSettings)
-    const account: Account = { id, serverEndpoint }
+    const account: Account = { id, username: userInfo.username, serverEndpoint }
     const oldAccounts = oldSettings?.accounts
         ? oldSettings.accounts.filter(({ id }) => id !== account.id)
         : []
