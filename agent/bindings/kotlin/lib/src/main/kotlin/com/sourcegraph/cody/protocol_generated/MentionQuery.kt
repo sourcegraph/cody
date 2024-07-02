@@ -6,5 +6,6 @@ data class MentionQuery(
   val text: String,
   val range: RangeData? = null,
   val maybeHasRangeSuffix: Boolean? = null,
+  val includeRemoteRepositories: Boolean? = null,
 )
 

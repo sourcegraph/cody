@@ -19,6 +19,11 @@ import {
     ClientStateContextProvider,
     useClientActionDispatcher,
 } from '../../vscode/webviews/client/clientState'
+import { WithContextProviders } from '../../vscode/webviews/mentions/providers'
+import {
+    ChatMentionContext,
+    type ChatMentionsSettings,
+} from '../../vscode/webviews/promptEditor/plugins/atMentions/chatContextClient'
 import { type VSCodeWrapper, setVSCodeWrapper } from '../../vscode/webviews/utils/VSCodeApi'
 import {
     TelemetryRecorderContext,
@@ -26,6 +31,10 @@ import {
     createWebviewTelemetryService,
 } from '../../vscode/webviews/utils/telemetry'
 import { type AgentClient, createAgentClient } from './agent/client'
+
+const CONTEXT_MENTIONS_SETTINGS: ChatMentionsSettings = {
+    resolutionMode: 'remote',
+}
 
 let ACCESS_TOKEN = localStorage.getItem('accessToken')
 if (!ACCESS_TOKEN) {
@@ -198,22 +207,26 @@ export const App: FunctionComponent = () => {
         isErrorLike(client) ? (
             <p>Error: {client.message}</p>
         ) : (
-            <ChatModelContextProvider value={chatModelContext}>
-                <TelemetryRecorderContext.Provider value={telemetryRecorder}>
-                    <ClientStateContextProvider value={clientState}>
-                        <Chat
-                            chatID={chatID}
-                            chatEnabled={true}
-                            userInfo={userAccountInfo}
-                            messageInProgress={messageInProgress}
-                            transcript={transcript}
-                            vscodeAPI={vscodeAPI}
-                            telemetryService={telemetryService}
-                            isTranscriptError={isTranscriptError}
-                        />
-                    </ClientStateContextProvider>
-                </TelemetryRecorderContext.Provider>
-            </ChatModelContextProvider>
+            <ChatMentionContext.Provider value={CONTEXT_MENTIONS_SETTINGS}>
+                <WithContextProviders>
+                    <ChatModelContextProvider value={chatModelContext}>
+                        <TelemetryRecorderContext.Provider value={telemetryRecorder}>
+                            <ClientStateContextProvider value={clientState}>
+                                <Chat
+                                    chatID={chatID}
+                                    chatEnabled={true}
+                                    userInfo={userAccountInfo}
+                                    messageInProgress={messageInProgress}
+                                    transcript={transcript}
+                                    vscodeAPI={vscodeAPI}
+                                    telemetryService={telemetryService}
+                                    isTranscriptError={isTranscriptError}
+                                />
+                            </ClientStateContextProvider>
+                        </TelemetryRecorderContext.Provider>
+                    </ChatModelContextProvider>
+                </WithContextProviders>
+            </ChatMentionContext.Provider>
         )
     ) : (
         <>Loading...</>

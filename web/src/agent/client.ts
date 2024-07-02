@@ -67,6 +67,8 @@ export async function createAgentClient({
             customConfiguration: {
                 'cody.experimental.noodle': true,
                 'cody.autocomplete.enabled': false,
+                'cody.experimental.urlContext': true,
+                'cody.allow-remote-context': true,
             },
         },
     })

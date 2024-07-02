@@ -46,7 +46,7 @@ export class ChatManager implements vscode.Disposable {
     constructor(
         { extensionUri, ...options }: SidebarViewOptions,
         private chatClient: ChatClient,
-        private enterpriseContext: EnterpriseContextFactory | null,
+        private enterpriseContext: EnterpriseContextFactory,
         private localEmbeddings: LocalEmbeddingsController | null,
         private contextRanking: ContextRankingController | null,
         private symf: SymfRunner | null,
