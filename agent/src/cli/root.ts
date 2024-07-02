@@ -4,6 +4,7 @@ import { chatCommand } from './chat'
 import { codyBenchCommand } from './cody-bench/cody-bench'
 import { jsonrpcCommand } from './jsonrpc'
 import { serverCommand } from './server'
+import { tscContextRetrieverCommand } from './tscContextRetriever'
 
 export const rootCommand = new Command()
     .name('cody-agent')
@@ -16,3 +17,4 @@ export const rootCommand = new Command()
     .addCommand(jsonrpcCommand)
     .addCommand(codyBenchCommand)
     .addCommand(chatCommand())
+    .addCommand(tscContextRetrieverCommand())

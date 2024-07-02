@@ -8,10 +8,6 @@ import {
     isWindows,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import envPaths from 'env-paths'
-import * as vscode from 'vscode'
-import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
-
 import {
     type AuthStatus,
     type BillingCategory,
@@ -31,6 +27,10 @@ import {
     setUserAgent,
 } from '@sourcegraph/cody-shared'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
+import envPaths from 'env-paths'
+import * as vscode from 'vscode'
+import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
+import type { TscContextRetriverResult } from '../../vscode/src/jsonrpc/agent-protocol'
 
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import { SimpleChatModel } from '../../vscode/src/chat/chat-view/SimpleChatModel'
@@ -48,7 +48,9 @@ import { ModelUsage } from '../../lib/shared/src/models/types'
 import type { CommandResult } from '../../vscode/src/CommandResult'
 import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
 import { supportedTscLanguages } from '../../vscode/src/completions/context/retrievers/tsc/supportedTscLanguages'
+import { getCurrentDocContext } from '../../vscode/src/completions/get-current-doc-context'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
+import type { ContextRetrieverOptions } from '../../vscode/src/completions/types'
 import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/execute'
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
 import type { ExtensionClient, ExtensionObjects } from '../../vscode/src/extension-client'
@@ -619,6 +621,44 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
             const diagnostics = retriever.diagnostics(uri)
             return { diagnostics }
+        })
+
+        this.registerRequest('autocomplete/tscContextRetriever', async params => {
+            const filePath = vscode.Uri.file(params.filePath)
+            const position = new vscode.Position(params.position.line, params.position.character)
+            const retriever = loadTscRetriever()
+            if (!retriever) {
+                throw new Error('autocomplete/tscContextRetriever: no retriever')
+            }
+            const document = this.workspace.getDocument(filePath)
+            if (!document) {
+                throw new Error(`autocomplete/tscContextRetriever: no document for URI ${filePath}`)
+            }
+            const options: ContextRetrieverOptions = {
+                document: document,
+                position: position,
+                docContext: getCurrentDocContext({
+                    document,
+                    position,
+                    maxPrefixLength: params.options.maxPrefixLength,
+                    maxSuffixLength: params.options.maxSuffixLength,
+                }),
+                hints: {
+                    maxChars: params.options.maxChars,
+                    maxMs: params.options.maxMsec,
+                },
+            }
+            const retrivedContext = await retriever?.retrieve(options)
+            const tscContext: TscContextRetriverResult[] = retrivedContext.map(context => {
+                return {
+                    symbol: 'symbol' in context ? context.symbol : undefined,
+                    content: context.content,
+                    startLine: context.startLine,
+                    endLline: context.endLine,
+                    filePath: context.uri.fsPath,
+                }
+            })
+            return tscContext
         })
 
         this.registerAuthenticatedRequest('testing/awaitPendingPromises', async () => {
