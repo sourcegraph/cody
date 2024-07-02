@@ -85,21 +85,20 @@ export class FixupDocumentEditObserver {
                 continue
             }
 
-            const changeWithinRange = event.contentChanges.some(
+            const changes = new Array<TextChange>(...event.contentChanges)
+            if (task.state === CodyTaskState.Applied && task.diff) {
+                task.diff = updateAppliedDiff(changes, task.diff)
+            }
+
+            const changeWithinRange = changes.some(
                 edit =>
                     !(
                         edit.range.end.isBefore(task.selectionRange.start) ||
                         edit.range.start.isAfter(task.selectionRange.end)
                     )
             )
-
             if (changeWithinRange) {
                 this.provider_.textDidChange(task)
-            }
-
-            const changes = new Array<TextChange>(...event.contentChanges)
-            if (task.state === CodyTaskState.Applied && task.diff) {
-                task.diff = updateAppliedDiff(changes, task.diff)
             }
 
             const updatedRange = updateRangeMultipleChanges(task.selectionRange, changes, {
