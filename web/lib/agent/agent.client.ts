@@ -82,7 +82,7 @@ export async function createAgentClient({
                 'cody.experimental.noodle': true,
                 'cody.autocomplete.enabled': false,
                 'cody.experimental.urlContext': true,
-                'cody.allow-remote-context': true,
+                'cody.web': true,
             },
         },
     })

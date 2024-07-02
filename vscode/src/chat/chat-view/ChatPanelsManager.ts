@@ -230,11 +230,11 @@ export class ChatPanelsManager implements vscode.Disposable {
         // Enterprise context is used for remote repositories context fetching
         // in vs cody extension it should be always off if extension is connected
         // to dot com instance, but in Cody Web it should be on by default for
-        // all instances (including dot com), Cody Web client sets cody.allow-remote-context
+        // all instances (including dot com), Cody Web client sets cody.web
         // to true to enable this directly.
         const allowRemoteContext = vscode.workspace
             .getConfiguration()
-            .get<boolean>('cody.allow-remote-context', !isConsumer)
+            .get<boolean>('cody.web', !isConsumer)
 
         return new SimpleChatPanelProvider({
             ...this.options,

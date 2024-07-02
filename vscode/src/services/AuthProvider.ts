@@ -227,12 +227,23 @@ export class AuthProvider implements AuthStatusProvider {
     ): Promise<AuthStatus> {
         const endpoint = config.serverEndpoint
         const token = config.accessToken
+        const isCodyWeb = vscode.workspace.getConfiguration().get<boolean>('cody.web', false)
+
         if (isOfflineMode) {
             const lastUser = localStorage.getLastStoredUser()
             return { ...offlineModeAuthStatus, ...lastUser }
         }
-        if (!token || !endpoint) {
-            return { ...defaultAuthStatus, endpoint }
+
+        // Cody Web can work without access token since authorization flow
+        // relies on cookie authentication
+        if (isCodyWeb) {
+            if (!endpoint) {
+                return { ...defaultAuthStatus, endpoint }
+            }
+        } else {
+            if (!token || !endpoint) {
+                return { ...defaultAuthStatus, endpoint }
+            }
         }
         // Cache the config and the GraphQL client
         if (this.config !== config || !this.client) {
