@@ -1,4 +1,4 @@
-import { mkdirSync, rmSync } from 'node:fs'
+import { mkdirSync, readdirSync, rmSync } from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import { type ReporterDescription, defineConfig } from '@playwright/test'
@@ -11,9 +11,15 @@ const isCI = !!process.env.CI
 // used other than to invalidate lockfiles etc.
 process.env.RUN_ID = process.env.RUN_ID || new Date().toISOString()
 
-const globalTmpDir = path.resolve(process.cwd(), `../.test/runs/${process.env.RUN_ID}/`)
-rmSync(path.resolve(globalTmpDir, '..'), { force: true, recursive: true })
+const globalTmpDir = path.resolve(__dirname, `../.test/runs/${process.env.RUN_ID}/`)
 mkdirSync(globalTmpDir, { recursive: true })
+// get previous runs and delete them
+for (const run of readdirSync(path.resolve(__dirname, '../.test/runs/'))) {
+    if (run !== process.env.RUN_ID) {
+        console.log('clearing previous run', run)
+        rmSync(path.resolve(__dirname, `../.test/runs/${run}`), { force: true, recursive: true })
+    }
+}
 
 export default defineConfig<WorkerOptions & TestOptions & SymlinkExtensions>({
     workers: '50%',
@@ -28,6 +34,7 @@ export default defineConfig<WorkerOptions & TestOptions & SymlinkExtensions>({
         // You can override options easily per project/worker/test so they are
         // unlikely to need to be modified here. These are just some sane
         // defaults
+        browserName: 'chromium',
         repoRootDir: '../', //deprecated
         vscodeExtensions: ['sourcegraph.cody-ai'],
         symlinkExtensions: ['.'],
