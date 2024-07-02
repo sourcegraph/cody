@@ -1492,6 +1492,7 @@
     "progress": "^2.0.3",
     "react-head": "^3.4.2",
     "typescript-language-server": "^4.3.3",
+    "ulidx": "^2.3.0",
     "vite-plugin-svgr": "^4.2.0",
     "vscode-jsonrpc": "^8.2.0",
     "vscode-languageserver-protocol": "^3.17.5",

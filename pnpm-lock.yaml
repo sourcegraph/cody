@@ -732,6 +732,9 @@ importers:
       typescript-language-server:
         specifier: ^4.3.3
         version: 4.3.3
+      ulidx:
+        specifier: ^2.3.0
+        version: 2.3.0
       vite-plugin-svgr:
         specifier: ^4.2.0
         version: 4.2.0(typescript@5.4.2)(vite@5.2.11)
@@ -10413,6 +10416,10 @@ packages:
       - supports-color
     dev: true
 
+  /layerr@2.1.0:
+    resolution: {integrity: sha512-xDD9suWxfBYeXgqffRVH/Wqh+mqZrQcqPRn0I0ijl7iJQ7vu8gMGPt1Qop59pEW/jaIDNUN7+PX1Qk40+vuflg==}
+    dev: true
+
   /lazy-universal-dotenv@4.0.0:
     resolution: {integrity: sha512-aXpZJRnTkpK6gQ/z4nk+ZBLd/Qdp118cvPruLSIQzQNRhKwEcdXCOzXuF55VDqIiuAaY3UGZ10DJtvZzDcvsxg==}
     engines: {node: '>=14.0.0'}
@@ -14604,6 +14611,13 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /ulidx@2.3.0:
+    resolution: {integrity: sha512-36piWNqcdp9hKlQewyeehCaALy4lyx3FodsCxHuV6i0YdexSkjDOubwxEVr2yi4kh62L/0MgyrxqG4K+qtovnw==}
+    engines: {node: '>=16'}
+    dependencies:
+      layerr: 2.1.0
+    dev: true
 
   /underscore@1.13.6:
     resolution: {integrity: sha512-+A5Sja4HP1M08MaXya7p5LvjuM7K6q/2EaC0+iovj/wOcMsTzMvDFbasi/oSapiwOlt252IqsKqPjCl7huKS0A==}

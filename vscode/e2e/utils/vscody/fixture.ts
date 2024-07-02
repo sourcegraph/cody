@@ -55,6 +55,7 @@ const workerOptionsSchema = zod.object({
     recordingDir: zod.string(),
     vscodeServerPortRange: zod.tuple([zod.number(), zod.number()]).default([33100, 33200]),
     keepRuntimeDirs: zod.enum(['all', 'failed', 'none']).default('none'),
+    allowGlobalVSCodeModification: zod.boolean().default(false),
 })
 
 const testOptionsSchema = zod.object({
@@ -124,6 +125,7 @@ const optionsFixture: ReturnType<
                 vscodeExtensionCacheDir,
                 keepRuntimeDirs,
                 vscodeServerPortRange,
+                allowGlobalVSCodeModification,
             },
             use
         ) => {
@@ -138,6 +140,7 @@ const optionsFixture: ReturnType<
                     vscodeExtensionCacheDir,
                     keepRuntimeDirs,
                     vscodeServerPortRange,
+                    allowGlobalVSCodeModification,
                 } satisfies { [key in keyof WorkerOptions]-?: WorkerOptions[key] },
                 {}
             )
@@ -374,18 +377,14 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
             const serverExecutableDir = path.resolve(process.cwd(), validOptions.vscodeServerTmpDir)
             await fs.mkdir(serverExecutableDir, { recursive: true })
             // We nullify the time it takes to download VSCode as it can vary wildly!
-            const electronExecutable = await stretchTimeout(
+            const [codeCliPath, codeTunnelCliPath] = await stretchTimeout(
                 () => downloadOrWaitForVSCode({ validOptions, executableDir }),
                 {
                     max: DOWNLOAD_GRACE_TIME,
                     testInfo,
                 }
             )
-            let [cliPath] = resolveCliArgsFromVSCodeExecutablePath(electronExecutable)
-            //replce code with code-tunnel(.exe) either if the last binary or if code.exe
-            cliPath = cliPath
-                .replace(/code$/, 'code-tunnel')
-                .replace(/code\.(?:exe|cmd)$/, 'code-tunnel.exe')
+
             // Machine settings should simply serve as a baseline to ensure
             // tests by default work smoothly. Any test specific preferences
             // should be set in workspace settings instead.
@@ -439,14 +438,20 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                     const args = [
                         ...validOptions.vscodeExtensions.flatMap(v => ['--install-extension', v]),
                     ]
-                    await pspawn(cliPath, args, {
+                    const res = await pspawn(codeTunnelCliPath, args, {
                         env: {
                             ...process.env,
                             // VSCODE_EXTENSIONS: sharedExtensionsDir, This doesn't work either
                         },
-                        stdio: ['inherit', 'ignore', 'inherit'],
+                        stdio: ['inherit', 'inherit', 'inherit'],
                     })
                 } catch (e) {
+                    console.log('I AM HERE')
+                    if (
+                        typeof e === 'string' &&
+                        e.includes('code version use stable --install-dir /path/to/installation')
+                    ) {
+                    }
                     console.error(e)
                     throw e
                 } finally {
@@ -494,7 +499,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                 CODY_TESTING_BFG_DIR: path.resolve(process.cwd(), validOptions.binaryTmpDir),
                 CODY_TESTING_SYMF_DIR: path.resolve(process.cwd(), validOptions.binaryTmpDir),
             }
-            const codeProcess = spawn(cliPath, args, {
+            const codeProcess = spawn(codeTunnelCliPath, args, {
                 env,
                 stdio: ['inherit', 'ignore', 'inherit'],
                 detached: false,
@@ -624,20 +629,46 @@ async function downloadOrWaitForVSCode({
     executableDir,
     validOptions,
 }: Pick<TestContext, 'validOptions'> & { executableDir: string }) {
-    let electronExecutable = ''
     const lockfilePath = path.join(executableDir, '.lock')
     const releaseLock = await waitForLock(executableDir, { lockfilePath, delay: 500 })
 
     try {
-        electronExecutable = await downloadAndUnzipVSCode({
+        const electronPath = await downloadAndUnzipVSCode({
             cachePath: executableDir,
             version: 'stable',
             reporter: new CustomConsoleReporter(process.stdout.isTTY),
         })
+        const installPath = path.join(
+            executableDir,
+            path.relative(executableDir, electronPath).split(path.sep)[0]
+        )
+        const [cliPath] = resolveCliArgsFromVSCodeExecutablePath(electronPath)
+        //replce code with code-tunnel(.exe) either if the last binary or if code.exe
+        const tunnelPath = cliPath
+            .replace(/code$/, 'code-tunnel')
+            .replace(/code\.(?:exe|cmd)$/, 'code-tunnel.exe')
+
+        // we need to make sure vscode has global configuration set
+        const res = await pspawn(tunnelPath, ['version', 'show'], {
+            stdio: ['inherit', 'pipe', 'inherit'],
+        })
+        if (res.code !== 0 || res.stdout.includes('No existing installation found')) {
+            if (!validOptions.allowGlobalVSCodeModification) {
+                throw new Error('Global VSCode path modification is not allowed')
+            }
+            await pspawn(tunnelPath, ['version', 'use', 'stable', '--install-dir', installPath], {
+                stdio: ['inherit', 'inherit', 'inherit'],
+            })
+        } else if (res.code !== 0) {
+            throw new Error(JSON.stringify(res))
+        }
+        return [cliPath, tunnelPath]
+        //If this fails I assume we haven't configured VSCode globally. Since
+        //getting portable mode to work is annoying we just set this
+        //installation as the global one.
     } finally {
         releaseLock()
     }
-    return electronExecutable
 }
 
 async function getFilesRecursive(dir: string): Promise<Array<Dirent>> {

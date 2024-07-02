@@ -2,14 +2,16 @@ import { mkdirSync, readdirSync, rmSync } from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import { type ReporterDescription, defineConfig } from '@playwright/test'
+import { ulid } from 'ulidx'
 import type { SymlinkExtensions } from './e2e/utils/symlink-extensions.setup'
 import type { TestOptions, WorkerOptions } from './e2e/utils/vscody'
+
 const isWin = process.platform.startsWith('win')
 const isCI = !!process.env.CI
 
 // This makes sure that each run gets a unique run id. This shouldn't really be
 // used other than to invalidate lockfiles etc.
-process.env.RUN_ID = process.env.RUN_ID || new Date().toISOString()
+process.env.RUN_ID = process.env.RUN_ID || ulid()
 
 const globalTmpDir = path.resolve(__dirname, `../.test/runs/${process.env.RUN_ID}/`)
 mkdirSync(globalTmpDir, { recursive: true })
@@ -58,6 +60,7 @@ export default defineConfig<WorkerOptions & TestOptions & SymlinkExtensions>({
         geolocation: { longitude: -122.40825783227943, latitude: 37.78124453182266 },
         acceptDownloads: false,
         keepRuntimeDirs: 'all',
+        allowGlobalVSCodeModification: isCI,
         trace: {
             mode: isCI ? 'retain-on-failure' : 'on',
             attachments: true,
