@@ -140,6 +140,9 @@ export type WebviewMessage =
     | {
           command: 'getAllMentionProvidersMetadata'
       }
+    | {
+          command: 'chat/upload-image'
+      }
 
 /**
  * A message sent from the extension host to the webview.

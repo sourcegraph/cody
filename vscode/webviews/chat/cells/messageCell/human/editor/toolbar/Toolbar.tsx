@@ -1,11 +1,13 @@
-import type { Model } from '@sourcegraph/cody-shared'
+import { type Model, ModelsService } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import { type FunctionComponent, useCallback } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
+import { getVSCodeAPI } from '../../../../../../utils/VSCodeApi'
 import { useChatModelContext } from '../../../../../models/chatModelContext'
 import { AddContextButton } from './AddContextButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
+import { UploadImageButton } from './UploadImageButton'
 
 /**
  * The toolbar for the human message editor.
@@ -54,6 +56,8 @@ export const Toolbar: FunctionComponent<{
         [onGapClick]
     )
 
+    const { chatModels } = useChatModelContext()
+    const currentModel = chatModels?.find(m => m.default)
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
         <menu
@@ -67,6 +71,13 @@ export const Toolbar: FunctionComponent<{
             <div className="tw-flex tw-gap-1 tw-items-center">
                 {onMentionClick && (
                     <AddContextButton onClick={onMentionClick} className="tw-opacity-60" />
+                )}
+                {currentModel && ModelsService.isMultiModalModel(currentModel?.model) && (
+                    // todo(tim): add support for passing in chatModel.images[0] if present (and make onClick remove it)
+                    <UploadImageButton
+                        className="tw-opacity-60"
+                        onClick={() => getVSCodeAPI().postMessage({ command: 'chat/upload-image' })}
+                    />
                 )}
                 <span>
                     <ModelSelectFieldToolbarItem userInfo={userInfo} focusEditor={focusEditor} />
