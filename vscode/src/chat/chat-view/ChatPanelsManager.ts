@@ -294,12 +294,12 @@ export class ChatPanelsManager implements vscode.Disposable {
         this.sidebarProvider.clearAndRestartSession()
     }
 
-    public async moveSidebarChatToEditor(): Promise<void> {
+    public async moveChatToEditor(): Promise<void> {
         const sessionID = this.sidebarProvider.sessionID
         await Promise.all([this.createWebviewPanel(sessionID), this.resetSidebar()])
     }
 
-    public async moveEditorChatToSidebar(): Promise<void> {
+    public async moveChatFromEditor(): Promise<void> {
         const sessionID = this.activePanelProvider?.sessionID
         if (!sessionID) {
             return
