@@ -1240,7 +1240,7 @@
             }
           }
         },
-        "cody.autocomplete.experimental.smartThrottleDebounce": {
+        "cody.autocomplete.experimental.smartThrottle": {
           "type": "boolean",
           "default": false,
           "markdownDescription": "Changes the debounce time for autocomplete requests based on the amount of time since the last request."
