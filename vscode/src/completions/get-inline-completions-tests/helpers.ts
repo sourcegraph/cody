@@ -15,7 +15,10 @@ import {
     testFileUri,
 } from '@sourcegraph/cody-shared'
 
-import type { CompletionResponseWithMetaData } from '@sourcegraph/cody-shared/src/inferenceClient/misc'
+import type {
+    CodeCompletionsParams,
+    CompletionResponseWithMetaData,
+} from '@sourcegraph/cody-shared/src/inferenceClient/misc'
 import { DEFAULT_VSCODE_SETTINGS, emptyMockFeatureFlagProvider } from '../../testutils/mocks'
 import type { SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
@@ -63,7 +66,7 @@ const getVSCodeConfigurationWithAccessToken = (
 type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'docContext'>> & {
     languageId?: string
     takeSuggestWidgetSelectionIntoAccount?: boolean
-    onNetworkRequest?: (params: CompletionParameters) => void
+    onNetworkRequest?: (params: CodeCompletionsParams, abortController: AbortController) => void
     completionResponseGenerator?: (
         params: CompletionParameters
     ) => CompletionResponseGenerator | Generator<CompletionResponse>
@@ -111,8 +114,8 @@ export function params(
     })
 
     const client: CodeCompletionsClient = {
-        async *complete(completeParams) {
-            onNetworkRequest?.(completeParams)
+        async *complete(completeParams, abortController) {
+            onNetworkRequest?.(completeParams, abortController)
 
             if (completionResponseGenerator) {
                 for await (const response of completionResponseGenerator(completeParams)) {

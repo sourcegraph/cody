@@ -10,13 +10,9 @@ import {
     ModelsService,
     featureFlagProvider,
 } from '@sourcegraph/cody-shared'
-
-import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from '../../services/telemetry'
 import { TreeViewProvider } from '../../services/tree-views/TreeViewProvider'
 import type { MessageProviderOptions } from '../MessageProvider'
 import type { ExtensionMessage } from '../protocol'
@@ -294,22 +290,16 @@ export class ChatPanelsManager implements vscode.Disposable {
         await Promise.all([this.createWebviewPanel(sessionID), this.resetSidebar()])
     }
 
-    /**
-     * Clear the current chat view and start a new chat session in the active panel
-     */
-    public async resetPanel(): Promise<void> {
-        logDebug('ChatPanelsManager', 'resetPanel')
-        telemetryService.log(
-            'CodyVSCodeExtension:chatTitleButton:clicked',
-            { name: 'clear' },
-            { hasV2Event: true }
-        )
-        telemetryRecorder.recordEvent('cody.interactive.clear', 'clicked', {
-            privateMetadata: { name: 'clear' },
-        })
-        if (this.activePanelProvider) {
-            return this.activePanelProvider.clearAndRestartSession()
+    public async moveEditorChatToSidebar(): Promise<void> {
+        const sessionID = this.activePanelProvider?.sessionID
+        if (!sessionID) {
+            return
         }
+        await Promise.all([
+            this.sidebarProvider.restoreSession(sessionID),
+            vscode.commands.executeCommand('workbench.action.closeActiveEditor'),
+        ])
+        await vscode.commands.executeCommand('cody.chat.focus')
     }
 
     public async restorePanel(
