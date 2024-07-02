@@ -58,7 +58,7 @@ class CodyToolWindowContent(private val project: Project) {
 
     allContentPanel.add(tabbedPane.component, MAIN_PANEL, CHAT_PANEL_INDEX)
     allContentPanel.add(SignInWithSourcegraphPanel(project), SIGN_IN_PANEL, SIGN_IN_PANEL_INDEX)
-    val codyOnboardingGuidancePanel = CodyOnboardingGuidancePanel()
+    val codyOnboardingGuidancePanel = CodyOnboardingGuidancePanel(project)
     codyOnboardingGuidancePanel.addMainButtonActionListener {
       CodyApplicationSettings.instance.isOnboardingGuidanceDismissed = true
       refreshPanelsVisibility()

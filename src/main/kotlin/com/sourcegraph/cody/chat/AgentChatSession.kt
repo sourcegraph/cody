@@ -30,6 +30,7 @@ import com.sourcegraph.cody.history.HistoryService
 import com.sourcegraph.cody.history.state.ChatState
 import com.sourcegraph.cody.history.state.EnhancedContextState
 import com.sourcegraph.cody.history.state.MessageState
+import com.sourcegraph.cody.telemetry.TelemetryV2
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.CodyBundle.fmt
@@ -175,6 +176,11 @@ private constructor(
             val errorReportLink = CodyErrorSubmitter().getEncodedUrl(project, chatError.message)
             CodyBundle.getString("chat.general-error").fmt(errorReportLink, chatError.message)
           }
+
+      val feature =
+          if (rateLimitError?.upgradeIsAvailable == true) "upsellUsageLimitCTA"
+          else "abuseUsageLimitCTA"
+      TelemetryV2.sendTelemetryEvent(project, feature, "shown")
 
       addErrorMessageAsAssistantMessage(errorMessage)
     } finally {

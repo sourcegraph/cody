@@ -7,12 +7,18 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.project.Project
 import com.sourcegraph.Icons
 import com.sourcegraph.cody.agent.protocol.RateLimitError
+import com.sourcegraph.cody.telemetry.TelemetryV2
 import com.sourcegraph.common.BrowserOpener.openInBrowser
 import com.sourcegraph.common.ui.SimpleDumbAwareEDTAction
 import java.util.concurrent.atomic.AtomicReference
 
 class UpgradeToCodyProNotification
-private constructor(title: String, content: String, shouldShowUpgradeOption: Boolean) :
+private constructor(
+    project: Project,
+    title: String,
+    content: String,
+    shouldShowUpgradeOption: Boolean
+) :
     Notification(NotificationGroups.SOURCEGRAPH_ERRORS, title, content, NotificationType.WARNING),
     NotificationFullContent {
   init {
@@ -28,6 +34,7 @@ private constructor(title: String, content: String, shouldShowUpgradeOption: Boo
     if (shouldShowUpgradeOption) {
       val upgradeAction =
           SimpleDumbAwareEDTAction("Upgrade") { anActionEvent ->
+            TelemetryV2.sendTelemetryEvent(project, "upsellUsageLimitCTA", "clicked")
             openInBrowser(anActionEvent.project, UPGRADE_URL)
             hideBalloon()
           }
@@ -60,7 +67,11 @@ private constructor(title: String, content: String, shouldShowUpgradeOption: Boo
             else -> CodyBundle.getString("UpgradeToCodyProNotification.title.explain")
           }
 
-      UpgradeToCodyProNotification(title, content, shouldShowUpgradeOption).notify(project)
+      val feature =
+          if (rateLimitError.upgradeIsAvailable) "upsellUsageLimitCTA" else "abuseUsageLimitCTA"
+      TelemetryV2.sendTelemetryEvent(project, feature, "shown")
+
+      UpgradeToCodyProNotification(project, title, content, shouldShowUpgradeOption).notify(project)
     }
 
     var isFirstRLEOnAutomaticAutocompletionsShown: Boolean = false

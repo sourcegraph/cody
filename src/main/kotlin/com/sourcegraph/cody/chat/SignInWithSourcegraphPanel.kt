@@ -2,7 +2,11 @@ package com.sourcegraph.cody.chat
 
 import com.intellij.ide.DataManager
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
-import com.intellij.openapi.actionSystem.*
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DataContextWrapper
+import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
@@ -12,7 +16,9 @@ import com.intellij.ui.components.AnActionLink
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import com.sourcegraph.cody.Icons
-import com.sourcegraph.cody.auth.SsoAuthMethod.*
+import com.sourcegraph.cody.auth.SsoAuthMethod.GITHUB
+import com.sourcegraph.cody.auth.SsoAuthMethod.GITLAB
+import com.sourcegraph.cody.auth.SsoAuthMethod.GOOGLE
 import com.sourcegraph.cody.auth.ui.SignInWithEnterpriseInstanceAction
 import com.sourcegraph.cody.chat.ui.UIComponents
 import com.sourcegraph.cody.config.CodyAccountsHost
@@ -40,7 +46,7 @@ class SignInWithSourcegraphPanel(private val project: Project) : JPanel() {
       UIComponents.createMainButton(GOOGLE.value, Icons.SignIn.Google)
 
   init {
-    val jEditorPane = createHtmlViewer()
+    val jEditorPane = createHtmlViewer(project)
     jEditorPane.text =
         ("<html><body><h2>Welcome to Cody</h2>" +
             "<p>Understand and write code faster with an AI assistant</p>" +

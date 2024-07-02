@@ -1,11 +1,8 @@
 package com.sourcegraph.cody.chat.ui
 
 import com.intellij.openapi.project.Project
-import com.intellij.ui.ColorUtil
 import com.intellij.util.ui.SwingHelper
-import com.intellij.util.ui.UIUtil
 import com.sourcegraph.cody.agent.protocol.ChatMessage
-import com.sourcegraph.cody.agent.protocol.Speaker
 import com.sourcegraph.cody.attribution.AttributionListener
 import com.sourcegraph.cody.attribution.AttributionSearchCommand
 import com.sourcegraph.cody.chat.ChatSession
@@ -16,7 +13,6 @@ import com.sourcegraph.cody.chat.findNodeAfterLastCodeBlock
 import com.sourcegraph.cody.chat.isCodeBlock
 import com.sourcegraph.cody.ui.HtmlViewer.createHtmlViewer
 import com.sourcegraph.telemetry.GraphQlLogger
-import java.awt.Color
 import javax.swing.JEditorPane
 import javax.swing.JPanel
 import org.commonmark.ext.gfm.tables.TablesExtension
@@ -90,16 +86,11 @@ class SingleMessagePanel(
   }
 
   private fun addAsNewTextComponent(renderedHtml: String) {
-    val textPane: JEditorPane = createHtmlViewer()
+    val textPane: JEditorPane = createHtmlViewer(project)
     SwingHelper.setHtml(textPane, renderedHtml, null)
     val textEditorComponent = TextPart(textPane)
     this.lastMessagePart = textEditorComponent
     add(textEditorComponent.component)
-  }
-
-  private fun getInlineCodeBackgroundColor(speaker: Speaker): Color {
-    return if (speaker == Speaker.ASSISTANT) ColorUtil.darker(UIUtil.getPanelBackground(), 3)
-    else ColorUtil.brighter(UIUtil.getPanelBackground(), 3)
   }
 
   /**

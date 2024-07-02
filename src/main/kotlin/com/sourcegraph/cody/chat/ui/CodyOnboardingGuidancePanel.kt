@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.chat.ui
 
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
+import com.intellij.openapi.project.Project
 import com.intellij.ui.ColorUtil
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
@@ -22,7 +23,7 @@ import javax.swing.JEditorPane
 import javax.swing.JPanel
 import javax.swing.text.html.HTMLEditorKit
 
-class CodyOnboardingGuidancePanel : JPanel() {
+class CodyOnboardingGuidancePanel(val project: Project) : JPanel() {
 
   private val createIntroductionMessage: JEditorPane = createIntroductionMessage()
 
@@ -69,7 +70,7 @@ class CodyOnboardingGuidancePanel : JPanel() {
   }
 
   private fun createIntroductionMessage(): JEditorPane {
-    val introductionMessage = createHtmlViewer()
+    val introductionMessage = createHtmlViewer(project)
     val introductionMessageEditorKit = introductionMessage.editorKit as HTMLEditorKit
     introductionMessageEditorKit.styleSheet.addRule(paragraphColorStyle)
     introductionMessage.setMargin(JBUI.emptyInsets())
@@ -140,7 +141,7 @@ class CodyOnboardingGuidancePanel : JPanel() {
   }
 
   private fun createInfoSection(): JEditorPane {
-    val sectionInfo = createHtmlViewer()
+    val sectionInfo = createHtmlViewer(project)
     val sectionInfoHtmlEditorKit = sectionInfo.editorKit as HTMLEditorKit
     sectionInfoHtmlEditorKit.styleSheet.addRule(paragraphColorStyle)
     sectionInfoHtmlEditorKit.styleSheet.addRule("""h3 { margin-top: 0;}""")

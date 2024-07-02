@@ -28,7 +28,7 @@ class TrialEndedNotification(val disposable: Disposable) :
             NotificationAction(CodyBundle.getString("EndOfTrialNotification.link-action-name")) {
           override fun actionPerformed(anActionEvent: AnActionEvent, notification: Notification) {
             openInBrowser(
-                anActionEvent.project, CodyBundle.getString("TrialEndedNotification.ended.link"))
+                anActionEvent.project, CodyBundle.getString("url.sourcegraph.subscription"))
             notification.expire()
           }
         })
