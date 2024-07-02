@@ -22,6 +22,7 @@ import {
     type FireworksOptions,
     createProviderConfig as createFireworksProviderConfig,
 } from './fireworks'
+import { createProviderConfig as createGeminiProviderConfig } from './google'
 import { createProviderConfig as createOpenAICompatibleProviderConfig } from './openaicompatible'
 import type { ProviderConfig } from './provider'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
@@ -50,6 +51,10 @@ export async function createProviderConfigFromVSCodeConfig(
         }
         case 'anthropic': {
             return createAnthropicProviderConfig({ client, model })
+        }
+        case 'unstable-google':
+        case 'google': {
+            return createGeminiProviderConfig({ client, model })
         }
         case 'experimental-openaicompatible': {
             return createOpenAICompatibleProviderConfig({
@@ -143,14 +148,16 @@ export async function createProviderConfig(
                             : undefined,
                 })
             case 'google':
+            case 'unstable-google':
                 if (authStatus.configOverwrites.completionModel?.includes('claude')) {
                     return createAnthropicProviderConfig({
                         client, // Model name for google provider is a deployment name. It shouldn't appear in logs.
                         model: undefined,
                     })
                 }
-                logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
-                return null
+
+                // Gemini models
+                return createGeminiProviderConfig({ client, model })
             default:
                 logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
                 return null
