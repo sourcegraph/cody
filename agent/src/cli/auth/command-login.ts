@@ -119,12 +119,12 @@ export async function loginAction(
     })
     const userInfo = await client.getCurrentUserInfo()
     if (isError(userInfo)) {
-        spinner.fail('Failed to get username from GraphQL')
+        spinner.fail('Failed to get username from GraphQL. Error: ' + String(userInfo))
         return undefined
     }
     const oldSettings = loadUserSettings()
     const id = uniqueID(userInfo.username, oldSettings)
-    const account: Account = { id, serverEndpoint }
+    const account: Account = { id, username: userInfo.username, serverEndpoint }
     const oldAccounts = oldSettings?.accounts
         ? oldSettings.accounts.filter(({ id }) => id !== account.id)
         : []
