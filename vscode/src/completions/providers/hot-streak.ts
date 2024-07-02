@@ -6,7 +6,7 @@ import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-u
 import { canUsePartialCompletion } from '../can-use-partial-completion'
 import { endsWithBlockStart } from '../detect-multiline'
 import { insertIntoDocContext } from '../get-current-doc-context'
-import { getLastLine } from '../text-processing'
+import { getLastLine, lines } from '../text-processing'
 import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
 import {
     type InlineCompletionItemWithAnalytics,
@@ -75,8 +75,12 @@ function insertCompletionAndPressEnter(
     return updatedDocContext
 }
 
+// To reduce the load on the inference providers we limit the hot streak
+// generation to a constant number of lines after the initial completion.
+const MAX_HOT_STREAK_LINES = 5
+
 export function createHotStreakExtractor(params: HotStreakExtractorParams): HotStreakExtractor {
-    const { completedCompletion, providerOptions } = params
+    const { completedCompletion, providerOptions, abortController } = params
     const {
         docContext,
         document,
@@ -87,6 +91,14 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
 
     function* extract(rawCompletion: string, isRequestEnd: boolean): Generator<FetchCompletionResult> {
         while (true) {
+            const hotStreakText = rawCompletion.slice(completedCompletion.insertText.length)
+
+            // Trim the hot streak text to remove leading and trailing new lines.
+            if (lines(hotStreakText.trim()).length >= MAX_HOT_STREAK_LINES) {
+                // Cancel streaming completions if the hot streak is too long.
+                abortController.abort()
+            }
+
             const unprocessedCompletion = rawCompletion.slice(
                 updatedDocContext.injectedCompletionText?.length || 0
             )
