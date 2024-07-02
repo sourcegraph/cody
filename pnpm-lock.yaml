@@ -127,43 +127,43 @@ importers:
         specifier: ^0.16.0
         version: 0.16.0
       '@types/dedent':
-        specifier: ^0.7.0
-        version: 0.7.0
+        specifier: 0.7.2
+        version: 0.7.2
       '@types/diff':
-        specifier: ^5.0.9
-        version: 5.0.9
+        specifier: 5.2.1
+        version: 5.2.1
       '@types/fast-json-stable-stringify':
-        specifier: ^2.1.0
+        specifier: 2.1.0
         version: 2.1.0
       '@types/glob':
-        specifier: ^8.0.0
-        version: 8.0.0
+        specifier: 8.1.0
+        version: 8.1.0
       '@types/google-protobuf':
         specifier: 3.15.12
         version: 3.15.12
       '@types/js-levenshtein':
-        specifier: ^1.1.1
-        version: 1.1.1
+        specifier: 1.1.3
+        version: 1.1.3
       '@types/lodash':
-        specifier: ^4.14.195
-        version: 4.17.0
+        specifier: 4.17.6
+        version: 4.17.6
       '@types/minimatch':
-        specifier: ^5.1.2
+        specifier: 5.1.2
         version: 5.1.2
       '@types/open':
-        specifier: ^6.2.1
+        specifier: 6.2.1
         version: 6.2.1
       '@types/uuid':
-        specifier: ^9.0.2
-        version: 9.0.2
+        specifier: 9.0.8
+        version: 9.0.8
       '@types/vscode':
-        specifier: ^1.80.0
-        version: 1.80.0
+        specifier: 1.90.0
+        version: 1.90.0
       '@types/win-ca':
-        specifier: ^3.5.4
+        specifier: 3.5.4
         version: 3.5.4
       '@types/ws':
-        specifier: ^8.5.10
+        specifier: 8.5.10
         version: 8.5.10
       chalk:
         specifier: ^5.3.0
@@ -338,28 +338,28 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       '@types/crypto-js':
-        specifier: ^4.2.2
+        specifier: 4.2.2
         version: 4.2.2
       '@types/dedent':
-        specifier: ^0.7.0
+        specifier: 0.7.0
         version: 0.7.0
       '@types/diff':
-        specifier: ^5.0.9
+        specifier: 5.0.9
         version: 5.0.9
       '@types/isomorphic-fetch':
-        specifier: ^0.0.39
+        specifier: 0.0.39
         version: 0.0.39
       '@types/lodash':
-        specifier: ^4.14.195
+        specifier: 4.14.195
         version: 4.14.195
       '@types/node-fetch':
-        specifier: ^2.6.4
+        specifier: 2.6.4
         version: 2.6.4
       '@types/semver':
-        specifier: ^7.5.0
+        specifier: 7.5.8
         version: 7.5.8
       '@types/vscode':
-        specifier: ^1.80.0
+        specifier: 1.80.0
         version: 1.80.0
 
   vscode:
@@ -455,7 +455,7 @@ importers:
         specifier: ^0.1.9
         version: 0.1.9
       '@types/he':
-        specifier: ^1.2.3
+        specifier: 1.2.3
         version: 1.2.3
       '@vscode/codicons':
         specifier: ^0.0.35
@@ -612,58 +612,58 @@ importers:
         specifier: ^8.0.5
         version: 8.0.5
       '@types/crypto-js':
-        specifier: ^4.2.2
+        specifier: 4.2.2
         version: 4.2.2
       '@types/dedent':
-        specifier: ^0.7.0
+        specifier: 0.7.0
         version: 0.7.0
       '@types/diff':
-        specifier: ^5.0.9
+        specifier: 5.0.9
         version: 5.0.9
       '@types/express':
-        specifier: ^4.17.17
+        specifier: 4.17.17
         version: 4.17.17
       '@types/fs-extra':
-        specifier: ^11.0.4
+        specifier: 11.0.4
         version: 11.0.4
       '@types/glob':
-        specifier: ^8.0.0
+        specifier: 8.0.0
         version: 8.0.0
       '@types/ini':
-        specifier: ^4.1.0
+        specifier: 4.1.0
         version: 4.1.0
       '@types/isomorphic-fetch':
-        specifier: ^0.0.39
+        specifier: 0.0.39
         version: 0.0.39
       '@types/js-levenshtein':
-        specifier: ^1.1.1
+        specifier: 1.1.1
         version: 1.1.1
       '@types/lodash':
-        specifier: ^4.14.195
+        specifier: 4.14.195
         version: 4.14.195
       '@types/marked':
-        specifier: ^5.0.0
+        specifier: 5.0.0
         version: 5.0.0
       '@types/mocha':
-        specifier: ^10.0.6
+        specifier: 10.0.6
         version: 10.0.6
       '@types/pako':
-        specifier: ^2.0.3
+        specifier: 2.0.3
         version: 2.0.3
       '@types/progress':
-        specifier: ^2.0.5
+        specifier: 2.0.5
         version: 2.0.5
       '@types/semver':
-        specifier: ^7.5.0
+        specifier: 7.5.0
         version: 7.5.0
       '@types/unzipper':
-        specifier: ^0.10.7
+        specifier: 0.10.7
         version: 0.10.7
       '@types/uuid':
-        specifier: ^9.0.2
+        specifier: 9.0.2
         version: 9.0.2
       '@types/vscode':
-        specifier: ^1.79.0
+        specifier: 1.80.0
         version: 1.80.0
       '@vscode/test-electron':
         specifier: ^2.3.8
@@ -4849,7 +4849,7 @@ packages:
     dependencies:
       '@storybook/core-events': 8.0.5
       '@storybook/global': 5.0.0
-      '@types/uuid': 9.0.8
+      '@types/uuid': 9.0.2
       dequal: 2.0.3
       polished: 4.3.1
       uuid: 9.0.1
@@ -5931,6 +5931,11 @@ packages:
 
   /@types/dedent@0.7.0:
     resolution: {integrity: sha512-EGlKlgMhnLt/cM4DbUSafFdrkeJoC9Mvnj0PUCU7tFmTjMjNRT957kXCx0wYm3JuEq4o4ZsS5vG+NlkM2DMd2A==}
+    dev: true
+
+  /@types/dedent@0.7.2:
+    resolution: {integrity: sha512-kRiitIeUg1mPV9yH4VUJ/1uk2XjyANfeL8/7rH1tsjvHeO9PJLBHJIYsFWmAvmGj5u8rj+1TZx7PZzW2qLw3Lw==}
+    dev: false
 
   /@types/detect-port@1.3.5:
     resolution: {integrity: sha512-Rf3/lB9WkDfIL9eEKaSYKc+1L/rNVYBjThk22JTqQw0YozXarX8YljFAz+HCoC6h4B4KwCMsBPZHaFezwT4BNA==}
@@ -5938,6 +5943,11 @@ packages:
 
   /@types/diff@5.0.9:
     resolution: {integrity: sha512-RWVEhh/zGXpAVF/ZChwNnv7r4rvqzJ7lYNSmZSVTxjV0PBLf6Qu7RNg+SUtkpzxmiNkjCx0Xn2tPp7FIkshJwQ==}
+    dev: true
+
+  /@types/diff@5.2.1:
+    resolution: {integrity: sha512-uxpcuwWJGhe2AR1g8hD9F5OYGCqjqWnBUQFD8gMZsDbv8oPHzxJF6iMO6n8Tk0AdzlxoaaoQhOYlIg/PukVU8g==}
+    dev: false
 
   /@types/doctrine@0.0.3:
     resolution: {integrity: sha512-w5jZ0ee+HaPOaX25X2/2oGR/7rgAQSYII7X7pp0m9KgBfMP7uKfMfTvcpl5Dj+eDBbpxKGiqE+flqDr6XTd2RA==}
@@ -6024,6 +6034,14 @@ packages:
     dependencies:
       '@types/minimatch': 5.1.2
       '@types/node': 20.12.7
+    dev: true
+
+  /@types/glob@8.1.0:
+    resolution: {integrity: sha512-IO+MJPVhoqz+28h1qLAcBEH2+xHMK6MTyHJc7MTnnYb6wsoLR29POVGJ7LycmVXIqyy/4/2ShP5sUwTXuOwb/w==}
+    dependencies:
+      '@types/minimatch': 5.1.2
+      '@types/node': 20.12.7
+    dev: false
 
   /@types/google-protobuf@3.15.12:
     resolution: {integrity: sha512-40um9QqwHjRS92qnOaDpL7RmDK15NuZYo9HihiJRbYkMQZlWnuH8AdvbMy8/o6lgLmKbDUKa+OALCltHdbOTpQ==}
@@ -6058,6 +6076,11 @@ packages:
 
   /@types/js-levenshtein@1.1.1:
     resolution: {integrity: sha512-qC4bCqYGy1y/NP7dDVr7KJarn+PbX1nSpwA7JXdu0HxT3QYjO8MJ+cntENtHFVy2dRAyBV23OZ6MxsW1AM1L8g==}
+    dev: true
+
+  /@types/js-levenshtein@1.1.3:
+    resolution: {integrity: sha512-jd+Q+sD20Qfu9e2aEXogiO3vpOC1PYJOUdyN9gvs4Qrvkg4wF43L5OhqrPeokdv8TL0/mXoYfpkcoGZMNN2pkQ==}
+    dev: false
 
   /@types/jsonfile@6.1.4:
     resolution: {integrity: sha512-D5qGUYwjvnNNextdU59/+fI+spnwtTFmyQP0h+PfIOSkNfpU6AOICUOkm4i0OnSk+NyjdPJrxCDro0sJsWlRpQ==}
@@ -6072,8 +6095,9 @@ packages:
     resolution: {integrity: sha512-Hwx9EUgdwf2GLarOjQp5ZH8ZmblzcbTBC2wtQWNKARBSxM9ezRIAUpeDTgoQRAFB0+8CNWXVA9+MaSOzOF3nPg==}
     dev: true
 
-  /@types/lodash@4.17.0:
-    resolution: {integrity: sha512-t7dhREVv6dbNj0q17X12j7yDG4bD/DHYX7o5/DbDxobP0HnGPgpRz2Ej77aL7TZT3DSw13fqUTj8J4mMnqa7WA==}
+  /@types/lodash@4.17.6:
+    resolution: {integrity: sha512-OpXEVoCKSS3lQqjx9GGGOapBeuW5eUboYHRlHP9urXPX25IKZ6AnP5ZRxtVf63iieUbsHxLn8NQ5Nlftc6yzAA==}
+    dev: false
 
   /@types/long@4.0.2:
     resolution: {integrity: sha512-MqTGEo5bj5t157U6fA/BiDynNkn0YknVdh48CMPkTSpFTVmvao5UQmm7uEF6xBEo7qIMAlY/JSleYaE6VOdpaA==}
@@ -6294,13 +6318,19 @@ packages:
 
   /@types/uuid@9.0.2:
     resolution: {integrity: sha512-kNnC1GFBLuhImSnV7w4njQkUiJi0ZXUycu1rUaouPqiKlXkh77JKgdRnTAp1x5eBwcIwbtI+3otwzuIDEuDoxQ==}
+    dev: true
 
   /@types/uuid@9.0.8:
     resolution: {integrity: sha512-jg+97EGIcY9AGHJJRaaPVgetKDsrTgbRjQ5Msgjh/DQKEFl0DtyRr/VCOyD1T2R1MNeWPK/u7JoGhlDZnKBAfA==}
-    dev: true
+    dev: false
 
   /@types/vscode@1.80.0:
     resolution: {integrity: sha512-qK/CmOdS2o7ry3k6YqU4zD3R2AYlJfbwBoSbKpBoP+GpXNE+0NEgJOli4n0bm0diK5kfBnchgCEj4igQz/44Hg==}
+    dev: true
+
+  /@types/vscode@1.90.0:
+    resolution: {integrity: sha512-oT+ZJL7qHS9Z8bs0+WKf/kQ27qWYR3trsXpq46YDjFqBsMLG4ygGGjPaJ2tyrH0wJzjOEmDyg9PDJBBhWg9pkQ==}
+    dev: false
 
   /@types/win-ca@3.5.4:
     resolution: {integrity: sha512-WDlA6ZvTg1g9ygKcDCQb4GjEtk0RcZyx09btQea9NZqfKPl+WtyOlEwNfYMhK2E5sRCo6hMtct1EX3l04yAC1A==}
