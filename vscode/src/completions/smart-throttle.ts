@@ -23,6 +23,12 @@ export class SmartThrottleService implements vscode.Disposable {
     // enqueued.
     private startOfLineRequest: null | ThrottledRequest = null
     private startOfLineLocation: null | { uri: vscode.Uri; line: number } = null
+
+    // The latest start-of-word request. Will be cancelled when a new start-of-word request is
+    // enqueued.
+    private startOfWordRequest: null | ThrottledRequest = null
+    private startOfWordLocation: null | { uri: vscode.Uri; position: vscode.Position } = null
+
     // The latest tail request. Will be cancelled when a new tail request is enqueued unless
     // upgraded to a throttled request.
     private tailRequest: null | ThrottledRequest = null
@@ -50,7 +56,25 @@ export class SmartThrottleService implements vscode.Disposable {
                 return throttledRequest.updatedRequestParams()
             }
 
-            // Case 2: The last throttled promotion is more than the throttle timeout ago. In this case,
+            // Case 2: If this is a start-of-word request, cancel any previous start-of-word requests
+            //         and immediately continue with the execution.
+            if (this.isNewStartOfWordRequest(request)) {
+                this.startOfWordRequest?.abort()
+                this.startOfWordRequest = throttledRequest
+                this.startOfWordLocation = {
+                    uri: request.document.uri,
+                    position: request.position,
+                }
+
+                // When a start-of-word request is started, we also want to increment the last throttled
+                // request timer. This is to ensure that, on a new word, the very next keystroke does
+                // not get prompted into a kept-alive request yet.
+                this.lastThrottlePromotion = now
+
+                return throttledRequest.updatedRequestParams()
+            }
+
+            // Case 3: The last throttled promotion is more than the throttle timeout ago. In this case,
             //         promote the last tail request to a throttled request and continue with the third
             //         case.
             if (now - this.lastThrottlePromotion > THROTTLE_TIMEOUT && this.tailRequest) {
@@ -60,7 +84,7 @@ export class SmartThrottleService implements vscode.Disposable {
                 this.lastThrottlePromotion = now
             }
 
-            // Case 3: Handle the latest request as the new tail request and require a small debounce
+            // Case 4: Handle the latest request as the new tail request and require a small debounce
             //         time before continuing.
             this.tailRequest?.abort()
             this.tailRequest = throttledRequest
@@ -86,6 +110,16 @@ export class SmartThrottleService implements vscode.Disposable {
             request.document.uri.toString() !== this.startOfLineLocation?.uri.toString()
         const isDifferentLine = request.position.line !== this.startOfLineLocation?.line
         return isStartOfLine && (isDifferentUri || isDifferentLine)
+    }
+
+    private isNewStartOfWordRequest(request: RequestParams): boolean {
+        const isDifferentUri =
+            request.document.uri.toString() !== this.startOfLineLocation?.uri.toString()
+        const isDifferentPosition =
+            !this.startOfWordLocation || !request.position.isEqual(this.startOfWordLocation.position)
+        const wordRange = request.document.getWordRangeAtPosition(request.position)
+        const isStartOfWord = wordRange ? wordRange.start.isEqual(request.position) : false
+        return isStartOfWord && (isDifferentUri || isDifferentPosition)
     }
 
     dispose() {
