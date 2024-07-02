@@ -5,7 +5,7 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: 3977a0844deafca78dab5498c249731c
+    - _id: f5c671311272dfe9f175bc9d89a42959
       _order: 0
       cache: {}
       request:
@@ -20,12 +20,12 @@ log:
             value: token
               REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
           - name: user-agent
-            value: cody-cli / 0.1.0
+            value: cody-cli / 0.1.0-SNAPSHOT
           - name: connection
             value: keep-alive
           - name: host
             value: sourcegraph.com
-        headersSize: 341
+        headersSize: 359
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -48,8 +48,8 @@ log:
           - name: client-name
             value: cody-cli
           - name: client-version
-            value: 0.1.0
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=cody-cli&client-version=0.1.0
+            value: 0.1.0-SNAPSHOT
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=cody-cli&client-version=0.1.0-SNAPSHOT
       response:
         bodySize: 158
         content:
@@ -65,7 +65,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Sat, 29 Jun 2024 00:12:56 GMT
+            value: Tue, 02 Jul 2024 09:56:00 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -94,7 +94,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-29T00:12:54.673Z
+      startedDateTime: 2024-07-02T09:55:59.385Z
       time: 0
       timings:
         blocked: -1
@@ -104,7 +104,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: ecca79497457a4c2bc7dadf6f0d89230
+    - _id: d0137030b958d69c4b901e901e27dae7
       _order: 0
       cache: {}
       request:
@@ -119,12 +119,12 @@ log:
             value: token
               REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
           - name: user-agent
-            value: cody-cli / 0.1.0
+            value: cody-cli / 0.1.0-SNAPSHOT
           - name: connection
             value: keep-alive
           - name: host
             value: sourcegraph.com
-        headersSize: 341
+        headersSize: 359
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -147,17 +147,17 @@ log:
           - name: client-name
             value: cody-cli
           - name: client-version
-            value: 0.1.0
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=cody-cli&client-version=0.1.0
+            value: 0.1.0-SNAPSHOT
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=cody-cli&client-version=0.1.0-SNAPSHOT
       response:
-        bodySize: 8172
+        bodySize: 6468
         content:
           mimeType: text/event-stream
-          size: 8172
+          size: 6468
           text: >+
             event: completion
 
-            data: {"completion":"Squirrel is a high-performance, open-source object-relational database (ORD) that uses an SQL dialect and is embedded within applications. It is designed to be lightweight, fast, and easy to use, making it suitable for applications that require a database but do not need the complexity and overhead of a traditional client-server database management system (DBMS).","stopReason":"end_turn"}
+            data: {"completion":"Squirrel is a high-performance, open-source object-relational database (ORD) that provides a SQL interface for storing and querying JSON data. It is designed to be embedded in applications, making it suitable for use cases such as caching, analytics, and data storage in edge computing environments.","stopReason":"end_turn"}
 
 
             event: done
@@ -167,7 +167,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Sat, 29 Jun 2024 00:12:57 GMT
+            value: Tue, 02 Jul 2024 09:56:02 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -196,7 +196,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-29T00:12:56.274Z
+      startedDateTime: 2024-07-02T09:56:01.007Z
       time: 0
       timings:
         blocked: -1
@@ -206,7 +206,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 886c0117d06168cf2c5ef71692212297
+    - _id: 4b9ab34799ecb6bc4e4aafdfdbedced9
       _order: 0
       cache: {}
       request:
@@ -221,12 +221,12 @@ log:
             value: token
               REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
           - name: user-agent
-            value: cody-cli / 0.1.0
+            value: cody-cli / 0.1.0-SNAPSHOT
           - name: connection
             value: keep-alive
           - name: host
             value: sourcegraph.com
-        headersSize: 341
+        headersSize: 359
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -260,8 +260,8 @@ log:
           - name: client-name
             value: cody-cli
           - name: client-version
-            value: 0.1.0
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=cody-cli&client-version=0.1.0
+            value: 0.1.0-SNAPSHOT
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=cody-cli&client-version=0.1.0-SNAPSHOT
       response:
         bodySize: 1729
         content:
@@ -280,7 +280,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Sat, 29 Jun 2024 00:12:59 GMT
+            value: Tue, 02 Jul 2024 09:56:04 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -309,7 +309,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-29T00:12:58.735Z
+      startedDateTime: 2024-07-02T09:56:03.436Z
       time: 0
       timings:
         blocked: -1
