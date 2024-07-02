@@ -144,20 +144,22 @@ class WindowsCredentialManager extends KeychainOperations {
 class LinuxSecretService extends KeychainOperations {
     async readSecret(): Promise<string> {
         const { stdout } = await execAsync(
-            `secret-tool lookup service ${this.service()} account ${this.account.username}`
+            `secret-tool lookup service '${this.service()}' account '${this.account.username}'`
         )
         return stdout.trim()
     }
 
     async writeSecret(secret: string): Promise<void> {
         await execAsync(
-            `echo "${secret}" | secret-tool store --label="${this.service()}" service ${this.service()} account ${
+            `echo "${secret}" | secret-tool store --label="${this.service()}" service '${this.service()}' account ${
                 this.account.username
             }`
         )
     }
 
     async deleteSecret(): Promise<void> {
-        await execAsync(`secret-tool clear service ${this.service()} account ${this.account.username}`)
+        await execAsync(
+            `secret-tool clear service '${this.service()}' account '${this.account.username}'`
+        )
     }
 }
