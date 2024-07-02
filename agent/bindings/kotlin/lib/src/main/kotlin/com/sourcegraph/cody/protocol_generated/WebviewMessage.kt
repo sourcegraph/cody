@@ -46,7 +46,7 @@ sealed class WebviewMessage {
           "attribution-search" -> context.deserialize<`attribution-searchWebviewMessage`>(element, `attribution-searchWebviewMessage`::class.java)
           "troubleshoot/reloadAuth" -> context.deserialize<Troubleshoot_reloadAuthWebviewMessage>(element, Troubleshoot_reloadAuthWebviewMessage::class.java)
           "getAllMentionProvidersMetadata" -> context.deserialize<GetAllMentionProvidersMetadataWebviewMessage>(element, GetAllMentionProvidersMetadataWebviewMessage::class.java)
-          "chat/upload-image" -> context.deserialize<`chat_upload-imageWebviewMessage`>(element, `chat_upload-imageWebviewMessage`::class.java)
+          "chat/upload-file" -> context.deserialize<`chat_upload-fileWebviewMessage`>(element, `chat_upload-fileWebviewMessage`::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
@@ -413,12 +413,13 @@ data class GetAllMentionProvidersMetadataWebviewMessage(
   }
 }
 
-data class `chat_upload-imageWebviewMessage`(
-  val command: CommandEnum, // Oneof: chat/upload-image
+data class `chat_upload-fileWebviewMessage`(
+  val command: CommandEnum, // Oneof: chat/upload-file
+  val base64: String,
 ) : WebviewMessage() {
 
   enum class CommandEnum {
-    @SerializedName("chat/upload-image") `Chat_upload-image`,
+    @SerializedName("chat/upload-file") `Chat_upload-file`,
   }
 }
 
