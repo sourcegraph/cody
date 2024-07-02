@@ -29,15 +29,13 @@ import {
 } from './provider'
 
 const DEFAULT_GEMINI_MODEL = 'google/gemini-1.5-flash-latest'
+const SUPPORTED_GEMINI_MODELS = ['gemini-1.5-flash', 'gemini-pro', 'gemini-1.0-pro']
 
-const RESPONSE_CODE = '<|fim|>'
-const AT_CURSOR = ps`<|cursor|>`
-const PRE_CURSOR = ps`<|fim_start|>`
-const AFTER_CURSOR = ps`<|fim_end|>`
+const RESPONSE_CODE = ps`<|fim|>`
 
 const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopSequences: [RESPONSE_CODE],
-    multilineStopSequences: [RESPONSE_CODE],
+    singlelineStopSequences: [`${RESPONSE_CODE}`],
+    multilineStopSequences: [`${RESPONSE_CODE}`],
 })
 
 interface GoogleGeminiOptions {
@@ -56,7 +54,7 @@ class GoogleGeminiProvider extends Provider {
     private promptChars: number
 
     private instructions =
-        ps`You are a code completion AI designed to autofill code at the ${AT_CURSOR} location based on its surrounding context. Your goal is to generate the COMPLETED code I can replace '${AT_CURSOR}' with.`
+        ps`You are a code completion AI with fill-in-middle capacity, designed to autofill code at a specific location based on its surrounding context.`
 
     constructor(
         options: ProviderOptions,
@@ -71,7 +69,7 @@ class GoogleGeminiProvider extends Provider {
     public emptyPromptLength(): number {
         const { messages } = this.createPrompt([])
         const promptNoSnippets = messagesToText(messages)
-        return promptNoSnippets.length - 10 // extra 10 chars of buffer cuz who knows
+        return promptNoSnippets.length - 10
     }
 
     protected createPrompt(snippets: AutocompleteContextSnippet[]): {
@@ -89,14 +87,10 @@ class GoogleGeminiProvider extends Provider {
 
         let groupedSnippets = ps``
 
-        function createContext(type: PromptString, name: PromptString, content: PromptString) {
-            return ps`\nTYPE: ${type}\nNAME: ${name}\nCONTENT: ${content.trimEnd()}\n---\n`
-        }
-
         for (const snippet of snippets) {
             const { uri } = snippet
             const { content, symbol } = PromptString.fromAutocompleteContextSnippet(snippet)
-            const contextPrompt = createContext(
+            const contextPrompt = this.createContext(
                 symbol ? ps`symbol` : ps`file`,
                 symbol ? symbol : PromptString.fromDisplayPath(uri),
                 content
@@ -116,13 +110,25 @@ class GoogleGeminiProvider extends Provider {
             groupedSnippets = ps`CONTEXT:\n${groupedSnippets}\n---\n`
         }
 
-        const infillPrompt = ps`<|task|>${prefix}${AT_CURSOR}${suffix.trimEnd()}<|task|>`
+        const prefixPrompt = ps`<|prefix|>${prefix}<|prefix|>`
+        const suffixPrompt = ps`Code after my cursor: <|suffix|>${suffix.trimEnd()}<|suffix|>`
 
-        const humanText = ps`${this.instructions}\n---${groupedSnippets}\nHere is your task:\nFileName: ${relativeFilePath}\nCode:${infillPrompt}\n\n\nInstruction: Ensure to follow the surrounding coding styles, format, and spacings without repeating.\nYour response should contains only the completed code, and the code must be enclosed WITHOUT backticks between '${PRE_CURSOR}' and '${AFTER_CURSOR}'.`
+        const humanText = ps`${this.instructions}
+---
+${groupedSnippets}
+---
+FileName: ${relativeFilePath}
+---
+${suffixPrompt}
+
+Generate code to complete the code inside <|prefix|>.
+Your response should contains only the fill-in code, and the code must be enclosed WITHOUT backticks between '${RESPONSE_CODE}' and '${RESPONSE_CODE}'.
+Here is the code: ${prefixPrompt}
+---`
 
         const messages: Message[] = [
             { speaker: 'human', text: humanText },
-            { speaker: 'assistant', text: ps`${PRE_CURSOR}` },
+            { speaker: 'assistant', text: ps`${RESPONSE_CODE}` },
         ]
 
         return { messages, prefix: { head, tail, overlap } }
@@ -142,8 +148,8 @@ class GoogleGeminiProvider extends Provider {
             ...partialRequestParams,
             messages: this.createPrompt(snippets).messages,
             topP: 0.95,
+            temperature: 0.2,
             model: this.model,
-            stopSequences: [RESPONSE_CODE],
         }
 
         tracer?.params(requestParams)
@@ -172,16 +178,16 @@ class GoogleGeminiProvider extends Provider {
         let completion = rawResponse.trim()
 
         // Because the response should be enclosed with RESPONSE_CODE for consistency.
-        completion = completion
-            .replaceAll(RESPONSE_CODE, '')
-            .trim()
-            .replaceAll(`${PRE_CURSOR}`, '')
-            .replaceAll(`${AFTER_CURSOR}`, '')
+        completion = completion.replaceAll(`${RESPONSE_CODE}`, '')
 
         // Remove bad symbols from the start of the completion string.
         completion = fixBadCompletionStart(completion)
 
         return completion
+    }
+
+    private createContext(type: PromptString, name: PromptString, content: PromptString) {
+        return ps`\nTYPE: ${type}\nNAME: ${name}\nCONTENT: ${content.trimEnd()}\n---\n`
     }
 }
 
@@ -192,6 +198,10 @@ export function createProviderConfig({
 }: GoogleGeminiOptions & { model?: string }): ProviderConfig {
     if (!model) {
         model = DEFAULT_GEMINI_MODEL
+    }
+
+    if (!SUPPORTED_GEMINI_MODELS.some(m => model.includes(m))) {
+        throw new Error(`Model ${model} is not supported by GeminiProvider`)
     }
 
     return {
