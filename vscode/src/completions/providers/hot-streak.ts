@@ -77,7 +77,9 @@ function insertCompletionAndPressEnter(
 
 // To reduce the load on the inference providers we limit the hot streak
 // generation to a constant number of lines after the initial completion.
-const MAX_HOT_STREAK_LINES = 5
+const MAX_HOT_STREAK_LINES = vscode.workspace
+    .getConfiguration()
+    .get<number>('cody.experimental.maxHotStreakLines', 5)
 
 export function createHotStreakExtractor(params: HotStreakExtractorParams): HotStreakExtractor {
     const { completedCompletion, providerOptions, abortController } = params
