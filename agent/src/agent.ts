@@ -47,7 +47,9 @@ import { ModelUsage } from '../../lib/shared/src/models/types'
 import type { CommandResult } from '../../vscode/src/CommandResult'
 import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
 import { supportedTscLanguages } from '../../vscode/src/completions/context/retrievers/tsc/supportedTscLanguages'
+import { getCurrentDocContext } from '../../vscode/src/completions/get-current-doc-context'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
+import type { ContextRetrieverOptions } from '../../vscode/src/completions/types'
 import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/execute'
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
 import type { ExtensionClient, ExtensionObjects } from '../../vscode/src/extension-client'
@@ -86,8 +88,6 @@ import type {
 } from './protocol-alias'
 import * as vscode_shim from './vscode-shim'
 import { vscodeLocation, vscodeRange } from './vscode-type-converters'
-import { ContextRetrieverOptions } from '../../vscode/src/completions/types'
-import { getCurrentDocContext } from '../../vscode/src/completions/get-current-doc-context'
 
 const inMemorySecretStorageMap = new Map<string, string>()
 const globalState = new AgentGlobalState()
@@ -649,18 +649,19 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 },
             }
             const retrivedContext = await retriever?.retrieve(options)
-            const tscContext: agent_protocol.TscContextRetriverResult[] = retrivedContext.map(context => {
-                return {
-                    symbol: 'symbol' in context ? context.symbol : undefined,
-                    content: context.content,
-                    startLine: context.startLine,
-                    endLline: context.endLine,
-                    filePath: context.uri.fsPath,
+            const tscContext: agent_protocol.TscContextRetriverResult[] = retrivedContext.map(
+                context => {
+                    return {
+                        symbol: 'symbol' in context ? context.symbol : undefined,
+                        content: context.content,
+                        startLine: context.startLine,
+                        endLline: context.endLine,
+                        filePath: context.uri.fsPath,
+                    }
                 }
-            })
+            )
             return tscContext
         })
-
 
         this.registerAuthenticatedRequest('testing/awaitPendingPromises', async () => {
             if (!(vscode_shim.isTesting || vscode_shim.isIntegrationTesting)) {
