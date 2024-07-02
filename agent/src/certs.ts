@@ -44,7 +44,7 @@ function addLinuxCerts() {
 
     try {
         cas.push(...loadLinuxCerts())
-    } catch(err) {
+    } catch (err) {
         console.warn('Error loading linux certs', err)
     }
     globalAgent.options.ca = cas
