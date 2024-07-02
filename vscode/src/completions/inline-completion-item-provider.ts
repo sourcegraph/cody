@@ -42,10 +42,9 @@ import * as CompletionLogger from './logger'
 import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 import type { ProviderConfig } from './providers/provider'
 import { RequestManager, type RequestParams } from './request-manager'
-import {
-    canReuseLastCandidateInDocumentContext,
-    getRequestParamsFromLastCandidate,
-} from './reuse-last-candidate'
+import { getRequestParamsFromLastCandidate } from './reuse-last-candidate'
+import { canReuseLastCandidateInDocumentContext } from './reuse-last-candidate'
+import { SmartThrottleService } from './smart-throttle'
 import {
     type AutocompleteInlineAcceptedCommandArgs,
     type AutocompleteItem,
@@ -113,6 +112,7 @@ export class InlineCompletionItemProvider
 
     private requestManager: RequestManager
     private contextMixer: ContextMixer
+    private smartThrottleService: SmartThrottleService | null = null
 
     /** Mockable (for testing only). */
     protected getInlineCompletions = getInlineCompletions
@@ -177,6 +177,11 @@ export class InlineCompletionItemProvider
                 createBfgRetriever
             )
         )
+
+        if (completionProviderConfig.smartThrottle) {
+            this.smartThrottleService = new SmartThrottleService()
+            this.disposables.push(this.smartThrottleService)
+        }
 
         const chatHistory = localStorage.getChatHistory(this.config.authStatus)?.chat
         this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0
@@ -282,11 +287,12 @@ export class InlineCompletionItemProvider
             }
 
             const abortController = new AbortController()
+            let cancellationListener: vscode.Disposable | undefined
             if (token) {
                 if (token.isCancellationRequested) {
                     abortController.abort()
                 }
-                token.onCancellationRequested(() => abortController.abort())
+                cancellationListener = token.onCancellationRequested(() => abortController.abort())
             }
 
             // When the user has the completions popup open and an item is selected that does not match
@@ -348,19 +354,7 @@ export class InlineCompletionItemProvider
             )
 
             const isLocalProvider = isLocalCompletionsProvider(this.config.providerConfig.identifier)
-            const isEagerCancellationEnabled = completionProviderConfig.getPrefetchedFlag(
-                FeatureFlag.CodyAutocompleteEagerCancellation
-            )
-            const isReducedDebounceEnabled = completionProviderConfig.getPrefetchedFlag(
-                FeatureFlag.CodyAutocompleteReducedDebounce
-            )
-            const debounceInterval = isLocalProvider
-                ? 125
-                : isEagerCancellationEnabled
-                  ? 10
-                  : isReducedDebounceEnabled
-                    ? 25
-                    : 75
+            const debounceInterval = isLocalProvider ? 125 : 75
 
             try {
                 const result = await this.getInlineCompletions({
@@ -371,6 +365,7 @@ export class InlineCompletionItemProvider
                     docContext,
                     providerConfig: this.config.providerConfig,
                     contextMixer: this.contextMixer,
+                    smartThrottleService: this.smartThrottleService,
                     requestManager: this.requestManager,
                     lastCandidate: this.lastCandidate,
                     debounceInterval: {
@@ -379,6 +374,7 @@ export class InlineCompletionItemProvider
                     },
                     setIsLoading,
                     abortSignal: abortController.signal,
+                    cancellationListener,
                     tracer,
                     handleDidAcceptCompletionItem: this.handleDidAcceptCompletionItem.bind(this),
                     handleDidPartiallyAcceptCompletionItem:
