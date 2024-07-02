@@ -50,7 +50,10 @@ const lowScoringPathSegments = ['bin']
  */
 const throttledFindFiles = throttle(() => findWorkspaceFiles(), 10000)
 
-const debouncedRemoteFindFiles = debouncePromise(graphqlClient.getRemoteFiles.bind(graphqlClient), 500)
+const debouncedRemoteFindFiles = debouncePromise(
+    graphqlClient.getRemoteFilesWithFuzzyRetry.bind(graphqlClient),
+    500
+)
 const debouncedRemoteFindSymbols = debouncePromise(
     graphqlClient.getRemoteSymbols.bind(graphqlClient),
     500
