@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
+import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 // biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { telemetryService } from '../../services/telemetry'
 import { ContentProvider } from '../FixupContentStore'
@@ -259,9 +260,11 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
         // show diff view between the current document and replacement
         // Add replacement content to the temp document
 
-        // Note: We need to accept the task before showing it as a diff here, this is because
-        // we have injected empty whitespace and decorations to the document.
-        this.controller.accept(task)
+        if (!isRunningInsideAgent()) {
+            // Note: For VS Code, we need to accept the task before showing it as a diff here, this is because
+            // we have injected empty whitespace and decorations to the document.
+            this.controller.accept(task)
+        }
 
         // Ensure each diff is fresh so there is no chance of diffing an already diffed file.
         const diffId = `${task.id}-${Date.now()}`
