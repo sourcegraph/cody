@@ -3,6 +3,7 @@ import { type ContextItem, ModelsService, PromptString } from '@sourcegraph/cody
 import { glob } from 'glob'
 import * as vscode from 'vscode'
 import YAML from 'yaml'
+import { sleep } from '../../../../vscode/src/completions/utils'
 import type { RpcMessageHandler } from '../../jsonrpc-alias'
 import { EvaluationDocument } from './EvaluationDocument'
 import type { CodyBenchOptions } from './cody-bench'
@@ -30,6 +31,7 @@ export async function evaluateChatStrategy(
             'Missing cody-bench.chatModel. To fix this problem, add "customConfiguration": { "cody-bench.chatModel": "claude-3-sonnet" } to the cody-bench JSON config.'
         )
     }
+    await sleep(10000)
     const llm = new LlmJudge(options)
     const scores: LlmJudgeScore[] = []
     const model = ModelsService.getModelByIDSubstringOrError(chatModel).model
@@ -55,20 +57,32 @@ export async function evaluateChatStrategy(
                 submitType: 'user',
                 text: task.question,
                 contextFiles,
-                addEnhancedContext: false,
+                addEnhancedContext: true, // TODO parametrize this
             },
         })
         const range = new vscode.Range(0, 0, 0, 0)
         if (response.type === 'transcript') {
+            const query = response.messages.at(0)
             const reply = response.messages.at(-1)
             if (reply?.text) {
-                const response = PromptString.unsafe_fromLLMResponse(reply.text)
-                const score = await llm.judge(helpfulnessPrompt({ response }))
-                const concisenessScore = await llm.judge(concisenessPrompt({ response }))
+                const llmResponse = PromptString.unsafe_fromLLMResponse(reply.text)
+                const score = await llm.judge(helpfulnessPrompt({ response: llmResponse }))
+                const concisenessScore = await llm.judge(concisenessPrompt({ response: llmResponse }))
+                const contextItems = query?.contextFiles?.map(i => ({
+                    source: i.source,
+                    file: i.uri.path + `L${i.range?.start.line}-${i.range?.end.line}`,
+                    //content: i.content,
+                }))
+
+                console.log('Context items num:', contextItems?.length)
+                for (const item of contextItems ?? []) {
+                    console.log(JSON.stringify(item))
+                }
                 document.pushItem({
                     range,
                     chatReply: reply.text,
                     chatQuestion: task.question,
+                    contextItems: contextItems,
                     questionClass: task.class,
                     llmJudgeScore: score.scoreNumeric,
                     concisenessScore: concisenessScore.scoreNumeric,
@@ -98,7 +112,7 @@ export async function evaluateChatStrategy(
 
 const apologyCheck = /sorry|apologize|unfortunately/i
 const accessCheck =
-    /I (don't|do not) (actually )?have (direct )?access|your actual codebase|can't browse external repositories|not able to access external information|unable to browse through|directly access|direct access|snippet you provided is incomplete|I can't review/i
+    /I (don't|do not) (actually )?have (direct )?access|your actual codebase|can't browse external repositories|not able to access external information|unable to browse through|directly access|direct access|snippet you provided is incomplete|I can't review|don't see any information|no specific information/i
 function checkHedging(reply: string): boolean {
     return apologyCheck.test(reply) || accessCheck.test(reply)
 }

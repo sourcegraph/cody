@@ -53,6 +53,7 @@ export interface CodyBenchOptions {
     testCommand?: string
     gitLogFilter?: string
     fixture: EvaluationFixture
+    useContext: boolean
 
     verbose: boolean
 }
@@ -352,7 +353,9 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
             serverEndpoint: options.srcEndpoint,
             customHeaders: {},
             customConfiguration: {
-                'cody.experimental.symf.enabled': false, // fixes errors in Polly.js related to fetchin the symf binary
+                'cody.experimental.symf.enabled': options.useContext, // disabling fixes errors in Polly.js related to fetching the symf binary
+                'cody.experimental.localEmbeddings.disabled': !options.useContext,
+                'cody.useContext': 'blended',
                 'cody.experimental.telemetry.enabled': false,
                 ...options.fixture.customConfiguration,
             },
