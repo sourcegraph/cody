@@ -332,7 +332,6 @@ async function doGetInlineCompletions(
 
     autocompleteStageCounterLogger.record('preDebounce')
 
-    let remainingInterval: number
     if (smartThrottleService) {
         // For the smart throttle to work correctly and preserve tail requests, we need full control
         // over the cancellation logic for each request.
@@ -341,29 +340,28 @@ async function doGetInlineCompletions(
 
         const throttledRequest = await smartThrottleService.throttle(requestParams, triggerKind)
         if (throttledRequest === null) {
-            // aborted
             return null
         }
 
         requestParams = throttledRequest
-        remainingInterval = 0
-    } else {
-        const debounceTime =
-            triggerKind !== TriggerKind.Automatic
-                ? 0
-                : ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) +
-                  (artificialDelay ?? 0)
+    }
 
-        // We split the desired debounceTime into two chunks. One that is at most 25ms where every
-        // further execution is halted...
-        const waitInterval = Math.min(debounceTime, 25)
-        // ...and one for the remaining time where we can already start retrieving context in parallel.
-        remainingInterval = debounceTime - waitInterval
-        if (waitInterval > 0) {
-            await wrapInActiveSpan('autocomplete.debounce.wait', () => sleep(waitInterval))
-            if (abortSignal?.aborted) {
-                return null
-            }
+    const debounceTime = smartThrottleService
+        ? 0
+        : triggerKind !== TriggerKind.Automatic
+          ? 0
+          : ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) +
+            (artificialDelay ?? 0)
+
+    // We split the desired debounceTime into two chunks. One that is at most 25ms where every
+    // further execution is halted...
+    const waitInterval = Math.min(debounceTime, 25)
+    // ...and one for the remaining time where we can already start retrieving context in parallel.
+    const remainingInterval = debounceTime - waitInterval
+    if (waitInterval > 0) {
+        await wrapInActiveSpan('autocomplete.debounce.wait', () => sleep(waitInterval))
+        if (abortSignal?.aborted) {
+            return null
         }
     }
 
