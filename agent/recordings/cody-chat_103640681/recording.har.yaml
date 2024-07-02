@@ -206,11 +206,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 4b9ab34799ecb6bc4e4aafdfdbedced9
+    - _id: 62a24e624a5b44b4ab7c83abd04da68f
       _order: 0
       cache: {}
       request:
-        bodySize: 545
+        bodySize: 549
         cookies: []
         headers:
           - name: content-type
@@ -248,8 +248,11 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: "You have access to the provided codebase context. Question: implement a
-                  cow. Only print the code without any explanation."
+                text: >-
+                  You have access to the provided codebase context. 
+
+
+                  Question: implement a cow. Only print the code without any explanation.
             model: anthropic/claude-3-sonnet-20240229
             temperature: 0.2
             topK: -1
@@ -280,13 +283,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 02 Jul 2024 09:56:04 GMT
+            value: Tue, 02 Jul 2024 21:41:44 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
+          - name: retry-after
+            value: "501"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -304,12 +309,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
+        headersSize: 1406
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-02T09:56:03.436Z
+      startedDateTime: 2024-07-02T21:41:43.246Z
       time: 0
       timings:
         blocked: -1
