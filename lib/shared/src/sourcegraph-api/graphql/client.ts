@@ -7,7 +7,6 @@ import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
 import { escapeRegExp } from 'lodash'
 import semver from 'semver'
-import { isErrorLike } from '../../common'
 import type { ConfigurationWithAccessToken } from '../../configuration'
 import { logDebug, logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
