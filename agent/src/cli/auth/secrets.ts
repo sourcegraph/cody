@@ -115,10 +115,11 @@ class MacOSKeychain extends KeychainOperations {
 
 class WindowsCredentialManager extends KeychainOperations {
     async readSecret(): Promise<string> {
+        const powershellCommand = `(Get-StoredCredential -Target "${this.service()}:${
+            this.account.username
+        }").GetNetworkCredential().Password`
         const { stdout } = await execAsync(
-            `powershell -command "& {(Get-StoredCredential -Target '${this.service()}:${
-                this.account.username
-            }').Password | ConvertFrom-SecureString -AsPlainText}"`
+            `powershell -Command "${powershellCommand.replace(/"/g, '\\"')}"`
         )
         return stdout.trim()
     }
