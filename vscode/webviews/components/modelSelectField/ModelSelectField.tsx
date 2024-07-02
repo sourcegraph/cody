@@ -1,6 +1,6 @@
-import { type Model, ModelUIGroup } from '@sourcegraph/cody-shared'
+import { type Model, ModelUIGroup, ModelsService } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { BookOpenIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
+import { BookOpenIcon, BuildingIcon, ExternalLinkIcon, ImageIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -121,6 +121,7 @@ export const ModelSelectField: React.FunctionComponent<{
                             showIcon={true}
                             showProvider={true}
                             modelAvailability={availability}
+                            supportsImageUpload={ModelsService.isMultiModalModel(m.model)}
                         />
                     ),
                     // needs-cody-pro models should be clickable (not disabled) so the user can
@@ -340,7 +341,8 @@ const ModelTitleWithIcon: FunctionComponent<{
     showIcon?: boolean
     showProvider?: boolean
     modelAvailability?: ModelAvailability
-}> = ({ model, showIcon, showProvider, modelAvailability }) => (
+    supportsImageUpload?: boolean
+}> = ({ model, showIcon, showProvider, modelAvailability, supportsImageUpload }) => (
     <span
         className={clsx(styles.modelTitleWithIcon, {
             [styles.disabled]: modelAvailability !== 'available',
@@ -348,6 +350,11 @@ const ModelTitleWithIcon: FunctionComponent<{
     >
         {showIcon && <ChatModelIcon model={model.model} className={styles.modelIcon} />}
         <span className={styles.modelName}>{model.title}</span>
+        {supportsImageUpload && (
+            <span className={styles.supportsImageUploadIcon} title="Supports image upload">
+                <ImageIcon size={16} strokeWidth={1.25} className="tw-opacity-80" />
+            </span>
+        )}
         {modelAvailability === 'needs-cody-pro' && (
             <span className={clsx(styles.badge, styles.badgePro)}>Cody Pro</span>
         )}
