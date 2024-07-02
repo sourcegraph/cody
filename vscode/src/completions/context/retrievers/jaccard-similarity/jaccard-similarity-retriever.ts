@@ -162,14 +162,14 @@ export class JaccardSimilarityRetriever extends CachedRetriever implements Conte
             })
         }
 
-        const visibleUris = this.window.visibleTextEditors.flatMap(e =>
+        const visibleUris = this.visibleTextEditors.flatMap(e =>
             e.document.uri.scheme === 'file' ? [e.document.uri] : []
         )
 
         // Use tabs API to get current docs instead of `vscode.workspace.textDocuments`.
         // See related discussion: https://github.com/microsoft/vscode/issues/15178
         // See more info about the API: https://code.visualstudio.com/api/references/vscode-api#Tab
-        const allUris: vscode.Uri[] = this.window.tabGroups.all
+        const allUris: vscode.Uri[] = this.tabGroups.all
             .flatMap(({ tabs }) => tabs.map(tab => (tab.input as any)?.uri))
             .filter(Boolean)
 
@@ -205,7 +205,7 @@ export class JaccardSimilarityRetriever extends CachedRetriever implements Conte
                     }
 
                     try {
-                        return [await this.workspace.openTextDocument(uri)]
+                        return [await this.openTextDocument(uri)]
                     } catch (error) {
                         console.error(error)
                         return []
@@ -227,7 +227,7 @@ export class JaccardSimilarityRetriever extends CachedRetriever implements Conte
                 .lastN(10, curLang, [currentDocument.uri, ...files.map(f => f.uri)])
                 .map(async item => {
                     try {
-                        const document = await this.workspace.openTextDocument(item.document.uri)
+                        const document = await this.openTextDocument(item.document.uri)
                         addDocument(document)
                     } catch (error) {
                         console.error(error)

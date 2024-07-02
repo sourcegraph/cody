@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
 import {
-    type AuthStatus,
     ConfigFeaturesSingleton,
     FeatureFlag,
     RateLimitError,
@@ -13,7 +12,6 @@ import {
 
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
-import type { CodyStatusBar } from '../services/StatusBar'
 import { telemetryService } from '../services/telemetry'
 
 import { type CodyIgnoreType, showCodyIgnoreNotification } from '../cody-ignore/notification'
@@ -24,7 +22,6 @@ import { type LatencyFeatureFlags, getArtificialDelay, resetArtificialDelay } fr
 import { completionProviderConfig } from './completion-provider-config'
 import { ContextMixer } from './context/context-mixer'
 import { DefaultContextStrategyFactory } from './context/context-strategy'
-import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { getCompletionIntent } from './doc-context-getters'
 import { FirstCompletionDecorationHandler } from './first-completion-decoration-handler'
 import { formatCompletion } from './format-completion'
@@ -36,11 +33,15 @@ import {
     TriggerKind,
     getInlineCompletions,
 } from './get-inline-completions'
+import {
+    type CodyCompletionItemProviderConfig,
+    type InlineCompletionItemProviderConfig,
+    InlineCompletionItemProviderConfigSingleton,
+} from './inline-completion-item-provider-config'
 import { isCompletionVisible } from './is-completion-visible'
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './logger'
 import * as CompletionLogger from './logger'
 import { isLocalCompletionsProvider } from './providers/experimental-ollama'
-import type { ProviderConfig } from './providers/provider'
 import { RequestManager, type RequestParams } from './request-manager'
 import {
     canReuseLastCandidateInDocumentContext,
@@ -62,31 +63,6 @@ interface AutocompleteResult extends vscode.InlineCompletionList {
     completionEvent?: CompletionBookkeepingEvent
 }
 
-interface CodyCompletionItemProviderConfig {
-    providerConfig: ProviderConfig
-    firstCompletionTimeout: number
-    statusBar: CodyStatusBar
-    tracer?: ProvideInlineCompletionItemsTracer | null
-    isRunningInsideAgent?: boolean
-
-    authStatus: AuthStatus
-    isDotComUser?: boolean
-
-    createBfgRetriever?: () => BfgRetriever
-
-    // Settings
-    formatOnAccept?: boolean
-    disableInsideComments?: boolean
-
-    // Feature flags
-    completeSuggestWidgetSelection?: boolean
-
-    // Flag to check if the current request is also triggered for multiple providers.
-    // When true it means the inlineCompletion are triggerd for multiple model for comparison purpose.
-    // Check `createInlineCompletionItemFromMultipleProviders` method in create-inline-completion-item-provider for more detail.
-    noInlineAccept?: boolean
-}
-
 export interface MultiModelCompletionsResults {
     provider: string
     model: string
@@ -98,10 +74,6 @@ interface CompletionRequest {
     position: vscode.Position
     context: vscode.InlineCompletionContext
 }
-
-type InlineCompletionItemProviderConfig = Omit<CodyCompletionItemProviderConfig, 'createBfgRetriever'> &
-    Required<Pick<CodyCompletionItemProviderConfig, 'isDotComUser'>>
-
 export class InlineCompletionItemProvider
     implements vscode.InlineCompletionItemProvider, vscode.Disposable
 {
@@ -131,13 +103,8 @@ export class InlineCompletionItemProvider
 
     private firstCompletionDecoration = new FirstCompletionDecorationHandler()
 
-    static get configuration(): InlineCompletionItemProviderConfig {
-        return InlineCompletionItemProvider._configuration
-    }
-    private static _configuration: InlineCompletionItemProviderConfig
-
     private get config(): InlineCompletionItemProviderConfig {
-        return InlineCompletionItemProvider.configuration
+        return InlineCompletionItemProviderConfigSingleton.configuration
     }
 
     constructor({
@@ -150,7 +117,7 @@ export class InlineCompletionItemProvider
     }: CodyCompletionItemProviderConfig) {
         // This is a static field to allow for easy access in the static `configuration` getter.
         // There must only be one instance of this class at a time.
-        InlineCompletionItemProvider._configuration = {
+        InlineCompletionItemProviderConfigSingleton.set({
             ...config,
             completeSuggestWidgetSelection,
             formatOnAccept,
@@ -159,7 +126,7 @@ export class InlineCompletionItemProvider
             isRunningInsideAgent: config.isRunningInsideAgent ?? false,
             isDotComUser: config.isDotComUser ?? false,
             noInlineAccept: config.noInlineAccept ?? false,
-        }
+        })
 
         autocompleteStageCounterLogger.setProviderModel(config.providerConfig.model)
 

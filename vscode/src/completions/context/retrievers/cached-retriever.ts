@@ -1,9 +1,9 @@
-import { type AutocompleteContextSnippet, logError } from '@sourcegraph/cody-shared'
+import { type AutocompleteContextSnippet, logError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { debounce } from 'lodash'
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 import { getCurrentDocContext } from '../../get-current-doc-context'
-import { InlineCompletionItemProvider } from '../../inline-completion-item-provider'
+import { InlineCompletionItemProviderConfigSingleton } from '../../inline-completion-item-provider-config'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../types'
 
 export interface CacheableRetriever extends ContextRetriever {}
@@ -14,17 +14,36 @@ export interface CachedRerieverOptions {
     precomputeOnCursorMove?: {
         debounceMs?: number
     }
+    // Flag for testing to ensure synchronous execution
+    neverDebounce?: boolean
 }
+
+type WorkspaceDependencies = Pick<
+    typeof vscode.workspace,
+    'onDidChangeTextDocument' | 'openTextDocument'
+>
+
+type WindowDependencies = Pick<
+    typeof vscode.window,
+    'onDidChangeTextEditorSelection' | 'visibleTextEditors' | 'tabGroups'
+>
 
 export abstract class CachedRetriever implements ContextRetriever {
     private cache: LRUCache<string, AutocompleteContextSnippet[]>
     private dependencies: LRUCache<string, Set<string>>
     private currentKey: string | null = null
     private subscriptions: Map<string, vscode.Disposable> = new Map()
+    private neverDebounce = false
+
     protected abortController: AbortController
     abstract identifier: string
 
-    constructor(options?: CachedRerieverOptions) {
+    constructor(
+        options?: CachedRerieverOptions,
+        readonly workspace: WorkspaceDependencies = vscode.workspace,
+        readonly window: WindowDependencies = vscode.window
+    ) {
+        this.neverDebounce = options?.neverDebounce ?? false
         this.abortController = new AbortController()
         this.cache = new LRUCache({ max: 500, ...options?.cacheOptions })
         this.dependencies = new LRUCache({
@@ -37,16 +56,14 @@ export abstract class CachedRetriever implements ContextRetriever {
         // and precompute retrievals
         if (options?.precomputeOnCursorMove) {
             this.subscribe(
-                vscode.window.onDidChangeTextEditorSelection,
+                this.window.onDidChangeTextEditorSelection,
                 this.onDidChangeTextEditorSelection,
                 {
                     debounceMs: options.precomputeOnCursorMove.debounceMs,
                 }
             )
         }
-
-        //
-        this.subscribe(vscode.workspace.onDidChangeTextDocument, this.onDidChangeTextDocument)
+        this.subscribe(this.workspace.onDidChangeTextDocument, this.onDidChangeTextDocument)
     }
 
     // Converts the input arguments into a cache key. NOTE: the cache key
@@ -144,19 +161,19 @@ export abstract class CachedRetriever implements ContextRetriever {
         this.subscribe(vscode.window.onDidChangeVisibleTextEditors, this.onDidChangeVisibleTextEditors, {
             key: CacheKey.visibleTextEditors,
         })
-        return vscode.window.visibleTextEditors
+        return this.window.visibleTextEditors
     }
 
-    get tabGroups(): typeof vscode.window.tabGroups {
-        this.subscribe(vscode.window.tabGroups.onDidChangeTabGroups, this.onDidChangeTabGroups, {
+    get tabGroups(): typeof this.window.tabGroups {
+        this.subscribe(this.window.tabGroups.onDidChangeTabGroups, this.onDidChangeTabGroups, {
             key: CacheKey.tabGroups,
         })
-        return vscode.window.tabGroups
+        return this.window.tabGroups
     }
 
     openTextDocument = (uri: vscode.Uri): Thenable<vscode.TextDocument> => {
         this.addDependency(uri.toString())
-        return vscode.workspace.openTextDocument(uri)
+        return this.workspace.openTextDocument(uri)
     }
 
     // Subscription methods
@@ -195,21 +212,23 @@ export abstract class CachedRetriever implements ContextRetriever {
         const position = event.selections[0].active
 
         // Start a preloading requests as identifier by setting the maxChars to 0
-        void this.retrieve({
-            document,
-            position,
-            hints: { maxChars: 0, maxMs: 150 },
-            docContext: getCurrentDocContext({
+        wrapInActiveSpan(`autocomplete.retrieve.${this.identifier}.preload`, span =>
+            this.retrieve({
                 document,
                 position,
-                maxPrefixLength:
-                    InlineCompletionItemProvider.configuration.providerConfig.contextSizeHints
-                        .prefixChars,
-                maxSuffixLength:
-                    InlineCompletionItemProvider.configuration.providerConfig.contextSizeHints
-                        .suffixChars,
-            }),
-        })
+                hints: { maxChars: 0, maxMs: 150, isPreload: true },
+                docContext: getCurrentDocContext({
+                    document,
+                    position,
+                    maxPrefixLength:
+                        InlineCompletionItemProviderConfigSingleton.configuration.providerConfig
+                            .contextSizeHints.prefixChars,
+                    maxSuffixLength:
+                        InlineCompletionItemProviderConfigSingleton.configuration.providerConfig
+                            .contextSizeHints.suffixChars,
+                }),
+            })
+        )
     }
 
     /**
@@ -233,13 +252,9 @@ export abstract class CachedRetriever implements ContextRetriever {
             return
         }
         // Unless they have specified no debounce, default to debouncing all handlers
-        handler = debounceMs === 0 ? handler : debounce(handler, debounceMs ?? 100)
+        handler = this.neverDebounce || debounceMs === 0 ? handler : debounce(handler, debounceMs ?? 100)
         this.subscriptions.set(handler.name, register(handler))
     }
-
-    // Fake namespaces to make replaces VSCode APIs more readable
-    protected window = this
-    protected workspace = this
 
     public dispose() {
         this.cache.clear()
