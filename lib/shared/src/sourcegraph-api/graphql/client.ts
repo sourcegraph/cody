@@ -1,4 +1,4 @@
-import * as path from 'path'
+import * as path from 'node:path'
 import type { Response as NodeResponse } from 'node-fetch'
 import { URI } from 'vscode-uri'
 import { fetch } from '../../fetch'
