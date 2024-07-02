@@ -287,14 +287,12 @@ export class InlineCompletionItemProvider
             }
 
             const abortController = new AbortController()
+            let cancellationListener: vscode.Disposable | undefined
             if (token) {
                 if (token.isCancellationRequested) {
                     abortController.abort()
                 }
-                token.onCancellationRequested(() => {
-                    console.log('UMPOX: ABORTING FROM onCancellationRequested')
-                    abortController.abort()
-                })
+                cancellationListener = token.onCancellationRequested(() => abortController.abort())
             }
 
             // When the user has the completions popup open and an item is selected that does not match
@@ -376,6 +374,7 @@ export class InlineCompletionItemProvider
                     },
                     setIsLoading,
                     abortSignal: abortController.signal,
+                    cancellationListener,
                     tracer,
                     handleDidAcceptCompletionItem: this.handleDidAcceptCompletionItem.bind(this),
                     handleDidPartiallyAcceptCompletionItem:

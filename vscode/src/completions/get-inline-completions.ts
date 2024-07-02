@@ -55,6 +55,7 @@ export interface InlineCompletionsParams {
 
     // Execution
     abortSignal?: AbortSignal
+    cancellationListener?: vscode.Disposable
     tracer?: (data: Partial<ProvideInlineCompletionsItemTraceData>) => void
     artificialDelay?: number
     firstCompletionTimeout: number
@@ -196,6 +197,7 @@ async function doGetInlineCompletions(
         debounceInterval,
         setIsLoading,
         abortSignal,
+        cancellationListener,
         tracer,
         handleDidAcceptCompletionItem,
         handleDidPartiallyAcceptCompletionItem,
@@ -332,6 +334,11 @@ async function doGetInlineCompletions(
 
     let remainingInterval: number
     if (smartThrottleService) {
+        // For the smart throttle to work correctly and preserve tail requests, we need full control
+        // over the cancellation logic for each request.
+        // Therefore we must stop listening for cancellation events originating from VS Code.
+        cancellationListener?.dispose()
+
         const throttledRequest = await smartThrottleService.throttle(requestParams, triggerKind)
         if (throttledRequest === null) {
             // aborted
