@@ -1227,11 +1227,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: ac0c3414b079334ea98abd646399b918
+    - _id: 995796292d70192b0f8ad4f75d87443e
       _order: 0
       cache: {}
       request:
-        bodySize: 2472
+        bodySize: 2417
         cookies: []
         headers:
           - name: content-type
@@ -1244,7 +1244,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-3e7fdfbbf259aaec338adbff6f76815d-9bf2b768c0f49e53-01
+            value: 00-9fdd886723870bcbb5883c1313e0270b-d3ef82d80b6b0d69-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1360,10 +1360,11 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: "You have access to my codebase context. Provide a high-level overview
-                  answer positively without apologizing. Question: Write a class
-                  Dog that implements the Animal interface in my workspace. Show
-                  the code only, no explanation needed."
+                text: >-
+                  You have access to the provided codebase context. 
+
+
+                  Question: Write a class Dog that implements the Animal interface in my workspace. Show the code only, no explanation needed.
             model: anthropic/claude-3-sonnet-20240229
             temperature: 0
             topK: -1
@@ -1377,10 +1378,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 4047
+        bodySize: 3941
         content:
           mimeType: text/event-stream
-          size: 4047
+          size: 3941
           text: >+
             event: completion
 
@@ -1394,7 +1395,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 02 Jul 2024 16:45:12 GMT
+            value: Tue, 02 Jul 2024 21:41:42 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1402,7 +1403,7 @@ log:
           - name: connection
             value: keep-alive
           - name: retry-after
-            value: "9"
+            value: "504"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1420,12 +1421,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1404
+        headersSize: 1406
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-02T16:45:10.334Z
+      startedDateTime: 2024-07-02T21:41:40.906Z
       time: 0
       timings:
         blocked: -1
@@ -1435,11 +1436,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 05a160a6864928871086cd31318342d2
+    - _id: 4669fca2fa47ddd0468c59cf7472b21b
       _order: 0
       cache: {}
       request:
-        bodySize: 2140
+        bodySize: 2085
         cookies: []
         headers:
           - name: content-type
@@ -1452,7 +1453,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-40b7fe21fd20638a122cbf5f8275ecda-7fd5f0104720f751-01
+            value: 00-936d347fb1426027ffa76fbb6fba8442-c67c53e6ccb80d49-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1555,9 +1556,10 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: "You have access to my codebase context. Provide a high-level overview
-                  answer positively without apologizing. Question: What is
-                  Squirrel?"
+                text: |-
+                  You have access to the provided codebase context. 
+
+                  Question: What is Squirrel?
             model: anthropic/claude-3-sonnet-20240229
             temperature: 0
             topK: -1
@@ -1571,14 +1573,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 2760
+        bodySize: 3945
         content:
           mimeType: text/event-stream
-          size: 2760
+          size: 3945
           text: >+
             event: completion
 
-            data: {"completion":"Squirrel is an interface defined in the codebase that mocks something completely unrelated to actual squirrels. According to the docstring, it is related to the implementation of precise code navigation in Sourcegraph.","stopReason":"end_turn"}
+            data: {"completion":"Based on the provided code context from `src/squirrel.ts`, the `Squirrel` is an interface that mocks something completely unrelated to actual squirrels. According to the comment, it is related to the implementation of precise code navigation in Sourcegraph.","stopReason":"end_turn"}
 
 
             event: done
@@ -1588,7 +1590,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 02 Jul 2024 16:45:14 GMT
+            value: Tue, 02 Jul 2024 21:41:44 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1596,7 +1598,7 @@ log:
           - name: connection
             value: keep-alive
           - name: retry-after
-            value: "6"
+            value: "501"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1614,12 +1616,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1404
+        headersSize: 1406
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-02T16:45:12.943Z
+      startedDateTime: 2024-07-02T21:41:43.242Z
       time: 0
       timings:
         blocked: -1
@@ -1629,11 +1631,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 2e61356a625fd7c5f7e0cafc32254bac
+    - _id: ded2327016b40f4eb044d62279b528ef
       _order: 0
       cache: {}
       request:
-        bodySize: 2410
+        bodySize: 2355
         cookies: []
         headers:
           - name: content-type
@@ -1646,7 +1648,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-9d0fc5696052b9bba72a34b4da10a63a-c92997e48ef15e37-01
+            value: 00-9c2edee446f6d0fd704da555b49d0504-6ea3aa1d36ebd6cf-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1762,10 +1764,11 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: "You have access to my codebase context. Provide a high-level overview
-                  answer positively without apologizing. Question: What is the
-                  name of the function that I have selected? Only answer with
-                  the name of the function, nothing else"
+                text: >-
+                  You have access to the provided codebase context. 
+
+
+                  Question: What is the name of the function that I have selected? Only answer with the name of the function, nothing else
             model: anthropic/claude-3-sonnet-20240229
             temperature: 0
             topK: -1
@@ -1793,7 +1796,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 02 Jul 2024 16:45:16 GMT
+            value: Tue, 02 Jul 2024 21:41:46 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1801,7 +1804,7 @@ log:
           - name: connection
             value: keep-alive
           - name: retry-after
-            value: "4"
+            value: "499"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1819,12 +1822,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1404
+        headersSize: 1406
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-02T16:45:15.098Z
+      startedDateTime: 2024-07-02T21:41:45.588Z
       time: 0
       timings:
         blocked: -1
@@ -1834,11 +1837,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b52884c142abd494b45d7314cd9526a6
+    - _id: 14bfd7702373d5c73d5f7599ca429a81
       _order: 0
       cache: {}
       request:
-        bodySize: 2415
+        bodySize: 2360
         cookies: []
         headers:
           - name: content-type
@@ -1851,7 +1854,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-4f4885562b4d834e5a93b07d1bce76d4-cc22a89715fe4149-01
+            value: 00-16ab930f87f35c9e7561e7c82a1501b1-83066edacabf3532-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1965,10 +1968,11 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: "You have access to my codebase context. Provide a high-level overview
-                  answer positively without apologizing. Question: What is the
-                  name of the function that I have selected? Only answer with
-                  the name of the function, nothing else"
+                text: >-
+                  You have access to the provided codebase context. 
+
+
+                  Question: What is the name of the function that I have selected? Only answer with the name of the function, nothing else
             model: anthropic/claude-3-sonnet-20240229
             temperature: 0
             topK: -1
@@ -1996,7 +2000,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 02 Jul 2024 16:45:17 GMT
+            value: Tue, 02 Jul 2024 21:41:48 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2004,7 +2008,7 @@ log:
           - name: connection
             value: keep-alive
           - name: retry-after
-            value: "3"
+            value: "498"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -2022,12 +2026,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1404
+        headersSize: 1406
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-07-02T16:45:16.483Z
+      startedDateTime: 2024-07-02T21:41:46.830Z
       time: 0
       timings:
         blocked: -1

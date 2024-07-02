@@ -9,7 +9,7 @@ const CONTEXT_PREAMBLE = ps`You have access to the provided codebase context. `
 /**
  * The preamble for preventing known models from hedging.
  */
-const HEDGES_PREVENTION = ps`Always provide a high-level overview answer positively without apologizing.`
+const HEDGES_PREVENTION = ps`Provide a high-level overview answer positively without apologizing. `
 
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.
@@ -25,13 +25,13 @@ export class PromptMixin {
      */
     public static mixInto(humanMessage: ChatMessage, modelID: string): ChatMessage {
         // Default Mixin is added at the end so that it cannot be overriden by other mixins.
-        const mixins = PromptString.join(
+        let mixins = PromptString.join(
             [...PromptMixin.mixins, PromptMixin.defaultMixin].map(mixin => mixin.prompt),
             ps`\n\n`
         )
 
-        if (modelID?.includes('claude-3-5-sonnet')) {
-            mixins.concat(HEDGES_PREVENTION)
+        if (modelID.includes('claude-3-5-sonnet')) {
+            mixins = mixins.concat(HEDGES_PREVENTION)
         }
 
         if (mixins) {
@@ -39,7 +39,7 @@ export class PromptMixin {
             // Note we do not reflect them in `text`.
             return {
                 ...humanMessage,
-                text: ps`${mixins}Question: ${humanMessage.text ? humanMessage.text : ''}`,
+                text: ps`${mixins}\n\nQuestion: ${humanMessage.text ? humanMessage.text : ''}`,
             }
         }
         return humanMessage
