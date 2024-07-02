@@ -108,6 +108,7 @@ export type ClientRequests = {
         EditTask,
     ]
     'editCommands/test': [null, EditTask]
+    'editCommands/fix': [null, EditTask]
     'editCommands/document': [null, EditTask]
 
     // If the task is "applied", discards the task.
