@@ -1,14 +1,13 @@
 import { type Model, ModelsService } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
-import { PaperclipIcon } from 'lucide-react'
 import { type FunctionComponent, useCallback } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
-import { ToolbarButton } from '../../../../../../components/shadcn/ui/toolbar'
 import { getVSCodeAPI } from '../../../../../../utils/VSCodeApi'
 import { useChatModelContext } from '../../../../../models/chatModelContext'
 import { AddContextButton } from './AddContextButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
+import { UploadImageButton } from './UploadImageButton'
 
 /**
  * The toolbar for the human message editor.
@@ -74,12 +73,10 @@ export const Toolbar: FunctionComponent<{
                     <AddContextButton onClick={onMentionClick} className="tw-opacity-60" />
                 )}
                 {currentModel && ModelsService.isMultiModalModel(currentModel?.model) && (
-                    <ToolbarButton
-                        variant="secondary"
-                        tooltip="Upload an image"
-                        iconStart={PaperclipIcon}
+                    // todo(tim): add support for passing in chatModel.images[0] if present (and make onClick remove it)
+                    <UploadImageButton
+                        className="tw-opacity-60"
                         onClick={() => getVSCodeAPI().postMessage({ command: 'chat/upload-image' })}
-                        aria-label="Upload image"
                     />
                 )}
                 <span>
