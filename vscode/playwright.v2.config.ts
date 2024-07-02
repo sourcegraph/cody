@@ -1,3 +1,6 @@
+import { mkdirSync, rmSync } from 'node:fs'
+import * as os from 'node:os'
+import * as path from 'node:path'
 import { type ReporterDescription, defineConfig } from '@playwright/test'
 import type { SymlinkExtensions } from './e2e/utils/symlink-extensions.setup'
 import type { TestOptions, WorkerOptions } from './e2e/utils/vscody'
@@ -7,6 +10,10 @@ const isCI = !!process.env.CI
 // This makes sure that each run gets a unique run id. This shouldn't really be
 // used other than to invalidate lockfiles etc.
 process.env.RUN_ID = process.env.RUN_ID || new Date().toISOString()
+
+const globalTmpDir = path.resolve(process.cwd(), `../.test/runs/${process.env.RUN_ID}/`)
+rmSync(path.resolve(globalTmpDir, '..'), { force: true, recursive: true })
+mkdirSync(globalTmpDir, { recursive: true })
 
 export default defineConfig<WorkerOptions & TestOptions & SymlinkExtensions>({
     workers: '50%',
@@ -24,9 +31,11 @@ export default defineConfig<WorkerOptions & TestOptions & SymlinkExtensions>({
         repoRootDir: '../', //deprecated
         vscodeExtensions: ['sourcegraph.cody-ai'],
         symlinkExtensions: ['.'],
-        vscodeVersion: 'stable',
+        globalTmpDir: `../.test/runs/${process.env.RUN_ID}/`, //os.tmpdir(),
+        vscodeVersion: 'stablefff',
         vscodeTmpDir: '../.test/global/vscode',
-        vscodeExtensionCacheDir: '../.test/global/vscode-extensions',
+        vscodeExtensionCacheDir: `${os.homedir()}/.vscode-server/extensions`,
+        vscodeServerTmpDir: '../.test/global/vscode-server',
         binaryTmpDir: '../.test/global/bin',
         recordIfMissing:
             typeof process.env.CODY_RECORD_IF_MISSING === 'string'
@@ -34,13 +43,14 @@ export default defineConfig<WorkerOptions & TestOptions & SymlinkExtensions>({
                 : false,
         recordingMode: (process.env.CODY_RECORDING_MODE as any) ?? 'replay',
         recordingDir: '../recordings/vscode/',
-
+        keepUnusedRecordings: true,
         bypassCSP: true,
         locale: 'en-US',
         timezoneId: 'America/Los_Angeles',
         permissions: ['clipboard-read', 'clipboard-write'],
         geolocation: { longitude: -122.40825783227943, latitude: 37.78124453182266 },
         acceptDownloads: false,
+        keepRuntimeDirs: 'all',
         trace: {
             mode: isCI ? 'retain-on-failure' : 'on',
             attachments: true,
@@ -67,6 +77,9 @@ export default defineConfig<WorkerOptions & TestOptions & SymlinkExtensions>({
             testMatch: ['**/*.test.ts'],
             testIgnore: ['issues/**/*', 'utils/**/*'],
             dependencies: ['symlink-extensions'],
+            use: {
+                // recordIfMissing: true, //uncomment for quick manual override
+            },
         },
         {
             name: 'issues',
@@ -74,6 +87,9 @@ export default defineConfig<WorkerOptions & TestOptions & SymlinkExtensions>({
             retries: 0,
             testMatch: ['**/*.test.ts'],
             dependencies: ['symlink-extensions'],
+            use: {
+                // recordIfMissing: true, //uncomment for quick manual override
+            },
         },
     ],
     reporter: [

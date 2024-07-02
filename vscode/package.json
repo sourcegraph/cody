@@ -42,7 +42,7 @@
     "test:e2e:run": "playwright test",
     "test:e2e2": "pnpm -s test:e2e2:deps && pnpm -s build:dev:desktop && pnpm -s test:e2e2:run",
     "test:e2e2:run": "playwright test -c playwright.v2.config.ts",
-    "test:e2e2:deps": "playwright install chromium",
+    "test:e2e2:deps": "playwright install-deps chromium ",
     "test:integration": "tsc --build ./test/integration && pnpm run -s build:dev:desktop && node --inspect -r ts-node/register dist/tsc/test/integration/main.js",
     "test:unit": "vitest",
     "bench": "vitest bench",
