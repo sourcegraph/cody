@@ -72,15 +72,24 @@ export class ChatManager implements vscode.Disposable {
         // Register Commands
         this.disposables.push(
             vscode.commands.registerCommand('cody.action.chat', args => this.executeChat(args)),
+            vscode.commands.registerCommand(
+                'cody.chat.panel.moveFromSidebarToEditor',
+                async () => await this.chatPanelsManager.moveSidebarChatToEditor()
+            ),
+            vscode.commands.registerCommand(
+                'cody.chat.panel.moveFromEditorToSidebar',
+                async () => await this.chatPanelsManager.moveEditorChatToSidebar()
+            ),
+            vscode.commands.registerCommand(
+                'cody.chat.panel.sidebar.new',
+                async () => await this.chatPanelsManager.resetSidebar()
+            ),
             vscode.commands.registerCommand('cody.chat.history.export', () => this.exportHistory()),
             vscode.commands.registerCommand('cody.chat.history.clear', () => this.clearHistory()),
             vscode.commands.registerCommand('cody.chat.history.delete', item => this.clearHistory(item)),
             vscode.commands.registerCommand('cody.chat.panel.new', () => this.createNewWebviewPanel()),
             vscode.commands.registerCommand('cody.chat.panel.restore', (id, chat) =>
                 this.restorePanel(id, chat)
-            ),
-            vscode.commands.registerCommand('cody.chat.panel.reset', () =>
-                this.chatPanelsManager.resetPanel()
             ),
             vscode.commands.registerCommand(CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID, (...args) =>
                 this.passthroughVsCodeOpen(...args)

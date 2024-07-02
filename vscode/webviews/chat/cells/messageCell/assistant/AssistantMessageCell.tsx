@@ -4,6 +4,7 @@ import {
     type Guardrails,
     contextItemsFromPromptEditorValue,
     filterContextItemsFromPromptEditorValue,
+    isAbortErrorOrSocketHangUp,
     ps,
     reformatBotMessageForChat,
     serializedPromptEditorStateFromChatMessage,
@@ -11,6 +12,7 @@ import {
 import { type FunctionComponent, type RefObject, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
 import { chatModelIconComponent } from '../../../../components/ChatModelIcon'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../components/shadcn/ui/tooltip'
 import type { PromptEditorRefAPI } from '../../../../promptEditor/PromptEditor'
 import { ChatMessageContent, type CodeBlockActionsProps } from '../../../ChatMessageContent'
 import { ErrorItem, RequestErrorItem } from '../../../ErrorItem'
@@ -31,6 +33,7 @@ export const AssistantMessageCell: FunctionComponent<{
     humanMessage: PriorHumanMessageInfo | null
 
     userInfo: UserAccountInfo
+    chatEnabled: boolean
     isLoading: boolean
 
     showFeedbackButtons: boolean
@@ -45,6 +48,7 @@ export const AssistantMessageCell: FunctionComponent<{
     message,
     humanMessage,
     userInfo,
+    chatEnabled,
     isLoading,
     showFeedbackButtons,
     feedbackButtonsOnSubmit,
@@ -60,20 +64,29 @@ export const AssistantMessageCell: FunctionComponent<{
 
     const chatModel = useChatModelByID(message.model)
     const ModelIcon = chatModel ? chatModelIconComponent(chatModel.model) : null
+    const isAborted = isAbortErrorOrSocketHangUp(message.error)
 
     return (
         <BaseMessageCell
             speaker={message.speaker}
             speakerIcon={
                 chatModel && ModelIcon ? (
-                    <span title={`${chatModel.title} by ${chatModel.provider}`}>
-                        <ModelIcon size={NON_HUMAN_CELL_AVATAR_SIZE} />
+                    <span>
+                        <Tooltip>
+                            <TooltipTrigger
+                                className="tw-cursor-default"
+                                data-testid="chat-message-model-icon"
+                            >
+                                <ModelIcon size={NON_HUMAN_CELL_AVATAR_SIZE} />
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom">{`${chatModel.title} by ${chatModel.provider}`}</TooltipContent>
+                        </Tooltip>
                     </span>
                 ) : null
             }
             content={
                 <>
-                    {message.error ? (
+                    {message.error && !isAborted ? (
                         typeof message.error === 'string' ? (
                             <RequestErrorItem error={message.error} />
                         ) : (
@@ -98,17 +111,32 @@ export const AssistantMessageCell: FunctionComponent<{
                 </>
             }
             footer={
-                ((showFeedbackButtons && feedbackButtonsOnSubmit) || humanMessage) && (
-                    <div className="tw-flex tw-items-center tw-py-3 tw-divide-x tw-transition tw-divide-muted tw-opacity-65 hover:tw-opacity-100">
-                        {showFeedbackButtons && feedbackButtonsOnSubmit && (
-                            <FeedbackButtons
-                                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                                className="tw-pr-4"
-                            />
+                chatEnabled &&
+                humanMessage && (
+                    <div className="tw-py-3 tw-flex tw-flex-col tw-gap-2">
+                        {isAborted && (
+                            <div className="tw-text-sm tw-text-muted-foreground tw-mt-4">
+                                Output stream stopped
+                            </div>
                         )}
-                        {humanMessage && !isLoading && !message.error && (
-                            <ContextFocusActions humanMessage={humanMessage} className="tw-pl-5" />
-                        )}
+                        <div className="tw-flex tw-items-center tw-divide-x tw-transition tw-divide-muted tw-opacity-65 hover:tw-opacity-100">
+                            {showFeedbackButtons && feedbackButtonsOnSubmit && (
+                                <FeedbackButtons
+                                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                                    className="tw-pr-4"
+                                />
+                            )}
+                            {!isLoading && (!message.error || isAborted) && (
+                                <ContextFocusActions
+                                    humanMessage={humanMessage}
+                                    className={
+                                        showFeedbackButtons && feedbackButtonsOnSubmit
+                                            ? 'tw-pl-5'
+                                            : undefined
+                                    }
+                                />
+                            )}
+                        </div>
                     </div>
                 )
             }

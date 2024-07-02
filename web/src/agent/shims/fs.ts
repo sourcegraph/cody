@@ -21,3 +21,7 @@ export function rmSync(): unknown {
 export function copyFileSync(): unknown {
     throw new Error('not implemented')
 }
+
+export function statSync(): unknown {
+    throw new Error('not implemented')
+}

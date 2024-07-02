@@ -141,6 +141,7 @@ export const iconForProvider: Record<
     'https://openctx.org/npm/@openctx/provider-hello-world': SmileIcon,
     'https://openctx.org/npm/@openctx/provider-devdocs': LibraryBigIcon,
     'https://openctx.org/npm/@openctx/provider-sourcegraph-search': SourcegraphLogo,
+    'internal-linear-issues': LinearLogo, // Can't import LinearIssuesProvider due to transitive dep on vscode.
     [RemoteRepositorySearch.providerUri]: FolderGitIcon,
     [RemoteFileProvider.providerUri]: FolderGitIcon,
     [WebProvider.providerUri]: LinkIcon,

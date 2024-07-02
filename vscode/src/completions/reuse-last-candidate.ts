@@ -29,20 +29,15 @@ type ReuseLastCandidateArgument =
             docContext: DocumentContext
         }
 
-/**
- * See test cases for the expected behaviors.
- */
-export function reuseLastCandidate({
+export function canReuseLastCandidateInDocumentContext({
     document,
     position,
     selectedCompletionInfo,
     lastCandidate: { lastTriggerPosition, lastTriggerDocContext, lastTriggerSelectedCompletionInfo },
     lastCandidate,
-    docContext: { currentLinePrefix, currentLineSuffix, nextNonEmptyLine },
+    docContext: { nextNonEmptyLine },
     docContext,
-    handleDidAcceptCompletionItem,
-    handleDidPartiallyAcceptCompletionItem,
-}: ReuseLastCandidateArgument): InlineCompletionsResult | null {
+}: ReuseLastCandidateArgument): boolean {
     const isSameDocument = lastCandidate.uri.toString() === document.uri.toString()
     const isSameLine = lastTriggerPosition.line === position.line
     const isSameNextNonEmptyLine = lastTriggerDocContext.nextNonEmptyLine === nextNonEmptyLine
@@ -65,12 +60,34 @@ export function reuseLastCandidate({
             ? lastTriggerSelectedCompletionInfo?.text === selectedCompletionInfo?.text
             : true
 
-    if (
-        !isSameDocument ||
-        !isSameLine ||
-        !isSameNextNonEmptyLine ||
-        !isSameSelectedInfoItemOrFullyAccepted
-    ) {
+    return (
+        isSameDocument && isSameLine && isSameNextNonEmptyLine && isSameSelectedInfoItemOrFullyAccepted
+    )
+}
+
+/**
+ * See test cases for the expected behaviors.
+ */
+export function reuseLastCandidate({
+    document,
+    position,
+    selectedCompletionInfo,
+    lastCandidate: { lastTriggerPosition, lastTriggerDocContext, lastTriggerSelectedCompletionInfo },
+    lastCandidate,
+    docContext: { currentLinePrefix, currentLineSuffix, nextNonEmptyLine },
+    docContext,
+    handleDidAcceptCompletionItem,
+    handleDidPartiallyAcceptCompletionItem,
+}: ReuseLastCandidateArgument): InlineCompletionsResult | null {
+    const canReuse = canReuseLastCandidateInDocumentContext({
+        document,
+        position,
+        selectedCompletionInfo,
+        lastCandidate,
+        docContext,
+    })
+
+    if (!canReuse) {
         return null
     }
 

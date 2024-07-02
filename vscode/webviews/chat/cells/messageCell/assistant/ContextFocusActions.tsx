@@ -67,7 +67,7 @@ export const ContextFocusActions: FunctionComponent<{
                         : null,
                     {
                         label: 'Add context...',
-                        tooltip: '@-mention relevant content to improve the response',
+                        tooltip: 'Add relevant content to improve the response',
                         onClick: () => {
                             telemetryRecorder.recordEvent('cody.contextSelection', 'addFile', {
                                 metadata: initialContextEventMetadata,

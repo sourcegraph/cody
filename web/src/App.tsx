@@ -61,6 +61,7 @@ export const App: FunctionComponent = () => {
     const [clientState, setClientState] = useState<ClientStateForWebview>({
         initialContext: [],
     })
+    const [chatID, setChatID] = useState<string>('[no-chat]')
     const dispatchClientAction = useClientActionDispatcher()
 
     const [client, setClient] = useState<AgentClient | Error | null>(null)
@@ -128,6 +129,7 @@ export const App: FunctionComponent = () => {
                     const deserializedMessages = message.messages.map(
                         PromptString.unsafe_deserializeChatMessage
                     )
+                    setChatID(message.chatID)
                     if (message.isMessageInProgress) {
                         const msgLength = deserializedMessages.length - 1
                         setTranscript(deserializedMessages.slice(0, msgLength))
@@ -200,6 +202,7 @@ export const App: FunctionComponent = () => {
                 <TelemetryRecorderContext.Provider value={telemetryRecorder}>
                     <ClientStateContextProvider value={clientState}>
                         <Chat
+                            chatID={chatID}
                             chatEnabled={true}
                             userInfo={userAccountInfo}
                             messageInProgress={messageInProgress}

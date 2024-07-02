@@ -43,7 +43,7 @@ export function newAuthStatus(
     isOfflineMode?: boolean
 ): AuthStatus {
     if (isOfflineMode) {
-        return { ...offlineModeAuthStatus, endpoint }
+        return { ...offlineModeAuthStatus, endpoint, username }
     }
     if (!user) {
         return { ...unauthenticatedStatus, endpoint }

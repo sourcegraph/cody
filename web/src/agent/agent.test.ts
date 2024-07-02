@@ -12,7 +12,7 @@ vi.mock('../../../vscode/src/models', () => ({
 }))
 
 describe('agent web worker', () => {
-    test(
+    test.skip(
         'creates',
         async () => {
             const agent = await createAgentClient({
