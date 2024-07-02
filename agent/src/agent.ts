@@ -1040,6 +1040,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
         })
 
+        this.registerAuthenticatedRequest('editCommands/fix', () => {
+            return this.createEditTask(
+                vscode.commands.executeCommand<CommandResult | undefined>('cody.command.fix-problem')
+            )
+        })
+
         this.registerAuthenticatedRequest('commands/smell', () => {
             return this.createChatPanel(
                 vscode.commands.executeCommand('cody.command.smell-code', commandArgs)
