@@ -116,7 +116,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
         if (activeChatID) {
             vscodeAPI.postMessage({ command: 'restoreHistory', chatID: activeChatID })
         }
-    }, [vscodeAPI])
+    }, [vscodeAPI, activeChatID])
 
     // Deprecated V1 telemetry
     const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
