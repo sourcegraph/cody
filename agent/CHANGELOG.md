@@ -10,6 +10,12 @@ This is a log of all notable changes to the Cody command-line tool. [Unreleased]
 
 ### Changed
 
+## 0.1.1
+
+### Fixed
+
+- Running `npm install -g @sourcegraph/cody-agent` should work now. It was previously crashing about a missing keytar dependency.
+
 ## 0.1.0
 
 ### Added

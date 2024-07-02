@@ -1142,6 +1142,24 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return []
         })
 
+        this.registerAuthenticatedRequest('chat/delete', async params => {
+            await vscode.commands.executeCommand<AuthStatus>('cody.chat.history.delete', {
+                id: params.chatId,
+            })
+
+            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+            const localHistory = await chatHistory.getLocalHistory(authStatus)
+
+            if (localHistory != null) {
+                return Object.entries(localHistory?.chat).map(([chatID, chatTranscript]) => ({
+                    chatID: chatID,
+                    transcript: chatTranscript,
+                }))
+            }
+
+            return []
+        })
+
         this.registerAuthenticatedRequest('chat/remoteRepos', async ({ id }) => {
             const panel = this.webPanels.getPanelOrError(id)
             await this.receiveWebviewMessage(id, {

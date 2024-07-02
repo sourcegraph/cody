@@ -1,0 +1,83 @@
+
+html,
+:host {
+    tab-size: 4;
+    line-height: 1.5;
+    text-size-adjust: 100%;
+    font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji';
+    font-feature-settings: normal;
+    font-variation-settings: normal;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    line-height: inherit;
+}
+
+:root {
+    color-scheme: dark;
+}
+
+.root {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+    font-size: 13px;
+    overflow: hidden;
+}
+
+.history {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    height: 100%;
+    width: 30%;
+    flex-grow: 0;
+    flex-shrink: 0;
+    list-style: none;
+    padding: 0.5rem;
+
+    :global(li) {
+        display: flex;
+        width: 100%;
+
+        &.selected button, :global(button):hover {
+            background: #0b216f;
+        }
+    }
+
+    :global(button) {
+        border: none;
+        padding: 0.25rem;
+        text-align: start;
+        background: #1e1e1e;
+
+        &.select {
+            border-top-left-radius: 3px;
+            border-bottom-left-radius: 3px;
+            flex-grow: 1;
+        }
+
+        &.delete {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-top-right-radius: 3px;
+            border-bottom-right-radius: 3px;
+            height: 100%;
+        }
+
+        &.create-chat {
+            width: 100%;
+            background: #0e2414;
+            border-radius: 3px;
+        }
+    }
+}
+
+.container {
+    height: 100%;
+    flex-grow: 1;
+}

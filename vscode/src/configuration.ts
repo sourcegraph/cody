@@ -198,7 +198,7 @@ export function getConfiguration(
                       indexPath: URI.file(
                           getHiddenSetting<string>('testing.localEmbeddings.indexLibraryPath')
                       ),
-                      provider: 'openai',
+                      provider: 'sourcegraph',
                   }
                 : undefined,
     }
