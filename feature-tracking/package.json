@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "name": "features",
+  "description": "Queries features.json5 to summarize features in Cody",
+  "version": "0.0.1",
+  "scripts": {
+    "features": "tsc --build . && node -r ts-node/register dist/index.js"
+  },
+  "dependencies": {
+    "@types/argparse": "^2.0.16",
+    "argparse": "^2.0.1",
+    "json5": "^2.2.3"
+  }
+}

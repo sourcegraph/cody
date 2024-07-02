@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+    "index.ts",
+  ],
+  "ts-node": {
+    "esm": true
+  }
+}
