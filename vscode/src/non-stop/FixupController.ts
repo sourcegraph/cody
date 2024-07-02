@@ -29,7 +29,6 @@ import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type FixupTaskID, type FixupTelemetryMetadata } from './FixupTask'
-import { TERMINAL_EDIT_STATES } from './codelenses/constants'
 import { FixupDecorator } from './decorations/FixupDecorator'
 import { type Edit, computeDiff, makeDiffEditBuilderCompatible } from './line-diff'
 import { trackRejection } from './rejection-tracker'
@@ -137,6 +136,22 @@ export class FixupController
             return
         }
         this.setTaskState(task, CodyTaskState.Finished)
+    }
+
+    private async acceptOverlappingTasks(primaryTask: FixupTask): Promise<void> {
+        const tasksForFile = [...this.tasks.values()].filter(
+            task => primaryTask.fixupFile.uri.toString === task.fixupFile.uri.toString
+        )
+        for (const task of tasksForFile) {
+            if (
+                task.state === CodyTaskState.Applied &&
+                task.selectionRange.intersection(primaryTask.selectionRange) !== undefined
+            ) {
+                await this.clearPlaceholderInsertions([task], task.fixupFile.uri)
+                task.diff = undefined
+                this.accept(task)
+            }
+        }
     }
 
     public cancel(task: FixupTask): void {
@@ -689,6 +704,11 @@ export class FixupController
             return
         }
 
+        // Before applying this task, we should auto-accept any other tasks
+        // that have an overlapping range. This is so we don't end up in a scenario
+        // where we have two overlapping diffs shown in the document.
+        await this.acceptOverlappingTasks(task)
+
         let edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit
         let document: vscode.TextDocument
 
@@ -1007,19 +1027,17 @@ export class FixupController
 
     // Handles changes to the source document in the fixup selection
     public textDidChange(task: FixupTask): void {
-        if (TERMINAL_EDIT_STATES.includes(task.state)) {
-            // We don't need to worry about updating decorations for terminal states,
-            // as we will accept this task here anyway
-            return
-        }
-
         if (isStreamedIntent(task.intent)) {
             // Text change is most likely coming from the incoming streamed insertions,
             // No need to update the decorator here as it'll cause a flicker.
             return
         }
 
-        this.decorator.didUpdateInProgressTask(task)
+        if (task.state === CodyTaskState.Working) {
+            this.decorator.didUpdateInProgressTask(task)
+        } else if (task.state === CodyTaskState.Applied) {
+            this.decorator.didApplyTask(task)
+        }
     }
 
     // Handles when the range associated with a fixup task changes.

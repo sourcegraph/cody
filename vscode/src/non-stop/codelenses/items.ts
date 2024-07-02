@@ -33,18 +33,19 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
             const accept = getAcceptLens(codeLensRange, task.id)
             const retry = getRetryLens(codeLensRange, task.id)
             const undo = getUndoLens(codeLensRange, task.id)
-            const showDiff = getDiffLens(codeLensRange, task.id)
             if (isTest) {
                 return [accept, undo]
             }
             if (isEdit) {
-                const actions = [accept, retry, undo]
-                if (isRunningInsideAgent()) {
-                    // We only show an inline diff in VS Code, so keep the "Show Diff"
-                    // option in other clients
-                    return [...actions, showDiff]
-                }
-                return actions
+                const showDiff = getDiffLens(
+                    codeLensRange,
+                    task.id,
+                    // Note: We already show an inline-diff in VS Code, so we change the wording slightly.
+                    // It is still useful to open the diff fully here, as it provides additional controls such as
+                    // reverting specific lines
+                    isRunningInsideAgent() ? 'Show Diff' : 'Open Diff'
+                )
+                return [accept, retry, undo, showDiff]
             }
             return [accept, retry, undo]
         }
@@ -141,10 +142,10 @@ function getDiscardLens(codeLensRange: vscode.Range, id: string): vscode.CodeLen
     return lens
 }
 
-function getDiffLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
+function getDiffLens(codeLensRange: vscode.Range, id: string, title: string): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
-        title: 'Show Diff',
+        title,
         command: 'cody.fixup.codelens.diff',
         arguments: [id],
     }
