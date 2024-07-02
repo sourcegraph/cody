@@ -90,6 +90,7 @@ export class RequestManager {
     }
 
     public async request(params: RequestsManagerParams): Promise<RequestManagerResult> {
+        console.log('UMPOX: NEW REQUEST')
         this.latestRequestParams = params
 
         const { requestParams, provider, context, tracer } = params
@@ -107,10 +108,10 @@ export class RequestManager {
                 : new AbortController()
 
         const request = new InflightRequest(requestParams, abortController)
+        console.log('UMPOX: REQUEST IS', request)
         this.inflightRequests.add(request)
 
         const generateCompletions = async (): Promise<void> => {
-            console.log('MAKING REQUEST')
             try {
                 for await (const fetchCompletionResults of provider.generateCompletions(
                     request.abortController.signal,
@@ -143,6 +144,7 @@ export class RequestManager {
                             source: InlineCompletionsResultSource.Cache,
                         })
 
+                        console.log('UMPOX: RESOLVING REQUEST TO', processedCompletions)
                         // A promise will never resolve twice, so we do not need to
                         // check if the request was already fulfilled.
                         request.resolve({
@@ -152,12 +154,7 @@ export class RequestManager {
 
                         request.lastCompletions = processedCompletions
 
-                        if (!shouldHonorCancellation) {
-                            this.testIfResultCanBeRecycledForInflightRequests(
-                                request,
-                                processedCompletions
-                            )
-                        }
+                        this.testIfResultCanBeRecycledForInflightRequests(request, processedCompletions)
                     }
 
                     // Save hot streak completions for later use.
@@ -176,20 +173,18 @@ export class RequestManager {
                         )
                     }
 
-                    if (!shouldHonorCancellation) {
-                        this.cancelIrrelevantRequests()
-                    }
+                    this.cancelIrrelevantRequests()
                 }
             } catch (error) {
+                console.log('UMPOX: GOT ERROR', error)
                 request.reject(error as Error)
             } finally {
+                console.log('UMPOX: REMOVING REQUEST:', request)
                 this.inflightRequests.delete(request)
             }
         }
 
-        if (!shouldHonorCancellation) {
-            this.cancelIrrelevantRequests()
-        }
+        this.cancelIrrelevantRequests()
 
         void wrapInActiveSpan('autocomplete.generate', generateCompletions)
         return request.promise
@@ -258,6 +253,7 @@ export class RequestManager {
 
         const isLocalProvider = isLocalCompletionsProvider(this.latestRequestParams.provider.options.id)
 
+        console.log('UMPOX: INFLIGHT REQUEST COUNT:', this.inflightRequests.size)
         for (const request of this.inflightRequests) {
             let shouldAbort = !computeIfRequestStillRelevant(
                 this.latestRequestParams.requestParams,
@@ -273,7 +269,7 @@ export class RequestManager {
 
             if (shouldAbort) {
                 logDebug('CodyCompletionProvider', 'Irrelevant request aborted')
-                console.log('ABORTING REQUEST')
+                console.log('UMPOX: ABORTING REQUEST')
                 request.abortController.abort()
                 this.inflightRequests.delete(request)
             }

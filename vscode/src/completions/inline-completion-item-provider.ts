@@ -291,7 +291,10 @@ export class InlineCompletionItemProvider
                 if (token.isCancellationRequested) {
                     abortController.abort()
                 }
-                token.onCancellationRequested(() => abortController.abort())
+                token.onCancellationRequested(() => {
+                    console.log('UMPOX: ABORTING FROM onCancellationRequested')
+                    abortController.abort()
+                })
             }
 
             // When the user has the completions popup open and an item is selected that does not match
