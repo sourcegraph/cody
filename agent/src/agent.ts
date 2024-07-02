@@ -86,6 +86,8 @@ import type {
 } from './protocol-alias'
 import * as vscode_shim from './vscode-shim'
 import { vscodeLocation, vscodeRange } from './vscode-type-converters'
+import { ContextRetrieverOptions } from '../../vscode/src/completions/types'
+import { getCurrentDocContext } from '../../vscode/src/completions/get-current-doc-context'
 
 const inMemorySecretStorageMap = new Map<string, string>()
 const globalState = new AgentGlobalState()
@@ -620,6 +622,45 @@ export class Agent extends MessageHandler implements ExtensionClient {
             const diagnostics = retriever.diagnostics(uri)
             return { diagnostics }
         })
+
+        this.registerRequest('autocomplete/tscContextRetriever', async params => {
+            const filePath = vscode.Uri.file(params.filePath)
+            const position = new vscode.Position(params.position.line, params.position.character)
+            const retriever = loadTscRetriever()
+            if (!retriever) {
+                throw new Error('autocomplete/tscContextRetriever: no retriever')
+            }
+            const document = this.workspace.getDocument(filePath)
+            if (!document) {
+                throw new Error(`autocomplete/tscContextRetriever: no document for URI ${filePath}`)
+            }
+            const options: ContextRetrieverOptions = {
+                document: document,
+                position: position,
+                docContext: getCurrentDocContext({
+                    document,
+                    position,
+                    maxPrefixLength: params.options.maxPrefixLength,
+                    maxSuffixLength: params.options.maxSuffixLength,
+                }),
+                hints: {
+                    maxChars: params.options.maxChars,
+                    maxMs: params.options.maxMsec,
+                },
+            }
+            const retrivedContext = await retriever?.retrieve(options)
+            const tscContext: agent_protocol.TscContextRetriverResult[] = retrivedContext.map(context => {
+                return {
+                    symbol: 'symbol' in context ? context.symbol : undefined,
+                    content: context.content,
+                    startLine: context.startLine,
+                    endLline: context.endLine,
+                    filePath: context.uri.fsPath,
+                }
+            })
+            return tscContext
+        })
+
 
         this.registerAuthenticatedRequest('testing/awaitPendingPromises', async () => {
             if (!(vscode_shim.isTesting || vscode_shim.isIntegrationTesting)) {
