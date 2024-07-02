@@ -264,9 +264,9 @@ html[data-ide=JetBrains] {
     --vscode-inlineChatInput-border: var(--jetbrains-InlineChatInput-border);
     --vscode-inlineChatInput-focusBorder: var(--jetbrains-InlineChatInput-focusBorder);
     --vscode-inlineChatInput-placeholderForeground: var(--jetbrains-InlineChatInput-placeholderForeground);
-    --vscode-input-background: var(--jetbrains-Input-background);
-    --vscode-input-border: var(--jetbrains-Input-border);
-    --vscode-input-foreground: var(--jetbrains-Input-foreground);
+    --vscode-input-background: var(--jetbrains-TextArea-background);
+    --vscode-input-border: var(--jetbrains-TextArea-inactiveForeground);
+    --vscode-input-foreground: var(--jetbrains-TextArea-foreground);
     --vscode-input-placeholderForeground: var(--jetbrains-Input-placeholderForeground);
     --vscode-inputOption-activeBackground: var(--jetbrains-InputOption-activeBackground);
     --vscode-inputOption-activeBorder: var(--jetbrains-InputOption-activeBorder);
