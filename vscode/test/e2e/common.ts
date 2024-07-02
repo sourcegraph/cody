@@ -20,7 +20,6 @@ export const sidebarSignin = async (
     await page.getByRole('combobox', { name: 'input' }).fill(VALID_TOKEN)
     await page.getByRole('combobox', { name: 'input' }).press('Enter')
 
-    // TODO(beyang): re-enable when sidebar chat is enabled
     // // Close sidebar chat
     // await page.getByLabel('Chat Section').click()
 

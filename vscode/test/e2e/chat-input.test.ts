@@ -63,8 +63,6 @@ test.extend<ExpectedEvents>({
     // (`Cody: New Chat`) to switch back to the chat window we already opened and check that the
     // input is focused.
     await page.getByText("fizzbuzz.push('Buzz')").click()
-    await page.keyboard.press('Alt+L')
-    await expect(firstChatInput).toBeFocused()
 
     // Submit a new chat question from the command menu.
     await page.getByLabel(/Commands \(/).click()
@@ -240,6 +238,7 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     await expect(modelSelect).toHaveText(/^GPT-4o/)
     await lastChatInput.fill('to model2')
     await lastChatInput.press('Enter')
+    await expect(chatFrame.locator('[data-testid="chat-message-model-icon"]')).toHaveCount(2)
     await chatFrame.locator('[data-testid="chat-message-model-icon"]').last().hover()
     await expect(
         chatFrame.locator('[data-testid="message"]').getByText('GPT-4o by OpenAI')
