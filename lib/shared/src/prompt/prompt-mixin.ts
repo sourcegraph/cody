@@ -5,7 +5,11 @@ import { PromptString, ps } from './prompt-string'
 /**
  * The preamble we add to the start of the last human open-end chat message that has context items.
  */
-const CONTEXT_PREAMBLE = ps`You have access to my codebase context. Provide a high-level overview answer positively without apologizing. Question: `
+const CONTEXT_PREAMBLE = ps`You have access to my codebase context.`
+/**
+ * The preamble for preventing known models from hedging.
+ */
+const HEDGES_PREVENTION = ps`Always provide a high-level overview answer positively without apologizing.`
 
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.
@@ -17,19 +21,25 @@ export class PromptMixin {
 
     /**
      * Prepends all mixins to `humanMessage`. Modifies and returns `humanMessage`.
+     * Add headges prevention prompt to known models.
      */
-    public static mixInto(humanMessage: ChatMessage): ChatMessage {
+    public static mixInto(humanMessage: ChatMessage, modelID: string): ChatMessage {
         // Default Mixin is added at the end so that it cannot be overriden by other mixins.
         const mixins = PromptString.join(
             [...PromptMixin.mixins, PromptMixin.defaultMixin].map(mixin => mixin.prompt),
             ps`\n\n`
         )
+
+        if (modelID?.includes('claude-3-5-sonnet')) {
+            mixins.concat(HEDGES_PREVENTION)
+        }
+
         if (mixins) {
             // Stuff the prompt mixins at the start of the human text.
             // Note we do not reflect them in `text`.
             return {
                 ...humanMessage,
-                text: ps`${mixins}${humanMessage.text ? humanMessage.text : ''}`,
+                text: ps`${mixins}Question: ${humanMessage.text ? humanMessage.text : ''}`,
             }
         }
         return humanMessage
