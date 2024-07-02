@@ -96,6 +96,9 @@ export async function createInlineCompletionItemProvider({
             vscode.commands.registerCommand('cody.autocomplete.manual-trigger', () =>
                 completionsProvider.manuallyTriggerCompletion()
             ),
+            vscode.commands.registerCommand('cody.autocomplete.force-multiline', () =>
+                completionsProvider.manuallyTriggerMultiLine()
+            ),
             vscode.languages.registerInlineCompletionItemProvider(
                 [{ notebookType: '*' }, ...documentFilters],
                 completionsProvider

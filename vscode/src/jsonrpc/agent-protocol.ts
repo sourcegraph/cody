@@ -434,6 +434,7 @@ export interface AutocompleteParams {
     // triggered.
     triggerKind?: 'Automatic' | 'Invoke' | undefined | null
     selectedCompletionInfo?: SelectedCompletionInfo | undefined | null
+    forceMultiline?: boolean | undefined | null
 }
 
 interface SelectedCompletionInfo {

@@ -102,6 +102,11 @@ interface CompletionRequest {
 export class InlineCompletionItemProvider
     implements vscode.InlineCompletionItemProvider, vscode.Disposable
 {
+    // This field is going to be set if you use the keyboard shortcut to manually trigger a
+    // multiline completion.
+    // VSCode does not allow to send additional parameters with suggestion triggers, so we
+    // need to keep this intent outside of the message.
+    public forceNextCompletionIsMultiline = false
     private lastCompletionRequest: CompletionRequest | null = null
     // This field is going to be set if you use the keyboard shortcut to manually trigger a
     // completion. Since VS Code does not provide a way to distinguish manual vs automatic
@@ -222,6 +227,10 @@ export class InlineCompletionItemProvider
             this.lastManualCompletionTimestamp && this.lastManualCompletionTimestamp > Date.now() - 500
         )
 
+        const forceMultiline = this.forceNextCompletionIsMultiline === true
+        // Reset intent state.
+        this.forceNextCompletionIsMultiline = false
+
         // Do not create item for files that are on the cody ignore list
         if (isCodyIgnoredFile(document.uri)) {
             logIgnored(document.uri, 'cody-ignore', isManualCompletion)
@@ -323,6 +332,10 @@ export class InlineCompletionItemProvider
                 // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
                 context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
             })
+
+            if (forceMultiline) {
+                docContext.multilineTrigger = 'manual'
+            }
 
             const completionIntent = getCompletionIntent({
                 document,
@@ -620,9 +633,16 @@ export class InlineCompletionItemProvider
     }
 
     public async manuallyTriggerCompletion(): Promise<void> {
+        // We hide the current suggestion, otherwise VSCode will not trigger a new
+        // suggestion request.
         await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
         this.lastManualCompletionTimestamp = Date.now()
         await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
+    }
+
+    public async manuallyTriggerMultiLine(): Promise<void> {
+        this.forceNextCompletionIsMultiline = true
+        return this.manuallyTriggerCompletion()
     }
 
     /**

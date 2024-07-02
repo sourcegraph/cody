@@ -674,6 +674,11 @@
         "when": "editorTextFocus && !editorHasSelection && config.cody.autocomplete.enabled && !inlineSuggestionsVisible"
       },
       {
+        "command": "cody.autocomplete.force-multiline",
+        "key": "alt+shift+\\",
+        "when": "editorTextFocus && !editorHasSelection && config.cody.autocomplete.enabled && !inlineSuggestionsVisible"
+      },
+      {
         "command": "cody.multi-model-autocomplete.manual-trigger",
         "key": "alt+m",
         "when": "editorTextFocus && !editorHasSelection && config.cody.autocomplete.enabled && !inlineSuggestionsVisible"
