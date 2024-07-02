@@ -226,11 +226,12 @@ export class AuthProvider implements AuthStatusProvider {
         isOfflineMode?: boolean
     ): Promise<AuthStatus> {
         const endpoint = config.serverEndpoint
+        const token = config.accessToken
         if (isOfflineMode) {
             const lastUser = localStorage.getLastStoredUser()
             return { ...offlineModeAuthStatus, ...lastUser }
         }
-        if (!endpoint) {
+        if (!token || !endpoint) {
             return { ...defaultAuthStatus, endpoint }
         }
         // Cache the config and the GraphQL client
