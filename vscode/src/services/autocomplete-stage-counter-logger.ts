@@ -10,6 +10,7 @@ export const LOG_INTERVAL = 30 * 60 * 1000 // 30 minutes
 const INITIAL_STATE = {
     preLastCandidate: 0,
     preCache: 0,
+    preSmartThrottle: 0,
     preDebounce: 0,
     preContextRetrieval: 0,
     preNetworkRequest: 0,

@@ -166,6 +166,10 @@ export function getConfiguration(
             'autocomplete.experimental.multiModelCompletions',
             undefined
         ),
+        autocompleteExperimentalSmartThrottle: getHiddenSetting(
+            'autocomplete.experimental.smartThrottle',
+            false
+        ),
 
         // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
         // We currently use this flag for the agent to provide more helpful error messages

@@ -33,14 +33,11 @@ export enum FeatureFlag {
     CodyAutocompleteContextBfgMixed = 'cody-autocomplete-context-bfg-mixed',
     // Enable latency adjustments based on accept/reject streaks
     CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
-    // Completion requests will be cancelled as soon as a new request comes in and the debounce time
-    // will be reduced to try and counter the latency impact.
-    CodyAutocompleteEagerCancellation = 'cody-autocomplete-eager-cancellation',
     // Continue generations after a single-line completion and use the response to see the next line
     // if the first completion is accepted.
     CodyAutocompleteHotStreak = 'cody-autocomplete-hot-streak',
-    // When activated, reduces the debounce time to 25ms (from 75ms).
-    CodyAutocompleteReducedDebounce = 'cody-autocomplete-reduced-debounce',
+    // Enable smart-throttling for more aggressive request cancellation and lower initial latencies
+    CodyAutocompleteSmartThrottle = 'cody-autocomplete-smart-throttle',
     // When enabled, it will extend the number of languages considered for context (e.g. React files
     // will be able to use CSS files as context).
     CodyAutocompleteContextExtendLanguagePool = 'cody-autocomplete-context-extend-language-pool',
