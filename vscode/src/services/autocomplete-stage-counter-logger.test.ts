@@ -33,6 +33,7 @@ describe('AutocompleteStageCounter', () => {
         logger.setProviderModel('test-model')
         logger.record('preLastCandidate')
         logger.record('preCache')
+        logger.record('preSmartThrottle')
         logger.record('preDebounce')
         logger.record('preContextRetrieval')
         logger.record('preNetworkRequest')
@@ -45,6 +46,7 @@ describe('AutocompleteStageCounter', () => {
             metadata: {
                 preLastCandidate: 1,
                 preCache: 1,
+                preSmartThrottle: 1,
                 preDebounce: 1,
                 preContextRetrieval: 1,
                 preNetworkRequest: 1,
@@ -67,6 +69,7 @@ describe('AutocompleteStageCounter', () => {
             metadata: {
                 preLastCandidate: 1,
                 preCache: 2,
+                preSmartThrottle: 0,
                 preDebounce: 0,
                 preContextRetrieval: 0,
                 preNetworkRequest: 0,
@@ -84,6 +87,7 @@ describe('AutocompleteStageCounter', () => {
             metadata: {
                 preLastCandidate: 0,
                 preCache: 0,
+                preSmartThrottle: 0,
                 preDebounce: 1,
                 preContextRetrieval: 0,
                 preNetworkRequest: 0,
@@ -116,6 +120,7 @@ describe('AutocompleteStageCounter', () => {
             metadata: {
                 preLastCandidate: 1,
                 preCache: 0,
+                preSmartThrottle: 0,
                 preDebounce: 0,
                 preContextRetrieval: 0,
                 preNetworkRequest: 0,
@@ -149,6 +154,7 @@ describe('AutocompleteStageCounter', () => {
             metadata: {
                 preLastCandidate: 0,
                 preCache: 1,
+                preSmartThrottle: 0,
                 preDebounce: 0,
                 preContextRetrieval: 0,
                 preNetworkRequest: 0,
