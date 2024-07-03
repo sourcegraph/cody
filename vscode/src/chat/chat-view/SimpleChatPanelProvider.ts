@@ -30,7 +30,7 @@ import {
     Typewriter,
     allMentionProvidersMetadata,
     hydrateAfterPostMessage,
-    isAbortError,
+    isAbortErrorOrSocketHangUp,
     isDefined,
     isError,
     isFileURI,
@@ -260,6 +260,14 @@ export class SimpleChatPanelProvider
                 remoteSearch: this.remoteSearch,
                 postMessage: (message: ExtensionMessage) => this.postMessage(message),
                 chatModel: this.chatModel,
+            })
+        )
+
+        // Observe any changes in chat history and send client notifications to
+        // the consumer
+        this.disposables.push(
+            chatHistory.onHistoryChanged(chatHistory => {
+                this.postMessage({ type: 'history', localHistory: chatHistory })
             })
         )
     }
@@ -930,8 +938,15 @@ export class SimpleChatPanelProvider
             const items = await getChatContextItemsForMention(
                 query,
                 cancellation.token,
-                scopedTelemetryRecorder
+                scopedTelemetryRecorder,
+                // Pass possible remote repository context in order to resolve files
+                // for this remote repositories and not for local one, Cody Web case
+                // when we have only remote repositories as context
+                query.includeRemoteRepositories
+                    ? this.remoteSearch?.getRepos('all')?.map(repo => repo.name)
+                    : undefined
             )
+
             if (cancellation.token.isCancellationRequested) {
                 return
             }
@@ -1235,10 +1250,10 @@ export class SimpleChatPanelProvider
                     this.addBotMessage(requestID, PromptString.unsafe_fromLLMResponse(content))
                 },
                 error: (partialResponse, error) => {
+                    this.postError(error, 'transcript')
                     if (isAbortErrorOrSocketHangUp(error)) {
                         abortSignal.throwIfAborted()
                     }
-                    this.postError(error, 'transcript')
                     try {
                         // We should still add the partial response if there was an error
                         // This'd throw an error if one has already been added
@@ -1638,10 +1653,6 @@ export function revealWebviewViewOrPanel(viewOrPanel: vscode.WebviewView | vscod
     if ('reveal' in viewOrPanel) {
         viewOrPanel.reveal()
     }
-}
-
-function isAbortErrorOrSocketHangUp(error: unknown): error is Error {
-    return Boolean(isAbortError(error) || (error && (error as any).message === 'socket hang up'))
 }
 
 function getDefaultModelID(authProvider: AuthProvider, models: Model[]): string {
