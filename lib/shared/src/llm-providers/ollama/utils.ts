@@ -1,6 +1,7 @@
 import ollama from 'ollama/browser'
 import { OLLAMA_DEFAULT_CONTEXT_WINDOW } from '.'
-import { Model, ModelUIGroup, ModelUsage } from '../..'
+import { Model, ModelUsage } from '../..'
+import { ModelTag } from '../../models/tags'
 import { CHAT_OUTPUT_TOKEN_BUDGET } from '../../token/constants'
 /**
  * Fetches available Ollama models from the Ollama server.
@@ -16,7 +17,8 @@ export async function fetchLocalOllamaModels(): Promise<Model[]> {
                     output: CHAT_OUTPUT_TOKEN_BUDGET,
                 },
                 undefined,
-                ModelUIGroup.Ollama
+                undefined,
+                [ModelTag.Ollama, ModelTag.Local]
             )
     )
 }

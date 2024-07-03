@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { VSCodeStandaloneComponent } from '../../storybook/VSCodeStoryDecorator'
 
 import { type Model, ModelUIGroup, ModelUsage, getDotComDefaultModels } from '@sourcegraph/cody-shared'
+import { ModelTag } from '@sourcegraph/cody-shared/src/models/tags'
 import { useArgs } from '@storybook/preview-api'
 import { ModelSelectField } from './ModelSelectField'
 
@@ -15,9 +16,9 @@ const MODELS: Model[] = [
         codyProOnly: false,
         contextWindow: { input: 100, output: 100 },
         default: false,
-        deprecated: false,
         usage: [ModelUsage.Chat],
         uiGroup: ModelUIGroup.Ollama,
+        tags: [ModelTag.Ollama, ModelTag.Local, ModelTag.Dev],
     },
 ]
 

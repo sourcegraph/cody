@@ -1,5 +1,6 @@
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
+import type { ModelTag } from './tags'
 import type { ModelContextWindow, ModelUsage } from './types'
 import { getModelInfo } from './utils'
 
@@ -19,9 +20,6 @@ export class Model {
     public provider: string
     // The title of the model, e.g. "Claude 3 Sonnet"
     public readonly title: string
-    // A deprecated model can be used (to not break agent) but won't be rendered
-    // in the UI
-    public deprecated = false
 
     constructor(
         /**
@@ -57,7 +55,11 @@ export class Model {
              */
             apiEndpoint?: string
         },
-        public readonly uiGroup?: string
+        public readonly uiGroup?: string,
+        /**
+         * The tags assigned for categorizing the model.
+         */
+        public readonly tags: ModelTag[] = []
     ) {
         const { provider, title } = getModelInfo(model)
         this.provider = provider

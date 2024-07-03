@@ -9,6 +9,7 @@ import {
     RestClient,
     getDotComDefaultModels,
 } from '@sourcegraph/cody-shared'
+import { ModelTag } from '@sourcegraph/cody-shared/src/models/tags'
 import * as vscode from 'vscode'
 import { secretStorage } from '../services/SecretStorageProvider'
 import { getEnterpriseContextWindow } from './utils'
@@ -74,7 +75,8 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
                     authStatus?.configOverwrites
                 ),
                 undefined,
-                ModelUIGroup.Enterprise
+                ModelUIGroup.Enterprise,
+                [ModelTag.Enterprise]
             ),
         ])
     } else {
@@ -116,7 +118,9 @@ export function registerModelsFromVSCodeConfiguration() {
             `${m.provider}/${m.model}`,
             [ModelUsage.Chat, ModelUsage.Edit],
             { input: m.inputTokens ?? CHAT_INPUT_TOKEN_BUDGET, output: m.outputTokens ?? ANSWER_TOKENS },
-            { apiKey: m.apiKey, apiEndpoint: m.apiEndpoint }
+            { apiKey: m.apiKey, apiEndpoint: m.apiEndpoint },
+            undefined,
+            [ModelTag.Dev, ModelTag.Experimental]
         )
         models.push(provider)
     }

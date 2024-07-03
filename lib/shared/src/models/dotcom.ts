@@ -5,6 +5,7 @@ import {
     EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
     EXTENDED_USER_CONTEXT_TOKEN_BUDGET,
 } from '../token/constants'
+import { ModelTag } from './tags'
 
 import { type ModelContextWindow, ModelUsage } from './types'
 import { ModelUIGroup } from './utils'
@@ -41,8 +42,8 @@ export const DEFAULT_DOT_COM_MODELS = [
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         // Has a higher context window with a separate limit for user-context.
         contextWindow: expandedContextWindow,
-        deprecated: false,
         uiGroup: ModelUIGroup.Balanced,
+        tags: [ModelTag.Free, ModelTag.Balanced],
     },
     {
         title: 'Claude 3.5 Sonnet',
@@ -53,8 +54,8 @@ export const DEFAULT_DOT_COM_MODELS = [
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         // Has a higher context window with a separate limit for user-context.
         contextWindow: expandedContextWindow,
-        deprecated: false,
         uiGroup: ModelUIGroup.Accuracy,
+        tags: [ModelTag.Free, ModelTag.Recommended, ModelTag.Accuracy],
     },
     {
         title: 'Claude 3 Opus',
@@ -65,8 +66,8 @@ export const DEFAULT_DOT_COM_MODELS = [
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         // Has a higher context window with a separate limit for user-context.
         contextWindow: expandedContextWindow,
-        deprecated: false,
         uiGroup: ModelUIGroup.Accuracy,
+        tags: [ModelTag.Pro, ModelTag.Recommended, ModelTag.Accuracy],
     },
     {
         title: 'Claude 3 Haiku',
@@ -76,8 +77,8 @@ export const DEFAULT_DOT_COM_MODELS = [
         codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: basicContextWindow,
-        deprecated: false,
         uiGroup: ModelUIGroup.Speed,
+        tags: [ModelTag.Free, ModelTag.Speed],
     },
 
     // --------------------------------
@@ -92,8 +93,8 @@ export const DEFAULT_DOT_COM_MODELS = [
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         // Has a higher context window with a separate limit for user-context.
         contextWindow: expandedContextWindow,
-        deprecated: false,
         uiGroup: ModelUIGroup.Accuracy,
+        tags: [ModelTag.Pro, ModelTag.Recommended, ModelTag.Accuracy],
     },
     {
         title: 'GPT-4 Turbo',
@@ -103,8 +104,8 @@ export const DEFAULT_DOT_COM_MODELS = [
         codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: basicContextWindow,
-        deprecated: false,
         uiGroup: ModelUIGroup.Balanced,
+        tags: [ModelTag.Pro, ModelTag.Accuracy],
     },
     {
         title: 'GPT-3.5 Turbo',
@@ -114,8 +115,8 @@ export const DEFAULT_DOT_COM_MODELS = [
         codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: basicContextWindow,
-        deprecated: false,
         uiGroup: ModelUIGroup.Speed,
+        tags: [ModelTag.Free, ModelTag.Speed],
     },
 
     // --------------------------------
@@ -129,8 +130,8 @@ export const DEFAULT_DOT_COM_MODELS = [
         codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: expandedContextWindow,
-        deprecated: false,
         uiGroup: ModelUIGroup.Accuracy,
+        tags: [ModelTag.Free, ModelTag.Accuracy],
     },
     {
         title: 'Gemini 1.5 Flash',
@@ -140,8 +141,8 @@ export const DEFAULT_DOT_COM_MODELS = [
         codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: expandedContextWindow,
-        deprecated: false,
         uiGroup: ModelUIGroup.Speed,
+        tags: [ModelTag.Free, ModelTag.Speed],
     },
 
     // TODO (tom) Improve prompt for Mixtral + Edit to see if we can use it there too.
@@ -153,8 +154,8 @@ export const DEFAULT_DOT_COM_MODELS = [
         codyProOnly: false,
         usage: [ModelUsage.Chat],
         contextWindow: basicContextWindow,
-        deprecated: false,
         uiGroup: ModelUIGroup.Speed,
+        tags: [ModelTag.Free, ModelTag.Speed],
     },
     {
         title: 'Mixtral 8x22B',
@@ -164,42 +165,8 @@ export const DEFAULT_DOT_COM_MODELS = [
         codyProOnly: false,
         usage: [ModelUsage.Chat],
         contextWindow: basicContextWindow,
-        deprecated: false,
         uiGroup: ModelUIGroup.Accuracy,
-    },
-
-    // --------------------------------
-    // Deprecated models
-    // --------------------------------
-    {
-        title: 'Claude 2.0',
-        model: 'anthropic/claude-2.0',
-        provider: 'Anthropic',
-        default: false,
-        codyProOnly: true,
-        usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: basicContextWindow,
-        deprecated: true,
-    },
-    {
-        title: 'Claude 2.1',
-        model: 'anthropic/claude-2.1',
-        provider: 'Anthropic',
-        default: false,
-        codyProOnly: true,
-        usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: basicContextWindow,
-        deprecated: true,
-    },
-    {
-        title: 'Claude Instant',
-        model: 'anthropic/claude-instant-1.2',
-        provider: 'Anthropic',
-        default: false,
-        codyProOnly: true,
-        usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: basicContextWindow,
-        deprecated: true,
+        tags: [ModelTag.Free, ModelTag.Accuracy],
     },
 ] as const satisfies Model[]
 

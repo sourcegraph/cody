@@ -28,9 +28,6 @@ const getModelProviderIcon = (provider: string): string => {
 export const getModelOptionItems = (modelOptions: Model[], isCodyPro: boolean): EditModelItem[] => {
     const allOptions = modelOptions
         .map(modelOption => {
-            if (modelOption.deprecated) {
-                return
-            }
             const icon = getModelProviderIcon(modelOption.provider)
             return {
                 label: `${QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX} ${icon} ${modelOption.title}`,

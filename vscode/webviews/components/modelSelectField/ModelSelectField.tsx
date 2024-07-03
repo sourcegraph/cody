@@ -43,8 +43,7 @@ export const ModelSelectField: React.FunctionComponent<{
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
-    const usableModels = useMemo(() => models.filter(m => !m.deprecated), [models])
-    const selectedModel = usableModels.find(m => m.default) ?? usableModels[0]
+    const selectedModel = models.find(m => m.default) ?? models[0]
 
     const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
     const isEnterpriseUser = !userInfo.isDotComUser
@@ -101,17 +100,17 @@ export const ModelSelectField: React.FunctionComponent<{
                 telemetryRecorder.recordEvent('cody.modelSelector', 'open', {
                     metadata: {
                         isCodyProUser: isCodyProUser ? 1 : 0,
-                        totalModels: usableModels.length,
+                        totalModels: models.length,
                     },
                 })
             }
         },
-        [telemetryRecorder.recordEvent, isCodyProUser, usableModels.length]
+        [telemetryRecorder.recordEvent, isCodyProUser, models.length]
     )
 
     const options = useMemo<SelectListOption[]>(
         () =>
-            usableModels.map(m => {
+            models.map(m => {
                 const availability = modelAvailability(userInfo, m)
                 return {
                     value: m.model,
@@ -135,7 +134,7 @@ export const ModelSelectField: React.FunctionComponent<{
                               : `${m.title} by ${m.provider}`,
                 } satisfies SelectListOption
             }),
-        [usableModels, userInfo]
+        [models, userInfo]
     )
     const optionsByGroup: { group: string; options: SelectListOption[] }[] = useMemo(() => {
         const groups = new Map<string, SelectListOption[]>()
@@ -167,9 +166,9 @@ export const ModelSelectField: React.FunctionComponent<{
 
     const onChange = useCallback(
         (value: string | undefined) => {
-            onModelSelect(usableModels.find(m => m.model === value)!)
+            onModelSelect(models.find(m => m.model === value)!)
         },
-        [onModelSelect, usableModels]
+        [onModelSelect, models]
     )
 
     const onKeyDown = useCallback(
@@ -181,7 +180,7 @@ export const ModelSelectField: React.FunctionComponent<{
         [onCloseByEscape]
     )
 
-    if (!usableModels.length || usableModels.length < 1) {
+    if (!models.length || models.length < 1) {
         return null
     }
 
