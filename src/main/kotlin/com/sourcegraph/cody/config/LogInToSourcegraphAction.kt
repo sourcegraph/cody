@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.ui.JBUI
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.auth.SsoAuthMethod
+import com.sourcegraph.cody.telemetry.TelemetryV2
 import com.sourcegraph.common.ui.DumbAwareEDTAction
 import java.awt.Component
 import javax.swing.Action
@@ -18,6 +19,8 @@ class LogInToSourcegraphAction : BaseAddAccountWithTokenAction() {
     get() = SourcegraphServerPath.DEFAULT_HOST
 
   override fun actionPerformed(e: AnActionEvent) {
+    e.project?.let { TelemetryV2.sendTelemetryEvent(it, "auth.login", "clicked") }
+
     val accountsHost = getCodyAccountsHost(e) ?: return
     val authMethod: SsoAuthMethod =
         try {
@@ -42,6 +45,8 @@ class AddCodyEnterpriseAccountAction : BaseAddAccountWithTokenAction() {
     get() = ""
 
   override fun actionPerformed(e: AnActionEvent) {
+    e.project?.let { TelemetryV2.sendTelemetryEvent(it, "auth.login", "clicked") }
+
     val accountsHost = getCodyAccountsHost(e) ?: return
     val dialog = newAddAccountDialog(e.project, e.getData(PlatformCoreDataKeys.CONTEXT_COMPONENT))
 

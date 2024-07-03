@@ -7,6 +7,7 @@ import com.intellij.openapi.ui.JBPopupMenu
 import com.intellij.ui.awt.RelativePoint
 import com.sourcegraph.cody.auth.ui.AccountsListModel
 import com.sourcegraph.cody.auth.ui.AccountsListModelBase
+import com.sourcegraph.cody.telemetry.TelemetryV2
 import javax.swing.JComponent
 
 class CodyAccountListModel(private val project: Project) :
@@ -61,6 +62,8 @@ class CodyAccountListModel(private val project: Project) :
       token: String,
       id: String
   ) {
+    TelemetryV2.sendTelemetryEvent(project, "auth.signin.token", "clicked")
+
     val account = CodyAccount(login, displayName, server, id)
     if (accountsListModel.isEmpty) {
       activeAccount = account
