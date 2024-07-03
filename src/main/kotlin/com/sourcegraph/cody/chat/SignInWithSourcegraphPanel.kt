@@ -38,33 +38,18 @@ import javax.swing.border.Border
 
 class SignInWithSourcegraphPanel(private val project: Project) : JPanel() {
 
-  private val signInWithGithubButton =
-      UIComponents.createMainButton(GITHUB.value, Icons.SignIn.Github)
-  private val signInWithGitlabButton =
-      UIComponents.createMainButton(GITLAB.value, Icons.SignIn.Gitlab)
-  private val signInWithGoogleButton =
-      UIComponents.createMainButton(GOOGLE.value, Icons.SignIn.Google)
-
   init {
+    val buttons =
+        listOf(
+            UIComponents.createMainButton(GITHUB.value, Icons.SignIn.Github),
+            UIComponents.createMainButton(GITLAB.value, Icons.SignIn.Gitlab),
+            UIComponents.createMainButton(GOOGLE.value, Icons.SignIn.Google))
+
     val jEditorPane = createHtmlViewer(project)
     jEditorPane.text =
         ("<html><body><h2>Welcome to Cody</h2>" +
             "<p>Understand and write code faster with an AI assistant</p>" +
             "</body></html>")
-    val signInWithGithubButton = signInWithGithubButton
-    val signInWithGitlabButton = signInWithGitlabButton
-    val signInWithGoogleButton = signInWithGoogleButton
-    signInWithGithubButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
-    signInWithGitlabButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
-    signInWithGoogleButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
-    val logInToSourcegraphAction = LogInToSourcegraphAction()
-
-    signInWithGithubButton.addActionListener(
-        getSignInAction(signInWithGithubButton, logInToSourcegraphAction))
-    signInWithGitlabButton.addActionListener(
-        getSignInAction(signInWithGitlabButton, logInToSourcegraphAction))
-    signInWithGoogleButton.addActionListener(
-        getSignInAction(signInWithGoogleButton, logInToSourcegraphAction))
 
     val panelWithTheMessage = JPanel()
     panelWithTheMessage.setLayout(BoxLayout(panelWithTheMessage, BoxLayout.Y_AXIS))
@@ -84,15 +69,16 @@ class SignInWithSourcegraphPanel(private val project: Project) : JPanel() {
             3, ColorUtil.brighter(UIUtil.getPanelBackground(), 3), UIUtil.getPanelBackground())
     separatorPanel.add(separatorComponent)
     panelWithTheMessage.add(separatorPanel)
-    val buttonPanelGithub = JPanel(BorderLayout())
-    val buttonPanelGitlab = JPanel(BorderLayout())
-    val buttonPanelGoogle = JPanel(BorderLayout())
-    buttonPanelGithub.add(signInWithGithubButton, BorderLayout.CENTER)
-    buttonPanelGitlab.add(signInWithGitlabButton, BorderLayout.CENTER)
-    buttonPanelGoogle.add(signInWithGoogleButton, BorderLayout.CENTER)
-    panelWithTheMessage.add(buttonPanelGithub)
-    panelWithTheMessage.add(buttonPanelGitlab)
-    panelWithTheMessage.add(buttonPanelGoogle)
+
+    val logInToSourcegraphAction = LogInToSourcegraphAction()
+    for (button in buttons) {
+      button.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
+      button.addActionListener(getSignInAction(button, logInToSourcegraphAction))
+      val buttonPanel = JPanel(BorderLayout())
+      buttonPanel.add(button, BorderLayout.CENTER)
+      panelWithTheMessage.add(buttonPanel)
+    }
+
     setLayout(VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false))
     setBorder(JBUI.Borders.empty(PADDING))
     this.add(panelWithTheMessage)
@@ -139,11 +125,9 @@ class SignInWithSourcegraphPanel(private val project: Project) : JPanel() {
   companion object {
     private const val PADDING = 20
 
-    // 10 here is the default padding from the styles of the h2 and we want to make the whole
-    // padding
-    // to be 20, that's why we need the difference between our PADDING and the default padding of
-    // the
-    // h2
+    // 10 here is the default padding from the styles of the h2
+    // and we want to make the whole padding to be 20, that's why
+    // we need the difference between our PADDING and the default padding of the h2
     private const val ADDITIONAL_PADDING_FOR_HEADER = PADDING - 10
   }
 }
