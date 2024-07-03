@@ -9,23 +9,31 @@ import type { Account } from './settings'
 // with the OS secret storage. However, Keytar is unmaintained and it was
 // complicated to distribute anyways because you had to distribute native
 // modules for each supported OS. The current implementation shells out to the
-// `security` command on macOS, `powershell` on Windows, and `secret-tool` on
-// Linux. Users can always set the `CODY_ACCESS_TOKEN` environment variable if
-// they don't want to use this functionality.
+// `security` command on macOS, `CredentialManager` on Windows, and `secret-tool` on
+// Linux. This is an o)ptional feature. Users can always avoid using this functionality
+// by setting the `CODY_ACCESS_TOKEN` environment variable or passing the `--access-token`
+// command line argument.
 //
-// The biggest problem with this approach is that users will most likely select
-// "Always allow" when prompted if the "system" tool can access the Cody
+// One problem with this custom solution is that users will most likely
+// select "Always allow" on macOS when prompted if the "system" tool can access the Cody
 // secrets. This means that any other tool on the computer can shell out to
-// `system` to read the same secret. However, we chose to go with this approach
+// `system` to read the same secret. However, we chose to go with this approach on macOS
 // regardless of this risk based on the following observations:
 // - The user can chose not to let Cody manage its secrets. This is an optional feature.
-// - Storing the secret as a global environment variable also isn't secure.
+// - Storing the secret as a global environment variable also isn't secure
+//   because it means any process on the computer can read the same
+//   SRC_ACCESS_TOKEN environment variable without custom work. With the secret manager,
+//   a malicious user needs to know at least the Sourcegraph server endpoint URL and the
+//   user's username (both easy to access information, but still more inconvenient than
+//   reading an environment variable).
 // - The `gh` cli tool uses the same approach (shelling out to `security` on macOS),
 //   meaning that any tool on my computer can read my GitHub access token by shelling out
-//   to `security` without me knowing.
-// - It's marginally more secure to build a native module instead of using
-//   `system` because a malicious user can also load the native module instead
-//   of shelling out to `system` to fake that it's Cody cli.
+//   to `security` without me knowing. I have not reviewed what `gh` does on
+//   Windows or Linux.
+// - The ideal solution would be to do something similar to IntelliJ does, which is to
+//   build a native module that is a signed Sourcegraph application and is very inconvenient
+//   to run outside of the the `cody` cli tool (not obvious how to do this). Keytar delivers
+//   some of these benefits with a native Node.js module.
 
 export async function writeCodySecret(spinner: Ora, account: Account, secret: string): Promise<void> {
     const keychain = getKeychainOperations(spinner, account)
@@ -72,12 +80,6 @@ function getKeychainOperations(spinner: Ora, account: Account): KeychainOperatio
     }
 }
 
-/**
- * Uses each operating system's native keychain to store the Cody access token.
- * - `security` on macOS
- * - `powershell -command '...StoredCredential ...` on Windows
- * - `secret-tool` on Linux
- */
 abstract class KeychainOperations {
     constructor(
         public spinner: Ora,
