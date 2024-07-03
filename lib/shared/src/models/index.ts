@@ -2,7 +2,7 @@ import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
 import type { ModelTag } from './tags'
 import type { ModelContextWindow, ModelUsage } from './types'
-import { getModelInfo } from './utils'
+import { getModelInfo, isCodyProModel } from './utils'
 
 /**
  * Model describes an LLM model and its capabilities.
@@ -14,8 +14,6 @@ export class Model {
      */
     public default = false
 
-    // Whether the model is only available to Pro users
-    public codyProOnly = false
     // The name of the provider of the model, e.g. "Anthropic"
     public provider: string
     // The title of the model, e.g. "Claude 3 Sonnet"
@@ -55,7 +53,6 @@ export class Model {
              */
             apiEndpoint?: string
         },
-        public readonly uiGroup?: string,
         /**
          * The tags assigned for categorizing the model.
          */
@@ -137,7 +134,7 @@ export class ModelsService {
         const currentDefault = currentModel
             ? availableModels.find(m => m.model === currentModel)
             : undefined
-        const canUseCurrentDefault = currentDefault?.codyProOnly ? isCodyProUser : !!currentDefault
+        const canUseCurrentDefault = isCodyProModel(currentDefault) ? isCodyProUser : !!currentDefault
 
         return ModelsService.models
             .filter(m => m.usage.includes(type))

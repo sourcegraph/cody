@@ -1,21 +1,20 @@
 export enum ModelTag {
+    // UI Groups
     Accuracy = 'accuracy',
     Speed = 'speed',
     Balanced = 'balanced',
-
     Recommended = 'recommended',
     Deprecated = 'deprecated',
-
-    Dev = 'dev',
-    New = 'new',
     Experimental = 'experimental',
-    Preview = 'preview',
 
+    // Tiers
     Pro = 'pro',
     Free = 'free',
     Enterprise = 'enterprise',
-    Local = 'local',
-    BYOK = 'byok',
 
+    // Host / Model Type
+    Gateway = 'cody-gateway',
+    BYOK = 'byok',
     Ollama = 'ollama',
+    Dev = 'dev',
 }

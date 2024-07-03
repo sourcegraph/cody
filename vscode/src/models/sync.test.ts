@@ -1,6 +1,6 @@
 import {
     Model,
-    ModelUIGroup,
+    ModelTag,
     ModelUsage,
     ModelsService,
     RestClient,
@@ -68,7 +68,7 @@ describe('syncModels', () => {
                 [ModelUsage.Chat, ModelUsage.Edit],
                 getEnterpriseContextWindow(chatModel, authStatus.configOverwrites),
                 undefined,
-                ModelUIGroup.Enterprise
+                [ModelTag.Enterprise]
             ),
         ])
     })

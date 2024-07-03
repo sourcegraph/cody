@@ -3,7 +3,6 @@ import {
     type AuthStatus,
     CHAT_INPUT_TOKEN_BUDGET,
     Model,
-    ModelUIGroup,
     ModelUsage,
     ModelsService,
     RestClient,
@@ -75,7 +74,6 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
                     authStatus?.configOverwrites
                 ),
                 undefined,
-                ModelUIGroup.Enterprise,
                 [ModelTag.Enterprise]
             ),
         ])
@@ -119,7 +117,6 @@ export function registerModelsFromVSCodeConfiguration() {
             [ModelUsage.Chat, ModelUsage.Edit],
             { input: m.inputTokens ?? CHAT_INPUT_TOKEN_BUDGET, output: m.outputTokens ?? ANSWER_TOKENS },
             { apiKey: m.apiKey, apiEndpoint: m.apiEndpoint },
-            undefined,
             [ModelTag.Dev, ModelTag.Experimental]
         )
         models.push(provider)

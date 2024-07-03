@@ -17,8 +17,7 @@ export async function fetchLocalOllamaModels(): Promise<Model[]> {
                     output: CHAT_OUTPUT_TOKEN_BUDGET,
                 },
                 undefined,
-                undefined,
-                [ModelTag.Ollama, ModelTag.Local]
+                [ModelTag.Ollama, ModelTag.Experimental]
             )
     )
 }

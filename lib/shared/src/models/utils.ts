@@ -1,3 +1,6 @@
+import type { Model } from '.'
+import { ModelTag } from './tags'
+
 export function getProviderName(name: string): string {
     const providerName = name.toLowerCase()
     switch (providerName) {
@@ -27,12 +30,6 @@ export function getModelInfo(modelID: string): {
     return { provider, title }
 }
 
-/** Common {@link ModelsService.uiGroup} values. */
-export const ModelUIGroup: Record<string, string> = {
-    Accuracy: 'Optimized for Accuracy',
-    Balanced: 'Balanced (Speed & Accuracy)',
-    Speed: 'Optimized for Speed',
-    Ollama: 'Ollama (Local)',
-    // Used for identifying the model type but currently not used for displaying in the UI.
-    Enterprise: 'Enterprise',
+export function isCodyProModel(model?: Model): boolean {
+    return Boolean(model?.tags.includes(ModelTag.Pro))
 }

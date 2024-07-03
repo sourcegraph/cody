@@ -8,7 +8,6 @@ import {
 import { ModelTag } from './tags'
 
 import { type ModelContextWindow, ModelUsage } from './types'
-import { ModelUIGroup } from './utils'
 
 const basicContextWindow: ModelContextWindow = {
     input: CHAT_INPUT_TOKEN_BUDGET,
@@ -38,35 +37,29 @@ export const DEFAULT_DOT_COM_MODELS = [
         model: 'anthropic/claude-3-sonnet-20240229',
         provider: 'Anthropic',
         default: true,
-        codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         // Has a higher context window with a separate limit for user-context.
         contextWindow: expandedContextWindow,
-        uiGroup: ModelUIGroup.Balanced,
-        tags: [ModelTag.Free, ModelTag.Balanced],
+        tags: [ModelTag.Gateway, ModelTag.Balanced],
     },
     {
         title: 'Claude 3.5 Sonnet',
         model: 'anthropic/claude-3-5-sonnet-20240620',
         provider: 'Anthropic',
         default: false,
-        codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         // Has a higher context window with a separate limit for user-context.
         contextWindow: expandedContextWindow,
-        uiGroup: ModelUIGroup.Accuracy,
-        tags: [ModelTag.Free, ModelTag.Recommended, ModelTag.Accuracy],
+        tags: [ModelTag.Gateway, ModelTag.Recommended, ModelTag.Accuracy],
     },
     {
         title: 'Claude 3 Opus',
         model: 'anthropic/claude-3-opus-20240229',
         provider: 'Anthropic',
         default: false,
-        codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         // Has a higher context window with a separate limit for user-context.
         contextWindow: expandedContextWindow,
-        uiGroup: ModelUIGroup.Accuracy,
         tags: [ModelTag.Pro, ModelTag.Recommended, ModelTag.Accuracy],
     },
     {
@@ -74,11 +67,9 @@ export const DEFAULT_DOT_COM_MODELS = [
         model: 'anthropic/claude-3-haiku-20240307',
         provider: 'Anthropic',
         default: false,
-        codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: basicContextWindow,
-        uiGroup: ModelUIGroup.Speed,
-        tags: [ModelTag.Free, ModelTag.Speed],
+        tags: [ModelTag.Gateway, ModelTag.Speed],
     },
 
     // --------------------------------
@@ -89,11 +80,9 @@ export const DEFAULT_DOT_COM_MODELS = [
         model: 'openai/gpt-4o',
         provider: 'OpenAI',
         default: false,
-        codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         // Has a higher context window with a separate limit for user-context.
         contextWindow: expandedContextWindow,
-        uiGroup: ModelUIGroup.Accuracy,
         tags: [ModelTag.Pro, ModelTag.Recommended, ModelTag.Accuracy],
     },
     {
@@ -101,10 +90,8 @@ export const DEFAULT_DOT_COM_MODELS = [
         model: 'openai/gpt-4-turbo',
         provider: 'OpenAI',
         default: false,
-        codyProOnly: true,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: basicContextWindow,
-        uiGroup: ModelUIGroup.Balanced,
         tags: [ModelTag.Pro, ModelTag.Accuracy],
     },
     {
@@ -112,11 +99,9 @@ export const DEFAULT_DOT_COM_MODELS = [
         model: 'openai/gpt-3.5-turbo',
         provider: 'OpenAI',
         default: false,
-        codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: basicContextWindow,
-        uiGroup: ModelUIGroup.Speed,
-        tags: [ModelTag.Free, ModelTag.Speed],
+        tags: [ModelTag.Gateway, ModelTag.Speed],
     },
 
     // --------------------------------
@@ -127,22 +112,18 @@ export const DEFAULT_DOT_COM_MODELS = [
         model: 'google/gemini-1.5-pro-latest',
         provider: 'Google',
         default: false,
-        codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: expandedContextWindow,
-        uiGroup: ModelUIGroup.Accuracy,
-        tags: [ModelTag.Free, ModelTag.Accuracy],
+        tags: [ModelTag.Gateway, ModelTag.Accuracy],
     },
     {
         title: 'Gemini 1.5 Flash',
         model: 'google/gemini-1.5-flash-latest',
         provider: 'Google',
         default: false,
-        codyProOnly: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: expandedContextWindow,
-        uiGroup: ModelUIGroup.Speed,
-        tags: [ModelTag.Free, ModelTag.Speed],
+        tags: [ModelTag.Gateway, ModelTag.Speed],
     },
 
     // TODO (tom) Improve prompt for Mixtral + Edit to see if we can use it there too.
@@ -151,22 +132,18 @@ export const DEFAULT_DOT_COM_MODELS = [
         model: 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
         provider: 'Mistral',
         default: false,
-        codyProOnly: false,
         usage: [ModelUsage.Chat],
         contextWindow: basicContextWindow,
-        uiGroup: ModelUIGroup.Speed,
-        tags: [ModelTag.Free, ModelTag.Speed],
+        tags: [ModelTag.Gateway, ModelTag.Speed],
     },
     {
         title: 'Mixtral 8x22B',
         model: 'fireworks/accounts/fireworks/models/mixtral-8x22b-instruct',
         provider: 'Mistral',
         default: false,
-        codyProOnly: false,
         usage: [ModelUsage.Chat],
         contextWindow: basicContextWindow,
-        uiGroup: ModelUIGroup.Accuracy,
-        tags: [ModelTag.Free, ModelTag.Accuracy],
+        tags: [ModelTag.Gateway, ModelTag.Accuracy],
     },
 ] as const satisfies Model[]
 
