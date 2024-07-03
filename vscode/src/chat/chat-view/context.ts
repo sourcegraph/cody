@@ -5,12 +5,15 @@ import {
     type ContextItem,
     type ContextItemRepository,
     ContextItemSource,
+    FeatureFlag,
     MAX_BYTES_PER_FILE,
     NUM_CODE_RESULTS,
     NUM_TEXT_RESULTS,
     type PromptString,
     type Result,
+    featureFlagProvider,
     isFileURI,
+    telemetryRecorder,
     truncateTextNearestLine,
     uriBasename,
     wrapInActiveSpan,
@@ -181,6 +184,45 @@ async function getEnhancedContextFromRanker({
         )
         return rankedContext
     })
+}
+
+export async function getContextStrategy(
+    defaultStrategy: ConfigurationUseContext
+): Promise<ConfigurationUseContext> {
+    // Only run experiment if we're in VS Code
+    if (vscode.workspace.getConfiguration().get<boolean>('cody.advanced.agent.running', false)) {
+        return defaultStrategy
+    }
+
+    const isEnhancedContextExperiment = await featureFlagProvider.evaluateFeatureFlag(
+        FeatureFlag.CodyEnhancedContextExperiment
+    )
+    if (!isEnhancedContextExperiment) {
+        return defaultStrategy
+    }
+
+    const useEmbeddings = await featureFlagProvider.evaluateFeatureFlag(
+        FeatureFlag.CodyEnhancedContexUseEmbeddings
+    )
+    const useSymf = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEnhancedContextUseSymf)
+
+    let variant: { group: number; strategy: ConfigurationUseContext } = { group: 0, strategy: 'none' }
+    if (useEmbeddings && useSymf) {
+        variant = { group: 1, strategy: 'blended' }
+    } else if (useEmbeddings) {
+        variant = { group: 2, strategy: 'embeddings' }
+    } else if (useSymf) {
+        variant = { group: 3, strategy: 'keyword' }
+    } else {
+        variant = { group: 0, strategy: 'none' }
+    }
+
+    telemetryRecorder.recordEvent('cody.embeddings.holdoutTest', 'enrolled', {
+        metadata: {
+            controlVariant: variant.group,
+        },
+    })
+    return variant.strategy
 }
 
 async function searchRemote(

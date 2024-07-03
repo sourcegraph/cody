@@ -103,7 +103,7 @@ import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { InitDoer } from './InitDoer'
 import { SimpleChatModel, prepareChatMessage } from './SimpleChatModel'
 import { getChatPanelTitle, openFile } from './chat-helpers'
-import { getEnhancedContext } from './context'
+import { getContextStrategy, getEnhancedContext } from './context'
 import { DefaultPrompter } from './prompt'
 
 interface SimpleChatPanelProviderOptions {
@@ -722,7 +722,8 @@ export class SimpleChatPanelProvider
                 const hasCorpusMentions = corpusMentions.length > 0
 
                 const config = getConfiguration()
-                span.setAttribute('strategy', config.useContext)
+                const contextStrategy = await getContextStrategy(config.useContext)
+                span.setAttribute('strategy', contextStrategy)
                 const prompter = new DefaultPrompter(
                     userContextItems,
                     addEnhancedContext || hasCorpusMentions
@@ -743,7 +744,7 @@ export class SimpleChatPanelProvider
                                   : inputText
 
                               return getEnhancedContext({
-                                  strategy: config.useContext,
+                                  strategy: contextStrategy,
                                   editor: this.editor,
                                   input: { text: rewrite, mentions },
                                   addEnhancedContext,
