@@ -148,7 +148,6 @@ export class FixupController
                 task.selectionRange.intersection(primaryTask.selectionRange) !== undefined
             ) {
                 await this.clearPlaceholderInsertions([task], task.fixupFile.uri)
-                task.diff = undefined
                 this.accept(task)
             }
         }
@@ -1027,6 +1026,15 @@ export class FixupController
 
     // Handles changes to the source document in the fixup selection
     public textDidChange(task: FixupTask): void {
+        if (task.state === CodyTaskState.Applied && task.mode === 'insert' && !isRunningInsideAgent()) {
+            // For insertion tasks we accept as soon as the user makes a change
+            // within the task range. This is a case where the user is more likely to want
+            // to keep in the flow of writing their code, and would not benefit from editing
+            // the "diff".
+            this.accept(task)
+            return
+        }
+
         if (isStreamedIntent(task.intent)) {
             // Text change is most likely coming from the incoming streamed insertions,
             // No need to update the decorator here as it'll cause a flicker.

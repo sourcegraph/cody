@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { isStreamedIntent } from '../edit/utils/edit-intent'
 import type { Edit } from './line-diff'
 import type { FixupActor, FixupFileCollection, FixupTextChanged } from './roles'
 import { type TextChange, updateFixedRange, updateRangeMultipleChanges } from './tracked-range'
@@ -104,7 +105,18 @@ export class FixupDocumentEditObserver {
             const updatedRange = updateRangeMultipleChanges(task.selectionRange, changes, {
                 supportRangeAffix: true,
             })
-            if (!updatedRange.isEqual(task.selectionRange)) {
+
+            /**
+             * Currently `updateRangeMultipleChanges` will collapse a range (it will be empty)
+             * if the entire contents of the range are replaced. This happens regularly for streamed
+             * insertions as we replace the full range with the latest LLM response as we receive it.
+             *
+             * TODO: Instead of collapsing the range, `updateRangeMultipleChanges` should expand to match
+             * the new contents.
+             */
+            const isCollapsedInsertion = isStreamedIntent(task.intent) && updatedRange.isEmpty
+
+            if (!isCollapsedInsertion && !updatedRange.isEqual(task.selectionRange)) {
                 task.selectionRange = updatedRange
                 this.provider_.rangeDidChange(task)
             }
