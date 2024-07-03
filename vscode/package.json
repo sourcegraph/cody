@@ -1115,6 +1115,7 @@
             null,
             "anthropic",
             "fireworks",
+            "unstable-gemini",
             "unstable-openai",
             "experimental-ollama",
             "experimental-openaicompatible"
