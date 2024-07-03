@@ -40,6 +40,8 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
                 return CodyIDE.Emacs
             case 'neovim':
                 return CodyIDE.Neovim
+            case 'web':
+                return CodyIDE.Web
             default:
                 return undefined
         }
