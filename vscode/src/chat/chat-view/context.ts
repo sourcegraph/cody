@@ -21,6 +21,7 @@ import type { ContextRankingController } from '../../local-context/context-ranki
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
+import {compact, flatten, zip} from "lodash";
 
 interface HumanInput {
     text: PromptString
@@ -99,12 +100,15 @@ export async function getEnhancedContext({
                 ? retrieveContextGracefully(searchSymf(providers.symf, editor, input.text), 'symf')
                 : []
 
-        // Combine all context sources
-        const searchContext = [
-            ...(await embeddingsContextItemsPromise),
-            ...(await remoteSearchContextItemsPromise),
-            ...(await localSearchContextItemsPromise),
+        // Retrieve items from all context sources
+        const searchContextBySource = [
+            await embeddingsContextItemsPromise,
+            await remoteSearchContextItemsPromise,
+            await localSearchContextItemsPromise,
         ]
+
+        // Interleave items from context sources, excluding undefined items inserted by lodash's zip
+        const searchContext = compact(flatten(zip(...searchContextBySource)))
 
         const priorityContext = await getPriorityContext(input.text, editor, searchContext)
         return priorityContext.concat(searchContext)
