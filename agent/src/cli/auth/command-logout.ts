@@ -22,7 +22,7 @@ export const logoutCommand = new Command('logout')
                 )
                 process.exit(1)
             }
-            await removeCodySecret(account)
+            await removeCodySecret(spinner, account)
             const newAccounts = settings.accounts.filter(
                 account => account.id !== settings.activeAccountID
             )

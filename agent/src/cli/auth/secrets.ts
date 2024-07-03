@@ -1,4 +1,5 @@
-import { spawn } from 'node:child_process'
+import { execSync, spawn } from 'node:child_process'
+import type { Ora } from 'ora'
 import { logDebug } from '../../../../vscode/src/log'
 import type { Account } from './settings'
 
@@ -26,8 +27,8 @@ import type { Account } from './settings'
 //   `system` because a malicious user can also load the native module instead
 //   of shelling out to `system` to fake that it's Cody cli.
 
-export async function writeCodySecret(account: Account, secret: string): Promise<void> {
-    const keychain = getKeychainOperations(account)
+export async function writeCodySecret(spinner: Ora, account: Account, secret: string): Promise<void> {
+    const keychain = getKeychainOperations(spinner, account)
     try {
         await keychain.writeSecret(secret)
     } catch (error) {
@@ -35,8 +36,8 @@ export async function writeCodySecret(account: Account, secret: string): Promise
     }
 }
 
-export async function readCodySecret(account: Account) {
-    const keychain = getKeychainOperations(account)
+export async function readCodySecret(spinner: Ora, account: Account) {
+    const keychain = getKeychainOperations(spinner, account)
     try {
         const secret = await keychain.readSecret()
         if (secret) {
@@ -49,8 +50,8 @@ export async function readCodySecret(account: Account) {
     }
 }
 
-export async function removeCodySecret(account: Account) {
-    const keychain = getKeychainOperations(account)
+export async function removeCodySecret(spinner: Ora, account: Account) {
+    const keychain = getKeychainOperations(spinner, account)
     try {
         await keychain.deleteSecret()
     } catch (error) {
@@ -58,14 +59,15 @@ export async function removeCodySecret(account: Account) {
     }
 }
 
-function getKeychainOperations(account: Account): KeychainOperations {
+function getKeychainOperations(spinner: Ora, account: Account): KeychainOperations {
+    registerCommandNotFoundHandler()
     switch (process.platform) {
         case 'darwin':
-            return new MacOSKeychain(account)
+            return new MacOSKeychain(spinner, account)
         case 'win32':
-            return new WindowsCredentialManager(account)
+            return new WindowsCredentialManager(spinner, account)
         case 'linux':
-            return new LinuxSecretService(account)
+            return new LinuxSecretService(spinner, account)
         default:
             throw new Error(`Unsupported platform: ${process.platform}`)
     }
@@ -78,30 +80,26 @@ function getKeychainOperations(account: Account): KeychainOperations {
  * - `secret-tool` on Linux
  */
 abstract class KeychainOperations {
-    constructor(public account: Account) {}
+    constructor(
+        public spinner: Ora,
+        public account: Account
+    ) {}
+    abstract installationInstructions: string
     abstract readSecret(): Promise<string>
     abstract writeSecret(secret: string): Promise<void>
     abstract deleteSecret(): Promise<void>
-    abstract installationInstructions: string
     protected service(): string {
         const host = new URL(this.account.serverEndpoint).host
         return `Cody: ${host} (${this.account.id})`
     }
-    protected spawnAsync(
-        command: string,
-        args: string[],
-        options?: { stdin: string }
-    ): Promise<{ stdout: string; stderr: string }> {
-        return new Promise((resolve, reject) => {
+    protected spawnAsync(command: string, args: string[], options?: { stdin: string }): Promise<string> {
+        if (!checkInstalled(this.spinner, command, this.installationInstructions)) {
+            return Promise.reject(`command not found: ${command}`)
+        }
+        return new Promise<string>((resolve, reject) => {
             const child = spawn(command, args, { stdio: 'pipe', ...options })
             let stdout = ''
             let stderr = ''
-
-            if (options?.stdin) {
-                child.stdin.write(options.stdin)
-                child.stdin.end()
-            }
-
             child.stdout.on('data', data => {
                 stdout += data
             })
@@ -110,12 +108,18 @@ abstract class KeychainOperations {
                 stderr += data
             })
 
-            child.on('error', () => reject(new Error(`child process exited with error: ${stderr}`)))
+            if (options?.stdin) {
+                child.stdin.write(options.stdin)
+                child.stdin.end()
+            }
+
             child.on('exit', code => {
                 if (code !== 0) {
-                    reject(new Error(`child process exited with code ${code}. stderr: ${stderr}`))
+                    reject(
+                        new Error(`command failed: ${command} ${args.join(' ')}\n${stdout}\n${stderr}`)
+                    )
                 } else {
-                    resolve({ stdout, stderr })
+                    resolve(stdout.trim())
                 }
             })
         })
@@ -123,10 +127,9 @@ abstract class KeychainOperations {
 }
 
 class MacOSKeychain extends KeychainOperations {
-    installationInstructions = '' // 'security' is already installed on macOS
-
+    installationInstructions = ''
     async readSecret(): Promise<string> {
-        const { stdout } = await this.spawnAsync('security', [
+        return await this.spawnAsync('security', [
             'find-generic-password',
             '-s',
             this.service(),
@@ -134,7 +137,6 @@ class MacOSKeychain extends KeychainOperations {
             this.account.username,
             '-w',
         ])
-        return stdout.trim()
     }
 
     async writeSecret(secret: string): Promise<void> {
@@ -159,17 +161,18 @@ class MacOSKeychain extends KeychainOperations {
         ])
     }
 }
+const toFixProblemPrefix =
+    'To fix this problem, either supply an access token with --access-token, the environment variable SRC_ACCESS_TOKEN, or run the command below to install the missing dependencies:'
 
 class WindowsCredentialManager extends KeychainOperations {
-    installationInstructions = `To fix this problem, run the command below in PowerShell and try again:
+    installationInstructions = `${toFixProblemPrefix}
   Install-Module -Name CredentialManager`
     private target(): string {
         return `${this.service()}:${this.account.username}`
     }
     async readSecret(): Promise<string> {
         const powershellCommand = `(Get-StoredCredential -Target "${this.target()}").GetNetworkCredential().Password`
-        const { stdout } = await this.spawnAsync('powershell', ['-Command', powershellCommand])
-        return stdout.trim()
+        return await this.spawnAsync('powershell', ['-Command', powershellCommand])
     }
 
     async writeSecret(secret: string): Promise<void> {
@@ -190,14 +193,13 @@ class LinuxSecretService extends KeychainOperations {
   sudo apt install libsecret-tools
   sudo apt install gnome-keyring`
     async readSecret(): Promise<string> {
-        const { stdout } = await this.spawnAsync('secret-tool', [
+        return await this.spawnAsync('secret-tool', [
             'lookup',
             'service',
-            `${this.service()}'`,
+            this.service(),
             'account',
-            `'${this.account.username}'`,
+            this.account.username,
         ])
-        return stdout.trim()
     }
 
     async writeSecret(secret: string): Promise<void> {
@@ -220,9 +222,34 @@ class LinuxSecretService extends KeychainOperations {
         await this.spawnAsync('secret-tool', [
             'clear',
             'service',
-            `${this.service()}`,
+            this.service(),
             'account',
-            `'${this.account.username}'`,
+            this.account.username,
         ])
+    }
+}
+
+const availableCommands = new Map<string, boolean>()
+function checkInstalled(spinner: Ora, command: string, installationInstructions: string): boolean {
+    const fromCache = availableCommands.get(command)
+    if (fromCache !== undefined) {
+        return fromCache
+    }
+    const isInstalled = canSpawnCommand(command)
+    availableCommands.set(command, isInstalled)
+    if (!isInstalled) {
+        spinner.fail(
+            `The tool '${command}' is not installed on shit computer.
+This tool is required to let Cody manage your access token securely.\n${installationInstructions}`
+        )
+    }
+    return isInstalled
+}
+function canSpawnCommand(command: string) {
+    try {
+        execSync(`which ${command}`, { stdio: 'ignore' })
+        return true
+    } catch (error) {
+        return false
     }
 }

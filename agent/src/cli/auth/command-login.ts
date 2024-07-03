@@ -32,6 +32,9 @@ export const loginCommand = new Command('login')
     .action(async (options: LoginOptions) => {
         const spinner = ora('Logging in...').start()
         const account = await AuthenticatedAccount.fromUserSettings(spinner)
+        if (!spinner.isSpinning) {
+            process.exit(1)
+        }
         const userInfo = await account?.getCurrentUserInfo()
         if (!isError(userInfo) && userInfo?.username) {
             spinner.succeed('You are already logged in as ' + userInfo.username)
@@ -128,7 +131,7 @@ export async function loginAction(
     const oldAccounts = oldSettings?.accounts
         ? oldSettings.accounts.filter(({ id }) => id !== account.id)
         : []
-    await writeCodySecret(account, token)
+    await writeCodySecret(spinner, account, token)
     const newAccounts = [account, ...oldAccounts]
     const newSettings: UserSettings = { accounts: newAccounts, activeAccountID: account.id }
     writeUserSettings(newSettings)
