@@ -1,6 +1,6 @@
 import { clsx } from 'clsx'
 import type React from 'react'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 
 import type { AuthStatus, ChatMessage, Guardrails, TelemetryService } from '@sourcegraph/cody-shared'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
@@ -14,6 +14,7 @@ import { ScrollDown } from './components/ScrollDown'
 import { useTelemetryRecorder } from './utils/telemetry'
 
 interface ChatboxProps {
+    chatID: string
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
@@ -22,9 +23,13 @@ interface ChatboxProps {
     isTranscriptError: boolean
     userInfo: UserAccountInfo
     guardrails?: Guardrails
+    showWelcomeMessage?: boolean
+    showIDESnippetActions?: boolean
+    className?: string
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
+    chatID,
     messageInProgress,
     transcript,
     vscodeAPI,
@@ -34,6 +39,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     chatEnabled = true,
     userInfo,
     guardrails,
+    showWelcomeMessage = true,
+    showIDESnippetActions = true,
+    className,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -93,21 +101,24 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         [vscodeAPI]
     )
 
-    const insertButtonOnSubmit = useCallback(
-        (text: string, newFile = false) => {
-            const op = newFile ? 'newFile' : 'insert'
-            const eventType = 'Button'
-            // remove the additional /n added by the text area at the end of the text
-            const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
-            // Log the event type and text to telemetry in chat view
-            vscodeAPI.postMessage({
-                command: op,
-                eventType,
-                text: code,
-            })
-        },
-        [vscodeAPI]
-    )
+    const insertButtonOnSubmit = useMemo(() => {
+        if (showIDESnippetActions) {
+            return (text: string, newFile = false) => {
+                const op = newFile ? 'newFile' : 'insert'
+                const eventType = 'Button'
+                // remove the additional /n added by the text area at the end of the text
+                const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
+                // Log the event type and text to telemetry in chat view
+                vscodeAPI.postMessage({
+                    command: op,
+                    eventType,
+                    text: code,
+                })
+            }
+        }
+
+        return
+    }, [vscodeAPI, showIDESnippetActions])
 
     const postMessage = useCallback<ApiPostMessage>(msg => vscodeAPI.postMessage(msg), [vscodeAPI])
 
@@ -154,13 +165,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     }, [])
 
     return (
-        <div className={clsx(styles.container, 'tw-relative')}>
+        <div className={clsx(styles.container, className, 'tw-relative')}>
             {!chatEnabled && (
                 <div className={styles.chatDisabled}>
                     Cody chat is disabled by your Sourcegraph site administrator
                 </div>
             )}
             <Transcript
+                chatID={chatID}
                 transcript={transcript}
                 messageInProgress={messageInProgress}
                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
@@ -172,7 +184,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 postMessage={postMessage}
                 guardrails={guardrails}
             />
-            {transcript.length === 0 && <WelcomeMessage />}
+            {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage />}
             <ScrollDown onClick={focusLastHumanMessageEditor} />
         </div>
     )

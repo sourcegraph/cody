@@ -4,6 +4,7 @@ import { fetch } from '../../fetch'
 
 import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
+import { escapeRegExp } from 'lodash'
 import semver from 'semver'
 import type { ConfigurationWithAccessToken } from '../../configuration'
 import { logDebug, logError } from '../../logger'
@@ -28,7 +29,10 @@ import {
     EVALUATE_FEATURE_FLAG_QUERY,
     FILE_CONTENTS_QUERY,
     FILE_MATCH_SEARCH_QUERY,
+    FUZZY_FILES_QUERY,
+    FUZZY_SYMBOLS_QUERY,
     GET_FEATURE_FLAGS_QUERY,
+    GET_REMOTE_FILE_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
     PACKAGE_LIST_QUERY,
@@ -48,8 +52,6 @@ export function isNodeResponse(response: BrowserOrNodeResponse): response is Nod
     return Boolean(response.body && !('getReader' in response.body))
 }
 
-const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
-
 interface APIResponse<T> {
     data?: T
     errors?: { message: string; path?: string[] }[]
@@ -57,6 +59,65 @@ interface APIResponse<T> {
 
 interface SiteVersionResponse {
     site: { productVersion: string } | null
+}
+
+export type FuzzyFindFilesResponse = {
+    __typename?: 'Query'
+    search: {
+        results: {
+            results: Array<FuzzyFindFile>
+        }
+    } | null
+}
+
+export type FuzzyFindSymbolsResponse = {
+    __typename?: 'Query'
+    search: {
+        results: {
+            results: FuzzyFindSymbol[]
+        }
+    }
+}
+
+type FuzzyFindFile = {
+    file: {
+        path: string
+        url: string
+        name: string
+        byteSize: number
+        isDirectory: boolean
+    }
+    repository: { id: string; name: string }
+}
+
+type FuzzyFindSymbol = {
+    symbols: {
+        name: string
+        location: {
+            range: {
+                start: { line: number }
+                end: { line: number }
+            }
+            resource: {
+                path: string
+            }
+        }
+    }[]
+    repository: { id: string; name: string }
+}
+
+interface RemoteFileContentReponse {
+    __typename?: 'Query'
+    repository: {
+        id: string
+        commit: {
+            id: string
+            oid: string
+            blob: {
+                content: string
+            }
+        }
+    }
 }
 
 interface SiteIdentificationResponse {
@@ -411,6 +472,8 @@ export class SourcegraphGraphQLAPIClient {
         return this._config
     }
 
+    private isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
+
     constructor(config: GraphQLAPIClientConfig | null = null) {
         this._config = config
     }
@@ -444,6 +507,56 @@ export class SourcegraphGraphQLAPIClient {
             extractDataOrError(
                 response,
                 data => data.site?.productVersion ?? new Error('site version not found')
+            )
+        )
+    }
+
+    public async getRemoteFiles(
+        repositories: string[],
+        query: string
+    ): Promise<FuzzyFindFile[] | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<FuzzyFindFilesResponse>>(FUZZY_FILES_QUERY, {
+            query: `type:path count:30 ${
+                repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''
+            } ${query}`,
+        }).then(response =>
+            extractDataOrError(
+                response,
+                data => data.search?.results.results ?? new Error('no files found')
+            )
+        )
+    }
+
+    public async getRemoteSymbols(
+        repositories: string[],
+        query: string
+    ): Promise<FuzzyFindSymbol[] | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<FuzzyFindSymbolsResponse>>(FUZZY_SYMBOLS_QUERY, {
+            query: `type:symbol count:30 ${
+                repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''
+            } ${query}`,
+        }).then(response =>
+            extractDataOrError(
+                response,
+                data => data.search?.results.results ?? new Error('no symbols found')
+            )
+        )
+    }
+
+    public async getFileContent(
+        repository: string,
+        filePath: string,
+        range?: { startLine?: number; endLine?: number }
+    ): Promise<string | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<RemoteFileContentReponse>>(GET_REMOTE_FILE_QUERY, {
+            repositoryName: repository,
+            filePath,
+            startLine: range?.startLine,
+            endLine: range?.endLine,
+        }).then(response =>
+            extractDataOrError(
+                response,
+                data => data.repository.commit.blob.content ?? new Error('no file found')
             )
         )
     }
@@ -835,7 +948,7 @@ export class SourcegraphGraphQLAPIClient {
         if (process.env.CODY_TESTING === 'true') {
             return this.sendEventLogRequestToTestingAPI(event)
         }
-        if (isAgentTesting) {
+        if (this.isAgentTesting) {
             return {}
         }
         if (this.config?.telemetryLevel === 'off') {
@@ -912,7 +1025,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     private anonymizeTelemetryEventInput(event: TelemetryEventInput): void {
-        if (isAgentTesting) {
+        if (this.isAgentTesting) {
             event.timestamp = undefined
             event.parameters.interactionID = undefined
             event.parameters.billingMetadata = undefined
@@ -923,7 +1036,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     private anonymizeEvent(event: event): void {
-        if (isAgentTesting) {
+        if (this.isAgentTesting) {
             event.publicArgument = undefined
             event.argument = undefined
             event.userCookieID = 'ANONYMOUS_USER_COOKIE_ID'

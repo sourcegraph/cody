@@ -3,20 +3,21 @@ import { type ContextItem, ModelsService, PromptString } from '@sourcegraph/cody
 import { glob } from 'glob'
 import * as vscode from 'vscode'
 import YAML from 'yaml'
-import type { MessageHandler } from '../../jsonrpc-alias'
+import type { RpcMessageHandler } from '../../jsonrpc-alias'
 import { EvaluationDocument } from './EvaluationDocument'
 import type { CodyBenchOptions } from './cody-bench'
 import { evaluateEachFile } from './evaluateEachFile'
 import { LlmJudge, type LlmJudgeScore } from './llm-judge'
-import { llmJudgeChatTemplate } from './llm-judge-chat-template'
+import { concisenessPrompt, helpfulnessPrompt } from './llm-judge-chat-template'
 
 interface ChatTask {
     question: string
+    class: string
     files?: string[]
 }
 
 export async function evaluateChatStrategy(
-    client: MessageHandler,
+    client: RpcMessageHandler,
     options: CodyBenchOptions
 ): Promise<void> {
     const absoluteFiles = glob.sync(`${options.workspace}/**`, {
@@ -62,15 +63,19 @@ export async function evaluateChatStrategy(
             const reply = response.messages.at(-1)
             if (reply?.text) {
                 const response = PromptString.unsafe_fromLLMResponse(reply.text)
-                const score = await llm.judge(llmJudgeChatTemplate({ response }))
+                const score = await llm.judge(helpfulnessPrompt({ response }))
+                const concisenessScore = await llm.judge(concisenessPrompt({ response }))
                 document.pushItem({
                     range,
                     chatReply: reply.text,
                     chatQuestion: task.question,
+                    questionClass: task.class,
                     llmJudgeScore: score.scoreNumeric,
+                    concisenessScore: concisenessScore.scoreNumeric,
+                    hedges: checkHedging(reply.text),
                 })
                 scores.push(score)
-                console.log({ reply, score })
+                console.log({ reply, score, concisenessScore })
             } else {
                 document.pushItem({
                     range,
@@ -89,4 +94,11 @@ export async function evaluateChatStrategy(
         })
         return document
     })
+}
+
+const apologyCheck = /sorry|apologize|unfortunately/i
+const accessCheck =
+    /I (don't|do not) (actually )?have (direct )?access|your actual codebase|can't browse external repositories|not able to access external information|unable to browse through|directly access|direct access|snippet you provided is incomplete|I can't review/i
+function checkHedging(reply: string): boolean {
+    return apologyCheck.test(reply) || accessCheck.test(reply)
 }

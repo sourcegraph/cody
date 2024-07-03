@@ -42,6 +42,7 @@ type NotificationCallback<M extends NotificationMethodName> = (
     params: ParamsOf<M>
 ) => void | Promise<void>
 
+export type RpcMessageHandler = Pick<MessageHandler, 'request' | 'notify' | 'conn'>
 export class MessageHandler {
     // Tracked for `clientForThisInstance` only.
     private readonly requestHandlers = new Map<RequestMethodName, RequestCallback<any>>()
@@ -130,8 +131,9 @@ export class MessageHandler {
      * @returns A JSON-RPC client to interact directly with this agent instance. Useful when we want
      * to use the agent in-process without stdout/stdin transport mechanism.
      */
-    public clientForThisInstance(): Pick<MessageHandler, 'request' | 'notify'> {
+    public clientForThisInstance(): RpcMessageHandler {
         return {
+            conn: this.conn,
             request: async <M extends RequestMethodName>(
                 method: M,
                 params: ParamsOf<M>,
@@ -147,6 +149,7 @@ export class MessageHandler {
                 const handler = this.notificationHandlers.get(method)
                 if (handler) {
                     handler(params)
+                    return
                 }
                 throw new Error(`No such notification handler: ${method}`)
             },

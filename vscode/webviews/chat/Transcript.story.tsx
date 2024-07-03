@@ -28,6 +28,7 @@ const meta: Meta<typeof Transcript> = {
         },
     },
     args: {
+        chatID: 'test',
         transcript: FIXTURE_TRANSCRIPT.simple,
         messageInProgress: null,
         feedbackButtonsOnSubmit: () => {},
@@ -136,6 +137,32 @@ export const WithRateLimitError: StoryObj<typeof meta> = {
                     new RateLimitError('chat messages and commands', 'rate limit error', true)
                 ),
             },
+        ]),
+        isTranscriptError: true,
+    },
+}
+
+export const abortedBeforeResponse: StoryObj<typeof meta> = {
+    args: {
+        transcript: transcriptFixture([
+            ...SIMPLE_TRANSCRIPT,
+            { speaker: 'human', text: ps`What color is the sky?'`, contextFiles: [] },
+            { speaker: 'assistant', error: errorToChatError(new Error('aborted')) },
+        ]),
+        isTranscriptError: true,
+    },
+}
+
+export const abortedWithPartialResponse: StoryObj<typeof meta> = {
+    args: {
+        transcript: transcriptFixture([
+            ...SIMPLE_TRANSCRIPT,
+            {
+                speaker: 'human',
+                text: ps`What color is the sky?`,
+                contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
+            },
+            { speaker: 'assistant', text: ps`Bl`, error: errorToChatError(new Error('aborted')) },
         ]),
         isTranscriptError: true,
     },

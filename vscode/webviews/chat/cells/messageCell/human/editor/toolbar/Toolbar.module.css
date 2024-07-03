@@ -1,9 +1,0 @@
-.container {
-    display: flex;
-    align-items: center;
-    margin: 0 0 0 -3px; /* make leftmost toolbar icon flush with text */
-}
-
-.spacer {
-    flex: 1;
-}

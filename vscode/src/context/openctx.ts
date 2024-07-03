@@ -1,6 +1,7 @@
 import { type ConfigurationWithAccessToken, setOpenCtxClient } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { logDebug, outputChannel } from '../log'
+import LinearIssuesProvider from './openctx/linear-issues'
 import RemoteFileProvider from './openctx/remoteFileSearch'
 import RemoteRepositorySearch from './openctx/remoteRepositorySearch'
 import WebProvider from './openctx/web'
@@ -27,11 +28,18 @@ export async function exposeOpenCtxClient(
         ]
 
         if (config.experimentalNoodle) {
-            providers.push({
-                providerUri: RemoteFileProvider.providerUri,
-                settings: true,
-                provider: RemoteFileProvider,
-            })
+            providers.push(
+                {
+                    providerUri: RemoteFileProvider.providerUri,
+                    settings: true,
+                    provider: RemoteFileProvider,
+                },
+                {
+                    providerUri: LinearIssuesProvider.providerUri,
+                    settings: true,
+                    provider: LinearIssuesProvider,
+                }
+            )
         }
 
         setOpenCtxClient(

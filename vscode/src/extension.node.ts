@@ -54,6 +54,10 @@ export function activate(
         .getConfiguration()
         .get<boolean>('cody.experimental.symf.enabled', true)
 
+    const isTelemetryEnabled = vscode.workspace
+        .getConfiguration()
+        .get<boolean>('cody.experimental.telemetry.enabled', true)
+
     return activateCommon(context, {
         createLocalEmbeddingsController: isLocalEmbeddingsDisabled
             ? undefined
@@ -66,9 +70,10 @@ export function activate(
         createSymfRunner: isSymfEnabled ? (...args) => new SymfRunner(...args) : undefined,
         createBfgRetriever: () => new BfgRetriever(context),
         createSentryService: (...args) => new NodeSentryService(...args),
-        createOpenTelemetryService: (...args) => new OpenTelemetryService(...args),
+        createOpenTelemetryService: isTelemetryEnabled
+            ? (...args) => new OpenTelemetryService(...args)
+            : undefined,
         startTokenReceiver: (...args) => startTokenReceiver(...args),
-
         onConfigurationChange: setCustomAgent,
         extensionClient,
     })

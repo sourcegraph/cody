@@ -39,10 +39,12 @@ import type {
     EditTask,
     ExtensionConfiguration,
     NetworkRequest,
+    Position,
     ProgressReportParams,
     ProgressStartParams,
     ProtocolCodeLens,
     ProtocolTextDocument,
+    Range,
     RenameFileOperation,
     ServerInfo,
     ShowWindowMessageParams,
@@ -71,7 +73,7 @@ interface ProgressEndMessage {
     message: Record<string, never>
 }
 
-function getAgentDir(): string {
+export function getAgentDir(): string {
     const cwd = process.cwd()
     return path.basename(cwd) === 'agent' ? cwd : path.join(cwd, 'agent')
 }
@@ -89,7 +91,7 @@ interface TestClientParams {
 }
 
 let isBuilt = false
-function buildAgentBinary(): void {
+export function buildAgentBinary(): void {
     if (isBuilt) {
         return
     }
@@ -270,11 +272,8 @@ export class TestClient extends MessageHandler {
             const createdFiles: CreateFileOperation[] = []
             for (const operation of params.operations) {
                 if (operation.type === 'edit-file') {
-                    const { success, protocolDocument } = this.editDocument(operation)
-                    result ||= success
-                    if (protocolDocument) {
-                        this.notify('textDocument/didChange', protocolDocument.underlying)
-                    }
+                    const protocolDocument = await this.editDocument(operation)
+                    this.notify('textDocument/didChange', protocolDocument.underlying)
                 } else if (operation.type === 'create-file') {
                     const fileExists = await doesFileExist(vscode.Uri.parse(operation.uri))
                     if (operation.options?.ignoreIfExists && fileExists) {
@@ -343,13 +342,11 @@ export class TestClient extends MessageHandler {
             this.notify('textDocument/didOpen', params)
             return Promise.resolve(true)
         })
-        this.registerRequest('textDocument/edit', params => {
+        this.registerRequest('textDocument/edit', async params => {
             this.textDocumentEditParams.push(params)
-            const { success, protocolDocument } = this.editDocument(params)
-            if (protocolDocument) {
-                this.notify('textDocument/didChange', protocolDocument.underlying)
-            }
-            return Promise.resolve(success)
+            const protocolDocument = await this.editDocument(params)
+            this.notify('textDocument/didChange', protocolDocument.underlying)
+            return Promise.resolve(true)
         })
         this.registerRequest('textDocument/show', () => {
             return Promise.resolve(true)
@@ -374,15 +371,8 @@ export class TestClient extends MessageHandler {
         })
     }
 
-    private editDocument(params: TextDocumentEditParams): {
-        success: boolean
-        protocolDocument?: ProtocolTextDocumentWithUri
-    } {
-        const document = this.workspace.getDocument(vscode.Uri.parse(params.uri))
-        if (!document) {
-            logError('textDocument/edit: document not found', params.uri)
-            return { success: false }
-        }
+    private async editDocument(params: TextDocumentEditParams): Promise<ProtocolTextDocumentWithUri> {
+        const document = await this.workspace.openTextDocument(vscode.Uri.parse(params.uri))
         const patches = params.edits.map<[number, number, string]>(edit => {
             switch (edit.type) {
                 case 'delete':
@@ -406,7 +396,7 @@ export class TestClient extends MessageHandler {
             content: updatedContent,
         })
         this.workspace.loadDocument(protocolDocument)
-        return { success: true, protocolDocument }
+        return protocolDocument
     }
     private logMessage(params: DebugMessage): void {
         // Uncomment below to see `logDebug` messages.
@@ -445,7 +435,7 @@ export class TestClient extends MessageHandler {
             content = content.replace('/* CURSOR */', '')
         }
 
-        const document = AgentTextDocument.from(uri, content)
+        const document = AgentTextDocument.from(uri, content, params)
         const start =
             cursor >= 0
                 ? document.positionAt(cursor)
@@ -457,7 +447,7 @@ export class TestClient extends MessageHandler {
         const protocolDocument: ProtocolTextDocument = {
             uri: uri.toString(),
             content,
-            selection: start && end ? { start, end } : undefined,
+            selection: params?.selection ?? (start && end ? { start, end } : undefined),
         }
         const clientDocument = this.workspace.loadDocument(
             ProtocolTextDocumentWithUri.fromDocument(protocolDocument)
@@ -492,6 +482,70 @@ export class TestClient extends MessageHandler {
 
         await this.request('editTask/accept', { id: task.id })
         return this.workspace.getDocument(uri)?.content ?? ''
+    }
+
+    public async generateUnitTestFor(uri: vscode.Uri, line: number): Promise<TestInfo | undefined> {
+        await this.openFile(uri, {
+            removeCursor: false,
+            selection: {
+                start: { line, character: 0 },
+                end: { line, character: 0 },
+            },
+        })
+
+        const task = await this.request('editCommands/test', null)
+        await this.taskHasReachedAppliedPhase(task)
+        const lenses = this.codeLenses.get(uri.toString()) ?? []
+        if (lenses.length > 0) {
+            throw new Error(
+                `Code lenses are not supported in this mode ${JSON.stringify(lenses, null, 2)}`
+            )
+        }
+
+        await this.request('editTask/accept', { id: task.id })
+        return this.getTestEdit()
+    }
+
+    private async getTestEdit(): Promise<TestInfo | undefined> {
+        // first check if a new text file was created in the workspace
+        if (this.textDocumentEditParams.length === 1) {
+            const [editParams] = this.textDocumentEditParams
+            for (const edit of editParams.edits) {
+                if (edit.type === 'replace') {
+                    return {
+                        uri: vscode.Uri.parse(editParams.uri).with({ scheme: 'file' }),
+                        value: edit.value,
+                        fullFile: edit.value,
+                        isUpdate: false,
+                    }
+                }
+            }
+        }
+        // Otherwise it is an update to test file so it should
+        for (const param of this.workspaceEditParams) {
+            for (const operation of param.operations) {
+                if (operation.type === 'edit-file') {
+                    for (const edit of operation.edits) {
+                        // looks for a replace with an appropriate range
+                        if (
+                            edit.type === 'replace' &&
+                            !isPositionEqual(edit.range.start, edit.range.end)
+                        ) {
+                            const uri = vscode.Uri.parse(operation.uri).with({ scheme: 'file' })
+                            await this.openFile(uri)
+                            return {
+                                uri,
+                                value: edit.value,
+                                fullFile: this.documentText(uri),
+                                isUpdate: true,
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return undefined
     }
 
     public async autocompleteText(params?: Partial<AutocompleteParams>): Promise<string[]> {
@@ -952,4 +1006,21 @@ interface TextDocumentEventParams {
     text?: string
     selectionName?: string
     removeCursor?: boolean
+    selection?: Range | undefined | null
+}
+
+function isPositionEqual(a: Position, b: Position): boolean {
+    return a.line === b.line && a.character === b.character
+}
+
+interface TestInfo {
+    // Test files "on disk" URI (not actually written about but uses "file" protocol)
+    uri: vscode.Uri
+
+    // Test content
+    value: string
+    fullFile: string
+
+    // Was this an update to an exisiting test file or a new file
+    isUpdate: boolean
 }

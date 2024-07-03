@@ -207,6 +207,56 @@ export class FixupController
         }
     }
 
+    /**
+     * Given a task, tracks upcoming changes in the associated document.
+     * If the change restores an applied task to its original state, we discard the task
+     * meaning any associated UI and behaviour is updated.
+     */
+    public registerDiscardOnRestoreListener(task: FixupTask): void {
+        // Triggering an auto-discard or auto-accept can lead to race conditions in the Agent, as the
+        // Agent doesn't get notified when the Accept lens is displayed, so it doesn't actually know when it
+        // is safe to discard/accept.
+        // Fixing it properly will require us to send some sort of notification back to the Agent after we finish
+        // applying the changes. https://github.com/sourcegraph/cody-issues/issues/315 is one example of a bug
+        // caused by auto-accepting here, but there were others as well.
+        if (isRunningInsideAgent()) {
+            return
+        }
+
+        const listener = vscode.workspace.onDidChangeTextDocument(async event => {
+            if (task.state !== CodyTaskState.Applied) {
+                // Task is not in the applied state, this is likely due to it
+                // being accepted or discarded in an alternative way.
+                // Dispose of this listener as we no longer need it
+                return listener.dispose()
+            }
+
+            if (event.document.uri.toString() !== task.fixupFile.uri.toString()) {
+                // Irrelevant change, ignore (edit applied to different file)
+                return
+            }
+
+            const changeIsWithinRange = event.contentChanges.some(
+                edit =>
+                    !(
+                        edit.range.end.isBefore(task.selectionRange.start) ||
+                        edit.range.start.isAfter(task.selectionRange.end)
+                    )
+            )
+            if (!changeIsWithinRange) {
+                // Irrelevant change, ignore (edit applied outside of task range)
+                return
+            }
+
+            if (event.document.getText(task.selectionRange) === task.original) {
+                // The user has undone the edit, discard the task
+                task.diff = undefined
+                this.discard(task)
+                return listener.dispose()
+            }
+        })
+    }
+
     private async revertToOriginal(
         task: FixupTask,
         edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit,
@@ -1026,11 +1076,9 @@ export class FixupController
             void this.apply(task.id)
         }
 
-        // We currently remove the decorations when the task is applied as they
-        // currently do not always show the correct positions for edits.
-        // TODO: Improve the diff handling so that decorations more accurately reflect the edits.
         if (task.state === CodyTaskState.Applied) {
             this.decorator.didApplyTask(task)
+            this.registerDiscardOnRestoreListener(task)
         }
     }
 

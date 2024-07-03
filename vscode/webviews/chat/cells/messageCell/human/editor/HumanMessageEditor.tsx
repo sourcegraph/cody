@@ -22,7 +22,7 @@ import {
 import { PromptEditor, type PromptEditorRefAPI } from '../../../../../promptEditor/PromptEditor'
 import { useTelemetryRecorder } from '../../../../../utils/telemetry'
 import styles from './HumanMessageEditor.module.css'
-import type { SubmitButtonDisabled } from './toolbar/SubmitButton'
+import type { SubmitButtonState } from './toolbar/SubmitButton'
 import { Toolbar } from './toolbar/Toolbar'
 
 /**
@@ -47,7 +47,10 @@ export const HumanMessageEditor: FunctionComponent<{
 
     onChange?: (editorState: SerializedPromptEditorValue) => void
     onSubmit: (editorValue: SerializedPromptEditorValue) => void
+    onStop: () => void
 
+    isFirstInteraction?: boolean
+    isLastInteraction?: boolean
     isEditorInitiallyFocused?: boolean
     className?: string
 
@@ -65,6 +68,9 @@ export const HumanMessageEditor: FunctionComponent<{
     disabled = false,
     onChange,
     onSubmit: parentOnSubmit,
+    onStop,
+    isFirstInteraction,
+    isLastInteraction,
     isEditorInitiallyFocused,
     className,
     editorRef: parentEditorRef,
@@ -89,14 +95,19 @@ export const HumanMessageEditor: FunctionComponent<{
         [onChange]
     )
 
-    const submitDisabled: SubmitButtonDisabled = isPendingPriorResponse
-        ? 'isPendingPriorResponse'
+    const submitState: SubmitButtonState = isPendingPriorResponse
+        ? 'waitingResponseComplete'
         : isEmptyEditorValue
           ? 'emptyEditorValue'
-          : false
+          : 'submittable'
 
     const onSubmitClick = useCallback(() => {
-        if (submitDisabled) {
+        if (submitState === 'emptyEditorValue') {
+            return
+        }
+
+        if (submitState === 'waitingResponseComplete') {
+            onStop()
             return
         }
 
@@ -115,7 +126,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 contextItems: value.contextItems.length,
             },
         })
-    }, [submitDisabled, parentOnSubmit, telemetryRecorder.recordEvent, isFirstMessage, isSent])
+    }, [submitState, parentOnSubmit, onStop, telemetryRecorder.recordEvent, isFirstMessage, isSent])
 
     const onEditorEnterKey = useCallback(
         (event: KeyboardEvent | null): void => {
@@ -152,13 +163,14 @@ export const HumanMessageEditor: FunctionComponent<{
     useEffect(() => {
         if (isEditorInitiallyFocused) {
             // Only focus the editor if the user hasn't made another selection or has scrolled down.
-            // It would be annoying if we clobber the user's intentional selection or scrolling
-            // choice with the autofocus.
+            // It would be annoying if we clobber the user's intentional selection with the autofocus.
             const selection = window.getSelection()
             const userHasIntentionalSelection = selection && !selection.isCollapsed
-            const userHasIntentionalScroll = window.scrollY !== 0
-            if (!userHasIntentionalSelection && !userHasIntentionalScroll) {
+            if (!userHasIntentionalSelection) {
                 editorRef.current?.setFocus(true, { moveCursorToEnd: true })
+                window.scrollTo({
+                    top: window.document.body.scrollHeight,
+                })
             }
         }
     }, [isEditorInitiallyFocused])
@@ -252,8 +264,10 @@ export const HumanMessageEditor: FunctionComponent<{
                     [styles.sent]: isSent,
                     [styles.focused]: focused,
                 },
+                'tw-transition',
                 className
             )}
+            data-keep-toolbar-open={isLastInteraction || undefined}
             onMouseDown={onMaybeGapClick}
             onClick={onMaybeGapClick}
             onFocus={onFocus}
@@ -277,11 +291,11 @@ export const HumanMessageEditor: FunctionComponent<{
                     isEditorFocused={focused}
                     onMentionClick={onMentionClick}
                     onSubmitClick={onSubmitClick}
-                    submitDisabled={submitDisabled}
+                    submitState={submitState}
                     onGapClick={onGapClick}
                     focusEditor={focusEditor}
                     hidden={!focused && isSent}
-                    className={styles.toolbar}
+                    className={clsx('tw-transition-all', styles.toolbar)}
                 />
             )}
         </div>
