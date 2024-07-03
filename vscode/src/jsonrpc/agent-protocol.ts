@@ -2,6 +2,7 @@ import type {
     AuthStatus,
     BillingCategory,
     BillingProduct,
+    CodyCommand,
     ContextFilters,
     CurrentUserCodySubscription,
     Model,
@@ -47,6 +48,15 @@ export type ClientRequests = {
     // webview/didDispose.
     'chat/new': [null, string]
 
+    // Start a new chat session and returns panel id and chat id that later can
+    // be used to reference to the session with panel id and restore chat with
+    // chat id. Main difference compared to the chat/new is that we return chatId.
+    'chat/web/new': [null, { panelId: string; chatId: string }]
+
+    // Deletes chat by its ID and returns newly updated chat history list
+    // Primary is used only in cody web client
+    'chat/delete': [{ chatId: string }, ChatExportResult[]]
+
     // Similar to `chat/new` except it starts a new chat session from an
     // existing transcript. The chatID matches the `chatID` property of the
     // `type: 'transcript'` ExtensionMessage that is sent via
@@ -62,7 +72,7 @@ export type ClientRequests = {
     ]
 
     'chat/models': [{ modelUsage: ModelUsage }, { models: Model[] }]
-    'chat/export': [null, ChatExportResult[]]
+    'chat/export': [null | { fullHistory: boolean }, ChatExportResult[]]
     'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] | undefined | null }]
 
     // High-level wrapper around webview/receiveMessage and webview/postMessage
@@ -84,6 +94,9 @@ export type ClientRequests = {
 
     // Trigger custom commands that could be a chat-based command or an edit command.
     'commands/custom': [{ key: string }, CustomCommandResult]
+
+    // A list of available custom commands stored in .cody/commands.json.
+    'customCommands/list': [null, CodyCommand[]]
 
     // Trigger commands that edit the code.
     'editCommands/code': [
@@ -180,6 +193,8 @@ export type ClientRequests = {
     'testing/closestPostData': [{ url: string; postData: string }, { closestBody: string }]
     'testing/memoryUsage': [null, { usage: MemoryUsage }]
     'testing/awaitPendingPromises': [null, null]
+    // Retrieve the Agent's copy of workspace documents, for testing/validation.
+    'testing/workspaceDocuments': [GetDocumentsParams, GetDocumentsResult]
     // Returns diagnostics for the given URI. Lives under `testing/` instead of
     // standalone `diagnostics/` because it only works for TypeScript files.
     'testing/diagnostics': [{ uri: string }, { diagnostics: ProtocolDiagnostic[] }]
@@ -200,6 +215,8 @@ export type ClientRequests = {
 
     // Returns the current authentication status without making changes to it.
     'extensionConfiguration/status': [null, AuthStatus | null]
+
+    'textDocument/change': [ProtocolTextDocument, { success: boolean }]
 
     // Run attribution search for a code snippet displayed in chat.
     // Attribution is an enterprise feature which allows to look for code generated
@@ -922,4 +939,16 @@ export interface ProtocolCodeAction {
           }
         | undefined
         | null
+}
+
+/**
+ * Omitting uris parameter will retrieve all open documents for the
+ * current workspace root.
+ */
+export interface GetDocumentsParams {
+    uris?: string[] | undefined | null
+}
+
+export interface GetDocumentsResult {
+    documents: ProtocolTextDocument[]
 }

@@ -108,6 +108,11 @@ function fixIndentation(
  */
 export function matchIndentation(incoming: string, original: string): string {
     const originalIndentation = detectIndent(original)
+    if (originalIndentation.amount === 0) {
+        // No indentation detected, this may be simply because the file is not populated enough.
+        // We cannot reliably update the incoming indentation so we will just return the unmodified string.
+        return incoming
+    }
     const incomingIndentation = detectIndent(incoming)
     const indentationCharacter = originalIndentation.type === 'tab' ? '\t' : ' '
 

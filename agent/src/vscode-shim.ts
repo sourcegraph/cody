@@ -59,6 +59,9 @@ import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
 // traffic.
 export const isTesting = process.env.CODY_SHIM_TESTING === 'true'
 
+// The testing code paths sometimes need to distinguish the different types of testing.
+export const isIntegrationTesting = process.env.CODY_CLIENT_INTEGRATION_TESTING === 'true'
+
 export { AgentEventEmitter as EventEmitter } from '../../vscode/src/testutils/AgentEventEmitter'
 
 export {

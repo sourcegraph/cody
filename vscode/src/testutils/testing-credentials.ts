@@ -23,6 +23,14 @@ export function s2Credentials(): TestingCredentials {
     }
 }
 
+export function dotcomCredentials(): TestingCredentials {
+    return {
+        redactedToken: 'REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d',
+        serverEndpoint: 'https://sourcegraph.com/',
+        token: loadSecret('CODY_PRO_ACCESS_TOKEN'),
+    }
+}
+
 // See instructions in agent/scripts/export-cody-http-recording-tokens.sh for
 // how to update the `redacted` tokens when the access token changes.
 export const TESTING_CREDENTIALS = {

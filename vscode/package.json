@@ -462,6 +462,30 @@
         "icon": "$(new-comment-icon)"
       },
       {
+        "command": "cody.chat.panel.sidebar.new",
+        "category": "Cody",
+        "title": "New Chat in Sidebar",
+        "enablement": "cody.activated",
+        "group": "Cody",
+        "icon": "$(new-comment-icon)"
+      },
+      {
+        "command": "cody.chat.panel.moveFromSidebarToEditor",
+        "category": "Cody",
+        "title": "Move Chat to Editor Panel",
+        "enablement": "cody.activated",
+        "group": "Cody",
+        "icon": "$(layout-sidebar-left-off)"
+      },
+      {
+        "command": "cody.chat.panel.moveFromEditorToSidebar",
+        "category": "Cody",
+        "title": "Move Chat to Sidebar",
+        "enablement": "cody.activated",
+        "group": "Cody",
+        "icon": "$(layout-sidebar-left)"
+      },
+      {
         "command": "cody.minion.panel.new",
         "category": "Cody",
         "title": "New Minion Panel",
@@ -546,14 +570,6 @@
         "title": "Add File to Cody Chat",
         "icon": "$(mention)",
         "enablement": "cody.activated && resourceSet && cody.hasChatPanelsOpened"
-      },
-      {
-        "command": "cody.chat.panel.reset",
-        "category": "Cody",
-        "title": "New Chat Session",
-        "group": "Cody",
-        "icon": "$(clear-all)",
-        "enablement": "cody.activated && cody.hasChatHistory"
       },
       {
         "command": "cody.embeddings.resolveIssue",
@@ -780,11 +796,6 @@
           "command": "cody.chat.view.popOut",
           "when": "false",
           "_comment": "Hidden because it is only a wrapper around the workspace pop out command and would place any editor tab (not just Cody chat) in a new window."
-        },
-        {
-          "command": "cody.chat.panel.reset",
-          "when": "false",
-          "_comment": "Hidden because it only needs to be usable in the chat toolbar."
         }
       ],
       "editor/context": [
@@ -869,6 +880,16 @@
           "group": "navigation@3"
         },
         {
+          "command": "cody.chat.panel.sidebar.new",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation@1"
+        },
+        {
+          "command": "cody.chat.panel.moveFromSidebarToEditor",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation@2"
+        },
+        {
           "command": "cody.welcome",
           "when": "view == cody.support.tree.view",
           "group": "7_cody@0"
@@ -902,27 +923,33 @@
           "visibility": "visible"
         },
         {
-          "command": "cody.chat.panel.new",
+          "command": "cody.chat.panel.moveFromEditorToSidebar",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
           "group": "navigation@1",
           "visibility": "visible"
         },
         {
-          "command": "cody.chat.history.panel",
+          "command": "cody.chat.panel.new",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
           "group": "navigation@2",
           "visibility": "visible"
         },
         {
+          "command": "cody.chat.history.panel",
+          "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
+          "group": "navigation@3",
+          "visibility": "visible"
+        },
+        {
           "command": "cody.chat.view.popOut",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated && !isAuxiliaryEditorPart",
-          "group": "navigation@3",
+          "group": "navigation@4",
           "visibility": "visible"
         },
         {
           "command": "cody.settings.extension.chat",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
-          "group": "navigation@4",
+          "group": "navigation@5",
           "visibility": "visible"
         }
       ],
@@ -1368,7 +1395,8 @@
     "@lexical/text": "^0.16.0",
     "@lexical/utils": "^0.16.0",
     "@mdi/js": "^7.2.96",
-    "@openctx/vscode-lib": "^0.0.11",
+    "@openctx/provider-linear-issues": "^0.0.6",
+    "@openctx/vscode-lib": "^0.0.13",
     "@opentelemetry/api": "^1.7.0",
     "@opentelemetry/core": "^1.18.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",
@@ -1379,6 +1407,7 @@
     "@opentelemetry/sdk-trace-base": "^1.18.1",
     "@opentelemetry/sdk-trace-node": "^1.18.1",
     "@opentelemetry/semantic-conventions": "^1.18.1",
+    "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-popover": "^1.0.7",
     "@radix-ui/react-slot": "^1.0.2",

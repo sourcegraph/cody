@@ -779,12 +779,12 @@ export const vsCodeMocks = {
         fs: workspaceFs,
         getConfiguration() {
             return {
-                get(key: string) {
+                get(key: string, defaultValue: unknown = undefined) {
                     switch (key) {
                         case 'cody.debug.filter':
                             return '.*'
                         default:
-                            return undefined
+                            return defaultValue
                     }
                 },
                 update(): void {},

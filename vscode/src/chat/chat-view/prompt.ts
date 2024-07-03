@@ -71,7 +71,7 @@ export class DefaultPrompter {
                 !this.isCommand &&
                 Boolean(this.explicitContext.length || historyItems.length || this.getEnhancedContext)
             ) {
-                reverseTranscript[0] = PromptMixin.mixInto(reverseTranscript[0])
+                reverseTranscript[0] = PromptMixin.mixInto(reverseTranscript[0], chat.modelID)
             }
 
             const messagesIgnored = promptBuilder.tryAddMessages(reverseTranscript)

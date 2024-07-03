@@ -1,4 +1,4 @@
-import fspromises from 'node:fs/promises'
+import { readFileSync } from 'node:fs'
 import { globalAgent } from 'node:https'
 
 /**
@@ -42,18 +42,20 @@ function addLinuxCerts() {
         cas = Array.from(originalCA)
     }
 
-    loadLinuxCerts()
-        .then(certs => cas.push(...certs))
-        .catch(err => console.warn('Error loading linux certs', err))
+    try {
+        cas.push(...loadLinuxCerts())
+    } catch (err) {
+        console.warn('Error loading linux certs', err)
+    }
     globalAgent.options.ca = cas
 }
 
-async function loadLinuxCerts(): Promise<Array<string>> {
+function loadLinuxCerts(): Array<string> {
     const certs = new Set<string>()
 
     for (const path of linuxPossibleCertPaths) {
         try {
-            const content: string = await fspromises.readFile(path, { encoding: 'utf8' })
+            const content: string = readFileSync(path, { encoding: 'utf8' })
             content
                 .split(/(?=-----BEGIN CERTIFICATE-----)/g)
                 .filter(pem => !!pem.length)

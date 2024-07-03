@@ -33,7 +33,7 @@ describe('cody chat', () => {
         process.env.SRC_ACCESS_TOKEN = credentials.token ?? credentials.redactedToken
         process.env.SRC_ENDPOINT = credentials.serverEndpoint
         process.env.CODY_TELEMETRY_EXPORTER = 'testing'
-        const args = [...params.args, '--dir', tmp.rootPath]
+        const args = [...params.args, '--dir', tmp.rootPath, '--silent']
 
         const command = chatCommand()
         const parseResult = command.parseOptions(args)
@@ -89,7 +89,7 @@ describe('cody chat', () => {
                 })
             )
         ).toMatchSnapshot()
-    }, 20_000)
+    }, 10_000)
 
     it('--context-repo (squirrel test)', async () => {
         expect(

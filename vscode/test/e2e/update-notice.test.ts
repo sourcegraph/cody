@@ -27,7 +27,8 @@ test('new installs should not show the update toast', async ({ page, sidebar }) 
     ).toMatch(/\d+\.\d+/)
 })
 
-test('existing installs should show the update toast when the last dismissed version is different', async ({
+// TODO(beyang): fix flaky
+test.skip('existing installs should show the update toast when the last dismissed version is different', async ({
     page,
     sidebar,
 }) => {

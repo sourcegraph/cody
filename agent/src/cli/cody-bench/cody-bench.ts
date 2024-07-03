@@ -1,5 +1,6 @@
 import * as fspromises from 'node:fs/promises'
 import * as path from 'node:path'
+import glob from 'glob'
 
 import * as commander from 'commander'
 import * as vscode from 'vscode'
@@ -8,6 +9,7 @@ import { newAgentClient } from '../../agent'
 
 import { ModelsService, getDotComDefaultModels, graphqlClient } from '@sourcegraph/cody-shared'
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
+import { dotcomCredentials } from '../../../../vscode/src/testutils/testing-credentials'
 import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled'
 import { arrayOption, booleanOption, intOption } from './cli-parsers'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
@@ -15,9 +17,11 @@ import { evaluateAutocompleteStrategy } from './strategy-autocomplete'
 import { evaluateChatStrategy } from './strategy-chat'
 import { evaluateFixStrategy } from './strategy-fix'
 import { evaluateGitLogStrategy } from './strategy-git-log'
+import { evaluateUnitTestStrategy } from './strategy-unit-test'
 
 export interface CodyBenchOptions {
     workspace: string
+    absolutePath?: string
     worktree?: string
     treeSitterGrammars: string
     queriesDirectory: string
@@ -64,9 +68,10 @@ interface EvaluationConfig extends Partial<CodyBenchOptions> {
 
 export enum BenchStrategy {
     Autocomplete = 'autocomplete',
-    GitLog = 'git-log',
-    Fix = 'fix',
     Chat = 'chat',
+    Fix = 'fix',
+    GitLog = 'git-log',
+    UnitTest = 'unit-test',
 }
 
 interface EvaluationFixture {
@@ -83,14 +88,14 @@ async function loadEvaluationConfig(options: CodyBenchOptions): Promise<CodyBenc
     const configBuffer = await fspromises.readFile(options.evaluationConfig)
     const config = JSON.parse(configBuffer.toString()) as EvaluationConfig
     const result: CodyBenchOptions[] = []
-    for (const test of config?.workspaces ?? []) {
+    const rootDir = path.dirname(options.evaluationConfig)
+    for (const test of expandWorkspaces(config.workspaces, rootDir) ?? []) {
         if (!test.workspace) {
             console.error(
                 `skipping test, missing required property 'workspace': ${JSON.stringify(test)}`
             )
             continue
         }
-        const rootDir = path.dirname(options.evaluationConfig)
         const workspace = path.normalize(path.join(rootDir, test.workspace))
         const fixtures: EvaluationFixture[] = config.fixtures ?? [
             { name: 'default', strategy: BenchStrategy.Autocomplete },
@@ -202,7 +207,9 @@ export const codyBenchCommand = new commander.Command('cody-bench')
         new commander.Option(
             '--src-endpoint <url>',
             'The Sourcegraph URL endpoint to use for authentication'
-        ).env('SRC_ENDPOINT')
+        )
+            .env('SRC_ENDPOINT')
+            .default('https://sourcegraph.com')
     )
     .option(
         '--include-workspace <glob>',
@@ -278,6 +285,19 @@ export const codyBenchCommand = new commander.Command('cody-bench')
         true
     )
     .action(async (options: CodyBenchOptions) => {
+        if (!options.srcAccessToken) {
+            const { token } = dotcomCredentials()
+            if (!token) {
+                console.error('environment variable SRC_ACCESS_TOKEN must be non-empty')
+                process.exit(1)
+            }
+            options.srcAccessToken = token
+        }
+        if (!options.srcEndpoint) {
+            console.error('environment variable SRC_ENDPOINT must be non-empty')
+            process.exit(1)
+        }
+
         const testOptions = await loadEvaluationConfig(options)
         const workspacesToRun = testOptions.filter(
             testOptions =>
@@ -321,15 +341,6 @@ export const codyBenchCommand = new commander.Command('cody-bench')
 
 async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: string): Promise<void> {
     console.log(`starting evaluation: fixture=${options.fixture.name} workspace=${options.workspace}`)
-
-    if (!options.srcAccessToken) {
-        console.error('environment variable SRC_ACCESS_TOKEN must be non-empty')
-        process.exit(1)
-    }
-    if (!options.srcEndpoint) {
-        console.error('environment variable SRC_ENDPOINT must be non-empty')
-        process.exit(1)
-    }
 
     const workspaceRootUri = vscode.Uri.from({ scheme: 'file', path: options.workspace })
 
@@ -389,6 +400,9 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
             case BenchStrategy.Chat:
                 await evaluateChatStrategy(client, options)
                 break
+            case BenchStrategy.UnitTest:
+                await evaluateUnitTestStrategy(client, options)
+                break
             default:
                 throw new Error(`unknown strategy ${options.fixture.strategy}`)
         }
@@ -398,4 +412,31 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
     console.log('cody-bench completed, shutting down...')
     await client.request('shutdown', null)
     client.notify('exit', null)
+}
+
+function expandWorkspaces(
+    workspaces: CodyBenchOptions[] | undefined,
+    rootDir: string
+): CodyBenchOptions[] {
+    if (!workspaces) {
+        return []
+    }
+    return workspaces.flatMap(workspace => {
+        workspace.absolutePath = path.normalize(path.join(rootDir, workspace.workspace))
+
+        if (!workspace.workspace.endsWith('/*')) {
+            return [workspace]
+        }
+        return glob
+            .sync(workspace.workspace, {
+                cwd: rootDir,
+            })
+            .flatMap(workspacePath => {
+                return {
+                    ...workspace,
+                    workspace: workspacePath,
+                    absolutePath: path.normalize(path.join(rootDir, workspacePath)),
+                }
+            })
+    })
 }
