@@ -58,7 +58,12 @@ export const chatCommand = () =>
         .option('--debug', 'Enable debug logging', false)
         .action(async (options: ChatOptions) => {
             if (!options.accessToken) {
-                const account = await AuthenticatedAccount.fromUserSettings()
+                const spinner = ora().start('Loading access token')
+                const account = await AuthenticatedAccount.fromUserSettings(spinner)
+                if (!spinner.isSpinning) {
+                    process.exit(1)
+                }
+                spinner.stop()
                 if (account) {
                     options.accessToken = account.accessToken
                     options.endpoint = account.serverEndpoint
