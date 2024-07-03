@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "@sourcegraph/cody-web",
+  "name": "cody-web-experimental",
   "version": "0.0.1",
   "description": "Cody standalone web app",
   "license": "Apache-2.0",
