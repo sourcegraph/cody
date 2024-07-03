@@ -167,7 +167,7 @@ To fix this problem, run the command below to install the missing dependencies:
   Install-Module -Name CredentialManager
 ${alternativelyMessage}`
     private target(): string {
-        return `${this.service()}:${this.account.username}`
+        return `${this.service()}:${this.account.username}`.replaceAll('"', '_')
     }
     async readSecret(): Promise<string> {
         const powershellCommand = `(Get-StoredCredential -Target "${this.target()}").GetNetworkCredential().Password`
