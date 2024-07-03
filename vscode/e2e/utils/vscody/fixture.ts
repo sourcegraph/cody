@@ -7,16 +7,21 @@ import fs from 'node:fs/promises'
 import 'node:http'
 import 'node:https'
 import type { AddressInfo } from 'node:net'
-import os from 'node:os'
 import path from 'node:path'
+import { EventEmitter } from 'node:stream'
 import { promisify } from 'node:util'
 
 import pspawn from '@npmcli/promise-spawn'
-import { test as _test, expect, mergeTests } from '@playwright/test'
+import { type TestInfo, test as _test, expect, mergeTests } from '@playwright/test'
 import NodeHttpAdapter from '@pollyjs/adapter-node-http'
 import { type EXPIRY_STRATEGY, type MODE, Polly } from '@pollyjs/core'
 import type { ArrayContainsAll } from '@sourcegraph/cody-shared/src/utils'
-import { ConsoleReporter, type ProgressReport, ProgressReportStage } from '@vscode/test-electron'
+import {
+    ConsoleReporter,
+    type ProgressReport,
+    ProgressReportStage,
+    resolveCliArgsFromVSCodeExecutablePath,
+} from '@vscode/test-electron'
 import { downloadAndUnzipVSCode } from '@vscode/test-electron/out/download'
 import express from 'express'
 import { copy as copyExt } from 'fs-extra'
@@ -24,7 +29,6 @@ import { createProxyMiddleware } from 'http-proxy-middleware'
 import type { loggerPlugin as ProxyMiddlewarePlugin } from 'http-proxy-middleware'
 import zod from 'zod'
 
-import { EventEmitter } from 'node:stream'
 import { waitForLock } from '../../../src/lockfile'
 import { CodyPersister } from '../../../src/testutils/CodyPersister'
 import { defaultMatchRequestsBy } from '../../../src/testutils/polly'
@@ -44,14 +48,19 @@ const workerOptionsSchema = zod.object({
             'DEPRECATED: The .git root of this project. Might still get used for some path defaults so must be set'
         ),
     vscodeExtensionCacheDir: zod.string(),
+    globalTmpDir: zod.string(),
     vscodeTmpDir: zod.string(),
+    vscodeServerTmpDir: zod.string(),
     binaryTmpDir: zod.string(),
     recordingDir: zod.string(),
+    vscodeServerPortRange: zod.tuple([zod.number(), zod.number()]).default([33100, 33200]),
+    keepRuntimeDirs: zod.enum(['all', 'failed', 'none']).default('none'),
+    allowGlobalVSCodeModification: zod.boolean().default(false),
 })
 
 const testOptionsSchema = zod.object({
     vscodeVersion: zod.string().default('stable'),
-    vscodeExtensions: zod.array(zod.string()).default([]),
+    vscodeExtensions: zod.array(zod.string().toLowerCase()).default([]),
     templateWorkspaceDir: zod.string(),
     recordingMode: zod.enum([
         'passthrough',
@@ -106,7 +115,18 @@ const optionsFixture: ReturnType<
     ...schemaOptions(testOptionsSchema, 'test'),
     validWorkerOptions: [
         async (
-            { repoRootDir, binaryTmpDir, recordingDir, vscodeTmpDir, vscodeExtensionCacheDir },
+            {
+                repoRootDir,
+                binaryTmpDir,
+                recordingDir,
+                globalTmpDir,
+                vscodeTmpDir,
+                vscodeServerTmpDir,
+                vscodeExtensionCacheDir,
+                keepRuntimeDirs,
+                vscodeServerPortRange,
+                allowGlobalVSCodeModification,
+            },
             use
         ) => {
             const validOptionsWithDefaults = await workerOptionsSchema.safeParseAsync(
@@ -114,8 +134,13 @@ const optionsFixture: ReturnType<
                     repoRootDir,
                     binaryTmpDir,
                     recordingDir,
+                    globalTmpDir,
                     vscodeTmpDir,
+                    vscodeServerTmpDir,
                     vscodeExtensionCacheDir,
+                    keepRuntimeDirs,
+                    vscodeServerPortRange,
+                    allowGlobalVSCodeModification,
                 } satisfies { [key in keyof WorkerOptions]-?: WorkerOptions[key] },
                 {}
             )
@@ -177,9 +202,10 @@ const optionsFixture: ReturnType<
 
 const implFixture = _test.extend<TestContext, WorkerContext>({
     serverRootDir: [
-        // biome-ignore lint/correctness/noEmptyPattern: <explanation>
-        async ({}, use, testInfo) => {
-            const dir = await fs.mkdtemp(path.resolve(os.tmpdir(), 'test-vscode-server-'))
+        async ({ validWorkerOptions }, use, testInfo) => {
+            const dir = await fs.mkdtemp(
+                path.resolve(validWorkerOptions.globalTmpDir, 'test-vscode-server-')
+            )
             await use(dir)
             const attachmentPromises = []
             const logDir = path.join(dir, 'data/logs')
@@ -196,13 +222,19 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
             if (attachmentPromises.length > 0) {
                 await Promise.allSettled(attachmentPromises)
             }
-            await retry(() => fs.rm(dir, { force: true, recursive: true }), 20, 500)
+            if (
+                validWorkerOptions.keepRuntimeDirs === 'none' ||
+                (validWorkerOptions.keepRuntimeDirs === 'failed' &&
+                    ['failed', 'timedOut'].includes(testInfo.status ?? 'unknown'))
+            ) {
+                await retry(() => fs.rm(logDir, { force: true, recursive: true }), 20, 500)
+            }
         },
         { scope: 'test' },
     ],
     workspaceDir: [
-        async ({ validOptions }, use) => {
-            const dir = await fs.mkdtemp(path.resolve(os.tmpdir(), 'test-workspace-'))
+        async ({ validOptions }, use, testInfo) => {
+            const dir = await fs.mkdtemp(path.resolve(validOptions.globalTmpDir, 'test-workspace-'))
 
             await copyExt(path.resolve(process.cwd(), validOptions.templateWorkspaceDir), dir, {
                 overwrite: true,
@@ -210,7 +242,13 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                 dereference: true, // we can't risk the test modifying the symlink
             })
             await use(dir)
-            await retry(() => fs.rm(dir, { force: true, recursive: true }), 20, 500)
+            if (
+                validOptions.keepRuntimeDirs === 'none' ||
+                (validOptions.keepRuntimeDirs === 'failed' &&
+                    ['failed', 'timedOut'].includes(testInfo.status ?? 'unknown'))
+            ) {
+                await retry(() => fs.rm(dir, { force: true, recursive: true }), 20, 500)
+            }
         },
         {
             scope: 'test',
@@ -219,7 +257,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
     //#region Polly & Proxies
     sourcegraphMitM: [
         // biome-ignore lint/correctness/noEmptyPattern: <explanation>
-        async ({}, use) => {
+        async ({}, use, testInfo) => {
             const app = express()
             //TODO: Credentials & Configuration TODO: I can see a use-case where
             //you can switch endpoints dynamically. For instance wanting to try
@@ -236,7 +274,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                 target,
                 changeOrigin: true,
                 ejectPlugins: true,
-                plugins: [failOrRetryRecordingOnError(testFailureSignal)],
+                plugins: [failOrRetryRecordingOnError(testFailureSignal, testInfo)],
             })
             app.use(middleware)
             let server: ReturnType<typeof app.listen> = null as any
@@ -333,47 +371,20 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
     ],
     //#region vscode agent
     vscodeUI: [
-        async ({ validOptions, serverRootDir, sourcegraphMitM, page, context }, use, testInfo) => {
+        async ({ validOptions, serverRootDir, sourcegraphMitM, page }, use, testInfo) => {
             const executableDir = path.resolve(process.cwd(), validOptions.vscodeTmpDir)
             await fs.mkdir(executableDir, { recursive: true })
-
+            const serverExecutableDir = path.resolve(process.cwd(), validOptions.vscodeServerTmpDir)
+            await fs.mkdir(serverExecutableDir, { recursive: true })
             // We nullify the time it takes to download VSCode as it can vary wildly!
-            const electronExecutable = await stretchTimeout(
+            const [codeCliPath, codeTunnelCliPath] = await stretchTimeout(
                 () => downloadOrWaitForVSCode({ validOptions, executableDir }),
                 {
                     max: DOWNLOAD_GRACE_TIME,
                     testInfo,
                 }
             )
-            const serverExecutableDir = path.join(
-                executableDir,
-                path.relative(executableDir, electronExecutable).split(path.sep)[0],
-                'server'
-            )
 
-            // The location of the executable is platform dependent, try the
-            // first location that works.
-            const vscodeExecutable = await Promise.any(
-                [
-                    '../Resources/app/bin', // darwin
-                    'bin', // linux and windows
-                ].map(async binPath => {
-                    const cliExecutableDir = path.resolve(path.dirname(electronExecutable), binPath)
-
-                    // find either a code or code.exe file
-                    const vscodeExecutableName = (await fs.readdir(cliExecutableDir)).find(
-                        file => file.endsWith('code-tunnel') || file.endsWith('code-tunnel.exe')
-                    )
-                    if (!vscodeExecutableName) {
-                        throw new Error(`Could not find a vscode executable in ${cliExecutableDir}`)
-                    }
-                    return path.join(cliExecutableDir, vscodeExecutableName)
-                })
-            ).catch(async () => {
-                throw new Error(
-                    `Could not find a vscode executable under ${path.dirname(electronExecutable)}`
-                )
-            })
             // Machine settings should simply serve as a baseline to ensure
             // tests by default work smoothly. Any test specific preferences
             // should be set in workspace settings instead.
@@ -404,76 +415,97 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
             // Here we install the extensions requested. To speed things up we make use of a shared extension cache that we symlink to.
             const extensionsDir = path.join(serverRootDir, 'extensions')
             await fs.mkdir(extensionsDir, { recursive: true })
-
+            const userDataDir = path.join(serverRootDir, 'data/User')
+            await fs.mkdir(userDataDir, { recursive: true })
             if (validOptions.vscodeExtensions.length > 0) {
                 //TODO(rnauta): Add lockfile wrapper to avoid race conditions
-                const sharedCacheDir = path.resolve(process.cwd(), validOptions.vscodeExtensionCacheDir)
-                await fs.mkdir(sharedCacheDir, { recursive: true })
-                const releaseLock = await waitForLock(sharedCacheDir, {
-                    lockfilePath: path.join(sharedCacheDir, '.lock'),
+                const sharedExtensionsDir = path.resolve(
+                    process.cwd(),
+                    validOptions.vscodeExtensionCacheDir
+                )
+                if (!sharedExtensionsDir.endsWith('.vscode-server/extensions')) {
+                    //right now there's no way of setting the extension installation directoy. Instead they are always install in ~/.vscode-server/extensions
+                    throw new Error(
+                        "Unfortunately VSCode doesn't provide a way yet to cache extensions isolated from a global installation. Please use ~/.code-server/extensions for now."
+                    )
+                }
+                await fs.mkdir(sharedExtensionsDir, { recursive: true })
+                const releaseLock = await waitForLock(sharedExtensionsDir, {
+                    lockfilePath: path.join(sharedExtensionsDir, '.lock'),
                     delay: 1000,
                 })
                 try {
                     const args = [
-                        `--extensions-dir=${sharedCacheDir.replace(/ /g, '\\ ')}`, // cli doesn't handle quotes properly so just escape spaces,
-                        '--install-extension',
-                        ...validOptions.vscodeExtensions,
+                        ...validOptions.vscodeExtensions.flatMap(v => ['--install-extension', v]),
                     ]
-                    await pspawn(vscodeExecutable, args)
+                    const res = await pspawn(codeTunnelCliPath, args, {
+                        env: {
+                            ...process.env,
+                            // VSCODE_EXTENSIONS: sharedExtensionsDir, This doesn't work either
+                        },
+                        stdio: ['inherit', 'inherit', 'inherit'],
+                    })
+                } catch (e) {
+                    console.log('I AM HERE')
+                    if (
+                        typeof e === 'string' &&
+                        e.includes('code version use stable --install-dir /path/to/installation')
+                    ) {
+                    }
+                    console.error(e)
+                    throw e
                 } finally {
                     releaseLock()
                 }
                 //we now read all the folders in the shared cache dir and
                 //symlink the relevant ones to our isolated extension dir
-                for (const sharedExtensionDir of await fs.readdir(sharedCacheDir)) {
+                for (const sharedExtensionDir of await fs.readdir(sharedExtensionsDir)) {
                     const [_, extensionName] = /^(.*)-\d+\.\d+\.\d+$/.exec(sharedExtensionDir) ?? []
-                    if (!validOptions.vscodeExtensions.includes(extensionName)) {
+                    if (!validOptions.vscodeExtensions.includes(extensionName?.toLowerCase())) {
                         continue
                     }
-                    const sharedExtensionPath = path.join(sharedCacheDir, sharedExtensionDir)
+                    const sharedExtensionPath = path.join(sharedExtensionsDir, sharedExtensionDir)
                     const extensionPath = path.join(extensionsDir, sharedExtensionDir)
-                    await fs.symlink(sharedExtensionPath, extensionPath, 'dir')
+                    await fs.symlink(sharedExtensionPath, extensionPath)
                 }
             }
+            //TODO: Fixed Port Ranges
 
             // We can now start the server
+            const connectionToken = '0000-0000'
+            const serverPort = validOptions.vscodeServerPortRange[0] + testInfo.parallelIndex
+            if (serverPort > validOptions.vscodeServerPortRange[1]) {
+                throw new Error(
+                    'Port range is exhausted. Either reduce the amount of workers or increase the port range.'
+                )
+            }
             const args = [
                 'serve-web',
+                `--user-data-dir=${userDataDir}`,
                 '--accept-server-license-terms',
-                '--port=0',
-                `--cli-data-dir=${serverExecutableDir.replace(/ /g, '\\ ')}`,
-                `--server-data-dir=${serverRootDir.replace(/ /g, '\\ ')}`,
-                `--extensions-dir=${extensionsDir.replace(/ /g, '\\ ')}`, // cli doesn't handle quotes properly so just escape spaces,
+                `--port=${serverPort}`,
+                `--connection-token=${connectionToken}`,
+                `--cli-data-dir=${serverExecutableDir}`,
+                `--server-data-dir=${serverRootDir}`,
+                `--extensions-dir=${extensionsDir}`, // cli doesn't handle quotes properly so just escape spaces,
             ]
-            //TODO(rnauta): better typing
+
             const env = {
-                // inherit environment
-                // TODO: Check why this was necessary. Shouldn't be needed
-                // ...process.env,
-                //TODO: all env variables
+                ...process.env,
+                ...(['stable', 'insiders'].includes(validOptions.vscodeVersion)
+                    ? { VSCODE_CLI_QUALITY: validOptions.vscodeVersion }
+                    : { VSCODE_CLI_COMMIT: validOptions.vscodeVersion }),
                 TESTING_DOTCOM_URL: sourcegraphMitM.endpoint,
                 CODY_TESTING_BFG_DIR: path.resolve(process.cwd(), validOptions.binaryTmpDir),
                 CODY_TESTING_SYMF_DIR: path.resolve(process.cwd(), validOptions.binaryTmpDir),
             }
-            const codeProcess = spawn(vscodeExecutable, args, {
+            const codeProcess = spawn(codeTunnelCliPath, args, {
                 env,
-                stdio: ['inherit', 'pipe', 'pipe'],
+                stdio: ['inherit', 'ignore', 'inherit'],
                 detached: false,
             })
-            if (!codeProcess.pid) {
-                throw new Error('Could not start code process')
-            }
-            const token = await waitForVSCodeUI(codeProcess.stdout)
-            if (!token) {
-                throw new Error("VSCode did't provide an auth token")
-            }
-            // We started vscode with port 0 which means a random port was
-            // assigned. However VSCode still reports the port as 0 themselves,
-            // so we need to do some magic to get the actual port.
-            // TODO: this might not be very cross-platform
-            const port = await getPortForPid(codeProcess.pid)
-            const config = { url: `http://127.0.0.1:${port}/`, token: token }
 
+            const config = { url: `http://127.0.0.1:${serverPort}/`, token: connectionToken }
             await stretchTimeout(() => waitForVSCodeServer({ url: config.url, serverExecutableDir }), {
                 max: DOWNLOAD_GRACE_TIME,
                 testInfo,
@@ -553,12 +585,17 @@ fixture.beforeAll(async () => {
  * Waits for server components to be downloaded and that the server is ready to
  * accept connections
  */
-async function waitForVSCodeServer(config: { url: string; serverExecutableDir: string }) {
+async function waitForVSCodeServer(config: {
+    url: string
+    serverExecutableDir: string
+    maxConnectionRetries?: number
+}) {
     const releaseServerDownloadLock = await waitForLock(config.serverExecutableDir, {
         delay: 1000,
         lockfilePath: path.join(config.serverExecutableDir, '.lock'),
     })
     try {
+        let connectionIssueTries = config.maxConnectionRetries ?? 5
         while (true) {
             try {
                 const res = await fetch(config.url)
@@ -572,30 +609,17 @@ async function waitForVSCodeServer(config: { url: string; serverExecutableDir: s
                 } else {
                     console.error(`Unexpected status code ${res.status}`)
                 }
-            } catch {}
+            } catch (err) {
+                connectionIssueTries--
+                if (connectionIssueTries <= 0) {
+                    throw err
+                }
+            }
             await new Promise(resolve => setTimeout(resolve, 1000))
         }
     } finally {
         releaseServerDownloadLock()
     }
-}
-
-function waitForVSCodeUI(stdout: NodeJS.ReadableStream): Promise<string | undefined> {
-    return new Promise((resolve, reject) => {
-        const listener = (data: Buffer) => {
-            if (data.toString().includes('available at')) {
-                clearTimeout(timeout)
-                stdout.removeListener('data', listener)
-                const [_, token] = /\?tkn=([a-zA-Z0-9-]+)/.exec(data.toString()) ?? []
-                resolve(token)
-            }
-        }
-        const timeout = setTimeout(() => {
-            stdout.removeListener('data', listener)
-            reject(new Error('Could not start code process'))
-        }, 10_000 /*TODO(rnauta): make this configurable*/)
-        stdout.on('data', listener)
-    })
 }
 
 /**
@@ -605,50 +629,46 @@ async function downloadOrWaitForVSCode({
     executableDir,
     validOptions,
 }: Pick<TestContext, 'validOptions'> & { executableDir: string }) {
-    let electronExecutable = ''
-    const lockfilePath = path.join(executableDir, `${validOptions.vscodeVersion}.lock`)
+    const lockfilePath = path.join(executableDir, '.lock')
     const releaseLock = await waitForLock(executableDir, { lockfilePath, delay: 500 })
 
     try {
-        electronExecutable = await downloadAndUnzipVSCode({
+        const electronPath = await downloadAndUnzipVSCode({
             cachePath: executableDir,
-            version: validOptions.vscodeVersion,
+            version: 'stable',
             reporter: new CustomConsoleReporter(process.stdout.isTTY),
         })
+        const installPath = path.join(
+            executableDir,
+            path.relative(executableDir, electronPath).split(path.sep)[0]
+        )
+        const [cliPath] = resolveCliArgsFromVSCodeExecutablePath(electronPath)
+        //replce code with code-tunnel(.exe) either if the last binary or if code.exe
+        const tunnelPath = cliPath
+            .replace(/code$/, 'code-tunnel')
+            .replace(/code\.(?:exe|cmd)$/, 'code-tunnel.exe')
+
+        // we need to make sure vscode has global configuration set
+        const res = await pspawn(tunnelPath, ['version', 'show'], {
+            stdio: ['inherit', 'pipe', 'inherit'],
+        })
+        if (res.code !== 0 || res.stdout.includes('No existing installation found')) {
+            if (!validOptions.allowGlobalVSCodeModification) {
+                throw new Error('Global VSCode path modification is not allowed')
+            }
+            await pspawn(tunnelPath, ['version', 'use', 'stable', '--install-dir', installPath], {
+                stdio: ['inherit', 'inherit', 'inherit'],
+            })
+        } else if (res.code !== 0) {
+            throw new Error(JSON.stringify(res))
+        }
+        return [cliPath, tunnelPath]
+        //If this fails I assume we haven't configured VSCode globally. Since
+        //getting portable mode to work is annoying we just set this
+        //installation as the global one.
     } finally {
         releaseLock()
     }
-    return electronExecutable
-}
-
-async function getPortForPid(pid: number): Promise<number> {
-    const platform = process.platform
-    let command: string
-
-    switch (platform) {
-        case 'win32':
-            command = `netstat -ano | findstr ${pid}`
-            break
-        case 'darwin':
-            // Use `lsof` with specific options for macOS
-            command = `lsof -nP -i4TCP -a -p ${pid} | grep LISTEN`
-            break
-        case 'linux':
-            command = `ss -tlnp | grep ${pid}`
-            break
-        default:
-            throw new Error(`Unsupported platform: ${platform}`)
-    }
-
-    const { stdout } = await exec(command, { encoding: 'utf-8' })
-    const lines = stdout.split('\n')
-    for (const line of lines) {
-        const match = line.match(/:(\d+)\s/)
-        if (match?.[1]) {
-            return Number.parseInt(match[1], 10)
-        }
-    }
-    throw new Error(`No listening port found for PID ${pid}`)
 }
 
 async function getFilesRecursive(dir: string): Promise<Array<Dirent>> {
@@ -676,17 +696,12 @@ async function getFilesRecursive(dir: string): Promise<Array<Dirent>> {
 }
 
 function failOrRetryRecordingOnError(
-    emitter: EventEmitter<{ error: [Error] }>
+    emitter: EventEmitter<{ error: [Error] }>,
+    testInfo: TestInfo
 ): typeof ProxyMiddlewarePlugin {
     return (proxyServer, options) => {
+        //TODO(rnauta): retry with different settings if user accepts in cli prompt
         proxyServer.on('error', (err, req, res) => {
-            if (
-                err.name === 'PollyError' &&
-                err.message.includes('Recording for the following request is not found')
-            ) {
-                //TODO: allow re-trying with recording temporarily enabled
-                err.message = `Polly recording missing for ${[req.method]}${req.url}`
-            }
             emitter.emit('error', err)
         })
     }
