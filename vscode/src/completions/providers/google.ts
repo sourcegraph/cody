@@ -110,6 +110,8 @@ class GoogleGeminiProvider extends Provider {
             groupedSnippets = ps`CONTEXT:\n${groupedSnippets}\n---\n`
         }
 
+        // See official docs on prompting for Gemini models:
+        // https://ai.google.dev/gemini-api/docs/prompting-intro
         const prefixPrompt = ps`<|prefix|>${prefix}<|prefix|>`
         const suffixPrompt = ps`Code after my cursor: <|suffix|>${suffix.trimEnd()}<|suffix|>`
 
@@ -193,7 +195,7 @@ Here is the code: ${prefixPrompt}
 
 export function createProviderConfig({
     model,
-    maxContextTokens = 5000,
+    maxContextTokens = 2048,
     ...otherOptions
 }: GoogleGeminiOptions & { model?: string }): ProviderConfig {
     if (!model) {
