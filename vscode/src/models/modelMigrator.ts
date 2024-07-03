@@ -1,13 +1,37 @@
-import { ModelsService, getDotComDefaultModels } from '@sourcegraph/cody-shared'
+import { type Model, ModelUsage, ModelsService } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import { localStorage } from '../services/LocalStorageProvider'
 
-const deprecatedModelSet = new Set(
-    getDotComDefaultModels()
-        .filter(m => m.deprecated)
-        .map(m => m.model)
-)
+const DEPRECATED_DOT_COM_MODELS = [
+    {
+        title: 'Claude 2.0',
+        model: 'anthropic/claude-2.0',
+        provider: 'Anthropic',
+        default: false,
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+        contextWindow: { input: 0, output: 0 },
+    },
+    {
+        title: 'Claude 2.1',
+        model: 'anthropic/claude-2.1',
+        provider: 'Anthropic',
+        default: false,
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+        contextWindow: { input: 0, output: 0 },
+    },
+    {
+        title: 'Claude Instant',
+        model: 'anthropic/claude-instant-1.2',
+        provider: 'Anthropic',
+        default: false,
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+        contextWindow: { input: 0, output: 0 },
+    },
+] as Model[]
+
+const deprecatedModelSet = new Set(DEPRECATED_DOT_COM_MODELS.map(m => m.model))
+
 export function migrateAndNotifyForOutdatedModels(model: string | null): string | null {
     if (!model || isRunningInsideAgent() || !deprecatedModelSet.has(model)) {
         return model

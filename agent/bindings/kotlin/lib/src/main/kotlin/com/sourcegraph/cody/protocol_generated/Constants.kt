@@ -62,6 +62,7 @@ object Constants {
   const val JetBrains = "JetBrains"
   const val Neovim = "Neovim"
   const val Emacs = "Emacs"
+  const val Web = "Web"
   const val Idle = "Idle"
   const val Working = "Working"
   const val Inserting = "Inserting"

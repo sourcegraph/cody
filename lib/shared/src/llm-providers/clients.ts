@@ -1,6 +1,7 @@
 import type { ChatNetworkClient, ChatNetworkClientParams } from '.'
-import { ModelUIGroup, googleChatClient, groqChatClient, ollamaChatClient } from '..'
+import { googleChatClient, groqChatClient, ollamaChatClient } from '..'
 import { type Model, ModelsService } from '../models'
+import { ModelTag } from '../models/tags'
 import { anthropicChatClient } from './anthropic/chat-client'
 
 export async function useCustomChatClient({
@@ -34,7 +35,5 @@ export async function useCustomChatClient({
 }
 
 function isCodyGatewayModel(model: Model): boolean {
-    // Google models with a UI group are Cody Gateway models.
-    // TODO (bee) Add new labels to make identifying Cody Gateway models easier.
-    return model.uiGroup !== undefined && model.uiGroup !== ModelUIGroup.Ollama
+    return model.tags.includes(ModelTag.Gateway)
 }

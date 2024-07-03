@@ -848,10 +848,7 @@ describe('Agent', () => {
         })
     })
 
-    // Skip `pnpm update-agent-recording` fails with:
-    // AssertionError: expected false to be truthy
-    // expect(serverInfo.authStatus?.isLoggedIn).toBeTruthy()
-    describe.skip('RateLimitedAgent', () => {
+    describe('RateLimitedAgent', () => {
         const rateLimitedClient = TestClient.create({
             workspaceRootUri: workspace.rootUri,
             name: 'rateLimitedClient',
@@ -862,10 +859,15 @@ describe('Agent', () => {
             const serverInfo = await rateLimitedClient.initialize()
 
             expect(serverInfo.authStatus?.isLoggedIn).toBeTruthy()
-            expect(serverInfo.authStatus?.username).toStrictEqual('david.veszelovszki')
+            expect(serverInfo.authStatus?.username).toStrictEqual('sourcegraphcodyclients-1-efapb')
         }, 10_000)
 
-        it('chat/submitMessage (RateLimitError)', async () => {
+        // Skipped because Polly is failing to record the HTTP rate-limit error
+        // response. Keeping the code around in case we need to debug these in
+        // the future. Use the following command to run this test:
+        // - First, mark this test as `it.only`
+        // - Next, run `CODY_RECORDING_MODE=passthrough pnpm test agent/src/index.test.ts`
+        it.skip('chat/submitMessage (RateLimitError)', async () => {
             const lastMessage = await rateLimitedClient.sendSingleMessageToNewChat('sqrt(9)')
             // Intentionally not a snapshot assertion because we should never
             // automatically update 'RateLimitError' to become another value.
@@ -873,7 +875,7 @@ describe('Agent', () => {
         }, 30_000)
 
         // Skipped because Polly is failing to record the HTTP rate-limit error
-        // response.  Keeping the code around in case we need to debug these  in
+        // response. Keeping the code around in case we need to debug these in
         // the future. Use the following command to run this test:
         // - First, mark this test as `it.only`
         // - Next, run `CODY_RECORDING_MODE=passthrough pnpm test agent/src/index.test.ts`

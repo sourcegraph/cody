@@ -1,7 +1,8 @@
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
+import type { ModelTag } from './tags'
 import { type ModelContextWindow, ModelUsage } from './types'
-import { getModelInfo } from './utils'
+import { getModelInfo, isCodyProModel } from './utils'
 
 export type ModelId = string
 export type ApiVersionId = string
@@ -43,12 +44,6 @@ export class Model {
      */
     public default = false
 
-    // Whether the model is only available to Pro users
-    public codyProOnly = false
-    // A deprecated model can be used (to not break agent) but won't be rendered
-    // in the UI
-    public deprecated = false
-
     constructor(
         /**
          * The model id that includes the provider name & the model name,
@@ -83,14 +78,17 @@ export class Model {
              */
             apiEndpoint?: string
         },
-        public readonly uiGroup?: string,
 
         public readonly tier?: 'free' | 'pro' | 'enterprise',
 
         // The name of the provider of the model, e.g. "Anthropic"
         public provider?: string,
         // The title of the model, e.g. "Claude 3 Sonnet"
-        public readonly title?: string
+        public readonly title?: string,
+        /**
+         * The tags assigned for categorizing the model.
+         */
+        public readonly tags: ModelTag[] = []
     ) {
         if (!provider || !title) {
             const info = getModelInfo(model)
@@ -208,7 +206,7 @@ export class ModelsService {
         const currentDefault = currentModel
             ? availableModels.find(m => m.model === currentModel)
             : undefined
-        const canUseCurrentDefault = currentDefault?.codyProOnly ? isCodyProUser : !!currentDefault
+        const canUseCurrentDefault = isCodyProModel(currentDefault) ? isCodyProUser : !!currentDefault
 
         return ModelsService.models
             .filter(m => m.usage.includes(type))

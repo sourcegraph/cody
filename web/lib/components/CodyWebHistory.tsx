@@ -24,8 +24,7 @@ interface CodyWebHistoryProps {
 export const CodyWebHistory: FC<CodyWebHistoryProps> = props => {
     const { children } = props
 
-    const { client, vscodeAPI, activeChatID, setLastActiveChatID, createChat, selectChat } =
-        useWebAgentClient()
+    const { client, vscodeAPI, activeChatID, createChat, selectChat } = useWebAgentClient()
 
     const [chats, setChats] = useState<ChatExportResult[]>([])
 
@@ -56,26 +55,12 @@ export const CodyWebHistory: FC<CodyWebHistoryProps> = props => {
                         receivedChats.push({ chatID, transcript })
                     }
 
-                    setChats(chats => {
-                        // Select only new chats that haven't been received before
-                        // New chats means that we may have new chat blank item in the chats
-                        // in this case we should replace them with real chats and update
-                        // last active chat id
-                        const newChats = receivedChats.filter(
-                            chat => !chats.find(currentChat => currentChat.chatID === chat.chatID)
-                        )
-
-                        if (newChats.length > 0) {
-                            setLastActiveChatID(newChats[newChats.length - 1].chatID)
-                        }
-
-                        return receivedChats
-                    })
+                    setChats(receivedChats)
                     return
                 }
             }
         })
-    }, [vscodeAPI, setLastActiveChatID])
+    }, [vscodeAPI])
 
     const deleteChat = async (chat: ChatExportResult): Promise<void> => {
         if (!client || isErrorLike(client)) {
@@ -89,10 +74,8 @@ export const CodyWebHistory: FC<CodyWebHistoryProps> = props => {
 
         // Delete chat from the agent's store
         const newChatsList = await client.rpc.sendRequest<ChatExportResult[]>('chat/delete', {
-            chatID: chat.chatID,
+            chatId: chat.chatID,
         })
-
-        setChats(newChatsList)
 
         // this means that we deleted not selected chat, so we can skip checks
         // about zero chat list case and selected chat was deleted case
