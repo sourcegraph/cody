@@ -15,13 +15,13 @@ import {
     uriBasename,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { compact, flatten, zip } from 'lodash'
 import type { RemoteSearch } from '../../context/remote-search'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ContextRankingController } from '../../local-context/context-ranking'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
-import {compact, flatten, zip} from "lodash";
 
 interface HumanInput {
     text: PromptString
