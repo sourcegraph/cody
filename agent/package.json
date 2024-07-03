@@ -1,6 +1,6 @@
 {
   "name": "@sourcegraph/cody-agent",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Cody JSON-RPC agent for consistent cross-editor support",
   "license": "Apache-2.0",
   "repository": {
@@ -24,13 +24,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "bin": "dist/index.js",
-  "files": [
-    "dist/index.js",
-    "dist/index.js.map",
-    "dist/*.wasm",
-    "dist/win-ca-roots.exe",
-    "dist/keytar-*.node"
-  ],
+  "files": ["dist/index.js", "dist/index.js.map", "dist/*.wasm", "dist/win-ca-roots.exe"],
   "peerDependencies": {
     "@inquirer/prompts": "^5.0.7",
     "@pollyjs/core": "^6.0.6",
@@ -48,7 +42,6 @@
     "fast-myers-diff": "^3.2.0",
     "glob": "^7.2.3",
     "js-levenshtein": "^1.1.6",
-    "keytar": "^7.9.0",
     "lodash": "^4.17.21",
     "mac-ca": "^2.0.3",
     "minimatch": "^9.0.3",

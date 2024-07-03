@@ -76,6 +76,7 @@ export interface Configuration {
     autocompleteExperimentalOllamaOptions: OllamaOptions
     autocompleteExperimentalFireworksOptions?: FireworksOptions
     autocompleteExperimentalMultiModelCompletions?: MultimodelSingleModelConfig[]
+    autocompleteExperimentalSmartThrottle?: boolean
 
     /**
      * Hidden settings
