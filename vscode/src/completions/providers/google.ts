@@ -28,7 +28,7 @@ import {
     standardContextSizeHints,
 } from './provider'
 
-const DEFAULT_GEMINI_MODEL = 'google/gemini-1.5-flash-latest'
+const DEFAULT_GEMINI_MODEL = 'google/gemini-1.5-flash'
 const SUPPORTED_GEMINI_MODELS = ['gemini-1.5-flash', 'gemini-pro', 'gemini-1.0-pro']
 
 const RESPONSE_CODE = ps`<|fim|>`
@@ -52,9 +52,6 @@ class GoogleGeminiProvider extends Provider {
     private client: Pick<CodeCompletionsClient, 'complete'>
 
     private promptChars: number
-
-    private instructions =
-        ps`You are a code completion AI with fill-in-middle capacity, designed to autofill code at a specific location based on its surrounding context.`
 
     constructor(
         options: ProviderOptions,
@@ -107,26 +104,25 @@ class GoogleGeminiProvider extends Provider {
         }
 
         if (groupedSnippets.length) {
-            groupedSnippets = ps`CONTEXT:\n${groupedSnippets}\n---\n`
+            groupedSnippets = ps`Context:\n${groupedSnippets}\n`
         }
 
         // See official docs on prompting for Gemini models:
         // https://ai.google.dev/gemini-api/docs/prompting-intro
-        const prefixPrompt = ps`<|prefix|>${prefix}<|prefix|>`
-        const suffixPrompt = ps`Code after my cursor: <|suffix|>${suffix.trimEnd()}<|suffix|>`
+        const fimPrompt = ps`<|prefix|>${prefix}<|fim|>${suffix}<|suffix|>`
 
-        const humanText = ps`${this.instructions}
----
+        const humanText = ps`You are a code completion AI, designed to autofill code enclosed in special markers based on its surrounding context.
 ${groupedSnippets}
----
-FileName: ${relativeFilePath}
----
-${suffixPrompt}
 
-Generate code to complete the code inside <|prefix|>.
-Your response should contains only the fill-in code, and the code must be enclosed WITHOUT backticks between '${RESPONSE_CODE}' and '${RESPONSE_CODE}'.
-Here is the code: ${prefixPrompt}
----`
+Code from ${relativeFilePath} file:
+${fimPrompt}
+
+Your mission is to generate completed code that I can replace the <|fim|> markers with, ensuring a seamless and syntactically correct result.
+
+Do not repeat code from before and after <|fim|> in your output.
+Maintain consistency with the indentation, spacing, and coding style used in the code.
+Leave the output markers empty if no code is required to bridge the gap.
+Your response should contains only the code required to connect the gap, and the code must be enclosed between <|fim|> WITHOUT backticks`
 
         const messages: Message[] = [
             { speaker: 'human', text: humanText },
@@ -150,7 +146,7 @@ Here is the code: ${prefixPrompt}
             ...partialRequestParams,
             messages: this.createPrompt(snippets).messages,
             topP: 0.95,
-            temperature: 0.2,
+            temperature: 0,
             model: this.model,
         }
 
@@ -177,7 +173,7 @@ Here is the code: ${prefixPrompt}
     }
 
     private postProcess = (rawResponse: string): string => {
-        let completion = rawResponse.trim()
+        let completion = rawResponse
 
         // Because the response should be enclosed with RESPONSE_CODE for consistency.
         completion = completion.replaceAll(`${RESPONSE_CODE}`, '')
@@ -189,7 +185,7 @@ Here is the code: ${prefixPrompt}
     }
 
     private createContext(type: PromptString, name: PromptString, content: PromptString) {
-        return ps`\nTYPE: ${type}\nNAME: ${name}\nCONTENT: ${content.trimEnd()}\n---\n`
+        return ps`\n-TYPE: ${type}\n-NAME: ${name}\n-CONTENT: ${content.trimEnd()}\n---\n`
     }
 }
 
