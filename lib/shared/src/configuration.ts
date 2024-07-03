@@ -95,6 +95,7 @@ export enum CodyIDE {
     JetBrains = 'JetBrains',
     Neovim = 'Neovim',
     Emacs = 'Emacs',
+    Web = 'Web',
 }
 
 export interface AutocompleteTimeouts {

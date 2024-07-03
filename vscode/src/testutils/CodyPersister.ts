@@ -153,7 +153,12 @@ export class CodyPersister extends FSPersister {
     private filterHeaders(
         headers: { name: string; value: string }[]
     ): { name: string; value: string }[] {
-        const removeHeaderNames = new Set(['set-cookie', 'server', 'via'])
+        const removeHeaderNames = new Set([
+            'set-cookie',
+            'server',
+            'via',
+            'x-sourcegraph-actor-anonymous-uid',
+        ])
         const removeHeaderPrefixes = ['x-trace', 'cf-']
         return headers.filter(
             header =>
