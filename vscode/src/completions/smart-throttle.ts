@@ -67,10 +67,7 @@ export class SmartThrottleService implements vscode.Disposable {
             const newRequestParams = throttledRequest.updatedRequestParams()
 
             if (triggerKind === TriggerKind.Automatic) {
-                // If we have bypassed the throttle timeout, we don't need to wait for the
-                // debounce either.
-                const debounceTime = Math.min(now - this.lastThrottlePromotion, 25)
-                await sleep(debounceTime)
+                await sleep(25)
                 if (newRequestParams.abortSignal?.aborted) {
                     return null
                 }

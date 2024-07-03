@@ -330,14 +330,13 @@ async function doGetInlineCompletions(
         }
     }
 
-    autocompleteStageCounterLogger.record('preDebounce')
-
     if (smartThrottleService) {
         // For the smart throttle to work correctly and preserve tail requests, we need full control
         // over the cancellation logic for each request.
         // Therefore we must stop listening for cancellation events originating from VS Code.
         cancellationListener?.dispose()
 
+        autocompleteStageCounterLogger.record('preSmartThrottle')
         const throttledRequest = await smartThrottleService.throttle(requestParams, triggerKind)
         if (throttledRequest === null) {
             return null
@@ -346,6 +345,7 @@ async function doGetInlineCompletions(
         requestParams = throttledRequest
     }
 
+    autocompleteStageCounterLogger.record('preDebounce')
     const debounceTime = smartThrottleService
         ? 0
         : triggerKind !== TriggerKind.Automatic
