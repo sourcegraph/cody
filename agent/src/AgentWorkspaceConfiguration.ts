@@ -94,6 +94,8 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
                 return this.clientInfo()?.version
             case 'editor.insertSpaces':
                 return true // TODO: override from IDE clients
+            case 'cody.accessToken':
+                return extensionConfig?.accessToken
             default:
                 // VS Code picks up default value in package.json, and only uses
                 // the `defaultValue` parameter if package.json provides no
