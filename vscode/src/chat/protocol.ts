@@ -152,7 +152,7 @@ export type ExtensionMessage =
           authStatus: AuthStatus
           workspaceFolderUris: string[]
       }
-    | { type: 'ui/theme'; agentIDE: CodyIDE; cssVariables: { [key: string]: string } }
+    | { type: 'ui/theme'; agentIDE: CodyIDE; cssVariables: CodyIDECssVariables }
     | { type: 'history'; localHistory?: UserLocalHistory | undefined | null }
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; view: View }
@@ -283,4 +283,8 @@ const sourcegraphTokenRegex =
  */
 export function isSourcegraphToken(text: string): boolean {
     return sourcegraphTokenRegex.test(text)
+}
+
+interface CodyIDECssVariables {
+    [key: string]: string
 }
