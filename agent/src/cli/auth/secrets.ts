@@ -1,5 +1,4 @@
-import { exec } from 'node:child_process'
-import { promisify } from 'node:util'
+import { spawn } from 'node:child_process'
 import { logDebug } from '../../../../vscode/src/log'
 import type { Account } from './settings'
 
@@ -59,7 +58,6 @@ export async function removeCodySecret(account: Account) {
     }
 }
 
-const execAsync = promisify(exec)
 function getKeychainOperations(account: Account): KeychainOperations {
     switch (process.platform) {
         case 'darwin':
@@ -81,85 +79,150 @@ function getKeychainOperations(account: Account): KeychainOperations {
  */
 abstract class KeychainOperations {
     constructor(public account: Account) {}
+    abstract readSecret(): Promise<string>
+    abstract writeSecret(secret: string): Promise<void>
+    abstract deleteSecret(): Promise<void>
+    abstract installationInstructions: string
     protected service(): string {
         const host = new URL(this.account.serverEndpoint).host
         return `Cody: ${host} (${this.account.id})`
     }
-    abstract readSecret(): Promise<string>
-    abstract writeSecret(secret: string): Promise<void>
-    abstract deleteSecret(): Promise<void>
+    protected spawnAsync(
+        command: string,
+        args: string[],
+        options?: { stdin: string }
+    ): Promise<{ stdout: string; stderr: string }> {
+        return new Promise((resolve, reject) => {
+            const child = spawn(command, args, { stdio: 'pipe', ...options })
+            let stdout = ''
+            let stderr = ''
+
+            if (options?.stdin) {
+                child.stdin.write(options.stdin)
+                child.stdin.end()
+            }
+
+            child.stdout.on('data', data => {
+                stdout += data
+            })
+
+            child.stderr.on('data', data => {
+                stderr += data
+            })
+
+            child.on('error', () => reject(new Error(`child process exited with error: ${stderr}`)))
+            child.on('exit', code => {
+                if (code !== 0) {
+                    reject(new Error(`child process exited with code ${code}. stderr: ${stderr}`))
+                } else {
+                    resolve({ stdout, stderr })
+                }
+            })
+        })
+    }
 }
 
 class MacOSKeychain extends KeychainOperations {
+    installationInstructions = '' // 'security' is already installed on macOS
+
     async readSecret(): Promise<string> {
-        const { stdout } = await execAsync(
-            `security find-generic-password -s "${this.service()}" -a "${this.account.username}" -w`
-        )
+        const { stdout } = await this.spawnAsync('security', [
+            'find-generic-password',
+            '-s',
+            this.service(),
+            '-a',
+            this.account.username,
+            '-w',
+        ])
         return stdout.trim()
     }
 
     async writeSecret(secret: string): Promise<void> {
-        await execAsync(
-            `security add-generic-password -s "${this.service()}" -a "${
-                this.account.username
-            }" -w "${secret}"`
-        )
+        await this.spawnAsync('security', [
+            'add-generic-password',
+            '-s',
+            this.service(),
+            '-a',
+            this.account.username,
+            '-w',
+            secret,
+        ])
     }
 
     async deleteSecret(): Promise<void> {
-        await execAsync(
-            `security delete-generic-password -s "${this.service()}" -a "${this.account.username}"`
-        )
+        await this.spawnAsync('security', [
+            'delete-generic-password',
+            '-s',
+            this.service(),
+            '-a',
+            this.account.username,
+        ])
     }
 }
 
 class WindowsCredentialManager extends KeychainOperations {
+    installationInstructions = `To fix this problem, run the command below in PowerShell and try again:
+  Install-Module -Name CredentialManager`
+    private target(): string {
+        return `${this.service()}:${this.account.username}`
+    }
     async readSecret(): Promise<string> {
-        const powershellCommand = `(Get-StoredCredential -Target "${this.service()}:${
-            this.account.username
-        }").GetNetworkCredential().Password`
-        const { stdout } = await execAsync(
-            `powershell -Command "${powershellCommand.replace(/"/g, '\\"')}"`
-        )
+        const powershellCommand = `(Get-StoredCredential -Target "${this.target()}").GetNetworkCredential().Password`
+        const { stdout } = await this.spawnAsync('powershell', ['-Command', powershellCommand])
         return stdout.trim()
     }
 
     async writeSecret(secret: string): Promise<void> {
-        await execAsync(
-            `powershell -command "& {New-StoredCredential -Target '${this.service()}:${
-                this.account.username
-            }' -UserName '${this.account.username}' -Password '${secret}' -Persist LocalMachine}"`
-        )
+        const powershellCommand = `& {New-StoredCredential -Target '${this.target()}' -Password '${secret}' -Persist LocalMachine}`
+        await this.spawnAsync('powershell', ['-Command', powershellCommand])
     }
 
     async deleteSecret(): Promise<void> {
-        await execAsync(
-            `powershell -command "& {Remove-StoredCredential -Target '${this.service()}:${
-                this.account.username
-            }'}"`
-        )
+        await this.spawnAsync('powershell', [
+            '-Command',
+            `& {Remove-StoredCredential -Target '${this.service()}:${this.account.username}'}`,
+        ])
     }
 }
 
 class LinuxSecretService extends KeychainOperations {
+    installationInstructions = `To fix this problem, run the commands below and try again:
+  sudo apt install libsecret-tools
+  sudo apt install gnome-keyring`
     async readSecret(): Promise<string> {
-        const { stdout } = await execAsync(
-            `secret-tool lookup service '${this.service()}' account '${this.account.username}'`
-        )
+        const { stdout } = await this.spawnAsync('secret-tool', [
+            'lookup',
+            'service',
+            `${this.service()}'`,
+            'account',
+            `'${this.account.username}'`,
+        ])
         return stdout.trim()
     }
 
     async writeSecret(secret: string): Promise<void> {
-        await execAsync(
-            `echo "${secret}" | secret-tool store --label="${this.service()}" service '${this.service()}' account ${
-                this.account.username
-            }`
+        await this.spawnAsync(
+            'secret-tool',
+            [
+                'store',
+                '--label',
+                this.service(),
+                'service',
+                this.service(),
+                'account',
+                this.account.username,
+            ],
+            { stdin: secret }
         )
     }
 
     async deleteSecret(): Promise<void> {
-        await execAsync(
-            `secret-tool clear service '${this.service()}' account '${this.account.username}'`
-        )
+        await this.spawnAsync('secret-tool', [
+            'clear',
+            'service',
+            `${this.service()}`,
+            'account',
+            `'${this.account.username}'`,
+        ])
     }
 }
