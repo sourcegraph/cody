@@ -13,9 +13,9 @@ interface Scroller {
 }
 
 // Chat UI could be run in different modes, in VSCode the whole chat
-// is rendered within scrollable iframe and it scroll down button should
+// is rendered within scrollable iframe, and it scrolls down button should
 // listen and work with window updates,In Cody Web (and possible in other
-// clients) chat might be rendered in arbitrary scollable element.
+// clients) chat might be rendered in arbitrary scrollable element.
 // This Scroller API helps to observe complexity of both cases and provides
 // unified API to work with different root elements.
 function createScrollerAPI(element: HTMLElement | null | undefined): Scroller {
