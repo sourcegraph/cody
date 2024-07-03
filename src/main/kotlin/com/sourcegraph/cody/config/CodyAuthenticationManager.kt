@@ -156,6 +156,8 @@ class CodyAuthenticationManager(val project: Project) :
         isTokenInvalidFuture.complete(error.cause?.message == UNAUTHORIZED_ERROR_MESSAGE)
         null
       }
+    } else {
+      isTokenInvalidFuture.complete(true)
     }
 
     return authenticationState
