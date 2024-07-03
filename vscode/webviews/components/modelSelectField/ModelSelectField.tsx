@@ -26,7 +26,7 @@ export const ModelSelectField: React.FunctionComponent<{
     models: Model[]
     onModelSelect: (model: Model) => void
 
-    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
+    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser' | 'isOldStyleEnterprise'>
 
     onCloseByEscape?: () => void
     className?: string
@@ -86,7 +86,7 @@ export const ModelSelectField: React.FunctionComponent<{
         [telemetryRecorder.recordEvent, showCodyProBadge, parentOnModelSelect, isCodyProUser]
     )
 
-    const readOnly = !userInfo.isDotComUser
+    const readOnly = userInfo.isOldStyleEnterprise
 
     const onOpenChange = useCallback(
         (open: boolean): void => {
@@ -297,10 +297,10 @@ const GROUP_ORDER = [
 type ModelAvailability = 'available' | 'needs-cody-pro' | 'not-selectable-on-enterprise'
 
 function modelAvailability(
-    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>,
+    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser' | 'isOldStyleEnterprise'>,
     model: Model
 ): ModelAvailability {
-    if (!userInfo.isDotComUser) {
+    if (!userInfo.isDotComUser && userInfo.isOldStyleEnterprise) {
         return 'not-selectable-on-enterprise'
     }
     if (model.codyProOnly && !userInfo.isCodyProUser) {
@@ -314,7 +314,7 @@ const ModelTitleWithIcon: FunctionComponent<{
     showIcon?: boolean
     showProvider?: boolean
     modelAvailability?: ModelAvailability
-}> = ({ model, showIcon, showProvider, modelAvailability }) => (
+}> = ({ model, showIcon, modelAvailability }) => (
     <span
         className={clsx(styles.modelTitleWithIcon, {
             [styles.disabled]: modelAvailability !== 'available',

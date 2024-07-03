@@ -193,6 +193,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 export interface UserAccountInfo {
     isDotComUser: boolean
     isCodyProUser: boolean
+    // When true, the user is on an enterprise instance that has not upgraded to
+    // allow multiple LLM selections
+    isOldStyleEnterprise: boolean
     user: Pick<AuthStatus, 'username' | 'displayName' | 'avatarURL'>
 }
 

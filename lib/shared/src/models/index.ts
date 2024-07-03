@@ -1,7 +1,37 @@
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
-import type { ModelContextWindow, ModelUsage } from './types'
+import { type ModelContextWindow, ModelUsage } from './types'
 import { getModelInfo } from './utils'
+
+export type ModelId = string
+export type ApiVersionId = string
+export type ProviderId = string
+
+export type ModelRef = `${ProviderId}::${ApiVersionId}::${ModelId}`
+
+export type ModelCapability = 'chat' | 'autocomplete'
+export type ModelCategory = 'accuracy' | 'balanced' | 'speed'
+export type ModelStatus = 'experimental' | 'beta' | 'stable' | 'deprecated'
+export type ModelTier = 'free' | 'pro' | 'enterprise'
+
+export interface ContextWindow {
+    maxInputTokens: number
+    maxOutputTokens: number
+}
+
+export interface ServerModel {
+    modelRef: ModelRef
+    displayName: string
+    modelName: string
+    capabilities: ModelCapability[]
+    category: ModelCategory
+    status: ModelStatus
+    tier: ModelTier
+
+    contextWindow: ContextWindow
+
+    clientSideConfig?: unknown
+}
 
 /**
  * Model describes an LLM model and its capabilities.
@@ -15,10 +45,6 @@ export class Model {
 
     // Whether the model is only available to Pro users
     public codyProOnly = false
-    // The name of the provider of the model, e.g. "Anthropic"
-    public provider: string
-    // The title of the model, e.g. "Claude 3 Sonnet"
-    public readonly title: string
     // A deprecated model can be used (to not break agent) but won't be rendered
     // in the UI
     public deprecated = false
@@ -57,12 +83,59 @@ export class Model {
              */
             apiEndpoint?: string
         },
-        public readonly uiGroup?: string
+        public readonly uiGroup?: string,
+
+        public readonly tier?: 'free' | 'pro' | 'enterprise',
+
+        // The name of the provider of the model, e.g. "Anthropic"
+        public provider?: string,
+        // The title of the model, e.g. "Claude 3 Sonnet"
+        public readonly title?: string
     ) {
-        const { provider, title } = getModelInfo(model)
-        this.provider = provider
-        this.title = title
+        if (!provider || !title) {
+            const info = getModelInfo(model)
+            this.provider = provider ?? info.provider
+            this.title = title ?? info.title
+        }
     }
+
+    // HACK: Constructor override allowing you to supply the title directly,
+    // so it can be different.
+    static fromApi({
+        modelRef,
+        displayName,
+        capabilities,
+        category,
+        tier,
+        clientSideConfig,
+        contextWindow = {
+            maxInputTokens: CHAT_INPUT_TOKEN_BUDGET,
+            maxOutputTokens: CHAT_OUTPUT_TOKEN_BUDGET,
+        },
+    }: ServerModel) {
+        // BUG: There is data loss here and the potential for ambiguity.
+        // BUG: We are assuming the modelRef is valid, but it might not be.
+        const [providerId, _, modelId] = modelRef.split('::', 3)
+
+        return new Model(
+            modelId,
+            capabilities.flatMap(capabilityToUsage),
+            {
+                input: contextWindow.maxInputTokens,
+                output: contextWindow.maxOutputTokens,
+            },
+            // @ts-ignore
+            clientSideConfig,
+            category,
+            tier,
+            providerId,
+            displayName
+        )
+    }
+}
+
+export function isNewStyleEnterpriseModel(model: Model): boolean {
+    return model.tier === 'enterprise'
 }
 
 /**
@@ -171,5 +244,14 @@ export class ModelsService {
                 : `No models found for substring ${modelSubstring}.`
         const modelsList = ModelsService.models.map(m => m.model).join(', ')
         throw new Error(`${errorMessage} Available models: ${modelsList}`)
+    }
+}
+
+export function capabilityToUsage(capability: ModelCapability): ModelUsage[] {
+    switch (capability) {
+        case 'autocomplete':
+            return []
+        case 'chat':
+            return [ModelUsage.Chat, ModelUsage.Edit]
     }
 }
