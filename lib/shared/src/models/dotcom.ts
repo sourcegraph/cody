@@ -60,7 +60,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         // Has a higher context window with a separate limit for user-context.
         contextWindow: expandedContextWindow,
-        tags: [ModelTag.Pro, ModelTag.Recommended, ModelTag.Accuracy],
+        tags: [ModelTag.Gateway, ModelTag.Pro, ModelTag.Recommended, ModelTag.Accuracy],
     },
     {
         title: 'Claude 3 Haiku',
@@ -83,7 +83,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         // Has a higher context window with a separate limit for user-context.
         contextWindow: expandedContextWindow,
-        tags: [ModelTag.Pro, ModelTag.Recommended, ModelTag.Accuracy],
+        tags: [ModelTag.Gateway, ModelTag.Pro, ModelTag.Recommended, ModelTag.Accuracy],
     },
     {
         title: 'GPT-4 Turbo',
@@ -92,7 +92,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         default: false,
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: basicContextWindow,
-        tags: [ModelTag.Pro, ModelTag.Accuracy],
+        tags: [ModelTag.Gateway, ModelTag.Pro, ModelTag.Accuracy],
     },
     {
         title: 'GPT-3.5 Turbo',
