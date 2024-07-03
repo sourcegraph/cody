@@ -1,6 +1,5 @@
 package com.sourcegraph.cody.chat.ui
 
-import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.openapi.project.Project
 import com.intellij.ui.ColorUtil
 import com.intellij.ui.JBColor
@@ -80,7 +79,6 @@ class CodyOnboardingGuidancePanel(val project: Project) : JPanel() {
 
   private fun createGetStartedButton(): JPanel {
     val buttonPanel = JPanel(BorderLayout())
-    mainButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
     buttonPanel.add(mainButton, BorderLayout.NORTH)
     buttonPanel.border = BorderFactory.createEmptyBorder(PADDING, 0, 0, 0)
     return buttonPanel

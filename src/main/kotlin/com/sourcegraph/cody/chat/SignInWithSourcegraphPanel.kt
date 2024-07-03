@@ -1,7 +1,6 @@
 package com.sourcegraph.cody.chat
 
 import com.intellij.ide.DataManager
-import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -72,7 +71,6 @@ class SignInWithSourcegraphPanel(private val project: Project) : JPanel() {
 
     val logInToSourcegraphAction = LogInToSourcegraphAction()
     for (button in buttons) {
-      button.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
       button.addActionListener(getSignInAction(button, logInToSourcegraphAction))
       val buttonPanel = JPanel(BorderLayout())
       buttonPanel.add(button, BorderLayout.CENTER)
@@ -86,11 +84,11 @@ class SignInWithSourcegraphPanel(private val project: Project) : JPanel() {
   }
 
   private fun getSignInAction(
-      signInWithGithubButton: JButton,
+      button: JButton,
       logInToSourcegraphAction: LogInToSourcegraphAction
   ): (e: ActionEvent) -> Unit {
-    val functionGithub: (e: ActionEvent) -> Unit = {
-      val dataContext = DataManager.getInstance().getDataContext(signInWithGithubButton)
+    return {
+      val dataContext = DataManager.getInstance().getDataContext(button)
       val dataContextWrapper = DataContextWrapper(dataContext)
       val accountsHost: CodyAccountsHost = CodyPersistentAccountsHost(project)
       dataContextWrapper.putUserData(CodyAccountsHost.KEY, accountsHost)
@@ -106,7 +104,6 @@ class SignInWithSourcegraphPanel(private val project: Project) : JPanel() {
         ActionUtil.performActionDumbAwareWithCallbacks(logInToSourcegraphAction, event)
       }
     }
-    return functionGithub
   }
 
   private fun createPanelWithSignInWithAnEnterpriseInstance(): JPanel {

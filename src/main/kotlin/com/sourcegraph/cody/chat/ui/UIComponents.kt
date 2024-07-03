@@ -22,6 +22,7 @@ object UIComponents {
   @JvmStatic
   fun createMainButton(text: String, icon: Icon): JButton {
     val button = createMainButton(text)
+    button.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
     button.icon = icon
     return button
   }
