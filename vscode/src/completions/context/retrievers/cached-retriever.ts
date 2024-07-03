@@ -3,7 +3,7 @@ import { debounce } from 'lodash'
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 import { getCurrentDocContext } from '../../get-current-doc-context'
-import { InlineCompletionItemProviderConfigSingleton } from '../../inline-completion-item-provider-config'
+import { InlineCompletionItemProviderConfigSingleton } from '../../inline-completion-item-provider-config-singleton'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../types'
 
 export interface CacheableRetriever extends ContextRetriever {}
@@ -14,8 +14,6 @@ export interface CachedRerieverOptions {
     precomputeOnCursorMove?: {
         debounceMs?: number
     }
-    // Flag for testing to ensure synchronous execution
-    neverDebounce?: boolean
 }
 
 type WorkspaceDependencies = Pick<
@@ -33,7 +31,6 @@ export abstract class CachedRetriever implements ContextRetriever {
     private dependencies: LRUCache<string, Set<string>>
     private currentKey: string | null = null
     private subscriptions: Map<string, vscode.Disposable> = new Map()
-    private neverDebounce = false
 
     protected abortController: AbortController
     abstract identifier: string
@@ -43,7 +40,6 @@ export abstract class CachedRetriever implements ContextRetriever {
         readonly workspace: WorkspaceDependencies = vscode.workspace,
         readonly window: WindowDependencies = vscode.window
     ) {
-        this.neverDebounce = options?.neverDebounce ?? false
         this.abortController = new AbortController()
         this.cache = new LRUCache({ max: 500, ...options?.cacheOptions })
         this.dependencies = new LRUCache({
@@ -252,7 +248,7 @@ export abstract class CachedRetriever implements ContextRetriever {
             return
         }
         // Unless they have specified no debounce, default to debouncing all handlers
-        handler = this.neverDebounce || debounceMs === 0 ? handler : debounce(handler, debounceMs ?? 100)
+        handler = debounceMs === 0 ? handler : debounce(handler, debounceMs ?? 100)
         this.subscriptions.set(handler.name, register(handler))
     }
 

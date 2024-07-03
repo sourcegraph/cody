@@ -37,7 +37,7 @@ import {
     type CodyCompletionItemProviderConfig,
     type InlineCompletionItemProviderConfig,
     InlineCompletionItemProviderConfigSingleton,
-} from './inline-completion-item-provider-config'
+} from './inline-completion-item-provider-config-singleton'
 import { isCompletionVisible } from './is-completion-visible'
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './logger'
 import * as CompletionLogger from './logger'

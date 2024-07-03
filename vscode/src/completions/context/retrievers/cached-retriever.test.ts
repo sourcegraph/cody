@@ -1,6 +1,6 @@
 import { type AutocompleteContextSnippet, testFileUri } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
-import { describe, expect, it } from 'vitest'
+import { type MockInstance, afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { getCurrentDocContext } from '../../get-current-doc-context'
 import { document, documentAndPosition } from '../../test-helpers'
@@ -23,36 +23,41 @@ class MockWorkspace implements Partial<typeof vscode.workspace> {
 }
 
 class MockCachedRetriever extends CachedRetriever {
-    callCount = 0
     identifier = 'mock'
+    spy: MockInstance
 
     constructor(
         options?: CachedRerieverOptions,
         public workspace: MockWorkspace = new MockWorkspace()
     ) {
-        super({ ...options, neverDebounce: true }, workspace)
+        super(options, workspace)
+        this.spy = vi.spyOn(this as MockCachedRetriever, 'doRetrieval')
     }
 
     toCacheKey = ({ document: { uri }, position: { line } }: ContextRetrieverOptions) => `${uri}:${line}`
 
     doRetrieval = async (options: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> => {
-        this.callCount += 1
-        this.retrievalHook(options)
         return []
     }
 
     isSupportedForLanguageId = () => true
-
-    // Hook for subclasses to extend with other behavior
-    retrievalHook = (_: ContextRetrieverOptions) => {}
 }
 
 // Mock retriever which opens the given file when it is called
 class FileOpeningRetriever extends MockCachedRetriever {
     identifier = 'file-opening'
 
-    retrievalHook = (options: ContextRetrieverOptions): void => {
+    constructor(
+        options?: CachedRerieverOptions,
+        public workspace: MockWorkspace = new MockWorkspace()
+    ) {
+        super(options, workspace)
+        this.spy = vi.spyOn(this as FileOpeningRetriever, 'doRetrieval')
+    }
+
+    doRetrieval = async (options: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> => {
         this.openTextDocument(options.document.uri)
+        return []
     }
 }
 
@@ -83,20 +88,28 @@ function getRetrieverOptions(
 }
 
 describe('CachedRetriever', () => {
+    beforeAll(() => {
+        vi.useFakeTimers()
+    })
+
+    afterAll(() => {
+        vi.useRealTimers()
+    })
+
     const mockOptions = getRetrieverOptions()
     it('should cache context correctly', async () => {
         const retriever = new MockCachedRetriever()
         await retriever.retrieve(mockOptions)
-        expect(retriever.callCount).toBe(1)
+        expect(retriever.spy).toHaveBeenCalledTimes(1)
         await retriever.retrieve(mockOptions)
 
-        expect(retriever.callCount).toBe(1)
+        expect(retriever.spy).toHaveBeenCalledTimes(1)
     })
 
     it("should not cache context if the input document's uri changes", async () => {
         const retriever = new MockCachedRetriever()
         await retriever.retrieve(mockOptions)
-        expect(retriever.callCount).toBe(1)
+        expect(retriever.spy).toHaveBeenCalledTimes(1)
 
         const newUri = vscode.Uri.file('/path/to/new/file')
         const newOptions: ContextRetrieverOptions = {
@@ -104,13 +117,13 @@ describe('CachedRetriever', () => {
             document: { ...mockOptions.document, uri: newUri },
         }
         await retriever.retrieve(newOptions)
-        expect(retriever.callCount).toBe(2)
+        expect(retriever.spy).toHaveBeenCalledTimes(2)
     })
 
     it('should recalculate if a dependency is invalidated', async () => {
         const retriever = new FileOpeningRetriever()
         await retriever.retrieve(mockOptions)
-        expect(retriever.callCount).toBe(1)
+        expect(retriever.spy).toHaveBeenCalledTimes(1)
 
         // Simulate an update to a file that this entry depends on
         retriever.workspace.didChangeTextDocumentListener({
@@ -119,15 +132,15 @@ describe('CachedRetriever', () => {
             contentChanges: [{} as unknown as vscode.TextDocumentContentChangeEvent],
             reason: undefined,
         })
-
+        vi.advanceTimersByTime(1000)
         await retriever.retrieve(mockOptions)
-        expect(retriever.callCount).toBe(2)
+        expect(retriever.spy).toHaveBeenCalledTimes(2)
     })
 
     it('should use cached value if an unrelated dependency is invalidated', async () => {
         const retriever = new FileOpeningRetriever()
         await retriever.retrieve(mockOptions)
-        expect(retriever.callCount).toBe(1)
+        expect(retriever.spy).toHaveBeenCalledTimes(1)
 
         // Invalidate an unrelated dependency
         retriever.workspace.didChangeTextDocumentListener({
@@ -135,9 +148,10 @@ describe('CachedRetriever', () => {
             contentChanges: [{} as unknown as vscode.TextDocumentContentChangeEvent],
             reason: undefined,
         })
+        vi.advanceTimersByTime(1000)
 
         await retriever.retrieve(mockOptions)
-        expect(retriever.callCount).toBe(1)
+        expect(retriever.spy).toHaveBeenCalledTimes(1)
     })
 
     it('should invalidate dependencies if entries are evicted from the cache', async () => {
@@ -147,7 +161,7 @@ describe('CachedRetriever', () => {
             },
         })
         await retriever.retrieve(mockOptions)
-        expect(retriever.callCount).toBe(1)
+        expect(retriever.spy).toHaveBeenCalledTimes(1)
 
         const { document: testDocument2, position: testPosition2 } = documentAndPosition(
             dedent`
@@ -162,10 +176,10 @@ describe('CachedRetriever', () => {
         // previous entry
         const newOptions = getRetrieverOptions(testDocument2, testPosition2)
         await retriever.retrieve(newOptions)
-        expect(retriever.callCount).toBe(2)
+        expect(retriever.spy).toHaveBeenCalledTimes(2)
 
         // rerun with existing options but re-evaluate because of eviction
         await retriever.retrieve(mockOptions)
-        expect(retriever.callCount).toBe(3)
+        expect(retriever.spy).toHaveBeenCalledTimes(3)
     })
 })
