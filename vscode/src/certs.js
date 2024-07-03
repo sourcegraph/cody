@@ -32,7 +32,7 @@ export function registerLocalCertificates(context) {
         const ca = require('win-ca/api')
         const rootsExe = path.join(context.extensionUri.fsPath, 'dist', 'win-ca-roots.exe')
         ca.exe(rootsExe)
-        ca({ fallback: true })
+        ca({ fallback: true, inject: '+' })
     } catch (e) {
         console.warn('Error installing Windows certs', e)
     }
