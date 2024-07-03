@@ -13,6 +13,7 @@ import com.sourcegraph.cody.listeners.CodyDocumentListener
 import com.sourcegraph.cody.listeners.CodyFocusChangeListener
 import com.sourcegraph.cody.listeners.CodySelectionListener
 import com.sourcegraph.cody.statusbar.CodyStatusService
+import com.sourcegraph.cody.telemetry.TelemetryV2
 import com.sourcegraph.config.CodyAuthNotificationActivity
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.telemetry.TelemetryInitializerActivity
@@ -52,5 +53,7 @@ class PostStartupActivity : StartupActivity.DumbAware {
     multicaster.addCaretListener(CodyCaretListener(project), disposable)
     multicaster.addSelectionListener(CodySelectionListener(project), disposable)
     multicaster.addDocumentListener(CodyDocumentListener(project), disposable)
+
+    TelemetryV2.sendTelemetryEvent(project, "cody.extension", "started")
   }
 }
