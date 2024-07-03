@@ -10,6 +10,10 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+## 1.24.1
+
+- Autocomplete: Restrict the number of lines we await during hot-streak completion generation to prevent overwhelming inference providers. [pull/4737](https://github.com/sourcegraph/cody/pull/4737)
+
 ## 1.24.0
 
 ### Added
