@@ -1,7 +1,7 @@
-import type { GeminiChatMessage } from '.'
 import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import type { Message } from '../../sourcegraph-api'
 
+import type { Content } from '@google/generative-ai'
 /**
  * Constructs an array of `GeminiChatMessage` objects from an array of `Message` objects.
  *
@@ -14,7 +14,7 @@ import type { Message } from '../../sourcegraph-api'
  * @param messages - An array of `Message` objects to be converted to `GeminiChatMessage` objects.
  * @returns An array of `GeminiChatMessage` objects.
  */
-export async function constructGeminiChatMessages(messages: Message[]): Promise<GeminiChatMessage[]> {
+export async function constructGeminiChatMessages(messages: Message[]): Promise<Content[]> {
     return (
         await Promise.all(
             messages.map(async msg => ({
@@ -23,4 +23,9 @@ export async function constructGeminiChatMessages(messages: Message[]): Promise<
             }))
         )
     ).filter((_, i, arr) => i !== arr.length - 1 || arr[i].role !== 'model')
+}
+
+export async function getGeminiCompletionPrompt(messages: Message[]): Promise<string> {
+    const lastMessage = messages.at(-1)?.text
+    return (await lastMessage?.toFilteredString(contextFiltersProvider)) ?? ''
 }

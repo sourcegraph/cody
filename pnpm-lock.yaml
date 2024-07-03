@@ -273,6 +273,9 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.20.8
         version: 0.20.8
+      '@google/generative-ai':
+        specifier: ^0.14.1
+        version: 0.14.1
       '@microsoft/fetch-event-source':
         specifier: ^2.0.1
         version: 2.0.1
@@ -2823,6 +2826,11 @@ packages:
       - encoding
       - supports-color
     dev: true
+
+  /@google/generative-ai@0.14.1:
+    resolution: {integrity: sha512-pevEyZCb0Oc+dYNlSberW8oZBm4ofeTD5wN01TowQMhTwdAbGAnJMtQzoklh6Blq2AKsx8Ox6FWa44KioZLZiA==}
+    engines: {node: '>=18.0.0'}
+    dev: false
 
   /@grpc/grpc-js@1.10.6:
     resolution: {integrity: sha512-xP58G7wDQ4TCmN/cMUHh00DS7SRDv/+lC+xFLrTkMIN8h55X5NhZMLYbvy7dSELP15qlI6hPhNCRWVMtZMwqLA==}
