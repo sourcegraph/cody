@@ -71,7 +71,7 @@ export async function createAgentClient({
 
     // Initialize
     const serverInfo: ServerInfo = await rpc.sendRequest('initialize', {
-        name: 'cody-web',
+        name: 'web',
         version: '0.0.1',
         workspaceRootUri,
         extensionConfiguration: {
