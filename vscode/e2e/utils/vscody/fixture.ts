@@ -1,7 +1,7 @@
 // TODO/WARNING/APOLOGY: I know that this is an unreasonably large file right
 // now. I'll refactor and cut it down this down once everything is working
 // first.
-import { exec as _exec, spawn } from 'node:child_process'
+import { spawn } from 'node:child_process'
 import type { Dirent } from 'node:fs'
 import fs from 'node:fs/promises'
 import 'node:http'
@@ -9,7 +9,6 @@ import 'node:https'
 import type { AddressInfo } from 'node:net'
 import path from 'node:path'
 import { EventEmitter } from 'node:stream'
-import { promisify } from 'node:util'
 
 import pspawn from '@npmcli/promise-spawn'
 import { type TestInfo, test as _test, expect, mergeTests } from '@playwright/test'
@@ -33,8 +32,6 @@ import { waitForLock } from '../../../src/lockfile'
 import { CodyPersister } from '../../../src/testutils/CodyPersister'
 import { defaultMatchRequestsBy } from '../../../src/testutils/polly'
 import { retry, stretchTimeout } from '../helpers'
-
-const exec = promisify(_exec)
 
 export type Directory = string
 
@@ -377,7 +374,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
             const serverExecutableDir = path.resolve(process.cwd(), validOptions.vscodeServerTmpDir)
             await fs.mkdir(serverExecutableDir, { recursive: true })
             // We nullify the time it takes to download VSCode as it can vary wildly!
-            const [codeCliPath, codeTunnelCliPath] = await stretchTimeout(
+            const [_, codeTunnelCliPath] = await stretchTimeout(
                 () => downloadOrWaitForVSCode({ validOptions, executableDir }),
                 {
                     max: DOWNLOAD_GRACE_TIME,
@@ -438,7 +435,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                     const args = [
                         ...validOptions.vscodeExtensions.flatMap(v => ['--install-extension', v]),
                     ]
-                    const res = await pspawn(codeTunnelCliPath, args, {
+                    await pspawn(codeTunnelCliPath, args, {
                         env: {
                             ...process.env,
                             // VSCODE_EXTENSIONS: sharedExtensionsDir, This doesn't work either

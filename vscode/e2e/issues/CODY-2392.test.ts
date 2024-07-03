@@ -1,6 +1,7 @@
-// // CTX(linear-issue): https://linear.app/sourcegraph/issue/CODY-2392
+// CTX(linear-issue): https://linear.app/sourcegraph/issue/CODY-2392
 import { expect } from '@playwright/test'
 import { fixture as test } from '../utils/vscody'
+//TODO(rnauta): wjow
 
 test.fixme('CODY-2392', () => {
     expect(true).toBeFalsy()
