@@ -83,7 +83,6 @@ abstract class KeychainOperations {
         public spinner: Ora,
         public account: Account
     ) {}
-    abstract installationInstructions: string
     abstract readSecret(): Promise<string>
     abstract writeSecret(secret: string): Promise<void>
     abstract deleteSecret(): Promise<void>
@@ -92,9 +91,6 @@ abstract class KeychainOperations {
         return `Cody: ${host} (${this.account.id})`
     }
     protected spawnAsync(command: string, args: string[], options?: { stdin: string }): Promise<string> {
-        if (!checkInstalled(this.spinner, command, this.installationInstructions)) {
-            return Promise.reject(`command not found: ${command}`)
-        }
         return new Promise<string>((resolve, reject) => {
             const child = spawn(command, args, { stdio: 'pipe', ...options })
             let stdout = ''
@@ -160,27 +156,42 @@ class MacOSKeychain extends KeychainOperations {
         ])
     }
 }
-const toFixProblemPrefix =
-    'To fix this problem, either supply an access token with --access-token, the environment variable SRC_ACCESS_TOKEN, or run the command below to install the missing dependencies:'
+const alternativelyMessage =
+    'Alternatively, you can manually supply an access token with --access-token or the environment variable SRC_ACCESS_TOKEN'
 
 class WindowsCredentialManager extends KeychainOperations {
-    installationInstructions = `${toFixProblemPrefix}
-  Install-Module -Name CredentialManager`
+    installationInstructions = `The 'CredentialManager' PowerShell module needs to be installed to let Cody manage your access token.
+To fix this problem, run the command below to install the missing dependencies:
+  Install-Module -Name CredentialManager
+${alternativelyMessage}`
     private target(): string {
         return `${this.service()}:${this.account.username}`
     }
     async readSecret(): Promise<string> {
         const powershellCommand = `(Get-StoredCredential -Target "${this.target()}").GetNetworkCredential().Password`
-        return await this.spawnAsync('powershell', ['-Command', powershellCommand])
+        return await this.spawnAsync('powershell.exe', ['-Command', powershellCommand])
+    }
+
+    override async spawnAsync(
+        command: string,
+        args: string[],
+        options?: { stdin: string } | undefined
+    ): Promise<string> {
+        try {
+            return await super.spawnAsync(command, args, options)
+        } catch (error) {
+            this.spinner.fail(this.installationInstructions)
+            throw error
+        }
     }
 
     async writeSecret(secret: string): Promise<void> {
         const powershellCommand = `& {New-StoredCredential -Target '${this.target()}' -Password '${secret}' -Persist LocalMachine}`
-        await this.spawnAsync('powershell', ['-Command', powershellCommand])
+        await this.spawnAsync('powershell.exe', ['-Command', powershellCommand])
     }
 
     async deleteSecret(): Promise<void> {
-        await this.spawnAsync('powershell', [
+        await this.spawnAsync('powershell.exe', [
             '-Command',
             `& {Remove-StoredCredential -Target '${this.service()}:${this.account.username}'}`,
         ])
@@ -188,9 +199,12 @@ class WindowsCredentialManager extends KeychainOperations {
 }
 
 class LinuxSecretService extends KeychainOperations {
-    installationInstructions = `To fix this problem, run the commands below and try again:
+    private installationInstructions = `The command 'secret-tool' is not installed on this computer.
+This tool is required to let Cody manage your access token securely.
+To fix this problem, run the commands below and try again:
   sudo apt install libsecret-tools
-  sudo apt install gnome-keyring`
+  sudo apt install gnome-keyring
+${alternativelyMessage}`
     async readSecret(): Promise<string> {
         return await this.spawnAsync('secret-tool', [
             'lookup',
@@ -199,6 +213,17 @@ class LinuxSecretService extends KeychainOperations {
             'account',
             this.account.username,
         ])
+    }
+
+    override spawnAsync(
+        command: string,
+        args: string[],
+        options?: { stdin: string } | undefined
+    ): Promise<string> {
+        if (!checkInstalled(this.spinner, command, this.installationInstructions)) {
+            return Promise.reject(`command not found: ${command}`)
+        }
+        return super.spawnAsync(command, args, options)
     }
 
     async writeSecret(secret: string): Promise<void> {
@@ -230,6 +255,10 @@ class LinuxSecretService extends KeychainOperations {
 
 const availableCommands = new Map<string, boolean>()
 function checkInstalled(spinner: Ora, command: string, installationInstructions: string): boolean {
+    if (process.platform === 'win32') {
+        // which doesn't work on Windows
+        return true
+    }
     const fromCache = availableCommands.get(command)
     if (fromCache !== undefined) {
         return fromCache
@@ -237,10 +266,7 @@ function checkInstalled(spinner: Ora, command: string, installationInstructions:
     const isInstalled = canSpawnCommand(command)
     availableCommands.set(command, isInstalled)
     if (!isInstalled) {
-        spinner.fail(
-            `The tool '${command}' is not installed on shit computer.
-This tool is required to let Cody manage your access token securely.\n${installationInstructions}`
-        )
+        spinner.fail(installationInstructions)
     }
     return isInstalled
 }

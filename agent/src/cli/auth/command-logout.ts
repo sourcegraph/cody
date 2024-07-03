@@ -27,7 +27,7 @@ export const logoutCommand = new Command('logout')
                 account => account.id !== settings.activeAccountID
             )
             writeUserSettings({ accounts: newAccounts })
-            spinner.succeed(`Logged out of account ${account.id} on ${account.serverEndpoint}`)
+            spinner.succeed(`Logged out of account ${account.username} on ${account.serverEndpoint}`)
             process.exit(0)
         } catch (error) {
             if (error instanceof Error) {
