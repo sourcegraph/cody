@@ -164,6 +164,10 @@ export abstract class CachedRetriever implements ContextRetriever {
         this.subscribe(this.window.tabGroups.onDidChangeTabGroups, this.onDidChangeTabGroups, {
             key: CacheKey.tabGroups,
         })
+
+        this.subscribe(this.window.tabGroups.onDidChangeTabs, this.onDidChangeTabs, {
+            key: CacheKey.tabGroups,
+        })
         return this.window.tabGroups
     }
 
@@ -180,10 +184,17 @@ export abstract class CachedRetriever implements ContextRetriever {
         this.invalidateDependency(CacheKey.visibleTextEditors)
     }
 
-    private onDidChangeTabGroups = (event: vscode.TabGroupChangeEvent) => {
+    private onDidChangeTabGroups = (_: vscode.TabGroupChangeEvent) => {
         // TODO: this currently invalidates all entries that depend on tabGroups
         // when this handler fired. If we want to be more precise, we could track which
         // tabGroups are actually be used by the retriever and then updating those
+        this.invalidateDependency(CacheKey.tabGroups)
+    }
+
+    private onDidChangeTabs = (_: vscode.TabChangeEvent) => {
+        // TODO: this currently invalidates all entries that depend on tabGroups
+        // when this handler fired. If we want to be more precise, we could track which
+        // tabs are actually be used by the retriever and then updating those
         this.invalidateDependency(CacheKey.tabGroups)
     }
 
@@ -236,20 +247,21 @@ export abstract class CachedRetriever implements ContextRetriever {
     private subscribe = <T>(
         register: (fxn: (event: T) => void) => vscode.Disposable,
         handler: (event: T) => void,
-        options?: SubscriptionOptions
+        options: SubscriptionOptions = {}
     ) => {
-        const { debounceMs, key } = options ?? {}
+        const { debounceMs, key } = options
+        const name = handler.name
         // If we recieved a cache key, we should track that this cache entry
         // depends on that dependency
         if (key) {
             this.addDependency(key)
         }
-        if (this.subscriptions.has(handler.name) || !register) {
+        if (this.subscriptions.has(name) || !register) {
             return
         }
         // Unless they have specified no debounce, default to debouncing all handlers
         handler = debounceMs === 0 ? handler : debounce(handler, debounceMs ?? 100)
-        this.subscriptions.set(handler.name, register(handler))
+        this.subscriptions.set(name, register(handler))
     }
 
     public dispose() {

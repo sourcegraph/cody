@@ -103,18 +103,11 @@ export class JaccardSimilarityRetriever extends CachedRetriever implements Conte
     }
 
     /**
-     * Generates a cache key from each of the context retriever options we use.
+     * Generates a cache key from only the document and the current prefix and suffix.
      *
      */
-    public toCacheKey({
-        document,
-        docContext: {
-            prefix,
-            suffix,
-            position: { line, character },
-        },
-    }: ContextRetrieverOptions): string {
-        return `${document.uri}:${prefix}:${suffix}:${line}:${character}`
+    public toCacheKey({ document, docContext: { prefix, suffix } }: ContextRetrieverOptions): string {
+        return `${document.uri}:${prefix + suffix}`
     }
 
     /**
