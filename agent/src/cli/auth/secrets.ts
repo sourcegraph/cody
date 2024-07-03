@@ -60,7 +60,6 @@ export async function removeCodySecret(spinner: Ora, account: Account) {
 }
 
 function getKeychainOperations(spinner: Ora, account: Account): KeychainOperations {
-    registerCommandNotFoundHandler()
     switch (process.platform) {
         case 'darwin':
             return new MacOSKeychain(spinner, account)
