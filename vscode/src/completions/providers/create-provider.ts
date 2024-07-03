@@ -146,14 +146,13 @@ export async function createProviderConfig(
                             ? authStatus.configOverwrites.completionModel
                             : undefined,
                 })
-            case 'unstable-gemini':
+            case 'google':
                 if (authStatus.configOverwrites.completionModel?.includes('claude')) {
                     return createAnthropicProviderConfig({
                         client, // Model name for google provider is a deployment name. It shouldn't appear in logs.
                         model: undefined,
                     })
                 }
-
                 // Gemini models
                 return createGeminiProviderConfig({ client, model })
             default:
