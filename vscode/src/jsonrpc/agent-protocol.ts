@@ -324,11 +324,10 @@ export type ServerRequests = {
     ]
     'workspace/edit': [WorkspaceEditParams, boolean]
 
-    // Low-level API to handle requests from the VS Code extension to create a
-    // webview.  This endpoint should not be needed as long as you use
-    // high-level APIs like chat/new instead. This API only exists to faithfully
-    // expose the VS Code webview API.
-    'webview/create': [{ id: string; data: any }, null]
+    'webview/createWebviewPanel': [WebviewCreatePanelParams, WebviewCreatePanelResult]
+    // TODO: Add VSCode support for registerWebviewViewProvider and views.
+    // TODO: Add VSCode support for registerWebviewPanelSerializer.
+    // TODO: Add additional notifications for Webview, etc. operations.
 }
 
 // The JSON-RPC notifications of the Cody Agent protocol. Notifications are
@@ -525,6 +524,11 @@ export interface ClientCapabilities {
     // convenient for clients that forward the string directly to an underlying
     // webview container.
     webviewMessages?: 'object-encoded' | 'string-encoded' | undefined | null
+    // Whether the client supports the VSCode WebView API. If 'agentic', uses
+    // AgentWebViewPanel which just delegates bidirectional postMessage over
+    // the Agent protocol. If 'native', implements a larger subset of the VSCode
+    // WebView API.
+    webview?: 'agentic' | 'native' | undefined | null
 }
 
 export interface ServerInfo {
@@ -813,6 +817,25 @@ export interface DeleteTextEdit {
     type: 'delete'
     range: Range
     metadata?: vscode.WorkspaceEditEntryMetadata | undefined | null
+}
+
+export interface WebviewCreatePanelParams {
+    viewType: string
+    title: string
+    showOptions: vscode.ViewColumn | { preserveFocus: boolean; viewColumn: vscode.ViewColumn }
+    options?: {
+        enableFindWidget?: boolean
+        retainContextWhenHidden?: boolean
+        enableCommandUris?: boolean
+        enableForms?: boolean
+        enableScripts?: boolean
+        localResourceRoots?: readonly vscode.Uri[]
+        portMapping?: readonly { extensionHostPort: number; webviewPort: number }[]
+    }
+}
+
+export interface WebviewCreatePanelResult {
+    panelId: string
 }
 
 export interface EditTask {
