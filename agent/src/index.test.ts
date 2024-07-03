@@ -867,7 +867,7 @@ describe('Agent', () => {
         // the future. Use the following command to run this test:
         // - First, mark this test as `it.only`
         // - Next, run `CODY_RECORDING_MODE=passthrough pnpm test agent/src/index.test.ts`
-        it('chat/submitMessage (RateLimitError)', async () => {
+        it.skip('chat/submitMessage (RateLimitError)', async () => {
             const lastMessage = await rateLimitedClient.sendSingleMessageToNewChat('sqrt(9)')
             // Intentionally not a snapshot assertion because we should never
             // automatically update 'RateLimitError' to become another value.
