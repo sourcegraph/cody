@@ -1,5 +1,12 @@
+
+/*
+Since this package is used only for Cody Web in Sourcegraph it's ok to
+not include this in the cody web package since highlights styles is already
+imported in Sourcegraph shell.
+*/
+/*@import url('../../../vscode/webviews/utils/highlight.css');*/
+
 @import url('../../../vscode/.storybook/static/vscode-themes/dark-modern.css');
-@import url('../../../vscode/webviews/utils/highlight.css');
 @import url('../../node_modules/@vscode/codicons/dist/codicon.css');
 @import url('./reset.css');
 
