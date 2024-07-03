@@ -177,7 +177,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
         }
     }, [initialContext])
 
-    console.log({ client, userAccountInfo, chatModels, activeChatID })
+    // console.log({ client, userAccountInfo, chatModels, activeChatID })
     return (
         <div className={className} data-cody-web-chat={true} ref={rootElementRef}>
             {client && userAccountInfo && chatModels && activeChatID ? (
