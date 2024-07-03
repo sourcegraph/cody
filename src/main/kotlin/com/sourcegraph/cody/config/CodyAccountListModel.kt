@@ -65,7 +65,9 @@ class CodyAccountListModel(private val project: Project) :
     if (accountsListModel.isEmpty) {
       activeAccount = account
     }
-    accountsListModel.add(account)
+    if (!accountsListModel.toList().contains(account)) {
+      accountsListModel.add(account)
+    }
     newCredentials[account] = token
     notifyCredentialsChanged(account)
   }
