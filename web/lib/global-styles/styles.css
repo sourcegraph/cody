@@ -1,0 +1,46 @@
+
+/*
+Since this package is used only for Cody Web in Sourcegraph it's ok to
+not include this in the cody web package since highlights styles is already
+imported in Sourcegraph shell.
+*/
+/*@import url('../../../vscode/webviews/utils/highlight.css');*/
+
+@import url('../../../vscode/.storybook/static/vscode-themes/dark-modern.css');
+@import url('../../node_modules/@vscode/codicons/dist/codicon.css');
+@import url('./reset.css');
+
+/*
+ Include tailwind "components" and "utilities" directly in
+ cody web but DON'T include base reset tailwind styles
+ since they will conflict with any possible reset/global
+ styles in consumer. See @mixin reset-styles for more details
+*/
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --vscode-font-size: 13px;
+    --vscode-font-family: -apple-system, BlinkMacSystemFont, 'Ubuntu', 'Droid Sans', 'Segoe WPC', 'Segoe UI', sans-serif;
+    --vscode-editor-font-family: 'Monaco', 'Consolas', monospace;
+}
+
+[data-cody-web-chat] {
+    /*
+     Include custom reset layer styles to avoid any big differences
+     in shadcn ui styles, they all will be scoped under [data-cody-web-chat]
+     so they won't effect any styles in consumer.
+     */
+    @mixin reset-styles;
+
+    height: 100%;
+    overflow: auto;
+    background-color: var(--vscode-editor-background);
+    font-size: var(--vscode-font-size);
+    font-family: var(--vscode-font-family);
+    color: var(--vscode-editor-foreground);
+
+    & a {
+        text-decoration: none;
+    }
+}

@@ -32,7 +32,7 @@ export interface RemoteSearchProvider {
     isIgnored: boolean
 }
 
-export type EmbeddingsProvider = 'sourcegraph' | 'openai'
+export type EmbeddingsProvider = 'sourcegraph'
 
 export interface LocalEmbeddingsProvider {
     kind: 'embeddings'

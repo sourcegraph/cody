@@ -23,10 +23,9 @@ exports[`--context-repo (squirrel test) 1`] = `
 exitCode: 0
 stdout: >+
   Squirrel is a high-performance, open-source object-relational database (ORD)
-  that uses an SQL dialect and is embedded within applications. It is designed
-  to be lightweight, fast, and easy to use, making it suitable for applications
-  that require a database but do not need the complexity and overhead of a
-  traditional client-server database management system (DBMS).
+  that provides a SQL interface for storing and querying JSON data. It is
+  designed to be embedded in applications, making it suitable for use cases such
+  as caching, analytics, and data storage in edge computing environments.
 
 stderr: ""
 "
