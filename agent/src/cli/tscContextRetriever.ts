@@ -24,6 +24,7 @@ interface TscContextRetrieverOptions {
     configPath: string
     maxPrefixLength: number
     maxSuffixLength: number
+    maxChars: number
     saveDir: string
     skipPreComputedWorkspace: boolean
 }
@@ -45,6 +46,12 @@ export const tscContextRetrieverCommand = () =>
         .option('--config-path <path>', 'Path to a JSON with configuration to compute TSC context')
         .option('--max-prefix-length <number>', 'Maximum length of the prefix', intOption, 1_000)
         .option('--max-suffix-length <number>', 'Maximum length of the suffix', intOption, 1_000)
+        .option(
+            '--max-chars <number>',
+            'Maximum number of chars in the output context',
+            intOption,
+            10_000
+        )
         .option('--save-dir <path>', 'Path to a directory to save the context outputs')
         .option(
             '--skip-pre-computed-workspace <bool>',
@@ -97,11 +104,8 @@ async function getTscContextForFile(
     workspaceUri: string
 ) {
     const workspaceName = path.basename(workspaceUri)
-    const fileName = path.basename(fileOption.filePath)
-    const fileNameParts = fileName.split('.')
-    const fileNameWithoutSuffix =
-        fileNameParts.length > 1 ? fileNameParts.slice(0, -1).join('.') : fileName
-    const contextSavePath = path.join(option.saveDir, workspaceName, `${fileNameWithoutSuffix}.json`)
+    const fileRelPath = path.relative(workspaceUri, fileOption.filePath)
+    const contextSavePath = path.join(option.saveDir, workspaceName, `${fileRelPath}.json`)
 
     if (
         option.skipPreComputedWorkspace &&
@@ -115,7 +119,7 @@ async function getTscContextForFile(
 
     const content = await fspromises.readFile(fileOption.filePath, 'utf-8')
     client.notify('textDocument/didOpen', { uri: fileOption.filePath, content })
-    const contextItems = await client.request('autocomplete/tscContextRetriever', {
+    const contextItems = await client.request('testing/tsc/retrieveContext', {
         filePath: fileOption.filePath,
         position: {
             line: fileOption.line,
@@ -124,10 +128,15 @@ async function getTscContextForFile(
         options: {
             maxPrefixLength: option.maxPrefixLength,
             maxSuffixLength: option.maxSuffixLength,
-            maxChars: 0,
-            maxMsec: 1000,
+            maxChars: option.maxChars,
+            maxMsec: 2500,
         },
     })
+    const contextData = {
+        repoPath: workspaceUri,
+        filePath: fileOption.filePath,
+        context: contextItems,
+    }
     await fspromises.mkdir(path.dirname(contextSavePath), { recursive: true })
-    await fspromises.writeFile(contextSavePath, JSON.stringify(contextItems, null, 2))
+    await fspromises.writeFile(contextSavePath, JSON.stringify(contextData, null, 2))
 }

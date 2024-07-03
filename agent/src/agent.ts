@@ -623,16 +623,16 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return { diagnostics }
         })
 
-        this.registerRequest('autocomplete/tscContextRetriever', async params => {
+        this.registerRequest('testing/tsc/retrieveContext', async params => {
             const filePath = vscode.Uri.file(params.filePath)
             const position = new vscode.Position(params.position.line, params.position.character)
             const retriever = loadTscRetriever()
             if (!retriever) {
-                throw new Error('autocomplete/tscContextRetriever: no retriever')
+                throw new Error('testing/tsc/retrieveContext: no retriever')
             }
             const document = this.workspace.getDocument(filePath)
             if (!document) {
-                throw new Error(`autocomplete/tscContextRetriever: no document for URI ${filePath}`)
+                throw new Error(`testing/tsc/retrieveContext: no document for URI ${filePath}`)
             }
             const options: ContextRetrieverOptions = {
                 document: document,

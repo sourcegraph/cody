@@ -198,7 +198,7 @@ export type ClientRequests = {
     // Returns diagnostics for the given URI. Lives under `testing/` instead of
     // standalone `diagnostics/` because it only works for TypeScript files.
     'testing/diagnostics': [{ uri: string }, { diagnostics: ProtocolDiagnostic[] }]
-    'autocomplete/tscContextRetriever': [
+    'testing/tsc/retrieveContext': [
         { filePath: string; position: Position; options: TSCContextRetriverOptions },
         TscContextRetriverResult[],
     ]
@@ -625,7 +625,7 @@ export interface TSCContextRetriverOptions {
 }
 
 export interface TscContextRetriverResult {
-    symbol: string | undefined
+    symbol?: string | undefined | null
     content: string
     filePath: string
     startLine: number
