@@ -165,6 +165,9 @@ importers:
       '@types/ws':
         specifier: ^8.5.10
         version: 8.5.10
+      async-mutex:
+        specifier: ^0.4.0
+        version: 0.4.0
       chalk:
         specifier: ^5.3.0
         version: 5.3.0
@@ -6074,6 +6077,7 @@ packages:
 
   /@types/lodash@4.17.0:
     resolution: {integrity: sha512-t7dhREVv6dbNj0q17X12j7yDG4bD/DHYX7o5/DbDxobP0HnGPgpRz2Ej77aL7TZT3DSw13fqUTj8J4mMnqa7WA==}
+    dev: false
 
   /@types/long@4.0.2:
     resolution: {integrity: sha512-MqTGEo5bj5t157U6fA/BiDynNkn0YknVdh48CMPkTSpFTVmvao5UQmm7uEF6xBEo7qIMAlY/JSleYaE6VOdpaA==}

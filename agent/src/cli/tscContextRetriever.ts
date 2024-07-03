@@ -6,6 +6,7 @@ import * as vscode from 'vscode'
 import type { RpcMessageHandler } from '../../../vscode/src/jsonrpc/jsonrpc'
 import { newAgentClient } from '../agent'
 import { booleanOption, intOption } from './cody-bench/cli-parsers'
+import { Semaphore } from 'async-mutex'
 
 interface FileOption {
     filePath: string
@@ -62,10 +63,17 @@ export const tscContextRetrieverCommand = () =>
         .action(async (option: TscContextRetrieverOptions) => {
             const configBuffer = await fspromises.readFile(option.configPath)
             const workspaceToRun = JSON.parse(configBuffer.toString()) as WorkspaceOption[]
+            const concurrencyLimit = 5
+            const semaphore = new Semaphore(concurrencyLimit)
             await Promise.all(
-                workspaceToRun.map(workspaceOption =>
-                    tscContextActionForWorkspace(option, workspaceOption)
-                )
+                workspaceToRun.map(async workspace => {
+                    const [_, release] = await semaphore.acquire()
+                    try {
+                        await tscContextActionForWorkspace(option, workspace)
+                    } finally {
+                        release()
+                    }
+                })
             )
             process.exit(0)
         })
@@ -90,10 +98,17 @@ async function tscContextActionForWorkspace(
         },
         inheritStderr: true,
     })
+    const concurrencyLimit = 2
+    const semaphore = new Semaphore(concurrencyLimit)
     await Promise.all(
-        workspaceOption.filesOptions.map(fileOption =>
-            getTscContextForFile(client, option, fileOption, workspaceOption.workspaceUri)
-        )
+        workspaceOption.filesOptions.map(async fileOption => {
+            const [_, release] = await semaphore.acquire()
+            try {
+                await getTscContextForFile(client, option, fileOption, workspaceOption.workspaceUri)
+            } finally {
+                release()
+            }
+        })
     )
 }
 
