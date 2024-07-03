@@ -8,6 +8,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Ollama: Added support for running Cody offline with local Ollama models. [pull/4691](https://github.com/sourcegraph/cody/pull/4691)
 - Edit: Added support for users' to edit the applied edit before the diff view is removed. [pull/4684](https://github.com/sourcegraph/cody/pull/4684)
+- Autocomplete: Added experimental support for Gemini 1.5 Flash as the autocomplete model. To enable this feature, update the `autocomplete.advanced.provider` configuration setting to `unstable-gemini`. [pull/4743](https://github.com/sourcegraph/cody/pull/4743)
 
 ### Fixed
 
@@ -18,7 +19,6 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Autocomplete: When the last completion candidate is not applicable at the current document position, it remains in the cache even after the user backspaces or deletes characters from the current line. [pull/4704](https://github.com/sourcegraph/cody/pull/4704)
 - Chat: Added a stop button and cleaned up the vertical space layout of the chat. [pull/4580](https://github.com/sourcegraph/cody/pull/4580)
 - Chat: Simplify the Enterprise docs in the model selector [pull/4745](https://github.com/sourcegraph/cody/pull/4745)
-
 
 ## 1.24.0
 
