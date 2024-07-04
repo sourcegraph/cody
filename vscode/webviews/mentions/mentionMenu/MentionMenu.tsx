@@ -120,12 +120,12 @@ export const MentionMenu: FunctionComponent<
 
                     if (mentionStartIndex !== -1) {
                         const mentionEndIndex = mentionStartIndex + mentionQuery.text.length
-                        return (
-                            currentText.slice(0, mentionStartIndex) + currentText.slice(mentionEndIndex)
-                        )
+                        return [
+                            currentText.slice(0, mentionStartIndex) + currentText.slice(mentionEndIndex),
+                        ]
                     }
 
-                    return ''
+                    return ['']
                 })
             }
             setValue(null)
@@ -177,12 +177,25 @@ export const MentionMenu: FunctionComponent<
                         },
                     })
 
-                    setEditorQuery(currentText =>
-                        currentText.replace(
-                            `@${mentionQuery.text}`,
-                            `@${openCtxItem.mention?.data?.repoName}:`
-                        )
-                    )
+                    setEditorQuery(currentText => {
+                        const selection = getSelection()
+
+                        if (!selection) {
+                            return [currentText]
+                        }
+
+                        const cursorPosition = selection.anchorOffset
+                        const mentionStart = cursorPosition - mentionQuery.text.length
+                        const mentionEndIndex = cursorPosition
+                        const textToInsert = `${openCtxItem.mention?.data?.repoName}:`
+
+                        return [
+                            currentText.slice(0, mentionStart) +
+                                textToInsert +
+                                currentText.slice(mentionEndIndex),
+                            mentionStart + textToInsert.length,
+                        ]
+                    })
 
                     setValue(null)
                     return
