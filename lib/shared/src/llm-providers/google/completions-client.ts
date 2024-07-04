@@ -15,7 +15,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 /**
  * NOTE: Behind `chat.dev.models` configuration flag.
  */
-export function createGoogleAPIClient(
+export function createGoogleCodeClient(
     logger?: CompletionLogger
 ): CodeCompletionsClient<CodeCompletionsParams> {
     async function* complete(
@@ -33,9 +33,7 @@ export function createGoogleAPIClient(
         const generationConfig = {
             stopSequences: params.stopSequences,
             maxOutputTokens: params.maxTokensToSample,
-            temperature: 0.9,
-            topP: 0.1,
-            topK: 16,
+            temperature: 0,
         }
 
         const google = new GoogleGenerativeAI(config.key)

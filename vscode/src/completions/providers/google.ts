@@ -111,7 +111,7 @@ class GoogleGeminiProvider extends Provider {
         // https://ai.google.dev/gemini-api/docs/prompting-intro
         const fimPrompt = ps`<|prefix|>${prefix}<|fim|>${suffix}<|suffix|>`
 
-        const humanText = ps`You are a code completion AI, designed to autofill code enclosed in special markers based on its surrounding context.
+        const humanText = ps`You are a code completion AI, designed to autofill code enclosed in special markers based on provided context.
 ${groupedSnippets}
 
 Code from ${relativeFilePath} file:
@@ -132,6 +132,10 @@ Your response should contains only the code required to connect the gap, and the
         return { messages, prefix: { head, tail, overlap } }
     }
 
+    private get isUsingCache(): boolean {
+        return this.model === 'gemini-1.5-flash-001'
+    }
+
     public generateCompletions(
         abortSignal: AbortSignal,
         snippets: AutocompleteContextSnippet[],
@@ -141,6 +145,11 @@ Your response should contains only the code required to connect the gap, and the
             providerOptions: this.options,
             lineNumberDependentCompletionParams,
         })
+
+        // Skip context generation if using context caching.
+        if (this.isUsingCache) {
+            snippets = []
+        }
 
         const requestParams: CodeCompletionsParams = {
             ...partialRequestParams,
@@ -157,7 +166,8 @@ Your response should contains only the code required to connect the gap, and the
 
             const completionResponseGenerator = generatorWithTimeout(
                 this.client.complete(requestParams, abortController),
-                requestParams.timeoutMs,
+                // Set a timeout of 20 seconds when using cache for testing.
+                this.isUsingCache ? 200_000 : requestParams.timeoutMs,
                 abortController
             )
 

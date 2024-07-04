@@ -3,11 +3,14 @@ import {
     type CodeCompletionsClient,
     type ConfigurationWithAccessToken,
     FeatureFlag,
+    createGoogleCacheClient,
     featureFlagProvider,
+    getCompletionsModelConfig,
 } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
-import { logError } from '../../log'
+import { getWorkspaceFilesContext } from '../../commands/context/workspace'
+import { logError, logger } from '../../log'
 import {
     type AnthropicOptions,
     createProviderConfig as createAnthropicProviderConfig,
@@ -53,6 +56,27 @@ export async function createProviderConfigFromVSCodeConfig(
             return createAnthropicProviderConfig({ client, model })
         }
         case 'unstable-gemini': {
+            // NOTE: Gemini 1.5 Flash with Context Caching for Dev testing.
+            const cacheModel = 'gemini-1.5-flash-001'
+            const config = getCompletionsModelConfig(`google/${cacheModel}`)
+            if (config?.key) {
+                // Get content from files in current workspace to initialize the cache.
+                // NOTE: This gets 50 ts files with chat in the file name from the workspace.
+                // This is a temporary workaround for getting enough content for min token required for cache.
+                // If this is not the case, then the cache will not be initialized.
+                const initContext = await getWorkspaceFilesContext('**/*{chat,Chat}*.ts', undefined, 50)
+                // Use window system messages for debugging purposes. To be removed.
+                if (!initContext.length) {
+                    vscode.window.showErrorMessage('CACHE FAIL: Not context found for caching.')
+                    return null
+                }
+                vscode.window.showInformationMessage(
+                    `CACHE: Initiating context cache with ${initContext.length} files.`
+                )
+                const cacheClient = createGoogleCacheClient(cacheModel, config?.key, initContext, logger)
+                return createGeminiProviderConfig({ client: cacheClient, model: cacheModel })
+            }
+
             return createGeminiProviderConfig({ client, model })
         }
         case 'experimental-openaicompatible': {

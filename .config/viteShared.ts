@@ -23,6 +23,11 @@ const defaultProjectConfig: UserWorkspaceConfig = {
             toFake: [...configDefaults.fakeTimers.toFake, 'performance'],
         },
     },
+    build: {
+        rollupOptions: {
+            external: ['fs'], // Ignore 'fs' module
+        },
+    },
 }
 
 /**

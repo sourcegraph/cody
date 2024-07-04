@@ -1,3 +1,4 @@
+import { ps } from '../..'
 import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import type { Message } from '../../sourcegraph-api'
 
@@ -26,6 +27,6 @@ export async function constructGeminiChatMessages(messages: Message[]): Promise<
 }
 
 export async function getGeminiCompletionPrompt(messages: Message[]): Promise<string> {
-    const lastMessage = messages.at(-1)?.text
-    return (await lastMessage?.toFilteredString(contextFiltersProvider)) ?? ''
+    const lastMessage = messages.findLast(msg => msg.speaker === 'human')?.text ?? ps``
+    return await lastMessage?.toFilteredString(contextFiltersProvider)
 }
