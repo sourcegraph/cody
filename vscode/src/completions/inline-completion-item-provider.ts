@@ -46,6 +46,7 @@ import {
     canReuseLastCandidateInDocumentContext,
     getRequestParamsFromLastCandidate,
 } from './reuse-last-candidate'
+import { SmartThrottleService } from './smart-throttle'
 import {
     type AutocompleteInlineAcceptedCommandArgs,
     type AutocompleteItem,
