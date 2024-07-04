@@ -21,9 +21,12 @@ export interface ContextRetrieverOptions {
     document: vscode.TextDocument
     position: vscode.Position
     docContext: DocumentContext
-    hints: {
-        maxChars: number
-        maxMs: number
+    hints?: {
+        maxChars?: number
+        maxMs?: number
+        // signals that this is being run pre-emptively to provide a warm cache
+        // and any result we return will be ingored
+        isPreload?: boolean
     }
     lastCandidate?: LastInlineCompletionCandidate
     abortSignal?: AbortSignal

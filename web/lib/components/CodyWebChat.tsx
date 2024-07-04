@@ -1,4 +1,4 @@
-import { type FC, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { type FC, useCallback, useLayoutEffect, useMemo, useState } from 'react'
 import { URI } from 'vscode-uri'
 
 import {
@@ -65,7 +65,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
 
     const [initialization, setInitialization] = useState<'init' | 'completed'>('init')
 
-    const rootElementRef = useRef<HTMLDivElement>(null)
+    const [rootElement, setRootElement] = useState<HTMLElement | null>()
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
@@ -191,9 +191,8 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
         }
     }, [initialContext])
 
-    console.log({ client, userAccountInfo, chatModels, activeChatID })
     return (
-        <div className={className} data-cody-web-chat={true} ref={rootElementRef}>
+        <div className={className} data-cody-web-chat={true} ref={setRootElement}>
             {client &&
             userAccountInfo &&
             chatModels &&
@@ -218,7 +217,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                                             vscodeAPI={vscodeAPI}
                                             telemetryService={telemetryService}
                                             isTranscriptError={isTranscriptError}
-                                            // scrollableParent={rootElementRef.current}
+                                            scrollableParent={rootElement}
                                             className={styles.chat}
                                         />
                                     </WithContextProviders>

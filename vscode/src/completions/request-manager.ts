@@ -305,7 +305,7 @@ interface RequestCacheItem {
 }
 class RequestCache {
     private cache = new LRUCache<string, RequestCacheItem>({
-        max: 50,
+        max: 250,
     })
 
     private toCacheKey(key: Pick<RequestParams, 'docContext'>): string {

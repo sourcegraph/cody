@@ -446,7 +446,8 @@ class SymbolCollector {
     private snippets: AutocompleteContextSnippet[] = []
     private nodeMatches = new Set<ts.Node>()
     private hasRemainingNodeMatches = () => this.nodeMatches.size < this.options.maxNodeMatches
-    private hasRemainingChars = () => this.addedContentChars < this.contextOptions.hints.maxChars
+    private hasRemainingChars = () =>
+        this.addedContentChars < (this.contextOptions.hints?.maxChars ?? Number.POSITIVE_INFINITY)
     private addedContentChars = 0
     private isAdded = new Set<ts.Symbol>()
     private formatter: SymbolFormatter
