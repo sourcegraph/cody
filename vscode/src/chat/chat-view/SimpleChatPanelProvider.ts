@@ -2,6 +2,7 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
+    type AuthStatus,
     type BillingCategory,
     type BillingProduct,
     CHAT_INPUT_TOKEN_BUDGET,
@@ -71,7 +72,6 @@ import type { LocalEmbeddingsController } from '../../local-context/local-embedd
 import { rewriteChatQuery } from '../../local-context/rewrite-chat-query'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
-import { chatModel } from '../../models'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { gitCommitIdFromGitExtension } from '../../repository/git-extension-api'
 import type { AuthProvider } from '../../services/AuthProvider'
@@ -202,7 +202,7 @@ export class SimpleChatPanelProvider
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
 
-        this.chatModel = new SimpleChatModel(getDefaultModelID(authProvider, models))
+        this.chatModel = new SimpleChatModel(getDefaultModelID(authProvider.getAuthStatus()))
 
         this.guardrails = guardrails
         this.startTokenReceiver = startTokenReceiver
@@ -878,7 +878,6 @@ export class SimpleChatPanelProvider
 
     private async handleSetChatModel(modelID: string): Promise<void> {
         this.chatModel.updateModel(modelID)
-        await chatModel.set(modelID)
     }
 
     private async handleGetAllMentionProvidersMetadata(): Promise<void> {
@@ -1113,11 +1112,7 @@ export class SimpleChatPanelProvider
         if (!authStatus?.isLoggedIn) {
             return
         }
-        const models = ModelsService.getModels(
-            ModelUsage.Chat,
-            authStatus.isDotCom && !authStatus.userCanUpgrade,
-            this.chatModel.modelID
-        )
+        const models = ModelsService.getModels(ModelUsage.Chat, authStatus)
 
         void this.postMessage({
             type: 'chatModels',
@@ -1604,6 +1599,7 @@ function newChatModelFromSerializedChatTranscript(
 ): SimpleChatModel {
     return new SimpleChatModel(
         migrateAndNotifyForOutdatedModels(json.chatModel || modelID)!,
+        json.id,
         json.interactions.flatMap((interaction: SerializedChatInteraction): ChatMessage[] =>
             [
                 PromptString.unsafe_deserializeChatMessage(interaction.humanMessage),
@@ -1612,7 +1608,6 @@ function newChatModelFromSerializedChatTranscript(
                     : null,
             ].filter(isDefined)
         ),
-        json.id,
         json.chatTitle,
         json.enhancedContext?.selectedRepos
     )
@@ -1655,9 +1650,9 @@ export function revealWebviewViewOrPanel(viewOrPanel: vscode.WebviewView | vscod
     }
 }
 
-function getDefaultModelID(authProvider: AuthProvider, models: Model[]): string {
+function getDefaultModelID(status: AuthStatus): string {
     try {
-        return chatModel.get(authProvider, models)
+        return ModelsService.getDefaultChatModel(status)
     } catch {
         return '(pending)'
     }

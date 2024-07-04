@@ -1,5 +1,4 @@
 import {
-    Model,
     ModelTag,
     ModelUsage,
     ModelsService,
@@ -8,7 +7,9 @@ import {
     getDotComDefaultModels,
     unauthenticatedStatus,
 } from '@sourcegraph/cody-shared'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { Model } from '@sourcegraph/cody-shared'
+import { afterEach, beforeEach } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { secretStorage } from '../services/SecretStorageProvider'
 import { syncModels } from './sync'
@@ -63,13 +64,12 @@ describe('syncModels', () => {
         // i.e. this gets the one and only chat model from the Sourcegraph instance.
         expect(setModelsSpy).not.toHaveBeenCalledWith(getDotComDefaultModels())
         expect(setModelsSpy).toHaveBeenCalledWith([
-            new Model(
-                authStatus.configOverwrites.chatModel,
-                [ModelUsage.Chat, ModelUsage.Edit],
-                getEnterpriseContextWindow(chatModel, authStatus.configOverwrites),
-                undefined,
-                [ModelTag.Enterprise]
-            ),
+            new Model({
+                model: authStatus.configOverwrites.chatModel,
+                usage: [ModelUsage.Chat, ModelUsage.Edit],
+                contextWindow: getEnterpriseContextWindow(chatModel, authStatus.configOverwrites),
+                tags: [ModelTag.Enterprise],
+            }),
         ])
     })
 })

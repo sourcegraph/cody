@@ -1,8 +1,9 @@
+import { type AuthStatus, isCodyProUser, isEnterpriseUser, isFreeUser } from '../auth/types'
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
-import type { ModelTag } from './tags'
-import { type ModelContextWindow, ModelUsage } from './types'
-import { getModelInfo, isCodyProModel } from './utils'
+import { ModelTag } from './tags'
+import { type ChatModel, type EditModel, type ModelContextWindow, ModelUsage } from './types'
+import { getModelInfo } from './utils'
 
 export type ModelId = string
 export type ApiVersionId = string
@@ -38,67 +39,71 @@ export interface ServerModel {
  * Model describes an LLM model and its capabilities.
  */
 export class Model {
+    // public default = false
     /**
-     * Whether the model is the default model for new chats and edits. The user can change their
-     * default model.
+     * The model id that includes the provider name & the model name,
+     * e.g. "anthropic/claude-3-sonnet-20240229"
+     *
+     * TODO(PRIME-282): Replace this with a `ModelRef` instance and introduce a separate
+     * "modelId" that is distinct from the "modelName". (e.g. "claude-3-sonnet" vs. "claude-3-sonnet-20240229")
      */
-    public default = false
+    public readonly model: string
+    /**
+     * The usage of the model, e.g. chat or edit.
+     */
+    public readonly usage: ModelUsage[]
+    /**
+     * The default context window of the model reserved for Chat and Context.
+     * {@see TokenCounter on how the token usage is calculated.}
+     */
+    public readonly contextWindow: ModelContextWindow
 
-    constructor(
+    /**
+     * The client-specific configuration for the model.
+     */
+    public readonly clientSideConfig?: {
         /**
-         * The model id that includes the provider name & the model name,
-         * e.g. "anthropic/claude-3-sonnet-20240229"
-         *
-         * TODO(PRIME-282): Replace this with a `ModelRef` instance and introduce a separate
-         * "modelId" that is distinct from the "modelName". (e.g. "claude-3-sonnet" vs. "claude-3-sonnet-20240229")
+         * The API key for the model
          */
-        public readonly model: string,
+        apiKey?: string
         /**
-         * The usage of the model, e.g. chat or edit.
+         * The API endpoint for the model
          */
-        public readonly usage: ModelUsage[],
-        /**
-         * The default context window of the model reserved for Chat and Context.
-         * {@see TokenCounter on how the token usage is calculated.}
-         */
-        public readonly contextWindow: ModelContextWindow = {
+        apiEndpoint?: string
+    }
+
+    // The name of the provider of the model, e.g. "Anthropic"
+    public provider: string
+    // The title of the model, e.g. "Claude 3 Sonnet"
+    public readonly title: string
+    /**
+     * The tags assigned for categorizing the model.
+     */
+    public readonly tags: ModelTag[] = []
+
+    constructor({
+        model,
+        usage,
+        contextWindow = {
             input: CHAT_INPUT_TOKEN_BUDGET,
             output: CHAT_OUTPUT_TOKEN_BUDGET,
         },
-        /**
-         * The client-specific configuration for the model.
-         */
-        public readonly config?: {
-            /**
-             * The API key for the model
-             */
-            apiKey?: string
-            /**
-             * The API endpoint for the model
-             */
-            apiEndpoint?: string
-        },
+        clientSideConfig,
+        tags = [],
+        provider,
+        title,
+    }: ModelParams) {
+        this.model = model
+        this.usage = usage
+        this.contextWindow = contextWindow
+        this.clientSideConfig = clientSideConfig
+        this.tags = tags
 
-        public readonly tier?: 'free' | 'pro' | 'enterprise',
-
-        // The name of the provider of the model, e.g. "Anthropic"
-        public provider?: string,
-        // The title of the model, e.g. "Claude 3 Sonnet"
-        public readonly title?: string,
-        /**
-         * The tags assigned for categorizing the model.
-         */
-        public readonly tags: ModelTag[] = []
-    ) {
-        if (!provider || !title) {
-            const info = getModelInfo(model)
-            this.provider = provider ?? info.provider
-            this.title = title ?? info.title
-        }
+        const info = getModelInfo(model)
+        this.provider = provider ?? info.provider
+        this.title = title ?? info.title
     }
 
-    // HACK: Constructor override allowing you to supply the title directly,
-    // so it can be different.
     static fromApi({
         modelRef,
         displayName,
@@ -106,34 +111,79 @@ export class Model {
         category,
         tier,
         clientSideConfig,
-        contextWindow = {
-            maxInputTokens: CHAT_INPUT_TOKEN_BUDGET,
-            maxOutputTokens: CHAT_OUTPUT_TOKEN_BUDGET,
-        },
+        contextWindow,
     }: ServerModel) {
         // BUG: There is data loss here and the potential for ambiguity.
         // BUG: We are assuming the modelRef is valid, but it might not be.
         const [providerId, _, modelId] = modelRef.split('::', 3)
 
-        return new Model(
-            modelId,
-            capabilities.flatMap(capabilityToUsage),
-            {
+        const categoryTag = ((): ModelTag => {
+            switch (category) {
+                case 'accuracy':
+                    return ModelTag.Accuracy
+                case 'balanced':
+                    return ModelTag.Balanced
+                case 'speed':
+                    return ModelTag.Speed
+            }
+        })()
+
+        const tierTag = ((): ModelTag => {
+            switch (tier) {
+                case 'free':
+                    return ModelTag.Free
+                case 'pro':
+                    return ModelTag.Pro
+                case 'enterprise':
+                    return ModelTag.Enterprise
+            }
+        })()
+
+        return new Model({
+            model: modelId,
+            usage: capabilities.flatMap(capabilityToUsage),
+            contextWindow: {
                 input: contextWindow.maxInputTokens,
                 output: contextWindow.maxOutputTokens,
             },
             // @ts-ignore
-            clientSideConfig,
-            category,
-            tier,
-            providerId,
-            displayName
-        )
+            clientSideConfig: clientSideConfig,
+            tags: [categoryTag, tierTag],
+            provider: providerId,
+            title: displayName,
+        })
     }
 }
 
+interface ModelParams {
+    model: string
+    usage: ModelUsage[]
+    contextWindow?: ModelContextWindow
+    clientSideConfig?: {
+        apiKey?: string
+        apiEndpoint?: string
+    }
+    tags?: ModelTag[]
+    provider?: string
+    title?: string
+}
+
 export function isNewStyleEnterpriseModel(model: Model): boolean {
-    return model.tier === 'enterprise'
+    return model.tags.includes(ModelTag.Enterprise)
+}
+
+export function getTier(model: Model): ModelTier {
+    if (model.tags.includes(ModelTag.Free)) {
+        return 'free'
+    }
+    if (model.tags.includes(ModelTag.Pro)) {
+        return 'pro'
+    }
+    if (model.tags.includes(ModelTag.Enterprise)) {
+        return 'enterprise'
+    }
+
+    return 'pro'
 }
 
 /**
@@ -169,12 +219,29 @@ export class ModelsService {
      */
     private static localModels: Model[] = []
 
+    private static defaultModels: Map<ModelUsage, Model> = new Map()
+
+    private static storage: Storage | undefined
+
+    private static storageKeys = {
+        [ModelUsage.Chat]: 'chat',
+        [ModelUsage.Edit]: 'editModel',
+    }
+
+    public static setStorage(storage: Storage): void {
+        ModelsService.storage = storage
+    }
+
     public static async onConfigChange(): Promise<void> {
         try {
             ModelsService.localModels = await fetchLocalOllamaModels()
         } catch {
             ModelsService.localModels = []
         }
+    }
+
+    private static getModelsByType(usage: ModelUsage): Model[] {
+        return ModelsService.models.filter(model => model.usage.includes(usage))
     }
 
     /**
@@ -197,24 +264,91 @@ export class ModelsService {
     }
 
     /**
-     * Get the list of the primary model, augmented with any local ones.
-     * If currentModel is provided, sets it as the default model.
+     * Gets the available models of the specified usage type, with the default model first.
+     *
+     * @param type - The usage type of the models to retrieve.
+     * @param authStatus - The authentication status of the user.
+     * @returns An array of models, with the default model first.
      */
-    public static getModels(type: ModelUsage, isCodyProUser: boolean, currentModel?: string): Model[] {
-        const availableModels = ModelsService.models.filter(m => m.usage.includes(type))
+    public static getModels(type: ModelUsage, authStatus: AuthStatus): Model[] {
+        const models = ModelsService.getModelsByType(type)
+        const currentModel = ModelsService.getDefaultModel(type, authStatus)
+        return [currentModel].concat(models.filter(m => m.model !== currentModel.model))
+    }
 
-        const currentDefault = currentModel
-            ? availableModels.find(m => m.model === currentModel)
-            : undefined
-        const canUseCurrentDefault = isCodyProModel(currentDefault) ? isCodyProUser : !!currentDefault
+    public static getDefaultModel(type: ModelUsage, authStatus: AuthStatus): Model {
+        if (!authStatus.authenticated) {
+            throw new Error('You are not authenticated')
+        }
+        const current = ModelsService.defaultModels.get(type)
+        if (current) return current
 
-        return ModelsService.models
-            .filter(m => m.usage.includes(type))
-            ?.map(model => ({
-                ...model,
-                // Set the current model as default
-                default: canUseCurrentDefault ? model.model === currentModel : model.default,
-            }))
+        const models = ModelsService.getModelsByType(type)
+
+        // Free users can only use the default model
+        if (isFreeUser(authStatus) || !ModelsService.storage) {
+            return models.find(m => ModelsService.canUserUseModel(authStatus, m)) || models[0]
+        }
+
+        // Check for the last selected model
+        const lastSelectedModelID = ModelsService.storage.get(ModelsService.storageKeys[type])
+        // TODO(jsm): Global migration should happen once in the activation
+        // const migratedModelID = migrateAndNotifyForOutdatedModels(lastSelectedModelID)
+
+        // if (migratedModelID && migratedModelID !== lastSelectedModelID) {
+        //     void setModel(migratedModelID, storageKey)
+        // }
+
+        // return either the
+        // 1. last selected model
+        // 2. first model they can use
+        // 3. first model in the list
+        return (
+            models.find(m => m.model === lastSelectedModelID) ||
+            models.find(m => ModelsService.canUserUseModel(authStatus, m)) ||
+            models[0]
+        )
+    }
+
+    public static getDefaultEditModel(authStatus: AuthStatus): EditModel {
+        return ModelsService.getDefaultModel(ModelUsage.Edit, authStatus).model
+    }
+
+    public static getDefaultChatModel(authStatus: AuthStatus): ChatModel {
+        return ModelsService.getDefaultModel(ModelUsage.Chat, authStatus).model
+    }
+
+    public static async setDefaultModel(type: ModelUsage, model: Model | string): Promise<void> {
+        model = ModelsService.resolveModel(model)
+        ModelsService.defaultModels.set(type, model)
+        // If we have persistent storage set, write it there
+        await ModelsService.storage?.set(ModelsService.storageKeys[type], model.model)
+    }
+
+    public static canUserUseModel(status: AuthStatus, model: string | Model): boolean {
+        model = ModelsService.resolveModel(model)
+        const tier = getTier(model)
+        if (isEnterpriseUser(status)) {
+            return tier === 'enterprise'
+        }
+        if (isCodyProUser(status)) {
+            return tier !== 'enterprise'
+        }
+        if (isFreeUser(status)) {
+            return tier === 'free'
+        }
+        return false
+    }
+
+    private static resolveModel(modelID: Model | string): Model {
+        if (typeof modelID !== 'string') {
+            return modelID
+        }
+        const model = ModelsService.models.find(m => m.model === modelID)
+        if (!model) {
+            throw new Error(`Unknown model: ${modelID}`)
+        }
+        return model
     }
 
     /**
@@ -243,6 +377,11 @@ export class ModelsService {
         const modelsList = ModelsService.models.map(m => m.model).join(', ')
         throw new Error(`${errorMessage} Available models: ${modelsList}`)
     }
+}
+
+interface Storage {
+    get(key: string): string | null
+    set(key: string, value: string): Promise<void>
 }
 
 export function capabilityToUsage(capability: ModelCapability): ModelUsage[] {

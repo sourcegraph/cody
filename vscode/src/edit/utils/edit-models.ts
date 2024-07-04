@@ -8,7 +8,7 @@ import {
 import type { EditIntent } from '../types'
 
 export function getEditModelsForUser(authStatus: AuthStatus): Model[] {
-    return ModelsService.getModels(ModelUsage.Edit, !authStatus.userCanUpgrade)
+    return ModelsService.getModels(ModelUsage.Edit, authStatus)
 }
 
 export function getOverridenModelForIntent(

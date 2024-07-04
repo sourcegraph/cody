@@ -1,10 +1,9 @@
 import * as vscode from 'vscode'
 
 import {
-    type AuthStatus,
     type ChatClient,
     ConfigFeaturesSingleton,
-    type Model,
+    ModelsService,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 
@@ -18,7 +17,6 @@ import { DEFAULT_EVENT_SOURCE } from '@sourcegraph/cody-shared'
 import { isUriIgnoredByContextFilterWithNotification } from '../cody-ignore/context-filter'
 import { showCodyIgnoreNotification } from '../cody-ignore/notification'
 import type { ExtensionClient } from '../extension-client'
-import { editModel } from '../models'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
 import type { AuthProvider } from '../services/AuthProvider'
 import { telemetryService } from '../services/telemetry'
@@ -27,7 +25,6 @@ import type { ExecuteEditArguments } from './execute'
 import { EditProvider } from './provider'
 import { getEditIntent } from './utils/edit-intent'
 import { getEditMode } from './utils/edit-mode'
-import { getEditModelsForUser } from './utils/edit-models'
 import { getEditLineSelection, getEditSmartSelection } from './utils/edit-selection'
 
 export interface EditManagerOptions {
@@ -45,7 +42,6 @@ export class EditManager implements vscode.Disposable {
     private readonly controller: FixupController
     private disposables: vscode.Disposable[] = []
     private editProviders = new WeakMap<FixupTask, EditProvider>()
-    private models: Model[] = []
 
     constructor(public options: EditManagerOptions) {
         this.controller = new FixupController(options.authProvider, options.extensionClient)
@@ -75,10 +71,6 @@ export class EditManager implements vscode.Disposable {
             }
         )
         this.disposables.push(this.controller, editCommand, startCommand)
-    }
-
-    public syncAuthStatus(authStatus: AuthStatus): void {
-        this.models = getEditModelsForUser(authStatus)
     }
 
     public async executeEdit(args: ExecuteEditArguments = {}): Promise<FixupTask | undefined> {
@@ -124,7 +116,9 @@ export class EditManager implements vscode.Disposable {
         // Set default edit configuration, if not provided
         // It is possible that these values may be overriden later, e.g. if the user changes them in the edit input.
         const range = getEditLineSelection(document, proposedRange)
-        const model = configuration.model || editModel.get(this.options.authProvider, this.models)
+        const model =
+            configuration.model ||
+            ModelsService.getDefaultEditModel(this.options.authProvider.getAuthStatus())
         const intent = getEditIntent(document, range, configuration.intent)
         const mode = getEditMode(intent, configuration.mode)
 

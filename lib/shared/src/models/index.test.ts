@@ -1,16 +1,11 @@
-import { beforeAll, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { Model, ModelsService } from '../models/index'
-import { DOTCOM_URL } from '../sourcegraph-api/environments'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
 import { getDotComDefaultModels } from './dotcom'
 import { ModelUsage } from './types'
 
 describe('Model Provider', () => {
     describe('getContextWindowByID', () => {
-        beforeAll(() => {
-            ModelsService.getModels(ModelUsage.Chat, false, DOTCOM_URL.toString())
-        })
-
         it('returns default token limit for unknown model', () => {
             const max = ModelsService.getContextWindowByID('unknown-model')
             expect(max).toEqual({ input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET })
@@ -36,14 +31,17 @@ describe('Model Provider', () => {
         })
 
         it('returns default token limit for unknown model - Enterprise user', () => {
-            ModelsService.getModels(ModelUsage.Chat, false, 'https://example.com')
             const cw = ModelsService.getContextWindowByID('unknown-model')
             expect(cw).toEqual({ input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET })
         })
 
         it('returns max token limit for known model - Enterprise user', () => {
             ModelsService.setModels([
-                new Model('enterprise-model', [ModelUsage.Chat], { input: 200, output: 100 }),
+                new Model({
+                    model: 'enterprise-model',
+                    usage: [ModelUsage.Chat],
+                    contextWindow: { input: 200, output: 100 },
+                }),
             ])
             const cw = ModelsService.getContextWindowByID('enterprise-model')
             expect(cw.input).toEqual(200)
@@ -51,10 +49,6 @@ describe('Model Provider', () => {
     })
 
     describe('getMaxOutputCharsByModel', () => {
-        beforeAll(() => {
-            ModelsService.getModels(ModelUsage.Chat, false, DOTCOM_URL.toString())
-        })
-
         it('returns default token limit for unknown model', () => {
             const { output } = ModelsService.getContextWindowByID('unknown-model')
             expect(output).toEqual(CHAT_OUTPUT_TOKEN_BUDGET)
@@ -67,15 +61,17 @@ describe('Model Provider', () => {
         })
 
         it('returns default token limit for unknown model - Enterprise user', () => {
-            ModelsService.getModels(ModelUsage.Chat, false, 'https://example.com')
             const { output } = ModelsService.getContextWindowByID('unknown-model')
             expect(output).toEqual(CHAT_OUTPUT_TOKEN_BUDGET)
         })
 
         it('returns max token limit for known model - Enterprise user', () => {
-            ModelsService.getModels(ModelUsage.Chat, false, 'https://example.com')
             ModelsService.setModels([
-                new Model('model-with-limit', [ModelUsage.Chat], { input: 8000, output: 2000 }),
+                new Model({
+                    model: 'model-with-limit',
+                    usage: [ModelUsage.Chat],
+                    contextWindow: { input: 8000, output: 2000 },
+                }),
             ])
             const { output } = ModelsService.getContextWindowByID('model-with-limit')
             expect(output).toEqual(2000)

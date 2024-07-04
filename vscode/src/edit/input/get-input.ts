@@ -3,6 +3,7 @@ import {
     type EditModel,
     type EventSource,
     FILE_CONTEXT_MENTION_PROVIDER,
+    ModelUsage,
     ModelsService,
     PromptString,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
@@ -17,7 +18,6 @@ import { GENERAL_HELP_LABEL, LARGE_FILE_WARNING_LABEL } from '../../chat/context
 import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 import { executeDocCommand, executeTestEditCommand } from '../../commands/execute'
 import { getEditor } from '../../editor/active-editor'
-import { editModel } from '../../models'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
 import type { AuthProvider } from '../../services/AuthProvider'
 // biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
@@ -207,7 +207,7 @@ export const getInput = async (
                     return
                 }
 
-                editModel.set(acceptedItem.model)
+                ModelsService.setDefaultModel(ModelUsage.Edit, acceptedItem.model)
                 activeModelItem = acceptedItem
                 activeModel = acceptedItem.model
                 activeModelContextWindow = getContextWindowOnModelChange(acceptedItem.model)

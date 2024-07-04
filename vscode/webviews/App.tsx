@@ -10,6 +10,7 @@ import {
     type Model,
     PromptString,
     type SerializedChatTranscript,
+    isEnterpriseUser,
 } from '@sourcegraph/cody-shared'
 import type { UserAccountInfo } from './Chat'
 
@@ -99,7 +100,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
                             isDotComUser: message.authStatus.isDotCom,
                             // Default to assuming they are a single model enterprise
-                            isOldStyleEnterprise: !message.authStatus.isDotCom,
+                            isOldStyleEnterpriseUser: isEnterpriseUser(message.authStatus),
                             user: message.authStatus,
                         })
                         setView(message.authStatus.isLoggedIn ? 'chat' : 'login')

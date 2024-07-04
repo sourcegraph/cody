@@ -5,6 +5,7 @@ import {
     type ContextItem,
     type Message,
     type ModelContextWindow,
+    ModelUsage,
     ModelsService,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
@@ -21,17 +22,18 @@ export class SimpleChatModel {
     public contextWindow: ModelContextWindow
     constructor(
         public modelID: string,
-        private messages: ChatMessage[] = [],
         public readonly sessionID: string = new Date(Date.now()).toUTCString(),
+        private messages: ChatMessage[] = [],
         private customChatTitle?: string,
         private selectedRepos?: Repo[]
     ) {
         this.contextWindow = ModelsService.getContextWindowByID(this.modelID)
     }
 
-    public updateModel(newModelID: string): void {
+    public async updateModel(newModelID: string): Promise<void> {
         this.modelID = newModelID
         this.contextWindow = ModelsService.getContextWindowByID(this.modelID)
+        await ModelsService.setDefaultModel(ModelUsage.Chat, newModelID)
     }
 
     public isEmpty(): boolean {

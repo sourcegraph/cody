@@ -14,7 +14,6 @@ const MODELS: Model[] = [
         provider: 'Ollama',
         model: 'ollama/llama-3',
         contextWindow: { input: 100, output: 100 },
-        default: false,
         usage: [ModelUsage.Chat],
         tags: [ModelTag.Ollama, ModelTag.Dev],
     },
@@ -55,6 +54,7 @@ export const FreeUser: Story = {
         userInfo: {
             isDotComUser: true,
             isCodyProUser: false,
+            isOldStyleEnterpriseUser: true,
         },
     },
 }
@@ -64,6 +64,17 @@ export const ProUser: Story = {
         userInfo: {
             isDotComUser: true,
             isCodyProUser: true,
+            isOldStyleEnterpriseUser: false,
+        },
+    },
+}
+
+export const EnterpriseUser: Story = {
+    args: {
+        userInfo: {
+            isDotComUser: false,
+            isCodyProUser: false,
+            isOldStyleEnterpriseUser: true,
         },
     },
 }

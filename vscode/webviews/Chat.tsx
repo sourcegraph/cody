@@ -195,7 +195,7 @@ export interface UserAccountInfo {
     isCodyProUser: boolean
     // When true, the user is on an enterprise instance that has not upgraded to
     // allow multiple LLM selections
-    isOldStyleEnterprise: boolean
+    isOldStyleEnterpriseUser: boolean
     user: Pick<AuthStatus, 'username' | 'displayName' | 'avatarURL'>
 }
 

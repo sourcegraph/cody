@@ -143,7 +143,7 @@ export const FIXTURE_TRANSCRIPT: Record<
 export const FIXTURE_USER_ACCOUNT_INFO: UserAccountInfo = {
     isCodyProUser: true,
     isDotComUser: true,
-    isOldStyleEnterprise: false,
+    isOldStyleEnterpriseUser: false,
     user: {
         username: 'sqs',
         displayName: 'Quinn Slack',

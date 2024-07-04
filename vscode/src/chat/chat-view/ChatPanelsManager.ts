@@ -225,8 +225,7 @@ export class ChatPanelsManager implements vscode.Disposable {
     private createProvider(): SimpleChatPanelProvider {
         const authStatus = this.options.authProvider.getAuthStatus()
         const isConsumer = authStatus.isDotCom
-        const isCodyProUser = !authStatus.userCanUpgrade
-        const models = ModelsService.getModels(ModelUsage.Chat, isCodyProUser)
+        const models = ModelsService.getModels(ModelUsage.Chat, authStatus)
 
         // Enterprise context is used for remote repositories context fetching
         // in vs cody extension it should be always off if extension is connected

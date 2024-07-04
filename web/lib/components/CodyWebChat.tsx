@@ -100,6 +100,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                     setUserAccountInfo({
                         isCodyProUser: !message.authStatus.userCanUpgrade,
                         isDotComUser: message.authStatus.isDotCom,
+                        isOldStyleEnterpriseUser: !message.authStatus.isDotCom,
                         user: message.authStatus,
                     })
                     break

@@ -233,7 +233,7 @@ const register = async (
         await localEmbeddings?.setAccessToken(config.serverEndpoint, config.accessToken)
     }, disposables)
 
-    const { chatManager, editorManager } = registerChat(
+    const { chatManager } = registerChat(
         {
             context,
             platform,
@@ -260,7 +260,6 @@ const register = async (
 
         // Chat Manager uses Simple Context Provider
         await chatManager.syncAuthStatus(authStatus)
-        editorManager.syncAuthStatus(authStatus)
 
         const parallelPromises: Promise<void>[] = []
         // feature flag provider
@@ -318,7 +317,6 @@ const register = async (
     const initAuthStatus = authProvider.getAuthStatus()
     await syncModels(initAuthStatus)
     await chatManager.syncAuthStatus(initAuthStatus)
-    editorManager.syncAuthStatus(initAuthStatus)
     await configWatcher.initAndOnChange(() => ModelsService.onConfigChange(), disposables)
     statusBar.syncAuthStatus(initAuthStatus)
     sourceControl.syncAuthStatus(initAuthStatus)

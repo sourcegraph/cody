@@ -27,7 +27,7 @@ export const ModelSelectField: React.FunctionComponent<{
     models: Model[]
     onModelSelect: (model: Model) => void
 
-    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser' | 'isOldStyleEnterprise'>
+    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser' | 'isOldStyleEnterpriseUser'>
 
     onCloseByEscape?: () => void
     className?: string
@@ -44,7 +44,7 @@ export const ModelSelectField: React.FunctionComponent<{
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
-    const selectedModel = models.find(m => m.default) ?? models[0]
+    const selectedModel = models[0]
 
     const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
     const isEnterpriseUser = !userInfo.isDotComUser
@@ -86,7 +86,7 @@ export const ModelSelectField: React.FunctionComponent<{
         [telemetryRecorder.recordEvent, showCodyProBadge, parentOnModelSelect, isCodyProUser]
     )
 
-    const readOnly = userInfo.isOldStyleEnterprise
+    const readOnly = userInfo.isOldStyleEnterpriseUser
 
     const onOpenChange = useCallback(
         (open: boolean): void => {
@@ -266,10 +266,10 @@ const ENTERPRISE_MODEL_DOCS_PAGE =
 type ModelAvailability = 'available' | 'needs-cody-pro' | 'not-selectable-on-enterprise'
 
 function modelAvailability(
-    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser' | 'isOldStyleEnterprise'>,
+    userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser' | 'isOldStyleEnterpriseUser'>,
     model: Model
 ): ModelAvailability {
-    if (!userInfo.isDotComUser && userInfo.isOldStyleEnterprise) {
+    if (!userInfo.isDotComUser && userInfo.isOldStyleEnterpriseUser) {
         return 'not-selectable-on-enterprise'
     }
     if (isCodyProModel(model) && !userInfo.isCodyProUser) {

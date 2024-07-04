@@ -2,12 +2,7 @@ import { spawn } from 'node:child_process'
 import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
-import {
-    type CodyCommand,
-    getDotComDefaultModels,
-    isWindows,
-    telemetryRecorder,
-} from '@sourcegraph/cody-shared'
+import { type CodyCommand, isWindows, telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 
@@ -43,7 +38,6 @@ import type { Har } from '@pollyjs/persister'
 import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
 import type { MessageConnection } from 'vscode-jsonrpc'
-import { ModelUsage } from '../../lib/shared/src/models/types'
 import type { CommandResult } from '../../vscode/src/CommandResult'
 import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
 import { supportedTscLanguages } from '../../vscode/src/completions/context/retrievers/tsc/supportedTscLanguages'
@@ -1079,17 +1073,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            let theModel = modelID
-                ? modelID
-                : ModelsService.getModels(
-                      ModelUsage.Chat,
-                      authStatus.isDotCom && !authStatus.userCanUpgrade
-                  ).at(0)?.model
-            if (!theModel) {
-                theModel = getDotComDefaultModels()[0].model
-            }
 
-            const chatModel = new SimpleChatModel(modelID!, [], chatID)
+            const chatModel = new SimpleChatModel(
+                modelID || ModelsService.getDefaultChatModel(authStatus),
+                chatID
+            )
             for (const message of messages) {
                 const deserializedMessage = PromptString.unsafe_deserializeChatMessage(message)
                 if (deserializedMessage.error) {
@@ -1111,10 +1099,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            const providers = ModelsService.getModels(
-                modelUsage,
-                authStatus.isDotCom && !authStatus.userCanUpgrade
-            )
+            const providers = ModelsService.getModels(modelUsage, authStatus)
             return { models: providers ?? [] }
         })
 
@@ -1129,7 +1114,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         // Return filtered (non-empty) chats by default, but if requests has fullHistory: true
                         // return the full list of chats from the storage, empty chats included
                         .filter(
-                            ([chatID, chatTranscript]) =>
+                            ([_, chatTranscript]) =>
                                 chatTranscript.interactions.length > 0 || fullHistory
                         )
                         .map(([chatID, chatTranscript]) => ({
