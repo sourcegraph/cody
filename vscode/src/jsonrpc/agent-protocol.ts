@@ -528,7 +528,11 @@ export interface ClientCapabilities {
     // AgentWebViewPanel which just delegates bidirectional postMessage over
     // the Agent protocol. If 'native', implements a larger subset of the VSCode
     // WebView API.
-    webview?: 'agentic' | 'native' | undefined | null
+    webview?:
+        | 'agentic'
+        | { type: 'native'; cspSource: string; webviewBundleServingPrefix: string }
+        | undefined
+        | null
 }
 
 export interface ServerInfo {
