@@ -1,4 +1,4 @@
-import uuid from 'uuid'
+import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 import type { Agent } from './agent'
 import * as vscode_shim from './vscode-shim'

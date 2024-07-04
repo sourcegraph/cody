@@ -326,7 +326,6 @@ export type ServerRequests = {
 
     // TODO: Add VSCode support for registerWebviewViewProvider and views.
     // TODO: Add VSCode support for registerWebviewPanelSerializer.
-    'webview/postMessage': [{ handle: string; message: string }]
 }
 
 // The JSON-RPC notifications of the Cody Agent protocol. Notifications are
