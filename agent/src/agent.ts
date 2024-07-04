@@ -58,6 +58,7 @@ import { AgentGlobalState } from './AgentGlobalState'
 import { AgentProviders } from './AgentProviders'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
+import { registerNativeWebviewHandlers } from './NativeWebview'
 import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
 import { codyPaths } from './codyPaths'
 import {
@@ -411,7 +412,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     params.extensionActivate,
                     this
                 )
-                this.registerWebviewHandlers()
+                const webviewCapabilities = clientInfo.capabilities?.webview
+                if (webviewCapabilities instanceof Object && webviewCapabilities.type === 'native') {
+                    registerNativeWebviewHandlers(this, webviewCapabilities)
+                } else {
+                    this.registerWebviewHandlers()
+                }
 
                 this.authenticationPromise = clientInfo.extensionConfiguration
                     ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
