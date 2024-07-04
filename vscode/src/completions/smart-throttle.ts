@@ -59,6 +59,7 @@ export class SmartThrottleService implements vscode.Disposable {
             // Case 2: If this is a start-of-word request, cancel any previous start-of-word requests
             //         and immediately continue with the execution.
             if (this.isNewStartOfWordRequest(request)) {
+                console.log('UMPOX: NEW START OF WORD REQUEST', request.docContext.currentLinePrefix)
                 this.startOfWordRequest?.abort()
                 this.startOfWordRequest = throttledRequest
                 this.startOfWordLocation = {
@@ -113,12 +114,16 @@ export class SmartThrottleService implements vscode.Disposable {
     }
 
     private isNewStartOfWordRequest(request: RequestParams): boolean {
+        // We must translate the position to be the previous character, as the position is now
+        // after the character that was typed.
+        const translatedPosition = request.position.translate(0, -1)
+
         const isDifferentUri =
             request.document.uri.toString() !== this.startOfLineLocation?.uri.toString()
         const isDifferentPosition =
-            !this.startOfWordLocation || !request.position.isEqual(this.startOfWordLocation.position)
-        const wordRange = request.document.getWordRangeAtPosition(request.position)
-        const isStartOfWord = wordRange ? wordRange.start.isEqual(request.position) : false
+            !this.startOfWordLocation || !translatedPosition.isEqual(this.startOfWordLocation.position)
+        const wordRange = request.document.getWordRangeAtPosition(translatedPosition)
+        const isStartOfWord = wordRange ? wordRange.start.isEqual(translatedPosition) : false
         return isStartOfWord && (isDifferentUri || isDifferentPosition)
     }
 

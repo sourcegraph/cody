@@ -108,6 +108,8 @@ export class RequestManager {
 
         const request = new InflightRequest(requestParams, abortController)
         this.inflightRequests.add(request)
+        console.log('UMPOX: NEW REQUEST:', request.params.docContext.currentLinePrefix)
+        console.log('UMPOX: IN FLIGHT REQUESTS:', this.inflightRequests.size)
 
         const generateCompletions = async (): Promise<void> => {
             try {
