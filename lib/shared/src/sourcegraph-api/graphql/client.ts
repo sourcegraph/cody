@@ -1267,7 +1267,7 @@ export class ClientConfigSingleton {
         })
     }
 
-    public getConfigFeatures(): Promise<CodyConfigFeatures> {
+    public getConfig(): Promise<CodyConfigFeatures> {
         return this.configFeatures
     }
 

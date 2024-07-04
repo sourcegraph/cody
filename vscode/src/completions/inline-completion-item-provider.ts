@@ -185,7 +185,7 @@ export class InlineCompletionItemProvider
 
         // Warm caches for the config feature configuration to avoid the first completion call
         // having to block on this.
-        void ClientConfigSingleton.getInstance().getConfigFeatures()
+        void ClientConfigSingleton.getInstance().getConfig()
     }
 
     /** Set the tracer (or unset it with `null`). */
@@ -227,7 +227,7 @@ export class InlineCompletionItemProvider
             }
             this.lastCompletionRequest = completionRequest
 
-            const configFeatures = await ClientConfigSingleton.getInstance().getConfigFeatures()
+            const configFeatures = await ClientConfigSingleton.getInstance().getConfig()
 
             if (!configFeatures.autoComplete) {
                 // If ConfigFeatures exists and autocomplete is disabled then raise
