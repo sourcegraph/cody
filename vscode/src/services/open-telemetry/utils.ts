@@ -4,7 +4,7 @@ import * as vscode from 'vscode'
 import { getConfiguration } from '../../configuration'
 import type { ExtensionApi } from '../../extension-api'
 // biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { getExtensionDetails } from '../telemetry'
+import { getExtensionDetails } from '../telemetry-v2'
 
 // Ensure to ad exposed experiments at the very end to make sure we include experiments that the
 // user is being exposed to while the span was generated
