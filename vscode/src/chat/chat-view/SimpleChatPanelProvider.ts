@@ -1220,15 +1220,11 @@ export class SimpleChatPanelProvider
             })),
         })
 
-        const privateContextStats = {
+        return {
             included: getContextStats(context.used),
             excluded: getContextStats(context.ignored),
             gitMetadata: await this.getRepoMetadataIfPublic(),
         }
-
-        logDebug('jan1', `${isDotCom} ${isPublic}`)
-        logDebug('jan_context_stats', JSON.stringify(privateContextStats))
-        return privateContextStats
     }
 
     private streamAssistantResponse(
