@@ -203,7 +203,7 @@ export const MentionComponent: FunctionComponent<{
             <TooltipTrigger asChild>
                 <span ref={ref} className={composedClassNames}>
                     {Icon && <Icon size={14} strokeWidth={2} className={iconClassName} />}
-                    {text}
+                    <span>{text}</span>
                 </span>
             </TooltipTrigger>
             {tooltip && <TooltipContent>{tooltip}</TooltipContent>}

@@ -14,6 +14,7 @@ sealed class ExtensionMessage {
       JsonDeserializer { element: JsonElement, _: Type, context: JsonDeserializationContext ->
         when (element.getAsJsonObject().get("type").getAsString()) {
           "config" -> context.deserialize<ConfigExtensionMessage>(element, ConfigExtensionMessage::class.java)
+          "ui/theme" -> context.deserialize<Ui_themeExtensionMessage>(element, Ui_themeExtensionMessage::class.java)
           "history" -> context.deserialize<HistoryExtensionMessage>(element, HistoryExtensionMessage::class.java)
           "transcript" -> context.deserialize<TranscriptExtensionMessage>(element, TranscriptExtensionMessage::class.java)
           "view" -> context.deserialize<ViewExtensionMessage>(element, ViewExtensionMessage::class.java)
@@ -43,6 +44,17 @@ data class ConfigExtensionMessage(
 
   enum class TypeEnum {
     @SerializedName("config") Config,
+  }
+}
+
+data class Ui_themeExtensionMessage(
+  val type: TypeEnum, // Oneof: ui/theme
+  val agentIDE: CodyIDE, // Oneof: VSCode, JetBrains, Neovim, Emacs, Web
+  val cssVariables: CodyIDECssVariables,
+) : ExtensionMessage() {
+
+  enum class TypeEnum {
+    @SerializedName("ui/theme") Ui_theme,
   }
 }
 
