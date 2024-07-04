@@ -77,6 +77,30 @@ export class FixupCodeAction implements vscode.CodeActionProvider {
         return action
     }
 
+    public async createExecuteEditArguments(
+        document: vscode.TextDocument,
+        diagnostics: vscode.Diagnostic[],
+        range: vscode.Range
+    ): Promise<ExecuteEditArguments> {
+        const instruction = await this.getCodeActionInstruction(
+            document.uri,
+            PromptString.fromDocumentText(document, range),
+            diagnostics
+        )
+        const source = 'code-action:fix'
+        let args = {
+            configuration: { instruction, range, intent: 'fix', document },
+            source,
+            telemetryMetadata: {
+                diagnostics: diagnostics.map(diagnostic => ({
+                    code: getDiagnosticCode(diagnostic.code),
+                    source: diagnostic.source,
+                })),
+            },
+        } satisfies ExecuteEditArguments
+        return args
+    }
+
     // Public for testing
     public async getCodeActionInstruction(
         uri: vscode.Uri,

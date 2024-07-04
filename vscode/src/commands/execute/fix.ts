@@ -1,10 +1,9 @@
 import * as vscode from 'vscode'
 
-import { PromptString, logDebug, ps } from '@sourcegraph/cody-shared'
+import { logDebug } from '@sourcegraph/cody-shared'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
-import { defaultCommands } from '.'
 import type { EditCommandResult } from '../../CommandResult'
-import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
+import { executeEdit } from '../../edit/execute'
 import { getEditor } from '../../editor/active-editor'
 import type { CodyCommandArgs } from '../types'
 
@@ -15,6 +14,7 @@ import {
     getEditSmartSelection,
 } from '../../edit/utils/edit-selection'
 import { execQueryWrapper } from '../../tree-sitter/query-sdk'
+import { FixupCodeAction } from '../../code-actions/fixup'
 
 /**
  * Gets the default range and insertion point for documenting the code around the current cursor position.
@@ -130,13 +130,7 @@ export async function executeFixCommand(
         span.setAttribute('sampled', true)
         logDebug('executeFixCommand', 'executing', { verbose: args })
 
-        //FIXME this code has been copied from doc.ts, and this command actually does "doc" instead of "fix".
-        //TODO how do I build a dynamic prompt like in fixup.ts?
-        let prompt = PromptString.fromDefaultCommands(defaultCommands, 'doc')
-        if (args?.additionalInstruction) {
-            span.addEvent('additionalInstruction')
-            prompt = ps`${prompt} ${args.additionalInstruction}`
-        }
+        //TODO collect diagnostics from IntelliJ and pass them here
 
         const editor = args?.uri ? await vscode.window.showTextDocument(args.uri) : getEditor()?.active
         const document = editor?.document
@@ -149,7 +143,16 @@ export async function executeFixCommand(
             editor.selection = new vscode.Selection(args.range.start, args.range.end)
         }
 
-        const { range, insertionPoint } = await getDocumentableRange(editor)
+        const { range } = await getDocumentableRange(editor)
+
+        if (!range) {
+            return undefined
+        }
+
+        let foo = new FixupCodeAction()
+        let bar = foo.createExecuteEditArguments(
+            document, [], range
+        )
 
         const selectionText = document?.getText(range)
         if (!selectionText?.trim()) {
@@ -167,16 +170,7 @@ export async function executeFixCommand(
 
         return {
             type: 'edit',
-            task: await executeEdit({
-                configuration: {
-                    instruction: prompt,
-                    intent: 'doc',
-                    mode: 'insert',
-                    range,
-                    insertionPoint,
-                },
-                source: args?.source,
-            } satisfies ExecuteEditArguments),
+            task: await executeEdit(await bar),
         }
     })
 }
