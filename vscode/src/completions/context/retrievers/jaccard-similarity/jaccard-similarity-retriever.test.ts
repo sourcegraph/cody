@@ -115,7 +115,7 @@ describe('JaccardSimilarityRetriever', () => {
 
     it('should pick multiple matches from the same file', async () => {
         // We limit the window size to 4 lines
-        const retriever = new JaccardSimilarityRetriever(4)
+        const retriever = new JaccardSimilarityRetriever({ snippetWindowSize: 4 })
 
         const snippets = await retriever.retrieve({
             document: testDocument,
@@ -144,7 +144,7 @@ describe('JaccardSimilarityRetriever', () => {
 
     it('should include matches from the same file that do not overlap the prefix/suffix', async () => {
         // We limit the window size to 3 lines
-        const retriever = new JaccardSimilarityRetriever(3)
+        const retriever = new JaccardSimilarityRetriever({ snippetWindowSize: 3 })
 
         const { document: testDocument, position: testPosition } = documentAndPosition(
             dedent`

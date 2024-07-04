@@ -1115,6 +1115,7 @@
             null,
             "anthropic",
             "fireworks",
+            "unstable-gemini",
             "unstable-openai",
             "experimental-ollama",
             "experimental-openaicompatible"
@@ -1242,6 +1243,11 @@
               }
             }
           }
+        },
+        "cody.autocomplete.experimental.smartThrottle": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Changes the debounce time for autocomplete requests based on the amount of time since the last request."
         },
         "openctx.enable": {
           "type": "boolean",

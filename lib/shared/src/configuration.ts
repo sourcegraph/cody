@@ -43,6 +43,7 @@ export interface Configuration {
     autocompleteAdvancedProvider:
         | 'anthropic'
         | 'fireworks'
+        | 'unstable-gemini'
         | 'unstable-openai'
         | 'experimental-openaicompatible'
         | 'experimental-ollama'
@@ -75,6 +76,7 @@ export interface Configuration {
     autocompleteExperimentalOllamaOptions: OllamaOptions
     autocompleteExperimentalFireworksOptions?: FireworksOptions
     autocompleteExperimentalMultiModelCompletions?: MultimodelSingleModelConfig[]
+    autocompleteExperimentalSmartThrottle?: boolean
 
     /**
      * Hidden settings

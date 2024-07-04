@@ -9,7 +9,7 @@ const CONTEXT_PREAMBLE = ps`You have access to the provided codebase context. `
 /**
  * The preamble for preventing known models from hedging.
  */
-const HEDGES_PREVENTION = ps`Provide a high-level overview answer positively without apologizing. `
+const HEDGES_PREVENTION = ps`Answer positively without apologizing. `
 
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.
