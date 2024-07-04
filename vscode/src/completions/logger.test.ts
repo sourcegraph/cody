@@ -1,7 +1,6 @@
 import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
-import { telemetryService } from '../services/telemetry'
 import { range } from '../testutils/textDocument'
 
 import type { ContextSummary } from './context/context-mixer'
@@ -48,7 +47,6 @@ describe('logger', () => {
     let recordSpy: MockInstance
     beforeEach(async () => {
         await initCompletionProviderConfig({})
-        logSpy = vi.spyOn(telemetryService, 'log')
         recordSpy = vi.spyOn(telemetryRecorder, 'recordEvent')
     })
     afterEach(() => {

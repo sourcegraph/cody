@@ -15,12 +15,10 @@ done.
 ## Telemetry
 
 To improve Cody, we record some events as people use Cody.
-All Telemetry should be recorded using our new framework, referred to as "V2 Telemetry" - legacy "event-logging" mechanisms ("V1 Telemetry") should no longer be used.
 
 ### Principles
 
 - Add enough Telemetry events for us to understand how Cody is used.
-- Legacy telemetry does NOT need to be recorded anymore - record Telemetry events in the "new" system only.
 - Event naming:
   - Name your event "feature" parameter `cody.<feature>`. Do not include the client name in the event feature.
   - Use the "action" parameter to indicate a verb corresponding to an event. Do not include event verbs in the "feature" parameter.
@@ -36,7 +34,7 @@ All Telemetry should be recorded using our new framework, referred to as "V2 Tel
 
 ### Rationale
 
-Events will eventually be migrated to [Sourcegraph's new telemetry events framework](https://sourcegraph.com/docs/dev/background-information/telemetry). Events primarily comprise of:
+All Cody events use [Sourcegraph's new telemetry events framework](https://sourcegraph.com/docs/dev/background-information/telemetry). Events primarily comprise of:
 
 1. `feature`, a string denoting the feature that the event is associated with.
    1. **All events must use a `feature` that starts with `cody.`**, for example `cody.myFeature`
@@ -46,19 +44,9 @@ Events will eventually be migrated to [Sourcegraph's new telemetry events framew
 
 Extensive additional context is added by the extension itself (e.g. extension name and version) and the Sourcegraph backend (e.g. feature flags and actor information), so the event should only provide metadata about the specific action. Learn more in [events lifecycle](https://sourcegraph.com/docs/dev/background-information/telemetry#event-lifecycle).
 
-For now, all events in VSCode should be updated to use both the legacy event clients and the new clients, for example:
-
 ```ts
 // New events client
 import { telemetryRecorder } from "@sourcegraph/cody-shared";
-
-// Legacy instrumentation
-// telemetryService.log(
-//   "CodyVSCodeExtension:fixup:applied",
-//   { ...codeCount, source },
-//   // Indicate the legacy instrumentation has a coexisting v2 instrumentation
-//   { hasV2Event: true }
-// );
 
 // Equivalent in the new instrumentatiom
 telemetryRecorder.recordEvent("cody.fixup.apply", "succeeded", {
@@ -87,10 +75,7 @@ telemetryRecorder.recordEvent("cody.fixup.apply", "succeeded", {
 });
 ```
 
-When events are recorded to both systems:
-
-1. `telemetryService` will _only_ send the event directly to dotcom's `event_logs`.
-2. `telemetryRecorder` will make sure the connected instance receives the event in the new framework, if the instance is 5.2.0 or later, or translated to the legacy `event_logs` format, if the instance is older.
+When events are recorded, `telemetryRecorder` will make sure the connected instance receives the event in the new framework, if the instance is 5.2.0 or later, or translated to the legacy `event_logs` format, if the instance is older.
    1. In instances 5.2.1 or later, the event will [also be exported from the instance](https://sourcegraph.com/docs/dev/background-information/telemetry/architecture).
 
 Allowed values for various fields are declared and tracked in [`lib/shared/src/telemetry-v2`](../lib/shared/src/telemetry-v2).

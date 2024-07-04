@@ -29,7 +29,6 @@ import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import {
     TelemetryRecorderContext,
     createWebviewTelemetryRecorder,
-    createWebviewTelemetryService,
 } from './utils/telemetry'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
@@ -185,8 +184,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [vscodeAPI]
     )
 
-    // Deprecated V1 telemetry
-    const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
@@ -238,7 +235,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 <TelemetryRecorderContext.Provider value={telemetryRecorder}>
                     <LoginSimplified
                         simplifiedLoginRedirect={loginRedirect}
-                        telemetryService={telemetryService}
                         uiKindIsWeb={config?.uiKindIsWeb}
                         vscodeAPI={vscodeAPI}
                     />
@@ -269,7 +265,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                     messageInProgress={messageInProgress}
                                     transcript={transcript}
                                     vscodeAPI={vscodeAPI}
-                                    telemetryService={telemetryService}
                                     isTranscriptError={isTranscriptError}
                                     guardrails={attributionEnabled ? guardrails : undefined}
                                 />

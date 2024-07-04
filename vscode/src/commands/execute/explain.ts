@@ -12,7 +12,6 @@ import * as vscode from 'vscode'
 import { defaultCommands, selectedCodePromptWithExtraFiles } from '.'
 import type { ChatCommandResult } from '../../CommandResult'
 // biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from '../../services/telemetry'
 import { getContextFileFromCurrentFile } from '../context/current-file'
 import { getContextFileFromCursor } from '../context/selection'
 import type { CodyCommandArgs } from '../types'
@@ -78,12 +77,6 @@ export async function executeExplainCommand(
             return
         }
 
-        telemetryService.log('CodyVSCodeExtension:command:explain:executed', {
-            useCodebaseContex: false,
-            requestID: args?.requestID,
-            source: args?.source,
-            traceId: span.spanContext().traceId,
-        })
         telemetryRecorder.recordEvent('cody.command.explain', 'executed', {
             metadata: {
                 useCodebaseContex: 0,

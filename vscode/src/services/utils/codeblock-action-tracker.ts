@@ -2,8 +2,6 @@ import * as vscode from 'vscode'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from '../telemetry'
 
 import { countCode, matchCodeSnippets } from './code-count'
 
@@ -51,7 +49,6 @@ function setLastStoredCode(
     const op = eventName.includes('copy') ? 'copy' : eventName.startsWith('insert') ? 'insert' : 'save'
     const args = { op, charCount, lineCount, source, requestID }
 
-    telemetryService.log(`CodyVSCodeExtension:${eventName}:clicked`, { args }, { hasV2Event: true })
     telemetryRecorder.recordEvent(`cody.${eventName}`, 'clicked', {
         metadata: {
             lineCount,
@@ -135,20 +132,6 @@ export async function onTextDocumentChange(newCode: string): Promise<void> {
     if (matchCodeSnippets(code, lastClipboardText) && matchCodeSnippets(code, newCode)) {
         const op = 'paste'
         const eventType = 'keyDown'
-        // e.g.'CodyVSCodeExtension:keyDown:Paste:clicked'
-        telemetryService.log(
-            `CodyVSCodeExtension:${eventType}:Paste:clicked`,
-            {
-                op,
-                lineCount,
-                charCount,
-                source,
-                requestID,
-            },
-            {
-                hasV2Event: true,
-            }
-        )
 
         telemetryRecorder.recordEvent(`cody.${eventType}`, 'paste', {
             metadata: {

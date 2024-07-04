@@ -12,9 +12,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
-import { getConfiguration } from '../configuration'
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
-import { getExtensionDetails, logPrefix, telemetryService } from '../services/telemetry'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
@@ -370,15 +368,6 @@ function writeCompletionEvent<SubFeature extends string, Action extends string, 
     params?: TelemetryEventParameters<{ [key: string]: number }, BillingProduct, BillingCategory>,
     legacyParams?: LegacyParams
 ): void {
-    const extDetails = getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration()))
-    telemetryService.log(
-        `${logPrefix(extDetails.ide)}:completion:${subfeature ? `${subfeature}:` : ''}${action}`,
-        legacyParams,
-        {
-            agent: true,
-            hasV2Event: true, // this helper translates the event for us
-        }
-    )
     /**
      * Extract interaction ID from the full legacy params for convenience
      */

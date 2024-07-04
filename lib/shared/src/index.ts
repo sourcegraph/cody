@@ -241,10 +241,6 @@ export type {
 } from './sourcegraph-api/graphql/client'
 export { RestClient } from './sourcegraph-api/rest/client'
 export { GraphQLTelemetryExporter } from './sourcegraph-api/telemetry/GraphQLTelemetryExporter'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-export { NOOP_TELEMETRY_SERVICE } from './telemetry'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-export type { TelemetryEventProperties, TelemetryService } from './telemetry'
 export { type BillingCategory, type BillingProduct } from './telemetry-v2'
 export {
     MockServerTelemetryRecorderProvider,
@@ -254,8 +250,6 @@ export {
 } from './telemetry-v2/TelemetryRecorderProvider'
 export type { TelemetryRecorder } from './telemetry-v2/TelemetryRecorderProvider'
 export * from './telemetry-v2/singleton'
-export { EventLogger } from './telemetry/EventLogger'
-export type { ExtensionDetails } from './telemetry/EventLogger'
 export { testFileUri } from './test/path-helpers'
 export * from './tracing'
 export {
