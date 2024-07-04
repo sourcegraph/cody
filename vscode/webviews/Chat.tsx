@@ -48,13 +48,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const feedbackButtonsOnSubmit = useCallback(
         (text: string) => {
-            const eventData = {
-                value: text,
-                lastChatUsedEmbeddings: Boolean(
-                    transcript.at(-1)?.contextFiles?.some(file => file.source === 'embeddings')
-                ),
-            }
-
             enum FeedbackType {
                 thumbsUp = 1,
                 thumbsDown = 0,

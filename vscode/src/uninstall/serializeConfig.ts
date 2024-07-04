@@ -4,8 +4,9 @@ import * as path from 'node:path'
 import type {
     AuthStatus,
     ConfigurationWithAccessToken,
-    ExtensionDetails,
 } from '@sourcegraph/cody-shared'
+
+import { ExtensionDetails } from '../services/telemetry-v2'
 import { Platform, getOSArch } from '../os'
 
 const CONFIG_FILE = 'config.json'

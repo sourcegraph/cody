@@ -24,7 +24,6 @@ export function logFirstEnrollmentEvent(key: FeatureFlag, isEnabled: boolean): b
 
     // Log the enrollment event
     const args = { variant: isEnabled ? 'treatment' : 'control' }
-    const hasV2Event = { hasV2Event: true }
     telemetryRecorder.recordEvent(`cody.experiment.${eventName}`, 'enrolled', {
         privateMetadata: args,
     })

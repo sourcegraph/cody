@@ -47,7 +47,6 @@ function setLastStoredCode(
 
     // Currently supported events are: copy, insert, save
     const op = eventName.includes('copy') ? 'copy' : eventName.startsWith('insert') ? 'insert' : 'save'
-    const args = { op, charCount, lineCount, source, requestID }
 
     telemetryRecorder.recordEvent(`cody.${eventName}`, 'clicked', {
         metadata: {
