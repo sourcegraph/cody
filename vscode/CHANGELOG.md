@@ -22,6 +22,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Autocomplete: Added a caching layer to Jaccard Similarity to reduce the load of context gathering during autocompletion. [pull/4608](https://github.com/sourcegraph/cody/pull/4608)
 - Chat: Simplify the Enterprise docs in the model selector [pull/4745](https://github.com/sourcegraph/cody/pull/4745)
 - Autocomplete: Increase request manager cache size. [pull/4778](https://github.com/sourcegraph/cody/pull/4778)
+- Edit: We now collapse the selection down to the cursor position after an edit is triggered. [pull/4781](https://github.com/sourcegraph/cody/pull/4781)
 
 ## 1.24.1
 
