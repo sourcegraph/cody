@@ -73,38 +73,6 @@ describe('logger', () => {
         CompletionLogger.suggested(id)
         CompletionLogger.accepted(id, document, item, range(0, 0, 0, 0), false)
 
-        const shared = {
-            id: expect.any(String),
-            languageId: 'typescript',
-            testFile: false,
-            source: 'Network',
-            triggerKind: 'Automatic',
-            multiline: false,
-            multilineMode: null,
-            otherCompletionProviderEnabled: false,
-            otherCompletionProviders: [],
-            providerIdentifier: 'bfl',
-            providerModel: 'blazing-fast-llm',
-            resolvedModel: 'blazing-fast-llm-resolved',
-            medianUpstreamLatency: undefined,
-            contextSummary: {
-                retrieverStats: {},
-                strategy: 'none',
-                totalChars: 3,
-                duration: 0.1337,
-            },
-            items: [
-                {
-                    charCount: 3,
-                    lineCount: 1,
-                    lineTruncatedCount: undefined,
-                    nodeTypes: undefined,
-                    parseErrorCount: undefined,
-                    truncatedWith: undefined,
-                },
-            ],
-        }
-
         expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'suggested', {
             version: 0,
             interactionID: expect.any(String),
