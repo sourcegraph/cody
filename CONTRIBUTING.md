@@ -117,28 +117,33 @@ After doing that:
 
 ## Publishing a New Release
 
+### Historical context
+We used to publish both stable and nightly channel versions at once. 
+In that approach QA testing and JB approval happened in parallel. 
+However, it consumed a lot of CI time and JB time for the releases that did not pass our QA 
+(and did not go public eventually). Hence, we decided to use a sequential process.
+We trigger the stable channel release only after the nightly channel release passes QA.
+
 ```mermaid
 graph TD;
-    Title["JetBrains plugin release"] --> stable;
-    Title --> nightly;
-    stable --> push_stable["push git tag"];
-    push_stable --> release_job_stable["wait for release job to complete"];
-    release_job_stable --> marketplace_approval["wait for marketplace approval"];
-    marketplace_approval -->|Automated approval, up to 48hr| unhide["unhide"];
-    unhide --> available_to_end_users_stable["available for download"];
-    marketplace_approval -->|Manual quick-approve| slack_approval["request JetBrains Marketplace team to manually approve update via Slack"];
-    slack_approval --> unhide["unhide approved release (requires admin access)"];
-    nightly --> push_nightly["push git tag\nwith '-nightly' suffix"];
-    push_nightly --> release_job_nightly["wait for release job to complete"];
-    release_job_nightly --> available_to_end_users_nightly["available for download"];
+    Title --> nightly["Nightly Release"];
+    Title["JetBrains Plugin Release"] --> stable["Stable Release"];
+    stable -->  trigger_stable["Manually trigger 'Stable Release' workflow\nin GitHub Actions"];
+    release_stable --> marketplace_approval["Wait for JetBrains approval"];
+    marketplace_approval --> |Automated approval, up to 48hr| unhide["unhide"];
+    unhide --> available_to_end_users_stable["Available for download"];
+    marketplace_approval --> |Manual quick-approve| slack_approval["Request JetBrains Marketplace team\nto manually approve it via Slack"];
+    slack_approval --> unhide["Unhide the approved release\n(requires admin access)"];
+    nightly --> push_nightly["Run `push-git-tag-for-next-release.sh`"];
+    trigger_stable --> release_stable["Wait for 'Stable Release' workflow to complete"];
+    push_nightly --> release_nightly["Wait for 'Nightly Release' workflow to complete"];
+    release_nightly --> available_to_end_users_nightly["Available for download"];
 ```
 
 We aim to cut a new Stable release every other week on Mondays.
 The release cadence is irregular for Nightly versions.
 
-### 1. Push a Git Tag
-
-First, choose whether to publish a new version of nightly or stable.
+### 1. Push a git tag & publish a nightly release
 
 Use the following command for a **patch** release:
 
@@ -162,11 +167,14 @@ Or this one for a **major** release
 This script runs `verify-release.sh`, which takes a long time to run with a clean cache, which is why we don't run it in
 CI. When you have a local cache of IDEA installations then this script can run decently fast (~1-2min).
 
-After successfully pushing the new tag (for example: `v5.2.4819` or `v5.2.4249-nightly`), we are now able to publish.
+After successfully pushing the new tag (for example: `v6.0.15`), we are now able to publish.
 
 Wait for the `Release to Marketplace` GitHub workflow to complete.
 
-### 2. For Stable releases, wait for Marketplace approval
+### 2. Publish a stable release 
+
+Go to [Stable Release workflow](https://github.com/sourcegraph/jetbrains/actions/workflows/stable-release.yml),
+click `Run workflow` and select the tag that has been pushed before (and tested by QA team), run it.
 
 It can take up to 48hr for stable releases to get approved by the JetBrains Marketplace team.
 It's possible to expedite this process by posting a message in the `#marketplace` channel in

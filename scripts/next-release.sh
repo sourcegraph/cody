@@ -1,10 +1,4 @@
 #!/usr/bin/env bash
-# This script implements the time-based version scheme from RFC 795
-# Simplified: versions should be MAJOR.MINOR.PATCH where
-# - MAJOR.MINOR: Latest Sourcegraph quarterly release
-# - PATCH: time-based number from simplified formula (MINUTES_SINCE_LAST_RELEASE / MINUTES_IN_ONE_YEAR * 65535)
-# The scheme gives generates a unique version number every 10 minutes.
-# https://docs.google.com/document/d/11cw-7dAp93JmasITNSNCtx31xrQsNB1L2OoxVE6zrTc/edit#bookmark=id.ufwe0bqp83z1
 set -eu
 
 # Check the number of arguments
