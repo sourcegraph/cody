@@ -1,6 +1,3 @@
-import type { Model } from '.'
-import { ModelTag } from './tags'
-
 export function getProviderName(name: string): string {
     const providerName = name.toLowerCase()
     switch (providerName) {
@@ -28,8 +25,4 @@ export function getModelInfo(modelID: string): {
     const provider = getProviderName(providerID)
     const title = (rest.at(-1) || '').replace(/-/g, ' ')
     return { provider, title }
-}
-
-export function isCodyProModel(model?: Model): boolean {
-    return Boolean(model?.tags.includes(ModelTag.Pro))
 }

@@ -1,5 +1,4 @@
-import { type Model, ModelTag } from '@sourcegraph/cody-shared'
-import { isCodyProModel } from '@sourcegraph/cody-shared/src/models/utils'
+import { Model, ModelTag } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import { BookOpenIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
@@ -54,7 +53,7 @@ export const ModelSelectField: React.FunctionComponent<{
         (model: Model): void => {
             telemetryRecorder.recordEvent('cody.modelSelector', 'select', {
                 metadata: {
-                    modelIsCodyProOnly: model ? 1 : 0,
+                    modelIsCodyProOnly: Model.isCodyPro(model) ? 1 : 0,
                     isCodyProUser: isCodyProUser ? 1 : 0,
                 },
                 privateMetadata: {
@@ -64,7 +63,7 @@ export const ModelSelectField: React.FunctionComponent<{
                 },
             })
 
-            if (showCodyProBadge && isCodyProModel(model)) {
+            if (showCodyProBadge && Model.isCodyPro(model)) {
                 getVSCodeAPI().postMessage({
                     command: 'links',
                     value: 'https://sourcegraph.com/cody/subscription',
@@ -272,7 +271,7 @@ function modelAvailability(
     if (!userInfo.isDotComUser && userInfo.isOldStyleEnterpriseUser) {
         return 'not-selectable-on-enterprise'
     }
-    if (isCodyProModel(model) && !userInfo.isCodyProUser) {
+    if (Model.isCodyPro(model) && !userInfo.isCodyProUser) {
         return 'needs-cody-pro'
     }
     return 'available'

@@ -39,7 +39,6 @@ export interface ServerModel {
  * Model describes an LLM model and its capabilities.
  */
 export class Model {
-    // public default = false
     /**
      * The model id that includes the provider name & the model name,
      * e.g. "anthropic/claude-3-sonnet-20240229"
@@ -171,6 +170,10 @@ export class Model {
 
         return 'pro'
     }
+
+    static isCodyPro(model?: Model): boolean {
+        return Boolean(model?.tags.includes(ModelTag.Pro))
+    }
 }
 
 interface ModelParams {
@@ -290,7 +293,7 @@ export class ModelsService {
 
         // Free users can only use the default model
         if (isFreeUser(authStatus) || !ModelsService.storage) {
-            return models.find(m => ModelsService.canUserUseModel(authStatus, m)) || models[0]
+            return models.find(m => ModelsService.canUserUseModel(authStatus, m))
         }
 
         // Check for the last selected model
@@ -302,14 +305,10 @@ export class ModelsService {
         //     void setModel(migratedModelID, storageKey)
         // }
 
-        // return either the
-        // 1. last selected model
-        // 2. first model they can use
-        // 3. first model in the list
+        // return either the last selected model or first model they can use if any
         return (
             models.find(m => m.model === lastSelectedModelID) ||
-            models.find(m => ModelsService.canUserUseModel(authStatus, m)) ||
-            models[0]
+            models.find(m => ModelsService.canUserUseModel(authStatus, m))
         )
     }
 

@@ -27,7 +27,7 @@ export class RestClient {
 
     // Make an authenticated HTTP request to the Sourcegraph instance.
     // "name" is a developer-friendly term to label the request's trace span.
-    public getRequest<T>(name: string, urlSuffix: string): Promise<T | Error> {
+    private getRequest<T>(name: string, urlSuffix: string): Promise<T | Error> {
         const headers = new Headers()
         headers.set('Authorization', `token ${this.accessToken}`)
         addCustomUserAgent(headers)
@@ -62,8 +62,12 @@ export class RestClient {
         //
         // NOTE: This API endpoint hasn't shippeted yet, and probably won't work for you.
         // Also, the URL definitely will change.
-        // const serverSideConfig = await this.getRequest<any>('getAvailableModels', '/.api/supported-llms')
-        const serverSideConfig = testModels
+        let serverSideConfig: any
+        try {
+            serverSideConfig = await this.getRequest<any>('getAvailableModels', '/.api/supported-llms')
+        } catch {
+            serverSideConfig = testModels
+        }
 
         // TODO(PRIME-323): Do a proper review of the data model we will use to describe
         // server-side configuration. Once complete, it should match the data types we
