@@ -414,7 +414,11 @@ export class FixupController
         )
 
         // Return focus to the editor
-        void vscode.window.showTextDocument(document)
+        const editor = await vscode.window.showTextDocument(document)
+
+        // Collapse selection to cursor position
+        const cursor = editor.selection.active
+        editor.selection = new vscode.Selection(cursor, cursor)
 
         return task
     }
