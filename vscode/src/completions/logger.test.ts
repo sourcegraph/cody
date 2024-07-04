@@ -193,5 +193,5 @@ describe('logger', () => {
 
         CompletionLogger.partiallyAccept(id, item, 5, false)
         CompletionLogger.partiallyAccept(id, item, 8, false)
-\    })
+    })
 })
