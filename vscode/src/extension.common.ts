@@ -34,6 +34,8 @@ type Constructor<T extends new (...args: any) => any> = T extends new (
     : never
 
 export interface PlatformContext {
+    // TODO [VK] expose controller types from @openctx/vscode-lib
+    createOpenCtxController?: (...args: any[]) => any
     createStorage?: () => Promise<vscode.Memento>
     createCommandsProvider?: Constructor<typeof CommandsProvider>
     createLocalEmbeddingsController?: (

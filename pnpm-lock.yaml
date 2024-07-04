@@ -776,6 +776,9 @@ importers:
 
   web:
     devDependencies:
+      '@openctx/vscode-lib':
+        specifier: ^0.0.13
+        version: 0.0.13
       '@sourcegraph/cody':
         specifier: workspace:*
         version: link:../agent
@@ -833,6 +836,9 @@ importers:
       util:
         specifier: ^0.12.5
         version: 0.12.5
+      vite-plugin-svgr:
+        specifier: ^4.2.0
+        version: 4.2.0(typescript@5.4.2)(vite@5.2.11)
       vscode-uri:
         specifier: ^3.0.7
         version: 3.0.7
@@ -3393,13 +3399,11 @@ packages:
       lru-cache: 10.2.2
       picomatch: 3.0.1
       rxjs: 7.8.1
-    dev: false
 
   /@openctx/protocol@0.0.15:
     resolution: {integrity: sha512-mT1iIb+tAdY0SUwFoM8xscvrC9c5wbCQ3hbzQgI5LKaXIULmPdQa478MtGxNto2zfp8QD6VKrySsKbzQ3JFfrA==}
     dependencies:
       '@openctx/schema': 0.0.12
-    dev: false
 
   /@openctx/provider-linear-issues@0.0.6:
     resolution: {integrity: sha512-h1N8OtATRDIVB/VJ/m3WBFdVQBwFpa1RHlDiNhg8znCAK9qhw6Y/GMTl89Q6IBZwIdFQ2uxxzF7d8bkyBIiEDQ==}
@@ -3417,11 +3421,9 @@ packages:
       '@openctx/protocol': 0.0.15
       '@openctx/schema': 0.0.12
       picomatch: 3.0.1
-    dev: false
 
   /@openctx/schema@0.0.12:
     resolution: {integrity: sha512-YEqmuasaOeAtcrhlN3/D6r+76J/omRbSBUPbv4azKQA7CDvG9MnfgV1Gv8JbFSz33XzI1h9wGbPi5uzb6o6peQ==}
-    dev: false
 
   /@openctx/ui-common@0.0.11:
     resolution: {integrity: sha512-3HESG+9UyAra9grHkyI9Fh6d6U5GAcz/kQ3cgOJgICR9Rx0WoTHrr3wgs7V0gOY3fJaL5f6wXEATBbRK3wOwqg==}
@@ -3430,7 +3432,6 @@ packages:
       marked: 12.0.2
       sanitize-html: 2.13.0
       xss: 1.0.15
-    dev: false
 
   /@openctx/vscode-lib@0.0.13:
     resolution: {integrity: sha512-lE26bXFVV8FQgayhBcFgdq+W4PrksB07TZmW/E3s9CTaEVUqMh/OW8o0Zo6R928Zsph+VibYsh/DTRHaavBGHA==}
@@ -3438,7 +3439,6 @@ packages:
       '@openctx/client': 0.0.19
       '@openctx/ui-common': 0.0.11
       rxjs: 7.8.1
-    dev: false
 
   /@opentelemetry/api-logs@0.45.1:
     resolution: {integrity: sha512-zVGq/k70l+kB/Wuv3O/zhptP2hvDhEbhDu9EtHde1iWZJf3FedeYS/nWVcMBkkyPAjS/JKNk86WN4CBQLGUuOw==}
@@ -7761,7 +7761,6 @@ packages:
 
   /commander@2.20.3:
     resolution: {integrity: sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==}
-    dev: false
 
   /commander@4.1.1:
     resolution: {integrity: sha512-NOKm8xhkzAjzFx8B2v5OAHT+u5pRQc2UCa2Vq9jYL/31o2wi9mxBA7LIFs3sV5VSC49z6pEhfbMULvShKj26WA==}
@@ -8001,7 +8000,6 @@ packages:
 
   /cssfilter@0.0.10:
     resolution: {integrity: sha512-FAaLDaplstoRsDR8XGYH51znUN0UY7nMc6Z9/fvE8EXGwvJE9hu7W2vHwx1+bd6gCYnln9nLbzxFTrcO9YQDZw==}
-    dev: false
 
   /csso@5.0.5:
     resolution: {integrity: sha512-0LrrStPOdJj+SPCCrGhzryycLjwcgUSHBtxNA8aIDxf0GLsRh1cKYhB00Gd1lDOS4yGH69+SNn13+TWbVHETFQ==}
@@ -8204,7 +8202,6 @@ packages:
   /deepmerge@4.3.1:
     resolution: {integrity: sha512-3sUqbMEc77XqpdNO7FRyRog+eW3ph+GYCbj+rK+uYyRMuwsVy0rMiVtPn+QJlKFvWP/1PYpapqYn0Me2knFn+A==}
     engines: {node: '>=0.10.0'}
-    dev: false
 
   /default-browser-id@3.0.0:
     resolution: {integrity: sha512-OZ1y3y0SqSICtE8DE4S8YOE9UZOJ8wO16fKWVP5J1Qz42kV9jcnMVFrEE/noXb/ss3Q4pZIH79kxofzyNNtUNA==}
@@ -11337,7 +11334,6 @@ packages:
     resolution: {integrity: sha512-qXUm7e/YKFoqFPYPa3Ukg9xlI5cyAtGmyEIzMfW//m6kXwCy2Ps9DYf5ioijFKQ8qyuscrHoY04iJGctu2Kg0Q==}
     engines: {node: '>= 18'}
     hasBin: true
-    dev: false
 
   /marked@4.3.0:
     resolution: {integrity: sha512-PRsaiG84bK+AMvxziE/lCFss8juXjNaWzVbN5tXAm4XjeaS9NAHhop+PjQxz2A9h8Q4M/xGmzP8vqNwy6JeK0A==}
@@ -12695,7 +12691,6 @@ packages:
 
   /parse-srcset@1.0.2:
     resolution: {integrity: sha512-/2qh0lav6CmI15FzA3i/2Bzk2zCgQhGMkvhOhKNcBVQ1ldgpbfiNTVslmooUmWJcADi1f1kIeynbDRVzNlfR6Q==}
-    dev: false
 
   /parse5-htmlparser2-tree-adapter@7.0.0:
     resolution: {integrity: sha512-B77tOZrqqfUfnVcOrUvfdLbz4pu4RopLD/4vmu3HUPswwTA8OH0EMW9BlWR2B0RCoiZRAHEUu7IxeP1Pd1UU+g==}
@@ -12797,7 +12792,6 @@ packages:
   /picomatch@3.0.1:
     resolution: {integrity: sha512-I3EurrIQMlRc9IaAZnqRR044Phh2DXY+55o7uJ0V+hYZAcQYSuFWsc9q5PvyDHUSCe1Qxn/iBz+78s86zWnGag==}
     engines: {node: '>=10'}
-    dev: false
 
   /picomatch@4.0.2:
     resolution: {integrity: sha512-M7BAV6Rlcy5u+m6oPhAPFgJTzAioX/6B0DxyvDlo9l8+T3nLKbrczg2WLUyzd45L8RqfUMyGPzekbMvX2Ldkwg==}
@@ -13988,7 +13982,6 @@ packages:
       is-plain-object: 5.0.0
       parse-srcset: 1.0.2
       postcss: 8.4.38
-    dev: false
 
   /sax@1.3.0:
     resolution: {integrity: sha512-0s+oAmw9zLl1V1cS9BtZN7JAd0cW5e0QH4W3LWEK6a4LaLEA2OTpGYWDY+6XasBLtz6wkm3u1xRw95mRuJ59WA==}
@@ -16184,7 +16177,6 @@ packages:
     dependencies:
       commander: 2.20.3
       cssfilter: 0.0.10
-    dev: false
 
   /xtend@4.0.2:
     resolution: {integrity: sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==}

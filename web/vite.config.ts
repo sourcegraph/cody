@@ -1,6 +1,7 @@
 import { resolve } from 'node:path'
 
 import react from '@vitejs/plugin-react-swc'
+import svgr from 'vite-plugin-svgr'
 
 // @ts-ignore
 import { defineProjectWithDefaults } from '../.config/viteShared'
@@ -28,6 +29,7 @@ export default defineProjectWithDefaults(__dirname, {
     plugins: [
         // @ts-ignore
         react({ devTarget: 'esnext' }),
+        svgr(),
     ],
     resolve: {
         alias: [
