@@ -10,6 +10,23 @@ This is a log of all notable changes to the Cody command-line tool. [Unreleased]
 
 ### Changed
 
+## 0.1.2
+
+### Changed
+
+- The "service account name" for storing secrets is now formatted as "Cody:
+  $SERVER_ENDPOINT ($USERNAME)" instead of "Cody" making it easier to
+  understand what account/endpoint is stored there.
+
+### Fixed
+
+- Running `cody-agent help` should work now. It was previously crashing about a missing keytar dependencies.
+
+## 0.1.1
+### Fixed
+
+- Running `npm install -g @sourcegraph/cody-agent` should work now. It was previously crashing about a missing keytar dependency.
+
 ## 0.1.0
 
 ### Added

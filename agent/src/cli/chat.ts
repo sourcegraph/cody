@@ -58,7 +58,12 @@ export const chatCommand = () =>
         .option('--debug', 'Enable debug logging', false)
         .action(async (options: ChatOptions) => {
             if (!options.accessToken) {
-                const account = await AuthenticatedAccount.fromUserSettings()
+                const spinner = ora().start('Loading access token')
+                const account = await AuthenticatedAccount.fromUserSettings(spinner)
+                if (!spinner.isSpinning) {
+                    process.exit(1)
+                }
+                spinner.stop()
                 if (account) {
                     options.accessToken = account.accessToken
                     options.endpoint = account.serverEndpoint
@@ -92,7 +97,7 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     const workspaceRootUri = vscode.Uri.file(path.resolve(options.dir))
     const clientInfo: ClientInfo = {
         name: 'cody-cli',
-        version: packageJson.version,
+        version: options.isTesting ? '0.1.0-SNAPSHOT' : packageJson.version,
         workspaceRootUri: workspaceRootUri.toString(),
         extensionConfiguration: {
             serverEndpoint: options.endpoint,

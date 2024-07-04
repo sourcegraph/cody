@@ -49,6 +49,6 @@
 }
 
 /* color-mix is not supported on JetBrains webview */
-html:is([data-ide='JetBrains']) .container {
+html[data-ide=JetBrains] .container {
     background-color: var(--vscode-input-background);
 }

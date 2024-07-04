@@ -44,7 +44,7 @@ body:is([data-vscode-theme-kind='vscode-high-contrast'], [data-vscode-theme-kind
 }
 
 /* color-mix is not supported on JetBrains webview */
-html:is([data-ide='JetBrains']) .context-item-mention-node {
+html[data-ide=JetBrains] .context-item-mention-node {
     color: var(--vscode-inputOption-activeForeground);
     background-color: var(--vscode-badge-background);
     gap: 0.2rem;

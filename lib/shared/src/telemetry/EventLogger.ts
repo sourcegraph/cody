@@ -5,10 +5,11 @@ import { isError } from '../utils'
 
 import type { TelemetryEventProperties } from '.'
 import type { AuthStatus } from '../auth/types'
+import type { CodyIDE } from '../configuration'
 import { getTier } from '../telemetry-v2/cody-tier'
 
 export interface ExtensionDetails {
-    ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs'
+    ide: CodyIDE
     ideVersion?: string
     ideExtensionType: 'Cody' | 'CodeSearch'
     platform: string
@@ -51,6 +52,9 @@ export class EventLogger {
                 break
             case 'Neovim':
                 this.client = 'NEOVIM_CODY_EXTENSION'
+                break
+            case 'Web':
+                this.client = 'WEB_CODY_EXTENSION'
                 break
             default:
                 throw new Error(`new IDE ${this.extensionDetails.ide} not yet accounted for`)

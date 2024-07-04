@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import {
     type AuthStatus,
     type ChatClient,
+    CodyIDE,
     type ConfigurationWithAccessToken,
     type FeatureFlagProvider,
     type Guardrails,
@@ -77,7 +78,7 @@ export class ChatPanelsManager implements vscode.Disposable {
         private readonly localEmbeddings: LocalEmbeddingsController | null,
         private readonly contextRanking: ContextRankingController | null,
         private readonly symf: SymfRunner | null,
-        private readonly enterpriseContext: EnterpriseContextFactory | null,
+        private readonly enterpriseContext: EnterpriseContextFactory,
         private readonly guardrails: Guardrails
     ) {
         logDebug('ChatPanelsManager:constructor', 'init')
@@ -227,13 +228,21 @@ export class ChatPanelsManager implements vscode.Disposable {
         const isCodyProUser = !authStatus.userCanUpgrade
         const models = ModelsService.getModels(ModelUsage.Chat, isCodyProUser)
 
+        // Enterprise context is used for remote repositories context fetching
+        // in vs cody extension it should be always off if extension is connected
+        // to dot com instance, but in Cody Web it should be on by default for
+        // all instances (including dot com)
+        const isCodyWeb =
+            vscode.workspace.getConfiguration().get<string>('cody.advanced.agent.ide') === CodyIDE.Web
+        const allowRemoteContext = isCodyWeb || !isConsumer
+
         return new SimpleChatPanelProvider({
             ...this.options,
             chatClient: this.chatClient,
             localEmbeddings: isConsumer ? this.localEmbeddings : null,
             contextRanking: isConsumer ? this.contextRanking : null,
             symf: isConsumer ? this.symf : null,
-            enterpriseContext: isConsumer ? null : this.enterpriseContext,
+            enterpriseContext: allowRemoteContext ? this.enterpriseContext : null,
             models,
             guardrails: this.guardrails,
             startTokenReceiver: this.options.startTokenReceiver,

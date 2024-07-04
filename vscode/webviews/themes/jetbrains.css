@@ -1,3 +1,4 @@
+/* incremental improvements coming */
 html[data-ide=JetBrains] {
     --vscode-actionBar-toggledBackground: var(--jetbrains-ToolbarComboWidget-background);
     --vscode-activityBar-background: var(--jetbrains-ToolBar-background);
