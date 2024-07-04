@@ -324,10 +324,9 @@ export type ServerRequests = {
     ]
     'workspace/edit': [WorkspaceEditParams, boolean]
 
-    'webview/createWebviewPanel': [WebviewCreatePanelParams, WebviewCreatePanelResult]
     // TODO: Add VSCode support for registerWebviewViewProvider and views.
     // TODO: Add VSCode support for registerWebviewPanelSerializer.
-    // TODO: Add additional notifications for Webview, etc. operations.
+    'webview/postMessage': [{ handle: string; message: string }]
 }
 
 // The JSON-RPC notifications of the Cody Agent protocol. Notifications are
@@ -438,6 +437,27 @@ export type ServerNotifications = {
     // complete, or errored, the results from remoteRepo/list will not change.
     // When configuration changes, repo fetching may re-start.
     'remoteRepo/didChangeState': [RemoteRepoFetchState]
+
+    // Clients with 'native' webview capability.
+    'webview/createWebviewPanel': [
+        {
+            // TODO: Expand vscode shim's webview handlers to express
+            // the rest of the vscode API and pass those settings here.
+            // For example, enable find-in-page etc.
+            handle: string
+            viewType: string
+            title: string
+            showOptions: {
+                preserveFocus: boolean
+                viewColumn: number
+            }
+        },
+    ]
+    'webview/dispose': [{ handle: string }]
+    'webview/reveal': [{ handle: string; viewColumn: number; preserveFocus: boolean }]
+    'webview/setTitle': [{ handle: string; title: string }]
+    'webview/setIconPath': [{ handle: string; iconPathUri: string | undefined }]
+    'webview/setHtml': [{ handle: string; html: string }]
 }
 
 interface CancelParams {
@@ -527,7 +547,7 @@ export interface ClientCapabilities {
     // Whether the client supports the VSCode WebView API. If 'agentic', uses
     // AgentWebViewPanel which just delegates bidirectional postMessage over
     // the Agent protocol. If 'native', implements a larger subset of the VSCode
-    // WebView API.
+    // WebView API and expects the client to run web content in the webview.
     webview?:
         | 'agentic'
         | { type: 'native'; cspSource: string; webviewBundleServingPrefix: string }
@@ -821,25 +841,6 @@ export interface DeleteTextEdit {
     type: 'delete'
     range: Range
     metadata?: vscode.WorkspaceEditEntryMetadata | undefined | null
-}
-
-export interface WebviewCreatePanelParams {
-    viewType: string
-    title: string
-    showOptions: vscode.ViewColumn | { preserveFocus: boolean; viewColumn: vscode.ViewColumn }
-    options?: {
-        enableFindWidget?: boolean
-        retainContextWhenHidden?: boolean
-        enableCommandUris?: boolean
-        enableForms?: boolean
-        enableScripts?: boolean
-        localResourceRoots?: readonly vscode.Uri[]
-        portMapping?: readonly { extensionHostPort: number; webviewPort: number }[]
-    }
-}
-
-export interface WebviewCreatePanelResult {
-    panelId: string
 }
 
 export interface EditTask {
