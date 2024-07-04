@@ -9,7 +9,7 @@ import {
     type ChatClient,
     type ChatMessage,
     CodyIDE,
-    ConfigFeaturesSingleton,
+    ClientConfigSingleton,
     type ContextItem,
     ContextItemSource,
     type ContextItemWithContent,
@@ -1554,7 +1554,7 @@ export class SimpleChatPanelProvider
         // Used for keeping sidebar chat view closed when webview panel is enabled
         await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, true)
 
-        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+        const configFeatures = await ClientConfigSingleton.getInstance().getConfigFeatures()
         void this.postMessage({
             type: 'setConfigFeatures',
             configFeatures: {

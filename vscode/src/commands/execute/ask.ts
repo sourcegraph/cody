@@ -1,5 +1,5 @@
 import {
-    ConfigFeaturesSingleton,
+    ClientConfigSingleton,
     type DefaultChatCommands,
     type EventSource,
     type PromptString,
@@ -22,7 +22,7 @@ export interface ExecuteChatArguments extends Omit<WebviewSubmitMessage, 'text' 
  * This is also called by all the default commands (e.g., explain).
  */
 export const executeChat = async (args: ExecuteChatArguments): Promise<ChatSession | undefined> => {
-    const { chat, commands } = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+    const { chat, commands } = await ClientConfigSingleton.getInstance().getConfigFeatures()
     const isCommand = Boolean(args.command)
     if ((!isCommand && !chat) || (isCommand && !commands)) {
         void vscode.window.showErrorMessage(

@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import {
     type AuthStatus,
     type ChatClient,
-    ConfigFeaturesSingleton,
+    ClientConfigSingleton,
     type ConfigurationWithAccessToken,
     type DefaultCodyCommands,
     type Guardrails,
@@ -288,7 +288,7 @@ const register = async (
         const newConfig = await getFullConfig()
         configWatcher.set(newConfig)
         // Re-sync whether guardrails is turned on
-        ConfigFeaturesSingleton.getInstance().refreshConfigFeatures()
+        ClientConfigSingleton.getInstance().refreshConfigFeatures()
         // Sync auth status to graphqlClient
         graphqlClient.onConfigurationChange(newConfig)
 
@@ -346,7 +346,7 @@ const register = async (
         id: DefaultCodyCommands | PromptString,
         args?: Partial<CodyCommandArgs>
     ): Promise<CommandResult | undefined> => {
-        const { commands } = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+        const { commands } = await ClientConfigSingleton.getInstance().getConfigFeatures()
         if (!commands) {
             void vscode.window.showErrorMessage(
                 'This feature has been disabled by your Sourcegraph site admin.'

@@ -1222,11 +1222,11 @@ export class SourcegraphGraphQLAPIClient {
 export const graphqlClient = new SourcegraphGraphQLAPIClient()
 
 /**
- * ConfigFeaturesSingleton is a class that manages the retrieval
+ * ClientConfigSingleton is a class that manages the retrieval
  * and caching of configuration features from GraphQL endpoints.
  */
-export class ConfigFeaturesSingleton {
-    private static instance: ConfigFeaturesSingleton
+export class ClientConfigSingleton {
+    private static instance: ClientConfigSingleton
     private configFeatures: Promise<CodyConfigFeatures>
 
     // Constructor is private to prevent creating new instances outside of the class
@@ -1247,11 +1247,11 @@ export class ConfigFeaturesSingleton {
     }
 
     // Static method to get the singleton instance
-    public static getInstance(): ConfigFeaturesSingleton {
-        if (!ConfigFeaturesSingleton.instance) {
-            ConfigFeaturesSingleton.instance = new ConfigFeaturesSingleton()
+    public static getInstance(): ClientConfigSingleton {
+        if (!ClientConfigSingleton.instance) {
+            ClientConfigSingleton.instance = new ClientConfigSingleton()
         }
-        return ConfigFeaturesSingleton.instance
+        return ClientConfigSingleton.instance
     }
 
     // Refreshes the config features by fetching them from the server and caching the result
@@ -1260,7 +1260,7 @@ export class ConfigFeaturesSingleton {
         this.configFeatures = this.fetchConfigFeatures().catch((error: Error) => {
             // Ignore fetcherrors as older SG instances will always face this because their GQL is outdated
             if (!(error.message.includes('FetchError') || hasOutdatedAPIErrorMessages(error))) {
-                logError('ConfigFeaturesSingleton', 'refreshConfigFeatures', error.message)
+                logError('ClientConfigSingleton', 'refreshConfigFeatures', error.message)
             }
             // In case of an error, return previously fetched value
             return previousConfigFeatures

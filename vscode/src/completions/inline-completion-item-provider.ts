@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import {
-    ConfigFeaturesSingleton,
+    ClientConfigSingleton,
     FeatureFlag,
     RateLimitError,
     contextFiltersProvider,
@@ -185,7 +185,7 @@ export class InlineCompletionItemProvider
 
         // Warm caches for the config feature configuration to avoid the first completion call
         // having to block on this.
-        void ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+        void ClientConfigSingleton.getInstance().getConfigFeatures()
     }
 
     /** Set the tracer (or unset it with `null`). */
@@ -227,7 +227,7 @@ export class InlineCompletionItemProvider
             }
             this.lastCompletionRequest = completionRequest
 
-            const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+            const configFeatures = await ClientConfigSingleton.getInstance().getConfigFeatures()
 
             if (!configFeatures.autoComplete) {
                 // If ConfigFeatures exists and autocomplete is disabled then raise
