@@ -19,6 +19,21 @@ describe('VS Code Mocks', () => {
             expect(selection.end.line).toStrictEqual(3)
             expect(selection.end.character).toStrictEqual(4)
         })
+
+        it('intersection(otherRange)', () => {
+            // Matching ranges intersect and produce the same ranges
+            const rangeA = new Range(0, 0, 4, 0)
+            const rangeB = new Range(0, 0, 4, 0)
+            expect(rangeA.intersection(rangeB)).toStrictEqual(rangeA)
+
+            // Overlapping ranges intersect and produce the overlapping range
+            const rangeC = new Range(2, 0, 6, 0)
+            expect(rangeA.intersection(rangeC)).toStrictEqual(new Range(2, 0, 4, 0))
+
+            // Non-overlapping ranges do not intersect and return undefined
+            const rangeD = new Range(99, 0, 100, 0)
+            expect(rangeA.intersection(rangeD)).toBeUndefined()
+        })
     })
     describe('Selection', () => {
         it('constructor(Position,Position)', () => {

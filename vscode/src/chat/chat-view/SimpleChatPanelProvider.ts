@@ -27,6 +27,7 @@ import {
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     type SerializedPromptEditorState,
+    TokenCounter,
     Typewriter,
     allMentionProvidersMetadata,
     hydrateAfterPostMessage,
@@ -1191,22 +1192,43 @@ export class SimpleChatPanelProvider
                 }
             }
 
-            // Log the size of all user context items (e.g., @-mentions)
-            // Includes the count of files and the size of each file
-            const getContextStats = (files: ContextItem[]) =>
-                files.length && {
-                    countFiles: files.length,
-                    fileSizes: files.map(f => f.size).filter(isDefined),
-                }
-            // NOTE: The private context stats are only logged for DotCom users
-            const privateContextStats = {
-                included: getContextStats(context.used.filter(f => f.source === 'user')),
-                excluded: getContextStats(context.ignored.filter(f => f.source === 'user')),
-            }
+            const privateContextStats = await this.buildPrivateContextStats(context)
             sendTelemetry(contextSummary, privateContextStats)
         }
 
         return prompt
+    }
+
+    private async buildPrivateContextStats(context: {
+        used: ContextItem[]
+        ignored: ContextItem[]
+    }): Promise<object> {
+        // 🚨 SECURITY: included only for dotcom users & public repos
+        const isDotCom = this.authProvider.getAuthStatus().isDotCom
+        const isPublic = (await this.codebaseStatusProvider.currentCodebase())?.isPublic
+
+        if (!(isDotCom && isPublic)) {
+            return {}
+        }
+
+        const getContextStats = (items: ContextItem[]) => ({
+            count: items.length,
+            items: items.map(i => ({
+                source: i.source,
+                size: i.size || TokenCounter.countTokens(i.content || ''),
+                content: i.content,
+            })),
+        })
+
+        const privateContextStats = {
+            included: getContextStats(context.used),
+            excluded: getContextStats(context.ignored),
+            gitMetadata: await this.getRepoMetadataIfPublic(),
+        }
+
+        logDebug('jan1', `${isDotCom} ${isPublic}`)
+        logDebug('jan_context_stats', JSON.stringify(privateContextStats))
+        return privateContextStats
     }
 
     private streamAssistantResponse(

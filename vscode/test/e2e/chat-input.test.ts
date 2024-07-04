@@ -224,7 +224,12 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
 
     await firstChatInput.fill('to model1')
     await firstChatInput.press('Enter')
-    await expect(chatFrame.getByRole('row').getByTitle('Claude 3 Sonnet by Anthropic')).toBeVisible()
+
+    // Verify tooltip shows the correct model
+    await chatFrame.locator('[data-testid="chat-message-model-icon"]').last().hover()
+    await expect(
+        chatFrame.locator('[data-testid="message"]').getByText('Claude 3 Sonnet by Anthropic')
+    ).toBeVisible()
 
     // Change model and send another message.
     await expect(modelSelect).toBeEnabled()
@@ -235,7 +240,10 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     await expect(modelSelect).toHaveText(/^GPT-4o/)
     await lastChatInput.fill('to model2')
     await lastChatInput.press('Enter')
-    await expect(chatFrame.getByRole('row').getByTitle('GPT-4o by OpenAI')).toBeVisible()
+    await chatFrame.locator('[data-testid="chat-message-model-icon"]').last().hover()
+    await expect(
+        chatFrame.locator('[data-testid="message"]').getByText('GPT-4o by OpenAI')
+    ).toBeVisible()
 })
 
 test.extend<ExpectedEvents>({

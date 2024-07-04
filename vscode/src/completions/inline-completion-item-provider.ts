@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
 import {
-    type AuthStatus,
     ConfigFeaturesSingleton,
     FeatureFlag,
     RateLimitError,
@@ -13,7 +12,6 @@ import {
 
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
-import type { CodyStatusBar } from '../services/StatusBar'
 import { telemetryService } from '../services/telemetry'
 
 import { type CodyIgnoreType, showCodyIgnoreNotification } from '../cody-ignore/notification'
@@ -24,7 +22,6 @@ import { type LatencyFeatureFlags, getArtificialDelay, resetArtificialDelay } fr
 import { completionProviderConfig } from './completion-provider-config'
 import { ContextMixer } from './context/context-mixer'
 import { DefaultContextStrategyFactory } from './context/context-strategy'
-import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { getCompletionIntent } from './doc-context-getters'
 import { FirstCompletionDecorationHandler } from './first-completion-decoration-handler'
 import { formatCompletion } from './format-completion'
@@ -36,13 +33,19 @@ import {
     TriggerKind,
     getInlineCompletions,
 } from './get-inline-completions'
+import {
+    type CodyCompletionItemProviderConfig,
+    type InlineCompletionItemProviderConfig,
+    InlineCompletionItemProviderConfigSingleton,
+} from './inline-completion-item-provider-config-singleton'
 import { isCompletionVisible } from './is-completion-visible'
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './logger'
 import * as CompletionLogger from './logger'
 import { isLocalCompletionsProvider } from './providers/experimental-ollama'
-import type { ProviderConfig } from './providers/provider'
 import { RequestManager, type RequestParams } from './request-manager'
 import { getRequestParamsFromLastCandidate } from './reuse-last-candidate'
+import { canReuseLastCandidateInDocumentContext } from './reuse-last-candidate'
+import { SmartThrottleService } from './smart-throttle'
 import {
     type AutocompleteInlineAcceptedCommandArgs,
     type AutocompleteItem,
@@ -59,31 +62,6 @@ interface AutocompleteResult extends vscode.InlineCompletionList {
     completionEvent?: CompletionBookkeepingEvent
 }
 
-interface CodyCompletionItemProviderConfig {
-    providerConfig: ProviderConfig
-    firstCompletionTimeout: number
-    statusBar: CodyStatusBar
-    tracer?: ProvideInlineCompletionItemsTracer | null
-    isRunningInsideAgent?: boolean
-
-    authStatus: AuthStatus
-    isDotComUser?: boolean
-
-    createBfgRetriever?: () => BfgRetriever
-
-    // Settings
-    formatOnAccept?: boolean
-    disableInsideComments?: boolean
-
-    // Feature flags
-    completeSuggestWidgetSelection?: boolean
-
-    // Flag to check if the current request is also triggered for multiple providers.
-    // When true it means the inlineCompletion are triggerd for multiple model for comparison purpose.
-    // Check `createInlineCompletionItemFromMultipleProviders` method in create-inline-completion-item-provider for more detail.
-    noInlineAccept?: boolean
-}
-
 export interface MultiModelCompletionsResults {
     provider: string
     model: string
@@ -95,7 +73,6 @@ interface CompletionRequest {
     position: vscode.Position
     context: vscode.InlineCompletionContext
 }
-
 export class InlineCompletionItemProvider
     implements vscode.InlineCompletionItemProvider, vscode.Disposable
 {
@@ -106,10 +83,9 @@ export class InlineCompletionItemProvider
     private lastManualCompletionTimestamp: number | null = null
     // private reportedErrorMessages: Map<string, number> = new Map()
 
-    private readonly config: Omit<Required<CodyCompletionItemProviderConfig>, 'createBfgRetriever'>
-
     private requestManager: RequestManager
     private contextMixer: ContextMixer
+    private smartThrottleService: SmartThrottleService | null = null
 
     /** Mockable (for testing only). */
     protected getInlineCompletions = getInlineCompletions
@@ -127,6 +103,10 @@ export class InlineCompletionItemProvider
 
     private firstCompletionDecoration = new FirstCompletionDecorationHandler()
 
+    private get config(): InlineCompletionItemProviderConfig {
+        return InlineCompletionItemProviderConfigSingleton.configuration
+    }
+
     constructor({
         completeSuggestWidgetSelection = true,
         formatOnAccept = true,
@@ -135,7 +115,9 @@ export class InlineCompletionItemProvider
         createBfgRetriever,
         ...config
     }: CodyCompletionItemProviderConfig) {
-        this.config = {
+        // This is a static field to allow for easy access in the static `configuration` getter.
+        // There must only be one instance of this class at a time.
+        InlineCompletionItemProviderConfigSingleton.set({
             ...config,
             completeSuggestWidgetSelection,
             formatOnAccept,
@@ -144,7 +126,9 @@ export class InlineCompletionItemProvider
             isRunningInsideAgent: config.isRunningInsideAgent ?? false,
             isDotComUser: config.isDotComUser ?? false,
             noInlineAccept: config.noInlineAccept ?? false,
-        }
+        })
+
+        autocompleteStageCounterLogger.setProviderModel(config.providerConfig.model)
 
         if (this.config.completeSuggestWidgetSelection) {
             // This must be set to true, or else the suggest widget showing will suppress inline
@@ -172,6 +156,11 @@ export class InlineCompletionItemProvider
                 createBfgRetriever
             )
         )
+
+        if (completionProviderConfig.smartThrottle) {
+            this.smartThrottleService = new SmartThrottleService()
+            this.disposables.push(this.smartThrottleService)
+        }
 
         const chatHistory = localStorage.getChatHistory(this.config.authStatus)?.chat
         this.isProbablyNewInstall = !chatHistory || Object.entries(chatHistory).length === 0
@@ -277,11 +266,12 @@ export class InlineCompletionItemProvider
             }
 
             const abortController = new AbortController()
+            let cancellationListener: vscode.Disposable | undefined
             if (token) {
                 if (token.isCancellationRequested) {
                     abortController.abort()
                 }
-                token.onCancellationRequested(() => abortController.abort())
+                cancellationListener = token.onCancellationRequested(() => abortController.abort())
             }
 
             // When the user has the completions popup open and an item is selected that does not match
@@ -343,19 +333,7 @@ export class InlineCompletionItemProvider
             )
 
             const isLocalProvider = isLocalCompletionsProvider(this.config.providerConfig.identifier)
-            const isEagerCancellationEnabled = completionProviderConfig.getPrefetchedFlag(
-                FeatureFlag.CodyAutocompleteEagerCancellation
-            )
-            const isReducedDebounceEnabled = completionProviderConfig.getPrefetchedFlag(
-                FeatureFlag.CodyAutocompleteReducedDebounce
-            )
-            const debounceInterval = isLocalProvider
-                ? 125
-                : isEagerCancellationEnabled
-                  ? 10
-                  : isReducedDebounceEnabled
-                    ? 25
-                    : 75
+            const debounceInterval = isLocalProvider ? 125 : 75
 
             try {
                 const result = await this.getInlineCompletions({
@@ -366,6 +344,7 @@ export class InlineCompletionItemProvider
                     docContext,
                     providerConfig: this.config.providerConfig,
                     contextMixer: this.contextMixer,
+                    smartThrottleService: this.smartThrottleService,
                     requestManager: this.requestManager,
                     lastCandidate: this.lastCandidate,
                     debounceInterval: {
@@ -374,6 +353,7 @@ export class InlineCompletionItemProvider
                     },
                     setIsLoading,
                     abortSignal: abortController.signal,
+                    cancellationListener,
                     tracer,
                     handleDidAcceptCompletionItem: this.handleDidAcceptCompletionItem.bind(this),
                     handleDidPartiallyAcceptCompletionItem:
@@ -412,7 +392,21 @@ export class InlineCompletionItemProvider
                 const lastTriggeredPrefix = this.lastCandidate?.lastTriggerDocContext.currentLinePrefix
                 if (
                     this.lastCandidate &&
+                    // Remove the last candidate from cache only if it can be
+                    // used in the current document context.
+                    canReuseLastCandidateInDocumentContext({
+                        document,
+                        position,
+                        selectedCompletionInfo: context?.selectedCompletionInfo,
+                        lastCandidate: this.lastCandidate,
+                        docContext,
+                    }) &&
                     lastTriggeredPrefix !== undefined &&
+                    // TODO: consider changing this to the trigger point that users observe.
+                    // Currently, if the request is synthesized from the inflight requests with an earlier
+                    // trigger point, it is used here to decide if users wants to cancel the completion
+                    // but it's not obvious to the user where the trigger point is, which makes this
+                    // behavior opaque and hard to understand.
                     currentPrefix.length < lastTriggeredPrefix.length
                 ) {
                     this.handleUnwantedCompletionItem(

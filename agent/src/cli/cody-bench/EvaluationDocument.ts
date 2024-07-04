@@ -139,6 +139,8 @@ export class EvaluationDocument {
                     out.push(' FIX')
                 } else if (this.options.fixture.strategy === BenchStrategy.Chat) {
                     out.push(' CHAT')
+                } else if (this.options.fixture.strategy === BenchStrategy.UnitTest) {
+                    out.push(' UNIT TEST')
                 } else {
                     throw new Error(`unknown strategy ${this.options.fixture.strategy}`)
                 }
@@ -262,6 +264,7 @@ interface EvaluationItem {
     editDiff?: string
     chatReply?: string
     chatQuestion?: string
+    questionClass?: string
     fixBeforeDiagnostic?: string
     fixAfterDiagnostic?: string
     llmJudgeScore?: number
@@ -271,9 +274,22 @@ interface EvaluationItem {
     info?: CompletionItemInfo
     event?: CompletionBookkeepingEvent
     eventJSON?: string
+    testName?: string
+    testExpectedFilename?: string
+    testFilename?: string
+    testInputFilename?: string
+    testLanguage?: string
+    testGenerated?: string
+    testUsedExpectedTestFramework?: boolean
+    testUsedCorrectAppendOperation?: boolean
+    testDiagnostics?: string
 }
 
-export const headerItems: ObjectHeaderItem[] = [
+interface EvaluationItemHeader extends ObjectHeaderItem {
+    id: keyof EvaluationItem
+}
+
+export const headerItems: EvaluationItemHeader[] = [
     { id: 'languageid', title: 'LANGUAGEID' },
     { id: 'workspace', title: 'WORKSPACE' },
     { id: 'fixture', title: 'FIXTURE' },
@@ -299,6 +315,7 @@ export const headerItems: ObjectHeaderItem[] = [
     { id: 'editDiff', title: 'EDIT_DIFF' },
     { id: 'chatReply', title: 'CHAT_REPLY' },
     { id: 'chatQuestion', title: 'CHAT_QUESTION' },
+    { id: 'questionClass', title: 'QUESTION_CLASS' },
     { id: 'fixAfterDiagnostic', title: 'FIX_AFTER_DIAGNOSTIC' },
     { id: 'fixBeforeDiagnostic', title: 'FIX_BEFORE_DIAGNOSTIC' },
     { id: 'llmJudgeScore', title: 'LLM_JUDGE_SCORE' },
@@ -312,6 +329,15 @@ export const headerItems: ObjectHeaderItem[] = [
     { id: 'contextBfgSuggestedCount', title: 'CONTEXT_BFG_SUGGESTED_COUNT' },
     { id: 'contextBfgDurationMs', title: 'CONTEXT_BFG_DURATION_MS' },
     { id: 'eventJSON', title: 'EVENT' },
+    { id: 'testFilename', title: 'TEST_FILENAME' },
+    { id: 'testExpectedFilename', title: 'TEST_EXPECTED_FILENAME' },
+    { id: 'testGenerated', title: 'TEST_GENERATED' },
+    { id: 'testUsedExpectedTestFramework', title: 'TEST_USED_EXPECTED_TEST_FRAMEWORK' },
+    { id: 'testUsedCorrectAppendOperation', title: 'TEST_USED_CORRECT_APPEND_OPERATION' },
+    { id: 'testInputFilename', title: 'TEST_INPUT_FILENAME' },
+    { id: 'testLanguage', title: 'TEST_LANGUAGE' },
+    { id: 'testName', title: 'TEST_NAME' },
+    { id: 'testDiagnostics', title: 'TEST_DIAGNOSTICS' },
 ]
 
 function commentSyntaxForLanguage(languageid: string): string {
