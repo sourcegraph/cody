@@ -222,7 +222,7 @@ export class ModelsService {
      */
     private static localModels: Model[] = []
 
-    private static defaultModels: Map<ModelUsage, Model> = new Map()
+    private static defaultModels: Map<ModelUsage, string> = new Map()
 
     private static storage: Storage | undefined
 
@@ -283,17 +283,17 @@ export class ModelsService {
     }
 
     public static getDefaultModel(type: ModelUsage, authStatus: AuthStatus): Model | undefined {
+        const models = ModelsService.getModelsByType(type)
+        const firstModelUserCanUse = models.find(m => ModelsService.canUserUseModel(authStatus, m))
         if (!authStatus.authenticated) {
-            throw new Error('You are not authenticated')
+            return firstModelUserCanUse
         }
         const current = ModelsService.defaultModels.get(type)
-        if (current) return current
-
-        const models = ModelsService.getModelsByType(type)
+        if (current) return models.find(m => m.model === current)
 
         // Free users can only use the default model
         if (isFreeUser(authStatus) || !ModelsService.storage) {
-            return models.find(m => ModelsService.canUserUseModel(authStatus, m))
+            return firstModelUserCanUse
         }
 
         // Check for the last selected model
@@ -321,15 +321,18 @@ export class ModelsService {
     }
 
     public static async setDefaultModel(type: ModelUsage, model: Model | string): Promise<void> {
-        model = ModelsService.resolveModel(model)
-        ModelsService.defaultModels.set(type, model)
+        const modelId = typeof model === 'string' ? model : model.model
+        ModelsService.defaultModels.set(type, modelId)
         // If we have persistent storage set, write it there
-        await ModelsService.storage?.set(ModelsService.storageKeys[type], model.model)
+        await ModelsService.storage?.set(ModelsService.storageKeys[type], modelId)
     }
 
     public static canUserUseModel(status: AuthStatus, model: string | Model): boolean {
-        model = ModelsService.resolveModel(model)
-        const tier = Model.tier(model)
+        const resolved = ModelsService.resolveModel(model)
+        if (!resolved) {
+            return false
+        }
+        const tier = Model.tier(resolved)
         if (isEnterpriseUser(status)) {
             return tier === 'enterprise'
         }
@@ -342,15 +345,11 @@ export class ModelsService {
         return false
     }
 
-    private static resolveModel(modelID: Model | string): Model {
+    private static resolveModel(modelID: Model | string): Model | undefined {
         if (typeof modelID !== 'string') {
             return modelID
         }
-        const model = ModelsService.models.find(m => m.model === modelID)
-        if (!model) {
-            throw new Error(`Unknown model: ${modelID}`)
-        }
-        return model
+        return ModelsService.models.find(m => m.model === modelID)
     }
 
     /**
