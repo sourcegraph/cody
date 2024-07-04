@@ -157,27 +157,27 @@ interface CurrentUserInfoResponse {
 // See https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/clientconfig/types.go
 interface CodyClientConfig {
     // Whether the site admin allows this user to make use of Cody at all.
-	codyEnabled: boolean
+    codyEnabled: boolean
 
-	// Whether the site admin allows this user to make use of the Cody chat feature.
-	chatEnabled: boolean
+    // Whether the site admin allows this user to make use of the Cody chat feature.
+    chatEnabled: boolean
 
-	// Whether the site admin allows this user to make use of the Cody autocomplete feature.
-	autoCompleteEnabled: boolean
+    // Whether the site admin allows this user to make use of the Cody autocomplete feature.
+    autoCompleteEnabled: boolean
 
-	// Whether the site admin allows the user to make use of the **custom** Cody commands feature.
-	customCommandsEnabled: boolean
+    // Whether the site admin allows the user to make use of the **custom** Cody commands feature.
+    customCommandsEnabled: boolean
 
-	// Whether the site admin allows this user to make use of the Cody attribution feature.
-	attributionEnabled: boolean
+    // Whether the site admin allows this user to make use of the Cody attribution feature.
+    attributionEnabled: boolean
 
-	// Whether the 'smart context window' feature should be enabled, and whether the Sourcegraph
-	// instance supports various new GraphQL APIs needed to make it work.
-	smartContextWindowEnabled: boolean
+    // Whether the 'smart context window' feature should be enabled, and whether the Sourcegraph
+    // instance supports various new GraphQL APIs needed to make it work.
+    smartContextWindowEnabled: boolean
 
-	// Whether the new Sourcegraph backend LLM models API endpoint should be used to query which
-	// models are available.
-	modelsAPIEnabled: boolean
+    // Whether the new Sourcegraph backend LLM models API endpoint should be used to query which
+    // models are available.
+    modelsAPIEnabled: boolean
 }
 
 interface CodyConfigFeatures {
@@ -1331,7 +1331,9 @@ export class ClientConfigSingleton {
     }
 
     public async getConfig(): Promise<CodyClientConfig> {
-        if (this.cachedClientConfig) { return this.cachedClientConfig }
+        if (this.cachedClientConfig) {
+            return this.cachedClientConfig
+        }
         this.cachedClientConfig = await this.refreshConfig()
         return this.cachedClientConfig!
     }
@@ -1341,10 +1343,15 @@ export class ClientConfigSingleton {
         logDebug('ClientConfigSingleton', 'refreshing configuration')
 
         // Determine based on the site version if /.api/client-config is available.
-        return graphqlClient.getSiteVersion()
-            .then((siteVersion) => {
+        return graphqlClient
+            .getSiteVersion()
+            .then(siteVersion => {
                 if (isError(siteVersion)) {
-                    logError('ClientConfigSingleton', 'Failed to determine site version, GraphQL error', siteVersion)
+                    logError(
+                        'ClientConfigSingleton',
+                        'Failed to determine site version, GraphQL error',
+                        siteVersion
+                    )
                     return false // assume /.api/client-config is not supported
                 }
 
@@ -1368,17 +1375,18 @@ export class ClientConfigSingleton {
                 }
 
                 // Otherwise we use our centralized client config endpoint.
-                return graphqlClient.fetchHTTP<CodyClientConfig>('client-config', 'GET', '/.api/client-config')
+                return graphqlClient
+                    .fetchHTTP<CodyClientConfig>('client-config', 'GET', '/.api/client-config')
                     .then(clientConfig => {
                         if (isError(clientConfig)) {
                             logError('ClientConfigSingleton', 'refresh client config', clientConfig)
-                            throw clientConfig;
+                            throw clientConfig
                         }
                         return clientConfig
                     })
                     .catch(e => {
                         logError('ClientConfigSingleton', 'refresh client config', e)
-                        throw e;
+                        throw e
                     })
             })
             .then(clientConfig => {
@@ -1387,36 +1395,36 @@ export class ClientConfigSingleton {
             })
             .catch(e => {
                 logError('ClientConfigSingleton', 'failed to refresh client config', e)
-                throw e;
+                throw e
             })
     }
-
 
     private async fetchClientConfigLegacy(): Promise<CodyClientConfig> {
         const previousFeaturesLegacy = await this.featuresLegacy
 
         // Note: all of these promises are written carefully to not throw errors internally, but
         // rather to return sane defaults, and so we do not catch() here.
-        return graphqlClient.getCodyLLMConfigurationSmartContext()
-            .then(smartContextWindow => this.fetchConfigFeaturesLegacy(previousFeaturesLegacy)
-                .then(features => graphqlClient.isCodyEnabled()
-                    .then(isCodyEnabled => ({
-                        codyEnabled: isCodyEnabled.enabled,
-                        chatEnabled: features.chat,
-                        autoCompleteEnabled: features.autoComplete,
-                        customCommandsEnabled: features.commands,
-                        attributionEnabled: features.attribution,
-                        smartContextWindowEnabled: smartContextWindow,
+        return graphqlClient.getCodyLLMConfigurationSmartContext().then(smartContextWindow =>
+            this.fetchConfigFeaturesLegacy(previousFeaturesLegacy).then(features =>
+                graphqlClient.isCodyEnabled().then(isCodyEnabled => ({
+                    codyEnabled: isCodyEnabled.enabled,
+                    chatEnabled: features.chat,
+                    autoCompleteEnabled: features.autoComplete,
+                    customCommandsEnabled: features.commands,
+                    attributionEnabled: features.attribution,
+                    smartContextWindowEnabled: smartContextWindow,
 
-                        // Things that did not exist before logically default to disabled.
-                        modelsAPIEnabled: false,
-                    }))
-                )
+                    // Things that did not exist before logically default to disabled.
+                    modelsAPIEnabled: false,
+                }))
             )
+        )
     }
 
     // Fetches the config features from the server and handles errors, using the old/legacy GraphQL API.
-    private async fetchConfigFeaturesLegacy(defaultErrorValue: CodyConfigFeatures): Promise<CodyConfigFeatures> {
+    private async fetchConfigFeaturesLegacy(
+        defaultErrorValue: CodyConfigFeatures
+    ): Promise<CodyConfigFeatures> {
         const features = await graphqlClient.getCodyConfigFeatures()
         if (features instanceof Error) {
             // An error here most likely indicates the Sourcegraph instance is so old that it doesn't

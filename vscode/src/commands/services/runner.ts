@@ -2,8 +2,8 @@ import * as vscode from 'vscode'
 
 import type { Span } from '@opentelemetry/api'
 import {
-    type CodyCommand,
     ClientConfigSingleton,
+    type CodyCommand,
     type ContextItem,
     DefaultChatCommands,
     type EventSource,
