@@ -1554,12 +1554,12 @@ export class SimpleChatPanelProvider
         // Used for keeping sidebar chat view closed when webview panel is enabled
         await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, true)
 
-        const configFeatures = await ClientConfigSingleton.getInstance().getConfig()
+        const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
         void this.postMessage({
             type: 'setConfigFeatures',
             configFeatures: {
-                chat: configFeatures.chat,
-                attribution: configFeatures.attribution,
+                chat: clientConfig.chatEnabled,
+                attribution: clientConfig.attributionEnabled,
             },
         })
 
