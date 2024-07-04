@@ -27,7 +27,6 @@ import {
     MockServer,
     SERVER_URL,
     VALID_TOKEN,
-    loggedEvents,
     loggedV2Events,
     resetLoggedEvents,
     sendTestInfo,
@@ -236,14 +235,7 @@ export const test = base
     })
     .extend({
         page: async (
-            {
-                page: _page,
-                app,
-                openDevTools,
-                assetsDirectory,
-                expectedV2Events,
-                preAuthenticate,
-            },
+            { page: _page, app, openDevTools, assetsDirectory, expectedV2Events, preAuthenticate },
             use,
             testInfo
         ) => {

@@ -3,10 +3,9 @@ import { expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 
 import { createEmptyChatPanel, sidebarSignin } from './common'
-import { type DotcomUrlOverride, type ExpectedEvents, test as baseTest } from './helpers'
+import { type DotcomUrlOverride, test as baseTest } from './helpers'
 
-const test = baseTest
-    .extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
+const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
 test('attribution search enabled in chat', async ({ page, sidebar, expectedEvents }) => {
     await fetch(`${mockServer.SERVER_URL}/.test/attribution/enable`, { method: 'POST' })
