@@ -253,6 +253,10 @@ const register = async (
     const sourceControl = new CodySourceControl(chatClient)
     const statusBar = createStatusBar()
 
+    // Allow the VS Code app's instance of ModelsService to use local storage to persist
+    // user's model choices
+    ModelsService.setStorage(localStorage)
+
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
         // Reset the available models based on the auth change.

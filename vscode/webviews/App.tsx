@@ -7,7 +7,7 @@ import {
     type ChatMessage,
     type ClientStateForWebview,
     GuardrailsPost,
-    type Model,
+    Model,
     PromptString,
     type SerializedChatTranscript,
     isEnterpriseUser,
@@ -16,7 +16,6 @@ import type { UserAccountInfo } from './Chat'
 
 import type { AuthMethod, ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
 
-import { isNewStyleEnterpriseModel } from '@sourcegraph/cody-shared/src/models'
 import { Chat } from './Chat'
 import { LoadingPage } from './LoadingPage'
 import type { View } from './NavBar'
@@ -140,7 +139,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                     ...info,
                                     isOldStyleEnterprise:
                                         !info.isDotComUser &&
-                                        !message.models.some(isNewStyleEnterpriseModel),
+                                        !message.models.some(Model.isNewStyleEnterprise),
                                 }
                         )
                         break

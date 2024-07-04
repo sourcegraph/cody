@@ -153,6 +153,24 @@ export class Model {
             title: displayName,
         })
     }
+
+    static isNewStyleEnterprise(model: Model): boolean {
+        return model.tags.includes(ModelTag.Enterprise)
+    }
+
+    static tier(model: Model): ModelTier {
+        if (model.tags.includes(ModelTag.Free)) {
+            return 'free'
+        }
+        if (model.tags.includes(ModelTag.Pro)) {
+            return 'pro'
+        }
+        if (model.tags.includes(ModelTag.Enterprise)) {
+            return 'enterprise'
+        }
+
+        return 'pro'
+    }
 }
 
 interface ModelParams {
@@ -166,24 +184,6 @@ interface ModelParams {
     tags?: ModelTag[]
     provider?: string
     title?: string
-}
-
-export function isNewStyleEnterpriseModel(model: Model): boolean {
-    return model.tags.includes(ModelTag.Enterprise)
-}
-
-export function getTier(model: Model): ModelTier {
-    if (model.tags.includes(ModelTag.Free)) {
-        return 'free'
-    }
-    if (model.tags.includes(ModelTag.Pro)) {
-        return 'pro'
-    }
-    if (model.tags.includes(ModelTag.Enterprise)) {
-        return 'enterprise'
-    }
-
-    return 'pro'
 }
 
 /**
@@ -273,10 +273,13 @@ export class ModelsService {
     public static getModels(type: ModelUsage, authStatus: AuthStatus): Model[] {
         const models = ModelsService.getModelsByType(type)
         const currentModel = ModelsService.getDefaultModel(type, authStatus)
+        if (!currentModel) {
+            return models
+        }
         return [currentModel].concat(models.filter(m => m.model !== currentModel.model))
     }
 
-    public static getDefaultModel(type: ModelUsage, authStatus: AuthStatus): Model {
+    public static getDefaultModel(type: ModelUsage, authStatus: AuthStatus): Model | undefined {
         if (!authStatus.authenticated) {
             throw new Error('You are not authenticated')
         }
@@ -310,12 +313,12 @@ export class ModelsService {
         )
     }
 
-    public static getDefaultEditModel(authStatus: AuthStatus): EditModel {
-        return ModelsService.getDefaultModel(ModelUsage.Edit, authStatus).model
+    public static getDefaultEditModel(authStatus: AuthStatus): EditModel | undefined {
+        return ModelsService.getDefaultModel(ModelUsage.Edit, authStatus)?.model
     }
 
-    public static getDefaultChatModel(authStatus: AuthStatus): ChatModel {
-        return ModelsService.getDefaultModel(ModelUsage.Chat, authStatus).model
+    public static getDefaultChatModel(authStatus: AuthStatus): ChatModel | undefined {
+        return ModelsService.getDefaultModel(ModelUsage.Chat, authStatus)?.model
     }
 
     public static async setDefaultModel(type: ModelUsage, model: Model | string): Promise<void> {
@@ -327,7 +330,7 @@ export class ModelsService {
 
     public static canUserUseModel(status: AuthStatus, model: string | Model): boolean {
         model = ModelsService.resolveModel(model)
-        const tier = getTier(model)
+        const tier = Model.tier(model)
         if (isEnterpriseUser(status)) {
             return tier === 'enterprise'
         }

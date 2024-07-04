@@ -119,6 +119,9 @@ export class EditManager implements vscode.Disposable {
         const model =
             configuration.model ||
             ModelsService.getDefaultEditModel(this.options.authProvider.getAuthStatus())
+        if (!model) {
+            throw new Error('No default edit model found. Please set one.')
+        }
         const intent = getEditIntent(document, range, configuration.intent)
         const mode = getEditMode(intent, configuration.mode)
 

@@ -1073,11 +1073,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+            if (!modelID) {
+                modelID = ModelsService.getDefaultChatModel(authStatus)
+            }
+            if (!modelID) {
+                throw new Error('agent::chat/restore: no chat model found')
+            }
 
-            const chatModel = new SimpleChatModel(
-                modelID || ModelsService.getDefaultChatModel(authStatus),
-                chatID
-            )
+            const chatModel = new SimpleChatModel(modelID, chatID)
             for (const message of messages) {
                 const deserializedMessage = PromptString.unsafe_deserializeChatMessage(message)
                 if (deserializedMessage.error) {
