@@ -13,13 +13,13 @@ import {
     selectLineRangeInEditorTab,
     sidebarSignin,
 } from './common'
-import { type ExpectedEvents, executeCommandInPalette, test, withPlatformSlashes } from './helpers'
+import { type ExpectedV2Events, executeCommandInPalette, test, withPlatformSlashes } from './helpers'
 
 // See chat-atFile.test.md for the expected behavior for this feature.
 //
 // NOTE: Creating new chats is slow, and setup is slow, so collapse these into fewer tests.
 
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     expectedV2Events: [
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
         'cody.extension:savedLogin',

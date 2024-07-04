@@ -4,7 +4,7 @@ import * as mockServer from '../fixtures/mock-server'
 import { sidebarSignin } from './common'
 import {
     type DotcomUrlOverride,
-    type ExpectedEvents,
+    type ExpectedV2Events,
     type ExtraWorkspaceSettings,
     test as baseTest,
 } from './helpers'
@@ -17,9 +17,8 @@ test.beforeEach(() => {
 })
 
 testGitWorkspace
-    .extend<ExpectedEvents>({
+    .extend<ExpectedV2Events>({
         // list of events we expect this test to log, add to this list as needed
-        expectedEvents: ['CodyVSCodeExtension:sidebar:commit:clicked'],
         expectedV2Events: ['cody.sidebar.commit:clicked'],
     })
     .extend<ExtraWorkspaceSettings>({

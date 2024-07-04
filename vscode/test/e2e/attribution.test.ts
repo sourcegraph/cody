@@ -7,7 +7,7 @@ import { type DotcomUrlOverride, test as baseTest } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
-test('attribution search enabled in chat', async ({ page, sidebar, expectedEvents }) => {
+test('attribution search enabled in chat', async ({ page, sidebar }) => {
     await fetch(`${mockServer.SERVER_URL}/.test/attribution/enable`, { method: 'POST' })
     await sidebarSignin(page, sidebar)
     const [chatFrame, chatInput] = await createEmptyChatPanel(page)
@@ -16,7 +16,7 @@ test('attribution search enabled in chat', async ({ page, sidebar, expectedEvent
     await expect(chatFrame.getByTestId('attribution-indicator')).toBeVisible()
 })
 
-test('attribution search disabled in chat', async ({ page, sidebar, expectedEvents }) => {
+test('attribution search disabled in chat', async ({ page, sidebar }) => {
     await fetch(`${mockServer.SERVER_URL}/.test/attribution/disable`, { method: 'POST' })
     await sidebarSignin(page, sidebar)
     const [chatFrame, chatInput] = await createEmptyChatPanel(page)

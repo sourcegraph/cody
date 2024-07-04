@@ -3,19 +3,12 @@ import { expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 
 import { openFileInEditorTab, sidebarExplorer, sidebarSignin } from './common'
-import { type DotcomUrlOverride, type ExpectedEvents, test as baseTest } from './helpers'
+import { type DotcomUrlOverride, type ExpectedV2Events, test as baseTest } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
-    expectedEvents: [
-        'CodyVSCodeExtension:command:edit:executed',
-        'CodyVSCodeExtension:fixupResponse:hasCode',
-        'CodyVSCodeExtension:fixup:codeLens:clicked', // each code lens clicked
-        'CodyVSCodeExtension:fixup:applied', // after clicking 'Accept'
-        'CodyVSCodeExtension:fixup:reverted', // after clicking 'Undo'
-    ],
     expectedV2Events: [
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
         'cody.extension:savedLogin',
@@ -35,7 +28,7 @@ test.extend<ExpectedEvents>({
         'cody.fixup.reverted:clicked',
         'cody.sidebar.edit:clicked',
     ],
-})('edit (fixup) task', async ({ page, sidebar, expectedEvents, nap }) => {
+})('edit (fixup) task', async ({ page, sidebar, nap }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 

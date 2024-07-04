@@ -2,9 +2,9 @@ import { expect } from '@playwright/test'
 import { SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
 
 import { focusSidebar } from './common'
-import { type ExpectedEvents, signOut, test } from './helpers'
+import { type ExpectedV2Events, signOut, test } from './helpers'
 
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     // list of V2 telemetry events we expect this test to log, add to this list as needed
     expectedV2Events: [
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825

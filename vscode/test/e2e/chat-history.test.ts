@@ -1,9 +1,9 @@
 import { expect } from '@playwright/test'
 
 import { createEmptyChatPanel, sidebarSignin } from './common'
-import { type ExpectedEvents, test } from './helpers'
+import { type ExpectedV2Events, test } from './helpers'
 
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
     expectedV2Events: [
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825

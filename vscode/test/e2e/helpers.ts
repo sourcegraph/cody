@@ -60,11 +60,6 @@ export interface TestConfiguration {
     preAuthenticate?: boolean
 }
 
-// playwright test extension: Add expectedEvents to each test to compare against
-export interface ExpectedEvents {
-    expectedEvents: string[]
-}
-
 // playwright test extension: Add expectedV2Events to each test to compare against
 export interface ExpectedV2Events {
     expectedV2Events: string[]

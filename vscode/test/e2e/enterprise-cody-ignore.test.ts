@@ -14,7 +14,6 @@ import {
 test
     .extend<ExpectedEvents>({
         // list of events we expect this test to log, add to this list as needed
-        expectEvents: ['CodyInstalled'],
         expectedV2Events: [
             // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
         ],
