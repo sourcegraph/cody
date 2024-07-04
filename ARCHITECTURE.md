@@ -24,7 +24,7 @@ To improve Cody, we record some events as people use Cody.
   - Use the "action" parameter to indicate a verb corresponding to an event. Do not include event verbs in the "feature" parameter.
 - Event metadata:
   - Design your events around numeric values, not arbitrary strings. Understand "sensitive" data and use `privateMetadata` to protect it. (See below.)
-- In VSCode, write e2e tests with `.extend<ExpectedEvents>({ ...` to test your events are firing. Grep the codebase for examples.
+- In VSCode, write e2e tests with `.extend<ExpectedV2Events>({ ...` to test your events are firing. Grep the codebase for examples.
 - When handling transcripts in Telemetry:
   - Transcript data can only be collected through V2 Telemetry and must be stored within the `privateMetadata` argument of the event
   - Transcript data should be stored as top-level fields within `privateMetadata`, using the keys `promptText` or `responseText`

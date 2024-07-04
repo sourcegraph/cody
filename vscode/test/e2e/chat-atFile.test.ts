@@ -203,7 +203,7 @@ test.extend<ExpectedV2Events>({
     await expect(noMatches).toBeVisible()
 })
 
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     expectedV2Events: [
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
         'cody.extension:savedLogin',
@@ -253,7 +253,7 @@ test.extend<ExpectedEvents>({
     await expectContextCellCounts(contextCell, { files: 2 })
 })
 
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     expectedV2Events: [
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
         'cody.extension:savedLogin',
@@ -296,7 +296,7 @@ test.extend<ExpectedEvents>({
 })
 
 // NOTE: @symbols does not require double tabbing to select an option.
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     expectedV2Events: [
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
         'cody.extension:savedLogin',
@@ -368,7 +368,7 @@ test.extend<ExpectedEvents>({
     await expect(previewTab).toBeVisible()
 })
 
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     expectedV2Events: ['cody.addChatContext:clicked'],
 })('Add Selection to Cody Chat', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)

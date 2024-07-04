@@ -37,7 +37,7 @@ test.extend<ExpectedV2Events>({
     await expect(chatFrame.getByRole('button', { name: 'Upgrade' })).toBeVisible()
 })
 
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     expectedV2Events: [
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
         'cody.extension:savedLogin',
@@ -66,7 +66,7 @@ test.extend<ExpectedEvents>({
     await expect(chatFrame.getByRole('button', { name: 'Learn More' })).toBeVisible()
 })
 
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     expectedV2Events: [
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
         'cody.extension:savedLogin',

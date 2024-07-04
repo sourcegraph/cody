@@ -104,7 +104,7 @@ test.extend<ExpectedV2Events>({
     await expect(chatInputMentions(firstChatInput)).toHaveText(['index.html:2-10', 'index.html'])
 })
 
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
     expectedV2Events: [
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
@@ -143,7 +143,7 @@ test.extend<ExpectedEvents>({
     await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible()
 })
 
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
     expectedV2Events: [
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825

@@ -21,8 +21,7 @@ test.fixme('CODY-2392', () => {
     //     test,
     // } from '../../e2e/helpers'
 
-    // test.extend<TestConfiguration & ExpectedEvents & ExpectedV2Events>({
-    //     expectedEvents: [],
+    // test.extend<TestConfiguration & ExpectedV2Events>({
     //     expectedV2Events: [],
     //     preAuthenticate: true,
     // })('@issue [CODY-2392](https://linear.app/sourcegraph/issue/CODY-2392)', async ({ page }) => {
