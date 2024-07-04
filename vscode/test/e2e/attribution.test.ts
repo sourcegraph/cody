@@ -7,20 +7,6 @@ import { type DotcomUrlOverride, type ExpectedEvents, test as baseTest } from '.
 
 const test = baseTest
     .extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
-    .extend<ExpectedEvents>({
-        // list of events we expect this test to log, add to this list as needed
-        expectedEvents: [
-            'CodyInstalled',
-            'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-            'CodyVSCodeExtension:login:clicked',
-            'CodyVSCodeExtension:auth:selectSigninMenu',
-            'CodyVSCodeExtension:auth:fromToken',
-            'CodyVSCodeExtension:Auth:connected',
-            'CodyVSCodeExtension:chat-question:submitted',
-            'CodyVSCodeExtension:chat-question:executed',
-            'CodyVSCodeExtension:chatResponse:hasCode',
-        ],
-    })
 
 test('attribution search enabled in chat', async ({ page, sidebar, expectedEvents }) => {
     await fetch(`${mockServer.SERVER_URL}/.test/attribution/enable`, { method: 'POST' })

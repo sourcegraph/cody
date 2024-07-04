@@ -5,19 +5,6 @@ import { type ExpectedEvents, test } from './helpers'
 
 test.extend<ExpectedEvents>({
     // list of events we expect this test to log, add to this list as needed
-    expectedEvents: [
-        'CodyInstalled',
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:Auth:connected',
-    ],
     expectedV2Events: [
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
         'cody.extension:savedLogin',

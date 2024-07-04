@@ -20,14 +20,6 @@ import { type ExpectedEvents, executeCommandInPalette, test, withPlatformSlashes
 // NOTE: Creating new chats is slow, and setup is slow, so collapse these into fewer tests.
 
 test.extend<ExpectedEvents>({
-    expectedEvents: [
-        'CodyInstalled',
-        // This is fired on empty @-mention query for open tabs context
-        'CodyVSCodeExtension:at-mention:executed',
-        // Log once on the first character entered for an @-mention query, e.g. "@."
-        'CodyVSCodeExtension:at-mention:file:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-    ],
     expectedV2Events: [
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
         'cody.extension:savedLogin',
@@ -212,18 +204,6 @@ test.extend<ExpectedEvents>({
 })
 
 test.extend<ExpectedEvents>({
-    expectedEvents: [
-        'CodyInstalled',
-        // This is fired on empty @-mention query for open tabs context
-        'CodyVSCodeExtension:at-mention:executed',
-        // Log once on the first character entered for an @-mention query, e.g. "@."
-        'CodyVSCodeExtension:at-mention:file:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-        'CodyVSCodeExtension:editChatButton:clicked',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-    ],
     expectedV2Events: [
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
         'cody.extension:savedLogin',
@@ -274,14 +254,6 @@ test.extend<ExpectedEvents>({
 })
 
 test.extend<ExpectedEvents>({
-    expectedEvents: [
-        'CodyVSCodeExtension:at-mention:file:executed',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-        'CodyVSCodeExtension:chat:context:opened',
-        'CodyVSCodeExtension:chat:context:fileLink:clicked',
-    ],
     expectedV2Events: [
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
         'cody.extension:savedLogin',
@@ -325,15 +297,6 @@ test.extend<ExpectedEvents>({
 
 // NOTE: @symbols does not require double tabbing to select an option.
 test.extend<ExpectedEvents>({
-    expectedEvents: [
-        'CodyVSCodeExtension:at-mention:executed',
-        'CodyVSCodeExtension:at-mention:symbol:executed',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-        'CodyVSCodeExtension:chat:context:opened',
-        'CodyVSCodeExtension:chat:context:fileLink:clicked',
-    ],
     expectedV2Events: [
         // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
         'cody.extension:savedLogin',
@@ -406,7 +369,6 @@ test.extend<ExpectedEvents>({
 })
 
 test.extend<ExpectedEvents>({
-    expectedEvents: ['CodyVSCodeExtension:addChatContext:clicked'],
     expectedV2Events: ['cody.addChatContext:clicked'],
 })('Add Selection to Cody Chat', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)

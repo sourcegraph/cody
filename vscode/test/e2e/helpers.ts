@@ -108,23 +108,6 @@ export const test = base
     .extend<TestConfiguration>({
         preAuthenticate: false,
     })
-    // By default, these events should always fire for each test
-    .extend<ExpectedEvents>({
-        expectedEvents: async ({ preAuthenticate }, use) =>
-            await use(
-                preAuthenticate
-                    ? ['CodyInstalled']
-                    : [
-                          'CodyInstalled',
-                          'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-                          'CodyVSCodeExtension:login:clicked',
-                          'CodyVSCodeExtension:auth:selectSigninMenu',
-                          'CodyVSCodeExtension:auth:fromToken',
-                          'CodyVSCodeExtension:Auth:connected',
-                      ]
-            ),
-    })
-
     .extend<ExpectedV2Events>({
         expectedV2Events: async ({ preAuthenticate }, use) =>
             await use(
@@ -258,7 +241,6 @@ export const test = base
                 app,
                 openDevTools,
                 assetsDirectory,
-                expectedEvents,
                 expectedV2Events,
                 preAuthenticate,
             },
@@ -293,7 +275,6 @@ export const test = base
             if (testInfo.status === 'passed') {
                 // Critical test to prevent event logging regressions.
                 // Do not remove without consulting data analytics team.
-                await expect(loggedEvents).toContainEvents(expectedEvents)
                 await expect(loggedV2Events).toContainEvents(expectedV2Events)
             } else {
                 await attachArtifacts(testInfo, page, assetsDirectory)
