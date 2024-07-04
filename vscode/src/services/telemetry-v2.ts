@@ -2,10 +2,10 @@ import * as vscode from 'vscode'
 
 import {
     type AuthStatusProvider,
+    CodyIDE,
     type Configuration,
     type ConfigurationWithAccessToken,
     type LogEventMode,
-    CodyIDE,
     MockServerTelemetryRecorderProvider,
     NoOpTelemetryRecorderProvider,
     TelemetryRecorderProvider,
