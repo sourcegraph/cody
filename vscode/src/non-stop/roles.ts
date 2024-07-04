@@ -70,13 +70,6 @@ export interface FixupFileCollection {
 }
 
 /**
- * Schedules a task for when the event loop is idle.
- */
-export interface FixupIdleTaskRunner {
-    scheduleIdle<T>(callback: () => T): Promise<T>
-}
-
-/**
  * Sink for notifications that text related to the fixup task--either the text
  * in the file, or the text provided by Cody--has changed.
  */
