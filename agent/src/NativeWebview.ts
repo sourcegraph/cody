@@ -1,11 +1,81 @@
 import uuid from 'uuid'
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
 type NativeWebviewHandle = string
 
+// TODO: Add support for WebviewView
+
+/**
+ * A delegate for adapting the VSCode Webview, WebviewPanel and WebviewView API
+ * to a client which has a native webview implementation.
+ */
 interface WebviewProtocolDelegate {
+    // CSP, resource-related
+    readonly webviewBundleLocalPrefix: string
+    readonly webviewBundleServingPrefix: string
+    readonly cspSource: string
+
+    // WebviewPanel
+    dispose(handle: NativeWebviewHandle): void
+    reveal(handle: NativeWebviewHandle, viewColumn?: vscode.ViewColumn, preserveFocus?: boolean): void
     setTitle(handle: NativeWebviewHandle, title: string): void
+    setIconPath(
+        handle: NativeWebviewHandle,
+        value: { light: vscode.Uri; dark: vscode.Uri } | undefined
+    ): void
+
+    // Webview
+    setHtml(handle: NativeWebviewHandle, value: string): void
+    postMessage(handle: NativeWebviewHandle, message: any): Promise<boolean>
 }
+
+class NativeWebview implements vscode.Webview {
+    private readonly didReceiveMessageEmitter = new vscode.EventEmitter<vscode.Event<any>>()
+    public readonly onDidReceiveMessage: vscode.Event<any> = this.didReceiveMessageEmitter.event
+    private _html = ''
+
+    constructor(
+        private readonly delegate: WebviewProtocolDelegate,
+        private readonly handle: NativeWebviewHandle,
+        public readonly options: vscode.WebviewOptions
+    ) {}
+
+    public get html(): string {
+        return this._html
+    }
+
+    public set html(value: string) {
+        this.delegate.setHtml(this.handle, value)
+        this._html = value
+    }
+
+    postMessage(message: any): Thenable<boolean> {
+        return this.delegate.postMessage(this.handle, message)
+    }
+
+    asWebviewUri(localResource: vscode.Uri): vscode.Uri {
+        if (!localResource.toString().startsWith(this.delegate.webviewBundleLocalPrefix)) {
+            // TODO: If you encounter this error, elaborate the ClientCapabilities protocol for
+            // cspRoot/webviewBundleServingPrefix to support multiple resource roots.
+            throw new Error(
+                `Unable to make '${localResource.toString()}' a webview URI: must start with '${
+                    this.delegate.webviewBundleLocalPrefix
+                }'`
+            )
+        }
+        return vscode.Uri.parse(
+            `${this.delegate.webviewBundleServingPrefix}${localResource.path.substr(
+                this.delegate.webviewBundleLocalPrefix.length
+            )}`
+        )
+    }
+
+    public get cspSource(): string {
+        return this.delegate.cspSource
+    }
+}
+
+// TODO: Plumb the receiveMessage, etc. side out of this interface.
 
 /**
  * Implementation of WebviewPanel that is supported by a native Webview
@@ -17,18 +87,30 @@ interface WebviewProtocolDelegate {
  * contents hosted by the client.
  */
 export class NativeWebviewPanel implements vscode.WebviewPanel {
-    // The identifier used to refer to the Webview on the client side. This
-    // identifier is allocated by the Agent because createWebviewPanel is
-    // synchronous.
-    private handle: NativeWebviewHandle = `native-webview-${uuid.v4()}`
+    // The identifier used to refer to the panel *and* Webview on the client
+    // side. This identifier is allocated by the Agent because
+    // createWebviewPanel is synchronous.
+    private handle: NativeWebviewHandle = `native-webview-panel-${uuid.v4()}`
     private _title: string
+    private _iconPath: vscode.Uri | { light: vscode.Uri; dark: vscode.Uri } | undefined
+    public readonly webview: vscode.Webview
+    // TODO: Implement active, visible and this event.
+    private readonly didChangeViewStateEmitter: vscode.EventEmitter<vscode.WebviewPanelOnDidChangeViewStateEvent> =
+        new vscode.EventEmitter()
+    public readonly onDidChangeViewState: vscode.Event<vscode.WebviewPanelOnDidChangeViewStateEvent> =
+        this.didChangeViewStateEmitter.event
+    private readonly disposeEmitter: vscode.EventEmitter<void> = new vscode.EventEmitter()
+    public readonly onDidDispose: vscode.Event<void> = this.disposeEmitter.event
 
     constructor(
         private readonly delegate: WebviewProtocolDelegate,
         public readonly viewType: string,
-        title: string
+        title: string,
+        public readonly options: vscode.WebviewPanelOptions,
+        webviewOptions: vscode.WebviewOptions
     ) {
         this._title = title
+        this.webview = new NativeWebview(this.delegate, this.handle, webviewOptions)
     }
 
     public get title(): string {
@@ -40,69 +122,44 @@ export class NativeWebviewPanel implements vscode.WebviewPanel {
         this._title = value
     }
 
-    /**
-     * Icon for the panel shown in UI.
-     */
-    iconPath?: Uri | { readonly light: Uri; readonly dark: Uri }
+    public get iconPath(): vscode.Uri | { light: vscode.Uri; dark: vscode.Uri } | undefined {
+        if (!this._iconPath) {
+            return undefined
+        }
+        if (this._iconPath instanceof vscode.Uri) {
+            return this._iconPath
+        }
+        return { ...this._iconPath }
+    }
 
-    /**
-     * {@linkcode Webview} belonging to the panel.
-     */
-    readonly webview: Webview
+    public set iconPath(value: vscode.Uri | { light: vscode.Uri; dark: vscode.Uri } | undefined) {
+        this.delegate.setIconPath(
+            this.handle,
+            value instanceof vscode.Uri ? { light: value, dark: value } : value
+        )
+        this._iconPath = value
+    }
 
-    /**
-     * Content settings for the webview panel.
-     */
-    readonly options: WebviewPanelOptions
+    public get viewColumn(): vscode.ViewColumn | undefined {
+        // TODO: Implement this
+        throw new Error('Agent "native" webview does not support WebviewPanel.viewColumn')
+    }
 
-    /**
-     * Editor position of the panel. This property is only set if the webview is in
-     * one of the editor view columns.
-     */
-    readonly viewColumn: ViewColumn | undefined
+    public get active(): boolean {
+        // TODO: Implement this
+        throw new Error('Agent "native" webview does not support WebviewPanel.active')
+    }
 
-    /**
-     * Whether the panel is active (focused by the user).
-     */
-    readonly active: boolean
+    public get visible(): boolean {
+        // TODO: Implement this
+        throw new Error('Agent "native" webview does not support WebviewPanel.visible')
+    }
 
-    /**
-     * Whether the panel is visible.
-     */
-    readonly visible: boolean
+    reveal(viewColumn?: vscode.ViewColumn, preserveFocus?: boolean): void {
+        this.delegate.reveal(this.handle, viewColumn, preserveFocus)
+    }
 
-    /**
-     * Fired when the panel's view state changes.
-     */
-    readonly onDidChangeViewState: Event<WebviewPanelOnDidChangeViewStateEvent>
-
-    /**
-     * Fired when the panel is disposed.
-     *
-     * This may be because the user closed the panel or because `.dispose()` was
-     * called on it.
-     *
-     * Trying to use the panel after it has been disposed throws an exception.
-     */
-    readonly onDidDispose: Event<void>
-
-    /**
-     * Show the webview panel in a given column.
-     *
-     * A webview panel may only show in a single column at a time. If it is already showing, this
-     * method moves it to a new column.
-     *
-     * @param viewColumn View column to show the panel in. Shows in the current `viewColumn` if undefined.
-     * @param preserveFocus When `true`, the webview will not take focus.
-     */
-    reveal(viewColumn?: ViewColumn, preserveFocus?: boolean): void
-
-    /**
-     * Dispose of the webview panel.
-     *
-     * This closes the panel if it showing and disposes of the resources owned by the webview.
-     * Webview panels are also disposed when the user closes the webview panel. Both cases
-     * fire the `onDispose` event.
-     */
-    dispose(): any
+    dispose(): any {
+        this.delegate.dispose(this.handle)
+    }
 }
