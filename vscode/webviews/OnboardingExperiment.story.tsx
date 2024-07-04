@@ -21,20 +21,12 @@ const vscodeAPI: VSCodeWrapper = {
 
 export const Login: StoryObj<typeof LoginSimplified> = {
     render: () => (
-        <LoginSimplified
-            simplifiedLoginRedirect={() => {}}
-            uiKindIsWeb={false}
-            vscodeAPI={vscodeAPI}
-        />
+        <LoginSimplified simplifiedLoginRedirect={() => {}} uiKindIsWeb={false} vscodeAPI={vscodeAPI} />
     ),
 }
 
 export const LoginWeb: StoryObj<typeof LoginSimplified> = {
     render: () => (
-        <LoginSimplified
-            simplifiedLoginRedirect={() => {}}
-            uiKindIsWeb={true}
-            vscodeAPI={vscodeAPI}
-        />
+        <LoginSimplified simplifiedLoginRedirect={() => {}} uiKindIsWeb={true} vscodeAPI={vscodeAPI} />
     ),
 }

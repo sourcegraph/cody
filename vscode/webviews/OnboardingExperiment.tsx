@@ -77,10 +77,7 @@ export const LoginSimplified: React.FunctionComponent<React.PropsWithoutRef<Logi
                     <div className={styles.buttonWidthSizer}>
                         <div className={styles.buttonStack}>
                             {uiKindIsWeb ? (
-                                <WebLogin
-                                    telemetryRecorder={telemetryRecorder}
-                                    vscodeAPI={vscodeAPI}
-                                />
+                                <WebLogin telemetryRecorder={telemetryRecorder} vscodeAPI={vscodeAPI} />
                             ) : (
                                 <>
                                     <VSCodeButton

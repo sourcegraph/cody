@@ -11,7 +11,6 @@ import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { defaultCommands, selectedCodePromptWithExtraFiles } from '.'
 import type { ChatCommandResult } from '../../CommandResult'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
 import { getContextFileFromCursor } from '../context/selection'
 import type { CodyCommandArgs } from '../types'
 import { type ExecuteChatArguments, executeChat } from './ask'

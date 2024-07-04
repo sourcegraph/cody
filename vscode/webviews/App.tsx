@@ -26,10 +26,7 @@ import { ClientStateContextProvider, useClientActionDispatcher } from './client/
 import { WithContextProviders } from './mentions/providers'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
-import {
-    TelemetryRecorderContext,
-    createWebviewTelemetryRecorder,
-} from './utils/telemetry'
+import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from './utils/telemetry'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<(LocalEnv & ConfigurationSubsetForWebview) | null>(null)
