@@ -12,7 +12,7 @@ export async function exposeOpenCtxClient(
     config: ConfigurationWithAccessToken,
     isDotCom: boolean,
     // TODO [VK] Expose createController openctx type from vscode-lib
-    createOpenContextController?: (...args: any[]) => any
+    createOpenContextController: ((...args: any[]) => any) | undefined
 ) {
     logDebug('openctx', 'OpenCtx is enabled in Cody')
     await warnIfOpenCtxExtensionConflict()

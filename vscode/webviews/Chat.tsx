@@ -11,6 +11,7 @@ import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/cons
 import styles from './Chat.module.css'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
+import { useContextProviders } from './mentions/providers'
 import { useTelemetryRecorder } from './utils/telemetry'
 
 interface ChatboxProps {
@@ -35,7 +36,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     transcript,
     vscodeAPI,
     telemetryService,
-
     isTranscriptError,
     chatEnabled = true,
     userInfo,
@@ -45,6 +45,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     showIDESnippetActions = true,
     className,
 }) => {
+    const { reload: reloadMentionProviders } = useContextProviders()
     const telemetryRecorder = useTelemetryRecorder()
 
     const feedbackButtonsOnSubmit = useCallback(
@@ -165,6 +166,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             window.removeEventListener('focus', onFocus)
         }
     }, [])
+
+    // biome-ignore lint/correctness/useExhaustiveDependencies: needs to run when is dotcom status is chaning to update openctx providers
+    useEffect(() => {
+        reloadMentionProviders()
+    }, [userInfo.isDotComUser, reloadMentionProviders])
 
     return (
         <div className={clsx(styles.container, className, 'tw-relative')}>
