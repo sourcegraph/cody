@@ -6,12 +6,14 @@
     border-radius: 2px;
     white-space: normal;
     padding: 0 3px;
-    display: inline-block;
+    display: inline-flex;
+    align-items: baseline;
     outline-offset: -1px;
     cursor: pointer;
 
     .icon {
-        display: inline;
+        display: inline-flex;
+        align-self: center;
         width: 14px;
         height: 14px;
         margin-right: 2px;
@@ -38,5 +40,17 @@
 body:is([data-vscode-theme-kind='vscode-high-contrast'], [data-vscode-theme-kind='vscode-high-contrast-light']) .context-item-mention-node {
     &:not(.context-item-mention-chip-node--focused) {
         outline: solid 1px var(--vscode-input-foreground);
+    }
+}
+
+/* color-mix is not supported on JetBrains webview */
+html[data-ide=JetBrains] .context-item-mention-node {
+    color: var(--vscode-inputOption-activeForeground);
+    background-color: var(--vscode-badge-background);
+    gap: 0.2rem;
+
+    .icon {
+        width: 1rem;
+        height: 1rem;
     }
 }

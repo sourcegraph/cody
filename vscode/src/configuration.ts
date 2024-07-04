@@ -166,6 +166,10 @@ export function getConfiguration(
             'autocomplete.experimental.multiModelCompletions',
             undefined
         ),
+        autocompleteExperimentalSmartThrottle: getHiddenSetting(
+            'autocomplete.experimental.smartThrottle',
+            false
+        ),
 
         // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
         // We currently use this flag for the agent to provide more helpful error messages
@@ -218,7 +222,10 @@ export const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => 
     const isTesting = process.env.CODY_TESTING === 'true'
     const serverEndpoint =
         localStorage?.getEndpoint() || (isTesting ? 'http://localhost:49300/' : DOTCOM_URL.href)
-    const accessToken = (await getAccessToken()) || null
+    const accessToken =
+        vscode.workspace.getConfiguration().get<string>('cody.accessToken') ||
+        (await getAccessToken()) ||
+        null
     return { ...config, accessToken, serverEndpoint }
 }
 

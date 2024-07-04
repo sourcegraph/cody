@@ -8,17 +8,26 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Ollama: Added support for running Cody offline with local Ollama models. [pull/4691](https://github.com/sourcegraph/cody/pull/4691)
 - Edit: Added support for users' to edit the applied edit before the diff view is removed. [pull/4684](https://github.com/sourcegraph/cody/pull/4684)
+- Autocomplete: Added a new experimental throttling mechanism that should decrease latency. [pull/4735](https://github.com/sourcegraph/cody/pull/4735)
+- Autocomplete: Added experimental support for Gemini 1.5 Flash as the autocomplete model. To enable this experimental feature, update the `autocomplete.advanced.provider` configuration setting to `unstable-gemini`. Prerequisite: Your Sourcegraph instance (v5.5.0+) must first be configured to use Gemini 1.5 Flash as the autocomplete model. [pull/4743](https://github.com/sourcegraph/cody/pull/4743)
 
 ### Fixed
 
 - Edit: Fixed an issue where, when unable to detect the indentation of a file, Cody would remove all indentation from a response. [pull/4704](https://github.com/sourcegraph/cody/pull/4704)
+- Edit: Fixed an issue where Cody would sometimes remove unintended parts of the code when an edit was accepted on save. [pull/4720](https://github.com/sourcegraph/cody/pull/4720)
 
 ### Changed
 
 - Autocomplete: When the last completion candidate is not applicable at the current document position, it remains in the cache even after the user backspaces or deletes characters from the current line. [pull/4704](https://github.com/sourcegraph/cody/pull/4704)
 - Chat: Added a stop button and cleaned up the vertical space layout of the chat. [pull/4580](https://github.com/sourcegraph/cody/pull/4580)
+- Autocomplete: Added a caching layer to Jaccard Similarity to reduce the load of context gathering during autocompletion. [pull/4608](https://github.com/sourcegraph/cody/pull/4608)
 - Chat: Simplify the Enterprise docs in the model selector [pull/4745](https://github.com/sourcegraph/cody/pull/4745)
+- Autocomplete: Increase request manager cache size. [pull/4778](https://github.com/sourcegraph/cody/pull/4778)
+- Edit: We now collapse the selection down to the cursor position after an edit is triggered. [pull/4781](https://github.com/sourcegraph/cody/pull/4781)
 
+## 1.24.1
+
+- Autocomplete: Restrict the number of lines we await during hot-streak completion generation to prevent overwhelming inference providers. [pull/4737](https://github.com/sourcegraph/cody/pull/4737)
 
 ## 1.24.0
 

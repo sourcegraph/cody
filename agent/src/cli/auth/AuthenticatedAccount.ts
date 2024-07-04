@@ -39,23 +39,24 @@ export class AuthenticatedAccount {
         return this.account.serverEndpoint
     }
 
-    public static async fromUserSettings(spinner?: Ora): Promise<AuthenticatedAccount | undefined> {
+    public static async fromUserSettings(spinner: Ora): Promise<AuthenticatedAccount | undefined> {
         const settings = loadUserSettings()
         if (!settings.activeAccountID) {
             return undefined
         }
         const account = settings.accounts?.find(({ id }) => id === settings.activeAccountID)
         if (!account) {
-            spinner?.fail(`Failed to find active account ${settings.activeAccountID}`)
+            spinner.fail(`Failed to find active account ${settings.activeAccountID}`)
             return undefined
         }
-        return AuthenticatedAccount.fromUnauthenticated(account)
+        return AuthenticatedAccount.fromUnauthenticated(spinner, account)
     }
 
     public static async fromUnauthenticated(
+        spinner: Ora,
         account: Account
     ): Promise<AuthenticatedAccount | undefined> {
-        const accessToken = await readCodySecret(account)
+        const accessToken = await readCodySecret(spinner, account)
         if (!accessToken) {
             return undefined
         }

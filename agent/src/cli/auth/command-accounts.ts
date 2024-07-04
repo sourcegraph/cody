@@ -20,7 +20,7 @@ export const accountsCommand = new Command('accounts')
             }
             const t = new Table()
             for (const account of settings.accounts ?? []) {
-                const authenticated = await AuthenticatedAccount.fromUnauthenticated(account)
+                const authenticated = await AuthenticatedAccount.fromUnauthenticated(spinner, account)
                 t.cell(chalk.bold('Name'), account.id)
                 t.cell(chalk.bold('Instance'), account.serverEndpoint)
                 const isActiveAccount = account.id === settings.activeAccountID

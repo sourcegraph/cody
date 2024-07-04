@@ -1,0 +1,13 @@
+
+.loading {
+    margin: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.chat {
+    /* Override chat standard styles for cody web chat */
+    min-height: 100% !important;
+}

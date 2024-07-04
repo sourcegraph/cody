@@ -10,10 +10,6 @@ export interface Decorations {
     currentLine?: vscode.DecorationOptions
 }
 
-export interface ComputedOutput {
-    decorations: Decorations
-}
-
 export function computeAppliedDecorations(task: FixupTask): Decorations | undefined {
     const visibleDocument = getVisibleDocument(task)
     if (!visibleDocument) {

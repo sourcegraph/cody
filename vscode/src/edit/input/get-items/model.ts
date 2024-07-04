@@ -21,7 +21,7 @@ const getModelProviderIcon = (provider: string): string => {
         case 'Google':
             return '$(gemini-logo)'
         default:
-            return ''
+            return '$(cody-logo)'
     }
 }
 

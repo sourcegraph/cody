@@ -13,7 +13,6 @@ export const logoutCommand = new Command('logout')
                 spinner.fail('You are already logged out')
                 process.exit(1)
             }
-            await removeCodySecret(settings.activeAccountID)
             const account = settings.accounts.find(account => account.id === settings.activeAccountID)
             if (!account) {
                 spinner.fail(
@@ -23,11 +22,12 @@ export const logoutCommand = new Command('logout')
                 )
                 process.exit(1)
             }
+            await removeCodySecret(spinner, account)
             const newAccounts = settings.accounts.filter(
                 account => account.id !== settings.activeAccountID
             )
             writeUserSettings({ accounts: newAccounts })
-            spinner.succeed(`Logged out of account ${account.id} on ${account.serverEndpoint}`)
+            spinner.succeed(`Logged out of account ${account.username} on ${account.serverEndpoint}`)
             process.exit(0)
         } catch (error) {
             if (error instanceof Error) {
