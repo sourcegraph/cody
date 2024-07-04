@@ -1466,6 +1466,7 @@
     "fs-extra": "^11.2.0",
     "fuzzysort": "^2.0.4",
     "http-proxy-middleware": "^3.0.0",
+    "kill-sync": "^1.0.3",
     "mocha": "^10.2.0",
     "ovsx": "^0.8.2",
     "pako": "^2.1.0",
