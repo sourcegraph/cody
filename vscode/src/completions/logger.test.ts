@@ -43,7 +43,6 @@ const defaultRequestParams: RequestParams = {
 const completionItemId = 'completion-item-id' as CompletionLogger.CompletionItemID
 
 describe('logger', () => {
-    let logSpy: MockInstance
     let recordSpy: MockInstance
     beforeEach(async () => {
         await initCompletionProviderConfig({})
@@ -106,18 +105,6 @@ describe('logger', () => {
             ],
         }
 
-        expect(logSpy).toHaveBeenCalledWith(
-            'CodyVSCodeExtension:completion:suggested',
-            {
-                ...shared,
-                accepted: true,
-                completionsStartedSinceLastSuggestion: 1,
-                displayDuration: expect.any(Number),
-                read: true,
-                latency: expect.any(Number),
-            },
-            { agent: true, hasV2Event: true }
-        )
         expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'suggested', {
             version: 0,
             interactionID: expect.any(String),
@@ -125,21 +112,6 @@ describe('logger', () => {
             privateMetadata: expect.anything(),
         })
 
-        expect(logSpy).toHaveBeenCalledWith(
-            'CodyVSCodeExtension:completion:accepted',
-            {
-                ...shared,
-                acceptedItem: {
-                    charCount: 3,
-                    lineCount: 1,
-                    lineTruncatedCount: undefined,
-                    nodeTypes: undefined,
-                    parseErrorCount: undefined,
-                    truncatedWith: undefined,
-                },
-            },
-            { agent: true, hasV2Event: true }
-        )
         expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'accepted', {
             version: 0,
             interactionID: expect.any(String),
@@ -183,33 +155,10 @@ describe('logger', () => {
         const loggerItem2 = CompletionLogger.getCompletionEvent(id2)
         expect(loggerItem2?.params.id).toBe(completionId)
 
-        expect(logSpy).toHaveBeenCalledWith(
-            'CodyVSCodeExtension:completion:suggested',
-            expect.objectContaining({
-                id: loggerItem?.params.id,
-                source: 'Network',
-            }),
-            { agent: true, hasV2Event: true }
-        )
         expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'suggested', expect.anything())
 
-        expect(logSpy).toHaveBeenCalledWith(
-            'CodyVSCodeExtension:completion:suggested',
-            expect.objectContaining({
-                id: loggerItem?.params.id,
-                source: 'Cache',
-            }),
-            { agent: true, hasV2Event: true }
-        )
         expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'suggested', expect.anything())
 
-        expect(logSpy).toHaveBeenCalledWith(
-            'CodyVSCodeExtension:completion:suggested',
-            expect.objectContaining({
-                id: loggerItem?.params.id,
-            }),
-            { agent: true, hasV2Event: true }
-        )
         expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'suggested', expect.anything())
 
         // After accepting the completion, the ID won't be reused a third time
@@ -236,30 +185,13 @@ describe('logger', () => {
         CompletionLogger.start(id)
         CompletionLogger.partiallyAccept(id, item, 5, false)
 
-        expect(logSpy).toHaveBeenCalledWith(
-            'CodyVSCodeExtension:completion:partiallyAccepted',
-            expect.objectContaining({
-                acceptedLength: 5,
-                acceptedLengthDelta: 5,
-            }),
-            { agent: true, hasV2Event: true }
-        )
         expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'partiallyAccepted', expect.anything())
 
         CompletionLogger.partiallyAccept(id, item, 10, false)
 
-        expect(logSpy).toHaveBeenCalledWith(
-            'CodyVSCodeExtension:completion:partiallyAccepted',
-            expect.objectContaining({
-                acceptedLength: 10,
-                acceptedLengthDelta: 5,
-            }),
-            { agent: true, hasV2Event: true }
-        )
         expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'partiallyAccepted', expect.anything())
 
         CompletionLogger.partiallyAccept(id, item, 5, false)
         CompletionLogger.partiallyAccept(id, item, 8, false)
-        expect(logSpy).toHaveBeenCalledTimes(2)
-    })
+\    })
 })
