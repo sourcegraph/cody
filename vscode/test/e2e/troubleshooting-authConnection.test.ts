@@ -25,12 +25,9 @@ test.skip('allow retrying on connection issues', async ({ page, nap }) => {
     // Cody this will now cause a connection issue when checking the currentUser.
     // After "fixing" the server Cody should be able to connect again.
 
-    let res = await fetch(
-        `${mockServer.SERVER_URL}/.test/connectionIssue/enable?issue=ECONNREFUSED`,
-        {
-            method: 'POST',
-        }
-    )
+    let res = await fetch(`${mockServer.SERVER_URL}/.test/connectionIssue/enable?issue=ECONNREFUSED`, {
+        method: 'POST',
+    })
     assert.equal(res.status, 200)
 
     await executeCommandInPalette(page, 'developer: reload window')
