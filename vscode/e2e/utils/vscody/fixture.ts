@@ -133,10 +133,8 @@ function schemaOptions<T extends zod.ZodObject<any>, S extends 'worker' | 'test'
 const SPAWNED_PIDS = new Set<number | undefined>()
 onExit(
     () => {
-        console.log('KILLLING')
         for (const pid of SPAWNED_PIDS.values()) {
             if (pid !== undefined) {
-                console.log('KILLING', pid)
                 killSync(pid, 'SIGKILL', true)
             }
         }
@@ -560,7 +558,6 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                     .intercept((req, res) => {
                         //TODO(rnauta): forward this to a local otlp server & include with attachments
                         // ideally combined with local or even remote sourcegraph traces too
-                        console.log('INTERCEPTED TRACING')
                         res.status(201).json({ partialSuccess: {} })
                     })
 
@@ -576,7 +573,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                         )
                     })
                     .intercept((req, res) => {
-                        console.log('INTERCEPTED A LOG MUTATION EVENT')
+                        //TODO: Implement this
                         res.status(200).json({ data: { logEvent: null } })
                     })
 
@@ -592,7 +589,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                         )
                     })
                     .intercept((req, res) => {
-                        console.log('INTERCEPTED A RecordTelemetryEvent')
+                        //TODO: implement this
                         res.status(200).json({
                             data: { telemetry: { recordEvents: { alwaysNil: null } } },
                         })
@@ -611,7 +608,6 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                     })
                     .intercept((req, res) => {
                         //TODO(rnauta): impeement this
-                        console.log('INTERCEPTED FEATURE FLAG EVENT')
                         res.status(200).json({ data: { evaluateFeatureFlag: null } })
                     })
                 polly.server
@@ -626,7 +622,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                         )
                     })
                     .intercept((req, res) => {
-                        console.log('intercepted feature flag get')
+                        //TODO: implement this
                         res.status(200).json({ data: { evaluatedFeatureFlags: [] } })
                     })
 
@@ -636,7 +632,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                         return req.pathname.startsWith('/healthz')
                     })
                     .intercept((req, res, interceptor) => {
-                        console.log('INTERCEPTED HEALTH CHECK')
+                        //TODO: implement this
                         res.sendStatus(200)
                     })
             }
@@ -728,17 +724,8 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                             ...process.env,
                             // VSCODE_EXTENSIONS: sharedExtensionsDir, This doesn't work either
                         },
-                        stdio: ['inherit', 'inherit', 'inherit'],
+                        stdio: ['inherit', 'ignore', 'inherit'],
                     })
-                } catch (e) {
-                    console.log('I AM HERE')
-                    if (
-                        typeof e === 'string' &&
-                        e.includes('code version use stable --install-dir /path/to/installation')
-                    ) {
-                    }
-                    console.error(e)
-                    throw e
                 } finally {
                     releaseLock()
                 }
@@ -938,7 +925,7 @@ async function downloadOrWaitForVSCode({
                 throw new Error('Global VSCode path modification is not allowed')
             }
             await pspawn(tunnelPath, ['version', 'use', 'stable', '--install-dir', installPath], {
-                stdio: ['inherit', 'inherit', 'inherit'],
+                stdio: ['inherit', 'ignore', 'inherit'],
             })
         } else if (res.code !== 0) {
             throw new Error(JSON.stringify(res))
