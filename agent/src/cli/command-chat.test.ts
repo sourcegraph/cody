@@ -11,6 +11,7 @@ import { Streams, StringBufferStream } from './Streams'
 import { type ChatOptions, chatAction, chatCommand } from './command-chat'
 
 process.env.CODY_SHIM_TESTING = 'true'
+process.env.DISABLE_FEATURE_FLAGS = 'true'
 
 interface ChatCommandResult {
     command: string
@@ -32,6 +33,7 @@ describe('cody chat', () => {
         // `--access-token` or `--endpoint` so we modify process.env instead.
         process.env.SRC_ACCESS_TOKEN = credentials.token ?? credentials.redactedToken
         process.env.SRC_ENDPOINT = credentials.serverEndpoint
+        process.env.DISABLE_FEATURE_FLAGS = 'true'
         process.env.CODY_TELEMETRY_EXPORTER = 'testing'
         const args = [...params.args, '--dir', tmp.rootPath, '--silent']
 

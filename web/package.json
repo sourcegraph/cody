@@ -38,7 +38,7 @@
     "tailwindcss": "^3.4.3",
     "cody-ai": "workspace:*",
     "@types/lodash": "4.14.195",
-    "@sourcegraph/cody-agent": "workspace:*",
+    "@sourcegraph/cody": "workspace:*",
     "@sourcegraph/cody-shared": "workspace:*"
   }
 }

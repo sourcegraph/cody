@@ -1,4 +1,4 @@
-import { Agent } from '@sourcegraph/cody-agent/src/agent'
+import { Agent } from '@sourcegraph/cody/src/agent'
 import {
     BrowserMessageReader,
     BrowserMessageWriter,
