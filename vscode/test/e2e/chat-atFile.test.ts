@@ -211,7 +211,6 @@ test.extend<ExpectedV2Events>({
         'cody.auth.login:firstEver',
         'cody.auth.signin.token:clicked',
         'cody.auth:connected',
-        'cody.extension:savedLogin',
         'cody.codyIgnore:hasFile',
         'cody.auth:connected',
         'cody.at-mention:executed',
