@@ -1309,12 +1309,13 @@ export const graphqlClient = new SourcegraphGraphQLAPIClient()
 export class ClientConfigSingleton {
     private static instance: ClientConfigSingleton
     private cachedClientConfig?: CodyClientConfig
+    private cachedAt?: number
     private featuresLegacy: Promise<CodyConfigFeatures>
 
     // Constructor is private to prevent creating new instances outside of the class
     private constructor() {
-        // Fetch the latest client config periodically every 60 seconds
-        setInterval(() => this.refreshConfig(), 60000)
+        // Fetch the latest client config initially because we know we'll need it.
+        this.refreshConfig()
 
         // Default values for the legacy GraphQL features API, used when a Sourcegraph instance
         // does not support even the legacy GraphQL API.
@@ -1335,10 +1336,25 @@ export class ClientConfigSingleton {
     }
 
     public async getConfig(): Promise<CodyClientConfig> {
-        if (this.cachedClientConfig) {
-            return this.cachedClientConfig
+        if (!this.cachedClientConfig) {
+            // Must wait for client config first.
+            await this.refreshConfig()
+
+            // If the cached config is null, then we must have failed to fetch it and there is
+            // nothing we can do.
+            if (!this.cachedClientConfig || !this.cachedAt) {
+                throw new Error('error while refreshing client config, please try again later or check the logs')
+            }
         }
-        this.cachedClientConfig = await this.refreshConfig()
+
+        // If the cached config is >60s old, then we will refresh it async now. In the meantime, we will
+        // continue using the old version.
+        //
+        // Note that this means the time allowance between 'site admin disabled <chat,autocomplete,commands,etc.>
+        // functionality but users can still make use of it' is double this (120s.)
+        if ((Date.now() - this.cachedAt!) > 60000) {
+            this.refreshConfig()
+        }
         return this.cachedClientConfig!
     }
 
@@ -1396,6 +1412,7 @@ export class ClientConfigSingleton {
             .then(clientConfig => {
                 logDebug('ClientConfigSingleton', 'refreshed', JSON.stringify(clientConfig))
                 this.cachedClientConfig = clientConfig
+                this.cachedAt = Date.now()
                 return clientConfig
             })
             .catch(e => {
