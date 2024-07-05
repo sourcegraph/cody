@@ -1343,7 +1343,9 @@ export class ClientConfigSingleton {
             // If the cached config is null, then we must have failed to fetch it and there is
             // nothing we can do.
             if (!this.cachedClientConfig || !this.cachedAt) {
-                throw new Error('error while refreshing client config, please try again later or check the logs')
+                throw new Error(
+                    'error while refreshing client config, please try again later or check the logs'
+                )
             }
         }
 
@@ -1352,7 +1354,7 @@ export class ClientConfigSingleton {
         //
         // Note that this means the time allowance between 'site admin disabled <chat,autocomplete,commands,etc.>
         // functionality but users can still make use of it' is double this (120s.)
-        if ((Date.now() - this.cachedAt!) > 60000) {
+        if (Date.now() - this.cachedAt! > 60000) {
             this.refreshConfig()
         }
         return this.cachedClientConfig!
@@ -1426,8 +1428,8 @@ export class ClientConfigSingleton {
 
         // Note: all of these promises are written carefully to not throw errors internally, but
         // rather to return sane defaults, and so we do not catch() here.
-        const smartContextWindow = await graphqlClient.getCodyLLMConfigurationSmartContext();
-        const features = await this.fetchConfigFeaturesLegacy(previousFeaturesLegacy);
+        const smartContextWindow = await graphqlClient.getCodyLLMConfigurationSmartContext()
+        const features = await this.fetchConfigFeaturesLegacy(previousFeaturesLegacy)
 
         return graphqlClient.isCodyEnabled().then(isCodyEnabled => ({
             codyEnabled: isCodyEnabled.enabled,
