@@ -86,7 +86,7 @@ export function registerNativeWebviewHandlers(
         postMessage: (handle, message) => {
             agent.notify('webview/postMessageStringEncoded', {
                 id: handle,
-                stringEncodedMessage: message,
+                stringEncodedMessage: JSON.stringify(message),
             })
             return Promise.resolve(true)
         },
@@ -115,8 +115,11 @@ export function registerNativeWebviewHandlers(
             preserveFocus: showOptions?.preserveFocus ?? false,
             viewColumn: showOptions?.viewColumn ?? vscode.ViewColumn.Active,
         })
-        // TODO: What reads webPanels, and do we need to push into there?
-        // this.webPanels.add(panel)
+        agent.webPanels.nativePanels.set(panel.handle, {
+            didReceiveMessage(message: any) {
+                ;(panel.webview as NativeWebview).didReceiveMessageEmitter.fire(message)
+            },
+        })
         return panel
     })
 }
@@ -124,7 +127,7 @@ export function registerNativeWebviewHandlers(
 // TODO: Add support for WebviewView
 
 class NativeWebview implements vscode.Webview {
-    private readonly didReceiveMessageEmitter = new vscode.EventEmitter<vscode.Event<any>>()
+    readonly didReceiveMessageEmitter = new vscode.EventEmitter<vscode.Event<any>>()
     public readonly onDidReceiveMessage: vscode.Event<any> = this.didReceiveMessageEmitter.event
     private _html = ''
 

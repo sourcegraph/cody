@@ -8,9 +8,11 @@ import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/pro
 import type { Repo } from '../../vscode/src/context/repo-fetcher'
 import { EventEmitter, defaultWebviewPanel } from './vscode-shim'
 
-/** Utility class to manage a list of `AgentWebPanel` instances. */
+/** Utility class to manage a list of `AgentWebPanel` or "native" WebviewPanel instances. */
 export class AgentWebviewPanels {
     public panels = new Map<string, AgentWebviewPanel>()
+    // TODO: If we don't create AgentWebviewPanels when using native webviews, untangle nativePanels from this type.
+    public readonly nativePanels = new Map<string, { didReceiveMessage: (message: any) => void }>()
     public add(panel: AgentWebviewPanel): void {
         this.panels.set(panel.panelID, panel)
     }
