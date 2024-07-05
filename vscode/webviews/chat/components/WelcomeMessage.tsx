@@ -52,7 +52,8 @@ export const WelcomeMessage: FunctionComponent<{
         setShowMessage(true)
     }, [])
 
-    if (!showMessage) {
+    // NOTE: The current welcome message only applies to VS Code client.
+    if (!showMessage || IDE !== CodyIDE.VSCode) {
         return (
             <div className="tw-flex-1 tw-flex tw-relative tw-min-h-12">
                 <div className="tw-absolute tw-bottom-0 tw-w-full tw-flex tw-justify-end tw-pb-8 tw-pr-8">
@@ -85,28 +86,19 @@ export const WelcomeMessage: FunctionComponent<{
                 <FeatureRow icon={AtSignIcon}>
                     Type <Kbd macOS="@" linuxAndWindows="@" /> to add context to your chat
                 </FeatureRow>
-                {/* IDE Specificed message - VS Code */}
-                {IDE === CodyIDE.VSCode && (
-                    <FeatureRow icon={TextIcon}>
-                        To add code context from an editor, or the file explorer, right click and use{' '}
-                        <MenuExample>Add to Cody Chat</MenuExample>
-                    </FeatureRow>
-                )}
-                {/* IDE Specificed message - VS Code */}
-                {IDE === CodyIDE.VSCode && (
-                    <FeatureRow icon={NewChatIcon}>
-                        Start a new chat using <Kbd macOS="opt+/" linuxAndWindows="alt+/" /> or the{' '}
-                        <CodyIcon character="H" /> button in the top right of any file
-                    </FeatureRow>
-                )}
-                {/* IDE Specificed message - VS Code */}
-                {IDE === CodyIDE.VSCode && (
-                    <FeatureRow icon={SettingsIcon}>
-                        Customize chat settings with the{' '}
-                        <i className="codicon codicon-settings-gear tw-translate-y-[3px] tw-mx-1" />{' '}
-                        button, or see the <a href="https://sourcegraph.com/docs/cody">documentation</a>
-                    </FeatureRow>
-                )}
+                <FeatureRow icon={TextIcon}>
+                    To add code context from an editor, or the file explorer, right click and use{' '}
+                    <MenuExample>Add to Cody Chat</MenuExample>
+                </FeatureRow>
+                <FeatureRow icon={NewChatIcon}>
+                    Start a new chat using <Kbd macOS="opt+/" linuxAndWindows="alt+/" /> or the{' '}
+                    <CodyIcon character="H" /> button in the top right of any file
+                </FeatureRow>
+                <FeatureRow icon={SettingsIcon}>
+                    Customize chat settings with the{' '}
+                    <i className="codicon codicon-settings-gear tw-translate-y-[3px] tw-mx-1" /> button,
+                    or see the <a href="https://sourcegraph.com/docs/cody">documentation</a>
+                </FeatureRow>
             </div>
         </div>
     )
