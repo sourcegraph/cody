@@ -46,7 +46,7 @@ public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
   }
 
   private void createTitleActions(@NotNull List<? super AnAction> titleActions) {
-    AnAction action = ActionManager.getInstance().getAction("CodyChatActionsGroup");
+    AnAction action = ActionManager.getInstance().getAction("cody.newChat");
     if (action != null) {
       titleActions.add(action);
     }
