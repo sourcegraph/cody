@@ -406,14 +406,18 @@ export class Agent extends MessageHandler implements ExtensionClient {
                       scheme: 'file',
                       path: clientInfo.workspaceRootPath ?? undefined,
                   })
+
             try {
                 await initializeVscodeExtension(
                     this.workspace.workspaceRootUri,
                     params.extensionActivate,
                     this
                 )
+
                 const webviewCapabilities = clientInfo.capabilities?.webview
-                if (webviewCapabilities instanceof Object && webviewCapabilities.type === 'native') {
+                const useNativeWebviews =
+                    webviewCapabilities instanceof Object && webviewCapabilities.type === 'native'
+                if (useNativeWebviews) {
                     registerNativeWebviewHandlers(this, webviewCapabilities)
                 } else {
                     this.registerWebviewHandlers()
@@ -1622,6 +1626,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
     }
 
     private async receiveWebviewMessage(id: string, message: WebviewMessage): Promise<void> {
+        const nativePanel = this.webPanels.nativePanels.get(id)
+        if (nativePanel) {
+            nativePanel.didReceiveMessage(message)
+            return
+        }
+
         const panel = this.webPanels.panels.get(id)
         if (!panel) {
             console.log(`No panel with id ${id} found`)
