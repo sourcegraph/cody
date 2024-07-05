@@ -252,6 +252,7 @@ export class ModelsService {
      * NOTE: private instances can only support 1 provider ATM.
      */
     public static setModels(models: Model[]): void {
+        console.trace('MODELS ARE: ', models)
         ModelsService.primaryModels = models
     }
 
