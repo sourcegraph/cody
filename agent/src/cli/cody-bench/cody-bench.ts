@@ -7,7 +7,16 @@ import * as vscode from 'vscode'
 
 import { newAgentClient } from '../../agent'
 
-import { ModelsService, getDotComDefaultModels, graphqlClient } from '@sourcegraph/cody-shared'
+import { exec } from 'node:child_process'
+import fs from 'node:fs'
+import { promisify } from 'node:util'
+import {
+    type ConfigurationUseContext,
+    ModelsService,
+    getDotComDefaultModels,
+    graphqlClient,
+    isDefined,
+} from '@sourcegraph/cody-shared'
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
 import { dotcomCredentials } from '../../../../vscode/src/testutils/testing-credentials'
 import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled'
@@ -57,7 +66,7 @@ export interface CodyBenchOptions {
     testCommand?: string
     gitLogFilter?: string
     fixture: EvaluationFixture
-    useContext: boolean
+    context: { sourcesDir: string; strategy: ConfigurationUseContext }
 
     verbose: boolean
 }
@@ -355,6 +364,10 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
         baseGlobalState.editModel = provider.model
     }
 
+    if (isDefined(options.context)) {
+        await gitInitContextSources(options)
+    }
+
     const { client } = await newAgentClient({
         name: 'cody-bench',
         version: '0.1.0',
@@ -364,9 +377,11 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
             serverEndpoint: options.srcEndpoint,
             customHeaders: {},
             customConfiguration: {
-                'cody.experimental.symf.enabled': options.useContext, // disabling fixes errors in Polly.js related to fetching the symf binary
-                'cody.experimental.localEmbeddings.disabled': !options.useContext,
-                'cody.useContext': 'blended',
+                'cody.experimental.symf.enabled': options.context.strategy in ['keyword', 'blended'], // disabling fixes errors in Polly.js related to fetching the symf binary
+                'cody.experimental.localEmbeddings.disabled': !(
+                    options.context.strategy in ['embeddings', 'blended']
+                ),
+                'cody.useContext': options.context.strategy,
                 'cody.experimental.telemetry.enabled': false,
                 ...options.fixture.customConfiguration,
             },
@@ -442,4 +457,20 @@ function expandWorkspaces(
                 }
             })
     })
+}
+
+async function gitInitContextSources(options: CodyBenchOptions): Promise<void> {
+    // If this is our first run, we need to git init the context sources dir so symf & embeddings work
+    if (fs.existsSync(path.join(options.workspace, '.git'))) {
+        return
+    }
+
+    await promisify(exec)(
+        `
+                git init &&
+                git add ${options.context.sourcesDir} &&
+                git commit -m "initial commit" &&
+                git remote add origin https://github.com/sgtest/cody-bench.git`,
+        { cwd: options.workspace }
+    )
 }
