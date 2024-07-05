@@ -5,7 +5,7 @@ import path from 'node:path'
 
 import type { TestParameters } from './TestParameters'
 import { Timer } from './Timer'
-import type { CodyBenchOptions } from './cody-bench'
+import type { CodyBenchOptions } from './command-bench'
 
 async function runCommand(command: string | undefined, cwd: string): Promise<boolean> {
     return new Promise<boolean>(resolve => {

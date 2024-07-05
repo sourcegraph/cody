@@ -1,10 +1,10 @@
 import { Command } from 'commander'
 
-import { authCommand } from './auth/command-auth'
-import { chatCommand } from './chat'
-import { codyBenchCommand } from './cody-bench/cody-bench'
-import { jsonrpcCommand } from './jsonrpc'
-import { serverCommand } from './server'
+import { authCommand } from './command-auth/command-auth'
+import { benchCommand } from './command-bench/command-bench'
+import { chatCommand } from './command-chat'
+import { jsonrpcCommand } from './command-jsonrpc-stdio'
+import { serverCommand } from './command-jsonrpc-websocket'
 
 export const rootCommand = new Command()
     .name('cody-agent')
@@ -13,8 +13,7 @@ export const rootCommand = new Command()
         'Cody Agent supports running the Cody VS Code extension in headless mode and interact with it via JSON-RPC. ' +
             'The Agent is used by editor clients like JetBrains and Neovim.'
     )
-    .addCommand(serverCommand)
-    .addCommand(jsonrpcCommand)
-    .addCommand(codyBenchCommand)
+    .addCommand(new Command('api').addCommand(serverCommand).addCommand(jsonrpcCommand))
+    .addCommand(benchCommand)
     .addCommand(chatCommand())
     .addCommand(authCommand())

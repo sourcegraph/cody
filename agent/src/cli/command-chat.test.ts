@@ -8,7 +8,7 @@ import { TESTING_CREDENTIALS } from '../../../vscode/src/testutils/testing-crede
 import { buildAgentBinary, getAgentDir } from '../TestClient'
 import { TestWorkspace } from '../TestWorkspace'
 import { Streams, StringBufferStream } from './Streams'
-import { type ChatOptions, chatAction, chatCommand } from './chat'
+import { type ChatOptions, chatAction, chatCommand } from './command-chat'
 
 process.env.CODY_SHIM_TESTING = 'true'
 
