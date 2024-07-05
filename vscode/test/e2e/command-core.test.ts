@@ -5,6 +5,7 @@ import {
     chatInputMentions,
     contextCellItems,
     expectContextCellCounts,
+    focusSidebar,
     getContextCell,
     openContextCell,
     sidebarExplorer,
@@ -63,7 +64,7 @@ test.extend<ExpectedEvents>({
     await page.getByRole('tab', { name: 'index.html' }).hover()
 
     // Bring the cody sidebar to the foreground
-    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
+    await focusSidebar(page)
 
     await page.getByText('Explain Code').hover()
     await page.getByText('Explain Code').click()

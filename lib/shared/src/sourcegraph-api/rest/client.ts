@@ -62,10 +62,8 @@ export class RestClient {
         //
         // NOTE: This API endpoint hasn't shippeted yet, and probably won't work for you.
         // Also, the URL definitely will change.
-        let serverSideConfig: any
-        try {
-            serverSideConfig = await this.getRequest<any>('getAvailableModels', '/.api/supported-llms')
-        } catch {
+        let serverSideConfig = await this.getRequest<any>('getAvailableModels', '/.api/supported-llms')
+        if (serverSideConfig instanceof Error) {
             serverSideConfig = testModels
         }
 

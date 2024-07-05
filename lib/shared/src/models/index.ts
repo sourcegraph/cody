@@ -285,16 +285,14 @@ export class ModelsService {
     public static getDefaultModel(type: ModelUsage, authStatus: AuthStatus): Model | undefined {
         const models = ModelsService.getModelsByType(type)
         const firstModelUserCanUse = models.find(m => ModelsService.canUserUseModel(authStatus, m))
-        if (!authStatus.authenticated) {
+        if (!authStatus.authenticated || isFreeUser(authStatus)) {
             return firstModelUserCanUse
         }
         const current = ModelsService.defaultModels.get(type)
-        if (current) return models.find(m => m.model === current)
-
-        // Free users can only use the default model
-        if (isFreeUser(authStatus) || !ModelsService.storage) {
-            return firstModelUserCanUse
+        if (current) {
+            return models.find(m => m.model === current) || firstModelUserCanUse
         }
+
 
         // Check for the last selected model
         const lastSelectedModelID = ModelsService.storage.get(ModelsService.storageKeys[type])
@@ -339,10 +337,8 @@ export class ModelsService {
         if (isCodyProUser(status)) {
             return tier !== 'enterprise'
         }
-        if (isFreeUser(status)) {
-            return tier === 'free'
-        }
-        return false
+
+        return tier === 'free'
     }
 
     private static resolveModel(modelID: Model | string): Model | undefined {
