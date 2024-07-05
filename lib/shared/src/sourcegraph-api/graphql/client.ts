@@ -1369,7 +1369,7 @@ export class ClientConfigSingleton {
                 if (semver.lt(siteVersion, '5.5.0')) {
                     return false
                 }
-                return true // Supports /.api/client-config
+                return true
             })
             .then(supportsClientConfig => {
                 // If /.api/client-config is not available, fallback to the myriad of GraphQL
