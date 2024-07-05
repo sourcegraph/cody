@@ -132,8 +132,6 @@ export class InlineCompletionItemProvider
 
         autocompleteStageCounterLogger.setProviderModel(config.providerConfig.model)
 
-        autocompleteStageCounterLogger.setProviderModel(config.providerConfig.model)
-
         if (this.config.completeSuggestWidgetSelection) {
             // This must be set to true, or else the suggest widget showing will suppress inline
             // completions. Note that the VS Code proposed API inlineCompletionsAdditions contains
