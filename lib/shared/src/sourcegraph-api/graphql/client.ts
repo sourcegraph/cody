@@ -1395,6 +1395,7 @@ export class ClientConfigSingleton {
             })
             .then(clientConfig => {
                 logDebug('ClientConfigSingleton', 'refreshed', JSON.stringify(clientConfig))
+                this.cachedClientConfig = clientConfig
                 return clientConfig
             })
             .catch(e => {
