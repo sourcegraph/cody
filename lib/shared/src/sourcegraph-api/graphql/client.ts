@@ -1249,7 +1249,7 @@ export class SourcegraphGraphQLAPIClient {
     public fetchHTTP<T>(
         queryName: string,
         method: string,
-        url_path: string,
+        urlPath: string,
         body?: string,
         timeout = 6000 // Default timeout of 6000ms (6 seconds)
     ): Promise<T | Error> {
@@ -1265,7 +1265,7 @@ export class SourcegraphGraphQLAPIClient {
         addTraceparent(headers)
         addCustomUserAgent(headers)
 
-        const url = new URL(url_path, this.config.serverEndpoint).href
+        const url = new URL(urlPath, this.config.serverEndpoint).href
 
         // Create an AbortController instance
         const controller = new AbortController()
