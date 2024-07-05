@@ -3,13 +3,16 @@ import { Command } from 'commander'
 import { WebSocketServer } from 'ws'
 import { newAgentClient } from '../agent'
 import type { RpcMessageHandler } from '../jsonrpc-alias'
-import { intOption } from './cody-bench/cli-parsers'
+import { intOption } from './command-bench/cli-parsers'
 
 interface ServerOptions {
     port: number
 }
 
-export const serverCommand = new Command('server')
+export const serverCommand = new Command('jsonrpc-websocket')
+    .description(
+        'Start a server that opens JSON-RPC connections through websockets. This command does not work at the moment.'
+    )
     .option('--port <number>', 'Which port to listen to', intOption, 7000)
     .action(async (options: ServerOptions) => {
         const wss = new WebSocketServer({

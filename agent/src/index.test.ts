@@ -127,7 +127,7 @@ describe('Agent', () => {
         })
         expect(valid?.isLoggedIn).toBeTruthy()
 
-        // Please don't update the recordings to use a different account without consulting #wg-cody-agent.
+        // Please don't update the recordings to use a different account without consulting #team-cody-core.
         // When changing an account, you also need to update the REDACTED_ hash above.
         //
         // To update the recordings with the correct account, run the following command

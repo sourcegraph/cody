@@ -11,7 +11,7 @@ import type { WrappedParser } from '../../../../vscode/src/tree-sitter/parser'
 import type { AutocompleteMatchKind } from './AutocompleteMatcher'
 import type { EvaluationDocument } from './EvaluationDocument'
 import type { TestParameters } from './TestParameters'
-import type { CodyBenchOptions } from './cody-bench'
+import type { CodyBenchOptions } from './command-bench'
 import { testParses } from './testParse'
 import { testTypecheck } from './testTypecheck'
 

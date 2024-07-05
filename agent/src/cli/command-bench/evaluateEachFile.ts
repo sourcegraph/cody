@@ -7,7 +7,7 @@ import { getLanguageForFileName } from '../../language'
 import type { EvaluationDocument } from './EvaluationDocument'
 import { Queries } from './Queries'
 import { SnapshotWriter } from './SnapshotWriter'
-import type { CodyBenchOptions } from './cody-bench'
+import type { CodyBenchOptions } from './command-bench'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { testCleanup, testInstall } from './testTypecheck'
 

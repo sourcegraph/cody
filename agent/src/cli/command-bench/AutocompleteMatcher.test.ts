@@ -9,7 +9,7 @@ import { getLanguageForFileName } from '../../language'
 import { AutocompleteMatcher } from './AutocompleteMatcher'
 import { EvaluationDocument } from './EvaluationDocument'
 import { Queries } from './Queries'
-import { BenchStrategy } from './cody-bench'
+import { BenchStrategy } from './command-bench'
 import { isWindows } from './isWindows'
 
 describe.skipIf(isWindows())('AutocompleteMatcher', () => {

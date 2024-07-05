@@ -776,7 +776,7 @@ importers:
 
   web:
     devDependencies:
-      '@sourcegraph/cody-agent':
+      '@sourcegraph/cody':
         specifier: workspace:*
         version: link:../agent
       '@sourcegraph/cody-shared':

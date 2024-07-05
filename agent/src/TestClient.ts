@@ -145,9 +145,10 @@ export class TestClient extends MessageHandler {
                       '--enable-source-maps',
                       // '--expose-gc', // Uncoment when running memory.test.ts
                       agentScript,
-                      'jsonrpc',
+                      'api',
+                      'jsonrpc-stdio',
                   ]
-                : ['jsonrpc']
+                : ['api', 'jsonrpc-stdio']
 
         const child = spawn(bin, args, {
             stdio: 'pipe',
