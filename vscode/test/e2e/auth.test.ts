@@ -7,8 +7,7 @@ import { type ExpectedV2Events, signOut, test } from './helpers'
 test.extend<ExpectedV2Events>({
     // list of V2 telemetry events we expect this test to log, add to this list as needed
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
         'cody.auth:failed',
         'cody.auth.login:clicked',
