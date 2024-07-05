@@ -1,3 +1,4 @@
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import { AtSignIcon, HelpCircleIcon, SettingsIcon, TextIcon, XIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactElement, useCallback, useState } from 'react'
 import { Kbd } from '../../components/Kbd'
@@ -34,7 +35,9 @@ const NewChatIcon: FunctionComponent = (props): ReactElement => (
 
 export const localStorageKey = 'chat.welcome-message-dismissed'
 
-export const WelcomeMessage: FunctionComponent = () => {
+export const WelcomeMessage: FunctionComponent<{
+    IDE: CodyIDE
+}> = ({ IDE }) => {
     const [showMessage, setShowMessage] = useState<boolean>(
         localStorage.getItem(localStorageKey) !== 'true'
     )
@@ -86,10 +89,12 @@ export const WelcomeMessage: FunctionComponent = () => {
                     To add code context from an editor, or the file explorer, right click and use{' '}
                     <MenuExample>Add to Cody Chat</MenuExample>
                 </FeatureRow>
-                <FeatureRow icon={NewChatIcon}>
-                    Start a new chat using <Kbd macOS="opt+/" linuxAndWindows="alt+/" /> or the{' '}
-                    <CodyIcon character="H" /> button in the top right of any file
-                </FeatureRow>
+                {IDE === CodyIDE.VSCode && (
+                    <FeatureRow icon={NewChatIcon}>
+                        Start a new chat using <Kbd macOS="opt+/" linuxAndWindows="alt+/" /> or the{' '}
+                        <CodyIcon character="H" /> button in the top right of any file
+                    </FeatureRow>
+                )}
                 <FeatureRow icon={SettingsIcon}>
                     Customize chat settings with the{' '}
                     <i className="codicon codicon-settings-gear tw-translate-y-[3px] tw-mx-1" /> button,

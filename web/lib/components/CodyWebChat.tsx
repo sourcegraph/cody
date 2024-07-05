@@ -4,6 +4,7 @@ import { URI } from 'vscode-uri'
 import {
     type ChatMessage,
     type ClientStateForWebview,
+    CodyIDE,
     type ContextItem,
     type ContextItemRepository,
     ContextItemSource,
@@ -100,6 +101,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                         isCodyProUser: !message.authStatus.userCanUpgrade,
                         isDotComUser: message.authStatus.isDotCom,
                         user: message.authStatus,
+                        ide: CodyIDE.Web,
                     })
                     break
                 case 'clientAction':

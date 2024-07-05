@@ -6,6 +6,7 @@ import {
     type AuthStatus,
     type ChatMessage,
     type ClientStateForWebview,
+    CodyIDE,
     GuardrailsPost,
     type Model,
     PromptString,
@@ -102,6 +103,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
                             isDotComUser: message.authStatus.isDotCom,
                             user: message.authStatus,
+                            ide: message.config.agentIDE || CodyIDE.VSCode,
                         })
                         setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
                         updateDisplayPathEnvInfoForWebview(message.workspaceFolderUris)
