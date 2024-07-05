@@ -369,6 +369,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                 changeOrigin: true,
                 ejectPlugins: true,
                 prependPath: false,
+                preserveHeaderKeyCase: false,
                 plugins: [proxyEventsPlugin],
                 router: req => {
                     try {
@@ -520,11 +521,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
             polly.server
                 .any()
                 .filter(req => !req.getHeader(MITM_PROXY_SERVICE_NAME_HEADER))
-                .intercept((req, res, interceptor) => {
-                    console.log('NOT HANDLING REQUEST', req.url)
-                    interceptor.stopPropagation()
-                    interceptor.passthrough()
-                })
+                .passthrough()
 
             //TODO(rnauta): we probably make some helpers so that we can verify it's a proxy request from a particular service
             // Sourcegraph Handlers
@@ -658,6 +655,8 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
     //#region vscode agent
     vscodeUI: [
         async ({ validOptions, serverRootDir, mitmProxy, page, polly }, use, testInfo) => {
+            polly.pause()
+
             const executableDir = path.resolve(process.cwd(), validOptions.vscodeTmpDir)
             await fs.mkdir(executableDir, { recursive: true })
             const serverExecutableDir = path.resolve(process.cwd(), validOptions.vscodeServerTmpDir)
@@ -793,7 +792,10 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                 testInfo,
             })
 
+            polly.play()
+
             await use(config)
+
             polly.pause()
             // Turn of logging browser logging and navigate away from the UI
             // Otherwise we needlessly add a bunch of noisy error logs
