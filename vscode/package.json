@@ -238,11 +238,6 @@
           "name": "Chat"
         },
         {
-          "id": "cody.chat.tree.view",
-          "name": "Chats",
-          "when": "cody.activated"
-        },
-        {
           "id": "cody.support.tree.view",
           "name": "Settings & Support",
           "when": "cody.activated"
@@ -826,23 +821,6 @@
       ],
       "view/title": [
         {
-          "command": "cody.chat.newEditorPanel",
-          "when": "view == cody.chat.tree.view && cody.activated",
-          "group": "navigation@1"
-        },
-        {
-          "command": "cody.chat.history.clear",
-          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
-          "enablement": "cody.hasChatHistory",
-          "group": "navigation@2"
-        },
-        {
-          "command": "cody.chat.history.export",
-          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
-          "enablement": "cody.hasChatHistory",
-          "group": "navigation@3"
-        },
-        {
           "command": "cody.chat.newPanel",
           "when": "view == cody.chat && cody.activated",
           "group": "navigation@1"
@@ -922,11 +900,6 @@
         }
       ],
       "view/item/context": [
-        {
-          "command": "cody.chat.history.delete",
-          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
-          "group": "inline@2"
-        },
         {
           "command": "cody.copy.version",
           "when": "view == cody.support.tree.view && viewItem == cody.version",
