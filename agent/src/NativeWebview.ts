@@ -195,6 +195,11 @@ class NativeWebviewPanel implements vscode.WebviewPanel {
     private readonly disposeEmitter: vscode.EventEmitter<void> = new vscode.EventEmitter()
     public readonly onDidDispose: vscode.Event<void> = this.disposeEmitter.event
 
+    // TODO: Actually implement these properties.
+    private readonly _viewColumn: vscode.ViewColumn = vscode.ViewColumn.Active
+    private readonly _active: boolean = true
+    private readonly _visible: boolean = true
+
     // TODO: Consider passing an initial value of 'active' based on preserveFocus
     constructor(
         private readonly delegate: WebviewProtocolDelegate,
@@ -234,18 +239,19 @@ class NativeWebviewPanel implements vscode.WebviewPanel {
     }
 
     public get viewColumn(): vscode.ViewColumn | undefined {
-        // TODO: Implement this
-        throw new Error('Agent "native" webview does not support WebviewPanel.viewColumn')
+        console.warn('Agent "native" webview does not support WebviewPanel.viewColumn')
+        return this._viewColumn
     }
 
     public get active(): boolean {
         // TODO: Implement this
-        throw new Error('Agent "native" webview does not support WebviewPanel.active')
+        console.warn('Agent "native" webview does not support WebviewPanel.active')
+        return this._active
     }
 
     public get visible(): boolean {
-        // TODO: Implement this
-        throw new Error('Agent "native" webview does not support WebviewPanel.visible')
+        console.warn('Agent "native" webview does not support WebviewPanel.visible')
+        return this._visible
     }
 
     reveal(viewColumn?: vscode.ViewColumn, preserveFocus?: boolean): void {
