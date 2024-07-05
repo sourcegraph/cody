@@ -195,11 +195,9 @@ export async function getContextStrategy(
     }
 
     const [isEnhancedContextExperiment, useEmbeddings, useSymf] = await Promise.all([
-        featureFlagProvider.evaluateFeatureFlag(
-        FeatureFlag.CodyEnhancedContextExperiment
-    ), featureFlagProvider.evaluateFeatureFlag(
-        FeatureFlag.CodyEnhancedContexUseEmbeddings
-    ), featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEnhancedContextUseSymf)
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEnhancedContextExperiment),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEnhancedContexUseEmbeddings),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEnhancedContextUseSymf),
     ])
 
     if (!isEnhancedContextExperiment) {
