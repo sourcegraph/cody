@@ -821,19 +821,24 @@
       ],
       "view/title": [
         {
-          "command": "cody.chat.newPanel",
+          "command": "cody.menu.commands",
           "when": "view == cody.chat && cody.activated",
           "group": "navigation@1"
         },
         {
-          "command": "cody.chat.history.panel",
+          "command": "cody.chat.newPanel",
           "when": "view == cody.chat && cody.activated",
           "group": "navigation@2"
         },
         {
-          "command": "cody.chat.moveToEditor",
+          "command": "cody.chat.history.panel",
           "when": "view == cody.chat && cody.activated",
           "group": "navigation@3"
+        },
+        {
+          "command": "cody.chat.moveToEditor",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation@4"
         },
         {
           "command": "cody.welcome",
