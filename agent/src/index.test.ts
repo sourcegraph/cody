@@ -992,7 +992,7 @@ describe('Agent', () => {
         it('chat/submitMessage', async () => {
             const lastMessage = await demoEnterpriseClient.sendSingleMessageToNewChat('Reply with "Yes"')
             expect(lastMessage?.text?.trim()).toStrictEqual('Yes')
-        }, 20_000_000)
+        }, 20_000)
 
         // Skip because it consistently fails with:
         // Error: Test timed out in 20000ms.
