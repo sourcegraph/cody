@@ -252,6 +252,7 @@ export class ModelsService {
      * NOTE: private instances can only support 1 provider ATM.
      */
     public static setModels(models: Model[]): void {
+        console.trace('MODELS ARE: ', models)
         ModelsService.primaryModels = models
     }
 
@@ -293,9 +294,8 @@ export class ModelsService {
             return models.find(m => m.model === current) || firstModelUserCanUse
         }
 
-
         // Check for the last selected model
-        const lastSelectedModelID = ModelsService.storage.get(ModelsService.storageKeys[type])
+        const lastSelectedModelID = ModelsService.storage?.get(ModelsService.storageKeys[type])
         // TODO(jsm): Global migration should happen once in the activation
         // const migratedModelID = migrateAndNotifyForOutdatedModels(lastSelectedModelID)
 
