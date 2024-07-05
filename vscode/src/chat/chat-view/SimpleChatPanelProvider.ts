@@ -39,13 +39,14 @@ import {
     recordErrorToSpan,
     reformatBotMessageForChat,
     serializeChatMessage,
+    telemetryRecorder,
     tracer,
     truncatePromptString,
+    webMentionProvidersMetadata,
 } from '@sourcegraph/cody-shared'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { isContextWindowLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import type { URI } from 'vscode-uri'
@@ -888,7 +889,12 @@ export class SimpleChatPanelProvider
         this.allMentionProvidersMetadataQueryCancellation = cancellation
 
         try {
-            const providers = await allMentionProvidersMetadata()
+            const config = await getFullConfig()
+            const isCodyWeb = config.agentIDE === CodyIDE.Web
+            const providers = isCodyWeb
+                ? await webMentionProvidersMetadata()
+                : await allMentionProvidersMetadata()
+
             if (cancellation.token.isCancellationRequested) {
                 return
             }

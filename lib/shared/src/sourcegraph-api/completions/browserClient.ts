@@ -8,6 +8,10 @@ import { type CompletionRequestParameters, SourcegraphCompletionsClient } from '
 import type { CompletionCallbacks, CompletionParameters, Event } from './types'
 import { getSerializedParams } from './utils'
 
+declare const WorkerGlobalScope: never
+const isRunningInWebWorker =
+    typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope
+
 export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsClient {
     protected async _streamWithCallbacks(
         params: CompletionParameters,
@@ -95,10 +99,6 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
     }
 }
 
-declare const WorkerGlobalScope: never
-const isRunningInWebWorker =
-    typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope
-
 if (isRunningInWebWorker) {
     // NOTE: If we need to add more hacks, or if this is janky, we should consider just setting
     // `globalThis.window = globalThis` (see
@@ -112,6 +112,10 @@ if (isRunningInWebWorker) {
         // HACK: web-tree-sitter tries to read window.document.currentScript, which fails if this is
         // running in a Web Worker.
         currentScript: null,
+
+        // HACK: Vite HMR client tries to call querySelectorAll, which is not
+        // available in a web worker, without this cody demo fails in dev mode.
+        querySelectorAll: () => [],
     }
     ;(self as any).window = {
         // HACK: @microsoft/fetch-event-source tries to call window.clearTimeout, which fails if this is

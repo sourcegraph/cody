@@ -173,7 +173,14 @@ const register = async (
 
     await authProvider.init()
 
-    await exposeOpenCtxClient(context, initialConfig)
+    if (authProvider.getAuthStatus().authenticated) {
+        await exposeOpenCtxClient(
+            context,
+            initialConfig,
+            authProvider.getAuthStatus().isDotCom,
+            platform.createOpenCtxController
+        )
+    }
 
     await configWatcher.initAndOnChange(async config => {
         graphqlClient.onConfigurationChange(config)
@@ -291,6 +298,14 @@ const register = async (
         ConfigFeaturesSingleton.getInstance().refreshConfigFeatures()
         // Sync auth status to graphqlClient
         graphqlClient.onConfigurationChange(newConfig)
+
+        // Re-register expose openctx client
+        await exposeOpenCtxClient(
+            context,
+            initialConfig,
+            authStatus.isDotCom,
+            platform.createOpenCtxController
+        )
 
         // When logged out, user's endpoint will be set to null
         const isLoggedOut = !authStatus.isLoggedIn && !authStatus.endpoint

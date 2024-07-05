@@ -15,8 +15,6 @@ import {
     NO_SYMBOL_MATCHES_HELP_LABEL,
 } from '../../../src/chat/context/constants'
 import RemoteFileProvider from '../../../src/context/openctx/remoteFileSearch'
-import RemoteRepositorySearch from '../../../src/context/openctx/remoteRepositorySearch'
-import type { UserAccountInfo } from '../../Chat'
 import {
     Command,
     CommandEmpty,
@@ -53,7 +51,6 @@ import type { MentionMenuData, MentionMenuParams } from './useMentionMenuData'
  */
 export const MentionMenu: FunctionComponent<
     {
-        userInfo?: UserAccountInfo
         params: MentionMenuParams
         updateMentionMenuParams: (update: Partial<Pick<MentionMenuParams, 'parentItem'>>) => void
         setEditorQuery: setEditorQuery
@@ -63,7 +60,6 @@ export const MentionMenu: FunctionComponent<
         __storybook__focus?: boolean
     } & Pick<Parameters<MenuRenderFn<MentionMenuOption>>[1], 'selectOptionAndCleanUp'>
 > = ({
-    userInfo,
     params,
     updateMentionMenuParams,
     setEditorQuery,
@@ -213,24 +209,17 @@ export const MentionMenu: FunctionComponent<
 
     const heading = getItemsHeading(params.parentItem, mentionQuery)
 
-    const providers = data.providers
-        .filter(
-            provider =>
-                (provider.id !== RemoteRepositorySearch.providerUri &&
-                    provider.id !== RemoteFileProvider.providerUri) ||
-                !userInfo?.isDotComUser
-        )
-        .map(provider => (
-            // show remote repositories search provider only if the user is connected to a non-dotcom instance.
-            <CommandItem
-                key={commandRowValue(provider)}
-                value={commandRowValue(provider)}
-                onSelect={onProviderSelect}
-                className={styles.item}
-            >
-                <MentionMenuProviderItemContent provider={provider} />
-            </CommandItem>
-        ))
+    const providers = data.providers.map(provider => (
+        // show remote repositories search provider only if the user is connected to a non-dotcom instance.
+        <CommandItem
+            key={commandRowValue(provider)}
+            value={commandRowValue(provider)}
+            onSelect={onProviderSelect}
+            className={styles.item}
+        >
+            <MentionMenuProviderItemContent provider={provider} />
+        </CommandItem>
+    ))
 
     return (
         <Command
