@@ -5,7 +5,6 @@ import type * as vscode from 'vscode'
 import {
     type AutocompleteContextSnippet,
     type DocumentContext,
-    FeatureFlag,
     isDefined,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
@@ -91,16 +90,13 @@ export class RequestManager {
     }
 
     public async request(params: RequestsManagerParams): Promise<RequestManagerResult> {
-        const eagerCancellation = completionProviderConfig.getPrefetchedFlag(
-            FeatureFlag.CodyAutocompleteEagerCancellation
-        )
         this.latestRequestParams = params
 
         const { requestParams, provider, context, tracer } = params
 
         addAutocompleteDebugEvent('RequestManager.request')
 
-        const shouldHonorCancellation = eagerCancellation
+        const shouldHonorCancellation = completionProviderConfig.smartThrottle
 
         // When request recycling is enabled, we do not pass the original abort signal forward as to
         // not interrupt requests that are no longer relevant. Instead, we let all previous requests
@@ -155,12 +151,7 @@ export class RequestManager {
 
                         request.lastCompletions = processedCompletions
 
-                        if (!eagerCancellation) {
-                            this.testIfResultCanBeRecycledForInflightRequests(
-                                request,
-                                processedCompletions
-                            )
-                        }
+                        this.testIfResultCanBeRecycledForInflightRequests(request, processedCompletions)
                     }
 
                     // Save hot streak completions for later use.
@@ -179,9 +170,7 @@ export class RequestManager {
                         )
                     }
 
-                    if (!eagerCancellation) {
-                        this.cancelIrrelevantRequests()
-                    }
+                    this.cancelIrrelevantRequests()
                 }
             } catch (error) {
                 request.reject(error as Error)
@@ -190,9 +179,7 @@ export class RequestManager {
             }
         }
 
-        if (!eagerCancellation) {
-            this.cancelIrrelevantRequests()
-        }
+        this.cancelIrrelevantRequests()
 
         void wrapInActiveSpan('autocomplete.generate', generateCompletions)
         return request.promise
@@ -318,7 +305,7 @@ interface RequestCacheItem {
 }
 class RequestCache {
     private cache = new LRUCache<string, RequestCacheItem>({
-        max: 50,
+        max: 250,
     })
 
     private toCacheKey(key: Pick<RequestParams, 'docContext'>): string {

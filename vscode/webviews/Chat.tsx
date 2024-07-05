@@ -23,6 +23,7 @@ interface ChatboxProps {
     isTranscriptError: boolean
     userInfo: UserAccountInfo
     guardrails?: Guardrails
+    scrollableParent?: HTMLElement | null
     showWelcomeMessage?: boolean
     showIDESnippetActions?: boolean
     className?: string
@@ -39,6 +40,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     chatEnabled = true,
     userInfo,
     guardrails,
+    scrollableParent,
     showWelcomeMessage = true,
     showIDESnippetActions = true,
     className,
@@ -185,7 +187,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 guardrails={guardrails}
             />
             {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage />}
-            <ScrollDown onClick={focusLastHumanMessageEditor} />
+            <ScrollDown scrollableParent={scrollableParent} onClick={focusLastHumanMessageEditor} />
         </div>
     )
 }

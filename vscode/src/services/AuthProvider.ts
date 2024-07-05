@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import {
     type AuthStatus,
     type AuthStatusProvider,
+    CodyIDE,
     type ConfigurationWithAccessToken,
     DOTCOM_URL,
     LOCAL_APP_URL,
@@ -12,18 +13,17 @@ import {
     logError,
     networkErrorAuthStatus,
     offlineModeAuthStatus,
+    telemetryRecorder,
     unauthenticatedStatus,
 } from '@sourcegraph/cody-shared'
 
+import { AccountMenuOptions, openAccountMenu } from '../auth/account-menu'
+import { closeAuthProgressIndicator } from '../auth/auth-progress-indicator'
 import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'
 import { ACCOUNT_USAGE_URL, isLoggedIn as isAuthenticated, isSourcegraphToken } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
 import { getFullConfig } from '../configuration'
 import { logDebug } from '../log'
-
-import { telemetryRecorder } from '@sourcegraph/cody-shared'
-import { AccountMenuOptions, openAccountMenu } from '../auth/account-menu'
-import { closeAuthProgressIndicator } from '../auth/auth-progress-indicator'
 import { maybeStartInteractiveTutorial } from '../tutorial/helpers'
 import { AuthMenu, showAccessTokenInputBox, showInstanceURLInputBox } from './AuthMenus'
 import { getAuthReferralCode } from './AuthProviderSimplified'
@@ -227,12 +227,24 @@ export class AuthProvider implements AuthStatusProvider {
     ): Promise<AuthStatus> {
         const endpoint = config.serverEndpoint
         const token = config.accessToken
+        const isCodyWeb =
+            vscode.workspace.getConfiguration().get<string>('cody.advanced.agent.ide') === CodyIDE.Web
+
         if (isOfflineMode) {
             const lastUser = localStorage.getLastStoredUser()
             return { ...offlineModeAuthStatus, ...lastUser }
         }
-        if (!token || !endpoint) {
-            return { ...defaultAuthStatus, endpoint }
+
+        // Cody Web can work without access token since authorization flow
+        // relies on cookie authentication
+        if (isCodyWeb) {
+            if (!endpoint) {
+                return { ...defaultAuthStatus, endpoint }
+            }
+        } else {
+            if (!token || !endpoint) {
+                return { ...defaultAuthStatus, endpoint }
+            }
         }
         // Cache the config and the GraphQL client
         if (this.config !== config || !this.client) {

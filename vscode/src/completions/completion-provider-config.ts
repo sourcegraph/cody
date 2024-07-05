@@ -13,10 +13,10 @@ class CompletionProviderConfig {
         FeatureFlag.CodyAutocompleteContextBfgMixed,
         FeatureFlag.CodyAutocompleteHotStreak,
         FeatureFlag.CodyAutocompleteUserLatency,
-        FeatureFlag.CodyAutocompleteEagerCancellation,
         FeatureFlag.CodyAutocompleteTracing,
-        FeatureFlag.CodyAutocompleteReducedDebounce,
         FeatureFlag.CodyAutocompleteContextExtendLanguagePool,
+        FeatureFlag.CodyAutocompleteSmartThrottle,
+        FeatureFlag.CodyAutocompleteLatencyExperimentBasedFeatureFlag,
     ] as const
 
     private get config() {
@@ -50,13 +50,6 @@ class CompletionProviderConfig {
         return Boolean(this.featureFlagProvider.getFromCache(flag as FeatureFlag))
     }
 
-    public get hotStreak(): boolean {
-        return (
-            this.config.autocompleteExperimentalHotStreak ||
-            this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteHotStreak)
-        )
-    }
-
     public get contextStrategy(): ContextStrategy {
         switch (this.config.autocompleteExperimentalGraphContext as string) {
             case 'lsp-light':
@@ -78,6 +71,43 @@ class CompletionProviderConfig {
                     ? 'bfg-mixed'
                     : 'jaccard-similarity'
         }
+    }
+
+    private getLatencyExperimentGroup(): 'hot-streak' | 'smart-throttle' | 'control' {
+        // The desired distribution:
+        // - Hot-streak 33%
+        // - Smart-throttle 33%
+        // - Control group 33%
+        //
+        // The rollout values to set;
+        // - CodyAutocompleteLatencyExperimentBasedFeatureFlag 66%
+        // - CodyAutocompleteHotStreak 50%
+        // - CodyAutocompleteSmartThrottle 100%
+        if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteLatencyExperimentBasedFeatureFlag)) {
+            if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteHotStreak)) {
+                return 'hot-streak'
+            }
+
+            if (this.getPrefetchedFlag(FeatureFlag.CodyAutocompleteSmartThrottle)) {
+                return 'smart-throttle'
+            }
+        }
+
+        return 'control'
+    }
+
+    public get hotStreak(): boolean {
+        return (
+            this.config.autocompleteExperimentalHotStreak ||
+            this.getLatencyExperimentGroup() === 'hot-streak'
+        )
+    }
+
+    public get smartThrottle(): boolean {
+        return (
+            this.config.autocompleteExperimentalSmartThrottle ||
+            this.getLatencyExperimentGroup() === 'smart-throttle'
+        )
     }
 }
 

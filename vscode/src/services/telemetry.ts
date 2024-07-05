@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import {
+    CodyIDE,
     type Configuration,
     type ConfigurationWithAccessToken,
     EventLogger,
@@ -26,7 +27,7 @@ const { platform, arch } = getOSArch()
 export const getExtensionDetails = (
     config: Pick<Configuration, 'agentIDE' | 'agentIDEVersion' | 'agentExtensionVersion'>
 ): ExtensionDetails => ({
-    ide: config.agentIDE ?? 'VSCode',
+    ide: config.agentIDE ?? CodyIDE.VSCode,
     ideVersion: config.agentIDEVersion ?? vscode.version,
     ideExtensionType: 'Cody',
     platform: platform ?? 'browser',
@@ -150,13 +151,14 @@ export const telemetryService: TelemetryService = {
 }
 
 // TODO: Clean up this name mismatch when we move to TelemetryV2
-export function logPrefix(ide: 'VSCode' | 'JetBrains' | 'Neovim' | 'Emacs' | undefined): string {
+export function logPrefix(ide: CodyIDE | undefined): string {
     return ide
         ? {
               VSCode: 'CodyVSCodeExtension',
               JetBrains: 'CodyJetBrainsPlugin',
               Emacs: 'CodyEmacsPlugin',
               Neovim: 'CodyNeovimPlugin',
+              Web: 'CodyWebClient',
           }[ide]
         : 'CodyVSCodeExtension'
 }
