@@ -12,6 +12,7 @@ import type {
     Model,
     RangeData,
     SerializedChatMessage,
+    SerializedPromptEditorState,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
 
@@ -155,6 +156,9 @@ export type WebviewMessage =
     | {
           command: 'getAllMentionProvidersMetadata'
       }
+    | {
+          command: 'experimental-unit-test-prompt'
+      }
 
 /**
  * A message sent from the extension host to the webview.
@@ -195,6 +199,10 @@ export type ExtensionMessage =
     | {
           type: 'allMentionProvidersMetadata'
           providers: ContextMentionProviderMetadata[]
+      }
+    | {
+          type: 'updateEditorState'
+          editorState: SerializedPromptEditorState
       }
 
 interface ExtensionAttributionMessage {
@@ -245,7 +253,9 @@ export interface ConfigurationSubsetForWebview
     extends Pick<
         ConfigurationWithAccessToken,
         'experimentalNoodle' | 'serverEndpoint' | 'agentIDE' | 'agentExtensionVersion'
-    > {}
+    > {
+    experimentalUnitTest: boolean
+}
 
 /**
  * URLs for the Sourcegraph instance and app.

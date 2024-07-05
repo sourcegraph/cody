@@ -70,6 +70,9 @@ export enum FeatureFlag {
 
     /** Whether to use generated metadata to power embeddings. */
     CodyEmbeddingsGenerateMetadata = 'cody-embeddings-generate-metadata',
+
+    /** Enable experimental generate unit test prompt template */
+    CodyExperimentalUnitTest = 'cody-experimental-unit-test',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

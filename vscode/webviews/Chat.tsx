@@ -11,6 +11,7 @@ import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/cons
 import styles from './Chat.module.css'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
+import { Button } from './components/shadcn/ui/button'
 import { useContextProviders } from './mentions/providers'
 import { useTelemetryRecorder } from './utils/telemetry'
 
@@ -27,6 +28,7 @@ interface ChatboxProps {
     showWelcomeMessage?: boolean
     showIDESnippetActions?: boolean
     className?: string
+    experimentalUnitTestEnabled?: boolean
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -42,10 +44,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     showWelcomeMessage = true,
     showIDESnippetActions = true,
     className,
+    experimentalUnitTestEnabled,
 }) => {
     const { reload: reloadMentionProviders } = useContextProviders()
     const telemetryRecorder = useTelemetryRecorder()
-
     const feedbackButtonsOnSubmit = useCallback(
         (text: string) => {
             enum FeedbackType {
@@ -155,10 +157,18 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         }
     }, [])
 
+<<<<<<< HEAD
     // biome-ignore lint/correctness/useExhaustiveDependencies: needs to run when is dotcom status is changing to update openctx providers
     useEffect(() => {
         reloadMentionProviders()
     }, [userInfo.isDotComUser, reloadMentionProviders])
+=======
+    const handleGenerateUnitTest = useCallback(() => {
+        postMessage({
+            command: 'experimental-unit-test-prompt',
+        })
+    }, [postMessage])
+>>>>>>> 2a3361341 (Add experimental unit test prompt template)
 
     return (
         <div className={clsx(styles.container, className, 'tw-relative')}>
@@ -180,6 +190,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 postMessage={postMessage}
                 guardrails={guardrails}
             />
+            {experimentalUnitTestEnabled && transcript.length === 0 && (
+                <div className="tw-mx-auto tw-text-center">
+                    <Button onClick={handleGenerateUnitTest}>Generate Unit Tests (Experimental)</Button>
+                </div>
+            )}
             {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage />}
             <ScrollDown scrollableParent={scrollableParent} onClick={focusLastHumanMessageEditor} />
         </div>
