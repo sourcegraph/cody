@@ -207,7 +207,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                                         <Chat
                                             chatID={activeChatID}
                                             chatEnabled={true}
-                                            showWelcomeMessage={false}
+                                            showWelcomeMessage={true}
                                             showIDESnippetActions={false}
                                             userInfo={userAccountInfo}
                                             messageInProgress={messageInProgress}
