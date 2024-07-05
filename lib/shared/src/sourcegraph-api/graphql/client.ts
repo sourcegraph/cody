@@ -1408,21 +1408,20 @@ export class ClientConfigSingleton {
 
         // Note: all of these promises are written carefully to not throw errors internally, but
         // rather to return sane defaults, and so we do not catch() here.
-        return graphqlClient.getCodyLLMConfigurationSmartContext().then(smartContextWindow =>
-            this.fetchConfigFeaturesLegacy(previousFeaturesLegacy).then(features =>
-                graphqlClient.isCodyEnabled().then(isCodyEnabled => ({
-                    codyEnabled: isCodyEnabled.enabled,
-                    chatEnabled: features.chat,
-                    autoCompleteEnabled: features.autoComplete,
-                    customCommandsEnabled: features.commands,
-                    attributionEnabled: features.attribution,
-                    smartContextWindowEnabled: smartContextWindow,
+        const smartContextWindow = await graphqlClient.getCodyLLMConfigurationSmartContext();
+        const features = await this.fetchConfigFeaturesLegacy(previousFeaturesLegacy);
 
-                    // Things that did not exist before logically default to disabled.
-                    modelsAPIEnabled: false,
-                }))
-            )
-        )
+        return graphqlClient.isCodyEnabled().then(isCodyEnabled => ({
+            codyEnabled: isCodyEnabled.enabled,
+            chatEnabled: features.chat,
+            autoCompleteEnabled: features.autoComplete,
+            customCommandsEnabled: features.commands,
+            attributionEnabled: features.attribution,
+            smartContextWindowEnabled: smartContextWindow,
+
+            // Things that did not exist before logically default to disabled.
+            modelsAPIEnabled: false,
+        }))
     }
 
     // Fetches the config features from the server and handles errors, using the old/legacy GraphQL API.
