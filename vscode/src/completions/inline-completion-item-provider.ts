@@ -43,8 +43,10 @@ import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } fr
 import * as CompletionLogger from './logger'
 import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 import { RequestManager, type RequestParams } from './request-manager'
-import { getRequestParamsFromLastCandidate } from './reuse-last-candidate'
-import { canReuseLastCandidateInDocumentContext } from './reuse-last-candidate'
+import {
+    canReuseLastCandidateInDocumentContext,
+    getRequestParamsFromLastCandidate,
+} from './reuse-last-candidate'
 import { SmartThrottleService } from './smart-throttle'
 import {
     type AutocompleteInlineAcceptedCommandArgs,
