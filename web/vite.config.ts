@@ -88,7 +88,6 @@ export default defineProjectWithDefaults(__dirname, {
     build: {
         // Turn off minification since it breaks json-rpc in inline web-worker in Safari
         minify: false,
-        emptyOutDir: false,
         outDir: 'dist',
         assetsDir: '.',
         reportCompressedSize: false,

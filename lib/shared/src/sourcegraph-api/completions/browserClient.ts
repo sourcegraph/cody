@@ -124,4 +124,8 @@ if (isRunningInWebWorker) {
 
         document: self.document,
     }
+    // HACK: @openctx/vscode-lib uses global object to share vscode API, it breaks cody web since
+    // global doesn't exist in web worker context, for more details see openctx issue here
+    // https://github.com/sourcegraph/openctx/issues/169
+    ;(self as any).global = {}
 }
