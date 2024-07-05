@@ -157,18 +157,15 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         }
     }, [])
 
-<<<<<<< HEAD
     // biome-ignore lint/correctness/useExhaustiveDependencies: needs to run when is dotcom status is changing to update openctx providers
     useEffect(() => {
         reloadMentionProviders()
     }, [userInfo.isDotComUser, reloadMentionProviders])
-=======
     const handleGenerateUnitTest = useCallback(() => {
         postMessage({
             command: 'experimental-unit-test-prompt',
         })
     }, [postMessage])
->>>>>>> 2a3361341 (Add experimental unit test prompt template)
 
     return (
         <div className={clsx(styles.container, className, 'tw-relative')}>
