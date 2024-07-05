@@ -6,14 +6,13 @@ import type { Dirent } from 'node:fs'
 import fs from 'node:fs/promises'
 import 'node:http'
 import 'node:https'
-import type { AddressInfo } from 'node:net'
+import type { Server as HTTPServer } from 'node:http'
 import path from 'node:path'
 import { EventEmitter } from 'node:stream'
-
 import pspawn from '@npmcli/promise-spawn'
-import { type TestInfo, test as _test, expect, mergeTests } from '@playwright/test'
+import { test as _test, expect, mergeTests } from '@playwright/test'
 import NodeHttpAdapter from '@pollyjs/adapter-node-http'
-import { type EXPIRY_STRATEGY, type MODE, Polly } from '@pollyjs/core'
+import { type EXPIRY_STRATEGY, type MODE, Polly, Timing } from '@pollyjs/core'
 import type { ArrayContainsAll } from '@sourcegraph/cody-shared/src/utils'
 import {
     ConsoleReporter,
@@ -23,16 +22,29 @@ import {
 } from '@vscode/test-electron'
 import { downloadAndUnzipVSCode } from '@vscode/test-electron/out/download'
 import express from 'express'
+import jsonStableStringify from 'fast-json-stable-stringify'
 import { copy as copyExt } from 'fs-extra'
-import { createProxyMiddleware } from 'http-proxy-middleware'
-import type { loggerPlugin as ProxyMiddlewarePlugin } from 'http-proxy-middleware'
+import { createProxyMiddleware, proxyEventsPlugin } from 'http-proxy-middleware'
+import type { OnProxyEvent } from 'http-proxy-middleware/dist/types'
+import killSync from 'kill-sync'
+import { onExit } from 'signal-exit'
 import zod from 'zod'
 
 import { waitForLock } from '../../../src/lockfile'
-import { CodyPersister } from '../../../src/testutils/CodyPersister'
-import { defaultMatchRequestsBy } from '../../../src/testutils/polly'
+import { CodyPersister, redactAuthorizationHeader } from '../../../src/testutils/CodyPersisterV2'
+import {
+    type DOTCOM_TESTING_CREDENTIALS,
+    type ENTERPRISE_TESTING_CREDENTIALS,
+    TESTING_CREDENTIALS,
+} from '../../../src/testutils/testing-credentials'
 import { retry, stretchTimeout } from '../helpers'
-
+import {
+    MITM_AUTH_TOKEN_PLACEHOLDER,
+    MITM_PROXY_AUTH_AVAILABLE_HEADER,
+    MITM_PROXY_AUTH_TOKEN_NAME_HEADER,
+    MITM_PROXY_SERVICE_ENDPOINT_HEADER,
+    MITM_PROXY_SERVICE_NAME_HEADER,
+} from './constants'
 export type Directory = string
 
 const DOWNLOAD_GRACE_TIME = 5 * 60 * 1000 //5 minutes
@@ -51,6 +63,7 @@ const workerOptionsSchema = zod.object({
     binaryTmpDir: zod.string(),
     recordingDir: zod.string(),
     vscodeServerPortRange: zod.tuple([zod.number(), zod.number()]).default([33100, 33200]),
+    mitmServerPortRange: zod.tuple([zod.number(), zod.number()]).default([34100, 34200]),
     keepRuntimeDirs: zod.enum(['all', 'failed', 'none']).default('none'),
     allowGlobalVSCodeModification: zod.boolean().default(false),
 })
@@ -76,6 +89,21 @@ const testOptionsSchema = zod.object({
 export type TestOptions = zod.infer<typeof testOptionsSchema>
 export type WorkerOptions = zod.infer<typeof workerOptionsSchema>
 
+export interface MitMProxyConfig {
+    sourcegraph: {
+        dotcom: {
+            readonly endpoint: string
+            readonly proxyTarget: string
+            readonly authName: keyof typeof DOTCOM_TESTING_CREDENTIALS
+        }
+        enterprise: {
+            readonly endpoint: string
+            readonly proxyTarget: string
+            readonly authName: keyof typeof ENTERPRISE_TESTING_CREDENTIALS
+        }
+    }
+}
+
 export interface WorkerContext {
     validWorkerOptions: WorkerOptions
 }
@@ -87,11 +115,14 @@ export interface TestContext {
     serverRootDir: Directory
     validOptions: TestOptions & WorkerOptions
     polly: Polly
-    sourcegraphMitM: { endpoint: string; target: string }
+    mitmProxy: MitMProxyConfig
+    //sourcegraphMitM: { endpoint: string; target: string }
     workspaceDir: Directory
     //TODO(rnauta): Make the typing inferred from VSCode directly
     executeCommand: <T = any>(commandId: string, ...args: any[]) => Promise<T | undefined>
 }
+
+type ProxyReqHandler = (...args: Parameters<Exclude<OnProxyEvent['proxyReq'], undefined>>) => boolean
 
 function schemaOptions<T extends zod.ZodObject<any>, S extends 'worker' | 'test'>(o: T, s: S) {
     return Object.fromEntries(
@@ -99,6 +130,17 @@ function schemaOptions<T extends zod.ZodObject<any>, S extends 'worker' | 'test'
     ) as unknown as { [k in keyof T]: [T[k], { scope: S; option: true }] }
 }
 
+const SPAWNED_PIDS = new Set<number | undefined>()
+onExit(
+    () => {
+        for (const pid of SPAWNED_PIDS.values()) {
+            if (pid !== undefined) {
+                killSync(pid, 'SIGKILL', true)
+            }
+        }
+    },
+    { alwaysLast: true }
+)
 // We split out the options fixutre from the implementation fixture so that in
 // the implementaiton fixture we don't accidentally use any options directly,
 // instead having to use validated options
@@ -122,6 +164,7 @@ const optionsFixture: ReturnType<
                 vscodeExtensionCacheDir,
                 keepRuntimeDirs,
                 vscodeServerPortRange,
+                mitmServerPortRange,
                 allowGlobalVSCodeModification,
             },
             use
@@ -137,6 +180,7 @@ const optionsFixture: ReturnType<
                     vscodeExtensionCacheDir,
                     keepRuntimeDirs,
                     vscodeServerPortRange,
+                    mitmServerPortRange,
                     allowGlobalVSCodeModification,
                 } satisfies { [key in keyof WorkerOptions]-?: WorkerOptions[key] },
                 {}
@@ -252,9 +296,8 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
         },
     ],
     //#region Polly & Proxies
-    sourcegraphMitM: [
-        // biome-ignore lint/correctness/noEmptyPattern: <explanation>
-        async ({}, use, testInfo) => {
+    mitmProxy: [
+        async ({ validWorkerOptions }, use, testInfo) => {
             const app = express()
             //TODO: Credentials & Configuration TODO: I can see a use-case where
             //you can switch endpoints dynamically. For instance wanting to try
@@ -262,42 +305,141 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
             //probably do that already using env variables in the workspace
             //config but it's not a super smooth experience yet. If you run into
             //this please give me a ping so we can brainstorm.
-            const target = 'https://sourcegraph.com'
+            const allocatedPorts = rangeOffset(
+                [testInfo.parallelIndex * 2, 2],
+                validWorkerOptions.mitmServerPortRange
+            )
+            const [sgDotComPort, sgEnterprisePort] = allocatedPorts
+            //TODO: we can provide additional endpoints here
+            const state: {
+                authName: {
+                    enterprise: MitMProxyConfig['sourcegraph']['enterprise']['authName']
+                    dotcom: MitMProxyConfig['sourcegraph']['dotcom']['authName']
+                }
+            } = { authName: { enterprise: 's2', dotcom: 'dotcom' } }
+
+            const config: MitMProxyConfig = {
+                sourcegraph: {
+                    dotcom: {
+                        get authName() {
+                            return state.authName.dotcom
+                        },
+                        endpoint: `http://127.0.0.1:${sgEnterprisePort}`,
+                        get proxyTarget() {
+                            return TESTING_CREDENTIALS[state.authName.dotcom].serverEndpoint
+                        },
+                    },
+                    enterprise: {
+                        get authName() {
+                            return state.authName.enterprise
+                        },
+                        endpoint: `http://127.0.0.1:${sgDotComPort}`,
+                        get proxyTarget() {
+                            return TESTING_CREDENTIALS[state.authName.enterprise].serverEndpoint
+                        },
+                    },
+                },
+            }
+
+            // Proxy Middleware has some internal Try/Catch wrapping so not all
+            // errors make it out into the test. By creating a manual signal we
+            // can ensure that errors inside the middleware always bubble up to
+            // a failed test.
             const testFailureSignal = new EventEmitter<{ error: [Error] }>()
             testFailureSignal.on('error', err => {
+                if (err.name === 'PollyError') {
+                    if (err.message.includes('`recordIfMissing` is `false`')) {
+                        console.error('Missing recording')
+                    }
+                } else {
+                    console.error('Error inside MitM proxy', err.message)
+                }
                 throw err
+                // process.nextTick(() => {
+                // })
             })
-            const middleware = createProxyMiddleware({
-                target,
+
+            const proxyReqHandlers = [
+                sourcegraphProxyReqHandler('dotcom', config),
+                sourcegraphProxyReqHandler('enterprise', config),
+            ]
+            const proxyMiddleware = createProxyMiddleware({
                 changeOrigin: true,
                 ejectPlugins: true,
-                plugins: [failOrRetryRecordingOnError(testFailureSignal, testInfo)],
-            })
-            app.use(middleware)
-            let server: ReturnType<typeof app.listen> = null as any
-            const serverInfo = await new Promise<AddressInfo>((resolve, reject) => {
-                server = app.listen(0, '127.0.0.1', () => {
-                    const address = server.address()
-                    if (address === null || typeof address === 'string') {
-                        reject('address is not a valid object')
-                    } else {
-                        resolve(address)
+                prependPath: false,
+                preserveHeaderKeyCase: false,
+                plugins: [proxyEventsPlugin],
+                router: req => {
+                    try {
+                        const hostPrefix = `http://${req.headers.host}`
+                        if (hostPrefix.startsWith(config.sourcegraph.dotcom.endpoint)) {
+                            return new URL(req.url ?? '', config.sourcegraph.dotcom.proxyTarget)
+                        }
+                        if (hostPrefix.startsWith(config.sourcegraph.enterprise.endpoint)) {
+                            return new URL(req.url ?? '', config.sourcegraph.enterprise.proxyTarget)
+                        }
+                        throw new Error('Unknown host prefix')
+                    } catch (err) {
+                        testFailureSignal.emit('error', err as Error)
+                        return undefined
                     }
-                })
+                },
+                on: {
+                    error: err => {
+                        testFailureSignal.emit('error', err as Error)
+                    },
+                    proxyReq: (proxyReq, req, res, options) => {
+                        try {
+                            for (const handler of proxyReqHandlers) {
+                                const handlerRes = handler(proxyReq, req, res, options)
+                                if (handlerRes) {
+                                    return
+                                }
+                            }
+                            throw new Error('No proxy request handler found')
+                        } catch (err) {
+                            testFailureSignal.emit('error', err as Error)
+                        }
+                    },
+                },
             })
+            app.use(proxyMiddleware)
+            const servers: HTTPServer<any, any>[] = []
+            const serverPromises = []
+            for (const port of allocatedPorts) {
+                serverPromises.push(
+                    new Promise((resolve, reject) => {
+                        const server = app.listen(port, '127.0.0.1', () => {
+                            server.listening ? resolve(void 0) : reject("server didn't start")
+                        })
+                        servers.push(server)
+                    })
+                )
+            }
 
-            await use({
-                endpoint: `http://${serverInfo.address}:${serverInfo.port}`,
-                target,
-            })
+            const cleanupServers = () => {
+                return Promise.allSettled(
+                    servers.map(server => {
+                        server.closeAllConnections()
+                        return new Promise<void>(resolve => server.close(() => resolve(void 0)))
+                    })
+                )
+            }
 
-            server.closeAllConnections()
-            await new Promise(resolve => server.close(resolve))
+            try {
+                await Promise.all(serverPromises)
+            } catch (e) {
+                await cleanupServers()
+                throw e
+            }
+
+            await use(config)
+            await cleanupServers()
         },
         { scope: 'test' },
     ],
     polly: [
-        async ({ validOptions, sourcegraphMitM }, use, testInfo) => {
+        async ({ validOptions }, use, testInfo) => {
             const relativeTestPath = path.relative(
                 path.resolve(process.cwd(), testInfo.project.testDir),
                 testInfo.file
@@ -310,7 +452,62 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                 adapters: ['node-http'],
                 recordFailedRequests: true,
                 logLevel: 'SILENT',
-                matchRequestsBy: defaultMatchRequestsBy,
+                timing: Timing.relative(1.0), //TODO: Configuration for fuzzy/flake testing
+                matchRequestsBy: {
+                    //TODO: Think of a clever way that we can require order on some types of requests
+                    order: false,
+                    method: true,
+                    url(url, req) {
+                        const parsed = new URL(url)
+                        parsed.searchParams.delete('client-version')
+                        const mitmProxy = getFirstOrValue(req.headers[MITM_PROXY_SERVICE_NAME_HEADER])
+                        if (mitmProxy) {
+                            parsed.hostname = `${mitmProxy}.proxy`
+                            parsed.port = ''
+                            parsed.protocol = 'http:'
+                        }
+                        //todo: replace host with semantic name if available
+                        return parsed.toString()
+                    },
+                    // Canonicalize JSON bodies so that we can replay the recording even if the JSON strings
+                    // differ by semantically meaningless things like object key enumeration order.
+                    body(body, req) {
+                        const contentType = getFirstOrValue(req.getHeader('content-type'))?.toLowerCase()
+                        if (contentType === 'application/json') {
+                            return jsonStableStringify(JSON.parse(body))
+                        }
+                        //TODO: Remove client version variables
+                        if (!contentType && typeof body === 'string') {
+                            const trimmedBody = body.trim()
+                            if (
+                                (trimmedBody.startsWith('{') && trimmedBody.endsWith('}')) ||
+                                (trimmedBody.startsWith('[') && trimmedBody.endsWith(']'))
+                            ) {
+                                let json: any = null
+                                try {
+                                    //only allow this to fail silently
+                                    json = JSON.parse(trimmedBody)
+                                } catch {}
+                                return jsonStableStringify(json)
+                            }
+                        }
+                        // TODO: We want to handle site identification requests so that we can seamlessly switch proxied backends
+                        // these are base64, chunked, gzip encoded responses though so we'll get to that
+                        return body
+                    },
+                    headers(headers, req) {
+                        const matchHeaders: Record<string, string> = {}
+                        const auth = getFirstOrValue(headers.authorization)
+                        const authName = getFirstOrValue(headers[MITM_PROXY_AUTH_TOKEN_NAME_HEADER])
+                        if (authName) {
+                            matchHeaders[MITM_PROXY_AUTH_TOKEN_NAME_HEADER] = authName
+                        } else if (auth) {
+                            matchHeaders.authorization = redactAuthorizationHeader(auth)
+                        }
+
+                        return matchHeaders
+                    },
+                },
                 persisterOptions: {
                     keepUnusedRequests: validOptions.keepUnusedRecordings ?? true,
                     fs: {
@@ -321,54 +518,141 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
 
             polly.server
                 .any()
-                .filter(req => !req.url.startsWith(sourcegraphMitM.target))
-                .intercept((req, res, interceptor) => {
-                    interceptor.stopPropagation()
-                    interceptor.passthrough()
-                })
-            polly.server.host(sourcegraphMitM.target, () => {
-                polly.server
-                    .post('/.api/graphql')
-                    .filter(req => 'RecordTelemetryEvents' in req.query)
-                    .on('request', (req, inter) => {
-                        //TODO(rnauta): Store telemetry & allow for custom validation (if needed)
-                    })
+                .filter(req => !req.getHeader(MITM_PROXY_SERVICE_NAME_HEADER))
+                .passthrough()
 
-                // NOTE: this might seem counter intuitive that the user could
-                // override these functions given that PollyJS calls them in the
-                // order they were defined. However, these intercept handlers
-                // don't work like normal middleware in that it's the first to
-                // respond. Instead if you call sendStatus(400) in a subsequent
-                // handler you change the resoponse. So although handlers are
-                // called in the order they are defined, it's the last handler
-                // to modify the response that actually dictates the response.
-                // This took me ages to figure out, and feels like a terrible
-                // API...why they didn't just go with normal well-understood
-                // middleware API 🤷‍♂️
-                polly.server
-                    .post('/.api/graphql')
-                    .filter(
-                        req => 'RecordTelemetryEvents' in req.query || 'LogEventMutation' in req.query
+            //TODO(rnauta): we probably make some helpers so that we can verify it's a proxy request from a particular service
+            // Sourcegraph Handlers
+            polly.server
+                .any()
+                .filter(req => {
+                    return !!getFirstOrValue(req.getHeader(MITM_PROXY_SERVICE_NAME_HEADER))?.startsWith(
+                        'sourcegraph'
                     )
-                    .intercept((req, res, interceptor) => {
-                        res.send('{}')
-                        res.status(200)
+                })
+                .on('response', (req, res) => {
+                    if (res.statusCode === 401) {
+                        // check if we simply didn't have the correct auth available
+                        const authAvailable = req.hasHeader(MITM_PROXY_AUTH_AVAILABLE_HEADER)
+                        const authSet = req.hasHeader(MITM_PROXY_AUTH_TOKEN_NAME_HEADER)
+
+                        if (authSet && !authAvailable) {
+                            throw new Error(
+                                "TESTING_CREDENTIALS haven't been set. TODO: Give an action to run next"
+                            )
+                        }
+                    }
+                })
+
+            if (true as unknown) {
+                // TODO: Make it configurable if we setup default handlers
+                polly.server
+                    .any()
+                    .filter(req => {
+                        return (
+                            !!getFirstOrValue(req.getHeader(MITM_PROXY_SERVICE_NAME_HEADER))?.startsWith(
+                                'sourcegraph'
+                            ) && req.pathname.startsWith('/-/debug/otlp/v1/traces')
+                        )
+                    })
+                    .intercept((req, res) => {
+                        //TODO(rnauta): forward this to a local otlp server & include with attachments
+                        // ideally combined with local or even remote sourcegraph traces too
+                        res.status(201).json({ partialSuccess: {} })
                     })
 
-                polly.server.get('/healthz').intercept((req, res, interceptor) => {
-                    res.sendStatus(200)
-                })
-            })
+                polly.server
+                    .any()
+                    .filter(req => {
+                        return (
+                            !!getFirstOrValue(req.getHeader(MITM_PROXY_SERVICE_NAME_HEADER))?.startsWith(
+                                'sourcegraph'
+                            ) &&
+                            req.pathname.startsWith('/.api/graphql') &&
+                            'LogEventMutation' in req.query
+                        )
+                    })
+                    .intercept((req, res) => {
+                        //TODO: Implement this
+                        res.status(200).json({ data: { logEvent: null } })
+                    })
+
+                polly.server
+                    .any()
+                    .filter(req => {
+                        return (
+                            !!getFirstOrValue(req.getHeader(MITM_PROXY_SERVICE_NAME_HEADER))?.startsWith(
+                                'sourcegraph'
+                            ) &&
+                            req.pathname.startsWith('/.api/graphql') &&
+                            'RecordTelemetryEvents' in req.query
+                        )
+                    })
+                    .intercept((req, res) => {
+                        //TODO: implement this
+                        res.status(200).json({
+                            data: { telemetry: { recordEvents: { alwaysNil: null } } },
+                        })
+                    })
+
+                polly.server
+                    .any()
+                    .filter(req => {
+                        return (
+                            !!getFirstOrValue(req.getHeader(MITM_PROXY_SERVICE_NAME_HEADER))?.startsWith(
+                                'sourcegraph'
+                            ) &&
+                            req.pathname.startsWith('/.api/graphql') &&
+                            'EvaluateFeatureFlag' in req.query
+                        )
+                    })
+                    .intercept((req, res) => {
+                        //TODO(rnauta): impeement this
+                        res.status(200).json({ data: { evaluateFeatureFlag: null } })
+                    })
+                polly.server
+                    .any()
+                    .filter(req => {
+                        return (
+                            !!getFirstOrValue(req.getHeader(MITM_PROXY_SERVICE_NAME_HEADER))?.startsWith(
+                                'sourcegraph'
+                            ) &&
+                            req.pathname.startsWith('/.api/graphql') &&
+                            'FeatureFlags' in req.query
+                        )
+                    })
+                    .intercept((req, res) => {
+                        //TODO: implement this
+                        res.status(200).json({ data: { evaluatedFeatureFlags: [] } })
+                    })
+
+                polly.server
+                    .any()
+                    .filter(req => {
+                        return req.pathname.startsWith('/healthz')
+                    })
+                    .intercept((req, res, interceptor) => {
+                        //TODO: implement this
+                        res.sendStatus(200)
+                    })
+            }
 
             await use(polly)
-            await polly.flush()
+            //NOTE: Be careful where you include Polly in this fixture. Because
+            //right now it's one of the first things released after a test
+            //meaning that requests outside of the test (such as shutting down
+            //etc) are not recorded/intercepted. If you'd include it in a
+            //component that lives longer the cleanup might not happen directly
+            //after the test finishes
             await polly.stop()
         },
         { scope: 'test' },
     ],
     //#region vscode agent
     vscodeUI: [
-        async ({ validOptions, serverRootDir, sourcegraphMitM, page }, use, testInfo) => {
+        async ({ validOptions, serverRootDir, mitmProxy, page, polly }, use, testInfo) => {
+            polly.pause()
+
             const executableDir = path.resolve(process.cwd(), validOptions.vscodeTmpDir)
             await fs.mkdir(executableDir, { recursive: true })
             const serverExecutableDir = path.resolve(process.cwd(), validOptions.vscodeServerTmpDir)
@@ -402,7 +686,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                         'workbench.welcomePage.walkthroughs.openOnInstall': false,
                         'workbench.colorTheme': 'Default Dark Modern',
                         // sane defaults
-                        'cody.debug.verbose': true,
+                        'cody.debug.verbose': false,
                     },
                     null,
                     2
@@ -440,17 +724,8 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                             ...process.env,
                             // VSCODE_EXTENSIONS: sharedExtensionsDir, This doesn't work either
                         },
-                        stdio: ['inherit', 'inherit', 'inherit'],
+                        stdio: ['inherit', 'ignore', 'inherit'],
                     })
-                } catch (e) {
-                    console.log('I AM HERE')
-                    if (
-                        typeof e === 'string' &&
-                        e.includes('code version use stable --install-dir /path/to/installation')
-                    ) {
-                    }
-                    console.error(e)
-                    throw e
                 } finally {
                     releaseLock()
                 }
@@ -470,12 +745,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
 
             // We can now start the server
             const connectionToken = '0000-0000'
-            const serverPort = validOptions.vscodeServerPortRange[0] + testInfo.parallelIndex
-            if (serverPort > validOptions.vscodeServerPortRange[1]) {
-                throw new Error(
-                    'Port range is exhausted. Either reduce the amount of workers or increase the port range.'
-                )
-            }
+            const serverPort = rangeOffset(testInfo.parallelIndex, validOptions.vscodeServerPortRange)
             const args = [
                 'serve-web',
                 `--user-data-dir=${userDataDir}`,
@@ -492,7 +762,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                 ...(['stable', 'insiders'].includes(validOptions.vscodeVersion)
                     ? { VSCODE_CLI_QUALITY: validOptions.vscodeVersion }
                     : { VSCODE_CLI_COMMIT: validOptions.vscodeVersion }),
-                TESTING_DOTCOM_URL: sourcegraphMitM.endpoint,
+                TESTING_DOTCOM_URL: mitmProxy.sourcegraph.dotcom.endpoint,
                 CODY_TESTING_BFG_DIR: path.resolve(process.cwd(), validOptions.binaryTmpDir),
                 CODY_TESTING_SYMF_DIR: path.resolve(process.cwd(), validOptions.binaryTmpDir),
             }
@@ -501,6 +771,7 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                 stdio: ['inherit', 'ignore', 'inherit'],
                 detached: false,
             })
+            SPAWNED_PIDS.add(codeProcess.pid)
 
             const config = { url: `http://127.0.0.1:${serverPort}/`, token: connectionToken }
             await stretchTimeout(() => waitForVSCodeServer({ url: config.url, serverExecutableDir }), {
@@ -508,8 +779,11 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                 testInfo,
             })
 
+            polly.play()
+
             await use(config)
 
+            polly.pause()
             // Turn of logging browser logging and navigate away from the UI
             // Otherwise we needlessly add a bunch of noisy error logs
             if (page.url().startsWith(config.url)) {
@@ -523,13 +797,10 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                 await page.goto('about:blank')
                 await page.waitForLoadState('domcontentloaded')
             }
-            const exitPromise = new Promise(resolve => {
-                codeProcess.on('exit', () => {
-                    resolve(void 0)
-                })
-            })
-            codeProcess.kill()
-            await exitPromise
+            if (codeProcess.pid) {
+                killSync(codeProcess.pid, 'SIGTERM', true)
+                SPAWNED_PIDS.delete(codeProcess.pid)
+            }
         },
         { scope: 'test' },
     ],
@@ -654,7 +925,7 @@ async function downloadOrWaitForVSCode({
                 throw new Error('Global VSCode path modification is not allowed')
             }
             await pspawn(tunnelPath, ['version', 'use', 'stable', '--install-dir', installPath], {
-                stdio: ['inherit', 'inherit', 'inherit'],
+                stdio: ['inherit', 'ignore', 'inherit'],
             })
         } else if (res.code !== 0) {
             throw new Error(JSON.stringify(res))
@@ -692,17 +963,68 @@ async function getFilesRecursive(dir: string): Promise<Array<Dirent>> {
     return files
 }
 
-function failOrRetryRecordingOnError(
-    emitter: EventEmitter<{ error: [Error] }>,
-    testInfo: TestInfo
-): typeof ProxyMiddlewarePlugin {
-    return (proxyServer, options) => {
-        //TODO(rnauta): retry with different settings if user accepts in cli prompt
-        proxyServer.on('error', (err, req, res) => {
-            emitter.emit('error', err)
-        })
+function sourcegraphProxyReqHandler(
+    variant: 'enterprise' | 'dotcom',
+    config: MitMProxyConfig
+): ProxyReqHandler {
+    return (proxyReq, req, res, options) => {
+        if (config.sourcegraph[variant].proxyTarget.startsWith((options.target as URL).origin)) {
+            const name = `sourcegraph.${variant}`
+            proxyReq.setHeader('accept-encoding', 'identity') //makes it easier to debug
+            proxyReq.setHeader(MITM_PROXY_SERVICE_ENDPOINT_HEADER, config.sourcegraph[variant].endpoint)
+            proxyReq.setHeader(MITM_PROXY_SERVICE_NAME_HEADER, name)
+            if (TESTING_CREDENTIALS[config.sourcegraph[variant].authName].token) {
+                proxyReq.setHeader(MITM_PROXY_AUTH_AVAILABLE_HEADER, name)
+            }
+            const authReplacement =
+                TESTING_CREDENTIALS[config.sourcegraph[variant].authName].token ??
+                TESTING_CREDENTIALS[config.sourcegraph[variant].authName].redactedToken
+
+            const headers = proxyReq.getHeaders()
+            if (headers.authorization) {
+                // can be used to match without worrying about the specific token value
+                const before = getFirstOrValue(headers.authorization)
+                const after = before.replace(MITM_AUTH_TOKEN_PLACEHOLDER, authReplacement)
+                if (before !== after) {
+                    // this means we set the token. This allows you to still
+                    // manually specify some other token in your test. For
+                    // instance to try and see what happens with an incorrect
+                    // token
+                    proxyReq.setHeader(MITM_PROXY_AUTH_TOKEN_NAME_HEADER, name)
+                }
+
+                proxyReq.setHeader('authorization', after)
+            }
+            return true
+        }
+        return false
     }
 }
+
+function getFirstOrValue<T>(input: T | Array<T>): T {
+    return Array.isArray(input) ? input[0] : input
+}
+
+/**
+ * Returns the lower bound + offset or errors if the number is outside of the range
+ */
+function rangeOffset<LENGTH extends number = number>(
+    offset: [number, LENGTH],
+    range: [number, number]
+): FixedLengthTuple<number, LENGTH>
+function rangeOffset(offset: number, range: [number, number]): number
+function rangeOffset(_offset: number | [number, number], range: [number, number]): number | number[] {
+    const [offset, take] = Array.isArray(_offset) ? _offset : [_offset, -1]
+    const anchor = range[0] + offset
+    if (take < 0) {
+        return anchor
+    }
+    return Array.from({ length: take }, (_, i) => anchor + i)
+}
+
+type FixedLengthTuple<T, N extends number, R extends readonly T[] = []> = R['length'] extends N
+    ? R
+    : FixedLengthTuple<T, N, readonly [T, ...R]>
 
 // A custom version of the VS Code download reporter that silences matching installation
 // notifications as these otherwise are emitted on every test run

@@ -7,13 +7,13 @@ test.describe('Demonstrations', () => {
     })
     test('Show off v2 features', async ({
         page,
-        sourcegraphMitM,
+        mitmProxy,
         vscodeUI,
         polly,
         executeCommand,
         workspaceDir,
     }) => {
-        polly.server.host(sourcegraphMitM.target, () => {
+        polly.server.host(mitmProxy.sourcegraph.dotcom.proxyTarget, () => {
             polly.server
                 .post('/.api/graphql')
                 .filter(req => 'RecordTelemetryEvents' in req.query)
@@ -51,7 +51,7 @@ test.describe('Demonstrations', () => {
         ).toBeVisible()
     })
 
-    test('also works', async ({ page, sourcegraphMitM, vscodeUI, executeCommand }) => {
+    test('also works', async ({ page, mitmProxy, vscodeUI, executeCommand }) => {
         await uix.cody.dummy()
     })
 })
