@@ -704,8 +704,8 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                     process.cwd(),
                     validOptions.vscodeExtensionCacheDir
                 )
-                if (!sharedExtensionsDir.endsWith('.vscode-server/extensions')) {
-                    //right now there's no way of setting the extension installation directoy. Instead they are always install in ~/.vscode-server/extensions
+                if (!sharedExtensionsDir.endsWith(path.join('.vscode-server', 'extensions'))) {
+                    //right now there's no way of setting the extension installation directory. Instead they are always install in ~/.vscode-server/extensions
                     throw new Error(
                         "Unfortunately VSCode doesn't provide a way yet to cache extensions isolated from a global installation. Please use ~/.code-server/extensions for now."
                     )
