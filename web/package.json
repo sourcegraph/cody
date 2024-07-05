@@ -22,7 +22,6 @@
   "devDependencies": {
     "@vitejs/plugin-react-swc": "^3.6.0",
     "@vitest/web-worker": "^1.4.0",
-    "@sourcegraph/cody-agent": "workspace:*",
     "@sourcegraph/cody-shared": "workspace:*",
     "@types/lodash": "4.14.195",
     "@vitejs/plugin-react-swc": "^3.6.0",
@@ -47,7 +46,7 @@
     "cody-ai": "workspace:*",
     "@types/lodash": "4.14.195",
     "@sourcegraph/cody": "workspace:*",
-    "@sourcegraph/cody-shared": "workspace:*"
+    "@sourcegraph/cody-shared": "workspace:*",
     "util": "^0.12.5",
     "vscode-uri": "^3.0.7",
     "@openctx/vscode-lib": "^0.0.13",
