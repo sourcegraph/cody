@@ -62,7 +62,7 @@ export async function allMentionProvidersMetadata(): Promise<ContextMentionProvi
 }
 
 // Cody Web providers don't include standard file provider since
-// it uses open context remote file provider instead
+// it uses openctx remote file provider instead
 export async function webMentionProvidersMetadata(): Promise<ContextMentionProviderMetadata[]> {
     return [SYMBOL_CONTEXT_MENTION_PROVIDER, ...(await openCtxMentionProviders())]
 }

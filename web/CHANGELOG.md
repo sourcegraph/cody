@@ -4,5 +4,5 @@
 Initial release includes
 
 - React chat UI components 
-- Open context mentions support
+- OpenCtx mentions support
 - Built-in remote context sources support (files and symbols)

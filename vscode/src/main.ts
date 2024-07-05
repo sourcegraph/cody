@@ -299,7 +299,7 @@ const register = async (
         // Sync auth status to graphqlClient
         graphqlClient.onConfigurationChange(newConfig)
 
-        // Re-register expose open context client
+        // Re-register expose openctx client
         await exposeOpenCtxClient(
             context,
             initialConfig,

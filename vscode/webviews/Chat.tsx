@@ -167,7 +167,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         }
     }, [])
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: needs to run when is dotcom status is chaning to update openctx providers
+    // biome-ignore lint/correctness/useExhaustiveDependencies: needs to run when is dotcom status is changing to update openctx providers
     useEffect(() => {
         reloadMentionProviders()
     }, [userInfo.isDotComUser, reloadMentionProviders])
