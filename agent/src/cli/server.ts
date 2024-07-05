@@ -2,7 +2,7 @@ import { logDebug, logError } from '@sourcegraph/cody-shared'
 import { Command } from 'commander'
 import { WebSocketServer } from 'ws'
 import { newAgentClient } from '../agent'
-import type { MessageHandler } from '../jsonrpc-alias'
+import type { RpcMessageHandler } from '../jsonrpc-alias'
 import { intOption } from './cody-bench/cli-parsers'
 
 interface ServerOptions {
@@ -18,23 +18,25 @@ export const serverCommand = new Command('server')
         logDebug('cody-server', `Listening... http://localhost:${options.port}`)
         wss.on('connection', async ws => {
             logDebug('cody-server', 'New client')
-            let agent: MessageHandler | undefined
+            let client: RpcMessageHandler | undefined
 
             ws.on('error', error => logError('cody-server', String(error)))
             ws.on('message', async data => {
                 const json = String(data)
                 logDebug('cody-server', 'Received message', json)
-                if (agent === undefined) {
-                    agent = await newAgentClient({
-                        name: 'cody-server',
-                        version: '0.1.0',
-                        workspaceRootUri: 'file:///tmp/cody-server',
-                    })
+                if (client === undefined) {
+                    client = (
+                        await newAgentClient({
+                            name: 'cody-server',
+                            version: '0.1.0',
+                            workspaceRootUri: 'file:///tmp/cody-server',
+                        })
+                    ).client
                     // TODO(olafurpg/sqs): reimplement with vscode-jsonrpc
                     // agent.fallbackHandler = async msg => {
                     //     ws.send(JSON.stringify(msg))
                     // }
-                    const initialized = await agent.request('extensionConfiguration/change', {
+                    const initialized = await client.request('extensionConfiguration/change', {
                         accessToken: process.env.SRC_ACCESS_TOKEN ?? 'invalidtoken',
                         serverEndpoint: process.env.SRC_ENDPOINT ?? 'invalidendpoint',
                         customHeaders: {},

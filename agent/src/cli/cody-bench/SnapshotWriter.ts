@@ -4,7 +4,7 @@ import { createObjectCsvWriter } from 'csv-writer'
 import type { CsvWriter } from 'csv-writer/src/lib/csv-writer'
 import { rimraf } from 'rimraf'
 
-import { type EvaluationDocument, autocompleteItemHeaders } from './EvaluationDocument'
+import { type EvaluationDocument, headerItems } from './EvaluationDocument'
 import type { CodyBenchOptions } from './cody-bench'
 
 export class SnapshotWriter {
@@ -16,7 +16,7 @@ export class SnapshotWriter {
             await fspromises.mkdir(this.options.snapshotDirectory, { recursive: true })
             if (this.options.csvPath) {
                 this.csvWriter = createObjectCsvWriter({
-                    header: autocompleteItemHeaders,
+                    header: headerItems,
                     path: this.options.csvPath,
                 })
             }

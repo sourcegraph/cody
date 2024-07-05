@@ -1,7 +1,8 @@
 import { Command } from 'commander'
 
+import { authCommand } from './auth/command-auth'
+import { chatCommand } from './chat'
 import { codyBenchCommand } from './cody-bench/cody-bench'
-import { experimentalCliCommand } from './experimental-cli/command'
 import { jsonrpcCommand } from './jsonrpc'
 import { serverCommand } from './server'
 
@@ -15,4 +16,5 @@ export const rootCommand = new Command()
     .addCommand(serverCommand)
     .addCommand(jsonrpcCommand)
     .addCommand(codyBenchCommand)
-    .addCommand(experimentalCliCommand)
+    .addCommand(chatCommand())
+    .addCommand(authCommand())

@@ -40,8 +40,12 @@ export class AgentTextDocument implements vscode.TextDocument {
     public version = 0
     public readonly isDirty: boolean = false
     public readonly isClosed: boolean = false
-    public static from(uri: vscode.Uri, content: string): AgentTextDocument {
-        return new AgentTextDocument(ProtocolTextDocumentWithUri.from(uri, { content }))
+    public static from(
+        uri: vscode.Uri,
+        content: string,
+        document?: Partial<protocol.ProtocolTextDocument>
+    ): AgentTextDocument {
+        return new AgentTextDocument(ProtocolTextDocumentWithUri.from(uri, { ...document, content }))
     }
 
     public save(): Thenable<boolean> {

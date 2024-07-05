@@ -85,9 +85,12 @@ export class ContextFiltersProvider implements vscode.Disposable {
         this.parsedContextFilters = null
         this.lastContextFiltersResponse = contextFilters
 
-        logDebug('ContextFiltersProvider', 'setContextFilters', {
-            verbose: contextFilters,
-        })
+        // Disable logging for unit tests. Retain for manual debugging of enterprise issues.
+        if (!process.env.VITEST) {
+            logDebug('ContextFiltersProvider', 'setContextFilters', {
+                verbose: contextFilters,
+            })
+        }
         this.parsedContextFilters = {
             include: contextFilters.include?.map(parseContextFilterItem) || null,
             exclude: contextFilters.exclude?.map(parseContextFilterItem) || null,

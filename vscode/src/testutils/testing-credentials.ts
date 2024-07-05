@@ -1,9 +1,34 @@
+import { execSync } from 'node:child_process'
 import { DOTCOM_URL } from '@sourcegraph/cody-shared'
 
 export interface TestingCredentials {
     readonly token?: string
     readonly redactedToken: string
     readonly serverEndpoint: string
+}
+
+export function loadSecret(name: string): string {
+    return execSync(
+        `gcloud secrets versions access latest --secret ${name} --project cody-agent-tokens --quiet`
+    )
+        .toString()
+        .trim()
+}
+
+export function s2Credentials(): TestingCredentials {
+    return {
+        redactedToken: 'REDACTED_964f5256e709a8c5c151a63d8696d5c7ac81604d179405864d88ff48a9232364',
+        serverEndpoint: 'https://sourcegraph.sourcegraph.com/',
+        token: loadSecret('CODY_S2_ACCESS_TOKEN'),
+    }
+}
+
+export function dotcomCredentials(): TestingCredentials {
+    return {
+        redactedToken: 'REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d',
+        serverEndpoint: 'https://sourcegraph.com/',
+        token: loadSecret('CODY_PRO_ACCESS_TOKEN'),
+    }
 }
 
 // See instructions in agent/scripts/export-cody-http-recording-tokens.sh for
@@ -16,7 +41,7 @@ export const TESTING_CREDENTIALS = {
     } satisfies TestingCredentials,
     dotcomProUserRateLimited: {
         token: process.env.SRC_DOTCOM_PRO_RATE_LIMIT_ACCESS_TOKEN,
-        redactedToken: 'REDACTED_8c77b24d9f3d0e679509263c553887f2887d67d33c4e3544039c1889484644f5',
+        redactedToken: 'REDACTED_e2ef220aa0a2f84113dc065a7fd9c7a620f17455d0aca3690d312676518dc48f',
         serverEndpoint: DOTCOM_URL.toString(),
     } satisfies TestingCredentials,
     enterprise: {

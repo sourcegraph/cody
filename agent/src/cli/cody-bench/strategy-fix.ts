@@ -3,11 +3,11 @@ import { PromptString, ps } from '@sourcegraph/cody-shared'
 import { glob } from 'glob'
 import * as vscode from 'vscode'
 import { ProtocolTextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
-import { fileExists } from '../../../../vscode/src/local-context/download-symf'
+import { pathExists } from '../../../../vscode/src/local-context/utils'
 import { redactAuthorizationHeader } from '../../../../vscode/src/testutils/CodyPersister'
 import { AgentTextDocument } from '../../AgentTextDocument'
 import { TestClient } from '../../TestClient'
-import type { MessageHandler } from '../../jsonrpc-alias'
+import type { RpcMessageHandler } from '../../jsonrpc-alias'
 import { renderUnifiedDiff } from '../../renderUnifiedDiff'
 import { vscodeRange } from '../../vscode-type-converters'
 import { EvaluationDocument } from './EvaluationDocument'
@@ -19,7 +19,7 @@ import { prettyDiagnostic, prettyDiagnosticMessage } from './prettyDiagnostic'
 import { runVoidCommand } from './testTypecheck'
 
 export async function evaluateFixStrategy(
-    messageHandler: MessageHandler,
+    messageHandler: RpcMessageHandler,
     options: CodyBenchOptions
 ): Promise<void> {
     const client = new TestClient(messageHandler.conn, {
@@ -31,7 +31,7 @@ export async function evaluateFixStrategy(
             token: options.srcAccessToken,
         },
     })
-    if (!(await fileExists(path.join(options.workspace, 'node_modules')))) {
+    if (!(await pathExists(path.join(options.workspace, 'node_modules')))) {
         // Run pnpm install only when `node_modules` doesn't exist.
         await runVoidCommand(options.installCommand, options.workspace)
     }

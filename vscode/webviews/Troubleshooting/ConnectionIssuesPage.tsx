@@ -1,6 +1,7 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import { clsx } from 'clsx'
 import { useCallback, useState } from 'react'
+import { OllamaLogo } from '../icons/LLMProviderIcons'
 import type { VSCodeWrapper } from '../utils/VSCodeApi'
 import styles from './ConnectionIssuesPage.module.css'
 
@@ -27,6 +28,10 @@ export const ConnectionIssuesPage: React.FunctionComponent<
         }
     }, [vscodeAPI])
 
+    const onOfflineClick = useCallback(() => {
+        vscodeAPI.postMessage({ command: 'auth', authKind: 'offline' })
+    }, [vscodeAPI])
+
     const onSignOut = useCallback(() => {
         vscodeAPI.postMessage({ command: 'auth', authKind: 'signout' })
     }, [vscodeAPI])
@@ -44,6 +49,7 @@ export const ConnectionIssuesPage: React.FunctionComponent<
                     <ul className={styles.causes}>
                         <li>You don't have internet access</li>
                         <li>Proxy settings might need to be configured</li>
+                        <li>An internal error preventing the connection</li>
                         <li>
                             The configured endpoint{' '}
                             {configuredEndpoint && (
@@ -53,7 +59,6 @@ export const ConnectionIssuesPage: React.FunctionComponent<
                             )}{' '}
                             is not reachable
                         </li>
-                        <li>An internal error preventing the connection</li>
                     </ul>
                 </div>
                 <div className={styles.actions}>
@@ -72,6 +77,16 @@ export const ConnectionIssuesPage: React.FunctionComponent<
                         onClick={onSignOut}
                     >
                         Sign Out
+                    </VSCodeButton>
+                </div>
+                <div className={styles.actions}>
+                    <OllamaLogo size={50} className={styles.icon} />
+                    <VSCodeButton
+                        className={clsx(styles.actionButton)}
+                        type="button"
+                        onClick={onOfflineClick}
+                    >
+                        Use Cody Offline with Ollama
                     </VSCodeButton>
                 </div>
             </div>

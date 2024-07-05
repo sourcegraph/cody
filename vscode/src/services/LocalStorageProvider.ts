@@ -29,6 +29,7 @@ class LocalStorage {
     protected readonly KEY_LOCAL_MINION_HISTORY = 'cody-local-minionHistory-v0'
     public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
     public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
+    public readonly LAST_USED_USERNAME = 'SOURCEGRAPH_CODY_USERNAME'
     protected readonly CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
     protected readonly CODY_ENROLLMENT_HISTORY = 'SOURCEGRAPH_CODY_ENROLLMENTS'
 
@@ -100,6 +101,12 @@ class LocalStorage {
         await this.storage.update(this.CODY_ENDPOINT_HISTORY, [...historySet])
     }
 
+    public getLastStoredUser(): { endpoint: string; username: string } | null {
+        const username = this.storage.get<string | null>(this.LAST_USED_USERNAME, null)
+        const endpoint = this.getEndpoint()
+        return username && endpoint ? { endpoint, username } : null
+    }
+
     public getChatHistory(authStatus: AuthStatus): UserLocalHistory {
         const history = this.storage.get<AccountKeyedChatHistory | null>(this.KEY_LOCAL_HISTORY, null)
         const accountKey = getKeyForAuthStatus(authStatus)
@@ -132,6 +139,11 @@ class LocalStorage {
             }
 
             await this.storage.update(this.KEY_LOCAL_HISTORY, fullHistory)
+
+            // Store the current username as the last used username
+            if (authStatus.username) {
+                this.storage.update(this.LAST_USED_USERNAME, authStatus.username)
+            }
         } catch (error) {
             console.error(error)
         }

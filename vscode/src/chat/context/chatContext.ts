@@ -27,7 +27,8 @@ export async function getChatContextItemsForMention(
     telemetryRecorder?: {
         empty: () => void
         withProvider: (type: MentionQuery['provider'], metadata?: { id: string }) => void
-    }
+    },
+    remoteRepositoriesNames?: string[]
 ): Promise<ContextItem[]> {
     const MAX_RESULTS = 20
     switch (mentionQuery.provider) {
@@ -37,11 +38,11 @@ export async function getChatContextItemsForMention(
         case SYMBOL_CONTEXT_MENTION_PROVIDER.id:
             telemetryRecorder?.withProvider(mentionQuery.provider)
             // It would be nice if the VS Code symbols API supports cancellation, but it doesn't
-            return getSymbolContextFiles(mentionQuery.text, MAX_RESULTS)
+            return getSymbolContextFiles(mentionQuery.text, MAX_RESULTS, remoteRepositoriesNames)
         case FILE_CONTEXT_MENTION_PROVIDER.id: {
             telemetryRecorder?.withProvider(mentionQuery.provider)
             const files = mentionQuery.text
-                ? await getFileContextFiles(mentionQuery.text, MAX_RESULTS)
+                ? await getFileContextFiles(mentionQuery.text, MAX_RESULTS, remoteRepositoriesNames)
                 : await getOpenTabsContextFile()
 
             // If a range is provided, that means user is trying to mention a specific line range.

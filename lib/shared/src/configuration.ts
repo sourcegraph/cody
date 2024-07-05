@@ -43,6 +43,7 @@ export interface Configuration {
     autocompleteAdvancedProvider:
         | 'anthropic'
         | 'fireworks'
+        | 'unstable-gemini'
         | 'unstable-openai'
         | 'experimental-openaicompatible'
         | 'experimental-ollama'
@@ -95,6 +96,7 @@ export enum CodyIDE {
     JetBrains = 'JetBrains',
     Neovim = 'Neovim',
     Emacs = 'Emacs',
+    Web = 'Web',
 }
 
 export interface AutocompleteTimeouts {

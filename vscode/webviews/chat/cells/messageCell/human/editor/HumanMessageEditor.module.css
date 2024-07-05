@@ -1,6 +1,6 @@
 :root {
-    --human-message-editor-toolbar-height: 21px;
-    --human-message-editor-gap: 3px;
+    --human-message-editor-toolbar-height: 22px;
+    --human-message-editor-gap: 4px;
     --human-message-editor-cell-spacing-bottom: 6px;
 }
 
@@ -8,21 +8,39 @@
     display: flex;
     flex-direction: column;
     gap: var(--human-message-editor-gap);
-
-    padding: calc(var(--prompt-editor-padding-y) - 1px) var(--prompt-editor-padding-x) var(--prompt-editor-padding-y) var(--prompt-editor-padding-x);
-
+    padding: var(--prompt-editor-padding-y) var(--prompt-editor-padding-x);
     border-radius: 2px;
-
-    background-color: var(--vscode-input-background);
+    background-color: color-mix(in srgb, var(--vscode-input-background) 50%, transparent);
     color: var(--vscode-input-foreground);
-
     outline: solid 1px var(--vscode-input-border);
     outline-offset: -1px;
+    cursor: text;
+}
+
+.toolbar {
+    height: var(--human-message-editor-toolbar-height);
+    margin-left: -2px;
+    overflow: hidden;
+}
+
+.container:not(.focused, [data-keep-toolbar-open]) {
+    --human-message-editor-gap: 0px;
+
+    .toolbar {
+        height: 0;
+        opacity: 0;
+        margin-top: 0;
+        pointer-events: none;
+    }
+}
+
+.container:hover, .container:has(:focus-within, menu>button:focus) {
+    background-color: var(--vscode-input-background);
 }
 
 /* Show focus ring when the input is focused or a toolbar button within the input container is
    focused, but NOT if something in a toolbar button's popover is focused. */
-.container:has([data-lexical-editor="true"]:focus-within, menu>button:focus) {
+.container:has([data-lexical-editor='true']:focus-within, menu>button:focus) {
     outline-color: var(--vscode-focusBorder);
 }
 
@@ -30,18 +48,7 @@
     min-height: 1lh;
 }
 
-.toolbar {
-    height: var(--human-message-editor-toolbar-height);
-}
-
-/* Hide the toolbar unless focused on all but the last cell. */
-[role="row"]:has(.container:is(:not(.sent), .focused)) {
-    /* HACK: Change HumanMessageCell style. */
-    padding-bottom: var(--human-message-editor-cell-spacing-bottom);
-}
-.container.sent:not(.focused) {
-    margin-bottom: calc(var(--human-message-editor-toolbar-height) + var(--human-message-editor-gap) + var(--human-message-editor-cell-spacing-bottom) - var(--cell-spacing-y));
-    .toolbar {
-        display: none;
-    }
+/* color-mix is not supported on JetBrains webview */
+html[data-ide=JetBrains] .container {
+    background-color: var(--vscode-input-background);
 }

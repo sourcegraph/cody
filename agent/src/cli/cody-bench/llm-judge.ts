@@ -68,9 +68,9 @@ function scoreNumeric(score?: string): number | undefined {
         case 'negative':
             return 0
         case 'acceptable':
+        case 'positive':
             return 1
         case 'amazing':
-        case 'positive':
             return 2
         default:
             return undefined

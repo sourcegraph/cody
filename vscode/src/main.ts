@@ -98,7 +98,10 @@ export async function start(
     platform: PlatformContext
 ): Promise<vscode.Disposable> {
     // Set internal storage fields for storage provider singletons
-    localStorage.setStorage(context.globalState)
+    localStorage.setStorage(
+        platform.createStorage ? await platform.createStorage() : context.globalState
+    )
+
     if (secretStorage instanceof VSCodeSecretStorage) {
         secretStorage.setStorage(context.secrets)
     }

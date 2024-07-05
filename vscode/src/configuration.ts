@@ -202,7 +202,7 @@ export function getConfiguration(
                       indexPath: URI.file(
                           getHiddenSetting<string>('testing.localEmbeddings.indexLibraryPath')
                       ),
-                      provider: 'openai',
+                      provider: 'sourcegraph',
                   }
                 : undefined,
     }
@@ -222,7 +222,10 @@ export const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => 
     const isTesting = process.env.CODY_TESTING === 'true'
     const serverEndpoint =
         localStorage?.getEndpoint() || (isTesting ? 'http://localhost:49300/' : DOTCOM_URL.href)
-    const accessToken = (await getAccessToken()) || null
+    const accessToken =
+        vscode.workspace.getConfiguration().get<string>('cody.accessToken') ||
+        (await getAccessToken()) ||
+        null
     return { ...config, accessToken, serverEndpoint }
 }
 
