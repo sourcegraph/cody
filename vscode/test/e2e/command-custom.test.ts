@@ -11,7 +11,7 @@ import {
 } from './common'
 import {
     type DotcomUrlOverride,
-    type ExpectedEvents,
+    type ExpectedV2Events,
     test as baseTest,
     openCustomCommandMenu,
     withPlatformSlashes,
@@ -24,23 +24,10 @@ test.beforeEach(() => {
     mockServer.resetLoggedEvents()
 })
 
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
-    expectedEvents: [
-        'CodyInstalled',
-        'CodyVSCodeExtension:codyIgnore:hasFile',
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:sidebar:custom:clicked',
-        'CodyVSCodeExtension:menu:command:custom:clicked',
-        'CodyVSCodeExtension:menu:custom:build:clicked',
-    ],
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
@@ -158,22 +145,10 @@ test.extend<ExpectedEvents>({
 
 // NOTE: If no custom commands are showing up in the command menu, it might
 // indicate a breaking change during the custom command building step.
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
-    expectedEvents: [
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:menu:command:custom:clicked',
-        'CodyVSCodeExtension:command:custom:executed',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-    ],
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
@@ -271,20 +246,10 @@ test.extend<ExpectedEvents>({
     ).toBeVisible()
 })
 
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
-    expectedEvents: [
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:menu:command:custom:clicked',
-        'CodyVSCodeExtension:menu:command:config:clicked',
-    ],
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',

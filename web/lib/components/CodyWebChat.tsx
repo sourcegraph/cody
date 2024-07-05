@@ -31,7 +31,6 @@ import {
 import {
     TelemetryRecorderContext,
     createWebviewTelemetryRecorder,
-    createWebviewTelemetryService,
 } from 'cody-ai/webviews/utils/telemetry'
 
 import { useWebAgentClient } from './CodyWebChatProvider'
@@ -131,8 +130,6 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
         }
     }, [initialization, vscodeAPI, activeChatID, activeWebviewPanelID, client])
 
-    // Deprecated V1 telemetry
-    const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
@@ -214,7 +211,6 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
                                             messageInProgress={messageInProgress}
                                             transcript={transcript}
                                             vscodeAPI={vscodeAPI}
-                                            telemetryService={telemetryService}
                                             isTranscriptError={isTranscriptError}
                                             scrollableParent={rootElement}
                                             className={styles.chat}
