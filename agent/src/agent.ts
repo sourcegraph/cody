@@ -1136,15 +1136,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('chat/web/new', async () => {
-            const panelId = await this.createChatPanel(
-                Promise.resolve({
-                    type: 'chat',
-                    session: await vscode.commands.executeCommand('cody.chat.newEditorPanel'),
-                })
-            )
-
-            const chatId = this.webPanels.panels.get(panelId)?.chatID ?? ''
-            return { panelId, chatId }
+            await vscode.commands.executeCommand('cody.chat.newEditorPanel')
+            return { panelId: 'TODO-remove-panel-id', chatId: 'TODO-remove-chat-id' }
         })
 
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
@@ -1658,6 +1651,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
             throw new Error('chatID is undefined')
         }
         if (!(webviewPanel instanceof AgentWebviewPanel)) {
+            // TODO: For WebViews we don't want to throw here, nor do we want to set chatID
+            // on the returned object.
             throw new TypeError('')
         }
 
