@@ -120,7 +120,7 @@ export function registerModelsFromVSCodeConfiguration() {
                         output: m.outputTokens ?? ANSWER_TOKENS,
                     },
                     clientSideConfig: { apiKey: m.apiKey, apiEndpoint: m.apiEndpoint },
-                    tags: [ModelTag.Dev, ModelTag.Experimental],
+                    tags: [ModelTag.Local, ModelTag.BYOK, ModelTag.Experimental],
                 })
         )
     )

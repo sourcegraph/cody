@@ -16,7 +16,7 @@ export async function fetchLocalOllamaModels(): Promise<Model[]> {
                     input: OLLAMA_DEFAULT_CONTEXT_WINDOW,
                     output: CHAT_OUTPUT_TOKEN_BUDGET,
                 },
-                tags: [ModelTag.Ollama, ModelTag.Experimental],
+                tags: [ModelTag.Local, ModelTag.Ollama, ModelTag.Experimental],
             })
     )
 }

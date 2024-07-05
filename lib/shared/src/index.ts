@@ -14,6 +14,8 @@ export { ModelTag } from './models/tags'
 export {
     getProviderName,
     getModelInfo,
+    isCodyProModel,
+    isCustomModel,
 } from './models/utils'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
