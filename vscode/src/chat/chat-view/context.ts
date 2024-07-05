@@ -194,17 +194,17 @@ export async function getContextStrategy(
         return defaultStrategy
     }
 
-    const isEnhancedContextExperiment = await featureFlagProvider.evaluateFeatureFlag(
+    const [isEnhancedContextExperiment, useEmbeddings, useSymf] = await Promise.all([
+        featureFlagProvider.evaluateFeatureFlag(
         FeatureFlag.CodyEnhancedContextExperiment
-    )
+    ), featureFlagProvider.evaluateFeatureFlag(
+        FeatureFlag.CodyEnhancedContexUseEmbeddings
+    ), featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEnhancedContextUseSymf)
+    ])
+
     if (!isEnhancedContextExperiment) {
         return defaultStrategy
     }
-
-    const useEmbeddings = await featureFlagProvider.evaluateFeatureFlag(
-        FeatureFlag.CodyEnhancedContexUseEmbeddings
-    )
-    const useSymf = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEnhancedContextUseSymf)
 
     let variant: { group: number; strategy: ConfigurationUseContext } = { group: 0, strategy: 'none' }
     if (useEmbeddings && useSymf) {
