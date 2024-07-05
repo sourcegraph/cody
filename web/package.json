@@ -20,6 +20,8 @@
     "build-ts": "tsc --build"
   },
   "devDependencies": {
+    "@sourcegraph/cody": "workspace:*",
+    "@sourcegraph/cody-shared": "workspace:*",
     "@vitejs/plugin-react-swc": "^3.6.0",
     "@vitest/web-worker": "^1.4.0",
     "@vscode/codicons": "^0.0.35",
@@ -34,13 +36,11 @@
     "stream-browserify": "^3.0.0",
     "tailwind-merge": "^2.3.0",
     "tailwindcss": "^3.4.3",
-    "util": "^0.12.5",
-    "vscode-uri": "^3.0.7",
-    "@openctx/vscode-lib": "^0.0.13",
     "vite-plugin-svgr": "^4.2.0",
     "cody-ai": "workspace:*",
     "@types/lodash": "4.14.195",
-    "@sourcegraph/cody": "workspace:*",
-    "@sourcegraph/cody-shared": "workspace:*"
+    "util": "^0.12.5",
+    "vscode-uri": "^3.0.7",
+    "@openctx/vscode-lib": "^0.0.13"
   }
 }

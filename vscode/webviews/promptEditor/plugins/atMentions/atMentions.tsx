@@ -78,7 +78,7 @@ function scanForMentionTriggerInLexicalInput(text: string) {
     return scanForMentionTriggerInUserTextInput({ textBeforeCursor: text, includeWhitespace: true })
 }
 
-export type setEditorQuery = (getNewQuery: (currentText: string) => string) => void
+export type setEditorQuery = (getNewQuery: (currentText: string) => [string, number?]) => void
 
 export default function MentionsPlugin(): JSX.Element | null {
     const [editor] = useLexicalComposerContext()
@@ -104,8 +104,8 @@ export default function MentionsPlugin(): JSX.Element | null {
         limit: SUGGESTION_LIST_LENGTH_LIMIT,
     })
 
-    const setEditorQuery = useCallback(
-        (getNewQuery: (currentText: string) => string): void => {
+    const setEditorQuery = useCallback<setEditorQuery>(
+        getNewQuery => {
             if (editor) {
                 editor.update(() => {
                     const node = $getSelection()?.getNodes().at(-1)
@@ -114,23 +114,27 @@ export default function MentionsPlugin(): JSX.Element | null {
                     }
 
                     const currentText = node.getTextContent()
-                    const newText = getNewQuery(currentText)
+                    const [newText, index] = getNewQuery(currentText)
                     if (currentText === newText) {
                         return
                     }
 
                     node.setTextContent(newText)
 
-                    // If our old text was "prefix @bar baz" and the new text is
-                    // "prefix @ baz" then our cursor should be just after @
-                    // (which is at the common prefix position)
-                    const offset = sharedPrefixLength(currentText, newText)
-                    node.select(offset, offset)
+                    if (index !== undefined) {
+                        node.select(index, index)
+                    } else {
+                        // If our old text was "prefix @bar baz" and the new text is
+                        // "prefix @ baz" then our cursor should be just after @
+                        // (which is at the common prefix position)
+                        const offset = sharedPrefixLength(currentText, newText)
+                        node.select(offset, offset)
+                    }
                 })
             }
         },
         [editor]
-    ) satisfies setEditorQuery
+    )
 
     useEffect(() => {
         // Listen for changes to ContextItemMentionNode to update the token count.
