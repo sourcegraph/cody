@@ -524,7 +524,7 @@
         "group": "Chat",
         "title": "Add Selection to Cody Chat",
         "icon": "$(mention)",
-        "enablement": "cody.activated && editorHasSelection && cody.hasChatPanelsOpened"
+        "enablement": "cody.activated && editorHasSelection"
       },
       {
         "command": "cody.mention.file",
@@ -601,12 +601,12 @@
       {
         "command": "cody.mention.selection",
         "key": "alt+/",
-        "when": "cody.activated && editorTextFocus && editorHasSelection && cody.hasChatPanelsOpened"
+        "when": "cody.activated && editorTextFocus && editorHasSelection"
       },
       {
         "command": "cody.mention.selection",
         "key": "alt+l",
-        "when": "cody.activated && editorTextFocus && editorHasSelection && cody.hasChatPanelsOpened"
+        "when": "cody.activated && editorTextFocus && editorHasSelection"
       },
       {
         "command": "cody.tutorial.chat",
@@ -766,7 +766,7 @@
         {
           "command": "cody.mention.selection",
           "group": "0_cody",
-          "when": "cody.activated && editorHasSelection && cody.hasChatPanelsOpened"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.mention.file",
