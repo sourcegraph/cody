@@ -3,7 +3,7 @@ import * as mockServer from '../fixtures/mock-server'
 
 import {
     expectContextCellCounts,
-    getChatPanel,
+    getChatEditorPanel,
     getContextCell,
     openContextCell,
     sidebarExplorer,
@@ -376,7 +376,7 @@ testGitWorkspace('use terminal output as context', async ({ page, sidebar }) => 
     await expect(menuInputBox).not.toBeVisible()
 
     // Check the context list to confirm the terminal output is added as file
-    const panel = getChatPanel(page)
+    const panel = getChatEditorPanel(page)
     const contextCell = getContextCell(panel)
     await expectContextCellCounts(contextCell, { files: 2 })
     await openContextCell(contextCell)

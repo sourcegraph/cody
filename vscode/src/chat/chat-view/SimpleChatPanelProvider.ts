@@ -1429,10 +1429,6 @@ export class SimpleChatPanelProvider
     }
 
     public async clearAndRestartSession(): Promise<void> {
-        if (this.chatModel.isEmpty()) {
-            return
-        }
-
         this.cancelSubmitOrEditOperation()
         await this.saveSession()
 
