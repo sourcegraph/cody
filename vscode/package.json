@@ -918,13 +918,6 @@
           "when": "cody.activated"
         }
       ],
-      "explorer/context": [
-        {
-          "command": "cody.mention.file",
-          "group": "0_cody",
-          "when": "cody.activated && resourceSet && !explorerResourceIsFolder && cody.hasChatPanelsOpened"
-        }
-      ],
       "scm/title": [
         {
           "command": "cody.command.generate-commit",
