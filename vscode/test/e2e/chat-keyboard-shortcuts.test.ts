@@ -23,7 +23,6 @@ test('chat keyboard shortcuts', async ({ page, sidebar }) => {
     // Alt+L with no selection opens a new chat (with file mention).
     await openFileInEditorTab(page, 'buzz.ts')
     await page.keyboard.press('Alt+L')
-    // await new Promise(resolve => setTimeout(resolve, 3_000))
     await expect(chatInput).toContainText('buzz.ts', { timeout: 3_000 })
 
     await executeCommandInPalette(page, 'View: Close Primary Sidebar')
