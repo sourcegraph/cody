@@ -27,6 +27,7 @@
     "dedent": "^0.7.0",
     "diff": "^5.2.0",
     "fast-xml-parser": "^4.3.2",
+    "fuzzysort": "^2.0.4",
     "isomorphic-fetch": "^3.0.0",
     "js-tiktoken": "^1.0.10",
     "lexical": "^0.16.0",

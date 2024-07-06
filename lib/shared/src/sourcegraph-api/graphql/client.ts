@@ -1,3 +1,5 @@
+import * as path from 'node:path'
+import fuzzysort from 'fuzzysort'
 import type { Response as NodeResponse } from 'node-fetch'
 import { URI } from 'vscode-uri'
 import { fetch } from '../../fetch'
@@ -515,16 +517,59 @@ export class SourcegraphGraphQLAPIClient {
         repositories: string[],
         query: string
     ): Promise<FuzzyFindFile[] | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<FuzzyFindFilesResponse>>(FUZZY_FILES_QUERY, {
-            query: `type:path count:30 ${
-                repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''
-            } ${query}`,
-        }).then(response =>
-            extractDataOrError(
-                response,
-                data => data.search?.results.results ?? new Error('no files found')
+        // as far as I can tell, `query` will only ever contain one file name and nothing else
+        const getMatches = async (
+            repositories: string[],
+            query: string,
+            count = 30
+        ): Promise<FuzzyFindFile[] | Error> => {
+            return this.fetchSourcegraphAPI<APIResponse<FuzzyFindFilesResponse>>(FUZZY_FILES_QUERY, {
+                query: `type:path count:${count} ${
+                    repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''
+                } ${query}`,
+            }).then(response =>
+                extractDataOrError(
+                    response,
+                    data => data.search?.results.results ?? new Error('no files found')
+                )
             )
-        )
+        }
+
+        // Expand the path into parts combined with the OR operator
+        // so as to return as many possible results as possible.
+        // Experimentally, simply separating the path parts performed
+        // as well as expaning using regular expressions and wildcard,
+        // and didn't take as long.
+        const expandQuery = (query: string): string => {
+            const { dir, name, ext } = path.parse(query)
+            const parts = [dir !== '.' ? dir.replace('/', ' OR ') : '', name, ext].filter(Boolean)
+
+            return `(${parts.join(' OR ')})`.replace(/\./g, '\\.')
+        }
+
+        const expandedQuery = expandQuery(query)
+
+        // Query ten times as many results as we want to display
+        // so that fuzzysort will have something to work with.
+        // Not sure whhy 30 is the magic number to display.
+        let result = await getMatches(repositories, expandedQuery, 300)
+
+        // Don't sort if the results don't have any file matches.
+        // Don't attempt a second, broader query at this time.
+        if (result instanceof Error || (Array.isArray(result) && result.length > 0)) {
+            return result
+        }
+
+        // fiter the results using the same fuzzysort as the VSCode local files uses
+        const sorted = fuzzysort.go(query, result, {
+            key: 'file.path',
+            limit: 30,
+        })
+
+        // extract the original FuzzyFindFile objects from the
+        result = sorted.map(s => s.obj)
+
+        return result.length > 0 ? result : new Error('no files found')
     }
 
     public async getRemoteSymbols(
