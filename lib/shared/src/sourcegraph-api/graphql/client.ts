@@ -514,6 +514,15 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     /**
+     * Tells if the underlying configuration contains an access token, i.e. if requests made right
+     * now would likely be authenticated. This can be used to avoid making requests that would
+     * otherwise just fail due to requiring auth.
+     */
+    public hasAccessToken(): boolean {
+        return !!this._config?.accessToken
+    }
+
+    /**
      * If set, anonymousUID is transmitted as 'X-Sourcegraph-Actor-Anonymous-UID'
      * which is automatically picked up by Sourcegraph backends 5.2+
      */
@@ -1397,6 +1406,7 @@ export class ClientConfigSingleton {
                 }
 
                 // Otherwise we use our centralized client config endpoint.
+                if (!graphqlClient.hasAccessToken()) throw new Error('unable to fetch /.api/client-config, client is not authenticated yet');
                 return graphqlClient
                     .fetchHTTP<CodyClientConfig>('client-config', 'GET', '/.api/client-config')
                     .then(clientConfig => {
