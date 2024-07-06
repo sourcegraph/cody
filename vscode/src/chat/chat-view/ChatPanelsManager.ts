@@ -194,7 +194,6 @@ export class ChatPanelsManager implements vscode.Disposable {
 
         this.activePanelProvider = provider
         this.panelProviders.push(provider)
-        void this.updateChatPanelContext()
 
         return provider
     }
@@ -230,11 +229,6 @@ export class ChatPanelsManager implements vscode.Disposable {
         })
     }
 
-    private updateChatPanelContext(): void {
-        const hasChatPanels = this.panelProviders.length > 0
-        vscode.commands.executeCommand('setContext', 'cody.hasChatPanelsOpened', hasChatPanels)
-    }
-
     public async clearHistory(chatID?: string): Promise<void> {
         const authProvider = this.options.authProvider
         const authStatus = authProvider.getAuthStatus()
@@ -242,7 +236,6 @@ export class ChatPanelsManager implements vscode.Disposable {
         if (chatID) {
             await chatHistory.deleteChat(authStatus, chatID)
             this.disposeProvider(chatID)
-            this.updateChatPanelContext()
             return
         }
         // delete all chats
@@ -307,8 +300,6 @@ export class ChatPanelsManager implements vscode.Disposable {
             }
             removedProvider.dispose()
         }
-
-        this.updateChatPanelContext()
     }
 
     // Dispose all open panels
@@ -327,7 +318,6 @@ export class ChatPanelsManager implements vscode.Disposable {
             }
             provider.dispose()
         }
-        this.updateChatPanelContext()
     }
 
     public dispose(): void {

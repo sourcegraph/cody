@@ -532,7 +532,7 @@
         "group": "Chat",
         "title": "Add File to Cody Chat",
         "icon": "$(mention)",
-        "enablement": "cody.activated && resourceSet && cody.hasChatPanelsOpened"
+        "enablement": "cody.activated && resourceSet"
       },
       {
         "command": "cody.embeddings.resolveIssue",
@@ -771,11 +771,11 @@
         {
           "command": "cody.mention.file",
           "group": "0_cody",
-          "when": "cody.activated && !editorHasSelection && cody.hasChatPanelsOpened"
+          "when": "cody.activated && !editorHasSelection"
         },
         {
           "command": "cody.chat.newEditorPanel",
-          "when": "cody.activated && (!editorHasSelection || !cody.hasChatPanelsOpened)",
+          "when": "cody.activated && !editorHasSelection",
           "group": "ask"
         },
         {
