@@ -296,7 +296,7 @@ export function createProviderConfig({
                     ...providerOptions,
                     id: PROVIDER_IDENTIFIER,
                 },
-                { maxContextTokens, model, ...otherOptions }
+                { maxContextTokens, model: model ?? 'anthropic/claude-instant-1.2', ...otherOptions }
             )
         },
         contextSizeHints: standardContextSizeHints(maxContextTokens),
