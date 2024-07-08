@@ -1,6 +1,6 @@
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
-import type { ModelContextWindow, ModelUsage } from './types'
+import { type ModelContextWindow, ModelUsage } from './types'
 import { getModelInfo } from './utils'
 
 /**
@@ -135,13 +135,13 @@ export class ModelsService {
             ? availableModels.find(m => m.model === currentModel)
             : undefined
         const canUseCurrentDefault = currentDefault?.codyProOnly ? isCodyProUser : !!currentDefault
-
+        const defaultProperty = type === ModelUsage.Edit ? 'editDefault' : 'chatDefault'
         return ModelsService.models
             .filter(m => m.usage.includes(type))
             ?.map(model => ({
                 ...model,
                 // Set the current model as default
-                default: canUseCurrentDefault ? model.model === currentModel : model.chatDefault,
+                default: canUseCurrentDefault ? model.model === currentModel : model[defaultProperty],
             }))
     }
 

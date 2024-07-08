@@ -1,13 +1,15 @@
-import type { ChatModel, EditModel, Model } from '@sourcegraph/cody-shared'
+import { type ChatModel, type EditModel, type Model, ModelUsage } from '@sourcegraph/cody-shared'
 import type { AuthProvider } from '../services/AuthProvider'
 import { localStorage } from '../services/LocalStorageProvider'
 import { migrateAndNotifyForOutdatedModels } from './modelMigrator'
 
-type ModelTypes = 'edit' | 'chat'
-
-export const MODEL_STORAGE_KEYS: Record<ModelTypes, string> = {
-    edit: 'model',
-    chat: 'chat-model',
+/**
+ * A mapping of the model usage type (i.e. chat or edit)
+ * to the local storage key used to store the model selection.
+ */
+export const MODEL_STORAGE_KEYS: Record<ModelUsage, string> = {
+    [ModelUsage.Edit]: 'model',
+    [ModelUsage.Chat]: 'chat-model',
 }
 
 async function setModel(modelID: EditModel, storageKey: string) {
@@ -15,8 +17,8 @@ async function setModel(modelID: EditModel, storageKey: string) {
     return localStorage.set(storageKey, modelID)
 }
 
-function getModel<T extends string>(authProvider: AuthProvider, models: Model[], type: ModelTypes): T {
-    const storageKey = MODEL_STORAGE_KEYS[type]
+function getModel<T extends string>(authProvider: AuthProvider, models: Model[], usage: ModelUsage): T {
+    const storageKey = MODEL_STORAGE_KEYS[usage]
     const authStatus = authProvider.getAuthStatus()
 
     if (!authStatus.authenticated) {
@@ -50,19 +52,20 @@ function getModel<T extends string>(authProvider: AuthProvider, models: Model[],
         }
     }
     // If the user has not selected a model before then we return the default model
-    const defaultModel = models.find(m => (type === 'edit' ? m.editDefault : m.chatDefault)) || models[0]
+    const defaultModel =
+        models.find(m => (usage === ModelUsage.Edit ? m.editDefault : m.chatDefault)) || models[0]
     if (!defaultModel) {
         throw new Error('No chat model found in server-provided config')
     }
     return defaultModel.model as T
 }
 
-function createModelAccessor<T extends string>(type: ModelTypes) {
+function createModelAccessor<T extends string>(usage: ModelUsage) {
     return {
-        get: (authProvider: AuthProvider, models: Model[]) => getModel<T>(authProvider, models, type),
-        set: (modelID: T) => setModel(modelID, MODEL_STORAGE_KEYS[type]),
+        get: (authProvider: AuthProvider, models: Model[]) => getModel<T>(authProvider, models, usage),
+        set: (modelID: T) => setModel(modelID, MODEL_STORAGE_KEYS[usage]),
     }
 }
 
-export const chatModel = createModelAccessor<ChatModel>('chat')
-export const editModel = createModelAccessor<EditModel>('edit')
+export const chatModel = createModelAccessor<ChatModel>(ModelUsage.Chat)
+export const editModel = createModelAccessor<EditModel>(ModelUsage.Edit)
