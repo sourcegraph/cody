@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import {
     type AuthStatus,
     type ChatClient,
-    ConfigFeaturesSingleton,
+    ClientConfigSingleton,
     type ConfigurationWithAccessToken,
     type DefaultCodyCommands,
     type Guardrails,
@@ -261,6 +261,10 @@ const register = async (
 
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
+        // Refresh server-sent client configuration, as it controls which features the user has
+        // access to.
+        ClientConfigSingleton.getInstance().refreshConfig()
+
         // Reset the available models based on the auth change.
         await syncModels(authStatus)
 
@@ -293,8 +297,6 @@ const register = async (
         // Propagate access token through config
         const newConfig = await getFullConfig()
         configWatcher.set(newConfig)
-        // Re-sync whether guardrails is turned on
-        ConfigFeaturesSingleton.getInstance().refreshConfigFeatures()
         // Sync auth status to graphqlClient
         graphqlClient.onConfigurationChange(newConfig)
 
@@ -327,6 +329,7 @@ const register = async (
 
     // Sync initial auth status
     const initAuthStatus = authProvider.getAuthStatus()
+    ClientConfigSingleton.getInstance().refreshConfig()
     await syncModels(initAuthStatus)
     await chatManager.syncAuthStatus(initAuthStatus)
     editorManager.syncAuthStatus(initAuthStatus)
@@ -357,8 +360,8 @@ const register = async (
         id: DefaultCodyCommands | PromptString,
         args?: Partial<CodyCommandArgs>
     ): Promise<CommandResult | undefined> => {
-        const { commands } = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
-        if (!commands) {
+        const { customCommandsEnabled } = await ClientConfigSingleton.getInstance().getConfig()
+        if (!customCommandsEnabled) {
             void vscode.window.showErrorMessage(
                 'This feature has been disabled by your Sourcegraph site admin.'
             )

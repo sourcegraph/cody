@@ -218,7 +218,7 @@ export {
     graphqlClient,
 } from './sourcegraph-api/graphql'
 export {
-    ConfigFeaturesSingleton,
+    ClientConfigSingleton,
     addCustomUserAgent,
     customUserAgent,
     isNodeResponse,
