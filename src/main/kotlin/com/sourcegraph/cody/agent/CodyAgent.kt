@@ -146,14 +146,20 @@ private constructor(
       val token = CancellationToken()
 
       val binaryPath = nodeBinary(token).absolutePath
+      val jsonRpcArgs = arrayOf("api", "jsonrpc-stdio")
       val command: List<String> =
           if (System.getenv("CODY_DIR") != null) {
             val script = File(System.getenv("CODY_DIR"), "agent/dist/index.js")
             logger.info("using Cody agent script " + script.absolutePath)
             if (shouldSpawnDebuggableAgent()) {
-              listOf(binaryPath, "--inspect-brk", "--enable-source-maps", script.absolutePath)
+              listOf(
+                  binaryPath,
+                  "--inspect-brk",
+                  "--enable-source-maps",
+                  script.absolutePath,
+                  *jsonRpcArgs)
             } else {
-              listOf(binaryPath, "--enable-source-maps", script.absolutePath)
+              listOf(binaryPath, "--enable-source-maps", script.absolutePath, *jsonRpcArgs)
             }
           } else {
             val script =
@@ -161,9 +167,14 @@ private constructor(
                     ?: throw CodyAgentException(
                         "Sourcegraph Cody + Code Search plugin path not found")
             if (shouldSpawnDebuggableAgent()) {
-              listOf(binaryPath, "--inspect", "--enable-source-maps", script.toFile().absolutePath)
+              listOf(
+                  binaryPath,
+                  "--inspect",
+                  "--enable-source-maps",
+                  script.toFile().absolutePath,
+                  *jsonRpcArgs)
             } else {
-              listOf(binaryPath, script.toFile().absolutePath)
+              listOf(binaryPath, script.toFile().absolutePath, *jsonRpcArgs)
             }
           }
 
