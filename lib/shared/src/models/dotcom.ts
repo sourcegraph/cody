@@ -27,6 +27,7 @@ const expandedContextWindow: ModelContextWindow = {
  * @link https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
  *
  * @returns An array of `Models` objects.
+ * @deprecated This will be replaced with server-sent models
  */
 export const DEFAULT_DOT_COM_MODELS = [
     // --------------------------------
@@ -140,6 +141,7 @@ export const DEFAULT_DOT_COM_MODELS = [
  * Returns an array of Models representing the default models for DotCom.
  *
  * @returns An array of `Models` objects.
+ * @deprecated This will be replaced with server-sent models
  */
 export function getDotComDefaultModels(): Model[] {
     return DEFAULT_DOT_COM_MODELS

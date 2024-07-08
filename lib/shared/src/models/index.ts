@@ -222,7 +222,7 @@ export class ModelsService {
      */
     private static localModels: Model[] = []
 
-    private static defaultModels: Map<ModelUsage, string> = new Map()
+    private static defaultModels: Map<ModelUsage, Model> = new Map()
 
     private static storage: Storage | undefined
 
@@ -289,8 +289,8 @@ export class ModelsService {
             return firstModelUserCanUse
         }
         const current = ModelsService.defaultModels.get(type)
-        if (current) {
-            return models.find(m => m.model === current) || firstModelUserCanUse
+        if (current && ModelsService.canUserUseModel(authStatus, current)) {
+            return current
         }
 
         // Check for the last selected model
@@ -318,10 +318,13 @@ export class ModelsService {
     }
 
     public static async setDefaultModel(type: ModelUsage, model: Model | string): Promise<void> {
-        const modelId = typeof model === 'string' ? model : model.model
-        ModelsService.defaultModels.set(type, modelId)
+        const resolved = ModelsService.resolveModel(model)
+        if (!resolved) {
+            return
+        }
+        ModelsService.defaultModels.set(type, resolved)
         // If we have persistent storage set, write it there
-        await ModelsService.storage?.set(ModelsService.storageKeys[type], modelId)
+        await ModelsService.storage?.set(ModelsService.storageKeys[type], resolved.model)
     }
 
     public static canUserUseModel(status: AuthStatus, model: string | Model): boolean {
