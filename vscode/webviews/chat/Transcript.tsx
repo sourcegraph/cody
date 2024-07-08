@@ -24,7 +24,7 @@ export const Transcript: React.FunctionComponent<{
     messageInProgress: ChatMessage | null
     feedbackButtonsOnSubmit: (text: string) => void
     copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
-    insertButtonOnSubmit: CodeBlockActionsProps['insertButtonOnSubmit']
+    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
     isTranscriptError?: boolean
     userInfo: UserAccountInfo
     chatEnabled: boolean

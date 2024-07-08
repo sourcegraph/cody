@@ -3,6 +3,7 @@ import type { URI } from 'vscode-uri'
 import type {
     AuthStatus,
     ClientStateForWebview,
+    CodyIDE,
     ConfigurationWithAccessToken,
     ContextItem,
     ContextMentionProviderMetadata,
@@ -11,7 +12,6 @@ import type {
     Model,
     RangeData,
     SerializedChatMessage,
-    TelemetryEventProperties,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
 
@@ -38,6 +38,21 @@ export type WebviewRecordEventParameters = TelemetryEventParameters<
     BillingProduct,
     BillingCategory
 >
+
+/**
+ * @deprecated v1 telemetry event properties format - use 'recordEvent' instead
+ */
+interface TelemetryEventProperties {
+    [key: string]:
+        | string
+        | number
+        | boolean
+        | null
+        | undefined
+        | string[]
+        | TelemetryEventProperties[]
+        | TelemetryEventProperties
+}
 
 /**
  * A message sent from the webview to the extension host.
@@ -155,6 +170,7 @@ export type ExtensionMessage =
           authStatus: AuthStatus
           workspaceFolderUris: string[]
       }
+    | { type: 'ui/theme'; agentIDE: CodyIDE; cssVariables: CodyIDECssVariables }
     | { type: 'history'; localHistory?: UserLocalHistory | undefined | null }
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; view: View }
@@ -285,4 +301,8 @@ const sourcegraphTokenRegex =
  */
 export function isSourcegraphToken(text: string): boolean {
     return sourcegraphTokenRegex.test(text)
+}
+
+interface CodyIDECssVariables {
+    [key: string]: string
 }

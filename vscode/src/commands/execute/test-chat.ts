@@ -3,8 +3,6 @@ import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import type { ChatCommandResult } from '../../CommandResult'
 import { getEditor } from '../../editor/active-editor'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from '../../services/telemetry'
 import { getContextFileFromCursor } from '../context/selection'
 import { getContextFilesForTestCommand } from '../context/unit-test-chat'
 import type { CodyCommandArgs } from '../types'
@@ -78,12 +76,6 @@ export async function executeTestChatCommand(
         }
 
         logDebug('executeTestEditCommand', 'executing', { args })
-        telemetryService.log('CodyVSCodeExtension:command:test:executed', {
-            useCodebaseContex: false,
-            requestID: args?.requestID,
-            source: args?.source,
-            traceId: span.spanContext().traceId,
-        })
         telemetryRecorder.recordEvent('cody.command.test', 'executed', {
             metadata: {
                 useCodebaseContex: 0,

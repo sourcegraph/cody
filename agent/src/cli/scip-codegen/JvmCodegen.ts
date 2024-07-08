@@ -269,6 +269,7 @@ export class JvmCodegen extends BaseCodegen {
                       }),
                   })
             this.writeDataClass({ p, f, symtab }, typeName, info, {
+                innerClass: true,
                 heritageClause:
                     this.language === JvmLanguage.Kotlin ? ` : ${name}()` : ` extends ${name}`,
             })
@@ -282,7 +283,7 @@ export class JvmCodegen extends BaseCodegen {
         { p, f, symtab }: DocumentContext,
         name: string,
         info: scip.SymbolInformation,
-        params?: { heritageClause?: string }
+        params?: { heritageClause?: string; innerClass?: boolean }
     ): Promise<void> {
         if (info.kind === scip.SymbolInformation.Kind.Class) {
             this.reporter.warn(
@@ -295,7 +296,8 @@ export class JvmCodegen extends BaseCodegen {
         if (this.language === JvmLanguage.Kotlin) {
             p.line(`data class ${name}(`)
         } else {
-            p.line(`public final class ${name}${params?.heritageClause ?? ''} {`)
+            const staticModifier = params?.innerClass ? 'static ' : ''
+            p.line(`public ${staticModifier}final class ${name}${params?.heritageClause ?? ''} {`)
         }
         p.block(() => {
             let hasMembers = false

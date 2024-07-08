@@ -12,7 +12,6 @@ import {
 import { executeEdit } from '../edit/execute'
 import type { EditIntent, EditMode } from '../edit/types'
 import { logDebug } from '../log'
-import { telemetryService } from '../services/telemetry'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 
@@ -27,39 +26,29 @@ import type { AuthProvider } from '../services/AuthProvider'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
-import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type FixupTaskID, type FixupTelemetryMetadata } from './FixupTask'
-import { TERMINAL_EDIT_STATES } from './codelenses/constants'
 import { FixupDecorator } from './decorations/FixupDecorator'
 import { type Edit, computeDiff, makeDiffEditBuilderCompatible } from './line-diff'
 import { trackRejection } from './rejection-tracker'
-import type { FixupActor, FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
+import type { FixupActor, FixupFileCollection, FixupTextChanged } from './roles'
 import { CodyTaskState, expandRangeToInsertedText, getMinimumDistanceToRangeBoundary } from './utils'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
-    implements FixupActor, FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged, vscode.Disposable
+    implements FixupActor, FixupFileCollection, FixupTextChanged, vscode.Disposable
 {
     private tasks = new Map<FixupTaskID, FixupTask>()
     private readonly files: FixupFileObserver
     private readonly editObserver: FixupDocumentEditObserver
-    // TODO: Make the fixup scheduler use a cooldown timer with a longer delay
-    private readonly scheduler = new FixupScheduler(10)
     private readonly decorator = new FixupDecorator()
     private readonly controlApplicator
     private readonly persistenceTracker = new PersistenceTracker(vscode.workspace, {
         onPresent: ({ metadata, ...event }) => {
             const safeMetadata = splitSafeMetadata({ ...event, ...metadata })
-            telemetryService.log('CodyVSCodeExtension:fixup:persistence:present', safeMetadata, {
-                hasV2Event: true,
-            })
             telemetryRecorder.recordEvent('cody.fixup.persistence', 'present', safeMetadata)
         },
         onRemoved: ({ metadata, ...event }) => {
             const safeMetadata = splitSafeMetadata({ ...event, ...metadata })
-            telemetryService.log('CodyVSCodeExtension:fixup:persistence:present', safeMetadata, {
-                hasV2Event: true,
-            })
             telemetryRecorder.recordEvent('cody.fixup.persistence', 'present', safeMetadata)
         },
     })
@@ -139,6 +128,21 @@ export class FixupController
         this.setTaskState(task, CodyTaskState.Finished)
     }
 
+    private async acceptOverlappingTasks(primaryTask: FixupTask): Promise<void> {
+        const tasksForFile = [...this.tasks.values()].filter(
+            task => primaryTask.fixupFile.uri.toString === task.fixupFile.uri.toString
+        )
+        for (const task of tasksForFile) {
+            if (
+                task.state === CodyTaskState.Applied &&
+                task.selectionRange.intersection(primaryTask.selectionRange) !== undefined
+            ) {
+                await this.clearPlaceholderInsertions([task], task.fixupFile.uri)
+                this.accept(task)
+            }
+        }
+    }
+
     public cancel(task: FixupTask): void {
         this.setTaskState(
             task,
@@ -183,9 +187,6 @@ export class FixupController
 
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         if (!editOk) {
-            telemetryService.log('CodyVSCodeExtension:fixup:revert:failed', legacyMetadata, {
-                hasV2Event: true,
-            })
             telemetryRecorder.recordEvent('cody.fixup.revert', 'failed', {
                 metadata,
                 privateMetadata: {
@@ -194,9 +195,6 @@ export class FixupController
                 },
             })
         } else {
-            telemetryService.log('CodyVSCodeExtension:fixup:reverted', legacyMetadata, {
-                hasV2Event: true,
-            })
             telemetryRecorder.recordEvent('cody.fixup.reverted', 'clicked', {
                 metadata,
                 privateMetadata: {
@@ -352,12 +350,6 @@ export class FixupController
         return closestTask
     }
 
-    // FixupIdleTaskScheduler
-
-    public scheduleIdle<T>(callback: () => T): Promise<T> {
-        return this.scheduler.scheduleIdle(callback)
-    }
-
     public async promptUserForTask(
         preInstruction: PromptString | undefined,
         document: vscode.TextDocument,
@@ -400,7 +392,11 @@ export class FixupController
         )
 
         // Return focus to the editor
-        void vscode.window.showTextDocument(document)
+        const editor = await vscode.window.showTextDocument(document)
+
+        // Collapse selection to cursor position
+        const cursor = editor.selection.active
+        editor.selection = new vscode.Selection(cursor, cursor)
 
         return task
     }
@@ -518,9 +514,6 @@ export class FixupController
         }
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         if (!editOk) {
-            telemetryService.log('CodyVSCodeExtension:fixup:apply:failed', legacyMetadata, {
-                hasV2Event: true,
-            })
             telemetryRecorder.recordEvent('cody.fixup.apply', 'failed', {
                 metadata,
                 privateMetadata,
@@ -535,7 +528,6 @@ export class FixupController
             return
         }
 
-        telemetryService.log('CodyVSCodeExtension:fixup:applied', legacyMetadata, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
             metadata,
             privateMetadata,
@@ -572,9 +564,6 @@ export class FixupController
         })
 
         const logAcceptance = (acceptance: 'rejected' | 'accepted') => {
-            telemetryService.log(`CodyVSCodeExtension:fixup:user:${acceptance}`, metadata, {
-                hasV2Event: true,
-            })
             telemetryRecorder.recordEvent('cody.fixup.user', acceptance, {
                 metadata,
                 privateMetadata,
@@ -688,6 +677,11 @@ export class FixupController
         if (task.state !== CodyTaskState.Applying) {
             return
         }
+
+        // Before applying this task, we should auto-accept any other tasks
+        // that have an overlapping range. This is so we don't end up in a scenario
+        // where we have two overlapping diffs shown in the document.
+        await this.acceptOverlappingTasks(task)
 
         let edit: vscode.TextEditor['edit'] | vscode.WorkspaceEdit
         let document: vscode.TextDocument
@@ -1007,9 +1001,12 @@ export class FixupController
 
     // Handles changes to the source document in the fixup selection
     public textDidChange(task: FixupTask): void {
-        if (TERMINAL_EDIT_STATES.includes(task.state)) {
-            // We don't need to worry about updating decorations for terminal states,
-            // as we will accept this task here anyway
+        if (task.state === CodyTaskState.Applied && task.mode === 'insert' && !isRunningInsideAgent()) {
+            // For insertion tasks we accept as soon as the user makes a change
+            // within the task range. This is a case where the user is more likely to want
+            // to keep in the flow of writing their code, and would not benefit from editing
+            // the "diff".
+            this.accept(task)
             return
         }
 
@@ -1019,7 +1016,11 @@ export class FixupController
             return
         }
 
-        this.decorator.didUpdateInProgressTask(task)
+        if (task.state === CodyTaskState.Working) {
+            this.decorator.didUpdateInProgressTask(task)
+        } else if (task.state === CodyTaskState.Applied) {
+            this.decorator.didApplyTask(task)
+        }
     }
 
     // Handles when the range associated with a fixup task changes.

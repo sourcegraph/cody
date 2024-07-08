@@ -207,10 +207,9 @@ export class MockServer {
             res.sendStatus(200)
         })
 
+        // Deprecated, no longer used, connected to v1 telemetry
         // endpoint which will accept the data that you want to send in that you will add your pubsub code
-        app.post('/.test/testLogging', (req, res) => {
-            void logTestingData('legacy', req.body)
-            storeLoggedEvents(req.body)
+        app.post('/.test/testLogging', (_, res) => {
             res.status(200)
         })
 
@@ -218,7 +217,7 @@ export class MockServer {
         app.post('/.test/mockEventRecording', (req, res) => {
             const events = req.body as TelemetryEventInput[]
             for (const event of events) {
-                void logTestingData('new', JSON.stringify(event))
+                void logTestingData(JSON.stringify(event))
                 loggedV2Events.push(`${event.feature}:${event.action}`)
             }
             res.status(200)
@@ -535,13 +534,13 @@ export class MockServer {
 
 const loggedTestRun: Record<string, boolean> = {}
 
-async function logTestingData(type: 'legacy' | 'new', data: string): Promise<void> {
+async function logTestingData(data: string): Promise<void> {
     if (process.env.CI === undefined || process.env.NO_LOG_TESTING_TELEMETRY_CALLS) {
         return
     }
 
     const message = {
-        type,
+        type: 'new',
         event: data,
         timestamp: new Date().getTime(),
         test_name: currentTestName,
@@ -574,22 +573,9 @@ export function sendTestInfo(testName: string, testID: string, testRunID: string
     currentTestRunID = testRunID || ''
 }
 
-export let loggedEvents: string[] = []
-
 // Events recorded using the new event recorders
-// Needs to be recorded separately from the legacy events to ensure ordering
-// is stable.
 export let loggedV2Events: string[] = []
 
 export function resetLoggedEvents(): void {
-    loggedEvents = []
     loggedV2Events = []
-}
-function storeLoggedEvents(event: string): void {
-    interface ParsedEvent {
-        event: string
-    }
-    const parsedEvent = JSON.parse(JSON.stringify(event)) as ParsedEvent
-    const name = parsedEvent.event
-    loggedEvents.push(name)
 }

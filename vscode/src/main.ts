@@ -77,7 +77,6 @@ import { createStatusBar } from './services/StatusBar'
 import { upstreamHealthProvider } from './services/UpstreamHealthProvider'
 import { autocompleteStageCounterLogger } from './services/autocomplete-stage-counter-logger'
 import { setUpCodyIgnore } from './services/cody-ignore'
-import { createOrUpdateEventLogger, logPrefix, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import {
@@ -173,7 +172,14 @@ const register = async (
 
     await authProvider.init()
 
-    await exposeOpenCtxClient(context, initialConfig)
+    if (authProvider.getAuthStatus().authenticated) {
+        await exposeOpenCtxClient(
+            context,
+            initialConfig,
+            authProvider.getAuthStatus().isDotCom,
+            platform.createOpenCtxController
+        )
+    }
 
     await configWatcher.initAndOnChange(async config => {
         graphqlClient.onConfigurationChange(config)
@@ -292,6 +298,14 @@ const register = async (
         // Sync auth status to graphqlClient
         graphqlClient.onConfigurationChange(newConfig)
 
+        // Re-register expose openctx client
+        await exposeOpenCtxClient(
+            context,
+            initialConfig,
+            authStatus.isDotCom,
+            platform.createOpenCtxController
+        )
+
         // When logged out, user's endpoint will be set to null
         const isLoggedOut = !authStatus.isLoggedIn && !authStatus.endpoint
         const isAuthError = authStatus?.showNetworkError || authStatus?.showInvalidAccessTokenError
@@ -300,9 +314,6 @@ const register = async (
             : authStatus.isLoggedIn && !isAuthError
               ? 'connected'
               : 'failed'
-        telemetryService.log(`${logPrefix(newConfig.agentIDE)}:Auth:${eventValue}`, undefined, {
-            agent: true,
-        })
         telemetryRecorder.recordEvent('cody.auth', eventValue)
     })
 
@@ -507,11 +518,6 @@ const register = async (
             vscode.env.openExternal(vscode.Uri.parse(CODY_FEEDBACK_URL.href))
         ),
         vscode.commands.registerCommand('cody.welcome', async () => {
-            telemetryService.log(
-                'CodyVSCodeExtension:walkthrough:clicked',
-                { page: 'welcome' },
-                { hasV2Event: true }
-            )
             telemetryRecorder.recordEvent('cody.walkthrough', 'clicked')
             // Hack: We have to run this twice to force VS Code to register the walkthrough
             // Open issue: https://github.com/microsoft/vscode/issues/186165
@@ -760,14 +766,12 @@ function registerChat(
 }
 
 /**
- * Create or update events infrastructure, both legacy (telemetryService) and
- * new (telemetryRecorder)
+ * Create or update events infrastructure, using the new telemetryRecorder.
  */
 async function configureEventsInfra(
     config: ConfigurationWithAccessToken,
     isExtensionModeDevOrTest: boolean,
     authProvider: AuthProvider
 ): Promise<void> {
-    await createOrUpdateEventLogger(config, isExtensionModeDevOrTest, authProvider)
     await createOrUpdateTelemetryRecorderProvider(config, isExtensionModeDevOrTest, authProvider)
 }
