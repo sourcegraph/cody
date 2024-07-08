@@ -2,8 +2,12 @@
 package com.sourcegraph.cody.protocol_generated;
 
 data class Model(
-  val default: Boolean,
+  val model: String,
+  val usage: List<ModelUsage>,
+  val contextWindow: ModelContextWindow,
+  val clientSideConfig: ClientSideConfigParams? = null,
   val provider: String,
   val title: String,
+  val tags: List<ModelTag>,
 )
 

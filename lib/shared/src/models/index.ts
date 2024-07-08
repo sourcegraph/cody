@@ -252,7 +252,6 @@ export class ModelsService {
      * NOTE: private instances can only support 1 provider ATM.
      */
     public static setModels(models: Model[]): void {
-        console.trace('MODELS ARE: ', models)
         ModelsService.primaryModels = models
     }
 
@@ -373,6 +372,10 @@ export class ModelsService {
                 : `No models found for substring ${modelSubstring}.`
         const modelsList = ModelsService.models.map(m => m.model).join(', ')
         throw new Error(`${errorMessage} Available models: ${modelsList}`)
+    }
+
+    public static hasModelTag(model: Model, modelTag: ModelTag): boolean {
+        return model.tags.includes(modelTag)
     }
 }
 

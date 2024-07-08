@@ -1,7 +1,7 @@
 import type { ChatNetworkClient, ChatNetworkClientParams } from '.'
 import { googleChatClient, groqChatClient, ollamaChatClient } from '..'
-import { type Model, ModelsService } from '../models'
-import { ModelTag } from '../models/tags'
+import { ModelsService } from '../models'
+import { isCustomModel } from '../models/utils'
 import { anthropicChatClient } from './anthropic/chat-client'
 
 export async function useCustomChatClient({
@@ -12,7 +12,7 @@ export async function useCustomChatClient({
     signal,
 }: ChatNetworkClientParams): Promise<boolean> {
     const model = ModelsService.getModelByID(params.model ?? '')
-    if (!model || isCodyGatewayModel(model)) {
+    if (!model || !isCustomModel(model)) {
         return false
     }
 
@@ -32,8 +32,4 @@ export async function useCustomChatClient({
     }
 
     return false
-}
-
-function isCodyGatewayModel(model: Model): boolean {
-    return model.tags.includes(ModelTag.Gateway)
 }

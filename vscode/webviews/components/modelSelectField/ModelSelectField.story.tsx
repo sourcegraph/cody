@@ -15,7 +15,7 @@ const MODELS: Model[] = [
         model: 'ollama/llama-3',
         contextWindow: { input: 100, output: 100 },
         usage: [ModelUsage.Chat],
-        tags: [ModelTag.Ollama, ModelTag.Dev],
+        tags: [ModelTag.Ollama, ModelTag.Local],
     },
 ]
 

@@ -39,7 +39,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         // Has a higher context window with a separate limit for user-context.
         contextWindow: expandedContextWindow,
-        tags: [ModelTag.Gateway, ModelTag.Balanced, ModelTag.Free],
+        tags: [ModelTag.Gateway, ModelTag.Balanced],
     },
     {
         title: 'Claude 3.5 Sonnet',
