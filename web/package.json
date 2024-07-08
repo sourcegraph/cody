@@ -1,5 +1,4 @@
 {
-  "private": true,
   "name": "cody-web-experimental",
   "version": "0.2.0",
   "description": "Cody standalone web app",
