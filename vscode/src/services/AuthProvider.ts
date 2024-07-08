@@ -3,34 +3,32 @@ import * as vscode from 'vscode'
 import {
     type AuthStatus,
     type AuthStatusProvider,
+    CodyIDE,
     type ConfigurationWithAccessToken,
     DOTCOM_URL,
     LOCAL_APP_URL,
     SourcegraphGraphQLAPIClient,
     defaultAuthStatus,
-    isDotCom,
     isError,
     logError,
     networkErrorAuthStatus,
     offlineModeAuthStatus,
+    telemetryRecorder,
     unauthenticatedStatus,
 } from '@sourcegraph/cody-shared'
 
+import { AccountMenuOptions, openAccountMenu } from '../auth/account-menu'
+import { closeAuthProgressIndicator } from '../auth/auth-progress-indicator'
 import { CodyChatPanelViewType } from '../chat/chat-view/ChatManager'
 import { ACCOUNT_USAGE_URL, isLoggedIn as isAuthenticated, isSourcegraphToken } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
 import { getFullConfig } from '../configuration'
 import { logDebug } from '../log'
-
-import { telemetryRecorder } from '@sourcegraph/cody-shared'
-import { closeAuthProgressIndicator } from '../auth/auth-progress-indicator'
 import { maybeStartInteractiveTutorial } from '../tutorial/helpers'
 import { AuthMenu, showAccessTokenInputBox, showInstanceURLInputBox } from './AuthMenus'
 import { getAuthReferralCode } from './AuthProviderSimplified'
 import { localStorage } from './LocalStorageProvider'
 import { secretStorage } from './SecretStorageProvider'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from './telemetry'
 
 type Listener = (authStatus: AuthStatus) => void
 type Unsubscribe = () => void
@@ -91,18 +89,12 @@ export class AuthProvider implements AuthStatusProvider {
     public async signinMenu(type?: 'enterprise' | 'dotcom' | 'token', uri?: string): Promise<void> {
         const mode = this.authStatus.isLoggedIn ? 'switch' : 'signin'
         logDebug('AuthProvider:signinMenu', mode)
-        telemetryService.log('CodyVSCodeExtension:login:clicked', {}, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.auth.login', 'clicked')
         const item = await AuthMenu(mode, this.endpointHistory)
         if (!item) {
             return
         }
         const menuID = type || item?.id
-        telemetryService.log(
-            'CodyVSCodeExtension:auth:selectSigninMenu',
-            { menuID },
-            { hasV2Event: true }
-        )
         telemetryRecorder.recordEvent('cody.auth.signin.menu', 'clicked', {
             privateMetadata: { menuID },
         })
@@ -160,13 +152,6 @@ export class AuthProvider implements AuthStatusProvider {
             endpoint: instanceUrl,
             token: accessToken,
         })
-        telemetryService.log(
-            'CodyVSCodeExtension:auth:fromToken',
-            {
-                success: Boolean(authState?.isLoggedIn),
-            },
-            { hasV2Event: true }
-        )
         telemetryRecorder.recordEvent('cody.auth.signin.token', 'clicked', {
             metadata: {
                 success: authState?.isLoggedIn ? 1 : 0,
@@ -176,7 +161,6 @@ export class AuthProvider implements AuthStatusProvider {
     }
 
     public async signoutMenu(): Promise<void> {
-        telemetryService.log('CodyVSCodeExtension:logout:clicked', {}, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.auth.logout', 'clicked')
         const { endpoint } = this.getAuthStatus()
 
@@ -187,43 +171,13 @@ export class AuthProvider implements AuthStatusProvider {
     }
 
     public async accountMenu(): Promise<void> {
-        if (!this.authStatus.authenticated || !this.authStatus.endpoint) {
+        const selected = await openAccountMenu(this.authStatus)
+        if (selected === undefined) {
             return
         }
 
-        if (!isDotCom(this.authStatus.endpoint)) {
-            const username = this.authStatus.username || this.authStatus.displayName
-            const option = await vscode.window.showInformationMessage(
-                `Signed in as @${username}`,
-                {
-                    modal: true,
-                    detail: `Enterprise Instance:\n${this.authStatus.endpoint}`,
-                },
-                'Switch Account...',
-                'Sign Out'
-            )
-            switch (option) {
-                case 'Switch Account...':
-                    await this.signinMenu()
-                    break
-                case 'Sign Out':
-                    await this.signoutMenu()
-                    break
-            }
-            return
-        }
-
-        const detail = `Plan: ${this.authStatus.userCanUpgrade ? 'Cody Free' : 'Cody Pro'}`
-        const options = ['Manage Account', 'Switch Account...', 'Sign Out']
-        const displayName = this.authStatus.displayName || this.authStatus.username
-        const email = this.authStatus.primaryEmail || 'No Email'
-        const option = await vscode.window.showInformationMessage(
-            `Signed in as ${displayName} (${email})`,
-            { modal: true, detail },
-            ...options
-        )
-        switch (option) {
-            case 'Manage Account': {
+        switch (selected) {
+            case AccountMenuOptions.Manage: {
                 // Add the username to the web can warn if the logged in session on web is different from VS Code
                 const uri = vscode.Uri.parse(ACCOUNT_USAGE_URL.toString()).with({
                     query: `cody_client_user=${encodeURIComponent(this.authStatus.username)}`,
@@ -231,10 +185,10 @@ export class AuthProvider implements AuthStatusProvider {
                 void vscode.env.openExternal(uri)
                 break
             }
-            case 'Switch Account...':
+            case AccountMenuOptions.Switch:
                 await this.signinMenu()
                 break
-            case 'Sign Out':
+            case AccountMenuOptions.SignOut:
                 await this.signoutMenu()
                 break
         }
@@ -257,11 +211,24 @@ export class AuthProvider implements AuthStatusProvider {
     ): Promise<AuthStatus> {
         const endpoint = config.serverEndpoint
         const token = config.accessToken
+        const isCodyWeb =
+            vscode.workspace.getConfiguration().get<string>('cody.advanced.agent.ide') === CodyIDE.Web
+
         if (isOfflineMode) {
-            return { ...offlineModeAuthStatus, endpoint }
+            const lastUser = localStorage.getLastStoredUser()
+            return { ...offlineModeAuthStatus, ...lastUser }
         }
-        if (!token || !endpoint) {
-            return { ...defaultAuthStatus, endpoint }
+
+        // Cody Web can work without access token since authorization flow
+        // relies on cookie authentication
+        if (isCodyWeb) {
+            if (!endpoint) {
+                return { ...defaultAuthStatus, endpoint }
+            }
+        } else {
+            if (!token || !endpoint) {
+                return { ...defaultAuthStatus, endpoint }
+            }
         }
         // Cache the config and the GraphQL client
         if (this.config !== config || !this.client) {
@@ -441,15 +408,6 @@ export class AuthProvider implements AuthStatusProvider {
             return
         }
         const authState = await this.auth({ endpoint, token, customHeaders })
-        telemetryService.log(
-            'CodyVSCodeExtension:auth:fromCallback',
-            {
-                type: 'callback',
-                from: 'web',
-                success: Boolean(authState?.isLoggedIn),
-            },
-            { hasV2Event: true }
-        )
         telemetryRecorder.recordEvent('cody.auth.fromCallback.web', 'succeeded', {
             metadata: {
                 success: authState?.isLoggedIn ? 1 : 0,
@@ -547,7 +505,7 @@ export function isNetworkError(error: Error): boolean {
     )
 }
 
-function formatURL(uri: string): string | null {
+export function formatURL(uri: string): string | null {
     try {
         if (!uri) {
             return null

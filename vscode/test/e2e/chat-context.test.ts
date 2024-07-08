@@ -1,5 +1,11 @@
 import { expect } from '@playwright/test'
-import { createEmptyChatPanel, getContextCell, selectMentionMenuItem, sidebarSignin } from './common'
+import {
+    createEmptyChatPanel,
+    getContextCell,
+    openContextCell,
+    selectMentionMenuItem,
+    sidebarSignin,
+} from './common'
 import { test } from './helpers'
 
 test('chat followup context', async ({ page, sidebar }) => {
@@ -15,6 +21,8 @@ test('chat followup context', async ({ page, sidebar }) => {
     const contextCells = getContextCell(chatFrame)
     expect(contextCells).toHaveCount(1)
     expect(contextCells.first()).toHaveText(/Context/)
+    await openContextCell(contextCells.first())
+    await expect(contextCells.first()).toHaveText(/Main\.java/)
 
     // No additional context means no context cell.
     await chatInput.fill('followup1')
@@ -27,7 +35,8 @@ test('chat followup context', async ({ page, sidebar }) => {
     await chatInput.press('Enter')
     expect(contextCells).toHaveCount(2)
     const lastContextCell = contextCells.last()
-    expect(lastContextCell).toHaveText(/new item/)
-    await lastContextCell.click() // expand
-    expect(lastContextCell).toHaveText(/prior/i)
+    expect(lastContextCell).toHaveText(/1 new item/)
+    await openContextCell(lastContextCell)
+    await expect(lastContextCell).toHaveText(/var\.go/)
+    await expect(lastContextCell).toHaveText(/Prior messages/)
 })

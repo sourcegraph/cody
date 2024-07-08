@@ -1,17 +1,12 @@
-import { isMacOS } from '@sourcegraph/cody-shared'
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import { AtSignIcon, HelpCircleIcon, SettingsIcon, TextIcon, XIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactElement, useCallback, useState } from 'react'
+import { Kbd } from '../../components/Kbd'
 import { Button } from '../../components/shadcn/ui/button'
 
 const CodyIcon: FunctionComponent<{ character: string }> = ({ character }) => (
     <span className="tw-font-codyicons tw-text-[16px] tw-leading-none tw-inline-block tw-translate-y-[3px] tw-mx-1">
         {character}
-    </span>
-)
-
-const Kbd: FunctionComponent<{ children: React.ReactNode }> = ({ children }) => (
-    <span className="tw-text-sm tw-tracking-widest tw-p-1 tw-rounded tw-text-keybinding-foreground tw-border tw-border-keybinding-border tw-bg-keybinding-background">
-        {children}
     </span>
 )
 
@@ -40,7 +35,9 @@ const NewChatIcon: FunctionComponent = (props): ReactElement => (
 
 export const localStorageKey = 'chat.welcome-message-dismissed'
 
-export const WelcomeMessage: FunctionComponent = () => {
+export const WelcomeMessage: FunctionComponent<{
+    IDE: CodyIDE
+}> = ({ IDE }) => {
     const [showMessage, setShowMessage] = useState<boolean>(
         localStorage.getItem(localStorageKey) !== 'true'
     )
@@ -55,7 +52,8 @@ export const WelcomeMessage: FunctionComponent = () => {
         setShowMessage(true)
     }, [])
 
-    if (!showMessage) {
+    // NOTE: The current welcome message only applies to VS Code client.
+    if (!showMessage || IDE !== CodyIDE.VSCode) {
         return (
             <div className="tw-flex-1 tw-flex tw-relative tw-min-h-12">
                 <div className="tw-absolute tw-bottom-0 tw-w-full tw-flex tw-justify-end tw-pb-8 tw-pr-8">
@@ -86,19 +84,15 @@ export const WelcomeMessage: FunctionComponent = () => {
                     <XIcon strokeWidth={1.5} className="tw-h-8 tw-w-8" />
                 </Button>
                 <FeatureRow icon={AtSignIcon}>
-                    Type <Kbd>@</Kbd> to add context to your chat
+                    Type <Kbd macOS="@" linuxAndWindows="@" /> to add context to your chat
                 </FeatureRow>
                 <FeatureRow icon={TextIcon}>
                     To add code context from an editor, or the file explorer, right click and use{' '}
                     <MenuExample>Add to Cody Chat</MenuExample>
                 </FeatureRow>
                 <FeatureRow icon={NewChatIcon}>
-                    Start a new chat using{' '}
-                    <Kbd>
-                        {isMacOS() ? '⌥' : 'Alt'}
-                        <span className="tw-ml-1">/</span>
-                    </Kbd>{' '}
-                    or the <CodyIcon character="H" /> button in the top right of any file
+                    Start a new chat using <Kbd macOS="opt+/" linuxAndWindows="alt+/" /> or the{' '}
+                    <CodyIcon character="H" /> button in the top right of any file
                 </FeatureRow>
                 <FeatureRow icon={SettingsIcon}>
                     Customize chat settings with the{' '}

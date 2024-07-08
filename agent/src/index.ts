@@ -11,7 +11,7 @@ console.log = console.error
 // process.stdout, which breaks the `jsonrpc` command, which uses stdout/stdin
 // to communicate with the agent client`jsonrpc` command, which uses
 // stdout/stdin to communicate with the agent client.
-const rootCommand: Command = require('./cli/root').rootCommand
+const rootCommand: Command = require('./cli/command-root').rootCommand
 
 process.on('uncaughtException', e => {
     // By default, an uncaught exception will take down the entire process.
@@ -26,10 +26,6 @@ process.on('uncaughtException', e => {
 registerLocalCertificates()
 
 const args = process.argv.slice(2)
-const { operands } = rootCommand.parseOptions(args)
-if (operands.length === 0) {
-    args.push('jsonrpc')
-}
 
 rootCommand.parseAsync(args, { from: 'user' }).catch(error => {
     console.error('Error:', error)

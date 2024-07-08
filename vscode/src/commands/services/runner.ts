@@ -14,8 +14,6 @@ import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import type { EditMode } from '../../edit/types'
 import { logDebug } from '../../log'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from '../../services/telemetry'
 
 import type { CommandResult } from '../../CommandResult'
 import type { ChatCommandResult, EditCommandResult } from '../../CommandResult'
@@ -62,14 +60,6 @@ export class CommandRunner implements vscode.Disposable {
         }
 
         const addCodebaseContex = false
-        telemetryService.log('CodyVSCodeExtension:command:custom:executed', {
-            mode: this.command.mode,
-            useCodebaseContex: addCodebaseContex,
-            useShellCommand: !!this.command.context?.command,
-            requestID: this.args.requestID,
-            source: this.args.source,
-            traceId: this.span.spanContext().traceId,
-        })
         telemetryRecorder.recordEvent('cody.command.custom', 'executed', {
             metadata: {
                 useCodebaseContex: addCodebaseContex ? 1 : 0,

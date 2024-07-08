@@ -48,6 +48,15 @@ export type ClientRequests = {
     // webview/didDispose.
     'chat/new': [null, string]
 
+    // Start a new chat session and returns panel id and chat id that later can
+    // be used to reference to the session with panel id and restore chat with
+    // chat id. Main difference compared to the chat/new is that we return chatId.
+    'chat/web/new': [null, { panelId: string; chatId: string }]
+
+    // Deletes chat by its ID and returns newly updated chat history list
+    // Primary is used only in cody web client
+    'chat/delete': [{ chatId: string }, ChatExportResult[]]
+
     // Similar to `chat/new` except it starts a new chat session from an
     // existing transcript. The chatID matches the `chatID` property of the
     // `type: 'transcript'` ExtensionMessage that is sent via
@@ -63,7 +72,7 @@ export type ClientRequests = {
     ]
 
     'chat/models': [{ modelUsage: ModelUsage }, { models: Model[] }]
-    'chat/export': [null, ChatExportResult[]]
+    'chat/export': [null | { fullHistory: boolean }, ChatExportResult[]]
     'chat/remoteRepos': [{ id: string }, { remoteRepos?: Repo[] | undefined | null }]
 
     // High-level wrapper around webview/receiveMessage and webview/postMessage

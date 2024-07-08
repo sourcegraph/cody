@@ -30,7 +30,7 @@ import {
     Typewriter,
     allMentionProvidersMetadata,
     hydrateAfterPostMessage,
-    isAbortError,
+    isAbortErrorOrSocketHangUp,
     isDefined,
     isError,
     isFileURI,
@@ -39,13 +39,14 @@ import {
     recordErrorToSpan,
     reformatBotMessageForChat,
     serializeChatMessage,
+    telemetryRecorder,
     tracer,
     truncatePromptString,
+    webMentionProvidersMetadata,
 } from '@sourcegraph/cody-shared'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { isContextWindowLimitError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import type { URI } from 'vscode-uri'
@@ -77,8 +78,6 @@ import { gitCommitIdFromGitExtension } from '../../repository/git-extension-api'
 import type { AuthProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from '../../services/telemetry'
 import {
     handleCodeFromInsertAtCursor,
     handleCodeFromSaveToNewFile,
@@ -262,6 +261,14 @@ export class SimpleChatPanelProvider
                 chatModel: this.chatModel,
             })
         )
+
+        // Observe any changes in chat history and send client notifications to
+        // the consumer
+        this.disposables.push(
+            chatHistory.onHistoryChanged(chatHistory => {
+                this.postMessage({ type: 'history', localHistory: chatHistory })
+            })
+        )
     }
 
     /**
@@ -380,7 +387,7 @@ export class SimpleChatPanelProvider
                 await this.clearAndRestartSession()
                 break
             case 'event':
-                telemetryService.log(message.eventName, message.properties ?? undefined)
+                // no-op, legacy v1 telemetry has been removed. This should be removed as well.
                 break
             case 'recordEvent':
                 telemetryRecorder.recordEvent(
@@ -422,17 +429,6 @@ export class SimpleChatPanelProvider
                         async (token, endpoint) => {
                             closeAuthProgressIndicator()
                             const authStatus = await this.authProvider.auth({ endpoint, token })
-                            telemetryService.log(
-                                'CodyVSCodeExtension:auth:fromTokenReceiver',
-                                {
-                                    type: 'callback',
-                                    from: 'web',
-                                    success: Boolean(authStatus?.isLoggedIn),
-                                },
-                                {
-                                    hasV2Event: true,
-                                }
-                            )
                             telemetryRecorder.recordEvent(
                                 'cody.auth.fromTokenReceiver.web',
                                 'succeeded',
@@ -491,15 +487,6 @@ export class SimpleChatPanelProvider
             case 'troubleshoot/reloadAuth': {
                 await this.authProvider.reloadAuthStatus()
                 const nextAuth = this.authProvider.getAuthStatus()
-                telemetryService.log(
-                    'CodyVSCodeExtension:troubleshoot:reloadAuth',
-                    {
-                        success: Boolean(nextAuth?.isLoggedIn),
-                    },
-                    {
-                        hasV2Event: true,
-                    }
-                )
                 telemetryRecorder.recordEvent('cody.troubleshoot', 'reloadAuth', {
                     metadata: {
                         success: nextAuth.isLoggedIn ? 1 : 0,
@@ -614,7 +601,6 @@ export class SimpleChatPanelProvider
                 sessionID: this.chatModel.sessionID,
                 addEnhancedContext,
             }
-            telemetryService.log('CodyVSCodeExtension:chat-question:submitted', sharedProperties)
             const mentionsInInitialContext = mentions.filter(
                 item => item.source !== ContextItemSource.User
             )
@@ -758,9 +744,6 @@ export class SimpleChatPanelProvider
                     span.setAttributes(properties)
                     firstTokenSpan.setAttributes(properties)
 
-                    telemetryService.log('CodyVSCodeExtension:chat-question:executed', properties, {
-                        hasV2Event: true,
-                    })
                     telemetryRecorder.recordEvent('cody.chat-question', 'executed', {
                         metadata: {
                             ...contextSummary,
@@ -834,9 +817,6 @@ export class SimpleChatPanelProvider
     ): Promise<void> {
         const abortSignal = this.startNewSubmitOrEditOperation()
 
-        telemetryService.log('CodyVSCodeExtension:editChatButton:clicked', undefined, {
-            hasV2Event: true,
-        })
         telemetryRecorder.recordEvent('cody.editChatButton', 'clicked')
 
         try {
@@ -864,7 +844,6 @@ export class SimpleChatPanelProvider
         this.cancelSubmitOrEditOperation()
         // Notify the webview there is no message in progress.
         this.postViewTranscript()
-        telemetryService.log('CodyVSCodeExtension:abortButton:clicked', { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked')
     }
 
@@ -880,7 +859,12 @@ export class SimpleChatPanelProvider
         this.allMentionProvidersMetadataQueryCancellation = cancellation
 
         try {
-            const providers = await allMentionProvidersMetadata()
+            const config = await getFullConfig()
+            const isCodyWeb = config.agentIDE === CodyIDE.Web
+            const providers = isCodyWeb
+                ? await webMentionProvidersMetadata()
+                : await allMentionProvidersMetadata()
+
             if (cancellation.token.isCancellationRequested) {
                 return
             }
@@ -908,18 +892,11 @@ export class SimpleChatPanelProvider
         const source = 'chat'
         const scopedTelemetryRecorder: Parameters<typeof getChatContextItemsForMention>[2] = {
             empty: () => {
-                telemetryService.log('CodyVSCodeExtension:at-mention:executed', {
-                    source,
-                })
                 telemetryRecorder.recordEvent('cody.at-mention', 'executed', {
                     privateMetadata: { source },
                 })
             },
             withProvider: (provider, providerMetadata) => {
-                telemetryService.log(`CodyVSCodeExtension:at-mention:${provider}:executed`, {
-                    source,
-                    providerMetadata,
-                })
                 telemetryRecorder.recordEvent(`cody.at-mention.${provider}`, 'executed', {
                     privateMetadata: { source, providerMetadata },
                 })
@@ -930,8 +907,15 @@ export class SimpleChatPanelProvider
             const items = await getChatContextItemsForMention(
                 query,
                 cancellation.token,
-                scopedTelemetryRecorder
+                scopedTelemetryRecorder,
+                // Pass possible remote repository context in order to resolve files
+                // for this remote repositories and not for local one, Cody Web case
+                // when we have only remote repositories as context
+                query.includeRemoteRepositories
+                    ? this.remoteSearch?.getRepos('all')?.map(repo => repo.name)
+                    : undefined
             )
+
             if (cancellation.token.isCancellationRequested) {
                 return
             }
@@ -1235,10 +1219,10 @@ export class SimpleChatPanelProvider
                     this.addBotMessage(requestID, PromptString.unsafe_fromLLMResponse(content))
                 },
                 error: (partialResponse, error) => {
+                    this.postError(error, 'transcript')
                     if (isAbortErrorOrSocketHangUp(error)) {
                         abortSignal.throwIfAborted()
                     }
-                    this.postError(error, 'transcript')
                     try {
                         // We should still add the partial response if there was an error
                         // This'd throw an error if one has already been added
@@ -1330,11 +1314,6 @@ export class SimpleChatPanelProvider
         // Count code generated from response
         const generatedCode = countGeneratedCode(messageText.toString())
         const responseEventAction = generatedCode.charCount > 0 ? 'hasCode' : 'noCode'
-        telemetryService.log(
-            `CodyVSCodeExtension:chatResponse:${responseEventAction}`,
-            { ...generatedCode, requestID, chatModel: this.chatModel.modelID },
-            { hasV2Event: true }
-        )
         telemetryRecorder.recordEvent('cody.chatResponse', responseEventAction, {
             version: 2, // increment for major changes to this event
             interactionID: requestID,
@@ -1638,10 +1617,6 @@ export function revealWebviewViewOrPanel(viewOrPanel: vscode.WebviewView | vscod
     if ('reveal' in viewOrPanel) {
         viewOrPanel.reveal()
     }
-}
-
-function isAbortErrorOrSocketHangUp(error: unknown): error is Error {
-    return Boolean(isAbortError(error) || (error && (error as any).message === 'socket hang up'))
 }
 
 function getDefaultModelID(authProvider: AuthProvider, models: Model[]): string {

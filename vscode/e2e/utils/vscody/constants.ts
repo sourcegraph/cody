@@ -1,0 +1,5 @@
+export const MITM_AUTH_TOKEN_PLACEHOLDER = '<__MITM_AUTH_TOKEN__>'
+export const MITM_PROXY_SERVICE_NAME_HEADER = 'x-mitm-proxy-name'
+export const MITM_PROXY_SERVICE_ENDPOINT_HEADER = 'x-mitm-proxy-endpoint'
+export const MITM_PROXY_AUTH_AVAILABLE_HEADER = 'x-mitm-auth-available'
+export const MITM_PROXY_AUTH_TOKEN_NAME_HEADER = 'x-mitm-auth-token-name'

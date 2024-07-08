@@ -6,36 +6,18 @@ import {
     contextCellItems,
     expectContextCellCounts,
     getContextCell,
+    openContextCell,
     sidebarExplorer,
     sidebarSignin,
 } from './common'
-import { type DotcomUrlOverride, type ExpectedEvents, test as baseTest } from './helpers'
+import { type DotcomUrlOverride, type ExpectedV2Events, test as baseTest } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
-    expectedEvents: [
-        'CodyInstalled',
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:sidebar:explain:clicked',
-        'CodyVSCodeExtension:command:explain:executed',
-        'CodyVSCodeExtension:command:explain:executed',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-        'CodyVSCodeExtension:chat:context:opened',
-        'CodyVSCodeExtension:chat:context:fileLink:clicked',
-        'CodyVSCodeExtension:sidebar:smell:clicked',
-        'CodyVSCodeExtension:command:smell:executed',
-    ],
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
@@ -75,17 +57,16 @@ test.extend<ExpectedEvents>({
     // If there is no cursor position, we will use the visible content of the editor
     // NOTE: Core commands context should not start with ✨
     const contextCell = getContextCell(chatPanel)
+    await openContextCell(contextCell)
     // NOTE(sqs): It's OK if the test changes so that it's just `index.html`.
     await expect(contextCellItems(contextCell)).toHaveText(['index.html', 'index.html:1-11'])
     await expectContextCellCounts(contextCell, { files: 2 })
-    await contextCell.click()
 
     // Check if assistant responsed
     await expect(chatPanel.getByText('hello from the assistant')).toBeVisible()
 
     // Click on the file link in chat
-    const chatContext = chatPanel.locator('details').last()
-    await chatContext.getByRole('link', { name: 'index.html' }).first().click()
+    await contextCell.getByRole('link', { name: 'index.html' }).first().click()
 
     // Check if the file is opened
     await expect(page.getByRole('list').getByText('index.html')).toBeVisible()
@@ -97,9 +78,9 @@ test.extend<ExpectedEvents>({
     await expect(page.getByText('Explain Code')).toBeVisible()
     await page.getByText('Explain Code').click()
     const CONTEXT_ITEM_TEXTS = ['index.html', 'index.html:2-10']
-    await expect(contextCellItems(contextCell)).toHaveText(CONTEXT_ITEM_TEXTS)
     await expectContextCellCounts(contextCell, { files: 2 })
-    await contextCell.click()
+    await openContextCell(contextCell)
+    await expect(contextCellItems(contextCell)).toHaveText(CONTEXT_ITEM_TEXTS)
 
     // The mentions in the command should show up as mentions.
     const firstChatInput = chatPanel.getByRole('textbox', { name: 'Chat message' }).first()
@@ -108,38 +89,24 @@ test.extend<ExpectedEvents>({
     // When the message is resent, ensure that the same number of context items are included.
     await firstChatInput.focus()
     await firstChatInput.press('Enter')
-    await expect(contextCellItems(contextCell)).toHaveText(CONTEXT_ITEM_TEXTS)
     await expectContextCellCounts(contextCell, { files: 2 })
+    await openContextCell(contextCell)
+    await expect(contextCellItems(contextCell)).toHaveText(CONTEXT_ITEM_TEXTS)
 
     // Smell Command
     // Running a command again should reuse the current cursor position
     await expect(page.getByText('Find Code Smells')).toBeVisible()
     await page.getByText('Find Code Smells').click()
     await expectContextCellCounts(contextCell, { files: 2 })
-    await contextCell.click()
+    await openContextCell(contextCell)
     await expect(chatPanel.getByRole('link', { name: 'index.html:2-10' })).toBeVisible()
     await expect(chatInputMentions(firstChatInput)).toHaveText(['index.html:2-10', 'index.html'])
 })
 
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
-    expectedEvents: [
-        'CodyInstalled',
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:command:codelens:clicked',
-        'CodyVSCodeExtension:menu:command:default:clicked',
-        'CodyVSCodeExtension:command:codelens:clicked',
-        'CodyVSCodeExtension:command:test:executed',
-        'CodyVSCodeExtension:fixupResponse:hasCode',
-        'CodyVSCodeExtension:fixup:applied',
-    ],
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
@@ -174,23 +141,10 @@ test.extend<ExpectedEvents>({
     await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible()
 })
 
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
-    expectedEvents: [
-        'CodyInstalled',
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:sidebar:doc:clicked',
-        'CodyVSCodeExtension:command:doc:executed',
-        'CodyVSCodeExtension:fixupResponse:hasCode',
-        'CodyVSCodeExtension:fixup:applied',
-    ],
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',

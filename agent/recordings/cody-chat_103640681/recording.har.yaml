@@ -5,122 +5,7 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: 4fe42a1c9c355d44a5f049b1bafd12a4
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 545
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - name: user-agent
-            value: cody-cli / 0.0.5b
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 343
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: |-
-                  Codebase context from file animal.ts:
-                  ```typescript
-                  interface StrangeAnimal {
-                      makesSound(): 'coo' | 'moo'
-                  }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: "You have access to the provided codebase context. Question: implement a
-                  cow. Only print the code without any explanation."
-            model: anthropic/claude-3-sonnet-20240229
-            temperature: 0.2
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-          - name: client-name
-            value: cody-cli
-          - name: client-version
-            value: 0.0.5b
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=cody-cli&client-version=0.0.5b
-      response:
-        bodySize: 1729
-        content:
-          mimeType: text/event-stream
-          size: 1729
-          text: >+
-            event: completion
-
-            data: {"completion":"```typescript\nclass Cow implements StrangeAnimal {\n    makesSound(): 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Thu, 27 Jun 2024 01:53:55 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: retry-after
-            value: "599"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-06-27T01:53:54.068Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 50a44fdcf63a11719b8abd35f78e8ba2
+    - _id: f5c671311272dfe9f175bc9d89a42959
       _order: 0
       cache: {}
       request:
@@ -135,12 +20,12 @@ log:
             value: token
               REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
           - name: user-agent
-            value: cody-cli / 0.0.5b
+            value: cody-cli / 0.1.0-SNAPSHOT
           - name: connection
             value: keep-alive
           - name: host
             value: sourcegraph.com
-        headersSize: 343
+        headersSize: 359
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -163,8 +48,8 @@ log:
           - name: client-name
             value: cody-cli
           - name: client-version
-            value: 0.0.5b
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=cody-cli&client-version=0.0.5b
+            value: 0.1.0-SNAPSHOT
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=cody-cli&client-version=0.1.0-SNAPSHOT
       response:
         bodySize: 158
         content:
@@ -180,15 +65,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 27 Jun 2024 20:22:51 GMT
+            value: Tue, 02 Jul 2024 09:56:00 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "89"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -206,12 +89,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1405
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-27T20:22:50.091Z
+      startedDateTime: 2024-07-02T09:55:59.385Z
       time: 0
       timings:
         blocked: -1
@@ -221,7 +104,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 33b24867e8f21213899ab8ad5847a82a
+    - _id: d0137030b958d69c4b901e901e27dae7
       _order: 0
       cache: {}
       request:
@@ -236,12 +119,12 @@ log:
             value: token
               REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
           - name: user-agent
-            value: cody-cli / 0.0.5b
+            value: cody-cli / 0.1.0-SNAPSHOT
           - name: connection
             value: keep-alive
           - name: host
             value: sourcegraph.com
-        headersSize: 343
+        headersSize: 359
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -264,17 +147,17 @@ log:
           - name: client-name
             value: cody-cli
           - name: client-version
-            value: 0.0.5b
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=cody-cli&client-version=0.0.5b
+            value: 0.1.0-SNAPSHOT
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=cody-cli&client-version=0.1.0-SNAPSHOT
       response:
-        bodySize: 5434
+        bodySize: 6468
         content:
           mimeType: text/event-stream
-          size: 5434
+          size: 6468
           text: >+
             event: completion
 
-            data: {"completion":"Squirrel is a high-performance, open-source object-relational database (ORD) that provides a SQL interface for working with structured and semi-structured data stored in modern cloud data stores like Amazon S3, Azure Blob Storage, and Google Cloud Storage.","stopReason":"end_turn"}
+            data: {"completion":"Squirrel is a high-performance, open-source object-relational database (ORD) that provides a SQL interface for storing and querying JSON data. It is designed to be embedded in applications, making it suitable for use cases such as caching, analytics, and data storage in edge computing environments.","stopReason":"end_turn"}
 
 
             event: done
@@ -284,15 +167,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 27 Jun 2024 20:22:53 GMT
+            value: Tue, 02 Jul 2024 09:56:02 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "88"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -310,12 +191,130 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1405
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-27T20:22:51.566Z
+      startedDateTime: 2024-07-02T09:56:01.007Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 62a24e624a5b44b4ab7c83abd04da68f
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 549
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: user-agent
+            value: cody-cli / 0.1.0-SNAPSHOT
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 359
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: |-
+                  Codebase context from file animal.ts:
+                  ```typescript
+                  interface StrangeAnimal {
+                      makesSound(): 'coo' | 'moo'
+                  }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  You have access to the provided codebase context. 
+
+
+                  Question: implement a cow. Only print the code without any explanation.
+            model: anthropic/claude-3-sonnet-20240229
+            temperature: 0.2
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+          - name: client-name
+            value: cody-cli
+          - name: client-version
+            value: 0.1.0-SNAPSHOT
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=cody-cli&client-version=0.1.0-SNAPSHOT
+      response:
+        bodySize: 1729
+        content:
+          mimeType: text/event-stream
+          size: 1729
+          text: >+
+            event: completion
+
+            data: {"completion":"```typescript\nclass Cow implements StrangeAnimal {\n    makesSound(): 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 02 Jul 2024 21:41:44 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: retry-after
+            value: "501"
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1406
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-07-02T21:41:43.246Z
       time: 0
       timings:
         blocked: -1

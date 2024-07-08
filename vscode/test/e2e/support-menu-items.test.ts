@@ -2,21 +2,11 @@ import { expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 
 import { sidebarSignin } from './common'
-import { type DotcomUrlOverride, type ExpectedEvents, test as baseTest } from './helpers'
+import { type DotcomUrlOverride, test as baseTest } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
-test.extend<ExpectedEvents>({
-    // list of events we expect this test to log, add to this list as needed
-    expectedEvents: [
-        'CodyInstalled',
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-    ],
-})('shows support link for free users', async ({ page, sidebar }) => {
+test('shows support link for free users', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     // The treeitem we need is offscreen, and locator.scrollIntoViewIfNeeded
@@ -41,17 +31,7 @@ test.extend<ExpectedEvents>({
     expect(supportItem).toBeVisible()
 })
 
-test.extend<ExpectedEvents>({
-    // list of events we expect this test to log, add to this list as needed
-    expectedEvents: [
-        'CodyInstalled',
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-    ],
-})('shows support link for pro users', async ({ page, sidebar }) => {
+test('shows support link for pro users', async ({ page, sidebar }) => {
     await fetch(`${mockServer.SERVER_URL}/.test/currentUser/codyProEnabled`, { method: 'POST' })
 
     await sidebarSignin(page, sidebar)

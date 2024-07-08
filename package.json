@@ -16,6 +16,7 @@
     "fs": false
   },
   "scripts": {
+    "agent": "pnpm -C agent agent",
     "build": "tsc --build",
     "watch": "tsc --build --watch",
     "check": "pnpm run -s check:build && pnpm run -s biome && pnpm run -s check:css",

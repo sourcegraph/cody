@@ -8,7 +8,6 @@ import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { clsx } from 'clsx'
 import type { EditorState, LexicalEditor, SerializedEditorState } from 'lexical'
 import { type FunctionComponent, type RefObject, useMemo } from 'react'
-import type { UserAccountInfo } from '../Chat'
 import styles from './BaseEditor.module.css'
 import { RICH_EDITOR_NODES } from './nodes'
 import MentionsPlugin from './plugins/atMentions/atMentions'
@@ -19,7 +18,6 @@ import { NoRichTextFormatShortcutsPlugin } from './plugins/noRichTextShortcuts'
 import { OnFocusChangePlugin } from './plugins/onFocus'
 
 interface Props extends KeyboardEventPluginProps {
-    userInfo?: UserAccountInfo
     initialEditorState: SerializedEditorState | null
     onChange: (editorState: EditorState, editor: LexicalEditor, tags: Set<string>) => void
     onFocusChange?: (focused: boolean) => void
@@ -35,7 +33,6 @@ interface Props extends KeyboardEventPluginProps {
  * The low-level rich editor for messages to Cody.
  */
 export const BaseEditor: FunctionComponent<Props> = ({
-    userInfo,
     initialEditorState,
     onChange,
     onFocusChange,
@@ -89,7 +86,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
                         // our tests using JSDOM. It doesn't hurt to enable otherwise.
                         ignoreHistoryMergeTagChange={false}
                     />
-                    <MentionsPlugin userInfo={userInfo} />
+                    <MentionsPlugin />
                     <CodeHighlightPlugin />
                     {onFocusChange && <OnFocusChangePlugin onFocusChange={onFocusChange} />}
                     {editorRef && <EditorRefPlugin editorRef={editorRef} />}

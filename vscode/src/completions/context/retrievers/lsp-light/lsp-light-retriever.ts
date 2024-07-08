@@ -63,7 +63,7 @@ export class LspLightRetriever implements ContextRetriever {
         const {
             document,
             position,
-            hints: { maxChars },
+            hints: { isPreload } = { isPreload: false },
         } = params
 
         const key = `${document.uri.toString()}█${position.line}█${document.lineAt(position.line).text}`
@@ -116,8 +116,9 @@ export class LspLightRetriever implements ContextRetriever {
             console.log('-------------------------------------------------------------')
         }
 
-        if (maxChars === 0) {
-            // This is likely just a preloading request, so we don't need to prepare the actual context
+        if (isPreload) {
+            // For preload requests we don't need to prepare the actual context, we just need to
+            // preload the cache
             return []
         }
 

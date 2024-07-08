@@ -8,6 +8,7 @@ import {
     type FunctionComponent,
     type KeyboardEventHandler,
     type PropsWithChildren,
+    type ReactNode,
     forwardRef,
     useCallback,
     useEffect,
@@ -39,7 +40,7 @@ type IconComponent = ComponentType<{ width?: number | string; height?: number | 
 interface ToolbarButtonProps
     extends ButtonHTMLAttributes<HTMLButtonElement>,
         VariantProps<typeof buttonVariants> {
-    tooltip?: string
+    tooltip?: ReactNode
     iconStart?: IconComponent
     iconEnd?: IconComponent | 'chevron'
 
@@ -82,7 +83,7 @@ export const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
         return tooltip ? (
             <Tooltip>
                 <TooltipTrigger asChild={true}>{button}</TooltipTrigger>
-                <TooltipContent>{tooltip}</TooltipContent>
+                <TooltipContent side="bottom">{tooltip}</TooltipContent>
             </Tooltip>
         ) : (
             button

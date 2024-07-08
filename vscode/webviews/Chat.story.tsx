@@ -16,6 +16,7 @@ const meta: Meta<typeof Chat> = {
         },
     },
     args: {
+        chatID: 'test',
         transcript: FIXTURE_TRANSCRIPT.simple2,
         messageInProgress: null,
         chatEnabled: true,
@@ -24,7 +25,6 @@ const meta: Meta<typeof Chat> = {
             postMessage: () => {},
             onMessage: () => () => {},
         },
-        telemetryService: null as any,
         isTranscriptError: false,
     } satisfies React.ComponentProps<typeof Chat>,
 

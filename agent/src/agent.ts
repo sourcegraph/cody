@@ -8,7 +8,6 @@ import {
     isWindows,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import envPaths from 'env-paths'
 import * as vscode from 'vscode'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 
@@ -62,7 +61,8 @@ import { AgentGlobalState } from './AgentGlobalState'
 import { AgentProviders } from './AgentProviders'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
-import type { PollyRequestError } from './cli/jsonrpc'
+import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
+import { codyPaths } from './codyPaths'
 import {
     MessageHandler,
     type RequestCallback,
@@ -130,7 +130,7 @@ export async function initializeVscodeExtension(
     extensionActivate: ExtensionActivate,
     extensionClient: ExtensionClient
 ): Promise<void> {
-    const paths = envPaths('Cody')
+    const paths = codyPaths()
     const extensionPath = paths.config
     copyWinCaRootsBinary(extensionPath)
 
@@ -185,7 +185,7 @@ export async function newAgentClient(
         const nodeArguments = process.argv0.endsWith('node')
             ? ['--enable-source-maps', ...process.argv.slice(1, 2)]
             : []
-        nodeArguments.push('jsonrpc')
+        nodeArguments.push('api', 'jsonrpc-stdio')
         const arg0 = clientInfo.codyAgentPath ?? process.argv[0]
         const args = clientInfo.codyAgentPath ? [] : nodeArguments
         const child = spawn(arg0, args, {
@@ -1065,6 +1065,18 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
         })
 
+        this.registerAuthenticatedRequest('chat/web/new', async () => {
+            const panelId = await this.createChatPanel(
+                Promise.resolve({
+                    type: 'chat',
+                    session: await vscode.commands.executeCommand('cody.chat.panel.new'),
+                })
+            )
+
+            const chatId = this.webPanels.panels.get(panelId)?.chatID ?? ''
+            return { panelId, chatId }
+        })
+
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
             let theModel = modelID
@@ -1106,17 +1118,43 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return { models: providers ?? [] }
         })
 
-        this.registerAuthenticatedRequest('chat/export', async () => {
+        this.registerAuthenticatedRequest('chat/export', async input => {
+            const { fullHistory = false } = input ?? {}
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
             const localHistory = chatHistory.getLocalHistory(authStatus)
 
             if (localHistory != null) {
-                return Object.entries(localHistory?.chat)
-                    .filter(([chatID, chatTranscript]) => chatTranscript.interactions.length > 0)
-                    .map(([chatID, chatTranscript]) => ({
-                        chatID: chatID,
-                        transcript: chatTranscript,
-                    }))
+                return (
+                    Object.entries(localHistory?.chat)
+                        // Return filtered (non-empty) chats by default, but if requests has fullHistory: true
+                        // return the full list of chats from the storage, empty chats included
+                        .filter(
+                            ([chatID, chatTranscript]) =>
+                                chatTranscript.interactions.length > 0 || fullHistory
+                        )
+                        .map(([chatID, chatTranscript]) => ({
+                            chatID: chatID,
+                            transcript: chatTranscript,
+                        }))
+                )
+            }
+
+            return []
+        })
+
+        this.registerAuthenticatedRequest('chat/delete', async params => {
+            await vscode.commands.executeCommand<AuthStatus>('cody.chat.history.delete', {
+                id: params.chatId,
+            })
+
+            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
+            const localHistory = await chatHistory.getLocalHistory(authStatus)
+
+            if (localHistory != null) {
+                return Object.entries(localHistory?.chat).map(([chatID, chatTranscript]) => ({
+                    chatID: chatID,
+                    transcript: chatTranscript,
+                }))
             }
 
             return []
