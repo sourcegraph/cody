@@ -8,7 +8,7 @@ import { registerLocalCertificates } from '../certs'
 // We don't want to run those tests anywhere else than locally.
 export const isLocal = process.env.RUN_LOCAL_E2E_TESTS === 'true'
 
-// Endpoint as defined by `sg setup` and `sg start dotcom`
+// Endpoint as defined by `sg setup` and `sg start dotcom-cody-e2e`
 const defaultEndpoint = 'https://sourcegraph.test:3443'
 
 // Access token set by `sg db default-site-admin`, always the same.
@@ -180,7 +180,7 @@ export class LocalSGInstance {
                             case 200:
                                 resolve({
                                     reason: 'Sourcegraph instance is not running in Dotcom mode',
-                                    fix: 'Kill the currently running instance and start it again using `sg start dotcom` instead.',
+                                    fix: 'Kill the currently running instance and start it again using `sg start dotcom-cody-e2e` instead.',
                                 })
                                 break
                             // This is what we want.
@@ -206,12 +206,12 @@ export class LocalSGInstance {
                     if (err.code === 'ECONNREFUSED') {
                         resolve({
                             reason: 'Sourcegraph instance is *not* running at all',
-                            fix: 'In your Sourcegraph folder, run `sg start dotcom` and run the tests again',
+                            fix: 'In your Sourcegraph folder, run `sg start dotcom-cody-e2e` and run the tests again',
                         })
                     } else {
                         resolve({
                             reason: `Failed to connect to Sourcegraph instance: ${err.message} `,
-                            fix: 'Something went wrong, if you have a running `sg start dotcom`, you could try to restart it',
+                            fix: 'Something went wrong, if you have a running `sg start dotcom-cody-e2e`, you could try to restart it',
                         })
                     }
                 })
@@ -249,7 +249,7 @@ export class LocalSGInstance {
                     if (isError(resp)) {
                         resolve({
                             reason: `Failed to connect to Sourcegraph instance: ${resp.message} `,
-                            fix: 'Something went wrong, if you have a running `sg start dotcom`, you could try to restart it',
+                            fix: 'Something went wrong, if you have a running `sg start dotcom-cody-e2e`, you could try to restart it',
                         })
                         return
                     }
