@@ -8,8 +8,8 @@ import { migrateAndNotifyForOutdatedModels } from './modelMigrator'
  * to the local storage key used to store the model selection.
  */
 export const MODEL_STORAGE_KEYS: Record<ModelUsage, string> = {
-    [ModelUsage.Edit]: 'model',
-    [ModelUsage.Chat]: 'chat-model',
+    [ModelUsage.Chat]: 'model',
+    [ModelUsage.Edit]: 'editModel',
 }
 
 async function setModel(modelID: EditModel, storageKey: string) {
