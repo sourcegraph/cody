@@ -7,11 +7,10 @@ import { getModelInfo } from './utils'
  * Model describes an LLM model and its capabilities.
  */
 export class Model {
-    /**
-     * Whether the model is the default model for new chats and edits. The user can change their
-     * default model.
-     */
-    public default = false
+    // Whether the model is the default model for new chats The user can change their default model
+    public chatDefault = false
+    // Whether the model is the default model for new edits The user can change their default model
+    public editDefault = false
 
     // Whether the model is only available to Pro users
     public codyProOnly = false
@@ -142,7 +141,7 @@ export class ModelsService {
             ?.map(model => ({
                 ...model,
                 // Set the current model as default
-                default: canUseCurrentDefault ? model.model === currentModel : model.default,
+                default: canUseCurrentDefault ? model.model === currentModel : model.chatDefault,
             }))
     }
 

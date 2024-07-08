@@ -3,12 +3,20 @@ import type { AuthProvider } from '../services/AuthProvider'
 import { localStorage } from '../services/LocalStorageProvider'
 import { migrateAndNotifyForOutdatedModels } from './modelMigrator'
 
+type ModelTypes = 'edit' | 'chat'
+
+export const MODEL_STORAGE_KEYS: Record<ModelTypes, string> = {
+    edit: 'model',
+    chat: 'chat-model',
+}
+
 async function setModel(modelID: EditModel, storageKey: string) {
     // Store the selected model in local storage to retrieve later
     return localStorage.set(storageKey, modelID)
 }
 
-function getModel<T extends string>(authProvider: AuthProvider, models: Model[], storageKey: string): T {
+function getModel<T extends string>(authProvider: AuthProvider, models: Model[], type: ModelTypes): T {
+    const storageKey = MODEL_STORAGE_KEYS[type]
     const authStatus = authProvider.getAuthStatus()
 
     if (!authStatus.authenticated) {
@@ -42,20 +50,19 @@ function getModel<T extends string>(authProvider: AuthProvider, models: Model[],
         }
     }
     // If the user has not selected a model before then we return the default model
-    const defaultModel = models.find(m => m.default) || models[0]
+    const defaultModel = models.find(m => (type === 'edit' ? m.editDefault : m.chatDefault)) || models[0]
     if (!defaultModel) {
         throw new Error('No chat model found in server-provided config')
     }
     return defaultModel.model as T
 }
 
-function createModelAccessor<T extends string>(storageKey: string) {
+function createModelAccessor<T extends string>(type: ModelTypes) {
     return {
-        get: (authProvider: AuthProvider, models: Model[]) =>
-            getModel<T>(authProvider, models, storageKey),
-        set: (modelID: T) => setModel(modelID, storageKey),
+        get: (authProvider: AuthProvider, models: Model[]) => getModel<T>(authProvider, models, type),
+        set: (modelID: T) => setModel(modelID, MODEL_STORAGE_KEYS[type]),
     }
 }
 
-export const chatModel = createModelAccessor<ChatModel>('model')
-export const editModel = createModelAccessor<EditModel>('editModel')
+export const chatModel = createModelAccessor<ChatModel>('chat')
+export const editModel = createModelAccessor<EditModel>('edit')

@@ -33,5 +33,5 @@ export function useChatModelByID(
 
 export function useCurrentChatModel(): Model | undefined {
     const { chatModels } = useChatModelContext()
-    return chatModels?.find(model => model.default) ?? chatModels?.[0]
+    return chatModels?.find(model => model.chatDefault) ?? chatModels?.[0]
 }

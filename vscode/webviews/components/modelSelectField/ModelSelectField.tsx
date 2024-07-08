@@ -44,7 +44,7 @@ export const ModelSelectField: React.FunctionComponent<{
     const telemetryRecorder = useTelemetryRecorder()
 
     const usableModels = useMemo(() => models.filter(m => !m.deprecated), [models])
-    const selectedModel = usableModels.find(m => m.default) ?? usableModels[0]
+    const selectedModel = usableModels.find(m => m.chatDefault) ?? usableModels[0]
 
     const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
     const isEnterpriseUser = !userInfo.isDotComUser
