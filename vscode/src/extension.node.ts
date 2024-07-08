@@ -26,7 +26,7 @@ import { SymfRunner } from './local-context/symf'
 import { authProvider } from './services/AuthProvider'
 import { localStorage } from './services/LocalStorageProvider'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
-import { getExtensionDetails } from './services/telemetry'
+import { getExtensionDetails } from './services/telemetry-v2'
 import { serializeConfigSnapshot } from './uninstall/serializeConfig'
 
 /**

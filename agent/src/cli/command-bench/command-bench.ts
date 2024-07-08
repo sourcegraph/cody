@@ -141,7 +141,7 @@ async function loadEvaluationConfig(options: CodyBenchOptions): Promise<CodyBenc
     return result
 }
 
-export const codyBenchCommand = new commander.Command('cody-bench')
+export const benchCommand = new commander.Command('bench')
     .description(
         'Evaluate Cody autocomplete by running the Agent in headless mode. ' +
             'See the repo https://github.com/sourcegraph/cody-bench-data for ' +

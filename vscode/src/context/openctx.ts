@@ -1,46 +1,28 @@
-import { type ConfigurationWithAccessToken, setOpenCtxClient } from '@sourcegraph/cody-shared'
+import { CodyIDE, type ConfigurationWithAccessToken, setOpenCtxClient } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+
 import { logDebug, outputChannel } from '../log'
 import LinearIssuesProvider from './openctx/linear-issues'
-import RemoteFileProvider from './openctx/remoteFileSearch'
-import RemoteRepositorySearch from './openctx/remoteRepositorySearch'
+import RemoteFileProvider, { createRemoteFileProvider } from './openctx/remoteFileSearch'
+import RemoteRepositorySearch, { createRemoteRepositoryProvider } from './openctx/remoteRepositorySearch'
 import WebProvider from './openctx/web'
 
 export async function exposeOpenCtxClient(
     context: Pick<vscode.ExtensionContext, 'extension' | 'secrets'>,
-    config: ConfigurationWithAccessToken
+    config: ConfigurationWithAccessToken,
+    isDotCom: boolean,
+    // TODO [VK] Expose createController openctx type from vscode-lib
+    createOpenContextController: ((...args: any[]) => any) | undefined
 ) {
     logDebug('openctx', 'OpenCtx is enabled in Cody')
     await warnIfOpenCtxExtensionConflict()
     try {
-        const { createController } = await import('@openctx/vscode-lib')
-        const providers = [
-            {
-                providerUri: WebProvider.providerUri,
-                settings: true,
-                provider: WebProvider,
-            },
-            {
-                providerUri: RemoteRepositorySearch.providerUri,
-                settings: true,
-                provider: RemoteRepositorySearch,
-            },
-        ]
-
-        if (config.experimentalNoodle) {
-            providers.push(
-                {
-                    providerUri: RemoteFileProvider.providerUri,
-                    settings: true,
-                    provider: RemoteFileProvider,
-                },
-                {
-                    providerUri: LinearIssuesProvider.providerUri,
-                    settings: true,
-                    provider: LinearIssuesProvider,
-                }
-            )
-        }
+        const isCodyWeb = config.agentIDE === CodyIDE.Web
+        const providers = isCodyWeb
+            ? getCodyWebOpenContextProviders()
+            : getStandardOpenContextProviders(config, isDotCom)
+        const createController =
+            createOpenContextController ?? (await import('@openctx/vscode-lib')).createController
 
         setOpenCtxClient(
             createController({
@@ -55,6 +37,60 @@ export async function exposeOpenCtxClient(
     } catch (error) {
         logDebug('openctx', `Failed to load OpenCtx client: ${error}`)
     }
+}
+
+function getStandardOpenContextProviders(config: ConfigurationWithAccessToken, isDotCom: boolean) {
+    // TODO [vk] expose types for providers from openctx/client lib
+    const providers: any[] = [
+        {
+            settings: true,
+            provider: WebProvider,
+            providerUri: WebProvider.providerUri,
+        },
+    ]
+
+    // Remote repository and remote files should be available only for
+    // non-dotcom users
+    if (!isDotCom) {
+        providers.push({
+            settings: true,
+            provider: RemoteRepositorySearch,
+            providerUri: RemoteRepositorySearch.providerUri,
+        })
+
+        if (config.experimentalNoodle) {
+            providers.push({
+                settings: true,
+                provider: RemoteFileProvider,
+                providerUri: RemoteFileProvider.providerUri,
+            })
+        }
+    }
+
+    if (config.experimentalNoodle) {
+        providers.push({
+            settings: true,
+            provider: LinearIssuesProvider,
+            providerUri: LinearIssuesProvider.providerUri,
+        })
+    }
+
+    return providers
+}
+
+function getCodyWebOpenContextProviders() {
+    return [
+        {
+            settings: true,
+            providerUri: RemoteRepositorySearch.providerUri,
+            provider: createRemoteRepositoryProvider('Repositories'),
+        },
+        {
+            settings: true,
+            providerUri: RemoteFileProvider.providerUri,
+            provider: createRemoteFileProvider('Files'),
+        },
+    ]
 }
 
 async function warnIfOpenCtxExtensionConflict() {

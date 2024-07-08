@@ -12,7 +12,6 @@ import {
 
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
-import { telemetryService } from '../services/telemetry'
 
 import { type CodyIgnoreType, showCodyIgnoreNotification } from '../cody-ignore/notification'
 import { autocompleteStageCounterLogger } from '../services/autocomplete-stage-counter-logger'
@@ -43,8 +42,10 @@ import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } fr
 import * as CompletionLogger from './logger'
 import { isLocalCompletionsProvider } from './providers/experimental-ollama'
 import { RequestManager, type RequestParams } from './request-manager'
-import { getRequestParamsFromLastCandidate } from './reuse-last-candidate'
-import { canReuseLastCandidateInDocumentContext } from './reuse-last-candidate'
+import {
+    canReuseLastCandidateInDocumentContext,
+    getRequestParamsFromLastCandidate,
+} from './reuse-last-candidate'
 import { SmartThrottleService } from './smart-throttle'
 import {
     type AutocompleteInlineAcceptedCommandArgs,
@@ -661,9 +662,6 @@ export class InlineCompletionItemProvider
                 removeAfterEpoch: error.retryAfterDate ? Number(error.retryAfterDate) : undefined,
                 onSelect: () => {
                     if (canUpgrade) {
-                        telemetryService.log('CodyVSCodeExtension:upsellUsageLimitCTA:clicked', {
-                            limit_type: 'suggestions',
-                        })
                         telemetryRecorder.recordEvent('cody.upsellUsageLimitCTA', 'clicked', {
                             privateMetadata: {
                                 limit_type: 'suggestions',
@@ -677,15 +675,6 @@ export class InlineCompletionItemProvider
                         return
                     }
                     shown = true
-                    telemetryService.log(
-                        canUpgrade
-                            ? 'CodyVSCodeExtension:upsellUsageLimitCTA:shown'
-                            : 'CodyVSCodeExtension:abuseUsageLimitCTA:shown',
-                        {
-                            limit_type: 'suggestions',
-                            tier,
-                        }
-                    )
                     telemetryRecorder.recordEvent(
                         canUpgrade ? 'cody.upsellUsageLimitCTA' : 'cody.abuseUsageLimitCTA',
                         'shown',
@@ -696,15 +685,6 @@ export class InlineCompletionItemProvider
                 },
             })
 
-            telemetryService.log(
-                canUpgrade
-                    ? 'CodyVSCodeExtension:upsellUsageLimitStatusBar:shown'
-                    : 'CodyVSCodeExtension:abuseUsageLimitStatusBar:shown',
-                {
-                    limit_type: 'suggestions',
-                    tier,
-                }
-            )
             telemetryRecorder.recordEvent(
                 canUpgrade ? 'cody.upsellUsageLimitStatusBar' : 'cody.abuseUsageLimitStatusBar',
                 'shown',

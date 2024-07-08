@@ -8,7 +8,7 @@ import { startPollyRecording } from '../../../vscode/src/testutils/polly'
 import { Agent } from '../agent'
 
 import { activate } from '../../../vscode/src/extension.node'
-import { booleanOption } from './cody-bench/cli-parsers'
+import { booleanOption } from './command-bench/cli-parsers'
 
 interface JsonrpcCommandOptions {
     expiresIn?: string | null | undefined
@@ -57,7 +57,7 @@ const debugPort = process.env.CODY_AGENT_DEBUG_PORT
     ? Number.parseInt(process.env.CODY_AGENT_DEBUG_PORT, 10)
     : 3113
 
-export const jsonrpcCommand = new Command('jsonrpc')
+export const jsonrpcCommand = new Command('jsonrpc-stdio')
     .description(
         'Interact with the Agent using JSON-RPC via stdout/stdin. ' +
             'This is the subcommand that is used by Cody clients like the JetBrains and Neovim plugins.'

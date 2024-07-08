@@ -61,7 +61,7 @@ import { AgentGlobalState } from './AgentGlobalState'
 import { AgentProviders } from './AgentProviders'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
-import type { PollyRequestError } from './cli/jsonrpc'
+import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
 import { codyPaths } from './codyPaths'
 import {
     MessageHandler,
@@ -185,7 +185,7 @@ export async function newAgentClient(
         const nodeArguments = process.argv0.endsWith('node')
             ? ['--enable-source-maps', ...process.argv.slice(1, 2)]
             : []
-        nodeArguments.push('jsonrpc')
+        nodeArguments.push('api', 'jsonrpc-stdio')
         const arg0 = clientInfo.codyAgentPath ?? process.argv[0]
         const args = clientInfo.codyAgentPath ? [] : nodeArguments
         const child = spawn(arg0, args, {

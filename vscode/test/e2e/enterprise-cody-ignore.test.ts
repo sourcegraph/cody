@@ -3,7 +3,7 @@ import path from 'node:path'
 import { type Page, expect } from '@playwright/test'
 import { sidebarExplorer, sidebarSignin } from './common'
 import {
-    type ExpectedEvents,
+    type ExpectedV2Events,
     type WorkspaceDirectory,
     executeCommandInPalette,
     spawn,
@@ -12,9 +12,8 @@ import {
 } from './helpers'
 
 test
-    .extend<ExpectedEvents>({
+    .extend<ExpectedV2Events>({
         // list of events we expect this test to log, add to this list as needed
-        expectEvents: ['CodyInstalled'],
         expectedV2Events: [
             // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
         ],

@@ -13,7 +13,7 @@ import { AgentTextDocument } from '../../AgentTextDocument'
 
 import type { ContextItemSource } from '@sourcegraph/cody-shared'
 import type { AutocompleteMatchKind } from './AutocompleteMatcher'
-import { BenchStrategy, type CodyBenchOptions } from './cody-bench'
+import { BenchStrategy, type CodyBenchOptions } from './command-bench'
 import type { EvaluateFileParams } from './evaluateEachFile'
 
 export type EvaluationDocumentParams = Pick<

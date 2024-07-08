@@ -1,7 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/cody-shared'
-// import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/cody-shared'
 import { VSCodeViewport } from '../storybook/VSCodeStoryDecorator'
 // import type { VSCodeWrapper } from '../utils/VSCodeApi'
 import { ConnectionIssuesPage } from './ConnectionIssuesPage'
@@ -18,7 +16,6 @@ const meta: Meta<typeof ConnectionIssuesPage> = {
         vscodeAPI: {
             postMessage: () => {},
         },
-        telemetryService: NOOP_TELEMETRY_SERVICE,
     },
 } as Meta
 

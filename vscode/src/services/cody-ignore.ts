@@ -10,8 +10,6 @@ import {
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { logDebug } from '../log'
 import { TestSupport } from '../test-support'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from './telemetry'
 
 const utf8 = new TextDecoder('utf-8')
 
@@ -179,7 +177,6 @@ async function refresh(uri: vscode.Uri): Promise<void> {
 function setCodyIgnoreFiles(ws: vscode.Uri, files: IgnoreFileContent[]): void {
     ignores.setIgnoreFiles(ws, files)
     if (files.length) {
-        telemetryService.log('CodyVSCodeExtension:codyIgnore:hasFile')
         telemetryRecorder.recordEvent('cody.codyIgnore', 'hasFile')
     }
 }

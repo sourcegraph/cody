@@ -9,7 +9,6 @@ import { $createTextNode, $getRoot, $getSelection, $insertNodes, type LexicalEdi
 import type { EditorState, SerializedEditorState, SerializedLexicalNode } from 'lexical'
 import { isEqual } from 'lodash'
 import { type FunctionComponent, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
-import type { UserAccountInfo } from '../Chat'
 import {
     isEditorContentOnlyInitialContext,
     lexicalNodesForContextItems,
@@ -20,7 +19,6 @@ import { $selectAfter, $selectEnd } from './lexicalUtils'
 import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
 
 interface Props extends KeyboardEventPluginProps {
-    userInfo?: UserAccountInfo
     editorClassName?: string
     contentEditableClassName?: string
     seamless?: boolean
@@ -48,7 +46,6 @@ export interface PromptEditorRefAPI {
  * The component for composing and editing prompts.
  */
 export const PromptEditor: FunctionComponent<Props> = ({
-    userInfo,
     editorClassName,
     contentEditableClassName,
     seamless,
@@ -181,7 +178,6 @@ export const PromptEditor: FunctionComponent<Props> = ({
 
     return (
         <BaseEditor
-            userInfo={userInfo}
             className={clsx(styles.editor, editorClassName, {
                 [styles.disabled]: disabled,
                 [styles.seamless]: seamless,
