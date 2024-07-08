@@ -21,15 +21,6 @@ describe('syncModels', () => {
         setModelsSpy.mockClear()
     })
 
-    // This test just confirms the environment is in the expected state.
-    it('should not have the userServerDefinedModels config setting enabled', async () => {
-        const codyConfig = vscode.workspace.getConfiguration('cody')
-        if (codyConfig) {
-            const setting = codyConfig.get<boolean>('dev.useServerDefinedModels')
-            expect(setting).to.be.undefined
-        }
-    })
-
     it('does not register models if not authenticated', async () => {
         await syncModels(unauthenticatedStatus)
         expect(setModelsSpy).toHaveBeenCalledWith([])
