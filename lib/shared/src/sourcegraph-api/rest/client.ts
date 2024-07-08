@@ -1,4 +1,4 @@
-import { Model, type ServerModel } from '../../models/index'
+import { Model, type ServerModelConfiguration } from '../../models/index'
 
 import { fetch } from '../../fetch'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
@@ -75,7 +75,7 @@ export class RestClient {
     }
 }
 
-const testModels = {
+const testModels: ServerModelConfiguration = {
     schemaVersion: '1.0',
     revision: '-',
     providers: [
@@ -124,7 +124,7 @@ const testModels = {
                 maxOutputTokens: 4000,
             },
         },
-    ] as ServerModel[],
+    ],
     defaultModels: {
         chat: 'anthropic::unknown::amazon.titan-text-lite-v1',
         fastChat: 'anthropic::unknown::anthropic.claude-3-opus-20240229-v1_0',

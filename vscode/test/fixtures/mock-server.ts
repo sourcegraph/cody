@@ -5,6 +5,7 @@ import express from 'express'
 import * as uuid from 'uuid'
 
 import type { TelemetryEventInput } from '@sourcegraph/telemetry'
+import { ServerModelConfiguration } from '@sourcegraph/cody-shared/src/models'
 
 // create interface for the request
 interface MockRequest {
@@ -153,6 +154,7 @@ class GraphQlMock {
 // Lets the test change the behavior of the mock server.
 export class MockServer {
     graphQlMocks: Map<string, GraphQlMock> = new Map()
+    availableLLMs: ServerModelConfiguration | undefined
 
     constructor(public readonly express: express.Express) {}
 
@@ -163,6 +165,10 @@ export class MockServer {
             this.graphQlMocks.set(operation, mock)
         }
         return mock
+    }
+
+    public setAvailableLLMs(config: ServerModelConfiguration) {
+        this.availableLLMs = config
     }
 
     // Runs a stub Cody service for testing.
@@ -517,6 +523,10 @@ export class MockServer {
         app.post('/.test/attribution/disable', (req, res) => {
             attribution = false
             res.sendStatus(200)
+        })
+
+        app.get('/.api/supported-llms', (req, res) => {
+            res.status(200).send(JSON.stringify(controller.availableLLMs))
         })
 
         const server = app.listen(SERVER_PORT)

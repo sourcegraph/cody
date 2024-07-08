@@ -35,6 +35,25 @@ export interface ServerModel {
     clientSideConfig?: unknown
 }
 
+interface Provider {
+    id: string
+    displayName: string
+}
+
+interface DefaultModels {
+    chat: ModelRef
+    fastChat: ModelRef
+    codeCompletion: ModelRef
+}
+
+export interface ServerModelConfiguration {
+    schemaVersion: string
+    revision: string
+    providers: Provider[]
+    models: ServerModel[]
+    defaultModels: DefaultModels
+}
+
 /**
  * Model describes an LLM model and its capabilities.
  */
