@@ -6,7 +6,7 @@ import { createPatch } from 'diff'
 import { execSync, spawn } from 'node:child_process'
 import fspromises from 'node:fs/promises'
 import path from 'node:path'
-import { type ContextItem, type SerializedChatMessage, logError } from '@sourcegraph/cody-shared'
+import { type ContextItem, type SerializedChatMessage, logDebug, logError } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { applyPatch } from 'fast-myers-diff'
 import * as vscode from 'vscode'
@@ -339,6 +339,9 @@ export class TestClient extends MessageHandler {
             return result
         })
         this.registerRequest('textDocument/openUntitledDocument', params => {
+            logDebug('#4581: textDocument/openUntitledDocument', JSON.stringify({
+                params,
+            }))
             this.workspace.loadDocument(ProtocolTextDocumentWithUri.fromDocument(params))
             this.notify('textDocument/didOpen', params)
             return Promise.resolve(true)

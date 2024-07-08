@@ -494,6 +494,12 @@ function toUri(
 }
 
 async function openUntitledDocument(uri: Uri, content?: string, language?: string) {
+    logDebug('#4581: openUntitledDocument called: ', JSON.stringify({
+        uri: uri.toString(),
+        content,
+        language,
+    }))
+    
     if (clientInfo?.capabilities?.untitledDocuments !== 'enabled') {
         const errorMessage =
             'Client does not support untitled documents. To fix this problem, set `untitledDocuments: "enabled"` in client capabilities'
