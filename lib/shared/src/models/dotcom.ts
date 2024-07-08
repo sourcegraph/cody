@@ -49,6 +49,8 @@ export const DEFAULT_DOT_COM_MODELS = [
         title: 'Claude 3.5 Sonnet',
         model: 'anthropic/claude-3-5-sonnet-20240620',
         provider: 'Anthropic',
+        // TODO: Update the `chatDefault` to true here, when we have finished evaluating for chat.
+        // https://linear.app/sourcegraph/issue/CODY-2507/evaluate-claude-35-sonnet-as-new-default
         chatDefault: false,
         editDefault: true,
         codyProOnly: false,
