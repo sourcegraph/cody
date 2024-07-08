@@ -36,7 +36,11 @@ export interface CompletionParameters {
     topK?: number
     topP?: number
     model?: string
-    images?: string[]
+    /**
+     * NOTE: Currently only llava multi-modal models from Ollama are supported.
+     * The base64-encoded image uploaded by user.
+     */
+    base64Image?: string
 }
 
 export interface SerializedCompletionParameters extends Omit<CompletionParameters, 'messages'> {

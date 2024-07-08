@@ -44,10 +44,10 @@ export async function ollamaChatClient({
         )
 
         // Add images to the last user message.
-        if (params.images?.length) {
+        if (params.base64Image !== undefined) {
             const lastUserMessage = messages.findLast(msg => msg.role === 'user')
             if (lastUserMessage) {
-                lastUserMessage.images = params.images
+                lastUserMessage.images = [params.base64Image]
             }
         }
 

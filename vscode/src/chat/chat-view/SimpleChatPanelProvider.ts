@@ -516,7 +516,7 @@ export class SimpleChatPanelProvider
                 break
             }
             case 'chat/upload-file': {
-                this.chatModel.addImageFile(message.base64)
+                this.chatModel.setImage(message.base64)
                 break
             }
 
@@ -1302,7 +1302,7 @@ export class SimpleChatPanelProvider
                 {
                     model: this.chatModel.modelID,
                     maxTokensToSample: this.chatModel.contextWindow.output,
-                    images: this.chatModel.getAndResetImages(),
+                    base64Image: this.chatModel.getAndResetImage(),
                 },
                 abortSignal
             )
