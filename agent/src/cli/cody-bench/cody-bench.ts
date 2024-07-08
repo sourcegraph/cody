@@ -17,6 +17,7 @@ import {
     graphqlClient,
     isDefined,
 } from '@sourcegraph/cody-shared'
+import { sleep } from '../../../../vscode/src/completions/utils'
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
 import { dotcomCredentials } from '../../../../vscode/src/testutils/testing-credentials'
 import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled'
@@ -377,11 +378,13 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
             serverEndpoint: options.srcEndpoint,
             customHeaders: {},
             customConfiguration: {
-                'cody.experimental.symf.enabled': options.context.strategy in ['keyword', 'blended'], // disabling fixes errors in Polly.js related to fetching the symf binary
-                'cody.experimental.localEmbeddings.disabled': !(
-                    options.context.strategy in ['embeddings', 'blended']
+                'cody.experimental.symf.enabled': ['keyword', 'blended'].includes(
+                    options.context?.strategy
+                ), // disabling fixes errors in Polly.js related to fetching the symf binary
+                'cody.experimental.localEmbeddings.disabled': !['embeddings', 'blended'].includes(
+                    options.context?.strategy
                 ),
-                'cody.useContext': options.context.strategy,
+                'cody.useContext': options.context?.strategy,
                 'cody.experimental.telemetry.enabled': false,
                 ...options.fixture.customConfiguration,
             },
@@ -399,6 +402,9 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
             CODY_DISABLE_FASTPATH: 'true',
         },
     })
+    if (isDefined(options.context)) {
+        await indexContextSources(options)
+    }
     try {
         if (options.fixture.strategy === BenchStrategy.Autocomplete) {
             await evaluateAutocompleteStrategy(client, options)
@@ -467,10 +473,39 @@ async function gitInitContextSources(options: CodyBenchOptions): Promise<void> {
 
     await promisify(exec)(
         `
-                git init &&
-                git add ${options.context.sourcesDir} &&
-                git commit -m "initial commit" &&
-                git remote add origin https://github.com/sgtest/cody-bench.git`,
+        git init &&
+        git add ${options.context.sourcesDir} &&
+        git commit -m "initial commit" &&
+        git remote add origin https://github.com/sgtest/cody-bench.git`,
         { cwd: options.workspace }
     )
+}
+
+async function indexContextSources(options: CodyBenchOptions): Promise<void> {
+    // If this is our first run, we need to index the context sources dir so symf & embeddings work
+
+    // TODO this is hacky but works
+    const symfIndex = path.join(
+        `${process.env.HOME}`,
+        'Library/Application Support/Cody-nodejs/symf/indexroot',
+        options.workspace
+    )
+
+    // TODO figure out what can we do with embeddings - don't really have access to the correct dir here
+
+    // Allow max 10 min for the index to be ready
+    const maxWaitTime = 10 * 60 * 1000
+    const sleepTime = 5000
+    let waitTime = 0
+    while (waitTime < maxWaitTime) {
+        if (fs.existsSync(symfIndex)) {
+            console.log('Symf index ready')
+            return
+        }
+        console.log('Symf index not ready, waiting...')
+        await sleep(sleepTime)
+        waitTime += sleepTime
+    }
+
+    throw new Error('Symf index not ready after 10 min, exiting')
 }

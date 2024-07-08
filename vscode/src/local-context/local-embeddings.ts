@@ -37,9 +37,7 @@ export async function createLocalEmbeddingsController(
         (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEmbeddingsGenerateMetadata))
             ? sourcegraphMetadataModelConfig
             : sourcegraphModelConfig
-    const autoIndexingEnabled = await featureFlagProvider.evaluateFeatureFlag(
-        FeatureFlag.CodyEmbeddingsAutoIndexing
-    )
+    const autoIndexingEnabled = true // TODO figure out how to override this
     return new LocalEmbeddingsController(context, config, modelConfig, autoIndexingEnabled)
 }
 

@@ -30,7 +30,6 @@ export async function evaluateChatStrategy(
             'Missing cody-bench.chatModel. To fix this problem, add "customConfiguration": { "cody-bench.chatModel": "claude-3-sonnet" } to the cody-bench JSON config.'
         )
     }
-    await sleep(10000)
     const llm = new LlmJudge(options)
     const scores: LlmJudgeScore[] = []
     const model = ModelsService.getModelByIDSubstringOrError(chatModel).model
