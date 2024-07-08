@@ -22,7 +22,16 @@ interface WebviewProtocolDelegate {
         handle: NativeWebviewHandle,
         viewType: string,
         title: string,
-        showOptions: { preserveFocus: boolean; viewColumn: vscode.ViewColumn }
+        showOptions: { preserveFocus: boolean; viewColumn: vscode.ViewColumn },
+        options: {
+            enableScripts: boolean
+            enableForms: boolean
+            enableCommandUris: boolean | readonly string[]
+            localResourceRoots: readonly string[] | undefined
+            portMapping: readonly { webviewPort: number; extensionHostPort: number }[]
+            enableFindWidget: boolean
+            retainContextWhenHidden: boolean
+        }
     ): void
     dispose(handle: NativeWebviewHandle): void
     reveal(handle: NativeWebviewHandle, viewColumn?: vscode.ViewColumn, preserveFocus?: boolean): void
@@ -45,12 +54,13 @@ export function registerNativeWebviewHandlers(
         webviewBundleLocalPrefix: 'TODO', // TODO get the extension path
         webviewBundleServingPrefix: capabilities.webviewBundleServingPrefix,
         cspSource: capabilities.cspSource,
-        createWebviewPanel: (handle, viewType, title, showOptions) => {
+        createWebviewPanel: (handle, viewType, title, showOptions, options) => {
             agent.notify('webview/createWebviewPanel', {
                 handle,
                 viewType,
                 title,
                 showOptions,
+                options,
             })
         },
         dispose: handle => {
@@ -111,10 +121,27 @@ export function registerNativeWebviewHandlers(
                 viewColumn: showOptions,
             }
         }
-        delegate.createWebviewPanel(panel.handle, viewType, title, {
-            preserveFocus: showOptions?.preserveFocus ?? false,
-            viewColumn: showOptions?.viewColumn ?? vscode.ViewColumn.Active,
-        })
+        delegate.createWebviewPanel(
+            panel.handle,
+            viewType,
+            title,
+            {
+                preserveFocus: showOptions?.preserveFocus ?? false,
+                viewColumn: showOptions?.viewColumn ?? vscode.ViewColumn.Active,
+            },
+            {
+                enableScripts: panel.webview.options.enableScripts ?? false,
+                enableForms:
+                    panel.webview.options.enableForms ?? panel.webview.options.enableScripts ?? false,
+                enableCommandUris: panel.webview.options.enableCommandUris ?? false,
+                localResourceRoots: (panel.webview.options.localResourceRoots || []).map(uri =>
+                    uri.toString()
+                ),
+                portMapping: panel.webview.options.portMapping ?? [],
+                enableFindWidget: panel.options.enableFindWidget ?? false,
+                retainContextWhenHidden: panel.options.retainContextWhenHidden ?? false,
+            }
+        )
         agent.webPanels.nativePanels.set(panel.handle, {
             didReceiveMessage(message: any) {
                 ;(panel.webview as NativeWebview).didReceiveMessageEmitter.fire(message)

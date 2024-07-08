@@ -440,9 +440,6 @@ export type ServerNotifications = {
     // Clients with 'native' webview capability.
     'webview/createWebviewPanel': [
         {
-            // TODO: Expand vscode shim's webview handlers to express
-            // the rest of the vscode API and pass those settings here.
-            // For example, enable find-in-page etc.
             handle: string
             viewType: string
             title: string
@@ -450,12 +447,25 @@ export type ServerNotifications = {
                 preserveFocus: boolean
                 viewColumn: number
             }
+            options: {
+                // WebviewOptions
+                enableScripts: boolean
+                enableForms: boolean
+                enableCommandUris: boolean | readonly string[]
+                // Note, we model "missing" here because interpreting the default
+                // depends on the current workspace root.
+                localResourceRoots: readonly string[] | null | undefined // Note, in vscode, ? readonly Uri[]
+                portMapping: readonly { webviewPort: number; extensionHostPort: number }[]
+                // WebviewPanelOptions
+                enableFindWidget: boolean
+                retainContextWhenHidden: boolean
+            }
         },
     ]
     'webview/dispose': [{ handle: string }]
     'webview/reveal': [{ handle: string; viewColumn: number; preserveFocus: boolean }]
     'webview/setTitle': [{ handle: string; title: string }]
-    'webview/setIconPath': [{ handle: string; iconPathUri: string | undefined }]
+    'webview/setIconPath': [{ handle: string; iconPathUri: string | null | undefined }]
     'webview/setHtml': [{ handle: string; html: string }]
 }
 
