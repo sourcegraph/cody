@@ -659,6 +659,9 @@ importers:
       '@types/mocha':
         specifier: ^10.0.6
         version: 10.0.6
+      '@types/node-fetch':
+        specifier: ^2.6.4
+        version: 2.6.4
       '@types/npmcli__promise-spawn':
         specifier: ^6.0.3
         version: 6.0.3
@@ -734,6 +737,9 @@ importers:
       mocha:
         specifier: ^10.2.0
         version: 10.2.0
+      node-fetch:
+        specifier: ^2.6.4
+        version: 2.7.0
       ovsx:
         specifier: ^0.8.2
         version: 0.8.2

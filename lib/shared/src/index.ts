@@ -153,6 +153,7 @@ export {
     type CodeCompletionsParams,
     type SerializedCodeCompletionsParams,
     type CompletionResponseGenerator,
+    type CompletionResponseWithMetaData,
 } from './inferenceClient/misc'
 export type {
     IndexedKeywordContextFetcher,
