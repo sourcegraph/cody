@@ -1,0 +1,42 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`--context-file (animal test) 1`] = `
+"command: cody chat chat --context-file animal.ts -m implement a cow. Only print
+  the code without any explanation.
+exitCode: 0
+stdout: |+
+  \`\`\`typescript
+  class Cow implements StrangeAnimal {
+      makesSound(): 'moo' {
+          return 'moo';
+      }
+  }
+  \`\`\`
+
+stderr: ""
+"
+`;
+
+exports[`--context-repo (squirrel test) 1`] = `
+"command: cody chat chat --context-repo github.com/sourcegraph/sourcegraph -m
+  what is squirrel? Explain as briefly as possible.
+exitCode: 0
+stdout: >+
+  Squirrel is a high-performance, open-source object-relational database (ORD)
+  that provides a SQL interface for storing and querying JSON data. It is
+  designed to be embedded in applications, making it suitable for use cases such
+  as caching, analytics, and data storage in edge computing environments.
+
+stderr: ""
+"
+`;
+
+exports[`--message (hello world test) 1`] = `
+"command: cody chat chat -m respond with "hello" and nothing else
+exitCode: 0
+stdout: |+
+  hello
+
+stderr: ""
+"
+`;

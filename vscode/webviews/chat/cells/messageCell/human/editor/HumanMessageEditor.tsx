@@ -274,7 +274,6 @@ export const HumanMessageEditor: FunctionComponent<{
             onBlur={onBlur}
         >
             <PromptEditor
-                userInfo={userInfo}
                 contentEditableClassName={styles.editorContentEditable}
                 seamless={true}
                 placeholder={placeholder}

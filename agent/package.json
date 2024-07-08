@@ -1,6 +1,6 @@
 {
-  "name": "@sourcegraph/cody-agent",
-  "version": "0.1.2",
+  "name": "@sourcegraph/cody",
+  "version": "0.2.0",
   "description": "Cody JSON-RPC agent for consistent cross-editor support",
   "license": "Apache-2.0",
   "repository": {
@@ -52,6 +52,9 @@
     "vscode-uri": "^3.0.7",
     "win-ca": "^3.5.1",
     "ws": "^8.16.0",
+    "json5": "^2.2.3"
+  },
+  "devDependencies": {
     "@types/dedent": "^0.7.0",
     "@types/diff": "^5.0.9",
     "@types/fast-json-stable-stringify": "^2.1.0",

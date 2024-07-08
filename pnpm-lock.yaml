@@ -126,6 +126,70 @@ importers:
       '@sourcegraph/telemetry':
         specifier: ^0.16.0
         version: 0.16.0
+      '@types/js-levenshtein':
+        specifier: ^1.1.1
+        version: 1.1.1
+      chalk:
+        specifier: ^5.3.0
+        version: 5.3.0
+      commander:
+        specifier: ^11.1.0
+        version: 11.1.0
+      csv-writer:
+        specifier: ^1.6.0
+        version: 1.6.0
+      dedent:
+        specifier: ^0.7.0
+        version: 0.7.0
+      easy-table:
+        specifier: ^1.2.0
+        version: 1.2.0
+      env-paths:
+        specifier: ^3.0.0
+        version: 3.0.0
+      fast-myers-diff:
+        specifier: ^3.2.0
+        version: 3.2.0
+      glob:
+        specifier: ^7.2.3
+        version: 7.2.3
+      js-levenshtein:
+        specifier: ^1.1.6
+        version: 1.1.6
+      json5:
+        specifier: ^2.2.3
+        version: 2.2.3
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
+      mac-ca:
+        specifier: ^2.0.3
+        version: 2.0.3
+      minimatch:
+        specifier: ^9.0.3
+        version: 9.0.3
+      open:
+        specifier: ^8.4.2
+        version: 8.4.2
+      ora:
+        specifier: ^8.0.1
+        version: 8.0.1
+      pretty-ms:
+        specifier: ^8.0.0
+        version: 8.0.0
+      uuid:
+        specifier: ^9.0.0
+        version: 9.0.0
+      vscode-uri:
+        specifier: ^3.0.7
+        version: 3.0.7
+      win-ca:
+        specifier: ^3.5.1
+        version: 3.5.1
+      ws:
+        specifier: ^8.16.0
+        version: 8.16.0
+    devDependencies:
       '@types/dedent':
         specifier: ^0.7.0
         version: 0.7.0
@@ -141,9 +205,6 @@ importers:
       '@types/google-protobuf':
         specifier: 3.15.12
         version: 3.15.12
-      '@types/js-levenshtein':
-        specifier: ^1.1.1
-        version: 1.1.1
       '@types/lodash':
         specifier: ^4.14.195
         version: 4.17.0
@@ -165,81 +226,24 @@ importers:
       '@types/ws':
         specifier: ^8.5.10
         version: 8.5.10
-      chalk:
-        specifier: ^5.3.0
-        version: 5.3.0
-      commander:
-        specifier: ^11.1.0
-        version: 11.1.0
-      csv-writer:
-        specifier: ^1.6.0
-        version: 1.6.0
-      dedent:
-        specifier: ^0.7.0
-        version: 0.7.0
       diff:
         specifier: ^5.2.0
         version: 5.2.0
-      easy-table:
-        specifier: ^1.2.0
-        version: 1.2.0
-      env-paths:
-        specifier: ^3.0.0
-        version: 3.0.0
       esbuild:
         specifier: ^0.18.19
         version: 0.18.20
       fast-json-stable-stringify:
         specifier: ^2.1.0
         version: 2.1.0
-      fast-myers-diff:
-        specifier: ^3.2.0
-        version: 3.2.0
-      glob:
-        specifier: ^7.2.3
-        version: 7.2.3
       google-protobuf:
         specifier: ^3.21.2
         version: 3.21.2
-      js-levenshtein:
-        specifier: ^1.1.6
-        version: 1.1.6
-      lodash:
-        specifier: ^4.17.21
-        version: 4.17.21
-      mac-ca:
-        specifier: ^2.0.3
-        version: 2.0.3
-      minimatch:
-        specifier: ^9.0.3
-        version: 9.0.3
-      open:
-        specifier: ^8.4.2
-        version: 8.4.2
-      ora:
-        specifier: ^8.0.1
-        version: 8.0.1
       parse-git-diff:
         specifier: ^0.0.14
         version: 0.0.14
-      pretty-ms:
-        specifier: ^8.0.0
-        version: 8.0.0
       rimraf:
         specifier: ^5.0.5
         version: 5.0.5
-      uuid:
-        specifier: ^9.0.0
-        version: 9.0.0
-      vscode-uri:
-        specifier: ^3.0.7
-        version: 3.0.7
-      win-ca:
-        specifier: ^3.5.1
-        version: 3.5.1
-      ws:
-        specifier: ^8.16.0
-        version: 8.16.0
       yaml:
         specifier: ^2.3.4
         version: 2.3.4
@@ -728,6 +732,9 @@ importers:
       http-proxy-middleware:
         specifier: ^3.0.0
         version: 3.0.0
+      kill-sync:
+        specifier: ^1.0.3
+        version: 1.0.3
       mocha:
         specifier: ^10.2.0
         version: 10.2.0
@@ -776,7 +783,10 @@ importers:
 
   web:
     devDependencies:
-      '@sourcegraph/cody-agent':
+      '@openctx/vscode-lib':
+        specifier: ^0.0.13
+        version: 0.0.13
+      '@sourcegraph/cody':
         specifier: workspace:*
         version: link:../agent
       '@sourcegraph/cody-shared':
@@ -833,6 +843,9 @@ importers:
       util:
         specifier: ^0.12.5
         version: 0.12.5
+      vite-plugin-svgr:
+        specifier: ^4.2.0
+        version: 4.2.0(typescript@5.4.2)(vite@5.2.11)
       vscode-uri:
         specifier: ^3.0.7
         version: 3.0.7
@@ -2359,6 +2372,7 @@ packages:
     cpu: [arm64]
     os: [android]
     requiresBuild: true
+    dev: true
     optional: true
 
   /@esbuild/android-arm64@0.20.2:
@@ -2376,6 +2390,7 @@ packages:
     cpu: [arm]
     os: [android]
     requiresBuild: true
+    dev: true
     optional: true
 
   /@esbuild/android-arm@0.20.2:
@@ -2393,6 +2408,7 @@ packages:
     cpu: [x64]
     os: [android]
     requiresBuild: true
+    dev: true
     optional: true
 
   /@esbuild/android-x64@0.20.2:
@@ -2410,6 +2426,7 @@ packages:
     cpu: [arm64]
     os: [darwin]
     requiresBuild: true
+    dev: true
     optional: true
 
   /@esbuild/darwin-arm64@0.20.2:
@@ -2427,6 +2444,7 @@ packages:
     cpu: [x64]
     os: [darwin]
     requiresBuild: true
+    dev: true
     optional: true
 
   /@esbuild/darwin-x64@0.20.2:
@@ -2444,6 +2462,7 @@ packages:
     cpu: [arm64]
     os: [freebsd]
     requiresBuild: true
+    dev: true
     optional: true
 
   /@esbuild/freebsd-arm64@0.20.2:
@@ -2461,6 +2480,7 @@ packages:
     cpu: [x64]
     os: [freebsd]
     requiresBuild: true
+    dev: true
     optional: true
 
   /@esbuild/freebsd-x64@0.20.2:
@@ -2478,6 +2498,7 @@ packages:
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
+    dev: true
     optional: true
 
   /@esbuild/linux-arm64@0.20.2:
@@ -2495,6 +2516,7 @@ packages:
     cpu: [arm]
     os: [linux]
     requiresBuild: true
+    dev: true
     optional: true
 
   /@esbuild/linux-arm@0.20.2:
@@ -2512,6 +2534,7 @@ packages:
     cpu: [ia32]
     os: [linux]
     requiresBuild: true
+    dev: true
     optional: true
 
   /@esbuild/linux-ia32@0.20.2:
@@ -2529,6 +2552,7 @@ packages:
     cpu: [loong64]
     os: [linux]
     requiresBuild: true
+    dev: true
     optional: true
 
   /@esbuild/linux-loong64@0.20.2:
@@ -2546,6 +2570,7 @@ packages:
     cpu: [mips64el]
     os: [linux]
     requiresBuild: true
+    dev: true
     optional: true
 
   /@esbuild/linux-mips64el@0.20.2:
@@ -2563,6 +2588,7 @@ packages:
     cpu: [ppc64]
     os: [linux]
     requiresBuild: true
+    dev: true
     optional: true
 
   /@esbuild/linux-ppc64@0.20.2:
@@ -2580,6 +2606,7 @@ packages:
     cpu: [riscv64]
     os: [linux]
     requiresBuild: true
+    dev: true
     optional: true
 
   /@esbuild/linux-riscv64@0.20.2:
@@ -2597,6 +2624,7 @@ packages:
     cpu: [s390x]
     os: [linux]
     requiresBuild: true
+    dev: true
     optional: true
 
   /@esbuild/linux-s390x@0.20.2:
@@ -2614,6 +2642,7 @@ packages:
     cpu: [x64]
     os: [linux]
     requiresBuild: true
+    dev: true
     optional: true
 
   /@esbuild/linux-x64@0.20.2:
@@ -2631,6 +2660,7 @@ packages:
     cpu: [x64]
     os: [netbsd]
     requiresBuild: true
+    dev: true
     optional: true
 
   /@esbuild/netbsd-x64@0.20.2:
@@ -2648,6 +2678,7 @@ packages:
     cpu: [x64]
     os: [openbsd]
     requiresBuild: true
+    dev: true
     optional: true
 
   /@esbuild/openbsd-x64@0.20.2:
@@ -2665,6 +2696,7 @@ packages:
     cpu: [x64]
     os: [sunos]
     requiresBuild: true
+    dev: true
     optional: true
 
   /@esbuild/sunos-x64@0.20.2:
@@ -2682,6 +2714,7 @@ packages:
     cpu: [arm64]
     os: [win32]
     requiresBuild: true
+    dev: true
     optional: true
 
   /@esbuild/win32-arm64@0.20.2:
@@ -2699,6 +2732,7 @@ packages:
     cpu: [ia32]
     os: [win32]
     requiresBuild: true
+    dev: true
     optional: true
 
   /@esbuild/win32-ia32@0.20.2:
@@ -2716,6 +2750,7 @@ packages:
     cpu: [x64]
     os: [win32]
     requiresBuild: true
+    dev: true
     optional: true
 
   /@esbuild/win32-x64@0.20.2:
@@ -3393,13 +3428,11 @@ packages:
       lru-cache: 10.2.2
       picomatch: 3.0.1
       rxjs: 7.8.1
-    dev: false
 
   /@openctx/protocol@0.0.15:
     resolution: {integrity: sha512-mT1iIb+tAdY0SUwFoM8xscvrC9c5wbCQ3hbzQgI5LKaXIULmPdQa478MtGxNto2zfp8QD6VKrySsKbzQ3JFfrA==}
     dependencies:
       '@openctx/schema': 0.0.12
-    dev: false
 
   /@openctx/provider-linear-issues@0.0.6:
     resolution: {integrity: sha512-h1N8OtATRDIVB/VJ/m3WBFdVQBwFpa1RHlDiNhg8znCAK9qhw6Y/GMTl89Q6IBZwIdFQ2uxxzF7d8bkyBIiEDQ==}
@@ -3417,11 +3450,9 @@ packages:
       '@openctx/protocol': 0.0.15
       '@openctx/schema': 0.0.12
       picomatch: 3.0.1
-    dev: false
 
   /@openctx/schema@0.0.12:
     resolution: {integrity: sha512-YEqmuasaOeAtcrhlN3/D6r+76J/omRbSBUPbv4azKQA7CDvG9MnfgV1Gv8JbFSz33XzI1h9wGbPi5uzb6o6peQ==}
-    dev: false
 
   /@openctx/ui-common@0.0.11:
     resolution: {integrity: sha512-3HESG+9UyAra9grHkyI9Fh6d6U5GAcz/kQ3cgOJgICR9Rx0WoTHrr3wgs7V0gOY3fJaL5f6wXEATBbRK3wOwqg==}
@@ -3430,7 +3461,6 @@ packages:
       marked: 12.0.2
       sanitize-html: 2.13.0
       xss: 1.0.15
-    dev: false
 
   /@openctx/vscode-lib@0.0.13:
     resolution: {integrity: sha512-lE26bXFVV8FQgayhBcFgdq+W4PrksB07TZmW/E3s9CTaEVUqMh/OW8o0Zo6R928Zsph+VibYsh/DTRHaavBGHA==}
@@ -3438,7 +3468,6 @@ packages:
       '@openctx/client': 0.0.19
       '@openctx/ui-common': 0.0.11
       rxjs: 7.8.1
-    dev: false
 
   /@opentelemetry/api-logs@0.45.1:
     resolution: {integrity: sha512-zVGq/k70l+kB/Wuv3O/zhptP2hvDhEbhDu9EtHde1iWZJf3FedeYS/nWVcMBkkyPAjS/JKNk86WN4CBQLGUuOw==}
@@ -6008,6 +6037,7 @@ packages:
 
   /@types/dedent@0.7.0:
     resolution: {integrity: sha512-EGlKlgMhnLt/cM4DbUSafFdrkeJoC9Mvnj0PUCU7tFmTjMjNRT957kXCx0wYm3JuEq4o4ZsS5vG+NlkM2DMd2A==}
+    dev: true
 
   /@types/detect-port@1.3.5:
     resolution: {integrity: sha512-Rf3/lB9WkDfIL9eEKaSYKc+1L/rNVYBjThk22JTqQw0YozXarX8YljFAz+HCoC6h4B4KwCMsBPZHaFezwT4BNA==}
@@ -6015,6 +6045,7 @@ packages:
 
   /@types/diff@5.0.9:
     resolution: {integrity: sha512-RWVEhh/zGXpAVF/ZChwNnv7r4rvqzJ7lYNSmZSVTxjV0PBLf6Qu7RNg+SUtkpzxmiNkjCx0Xn2tPp7FIkshJwQ==}
+    dev: true
 
   /@types/doctrine@0.0.3:
     resolution: {integrity: sha512-w5jZ0ee+HaPOaX25X2/2oGR/7rgAQSYII7X7pp0m9KgBfMP7uKfMfTvcpl5Dj+eDBbpxKGiqE+flqDr6XTd2RA==}
@@ -6077,7 +6108,7 @@ packages:
     deprecated: This is a stub types definition. fast-json-stable-stringify provides its own type definitions, so you do not need this installed.
     dependencies:
       fast-json-stable-stringify: 2.1.0
-    dev: false
+    dev: true
 
   /@types/find-cache-dir@3.2.1:
     resolution: {integrity: sha512-frsJrz2t/CeGifcu/6uRo4b+SzAwT4NYCVPu1GN8IB9XTzrpPkGuV0tmh9mN+/L0PklAlsC3u5Fxt0ju00LXIw==}
@@ -6101,10 +6132,11 @@ packages:
     dependencies:
       '@types/minimatch': 5.1.2
       '@types/node': 20.12.7
+    dev: true
 
   /@types/google-protobuf@3.15.12:
     resolution: {integrity: sha512-40um9QqwHjRS92qnOaDpL7RmDK15NuZYo9HihiJRbYkMQZlWnuH8AdvbMy8/o6lgLmKbDUKa+OALCltHdbOTpQ==}
-    dev: false
+    dev: true
 
   /@types/graceful-fs@4.1.9:
     resolution: {integrity: sha512-olP3sd1qOEe5dXTSaFvQG+02VdRXcdytWLAZsAq1PecU8uqQAhkrnbli7DagjtXKW/Bl7YJbUsa8MPcuc8LHEQ==}
@@ -6163,7 +6195,7 @@ packages:
 
   /@types/lodash@4.17.0:
     resolution: {integrity: sha512-t7dhREVv6dbNj0q17X12j7yDG4bD/DHYX7o5/DbDxobP0HnGPgpRz2Ej77aL7TZT3DSw13fqUTj8J4mMnqa7WA==}
-    dev: false
+    dev: true
 
   /@types/long@4.0.2:
     resolution: {integrity: sha512-MqTGEo5bj5t157U6fA/BiDynNkn0YknVdh48CMPkTSpFTVmvao5UQmm7uEF6xBEo7qIMAlY/JSleYaE6VOdpaA==}
@@ -6200,6 +6232,7 @@ packages:
 
   /@types/minimatch@5.1.2:
     resolution: {integrity: sha512-K0VQKziLUWkVKiRVrx4a40iPaxTUefQmjtkQofBkYRcoaaL/8rhwDWww9qWbrgicNOgnpIsMxyNIUM4+n6dUIA==}
+    dev: true
 
   /@types/minimist@1.2.5:
     resolution: {integrity: sha512-hov8bUuiLiyFPGyFPE1lwWhmzYbirOXQNNo40+y3zow8aFVTeyn3VWL0VFFfdNddA8S4Vf0Tc062rzyNr7Paag==}
@@ -6229,7 +6262,7 @@ packages:
     resolution: {integrity: sha512-FQx220y22OKNTqaByeBGqHWYz4cl94tpcxeFdvBo3wjG6XPBuZ0BNgNZRV5J5TFmmcsJ4IzsLkmGRiQbnYsBEQ==}
     dependencies:
       '@types/node': 20.12.7
-    dev: false
+    dev: true
 
   /@types/node@18.19.31:
     resolution: {integrity: sha512-ArgCD39YpyyrtFKIqMDvjz79jto5fcI/SVUs2HwB+f0dAzq68yqOdyaSivLiLugSziTpNXLQrVb7RZFmdZzbhA==}
@@ -6266,7 +6299,7 @@ packages:
     deprecated: This is a stub types definition. open provides its own type definitions, so you do not need this installed.
     dependencies:
       open: 8.4.2
-    dev: false
+    dev: true
 
   /@types/pako@2.0.3:
     resolution: {integrity: sha512-bq0hMV9opAcrmE0Byyo0fY3Ew4tgOevJmQ9grUhpXQhYfyLJ1Kqg3P33JT5fdbT2AjeAjR51zqqVjAL/HMkx7Q==}
@@ -6394,6 +6427,7 @@ packages:
 
   /@types/uuid@9.0.2:
     resolution: {integrity: sha512-kNnC1GFBLuhImSnV7w4njQkUiJi0ZXUycu1rUaouPqiKlXkh77JKgdRnTAp1x5eBwcIwbtI+3otwzuIDEuDoxQ==}
+    dev: true
 
   /@types/uuid@9.0.8:
     resolution: {integrity: sha512-jg+97EGIcY9AGHJJRaaPVgetKDsrTgbRjQ5Msgjh/DQKEFl0DtyRr/VCOyD1T2R1MNeWPK/u7JoGhlDZnKBAfA==}
@@ -6401,13 +6435,14 @@ packages:
 
   /@types/vscode@1.80.0:
     resolution: {integrity: sha512-qK/CmOdS2o7ry3k6YqU4zD3R2AYlJfbwBoSbKpBoP+GpXNE+0NEgJOli4n0bm0diK5kfBnchgCEj4igQz/44Hg==}
+    dev: true
 
   /@types/win-ca@3.5.4:
     resolution: {integrity: sha512-WDlA6ZvTg1g9ygKcDCQb4GjEtk0RcZyx09btQea9NZqfKPl+WtyOlEwNfYMhK2E5sRCo6hMtct1EX3l04yAC1A==}
     dependencies:
       '@types/node': 20.12.7
       '@types/node-forge': 1.3.11
-    dev: false
+    dev: true
 
   /@types/wrap-ansi@3.0.0:
     resolution: {integrity: sha512-ltIpx+kM7g/MLRZfkbL7EsCEjfzCcScLpkg37eXEtx5kmrAKBkTJwd1GIAjDSL8wTpM6Hzn5YO4pSb91BEwu1g==}
@@ -6417,7 +6452,7 @@ packages:
     resolution: {integrity: sha512-vmQSUcfalpIq0R9q7uTo2lXs6eGIpt9wtnLdMv9LVpIjCA/+ufZRozlVoVelIYixx1ugCBKDhn89vnsEGOCx9A==}
     dependencies:
       '@types/node': 20.12.7
-    dev: false
+    dev: true
 
   /@ungap/structured-clone@1.2.0:
     resolution: {integrity: sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==}
@@ -7761,7 +7796,6 @@ packages:
 
   /commander@2.20.3:
     resolution: {integrity: sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==}
-    dev: false
 
   /commander@4.1.1:
     resolution: {integrity: sha512-NOKm8xhkzAjzFx8B2v5OAHT+u5pRQc2UCa2Vq9jYL/31o2wi9mxBA7LIFs3sV5VSC49z6pEhfbMULvShKj26WA==}
@@ -8001,7 +8035,6 @@ packages:
 
   /cssfilter@0.0.10:
     resolution: {integrity: sha512-FAaLDaplstoRsDR8XGYH51znUN0UY7nMc6Z9/fvE8EXGwvJE9hu7W2vHwx1+bd6gCYnln9nLbzxFTrcO9YQDZw==}
-    dev: false
 
   /csso@5.0.5:
     resolution: {integrity: sha512-0LrrStPOdJj+SPCCrGhzryycLjwcgUSHBtxNA8aIDxf0GLsRh1cKYhB00Gd1lDOS4yGH69+SNn13+TWbVHETFQ==}
@@ -8204,7 +8237,6 @@ packages:
   /deepmerge@4.3.1:
     resolution: {integrity: sha512-3sUqbMEc77XqpdNO7FRyRog+eW3ph+GYCbj+rK+uYyRMuwsVy0rMiVtPn+QJlKFvWP/1PYpapqYn0Me2knFn+A==}
     engines: {node: '>=0.10.0'}
-    dev: false
 
   /default-browser-id@3.0.0:
     resolution: {integrity: sha512-OZ1y3y0SqSICtE8DE4S8YOE9UZOJ8wO16fKWVP5J1Qz42kV9jcnMVFrEE/noXb/ss3Q4pZIH79kxofzyNNtUNA==}
@@ -8377,7 +8409,6 @@ packages:
   /diff@5.2.0:
     resolution: {integrity: sha512-uIFDxqpRZGZ6ThOk84hEfqWoHx2devRFvpTZcTHur85vImfaxUbTW9Ryh4CpCuDnToOP1CEtXKIgytHBPVff5A==}
     engines: {node: '>=0.3.1'}
-    dev: false
 
   /dir-glob@3.0.1:
     resolution: {integrity: sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==}
@@ -8637,6 +8668,7 @@ packages:
       '@esbuild/win32-arm64': 0.18.20
       '@esbuild/win32-ia32': 0.18.20
       '@esbuild/win32-x64': 0.18.20
+    dev: true
 
   /esbuild@0.20.2:
     resolution: {integrity: sha512-WdOOppmUNU+IbZ0PaDiTst80zjnrOkyJNHoKupIcVyU8Lvla3Ugx94VzkQ32Ijqd7UhHJy75gNWDMUekcrSJ6g==}
@@ -9619,7 +9651,7 @@ packages:
 
   /google-protobuf@3.21.2:
     resolution: {integrity: sha512-3MSOYFO5U9mPGikIYCzK0SaThypfGgS6bHqrUGXG3DPHCrb+txNqeEcns1W0lkGfk0rCyNXm7xB9rMxnCiZOoA==}
-    dev: false
+    dev: true
 
   /gopd@1.0.1:
     resolution: {integrity: sha512-d65bNlIadxvpb/A2abVdlqKqV563juRnZ1Wtk6s1sIR8uNsXR70xqIzVqxVf1eTqDunwT2MkczEeaezCKTZhwA==}
@@ -10761,7 +10793,6 @@ packages:
     resolution: {integrity: sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==}
     engines: {node: '>=6'}
     hasBin: true
-    dev: true
 
   /jsonc-parser@3.2.1:
     resolution: {integrity: sha512-AilxAyFOAcK5wA1+LeaySVBrHsGQvUFCDWXKpZjzaL0PqW+xfBOttn8GNtWKFWqneyMZj41MWF9Kl6iPWLwgOA==}
@@ -10818,6 +10849,10 @@ packages:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
     dependencies:
       json-buffer: 3.0.1
+    dev: true
+
+  /kill-sync@1.0.3:
+    resolution: {integrity: sha512-3UKwyIpWxg2WGrYyN3f+Fh68QZ4WApTHWwEnyeDK96HSRy9In9UQvanCwIsaLQV7gOzczotBeoX8jgPNZ1g2Zw==}
     dev: true
 
   /kind-of@3.2.2:
@@ -11337,7 +11372,6 @@ packages:
     resolution: {integrity: sha512-qXUm7e/YKFoqFPYPa3Ukg9xlI5cyAtGmyEIzMfW//m6kXwCy2Ps9DYf5ioijFKQ8qyuscrHoY04iJGctu2Kg0Q==}
     engines: {node: '>= 18'}
     hasBin: true
-    dev: false
 
   /marked@4.3.0:
     resolution: {integrity: sha512-PRsaiG84bK+AMvxziE/lCFss8juXjNaWzVbN5tXAm4XjeaS9NAHhop+PjQxz2A9h8Q4M/xGmzP8vqNwy6JeK0A==}
@@ -12665,7 +12699,6 @@ packages:
 
   /parse-git-diff@0.0.14:
     resolution: {integrity: sha512-UHNB4IWZ0dae4Z9aKgQTAm1gTBqBpmqKwoLx2/iEaVY9hQlqstDnvdWsq5fJjF2iC6368OvAB6LWUJab5wk9VQ==}
-    dev: false
 
   /parse-json@5.2.0:
     resolution: {integrity: sha512-ayCKvm/phCGxOkYRSCM82iDwct8/EonSEgCSxWxD7ve6jHggsFl4fZVQBPRNgQoKiuV/odhFrGzQXZwbifC8Rg==}
@@ -12695,7 +12728,6 @@ packages:
 
   /parse-srcset@1.0.2:
     resolution: {integrity: sha512-/2qh0lav6CmI15FzA3i/2Bzk2zCgQhGMkvhOhKNcBVQ1ldgpbfiNTVslmooUmWJcADi1f1kIeynbDRVzNlfR6Q==}
-    dev: false
 
   /parse5-htmlparser2-tree-adapter@7.0.0:
     resolution: {integrity: sha512-B77tOZrqqfUfnVcOrUvfdLbz4pu4RopLD/4vmu3HUPswwTA8OH0EMW9BlWR2B0RCoiZRAHEUu7IxeP1Pd1UU+g==}
@@ -12797,7 +12829,6 @@ packages:
   /picomatch@3.0.1:
     resolution: {integrity: sha512-I3EurrIQMlRc9IaAZnqRR044Phh2DXY+55o7uJ0V+hYZAcQYSuFWsc9q5PvyDHUSCe1Qxn/iBz+78s86zWnGag==}
     engines: {node: '>=10'}
-    dev: false
 
   /picomatch@4.0.2:
     resolution: {integrity: sha512-M7BAV6Rlcy5u+m6oPhAPFgJTzAioX/6B0DxyvDlo9l8+T3nLKbrczg2WLUyzd45L8RqfUMyGPzekbMvX2Ldkwg==}
@@ -13893,7 +13924,7 @@ packages:
     hasBin: true
     dependencies:
       glob: 10.3.12
-    dev: false
+    dev: true
 
   /rollup@4.17.2:
     resolution: {integrity: sha512-/9ClTJPByC0U4zNLowV1tMBe8yMEAxewtR3cUNX5BoEpGH3dQEWpJLr6CLp0fPdYRF/fzVOgvDb1zXuakwF5kQ==}
@@ -13988,7 +14019,6 @@ packages:
       is-plain-object: 5.0.0
       parse-srcset: 1.0.2
       postcss: 8.4.38
-    dev: false
 
   /sax@1.3.0:
     resolution: {integrity: sha512-0s+oAmw9zLl1V1cS9BtZN7JAd0cW5e0QH4W3LWEK6a4LaLEA2OTpGYWDY+6XasBLtz6wkm3u1xRw95mRuJ59WA==}
@@ -16184,7 +16214,6 @@ packages:
     dependencies:
       commander: 2.20.3
       cssfilter: 0.0.10
-    dev: false
 
   /xtend@4.0.2:
     resolution: {integrity: sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==}
@@ -16204,6 +16233,7 @@ packages:
   /yaml@2.3.4:
     resolution: {integrity: sha512-8aAvwVUSHpfEqTQ4w/KMlf3HcRdt50E5ODIQJBw1fQ5RL34xabzxtUlzTXVqc4rkZsPbvrXKWnABCD7kWSmocA==}
     engines: {node: '>= 14'}
+    dev: true
 
   /yaml@2.4.2:
     resolution: {integrity: sha512-B3VqDZ+JAg1nZpaEmWtTXUlBneoGx6CPM9b0TENK6aoSu5t73dItudwdgmi6tHlIZZId4dZ9skcAQ2UbcyAeVA==}

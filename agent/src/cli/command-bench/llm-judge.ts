@@ -1,6 +1,6 @@
 import { ModelsService, type PromptString } from '@sourcegraph/cody-shared'
 import { SourcegraphNodeCompletionsClient } from '../../../../vscode/src/completions/nodeClient'
-import type { CodyBenchOptions } from './cody-bench'
+import type { CodyBenchOptions } from './command-bench'
 
 export interface LlmJudgeScore {
     score?: string // 'bad' | 'acceptable' | 'amazing'

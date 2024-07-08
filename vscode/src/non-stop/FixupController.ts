@@ -12,7 +12,6 @@ import {
 import { executeEdit } from '../edit/execute'
 import type { EditIntent, EditMode } from '../edit/types'
 import { logDebug } from '../log'
-import { telemetryService } from '../services/telemetry'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 
@@ -46,16 +45,10 @@ export class FixupController
     private readonly persistenceTracker = new PersistenceTracker(vscode.workspace, {
         onPresent: ({ metadata, ...event }) => {
             const safeMetadata = splitSafeMetadata({ ...event, ...metadata })
-            telemetryService.log('CodyVSCodeExtension:fixup:persistence:present', safeMetadata, {
-                hasV2Event: true,
-            })
             telemetryRecorder.recordEvent('cody.fixup.persistence', 'present', safeMetadata)
         },
         onRemoved: ({ metadata, ...event }) => {
             const safeMetadata = splitSafeMetadata({ ...event, ...metadata })
-            telemetryService.log('CodyVSCodeExtension:fixup:persistence:present', safeMetadata, {
-                hasV2Event: true,
-            })
             telemetryRecorder.recordEvent('cody.fixup.persistence', 'present', safeMetadata)
         },
     })
@@ -194,9 +187,6 @@ export class FixupController
 
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         if (!editOk) {
-            telemetryService.log('CodyVSCodeExtension:fixup:revert:failed', legacyMetadata, {
-                hasV2Event: true,
-            })
             telemetryRecorder.recordEvent('cody.fixup.revert', 'failed', {
                 metadata,
                 privateMetadata: {
@@ -205,9 +195,6 @@ export class FixupController
                 },
             })
         } else {
-            telemetryService.log('CodyVSCodeExtension:fixup:reverted', legacyMetadata, {
-                hasV2Event: true,
-            })
             telemetryRecorder.recordEvent('cody.fixup.reverted', 'clicked', {
                 metadata,
                 privateMetadata: {
@@ -527,9 +514,6 @@ export class FixupController
         }
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         if (!editOk) {
-            telemetryService.log('CodyVSCodeExtension:fixup:apply:failed', legacyMetadata, {
-                hasV2Event: true,
-            })
             telemetryRecorder.recordEvent('cody.fixup.apply', 'failed', {
                 metadata,
                 privateMetadata,
@@ -544,7 +528,6 @@ export class FixupController
             return
         }
 
-        telemetryService.log('CodyVSCodeExtension:fixup:applied', legacyMetadata, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
             metadata,
             privateMetadata,
@@ -581,9 +564,6 @@ export class FixupController
         })
 
         const logAcceptance = (acceptance: 'rejected' | 'accepted') => {
-            telemetryService.log(`CodyVSCodeExtension:fixup:user:${acceptance}`, metadata, {
-                hasV2Event: true,
-            })
             telemetryRecorder.recordEvent('cody.fixup.user', acceptance, {
                 metadata,
                 privateMetadata,

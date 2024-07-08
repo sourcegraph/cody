@@ -20,7 +20,6 @@ import { isNetworkError } from '../services/AuthProvider'
 import { workspace } from 'vscode'
 import { doesFileExist } from '../commands/utils/workspace-files'
 import { CodyTaskState } from '../non-stop/utils'
-import { telemetryService } from '../services/telemetry'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 import type { EditManagerOptions } from './manager'
@@ -198,9 +197,6 @@ export class EditProvider {
                 source: task.source,
                 ...countCode(response),
             }
-            telemetryService.log('CodyVSCodeExtension:fixupResponse:hasCode', legacyMetadata, {
-                hasV2Event: true,
-            })
             const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
             const endpoint = this.config.authProvider?.getAuthStatus()?.endpoint
             telemetryRecorder.recordEvent('cody.fixup.response', 'hasCode', {

@@ -120,10 +120,10 @@ describe('AutocompleteStageCounter', () => {
             metadata: {
                 preLastCandidate: 1,
                 preCache: 0,
-                preSmartThrottle: 0,
                 preDebounce: 0,
                 preContextRetrieval: 0,
                 preNetworkRequest: 0,
+                preSmartThrottle: 0,
                 preFinalCancellationCheck: 0,
                 preVisibilityCheck: 0,
             },
@@ -154,9 +154,9 @@ describe('AutocompleteStageCounter', () => {
             metadata: {
                 preLastCandidate: 0,
                 preCache: 1,
-                preSmartThrottle: 0,
                 preDebounce: 0,
                 preContextRetrieval: 0,
+                preSmartThrottle: 0,
                 preNetworkRequest: 0,
                 preFinalCancellationCheck: 0,
                 preVisibilityCheck: 0,

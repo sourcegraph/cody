@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import {
     type AuthStatus,
     type ChatClient,
-    ConfigFeaturesSingleton,
+    ClientConfigSingleton,
     type ConfigurationWithAccessToken,
     type DefaultCodyCommands,
     type Guardrails,
@@ -77,7 +77,6 @@ import { createStatusBar } from './services/StatusBar'
 import { upstreamHealthProvider } from './services/UpstreamHealthProvider'
 import { autocompleteStageCounterLogger } from './services/autocomplete-stage-counter-logger'
 import { setUpCodyIgnore } from './services/cody-ignore'
-import { createOrUpdateEventLogger, logPrefix, telemetryService } from './services/telemetry'
 import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import {
@@ -173,7 +172,14 @@ const register = async (
 
     await authProvider.init()
 
-    await exposeOpenCtxClient(context, initialConfig)
+    if (authProvider.getAuthStatus().authenticated) {
+        await exposeOpenCtxClient(
+            context,
+            initialConfig,
+            authProvider.getAuthStatus().isDotCom,
+            platform.createOpenCtxController
+        )
+    }
 
     await configWatcher.initAndOnChange(async config => {
         graphqlClient.onConfigurationChange(config)
@@ -259,6 +265,10 @@ const register = async (
 
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
+        // Refresh server-sent client configuration, as it controls which features the user has
+        // access to.
+        ClientConfigSingleton.getInstance().refreshConfig()
+
         // Reset the available models based on the auth change.
         await syncModels(authStatus)
 
@@ -290,10 +300,16 @@ const register = async (
         // Propagate access token through config
         const newConfig = await getFullConfig()
         configWatcher.set(newConfig)
-        // Re-sync whether guardrails is turned on
-        ConfigFeaturesSingleton.getInstance().refreshConfigFeatures()
         // Sync auth status to graphqlClient
         graphqlClient.onConfigurationChange(newConfig)
+
+        // Re-register expose openctx client
+        await exposeOpenCtxClient(
+            context,
+            initialConfig,
+            authStatus.isDotCom,
+            platform.createOpenCtxController
+        )
 
         // When logged out, user's endpoint will be set to null
         const isLoggedOut = !authStatus.isLoggedIn && !authStatus.endpoint
@@ -303,9 +319,6 @@ const register = async (
             : authStatus.isLoggedIn && !isAuthError
               ? 'connected'
               : 'failed'
-        telemetryService.log(`${logPrefix(newConfig.agentIDE)}:Auth:${eventValue}`, undefined, {
-            agent: true,
-        })
         telemetryRecorder.recordEvent('cody.auth', eventValue)
     })
 
@@ -319,6 +332,7 @@ const register = async (
 
     // Sync initial auth status
     const initAuthStatus = authProvider.getAuthStatus()
+    ClientConfigSingleton.getInstance().refreshConfig()
     await syncModels(initAuthStatus)
     await chatManager.syncAuthStatus(initAuthStatus)
     await configWatcher.initAndOnChange(() => ModelsService.onConfigChange(), disposables)
@@ -348,8 +362,8 @@ const register = async (
         id: DefaultCodyCommands | PromptString,
         args?: Partial<CodyCommandArgs>
     ): Promise<CommandResult | undefined> => {
-        const { commands } = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
-        if (!commands) {
+        const { customCommandsEnabled } = await ClientConfigSingleton.getInstance().getConfig()
+        if (!customCommandsEnabled) {
             void vscode.window.showErrorMessage(
                 'This feature has been disabled by your Sourcegraph site admin.'
             )
@@ -509,11 +523,6 @@ const register = async (
             vscode.env.openExternal(vscode.Uri.parse(CODY_FEEDBACK_URL.href))
         ),
         vscode.commands.registerCommand('cody.welcome', async () => {
-            telemetryService.log(
-                'CodyVSCodeExtension:walkthrough:clicked',
-                { page: 'welcome' },
-                { hasV2Event: true }
-            )
             telemetryRecorder.recordEvent('cody.walkthrough', 'clicked')
             // Hack: We have to run this twice to force VS Code to register the walkthrough
             // Open issue: https://github.com/microsoft/vscode/issues/186165
@@ -762,14 +771,12 @@ function registerChat(
 }
 
 /**
- * Create or update events infrastructure, both legacy (telemetryService) and
- * new (telemetryRecorder)
+ * Create or update events infrastructure, using the new telemetryRecorder.
  */
 async function configureEventsInfra(
     config: ConfigurationWithAccessToken,
     isExtensionModeDevOrTest: boolean,
     authProvider: AuthProvider
 ): Promise<void> {
-    await createOrUpdateEventLogger(config, isExtensionModeDevOrTest, authProvider)
     await createOrUpdateTelemetryRecorderProvider(config, isExtensionModeDevOrTest, authProvider)
 }

@@ -249,7 +249,7 @@ log:
                 text: Ok.
               - speaker: human
                 text: >-
-                  You have access to the provided codebase context. 
+                  You have access to the provided codebase context.
 
 
                   Question: implement a cow. Only print the code without any explanation.
@@ -360,7 +360,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {
@@ -475,7 +475,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query ContextFilters {
                   site {
                       codyContextFilters(version: V1) {
@@ -578,7 +578,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -698,7 +698,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -806,7 +806,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -914,7 +914,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -1044,7 +1044,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUserCodySubscription {
                   currentUser {
                       codySubscription {
@@ -1162,7 +1162,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -1258,7 +1258,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -1354,7 +1354,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -1450,7 +1450,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -1546,7 +1546,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -1642,7 +1642,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -1738,7 +1738,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -1834,7 +1834,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -1930,7 +1930,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -2026,7 +2026,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -2122,7 +2122,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -2216,7 +2216,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query EvaluateFeatureFlag($flagName: String!) {
                       evaluateFeatureFlag(flagName: $flagName)
                   }
@@ -2310,7 +2310,7 @@ log:
           params: []
           textJSON:
             query: |2
-              
+
                   query FeatureFlags {
                       evaluatedFeatureFlags() {
                           name
@@ -2459,7 +2459,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               query Repositories($names: [String!]!, $first: Int!) {
                   repositories(names: $names, first: $first) {
                     nodes {
@@ -2573,7 +2573,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteIdentification {
               	site {
               		siteID
@@ -2688,7 +2688,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion

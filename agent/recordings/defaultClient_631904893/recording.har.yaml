@@ -1040,7 +1040,7 @@ log:
                 text: Ok.
               - speaker: human
                 text: >-
-                  You have access to the provided codebase context. 
+                  You have access to the provided codebase context.
 
 
                   Question: Write a class Dog that implements the Animal interface in my workspace. Show the code only, no explanation needed.
@@ -1234,7 +1234,7 @@ log:
                 text: Ok.
               - speaker: human
                 text: |-
-                  You have access to the provided codebase context. 
+                  You have access to the provided codebase context.
 
                   Question: What is Squirrel?
             model: anthropic/claude-3-sonnet-20240229
@@ -3064,7 +3064,7 @@ log:
                 text: Ok.
               - speaker: human
                 text: >-
-                  You have access to the provided codebase context. 
+                  You have access to the provided codebase context.
 
 
                   Question: What is the name of the function that I have selected? Only answer with the name of the function, nothing else
@@ -3266,7 +3266,7 @@ log:
                 text: Ok.
               - speaker: human
                 text: >-
-                  You have access to the provided codebase context. 
+                  You have access to the provided codebase context.
 
 
                   Question: What is the name of the function that I have selected? Only answer with the name of the function, nothing else
@@ -3823,7 +3823,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {
@@ -3925,7 +3925,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {
@@ -4025,7 +4025,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {
@@ -4130,7 +4130,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query ContextFilters {
                   site {
                       codyContextFilters(version: V1) {
@@ -4231,7 +4231,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -4335,7 +4335,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -4434,7 +4434,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -4536,7 +4536,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -4633,7 +4633,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -4741,7 +4741,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -4847,7 +4847,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -4946,7 +4946,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -5043,7 +5043,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -5149,7 +5149,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -5259,7 +5259,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -5367,7 +5367,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -5483,7 +5483,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUserCodySubscription {
                   currentUser {
                       codySubscription {
@@ -5599,7 +5599,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query Repository($name: String!) {
               	repository(name: $name) {
               		id
@@ -5695,7 +5695,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteIdentification {
               	site {
               		siteID
@@ -5797,7 +5797,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteIdentification {
               	site {
               		siteID
@@ -5897,7 +5897,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteIdentification {
               	site {
               		siteID
@@ -6003,7 +6003,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -6100,7 +6100,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -6195,7 +6195,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
