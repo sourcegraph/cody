@@ -63,8 +63,7 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
 
     const prefixLines = lines(completePrefixWithContextCompletion)
     const suffixLines = lines(completeSuffix)
-
-    const prefix = getPrefix(offset, maxPrefixLength, prefixLines)
+    const prefix = getPrefix({ offset, maxPrefixLength, prefixLines })
 
     let totalSuffix = 0
     let endLine = 0
@@ -90,7 +89,15 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
     })
 }
 
-function getPrefix(offset: number, maxPrefixLength: number, prefixLines: string[]): string {
+interface GetPrefixParams {
+    offset: number
+    maxPrefixLength: number
+    prefixLines: string[]
+}
+
+function getPrefix(params: GetPrefixParams): string {
+    const { offset, maxPrefixLength, prefixLines } = params
+
     let prefix: string
     if (offset > maxPrefixLength) {
         let total = 0
@@ -183,11 +190,11 @@ export function insertIntoDocContext(params: InsertIntoDocContextParams): Docume
     })
 
     const updatedDocumentText = prefix + insertText
-    const updatedPrefix = getPrefix(
-        updatedDocumentText.length,
+    const updatedPrefix = getPrefix({
+        offset: updatedDocumentText.length,
         maxPrefixLength,
-        lines(updatedDocumentText)
-    )
+        prefixLines: lines(updatedDocumentText),
+    })
 
     const updatedDocContext = getDerivedDocContext({
         maxPrefixLength,
