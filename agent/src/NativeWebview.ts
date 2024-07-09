@@ -13,7 +13,7 @@ type NativeWebviewHandle = string
  */
 interface WebviewProtocolDelegate {
     // CSP, resource-related
-    readonly webviewBundleLocalPrefix: string
+    readonly webviewBundleLocalPrefix: vscode.Uri
     readonly webviewBundleServingPrefix: string
     readonly cspSource: string
 
@@ -48,10 +48,14 @@ interface WebviewProtocolDelegate {
 
 export function registerNativeWebviewHandlers(
     agent: Agent,
+    extensionUri: vscode.Uri,
     capabilities: NativeWebviewCapabilities
 ): void {
     const delegate: WebviewProtocolDelegate = {
-        webviewBundleLocalPrefix: 'TODO', // TODO get the extension path
+        // TODO: When we want to serve resources outside dist/, make Agent
+        // include 'dist' in its bundle paths, and simply set this to
+        // extensionUri.
+        webviewBundleLocalPrefix: extensionUri.with({ path: `${extensionUri.path}/dist` }),
         webviewBundleServingPrefix: capabilities.webviewBundleServingPrefix,
         cspSource: capabilities.cspSource,
         createWebviewPanel: (handle, viewType, title, showOptions, options) => {
@@ -113,7 +117,7 @@ export function registerNativeWebviewHandlers(
             {
                 enableScripts: options?.enableScripts ?? false,
                 enableCommandUris: options?.enableCommandUris ?? false,
-                localResourceRoots: [vscode.Uri.file(delegate.webviewBundleLocalPrefix)],
+                localResourceRoots: [delegate.webviewBundleLocalPrefix],
             }
         )
         if (typeof showOptions === 'number') {
@@ -178,19 +182,17 @@ class NativeWebview implements vscode.Webview {
     }
 
     asWebviewUri(localResource: vscode.Uri): vscode.Uri {
-        if (!localResource.toString().startsWith(this.delegate.webviewBundleLocalPrefix)) {
+        if (!localResource.toString().startsWith(this.delegate.webviewBundleLocalPrefix.toString())) {
             // TODO: If you encounter this error, elaborate the ClientCapabilities protocol for
             // cspRoot/webviewBundleServingPrefix to support multiple resource roots.
             throw new Error(
-                `Unable to make '${localResource.toString()}' a webview URI: must start with '${
-                    this.delegate.webviewBundleLocalPrefix
-                }'`
+                `Unable to make '${localResource.toString()}' a webview URI: must start with '${this.delegate.webviewBundleLocalPrefix.toString()}'`
             )
         }
         return vscode.Uri.parse(
-            `${this.delegate.webviewBundleServingPrefix}${localResource.path.substr(
-                this.delegate.webviewBundleLocalPrefix.length
-            )}`
+            `${this.delegate.webviewBundleServingPrefix}${localResource
+                .toString()
+                .slice(this.delegate.webviewBundleLocalPrefix.toString().length)}`
         )
     }
 
