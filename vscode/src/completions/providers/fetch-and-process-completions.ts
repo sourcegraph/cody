@@ -14,6 +14,7 @@ import {
     processCompletion,
 } from '../text-processing/process-inline-completions'
 
+import { trace } from '@opentelemetry/api'
 import { getDynamicMultilineDocContext } from './dynamic-multiline'
 import { type HotStreakExtractor, createHotStreakExtractor } from './hot-streak'
 import type { ProviderOptions } from './provider'
@@ -226,6 +227,13 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
                 })
             }
         }
+    }
+
+    trace.getActiveSpan()?.addEvent('completion_stream_end')
+
+    // An extra abort call to ensure the API request is canceled when we reach this point.
+    if (!abortController.signal.aborted) {
+        abortController.abort()
     }
 
     return undefined
