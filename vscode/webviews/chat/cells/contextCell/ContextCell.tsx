@@ -44,14 +44,10 @@ export const ContextCell: React.FunctionComponent<{
     }
 
     const itemCount = usedContext.length
-    let contextItemCountLabel = `${itemCount} ${!isForFirstMessage ? 'new ' : ''}${pluralize(
+    const contextItemCountLabel = `${itemCount} ${!isForFirstMessage ? 'new ' : ''}${pluralize(
         'item',
         itemCount
     )}`
-    if (excludedAtContext.length) {
-        const excludedAtUnit = excludedAtContext.length === 1 ? 'mention' : 'mentions'
-        contextItemCountLabel = `${contextItemCountLabel}, ${excludedAtContext.length} ${excludedAtUnit} excluded`
-    }
 
     function logContextOpening() {
         getVSCodeAPI().postMessage({
