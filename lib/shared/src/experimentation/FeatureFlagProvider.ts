@@ -21,6 +21,7 @@ export enum FeatureFlag {
     // Enable various feature flags to experiment with FIM trained fine-tuned models via Fireworks
     CodyAutocompleteFIMModelExperimentBaseFeatureFlag = 'cody-autocomplete-fim-model-experiment-flag',
     CodyAutocompleteFIMModelExperimentControl = 'cody-autocomplete-fim-model-experiment-control',
+    CodyAutocompleteFIMModelExperimentCurrentBest = 'cody-autocomplete-fim-model-experiment-current-best',
     CodyAutocompleteFIMModelExperimentVariant1 = 'cody-autocomplete-fim-model-experiment-variant-1',
     CodyAutocompleteFIMModelExperimentVariant2 = 'cody-autocomplete-fim-model-experiment-variant-2',
     CodyAutocompleteFIMModelExperimentVariant3 = 'cody-autocomplete-fim-model-experiment-variant-3',

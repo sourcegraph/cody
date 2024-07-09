@@ -81,10 +81,19 @@ export const FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID_WITH_200MS_DELAY =
     'fim-fine-tuned-model-hybrid-200ms-delay'
 export const FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID = 'fim-fine-tuned-model-hybrid'
 export const FIREWORKS_FIM_LANG_SPECIFIC_MODEL_MIXTRAL = 'fim-lang-specific-model-mixtral'
+
+export const FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED =
+    'fim-lang-specific-model-deepseek-stack-trained'
+export const FIREWORKS_DEEPSEEK_7B_LANG_LOG_FINETUNED = 'fim-lang-specific-model-deepseek-logs-trained  '
+
 // Huggingface link (https://huggingface.co/deepseek-ai/deepseek-coder-1.3b-base)
 export const DEEPSEEK_CODER_1P3_B = 'deepseek-coder-1p3b'
 // Huggingface link (https://huggingface.co/deepseek-ai/deepseek-coder-6.7b-base)
 export const DEEPSEEK_CODER_7B = 'deepseek-coder-7b'
+// Huggingface link (https://huggingface.co/deepseek-ai/DeepSeek-Coder-V2-Lite-Base)
+export const DEEPSEEK_CODER_V2_LITE_BASE = 'deepseek-coder-v2-lite-base'
+// Huggingface link (https://huggingface.co/Qwen/CodeQwen1.5-7B)
+export const CODE_QWEN_7B = 'code-qwen-7b'
 
 // Model identifiers can be found in https://docs.fireworks.ai/explore/ and in our internal
 // conversations
@@ -105,8 +114,12 @@ const MODEL_MAP = {
     [FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID_WITH_200MS_DELAY]:
         'fireworks/accounts/sourcegraph/models/finetuned-fim-lang-all-model-mixtral-8x7b',
     [FIREWORKS_FIM_LANG_SPECIFIC_MODEL_MIXTRAL]: FIREWORKS_FIM_LANG_SPECIFIC_MODEL_MIXTRAL,
+    [FIREWORKS_DEEPSEEK_7B_LANG_LOG_FINETUNED]: FIREWORKS_DEEPSEEK_7B_LANG_LOG_FINETUNED,
+    [FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED]: FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED,
     [DEEPSEEK_CODER_1P3_B]: 'fireworks/accounts/sourcegraph/models/custom-deepseek-1p3b-base-hf-version',
     [DEEPSEEK_CODER_7B]: 'fireworks/accounts/sourcegraph/models/deepseek-coder-7b-base',
+    [DEEPSEEK_CODER_V2_LITE_BASE]: 'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
+    [CODE_QWEN_7B]: 'accounts/sourcegraph/models/code-qwen-1p5-7b',
 }
 
 type FireworksModel =
@@ -135,8 +148,12 @@ function getMaxContextTokens(model: FireworksModel): number {
             return 2048
         case FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID:
         case FIREWORKS_FIM_LANG_SPECIFIC_MODEL_MIXTRAL:
+        case FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED:
+        case FIREWORKS_DEEPSEEK_7B_LANG_LOG_FINETUNED:
         case DEEPSEEK_CODER_1P3_B:
-        case DEEPSEEK_CODER_7B: {
+        case DEEPSEEK_CODER_7B:
+        case DEEPSEEK_CODER_V2_LITE_BASE:
+        case CODE_QWEN_7B: {
             return 2048
         }
         default:
@@ -215,6 +232,9 @@ class FireworksProvider extends Provider {
         if (isFinetunedV1ModelFamily(this.model)) {
             return new fimPromptUtils.FinetunedModelV1PromptExtractor()
         }
+        if (isCodeQwenFamily(this.model)) {
+            return new fimPromptUtils.CodeQwenModelPromptExtractor()
+        }
         if (isDeepSeekModelFamily(this.model)) {
             return new fimPromptUtils.DeepSeekPromptExtractor()
         }
@@ -292,8 +312,13 @@ class FireworksProvider extends Provider {
             // We want to remove the same line suffix from a completion request since both StarCoder and Llama
             // code can't handle this correctly.
             const suffixAfterFirstNewline = getSuffixAfterFirstNewline(suffix)
-
             const nextPrompt = this.promptExtractor.getInfillingPrompt({
+                repoName: this.options.gitContext
+                    ? PromptString.fromAutocompleteGitContext(
+                          this.options.gitContext,
+                          this.options.document.uri
+                      ).repoName
+                    : undefined,
                 filename: PromptString.fromDisplayPath(this.options.document.uri),
                 intro: introString,
                 prefix,
@@ -311,7 +336,11 @@ class FireworksProvider extends Provider {
     }
 
     private getIntroString(intro: PromptString[], languageConfig: LanguageConfig | null): PromptString {
-        if (isFinetunedV1ModelFamily(this.model) || isDeepSeekModelFamily(this.model)) {
+        if (
+            isFinetunedV1ModelFamily(this.model) ||
+            isDeepSeekModelFamily(this.model) ||
+            isCodeQwenFamily(this.model)
+        ) {
             // These model families take code from the context files without comments.
             return ps`${PromptString.join(intro, ps`\n\n`)}\n`
         }
@@ -352,7 +381,8 @@ class FireworksProvider extends Provider {
 
         if (
             requestParams.model.includes('starcoder2') ||
-            isFinetunedV1ModelFamily(requestParams.model)
+            isFinetunedV1ModelFamily(requestParams.model) ||
+            isCodeQwenFamily(requestParams.model)
         ) {
             requestParams.stopSequences = [
                 ...(requestParams.stopSequences || []),
@@ -414,14 +444,15 @@ class FireworksProvider extends Provider {
     }
 
     private postProcess = (content: string): string => {
-        if (isStarCoderFamily(this.model)) {
+        if (
+            isStarCoderFamily(this.model) ||
+            isCodeQwenFamily(this.model) ||
+            isFinetunedV1ModelFamily(this.model)
+        ) {
             return content.replace(EOT_STARCODER, '')
         }
         if (isLlamaCode(this.model)) {
             return content.replace(EOT_LLAMA_CODE, '')
-        }
-        if (isFinetunedV1ModelFamily(this.model)) {
-            return content.replace(EOT_STARCODER, '')
         }
         if (isDeepSeekModelFamily(this.model)) {
             return content.replace(EOT_DEEPSEEK_CODE, '')
@@ -734,7 +765,17 @@ function isFinetunedV1ModelFamily(model: string): boolean {
 }
 
 function isDeepSeekModelFamily(model: string): boolean {
-    return [DEEPSEEK_CODER_1P3_B, DEEPSEEK_CODER_7B].includes(model)
+    return [
+        DEEPSEEK_CODER_1P3_B,
+        DEEPSEEK_CODER_7B,
+        DEEPSEEK_CODER_V2_LITE_BASE,
+        FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED,
+        FIREWORKS_DEEPSEEK_7B_LANG_LOG_FINETUNED,
+    ].includes(model)
+}
+
+function isCodeQwenFamily(model: string): boolean {
+    return [CODE_QWEN_7B].includes(model)
 }
 
 interface FireworksSSEData {

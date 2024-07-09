@@ -392,6 +392,13 @@ async function doGetInlineCompletions(
 
     tracer?.({ context: contextResult })
 
+    let gitContext = undefined
+    if (gitIdentifiersForFile?.gitUrl) {
+        gitContext = {
+            repoName: gitIdentifiersForFile.gitUrl,
+        }
+    }
+
     const completionProvider = getCompletionProvider({
         document,
         position,
@@ -400,6 +407,7 @@ async function doGetInlineCompletions(
         docContext,
         firstCompletionTimeout,
         completionLogId: logId,
+        gitContext,
     })
 
     tracer?.({
