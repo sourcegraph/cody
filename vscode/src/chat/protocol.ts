@@ -12,7 +12,6 @@ import type {
     Model,
     RangeData,
     SerializedChatMessage,
-    TelemetryEventProperties,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
 
@@ -39,6 +38,21 @@ export type WebviewRecordEventParameters = TelemetryEventParameters<
     BillingProduct,
     BillingCategory
 >
+
+/**
+ * @deprecated v1 telemetry event properties format - use 'recordEvent' instead
+ */
+interface TelemetryEventProperties {
+    [key: string]:
+        | string
+        | number
+        | boolean
+        | null
+        | undefined
+        | string[]
+        | TelemetryEventProperties[]
+        | TelemetryEventProperties
+}
 
 /**
  * A message sent from the webview to the extension host.

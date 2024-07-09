@@ -25,7 +25,6 @@ const meta: Meta<typeof Chat> = {
             postMessage: () => {},
             onMessage: () => () => {},
         },
-        telemetryService: null as any,
         isTranscriptError: false,
     } satisfies React.ComponentProps<typeof Chat>,
 

@@ -13,8 +13,8 @@ import packageJson from '../../package.json'
 import { newEmbeddedAgentClient } from '../agent'
 import type { ClientInfo } from '../protocol-alias'
 import { Streams } from './Streams'
-import { AuthenticatedAccount } from './auth/AuthenticatedAccount'
-import { notLoggedIn } from './auth/messages'
+import { AuthenticatedAccount } from './command-auth/AuthenticatedAccount'
+import { notLoggedIn } from './command-auth/messages'
 
 declare const process: { pkg: { entrypoint: string } } & NodeJS.Process
 export interface ChatOptions {

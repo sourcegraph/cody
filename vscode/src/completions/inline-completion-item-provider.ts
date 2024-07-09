@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import {
-    ConfigFeaturesSingleton,
+    ClientConfigSingleton,
     FeatureFlag,
     RateLimitError,
     contextFiltersProvider,
@@ -12,7 +12,6 @@ import {
 
 import { logDebug } from '../log'
 import { localStorage } from '../services/LocalStorageProvider'
-import { telemetryService } from '../services/telemetry'
 
 import { type CodyIgnoreType, showCodyIgnoreNotification } from '../cody-ignore/notification'
 import { autocompleteStageCounterLogger } from '../services/autocomplete-stage-counter-logger'
@@ -187,7 +186,7 @@ export class InlineCompletionItemProvider
 
         // Warm caches for the config feature configuration to avoid the first completion call
         // having to block on this.
-        void ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+        void ClientConfigSingleton.getInstance().getConfig()
     }
 
     /** Set the tracer (or unset it with `null`). */
@@ -229,9 +228,9 @@ export class InlineCompletionItemProvider
             }
             this.lastCompletionRequest = completionRequest
 
-            const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
+            const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
 
-            if (!configFeatures.autoComplete) {
+            if (!clientConfig.autoCompleteEnabled) {
                 // If ConfigFeatures exists and autocomplete is disabled then raise
                 // the error banner for autocomplete config turned off
                 const error = new Error('AutocompleteConfigTurnedOff')
@@ -663,9 +662,6 @@ export class InlineCompletionItemProvider
                 removeAfterEpoch: error.retryAfterDate ? Number(error.retryAfterDate) : undefined,
                 onSelect: () => {
                     if (canUpgrade) {
-                        telemetryService.log('CodyVSCodeExtension:upsellUsageLimitCTA:clicked', {
-                            limit_type: 'suggestions',
-                        })
                         telemetryRecorder.recordEvent('cody.upsellUsageLimitCTA', 'clicked', {
                             privateMetadata: {
                                 limit_type: 'suggestions',
@@ -679,15 +675,6 @@ export class InlineCompletionItemProvider
                         return
                     }
                     shown = true
-                    telemetryService.log(
-                        canUpgrade
-                            ? 'CodyVSCodeExtension:upsellUsageLimitCTA:shown'
-                            : 'CodyVSCodeExtension:abuseUsageLimitCTA:shown',
-                        {
-                            limit_type: 'suggestions',
-                            tier,
-                        }
-                    )
                     telemetryRecorder.recordEvent(
                         canUpgrade ? 'cody.upsellUsageLimitCTA' : 'cody.abuseUsageLimitCTA',
                         'shown',
@@ -698,15 +685,6 @@ export class InlineCompletionItemProvider
                 },
             })
 
-            telemetryService.log(
-                canUpgrade
-                    ? 'CodyVSCodeExtension:upsellUsageLimitStatusBar:shown'
-                    : 'CodyVSCodeExtension:abuseUsageLimitStatusBar:shown',
-                {
-                    limit_type: 'suggestions',
-                    tier,
-                }
-            )
             telemetryRecorder.recordEvent(
                 canUpgrade ? 'cody.upsellUsageLimitStatusBar' : 'cody.abuseUsageLimitStatusBar',
                 'shown',

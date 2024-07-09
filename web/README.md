@@ -1,13 +1,24 @@
 # Cody standalone web app
 
-The `@sourcegraph/cody-web` package implements a standalone web app for Cody for development purposes only.
+**Status:** experimental (currently is used by Sourcegraph Web client)
 
-To run this standalone web app: `pnpm dev`, then open http://localhost:5777 and enter a Sourcegraph.com access token.
+The `cody-web-experimental` package implements a standalone web app/components for Cody Web.
 
-If the demo app doesn't load, it could be because there's an invalid token stored in local storage.
+To run demo standalone web app: 
+- Run `pnpm dev` 
+- Then open http://localhost:5777 and enter a Sourcegraph.com access token.
+
+If the demo app doesn't load, it could be because there's an invalid token stored in local storage
+or in your IndexDB.
 
 To clear the token, open the browser dev tools and run `localStorage.removeItem('accessToken')`.
+To clear tokens in IndexDB, open browser dev tools and go to applications tab and clear 
+IndexDB tables for http://localhost:5777 domain.
 
-**Status:** experimental (for development purposes only, not an end-user product)
+## How to run within Sourcegraph client 
 
-For now, it is OK to break this web app when making other changes to Cody if it seems hard to support.
+- Build `cody-web-experimental` package by running `pnpm build`
+- Register package local link with `pnpm link --global`
+- Go to the Sourcegraph repository and create a link with `pnpm link cody-web-experimental --global`
+- Run Sourcegraph `sg start` or `sg start web-standalone`
+

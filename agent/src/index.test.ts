@@ -127,7 +127,7 @@ describe('Agent', () => {
         })
         expect(valid?.isLoggedIn).toBeTruthy()
 
-        // Please don't update the recordings to use a different account without consulting #wg-cody-agent.
+        // Please don't update the recordings to use a different account without consulting #team-cody-core.
         // When changing an account, you also need to update the REDACTED_ hash above.
         //
         // To update the recordings with the correct account, run the following command
@@ -174,12 +174,13 @@ describe('Agent', () => {
                 `
               [
                 "   for (let i = 0; i < nums.length; i++) {
-                      for (let j = 0; j < nums.length - i - 1; j++) {
-                          if (nums[j] > nums[j + 1]) {
-                              [nums[j], nums[j + 1]] = [nums[j + 1], nums[j]];
+                      for (let j = i + 1; j < nums.length; j++) {
+                          if (nums[i] > nums[j]) {
+                              [nums[i], nums[j]] = [nums[j], nums[i]]
                           }
                       }
-                  }",
+                  }
+                  return nums",
               ]
             `
             )
@@ -1163,7 +1164,10 @@ describe('Agent', () => {
 
             // The site config `cody.contextFilters` value on sourcegraph.sourcegraph.com instance
             // should include `sourcegraph/cody` repo for this test to pass.
-            it('autocomplete/execute (with Cody Ignore filters)', async () => {
+            // Skipped because of the API error:
+            //  Request to https://sourcegraph.sourcegraph.com/.api/completions/code?client-name=vscode&client-version=v1 failed with 406 Not Acceptable: ClientCodyIgnoreCompatibilityError: Cody for vscode version "v1" doesn't match version constraint ">= 1.20.0". Please upgrade your client.
+            // https://linear.app/sourcegraph/issue/CODY-2814/fix-and-re-enable-cody-context-filters-agent-integration-test
+            it.skip('autocomplete/execute (with Cody Ignore filters)', async () => {
                 // Documents to be used as context sources.
                 await s2EnterpriseClient.openFile(animalUri)
                 await s2EnterpriseClient.openFile(squirrelUri)

@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import {
     type AuthStatus,
     type ChatClient,
-    ConfigFeaturesSingleton,
+    ClientConfigSingleton,
     type Model,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -21,7 +21,6 @@ import type { ExtensionClient } from '../extension-client'
 import { editModel } from '../models'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
 import type { AuthProvider } from '../services/AuthProvider'
-import { telemetryService } from '../services/telemetry'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import type { ExecuteEditArguments } from './execute'
 import { EditProvider } from './provider'
@@ -92,8 +91,8 @@ export class EditManager implements vscode.Disposable {
             source = DEFAULT_EVENT_SOURCE,
             telemetryMetadata,
         } = args
-        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
-        if (!configFeatures.commands) {
+        const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
+        if (!clientConfig.customCommandsEnabled) {
             void vscode.window.showErrorMessage(
                 'This feature has been disabled by your Sourcegraph site admin.'
             )
@@ -200,9 +199,6 @@ export class EditManager implements vscode.Disposable {
             source: task.source,
             ...telemetryMetadata,
         }
-        telemetryService.log(`CodyVSCodeExtension:command:${eventName}:executed`, legacyMetadata, {
-            hasV2Event: true,
-        })
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         telemetryRecorder.recordEvent(`cody.command.${eventName}`, 'executed', {
             metadata,

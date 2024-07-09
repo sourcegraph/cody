@@ -1,3 +1,4 @@
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import { AtSignIcon, HelpCircleIcon, SettingsIcon, TextIcon, XIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactElement, useCallback, useState } from 'react'
 import { Kbd } from '../../components/Kbd'
@@ -34,7 +35,9 @@ const NewChatIcon: FunctionComponent = (props): ReactElement => (
 
 export const localStorageKey = 'chat.welcome-message-dismissed'
 
-export const WelcomeMessage: FunctionComponent = () => {
+export const WelcomeMessage: FunctionComponent<{
+    IDE: CodyIDE
+}> = ({ IDE }) => {
     const [showMessage, setShowMessage] = useState<boolean>(
         localStorage.getItem(localStorageKey) !== 'true'
     )
@@ -49,7 +52,8 @@ export const WelcomeMessage: FunctionComponent = () => {
         setShowMessage(true)
     }, [])
 
-    if (!showMessage) {
+    // NOTE: The current welcome message only applies to VS Code client.
+    if (!showMessage || IDE !== CodyIDE.VSCode) {
         return (
             <div className="tw-flex-1 tw-flex tw-relative tw-min-h-12">
                 <div className="tw-absolute tw-bottom-0 tw-w-full tw-flex tw-justify-end tw-pb-8 tw-pr-8">

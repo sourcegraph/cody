@@ -6,7 +6,7 @@ import { type WrappedParser, createParser } from '../../../../vscode/src/tree-si
 
 import { EvaluationDocument, type EvaluationDocumentParams } from './EvaluationDocument'
 import type { Queries } from './Queries'
-import { BenchStrategy } from './cody-bench'
+import { BenchStrategy } from './command-bench'
 
 export type AutocompleteMatchKind =
     | 'if_statement'
