@@ -6,6 +6,7 @@ import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
 import { escapeRegExp } from 'lodash'
 import semver from 'semver'
+import type { AuthStatus } from '../../auth/types'
 import type { ConfigurationWithAccessToken } from '../../configuration'
 import { logDebug, logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
@@ -1323,9 +1324,6 @@ export class ClientConfigSingleton {
 
     // Constructor is private to prevent creating new instances outside of the class
     private constructor() {
-        // Fetch the latest client config initially because we know we'll need it.
-        this.refreshConfig()
-
         // Default values for the legacy GraphQL features API, used when a Sourcegraph instance
         // does not support even the legacy GraphQL API.
         this.featuresLegacy = Promise.resolve({
@@ -1342,6 +1340,15 @@ export class ClientConfigSingleton {
             ClientConfigSingleton.instance = new ClientConfigSingleton()
         }
         return ClientConfigSingleton.instance
+    }
+
+    public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
+        if (authStatus.authenticated && authStatus.isLoggedIn) {
+            await this.refreshConfig()
+        } else {
+            this.cachedClientConfig = undefined
+            this.cachedAt = undefined
+        }
     }
 
     public async getConfig(): Promise<CodyClientConfig> {
@@ -1370,11 +1377,11 @@ export class ClientConfigSingleton {
     }
 
     // Refreshes the config features by fetching them from the server and caching the result
-    public async refreshConfig(): Promise<CodyClientConfig> {
+    private async refreshConfig(): Promise<void> {
         logDebug('ClientConfigSingleton', 'refreshing configuration')
 
         // Determine based on the site version if /.api/client-config is available.
-        return graphqlClient
+        await graphqlClient
             .getSiteVersion()
             .then(siteVersion => {
                 if (isError(siteVersion)) {

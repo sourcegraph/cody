@@ -30,7 +30,6 @@ describe('syncModels', () => {
             smartContextWindowEnabled: true,
             modelsAPIEnabled: false,
         }
-        vi.spyOn(ClientConfigSingleton.prototype, 'refreshConfig').mockResolvedValue(mockClientConfig)
         vi.spyOn(ClientConfigSingleton.prototype, 'getConfig').mockResolvedValue(mockClientConfig)
     })
     afterEach(() => {
@@ -110,7 +109,6 @@ describe('syncModels from the server', () => {
             smartContextWindowEnabled: true,
             modelsAPIEnabled: true,
         }
-        vi.spyOn(ClientConfigSingleton.prototype, 'refreshConfig').mockResolvedValue(mockClientConfig)
         vi.spyOn(ClientConfigSingleton.prototype, 'getConfig').mockResolvedValue(mockClientConfig)
 
         // Mock the secretStorage to return user creds IFF it is for `testEndpoint`.
