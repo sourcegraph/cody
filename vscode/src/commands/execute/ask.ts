@@ -22,9 +22,12 @@ export interface ExecuteChatArguments extends Omit<WebviewSubmitMessage, 'text' 
  * This is also called by all the default commands (e.g., explain).
  */
 export const executeChat = async (args: ExecuteChatArguments): Promise<ChatSession | undefined> => {
-    const { chatEnabled, customCommandsEnabled } = await ClientConfigSingleton.getInstance().getConfig()
+    const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
     const isCommand = Boolean(args.command)
-    if ((!isCommand && !chatEnabled) || (isCommand && !customCommandsEnabled)) {
+    if (
+        (!isCommand && !clientConfig?.chatEnabled) ||
+        (isCommand && !clientConfig?.customCommandsEnabled)
+    ) {
         void vscode.window.showErrorMessage(
             'This feature has been disabled by your Sourcegraph site admin.'
         )
