@@ -266,6 +266,7 @@ const register = async (
         configWatcher.set(newConfig)
         graphqlClient.onConfigurationChange(newConfig)
         await ClientConfigSingleton.getInstance().refreshConfig()
+        await configWatcher.initAndOnChange(() => ModelsService.onConfigChange(), disposables)
 
         await syncModels(authStatus)
         await chatManager.syncAuthStatus(authStatus)
@@ -285,7 +286,6 @@ const register = async (
                 authStatus.isDotCom,
                 platform.createOpenCtxController
             ),
-            configWatcher.initAndOnChange(() => ModelsService.onConfigChange(), disposables),
         ]
 
         await Promise.all(parallelTasks)
