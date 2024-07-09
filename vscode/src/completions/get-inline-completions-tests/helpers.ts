@@ -7,7 +7,6 @@ import {
     type CodeCompletionsClient,
     type CompletionParameters,
     type CompletionResponse,
-    type CompletionResponseGenerator,
     CompletionStopReason,
     type Configuration,
     type ConfigurationWithAccessToken,
@@ -69,7 +68,7 @@ type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'd
     onNetworkRequest?: (params: CodeCompletionsParams, abortController: AbortController) => void
     completionResponseGenerator?: (
         params: CompletionParameters
-    ) => CompletionResponseGenerator | Generator<CompletionResponse>
+    ) => Generator<CompletionResponse> | AsyncGenerator<CompletionResponse>
     providerOptions?: Partial<ProviderOptions>
     configuration?: Partial<Configuration>
 }
@@ -91,7 +90,7 @@ interface ParamsResult extends InlineCompletionsParams {
  */
 export function params(
     code: string,
-    responses: CompletionResponseWithMetaData[] | 'never-resolve',
+    responses: CompletionResponse[] | CompletionResponseWithMetaData[] | 'never-resolve',
     params: Params = {}
 ): ParamsResult {
     const {
@@ -119,7 +118,12 @@ export function params(
 
             if (completionResponseGenerator) {
                 for await (const response of completionResponseGenerator(completeParams)) {
-                    yield { ...response, stopReason: CompletionStopReason.StreamingChunk }
+                    yield {
+                        completionResponse: {
+                            ...response,
+                            stopReason: CompletionStopReason.StreamingChunk,
+                        },
+                    }
                 }
 
                 // Signal to tests that all streaming chunks are processed.
@@ -130,7 +134,18 @@ export function params(
                 return new Promise(() => {})
             }
 
-            return responses[requestCounter++] || { completion: '', stopReason: 'unknown' }
+            const response = responses[requestCounter++]
+
+            if (response && 'completionResponse' in response) {
+                return response
+            }
+
+            return {
+                completionResponse: (response as CompletionResponse) || {
+                    completion: '',
+                    stopReason: 'unknown',
+                },
+            }
         },
         onConfigurationChange() {},
         logger: undefined,
@@ -278,7 +293,6 @@ function paramsWithInlinedCompletion(
                 yield {
                     completion: lastResponse,
                     stopReason: CompletionStopReason.StreamingChunk,
-                    resolvedModel: undefined,
                 }
 
                 if (delayBetweenChunks) {

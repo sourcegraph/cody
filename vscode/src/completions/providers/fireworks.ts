@@ -4,6 +4,7 @@ import {
     type AutocompleteTimeouts,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
+    type CompletionResponse,
     type CompletionResponseGenerator,
     CompletionStopReason,
     type ConfigurationWithAccessToken,
@@ -477,8 +478,10 @@ class FireworksProvider extends Provider {
                 if (abortController.signal.aborted) {
                     // return empty completion response and skip the HTTP request
                     return {
-                        completion: '',
-                        stopReason: CompletionStopReason.RequestAborted,
+                        completionResponse: {
+                            completion: '',
+                            stopReason: CompletionStopReason.RequestAborted,
+                        },
                     }
                 }
 
@@ -567,8 +570,21 @@ class FireworksProvider extends Provider {
                     )
                 }
 
-                const resolvedModel = response.headers.get('x-cody-resolved-model') || undefined
-                let lastResponse: CompletionResponseWithMetaData | undefined
+                const result: CompletionResponseWithMetaData = {
+                    completionResponse: undefined,
+                    metadata: { response },
+                }
+
+                // Convenience helper to make ternaries below more readable.
+                function lastResponseField<T extends keyof CompletionResponse>(
+                    field: T
+                ): CompletionResponse[T] | undefined {
+                    if (result.completionResponse) {
+                        return result.completionResponse[field]
+                    }
+                    return undefined
+                }
+
                 try {
                     const iterator = createSSEIterator(response.body)
                     let chunkIndex = 0
@@ -579,8 +595,9 @@ class FireworksProvider extends Provider {
                         }
 
                         if (abortController.signal.aborted) {
-                            if (lastResponse) {
-                                lastResponse.stopReason = CompletionStopReason.RequestAborted
+                            if (result.completionResponse && !result.completionResponse.stopReason) {
+                                result.completionResponse.stopReason =
+                                    CompletionStopReason.RequestAborted
                             }
                             break
                         }
@@ -597,38 +614,35 @@ class FireworksProvider extends Provider {
                             continue
                         }
 
-                        lastResponse = {
-                            completion: (lastResponse ? lastResponse.completion : '') + choice.text,
+                        result.completionResponse = {
+                            completion: (lastResponseField('completion') || '') + choice.text,
                             stopReason:
                                 choice.finish_reason ??
-                                (lastResponse
-                                    ? lastResponse.stopReason
-                                    : CompletionStopReason.StreamingChunk),
-                            resolvedModel,
+                                (lastResponseField('stopReason') || CompletionStopReason.StreamingChunk),
                         }
 
-                        span.addEvent('yield', { stopReason: lastResponse.stopReason })
-                        yield lastResponse
+                        span.addEvent('yield', { stopReason: result.completionResponse.stopReason })
+                        yield result
 
                         chunkIndex += 1
                     }
 
-                    if (lastResponse === undefined) {
+                    if (result.completionResponse === undefined) {
                         throw new TracedError('No completion response received', traceId)
                     }
 
-                    if (!lastResponse.stopReason) {
-                        lastResponse.stopReason = CompletionStopReason.RequestFinished
+                    if (!result.completionResponse.stopReason) {
+                        result.completionResponse.stopReason = CompletionStopReason.RequestFinished
                     }
 
-                    return lastResponse
+                    return result
                 } catch (error) {
                     // In case of the abort error and non-empty completion response, we can
                     // consider the completion partially completed and want to log it to
                     // the Cody output channel via `log.onComplete()` instead of erroring.
-                    if (isAbortError(error as Error) && lastResponse) {
-                        lastResponse.stopReason = CompletionStopReason.RequestAborted
-                        return
+                    if (isAbortError(error as Error) && result.completionResponse) {
+                        result.completionResponse.stopReason = CompletionStopReason.RequestAborted
+                        return result
                     }
 
                     recordErrorToSpan(span, error as Error)
@@ -641,11 +655,11 @@ class FireworksProvider extends Provider {
                     log?.onError(message, error)
                     throw new TracedError(message, traceId)
                 } finally {
-                    if (lastResponse) {
-                        span.addEvent('return', { stopReason: lastResponse.stopReason })
+                    if (result.completionResponse) {
+                        span.addEvent('return', { stopReason: result.completionResponse.stopReason })
                         span.setStatus({ code: SpanStatusCode.OK })
                         span.end()
-                        log?.onComplete(lastResponse)
+                        log?.onComplete(result.completionResponse)
                     }
                 }
             }

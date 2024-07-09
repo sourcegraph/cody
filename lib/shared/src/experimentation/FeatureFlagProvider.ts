@@ -244,7 +244,10 @@ export class FeatureFlagProvider {
             }
             subs.lastSnapshot = currentSnapshot
         }
-        logDebug('featureflag', 'refreshed')
+        // Disable on CI to unclutter the output.
+        if (!process.env.VITEST) {
+            logDebug('featureflag', 'refreshed')
+        }
         for (const callback of callbacksToTrigger) {
             callback()
         }
