@@ -1,6 +1,7 @@
 import {
     type ChatMessage,
     type Guardrails,
+    type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     deserializeContextItem,
     isAbortErrorOrSocketHangUp,
@@ -144,7 +145,9 @@ const TranscriptInteraction: FunctionComponent<
     useEffect(() => {
         getVSCodeAPI().onMessage(message => {
             if (message.type === 'updateEditorState') {
-                humanEditorRef.current?.setEditorState(message.editorState)
+                humanEditorRef.current?.setEditorState(
+                    message.editorState as SerializedPromptEditorState
+                )
             }
         })
     }, [])

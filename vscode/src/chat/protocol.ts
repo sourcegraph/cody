@@ -12,7 +12,6 @@ import type {
     Model,
     RangeData,
     SerializedChatMessage,
-    SerializedPromptEditorState,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
 
@@ -202,7 +201,8 @@ export type ExtensionMessage =
       }
     | {
           type: 'updateEditorState'
-          editorState: SerializedPromptEditorState
+          /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
+          editorState: unknown | undefined | null
       }
 
 interface ExtensionAttributionMessage {
