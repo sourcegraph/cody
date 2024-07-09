@@ -44,3 +44,12 @@ export const Text2Letters: Story = {
         },
     },
 }
+
+export const InvalidAvatarURL: Story = {
+    args: {
+        user: {
+            username: 'long-username-example',
+            avatarURL: 'https://example.com/invalid-avatar-url.png',
+        },
+    },
+}
