@@ -25,19 +25,19 @@ our [issue tracker](https://github.com/sourcegraph/cody/issues/new/choose).
 
 ### Running
 
-| What                                                             | Command                                                                  |
-|------------------------------------------------------------------|--------------------------------------------------------------------------|
-| Run the plugin locally                                           | `./gradlew :runIde`                                                      |
-| Run the plugin locally with fresh build of Cody                  | `./gradlew -PforceAgentBuild=true :runIde`                               |
-| Run the plugin locally with fresh build of a local clone of Cody | `CODY_DIR=<path_to_cody> ./gradlew -PforceAgentBuild=true :runIde`       |
-| Run the plugin locally with fresh build of Code Search assets    | `./gradlew -PforceCodeSearchBuild=true :runIde`                          |
-| Run the plugin locally with different IntelliJ version           | `./gradlew -PplatformVersion=2023.1 :runIde`                             |
-| Build Code Search assets (separate terminal)                     | `pnpm build`                                                             |
-| Continuously re-build Code Search assets (separate terminal)     | `pnpm watch`                                                             |
-| Code Search "Find with Sourcegraph" window                       | `pnpm standalone && open http://localhost:3000/`                         |
-| Build deployable plugin                                          | `./gradlew buildPlugin` (artifact is generated in `build/distributions`) |
-| Reformat Java and Kotlin sources                                 | `./gradlew spotlessApply`                                                |
-| Debug agent JSON-RPC communication                               | `tail -f build/sourcegraph/cody-agent-trace.json`                        |
+| What                                                                                                                                | Command                                                                  |
+|-------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------|
+| Run the plugin locally                                                                                                              | `./gradlew :runIde`                                                      |
+| Run the plugin locally with fresh build of Cody                                                                                     | `./gradlew -PforceAgentBuild=true :runIde`                               |
+| Run the plugin locally with fresh build of a local clone of Cody (CODY_DIR needs to be an absolute path)                            | `CODY_DIR=<path_to_cody> ./gradlew -PforceAgentBuild=true :runIde`       |
+| Run the plugin locally with fresh build of Code Search assets                                                                       | `./gradlew -PforceCodeSearchBuild=true :runIde`                          |
+| Run the plugin locally with different IntelliJ version                                                                              | `./gradlew -PplatformVersion=2023.1 :runIde`                             |
+| Build Code Search assets (separate terminal)                                                                                        | `pnpm build`                                                             |
+| Continuously re-build Code Search assets (separate terminal)                                                                        | `pnpm watch`                                                             |
+| Code Search "Find with Sourcegraph" window                                                                                          | `pnpm standalone && open http://localhost:3000/`                         |
+| Build deployable plugin                                                                                                             | `./gradlew buildPlugin` (artifact is generated in `build/distributions`) |
+| Reformat Java and Kotlin sources                                                                                                    | `./gradlew spotlessApply`                                                |
+| Debug agent JSON-RPC communication                                                                                                  | `tail -f build/sourcegraph/cody-agent-trace.json`                        |
 
 ### Editor config
 
