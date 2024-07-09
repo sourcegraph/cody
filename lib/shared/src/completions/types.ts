@@ -31,6 +31,11 @@ export interface DocumentContext extends DocumentDependentContext, LinesContext 
      */
     injectedCompletionText?: string
     positionWithoutInjectedCompletionText?: vscode.Position
+    /**
+     * Required to manipulate the document context after it was created.
+     */
+    maxPrefixLength: number
+    maxSuffixLength: number
 }
 
 export interface DocumentDependentContext {

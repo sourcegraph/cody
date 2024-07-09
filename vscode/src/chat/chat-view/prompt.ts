@@ -111,6 +111,7 @@ export class DefaultPrompter {
                 // Because this enhanced context is added for the last human message,
                 // we will also add it to the context list for display.
                 context.used.push(...newEnhancedMessages.added)
+                context.ignored.push(...newEnhancedMessages.ignored)
                 ignoredContext.enhanced += newEnhancedMessages.ignored.length
             }
 
