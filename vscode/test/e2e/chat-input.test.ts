@@ -194,7 +194,7 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     const modelSelect = chatFrame.getByRole('combobox', { name: 'Select a model' }).last()
 
     await expect(modelSelect).toBeEnabled()
-    await expect(modelSelect).toHaveText(/^Claude 3 Sonnet/)
+    await expect(modelSelect).toHaveText(/^Claude 3.5 Sonnet/)
 
     await firstChatInput.fill('to model1')
     await firstChatInput.press('Enter')
@@ -202,7 +202,7 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     // Verify tooltip shows the correct model
     await chatFrame.locator('[data-testid="chat-message-model-icon"]').last().hover()
     await expect(
-        chatFrame.locator('[data-testid="message"]').getByText('Claude 3 Sonnet by Anthropic')
+        chatFrame.locator('[data-testid="message"]').getByText('Claude 3.5 Sonnet by Anthropic')
     ).toBeVisible()
 
     // Change model and send another message.
