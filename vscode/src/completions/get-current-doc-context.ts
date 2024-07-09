@@ -63,6 +63,40 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
 
     const prefixLines = lines(completePrefixWithContextCompletion)
     const suffixLines = lines(completeSuffix)
+    const prefix = getPrefix({ offset, maxPrefixLength, prefixLines })
+
+    let totalSuffix = 0
+    let endLine = 0
+    for (let i = 0; i < suffixLines.length; i++) {
+        if (totalSuffix + suffixLines[i].length > maxSuffixLength) {
+            break
+        }
+        endLine = i + 1
+        totalSuffix += suffixLines[i].length
+    }
+    const suffix = suffixLines.slice(0, endLine).join('\n')
+
+    return getDerivedDocContext({
+        maxPrefixLength,
+        maxSuffixLength,
+        position,
+        languageId: document.languageId,
+        documentDependentContext: {
+            prefix,
+            suffix,
+            injectedPrefix,
+        },
+    })
+}
+
+interface GetPrefixParams {
+    offset: number
+    maxPrefixLength: number
+    prefixLines: string[]
+}
+
+function getPrefix(params: GetPrefixParams): string {
+    const { offset, maxPrefixLength, prefixLines } = params
 
     let prefix: string
     if (offset > maxPrefixLength) {
@@ -80,32 +114,15 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
         prefix = prefixLines.join('\n')
     }
 
-    let totalSuffix = 0
-    let endLine = 0
-    for (let i = 0; i < suffixLines.length; i++) {
-        if (totalSuffix + suffixLines[i].length > maxSuffixLength) {
-            break
-        }
-        endLine = i + 1
-        totalSuffix += suffixLines[i].length
-    }
-    const suffix = suffixLines.slice(0, endLine).join('\n')
-
-    return getDerivedDocContext({
-        position,
-        languageId: document.languageId,
-        documentDependentContext: {
-            prefix,
-            suffix,
-            injectedPrefix,
-        },
-    })
+    return prefix
 }
 
 interface GetDerivedDocContextParams {
     languageId: string
     position: vscode.Position
     documentDependentContext: DocumentDependentContext
+    maxPrefixLength: number
+    maxSuffixLength: number
 }
 
 /**
@@ -113,7 +130,7 @@ interface GetDerivedDocContextParams {
  * Used if the document context needs to be calculated for the updated text but there's no `document` instance for that.
  */
 function getDerivedDocContext(params: GetDerivedDocContextParams): DocumentContext {
-    const { position, documentDependentContext, languageId } = params
+    const { position, documentDependentContext, languageId, maxPrefixLength, maxSuffixLength } = params
     const linesContext = getLinesContext(documentDependentContext)
 
     const { multilineTrigger, multilineTriggerPosition } = detectMultiline({
@@ -130,6 +147,8 @@ function getDerivedDocContext(params: GetDerivedDocContextParams): DocumentConte
     return {
         ...documentDependentContext,
         ...linesContext,
+        maxPrefixLength,
+        maxSuffixLength,
         position,
         multilineTrigger,
         multilineTriggerPosition,
@@ -160,7 +179,7 @@ export function insertIntoDocContext(params: InsertIntoDocContextParams): Docume
         insertText,
         languageId,
         docContext,
-        docContext: { position, prefix, suffix, currentLineSuffix },
+        docContext: { position, prefix, suffix, currentLineSuffix, maxPrefixLength, maxSuffixLength },
     } = params
 
     const updatedPosition = getPositionAfterTextInsertion(position, insertText)
@@ -170,11 +189,20 @@ export function insertIntoDocContext(params: InsertIntoDocContextParams): Docume
         text: insertText,
     })
 
+    const updatedDocumentText = prefix + insertText
+    const updatedPrefix = getPrefix({
+        offset: updatedDocumentText.length,
+        maxPrefixLength,
+        prefixLines: lines(updatedDocumentText),
+    })
+
     const updatedDocContext = getDerivedDocContext({
+        maxPrefixLength,
+        maxSuffixLength,
         languageId,
         position: updatedPosition,
         documentDependentContext: {
-            prefix: prefix + insertText,
+            prefix: updatedPrefix,
             // Remove the characters that are being replaced by the completion
             // to reduce the chances of breaking the parse tree with redundant symbols.
             suffix: suffix.slice(getMatchingSuffixLength(insertText, currentLineSuffix)),
