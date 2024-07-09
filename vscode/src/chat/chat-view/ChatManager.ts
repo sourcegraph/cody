@@ -13,7 +13,6 @@ import {
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import type { View } from '../../../webviews/NavBar'
-import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
@@ -299,9 +298,6 @@ export async function addWebviewViewHTML(
     extensionUri: vscode.Uri,
     view: vscode.WebviewView | vscode.WebviewPanel
 ): Promise<void> {
-    if (isRunningInsideAgent()) {
-        return
-    }
     const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
     // Create Webview using vscode/index.html
     const root = vscode.Uri.joinPath(webviewPath, 'index.html')
