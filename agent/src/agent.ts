@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process'
 import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
-import { type CodyCommand, ModelUsage, isWindows, telemetryRecorder } from '@sourcegraph/cody-shared'
+import { type CodyCommand, ModelUsage, telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 import packageJson from '../../vscode/package.json'
@@ -33,9 +33,10 @@ import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/pro
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 
-import { copyFileSync, mkdirSync, statSync } from 'node:fs'
+import { mkdirSync, statSync } from 'node:fs'
 import { PassThrough } from 'node:stream'
 import type { Har } from '@pollyjs/persister'
+import { copySync } from 'fs-extra'
 import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
 import type { MessageConnection } from 'vscode-jsonrpc'
@@ -101,25 +102,26 @@ type ExtensionActivate = (
 // In the agent, we assume this file is placed next to the bundled `index.js`
 // file, and we copy it over to the `extensionPath` so the VS Code logic works
 // without changes.
-function copyWinCaRootsBinary(extensionPath: string): void {
-    const source = path.join(__dirname, 'win-ca-roots.exe')
-    const target = path.join(extensionPath, 'dist', 'win-ca-roots.exe')
-    try {
-        const stat = statSync(source)
-        if (!stat.isFile()) {
+function copyExtensionRelativeResources(extensionPath: string): void {
+    const relativeSources = ['win-ca-roots.exe', 'webviews']
+    for (const relativeSource of relativeSources) {
+        const source = path.join(__dirname, relativeSource)
+        const target = path.join(extensionPath, 'dist', relativeSource)
+        try {
+            const stat = statSync(source)
+            if (!(stat.isFile() || stat.isDirectory())) {
+                continue
+            }
+        } catch {
+            logDebug('copyExtensionRelativeResources', `Failed to find ${source}, skipping copy`)
             return
         }
-    } catch {
-        if (isWindows()) {
-            logDebug('win-ca', `Failed to find ${source}, skipping copy`)
+        try {
+            mkdirSync(path.dirname(target), { recursive: true })
+            copySync(source, target)
+        } catch (err) {
+            logDebug('copyExtensionRelativeResources', `Failed to copy ${source} to dist ${target}`, err)
         }
-        return
-    }
-    try {
-        mkdirSync(path.dirname(target), { recursive: true })
-        copyFileSync(source, target)
-    } catch (err) {
-        logDebug('win-ca', `Failed to copy ${source} to dist ${target}`, err)
     }
 }
 
@@ -130,7 +132,7 @@ export async function initializeVscodeExtension(
 ): Promise<void> {
     const paths = codyPaths()
     const extensionPath = paths.config
-    copyWinCaRootsBinary(extensionPath)
+    copyExtensionRelativeResources(extensionPath)
 
     const context: vscode.ExtensionContext = {
         asAbsolutePath(relativePath) {
@@ -418,7 +420,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 const useNativeWebviews =
                     webviewCapabilities instanceof Object && webviewCapabilities.type === 'native'
                 if (useNativeWebviews) {
-                    registerNativeWebviewHandlers(this, webviewCapabilities)
+                    registerNativeWebviewHandlers(
+                        this,
+                        vscode.Uri.file(codyPaths().config), // the extension root URI, for locating Webview resources
+                        webviewCapabilities
+                    )
                 } else {
                     this.registerWebviewHandlers()
                 }
