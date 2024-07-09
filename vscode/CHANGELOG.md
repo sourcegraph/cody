@@ -10,18 +10,24 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Edit: Added support for users' to edit the applied edit before the diff view is removed. [pull/4684](https://github.com/sourcegraph/cody/pull/4684)
 - Autocomplete: Added experimental support for Gemini 1.5 Flash as the autocomplete model. To enable this experimental feature, update the `autocomplete.advanced.provider` configuration setting to `unstable-gemini`. Prerequisite: Your Sourcegraph instance (v5.5.0+) must first be configured to use Gemini 1.5 Flash as the autocomplete model. [pull/4743](https://github.com/sourcegraph/cody/pull/4743)
 - Enterprise: Enabled support for multiple dynaic models if the Sourcegraph backend provides them. Requires the experimental flag `cody.dev.useServerDefinedModels` which currently returns a static list of models. Note: this won't work until the server side of this feature is merged.
+- Autocomplete: Fixed hot-streak cache keys for long documents. [pull/4817](https://github.com/sourcegraph/cody/pull/4817)
+- Autocomplete: Added an extra abort call to ensure request cancellation. [pull/4818](https://github.com/sourcegraph/cody/pull/4818)
 
 ### Fixed
 
 - Edit: Fixed an issue where, when unable to detect the indentation of a file, Cody would remove all indentation from a response. [pull/4704](https://github.com/sourcegraph/cody/pull/4704)
 - Edit: Fixed an issue where Cody would sometimes remove unintended parts of the code when an edit was accepted on save. [pull/4720](https://github.com/sourcegraph/cody/pull/4720)
+- Chat: The loading dots in the loading page are now centered correctly. [pull/4808](https://github.com/sourcegraph/cody/pull/4808)
 
 ### Changed
 
 - Chat: Added a stop button and cleaned up the vertical space layout of the chat. [pull/4580](https://github.com/sourcegraph/cody/pull/4580)
 - Autocomplete: Added a caching layer to Jaccard Similarity to reduce the load of context gathering during autocompletion. [pull/4608](https://github.com/sourcegraph/cody/pull/4608)
+- Autocomplete: Added Fireworks headers to analytics events. [pull/4804](https://github.com/sourcegraph/cody/pull/4804)
 - Chat: Simplify the Enterprise docs in the model selector [pull/4745](https://github.com/sourcegraph/cody/pull/4745)
 - Edit: We now collapse the selection down to the cursor position after an edit is triggered. [pull/4781](https://github.com/sourcegraph/cody/pull/4781)
+- Autocomplete: requests timeout decreased from 15s to 7s. [pull/4813](https://github.com/sourcegraph/cody/pull/4813)
+- Chat & Edit: Claude 3.5 Sonnet is now the default model for Chat and Commands. [pull/4822](https://github.com/sourcegraph/cody/pull/4822)
 
 ## 1.24.2
 

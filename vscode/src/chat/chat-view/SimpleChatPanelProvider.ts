@@ -17,6 +17,7 @@ import {
     DOTCOM_URL,
     type DefaultChatCommands,
     type EventSource,
+    FeatureFlag,
     type FeatureFlagProvider,
     type Guardrails,
     type MentionQuery,
@@ -28,6 +29,7 @@ import {
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     type SerializedPromptEditorState,
+    TokenCounter,
     Typewriter,
     allMentionProvidersMetadata,
     hydrateAfterPostMessage,
@@ -60,6 +62,7 @@ import {
 import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
+import { experimentalUnitTestMessageSubmission } from '../../commands/execute/test-chat-experimental'
 import { getConfiguration, getFullConfig } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
@@ -102,7 +105,7 @@ import { CodebaseStatusProvider } from './CodebaseStatusProvider'
 import { InitDoer } from './InitDoer'
 import { SimpleChatModel, prepareChatMessage } from './SimpleChatModel'
 import { getChatPanelTitle, openFile } from './chat-helpers'
-import { getEnhancedContext } from './context'
+import { getContextStrategy, getEnhancedContext } from './context'
 import { DefaultPrompter } from './prompt'
 
 interface SimpleChatPanelProviderOptions {
@@ -168,6 +171,7 @@ export class SimpleChatPanelProvider
     private readonly remoteSearch: RemoteSearch | null
     private readonly repoPicker: RemoteRepoPicker | null
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
+    private readonly featureFlagProvider: FeatureFlagProvider
 
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
     private allMentionProvidersMetadataQueryCancellation?: vscode.CancellationTokenSource
@@ -190,6 +194,7 @@ export class SimpleChatPanelProvider
         guardrails,
         enterpriseContext,
         startTokenReceiver,
+        featureFlagProvider,
     }: SimpleChatPanelProviderOptions) {
         this.extensionUri = extensionUri
         this.authProvider = authProvider
@@ -200,6 +205,7 @@ export class SimpleChatPanelProvider
         this.repoPicker = enterpriseContext?.repoPicker || null
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
+        this.featureFlagProvider = featureFlagProvider
 
         this.chatModel = new SimpleChatModel(getDefaultModelID(authProvider.getAuthStatus()))
 
@@ -494,13 +500,21 @@ export class SimpleChatPanelProvider
                 })
                 break
             }
+            case 'experimental-unit-test-prompt': {
+                await this.experimentalSetUnitTestPrompt()
+                break
+            }
             default:
                 this.postError(new Error(`Invalid request type from Webview Panel: ${message.command}`))
         }
     }
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
-        const config = await getFullConfig()
+        const [config, experimentalUnitTest] = await Promise.all([
+            getFullConfig(),
+            this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalUnitTest),
+        ])
+
         return {
             agentIDE: config.isRunningInsideAgent ? config.agentIDE : CodyIDE.VSCode,
             agentExtensionVersion: config.isRunningInsideAgent
@@ -509,6 +523,7 @@ export class SimpleChatPanelProvider
             uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
             serverEndpoint: config.serverEndpoint,
             experimentalNoodle: config.experimentalNoodle,
+            experimentalUnitTest,
         }
     }
 
@@ -573,6 +588,18 @@ export class SimpleChatPanelProvider
             return JSON.stringify(gitMetadata)
         }
         return ''
+    }
+
+    public async experimentalSetUnitTestPrompt() {
+        const message = await experimentalUnitTestMessageSubmission()
+        if (!message?.editorState) {
+            return
+        }
+
+        this.postMessage({
+            type: 'updateEditorState',
+            editorState: message.editorState as SerializedPromptEditorState,
+        })
     }
 
     /**
@@ -700,7 +727,8 @@ export class SimpleChatPanelProvider
                 const hasCorpusMentions = corpusMentions.length > 0
 
                 const config = getConfiguration()
-                span.setAttribute('strategy', config.useContext)
+                const contextStrategy = await getContextStrategy(config.useContext)
+                span.setAttribute('strategy', contextStrategy)
                 const prompter = new DefaultPrompter(
                     userContextItems,
                     addEnhancedContext || hasCorpusMentions
@@ -721,7 +749,7 @@ export class SimpleChatPanelProvider
                                   : inputText
 
                               return getEnhancedContext({
-                                  strategy: config.useContext,
+                                  strategy: contextStrategy,
                                   editor: this.editor,
                                   input: { text: rewrite, mentions },
                                   addEnhancedContext,
@@ -736,7 +764,7 @@ export class SimpleChatPanelProvider
                         : undefined,
                     command !== undefined
                 )
-                const sendTelemetry = (contextSummary: any, privateContextStats?: any): void => {
+                const sendTelemetry = (contextSummary: any, privateContextSummary?: any): void => {
                     const properties = {
                         ...sharedProperties,
                         traceId: span.spanContext().traceId,
@@ -753,7 +781,7 @@ export class SimpleChatPanelProvider
                         },
                         privateMetadata: {
                             properties,
-                            privateContextStats,
+                            privateContextSummary: privateContextSummary,
                             // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
                             // V2 telemetry exports privateMetadata only for DotCom users
                             // the condition below is an additional safeguard measure
@@ -1128,7 +1156,7 @@ export class SimpleChatPanelProvider
     private async buildPrompt(
         prompter: DefaultPrompter,
         abortSignal: AbortSignal,
-        sendTelemetry?: (contextSummary: any, privateContextStats?: any) => void
+        sendTelemetry?: (contextSummary: any, privateContextSummary?: any) => void
     ): Promise<Message[]> {
         const { prompt, context } = await prompter.makePrompt(
             this.chatModel,
@@ -1155,22 +1183,39 @@ export class SimpleChatPanelProvider
                 }
             }
 
-            // Log the size of all user context items (e.g., @-mentions)
-            // Includes the count of files and the size of each file
-            const getContextStats = (files: ContextItem[]) =>
-                files.length && {
-                    countFiles: files.length,
-                    fileSizes: files.map(f => f.size).filter(isDefined),
-                }
-            // NOTE: The private context stats are only logged for DotCom users
-            const privateContextStats = {
-                included: getContextStats(context.used.filter(f => f.source === 'user')),
-                excluded: getContextStats(context.ignored.filter(f => f.source === 'user')),
-            }
-            sendTelemetry(contextSummary, privateContextStats)
+            const privateContextSummary = await this.buildPrivateContextSummary(context)
+            sendTelemetry(contextSummary, privateContextSummary)
         }
 
         return prompt
+    }
+
+    private async buildPrivateContextSummary(context: {
+        used: ContextItem[]
+        ignored: ContextItem[]
+    }): Promise<object> {
+        // 🚨 SECURITY: included only for dotcom users & public repos
+        const isDotCom = this.authProvider.getAuthStatus().isDotCom
+        const isPublic = (await this.codebaseStatusProvider.currentCodebase())?.isPublic
+
+        if (!(isDotCom && isPublic)) {
+            return {}
+        }
+
+        const getContextSummary = (items: ContextItem[]) => ({
+            count: items.length,
+            items: items.map(i => ({
+                source: i.source,
+                size: i.size || TokenCounter.countTokens(i.content || ''),
+                content: i.content,
+            })),
+        })
+
+        return {
+            included: getContextSummary(context.used),
+            excluded: getContextSummary(context.ignored),
+            gitMetadata: await this.getRepoMetadataIfPublic(),
+        }
     }
 
     private streamAssistantResponse(

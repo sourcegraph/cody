@@ -13,6 +13,10 @@ const basicContextWindow: ModelContextWindow = {
     input: CHAT_INPUT_TOKEN_BUDGET,
     output: CHAT_OUTPUT_TOKEN_BUDGET,
 }
+
+/**
+ * Has a higher context window with a separate limit for user-context.
+ */
 const expandedContextWindow: ModelContextWindow = {
     input: EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
     output: CHAT_OUTPUT_TOKEN_BUDGET,
@@ -34,20 +38,18 @@ export const DEFAULT_DOT_COM_MODELS = [
     // Anthropic models
     // --------------------------------
     {
-        title: 'Claude 3 Sonnet',
-        model: 'anthropic/claude-3-sonnet-20240229',
-        provider: 'Anthropic',
-        usage: [ModelUsage.Chat, ModelUsage.Edit],
-        // Has a higher context window with a separate limit for user-context.
-        contextWindow: expandedContextWindow,
-        tags: [ModelTag.Gateway, ModelTag.Balanced, ModelTag.Free],
-    },
-    {
         title: 'Claude 3.5 Sonnet',
         model: 'anthropic/claude-3-5-sonnet-20240620',
         provider: 'Anthropic',
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        // Has a higher context window with a separate limit for user-context.
+        contextWindow: expandedContextWindow,
+        tags: [ModelTag.Gateway, ModelTag.Balanced, ModelTag.Free],
+    },
+    {
+        title: 'Claude 3 Sonnet',
+        model: 'anthropic/claude-3-sonnet-20240229',
+        provider: 'Anthropic',
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: expandedContextWindow,
         tags: [ModelTag.Gateway, ModelTag.Recommended, ModelTag.Accuracy],
     },
@@ -56,7 +58,6 @@ export const DEFAULT_DOT_COM_MODELS = [
         model: 'anthropic/claude-3-opus-20240229',
         provider: 'Anthropic',
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        // Has a higher context window with a separate limit for user-context.
         contextWindow: expandedContextWindow,
         tags: [ModelTag.Gateway, ModelTag.Pro, ModelTag.Recommended, ModelTag.Accuracy],
     },
@@ -77,7 +78,6 @@ export const DEFAULT_DOT_COM_MODELS = [
         model: 'openai/gpt-4o',
         provider: 'OpenAI',
         usage: [ModelUsage.Chat, ModelUsage.Edit],
-        // Has a higher context window with a separate limit for user-context.
         contextWindow: expandedContextWindow,
         tags: [ModelTag.Gateway, ModelTag.Pro, ModelTag.Recommended, ModelTag.Accuracy],
     },

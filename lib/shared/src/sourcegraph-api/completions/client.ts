@@ -1,10 +1,15 @@
 import type { Span } from '@opentelemetry/api'
 import type { ConfigurationWithAccessToken } from '../../configuration'
 
-import type { CompletionResponseWithMetaData } from '../../inferenceClient/misc'
 import { useCustomChatClient } from '../../llm-providers'
 import { recordErrorToSpan } from '../../tracing'
-import type { CompletionCallbacks, CompletionGeneratorValue, CompletionParameters, Event } from './types'
+import type {
+    CompletionCallbacks,
+    CompletionGeneratorValue,
+    CompletionParameters,
+    CompletionResponse,
+    Event,
+} from './types'
 
 export interface CompletionLogger {
     startCompletion(
@@ -15,11 +20,7 @@ export interface CompletionLogger {
         | {
               onError: (error: string, rawError?: unknown) => void
               onComplete: (
-                  response:
-                      | string
-                      | CompletionResponseWithMetaData
-                      | string[]
-                      | CompletionResponseWithMetaData[]
+                  response: string | CompletionResponse | string[] | CompletionResponse[]
               ) => void
               onEvents: (events: Event[]) => void
           }

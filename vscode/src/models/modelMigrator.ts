@@ -35,7 +35,7 @@ export function migrateAndNotifyForOutdatedModels(model: string | null): string 
     }
 
     // Claude 2 to Claude 3 migration.
-    const newModel = 'anthropic/claude-3-sonnet-20240229'
+    const newModel = 'anthropic/claude-3-5-sonnet-20240620'
     // Verify that the new model is available before migrating.
     if (ModelsService.getModelByID(newModel)) {
         showNotificationIfNotShownYet(

@@ -174,12 +174,13 @@ describe('Agent', () => {
                 `
               [
                 "   for (let i = 0; i < nums.length; i++) {
-                      for (let j = 0; j < nums.length - i - 1; j++) {
-                          if (nums[j] > nums[j + 1]) {
-                              [nums[j], nums[j + 1]] = [nums[j + 1], nums[j]];
+                      for (let j = i + 1; j < nums.length; j++) {
+                          if (nums[i] > nums[j]) {
+                              [nums[i], nums[j]] = [nums[j], nums[i]]
                           }
                       }
-                  }",
+                  }
+                  return nums",
               ]
             `
             )
@@ -211,9 +212,9 @@ describe('Agent', () => {
             expect(lastMessage).toMatchInlineSnapshot(
                 `
               {
-                "model": "anthropic/claude-3-sonnet-20240229",
+                "model": "anthropic/claude-3-5-sonnet-20240620",
                 "speaker": "assistant",
-                "text": "Hello! I'm Claude, an AI assistant created by Anthropic. It's nice to meet you. How can I help you today?",
+                "text": "Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with coding today? Whether you need help with a specific programming language, debugging, code optimization, or any other coding-related task, I'm here to assist you. What would you like to work on?",
               }
             `
             )
@@ -226,31 +227,40 @@ describe('Agent', () => {
             const trimmedMessage = trimEndOfLine(lastMessage?.text ?? '')
             expect(trimmedMessage).toMatchInlineSnapshot(
                 `
-              "Certainly! Here's a simple "Hello World" program in Java:
+              "Certainly! Here's a simple "Hello, World!" function in Java:
 
               \`\`\`java
               public class HelloWorld {
                   public static void main(String[] args) {
+                      sayHello();
+                  }
+
+                  public static void sayHello() {
                       System.out.println("Hello, World!");
                   }
               }
               \`\`\`
 
-              To explain the code:
+              This Java code does the following:
 
-              1. \`public class HelloWorld {\`: This line declares a new public class named \`HelloWorld\`. In Java, all code must be inside a class.
+              1. We define a class called \`HelloWorld\`.
+              2. Inside the class, we have the \`main\` method, which is the entry point of any Java program.
+              3. We create a separate method called \`sayHello()\` that prints "Hello, World!" to the console.
+              4. In the \`main\` method, we call the \`sayHello()\` function.
 
-              2. \`public static void main(String[] args) {\`: This line declares the \`main\` method, which is the entry point of a Java program. The \`public\` keyword makes the method accessible from outside the class, \`static\` allows the method to be called without creating an instance of the class, and \`void\` means the method doesn't return any value. The \`String[] args\` is an array that can hold command-line arguments passed to the program.
+              When you run this program, it will output:
 
-              3. \`System.out.println("Hello, World!");\`: This line prints the string \`"Hello, World!"\` to the console using the \`println\` method of the \`System.out\` object.
+              \`\`\`
+              Hello, World!
+              \`\`\`
 
-              4. \`}\`: This closing curly brace marks the end of the \`main\` method.
+              To run this program:
 
-              5. \`}\`: This closing curly brace marks the end of the \`HelloWorld\` class.
+              1. Save the code in a file named \`HelloWorld.java\`
+              2. Compile it using the command: \`javac HelloWorld.java\`
+              3. Run it using the command: \`java HelloWorld\`
 
-              To run this program, you need to save it in a file with a \`.java\` extension (e.g., \`HelloWorld.java\`), compile it using the Java compiler (\`javac HelloWorld.java\`), and then run the compiled bytecode using the Java Virtual Machine (\`java HelloWorld\`).
-
-              When you run the program, it will output \`Hello, World!\` to the console."
+              This will execute the program and display the "Hello, World!" message on the console."
             `,
                 explainPollyError
             )
@@ -294,7 +304,7 @@ describe('Agent', () => {
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                `"You said your name is Lars Monsen."`,
+                `"Your name is Lars Monsen, as you just told me."`,
                 explainPollyError
             )
         }, 30_000)
@@ -332,7 +342,7 @@ describe('Agent', () => {
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                `"I'm afraid I don't have complete information about the specifics of what type of model I am. As an AI system created by Anthropic, there are details about my architecture and training process that are not fully known to me. What I can say is that I am a large language model that has been further trained using reinforcement learning to be a capable coding assistant. But I don't have transparency into whether I'm based on GPT-3, PaLM, or another base model. I hope you can understand that there are aspects of my internals that are uncertain or unknown to me as the AI. Please let me know if you have any other questions!"`,
+                `"I am Cody, an AI coding assistant created by Sourcegraph. I don't have specific information about my underlying model or architecture. Is there a particular coding task or question I can help you with?"`,
                 explainPollyError
             )
         }, 30_000)
@@ -399,8 +409,10 @@ describe('Agent', () => {
             // is not a git directory and symf reports some git-related error.
             expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchInlineSnapshot(
                 `
-              "\`\`\`typescript
-              class Dog implements Animal {
+              "Certainly! Here's a Dog class that implements the Animal interface:
+
+              \`\`\`typescript
+              export class Dog implements Animal {
                   name: string;
                   isMammal: boolean = true;
 
@@ -412,7 +424,9 @@ describe('Agent', () => {
                       return "Woof!";
                   }
               }
-              \`\`\`"
+              \`\`\`
+
+              This class fully implements the Animal interface as defined in your workspace."
             `,
                 explainPollyError
             )
@@ -1161,7 +1175,10 @@ describe('Agent', () => {
 
             // The site config `cody.contextFilters` value on sourcegraph.sourcegraph.com instance
             // should include `sourcegraph/cody` repo for this test to pass.
-            it('autocomplete/execute (with Cody Ignore filters)', async () => {
+            // Skipped because of the API error:
+            //  Request to https://sourcegraph.sourcegraph.com/.api/completions/code?client-name=vscode&client-version=v1 failed with 406 Not Acceptable: ClientCodyIgnoreCompatibilityError: Cody for vscode version "v1" doesn't match version constraint ">= 1.20.0". Please upgrade your client.
+            // https://linear.app/sourcegraph/issue/CODY-2814/fix-and-re-enable-cody-context-filters-agent-integration-test
+            it.skip('autocomplete/execute (with Cody Ignore filters)', async () => {
                 // Documents to be used as context sources.
                 await s2EnterpriseClient.openFile(animalUri)
                 await s2EnterpriseClient.openFile(squirrelUri)

@@ -7,6 +7,7 @@ import * as CompletionLogger from '../logger'
 import type { CompletionBookkeepingEvent } from '../logger'
 import { initTreeSitterParser } from '../test-helpers'
 
+import { Response } from 'node-fetch'
 import { getInlineCompletions, params } from './helpers'
 
 describe('[getInlineCompletions] completion event', () => {
@@ -26,14 +27,26 @@ describe('[getInlineCompletions] completion event', () => {
         vi.spyOn(uuid, 'v4').mockImplementation(() => 'stable-uuid')
         const spy = vi.spyOn(CompletionLogger, 'loaded')
 
+        const response = new Response(code, {
+            status: 200,
+            headers: {
+                'x-cody-resolved-model': 'sourcegraph/gateway-model',
+                'fireworks-speculation-matched-tokens': '100',
+            },
+        })
+
         await getInlineCompletions(
             params(
                 code,
                 [
                     {
-                        completion,
-                        stopReason: 'unit-test',
-                        resolvedModel: 'sourcegraph/gateway-model',
+                        completionResponse: {
+                            completion,
+                            stopReason: 'unit-test',
+                        },
+                        metadata: {
+                            response,
+                        },
                     },
                 ],
                 additionalParams
@@ -107,6 +120,9 @@ describe('[getInlineCompletions] completion event', () => {
                   "providerIdentifier": "anthropic",
                   "providerModel": "claude-instant-1.2",
                   "resolvedModel": "sourcegraph/gateway-model",
+                  "responseHeaders": {
+                    "fireworks-speculation-matched-tokens": "100",
+                  },
                   "source": "Network",
                   "testFile": false,
                   "traceId": undefined,
@@ -165,6 +181,9 @@ describe('[getInlineCompletions] completion event', () => {
                   "providerIdentifier": "anthropic",
                   "providerModel": "claude-instant-1.2",
                   "resolvedModel": "sourcegraph/gateway-model",
+                  "responseHeaders": {
+                    "fireworks-speculation-matched-tokens": "100",
+                  },
                   "source": "Network",
                   "testFile": false,
                   "traceId": undefined,

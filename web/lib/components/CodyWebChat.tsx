@@ -10,7 +10,6 @@ import {
     ContextItemSource,
     type Model,
     PromptString,
-    createRemoteFileURI,
     isErrorLike,
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
@@ -180,7 +179,8 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
             mentions.push({
                 type: 'file',
                 isIgnored: false,
-                uri: createRemoteFileURI(repositories[0].name, fileURL),
+                remoteRepositoryName: repositories[0].name,
+                uri: URI.file(repositories[0].name + fileURL),
                 source: ContextItemSource.Initial,
             })
         }
