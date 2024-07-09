@@ -25,8 +25,12 @@ describe('[getInlineCompletions] hot streak', () => {
 
     describe('static multiline', () => {
         it('caches hot streaks completions that are streamed in', async () => {
+            const thousandConsoleLogLines = 'console.log(1)\n'.repeat(1000)
+
             let request = await getInlineCompletionsWithInlinedChunks(
-                `function myFunction() {
+                `const a = 10_000
+                ${thousandConsoleLogLines}
+                function myFunction() {
                     console.log(1)
                     █console.log(2)
                     █console.log(3)
@@ -34,7 +38,10 @@ describe('[getInlineCompletions] hot streak', () => {
                     █
                 }`,
                 {
-                    configuration: { autocompleteExperimentalHotStreak: true },
+                    configuration: {
+                        autocompleteExperimentalHotStreak: true,
+                        autocompleteAdvancedProvider: 'fireworks',
+                    },
                     delayBetweenChunks: 50,
                 }
             )

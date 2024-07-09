@@ -41,6 +41,8 @@ describe('getCurrentDocContext', () => {
                 line: 0,
             },
             injectedPrefix: null,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
             position: { character: 2, line: 1 },
         })
     })
@@ -61,6 +63,8 @@ describe('getCurrentDocContext', () => {
                 line: 1,
             },
             injectedPrefix: null,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
             position: { character: 2, line: 2 },
         })
     })
@@ -81,6 +85,8 @@ describe('getCurrentDocContext', () => {
                 line: 0,
             },
             injectedPrefix: null,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
             position: { character: 13, line: 0 },
         })
     })
@@ -101,6 +107,8 @@ describe('getCurrentDocContext', () => {
                 line: 1,
             },
             injectedPrefix: null,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
             position: { character: 13, line: 1 },
         })
     })
@@ -129,6 +137,8 @@ describe('getCurrentDocContext', () => {
             multilineTrigger: null,
             multilineTriggerPosition: null,
             injectedPrefix: 'ssert',
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
             position: { character: 9, line: 0 },
         })
     })
@@ -158,6 +168,8 @@ describe('getCurrentDocContext', () => {
             multilineTrigger: null,
             multilineTriggerPosition: null,
             injectedPrefix: 'log',
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
             position: { character: 8, line: 1 },
         })
     })
@@ -186,6 +198,8 @@ describe('getCurrentDocContext', () => {
             multilineTrigger: null,
             multilineTriggerPosition: null,
             injectedPrefix: null,
+            maxPrefixLength: 100,
+            maxSuffixLength: 100,
             position: { character: 7, line: 0 },
         })
     })
@@ -393,6 +407,8 @@ describe('insertCompletionIntoDocContext', () => {
             multilineTrigger: null,
             multilineTriggerPosition: null,
             injectedPrefix: null,
+            maxPrefixLength: 140,
+            maxSuffixLength: 60,
             position: { character: 24, line: 2 },
             positionWithoutInjectedCompletionText: docContext.position,
         })
@@ -433,6 +449,8 @@ describe('insertCompletionIntoDocContext', () => {
             multilineTrigger: null,
             multilineTriggerPosition: null,
             injectedPrefix: null,
+            maxPrefixLength: 140,
+            maxSuffixLength: 60,
             // Note: The position is always moved at the end of the line that the text was inserted
             position: { character: "    console.log('hello', 'world')".length, line: 1 },
             positionWithoutInjectedCompletionText: docContext.position,
@@ -478,6 +496,8 @@ describe('insertCompletionIntoDocContext', () => {
             multilineTrigger: null,
             multilineTriggerPosition: null,
             injectedPrefix: null,
+            maxPrefixLength: 140,
+            maxSuffixLength: 60,
             // Note: The position is always moved at the end of the line that the text was inserted
             position: { character: '    }, 2)'.length, line: 4 },
             positionWithoutInjectedCompletionText: docContext.position,

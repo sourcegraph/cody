@@ -163,8 +163,8 @@ export function params(
     const docContext = getCurrentDocContext({
         document,
         position,
-        maxPrefixLength: 1000,
-        maxSuffixLength: 1000,
+        maxPrefixLength: providerConfig.contextSizeHints.prefixChars,
+        maxSuffixLength: providerConfig.contextSizeHints.suffixChars,
         context: takeSuggestWidgetSelectionIntoAccount
             ? {
                   triggerKind: 0,
