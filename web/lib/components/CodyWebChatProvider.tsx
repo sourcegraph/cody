@@ -227,6 +227,13 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
             setActiveWebviewPanelID(panelId)
             setLastActiveChatID(chatId)
 
+            await agent.rpc.sendRequest('webview/receiveMessage', {
+                id: activeWebviewPanelIDRef.current,
+                message: { chatID: chatId, command: 'restoreHistory' },
+            })
+
+            // Set initial context after we restore history so context won't be
+            // overridden by the previous chat session context
             if (initialContext?.repositories.length) {
                 await agent.rpc.sendRequest('webview/receiveMessage', {
                     id: activeWebviewPanelIDRef.current,
@@ -236,11 +243,6 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
                     },
                 })
             }
-
-            await agent.rpc.sendRequest('webview/receiveMessage', {
-                id: activeWebviewPanelIDRef.current,
-                message: { chatID: chatId, command: 'restoreHistory' },
-            })
 
             if (onNewChatCreated) {
                 onNewChatCreated(chatId)
