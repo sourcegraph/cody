@@ -5,9 +5,11 @@ exports[`--context-file (animal test) 1`] = `
   the code without any explanation.
 exitCode: 0
 stdout: |+
+  Here's the implementation of a cow based on the provided interface:
+
   \`\`\`typescript
   class Cow implements StrangeAnimal {
-      makesSound(): 'moo' {
+      makesSound(): 'coo' | 'moo' {
           return 'moo';
       }
   }
@@ -22,10 +24,8 @@ exports[`--context-repo (squirrel test) 1`] = `
   what is squirrel? Explain as briefly as possible.
 exitCode: 0
 stdout: >+
-  Squirrel is a high-performance, open-source object-relational database (ORD)
-  that provides a SQL interface for storing and querying JSON data. It is
-  designed to be embedded in applications, making it suitable for use cases such
-  as caching, analytics, and data storage in edge computing environments.
+  Squirrel is a lightweight, high-performance SQL database engine written in
+  Rust. It's designed to be embedded into other applications.
 
 stderr: ""
 "

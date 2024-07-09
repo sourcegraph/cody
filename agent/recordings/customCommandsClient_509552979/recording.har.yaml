@@ -90,11 +90,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: c56d91c05ad7f8b4cd8d5de07644dd60
+    - _id: f442a08de275a7235aa9fc510320f560
       _order: 0
       cache: {}
       request:
-        bodySize: 319
+        bodySize: 953
         cookies: []
         headers:
           - name: content-type
@@ -107,109 +107,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-871f68d2198b34ceb514de57bff42226-20f22be34affa01a-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 429
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: You are Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: Did I share any code with you? If yes, reply single word 'yes'. If none,
-                  reply 'no'.
-            model: anthropic/claude-3-sonnet-20240229
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "1"
-          - name: client-name
-            value: customcommandsclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=customcommandsclient&client-version=v1
-      response:
-        bodySize: 152
-        content:
-          mimeType: text/event-stream
-          size: 152
-          text: |+
-            event: completion
-            data: {"completion":"no","stopReason":"end_turn"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 28 May 2024 11:58:23 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-28T11:58:22.689Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 9b577abac5d071fa97603ba9484e42af
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 951
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - name: user-agent
-            value: customCommandsClient / v1
-          - name: traceparent
-            value: 00-7fc428eac437166b3fc8dd08eb3fc621-85d6aa33c022d3c1-01
+            value: 00-8757f31c9f7bc98a6e8ab2ed2f5f25bd-19ec703ea3cbfc98-01
           - name: connection
             value: keep-alive
           - name: host
@@ -255,7 +153,7 @@ log:
                 text: Give me the names of the files I have shared with you so far. Format the
                   response as a bulleted list. Only include the raw filename, no
                   extra formatting like quotes.
-            model: anthropic/claude-3-sonnet-20240229
+            model: anthropic/claude-3-5-sonnet-20240620
             temperature: 0
             topK: -1
             topP: -1
@@ -268,14 +166,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 4839
+        bodySize: 2061
         content:
           mimeType: text/event-stream
-          size: 4839
+          size: 2061
           text: >+
             event: completion
 
-            data: {"completion":"Here are the names of the files you have shared with me so far as a bulleted list:\n\n- example3.ts\n- example2.ts\n- example1.ts","stopReason":"end_turn"}
+            data: {"completion":"Here are the names of the files you've shared so far, formatted as a bulleted list:\n\n• example3.ts\n• example2.ts\n• example1.ts","stopReason":"end_turn"}
 
 
             event: done
@@ -285,7 +183,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 11 Jun 2024 22:08:45 GMT
+            value: Tue, 09 Jul 2024 17:21:40 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -314,7 +212,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-11T22:08:44.099Z
+      startedDateTime: 2024-07-09T17:21:38.892Z
       time: 0
       timings:
         blocked: -1
@@ -324,11 +222,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 5c4caae9dfbe605303f8159cb61d5c88
+    - _id: b00e927b47ba8f61146d00d3a0fb85e2
       _order: 0
       cache: {}
       request:
-        bodySize: 1708
+        bodySize: 321
         cookies: []
         headers:
           - name: content-type
@@ -341,7 +239,109 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-f4c5a6e17909ad3108510b0bf3e4fd05-9c43e047473b5126-01
+            value: 00-c461574e8ede870114bf68bcf1026ad6-4584f5618503590a-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 429
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: Did I share any code with you? If yes, reply single word 'yes'. If none,
+                  reply 'no'.
+            model: anthropic/claude-3-5-sonnet-20240620
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "1"
+          - name: client-name
+            value: customcommandsclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=customcommandsclient&client-version=v1
+      response:
+        bodySize: 152
+        content:
+          mimeType: text/event-stream
+          size: 152
+          text: |+
+            event: completion
+            data: {"completion":"no","stopReason":"end_turn"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 09 Jul 2024 17:21:42 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-07-09T17:21:40.716Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 1b53a17454527b407c1163816f330c9f
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1710
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+          - name: user-agent
+            value: customCommandsClient / v1
+          - name: traceparent
+            value: 00-074f5f84cd45bdd436cd3ff9214389b5-ed93fa6b07be17f9-01
           - name: connection
             value: keep-alive
           - name: host
@@ -427,7 +427,7 @@ log:
               - speaker: human
                 text: How many file context have I shared with you? Reply single number. Skip
                   preamble.
-            model: anthropic/claude-3-sonnet-20240229
+            model: anthropic/claude-3-5-sonnet-20240620
             temperature: 0
             topK: -1
             topP: -1
@@ -454,7 +454,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 11 Jun 2024 22:08:47 GMT
+            value: Tue, 09 Jul 2024 17:21:44 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -483,7 +483,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-11T22:08:45.805Z
+      startedDateTime: 2024-07-09T17:21:42.342Z
       time: 0
       timings:
         blocked: -1
@@ -493,11 +493,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 26984de7053ea01429b394e478e25b36
+    - _id: ca95a2ec90c100a1713f5ad1c3c1d31d
       _order: 0
       cache: {}
       request:
-        bodySize: 2225
+        bodySize: 2227
         cookies: []
         headers:
           - name: content-type
@@ -510,7 +510,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-2627bdc2a4001e079456a42c4920f2f2-e1ddf0524fbab331-01
+            value: 00-e0a219c98b2496e6975173f99a3b2d0c-847a97fbbc757cd3-01
           - name: connection
             value: keep-alive
           - name: host
@@ -578,7 +578,7 @@ log:
                   </INSTRUCTIONS7390>
               - speaker: assistant
                 text: <CODE5711>
-            model: anthropic/claude-3-sonnet-20240229
+            model: anthropic/claude-3-5-sonnet-20240620
             stopSequences:
               - </CODE5711>
             temperature: 0
@@ -607,7 +607,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 25 Jun 2024 15:48:08 GMT
+            value: Tue, 09 Jul 2024 17:21:46 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -636,7 +636,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-25T15:48:06.909Z
+      startedDateTime: 2024-07-09T17:21:44.204Z
       time: 0
       timings:
         blocked: -1
@@ -646,11 +646,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 1ef0040bc821eab17c35aa9d9392d589
+    - _id: bc37afe008a60b37ff5850add1f56406
       _order: 0
       cache: {}
       request:
-        bodySize: 2343
+        bodySize: 2345
         cookies: []
         headers:
           - name: content-type
@@ -663,7 +663,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-3fa3ee29ec97313b239c9be1361dddf2-a70335330a14a7e3-01
+            value: 00-1a65f1420d38552040396cae4842220a-17e7da637da1f1ab-01
           - name: connection
             value: keep-alive
           - name: host
@@ -741,7 +741,7 @@ log:
                   </INSTRUCTIONS7390>
               - speaker: assistant
                 text: <CODE5711>
-            model: anthropic/claude-3-sonnet-20240229
+            model: anthropic/claude-3-5-sonnet-20240620
             stopSequences:
               - </CODE5711>
             temperature: 0
@@ -756,14 +756,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 3780
+        bodySize: 2588
         content:
           mimeType: text/event-stream
-          size: 3780
+          size: 2588
           text: >+
             event: completion
 
-            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    sayName(): void {\n        console.log(`My name is ${this.name}`);\n    }\n}\n/* SELECTION_END */","stopReason":"stop_sequence"}
+            data: {"completion":"/* SELECTION_START */\nexport interface Animal {\n    name: string;\n    makeAnimalSound(): string;\n    isMammal: boolean;\n    logName(): void;\n}\n/* SELECTION_END */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -773,7 +773,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 25 Jun 2024 15:48:09 GMT
+            value: Tue, 09 Jul 2024 17:21:48 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -802,7 +802,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-25T15:48:08.190Z
+      startedDateTime: 2024-07-09T17:21:46.060Z
       time: 0
       timings:
         blocked: -1
@@ -1560,119 +1560,6 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-07-03T09:58:04.376Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: b584bf96a3d88ab96114e5cbea1e4bca
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 164
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: customCommandsClient / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "164"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 331
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |-
-              
-              query SiteIdentification {
-              	site {
-              		siteID
-              		productSubscription {
-              			license {
-              				hashedKey
-              			}
-              		}
-              	}
-              }
-            variables: {}
-        queryString:
-          - name: SiteIdentification
-            value: null
-        url: https://sourcegraph.com/.api/graphql?SiteIdentification
-      response:
-        bodySize: 212
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 212
-          text: "[\"H4sIAAAAAAAAAzTLsQ6CMBCA4Xe52YX2rgVmF+PI4HztXaWJAdKWwRDf3WDiv/zTd4BwY\
-            xgPqLnp/7crjDCte4n6LLzNDw1wga2sssc27aHGkreW1+UErxx1qT87c51V7vqGEYbo\
-            u9AZm/okmgxi70QZlZzzqNEaJOMNReocCdkgiCk4j4btwJwIPmdfAAAA//8DABj2u36\
-            gAAAA\"]"
-          textDecoded:
-            data:
-              site:
-                productSubscription:
-                  license:
-                    hashedKey: 9c71b123f8fdef24486dea4e56674ec32452725c5165d53bd44fb6742a39aaf5
-                siteID: SourcegraphWeb
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 28 May 2024 11:58:20 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1333
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-05-28T11:58:20.314Z
       time: 0
       timings:
         blocked: -1

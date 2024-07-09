@@ -142,12 +142,12 @@ test('edit (fixup) input - model selection', async ({ page, nap, sidebar }) => {
 
     // Check the correct model item is auto-selected
     await nap()
-    const modelItem = page.getByText('Claude 3 Sonnet')
+    const modelItem = page.getByText('Claude 3.5 Sonnet')
     await nap()
     expect(modelItem).toBeVisible()
 
     // Open the model input and check it has the correct item selected
     await modelItem.click()
-    const selectedModelItem = page.getByLabel('check   anthropic-logo  Claude 3 Sonnet, by Anthropic')
+    const selectedModelItem = page.getByLabel('check   anthropic-logo  Claude 3.5 Sonnet, by Anthropic')
     expect(selectedModelItem).toBeVisible()
 })

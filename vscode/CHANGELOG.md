@@ -26,6 +26,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Simplify the Enterprise docs in the model selector [pull/4745](https://github.com/sourcegraph/cody/pull/4745)
 - Edit: We now collapse the selection down to the cursor position after an edit is triggered. [pull/4781](https://github.com/sourcegraph/cody/pull/4781)
 - Autocomplete: requests timeout decreased from 15s to 7s. [pull/4813](https://github.com/sourcegraph/cody/pull/4813)
+- Chat & Edit: Claude 3.5 Sonnet is now the default model for Chat and Commands. [pull/4822](https://github.com/sourcegraph/cody/pull/4822)
 
 ## 1.24.2
 
