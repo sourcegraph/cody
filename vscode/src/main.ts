@@ -266,9 +266,10 @@ const register = async (
         configWatcher.set(newConfig)
         graphqlClient.onConfigurationChange(newConfig)
         await ClientConfigSingleton.getInstance().refreshConfig()
-        await configWatcher.initAndOnChange(() => ModelsService.onConfigChange(), disposables)
 
         await syncModels(authStatus)
+        await ModelsService.onConfigChange()
+
         await chatManager.syncAuthStatus(authStatus)
         editorManager.syncAuthStatus(authStatus)
 
@@ -279,16 +280,18 @@ const register = async (
         const parallelTasks: Promise<void>[] = [
             featureFlagProvider.syncAuthStatus(),
             setupAutocomplete(),
-            PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent()),
-            exposeOpenCtxClient(
-                context,
-                initialConfig,
-                authStatus.isDotCom,
-                platform.createOpenCtxController
-            ),
         ]
 
         await Promise.all(parallelTasks)
+
+        await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
+
+        await exposeOpenCtxClient(
+            context,
+            initialConfig,
+            authStatus.isDotCom,
+            platform.createOpenCtxController
+        )
 
         const eventValue =
             !authStatus.isLoggedIn && !authStatus.endpoint
