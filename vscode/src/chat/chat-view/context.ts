@@ -5,16 +5,19 @@ import {
     type ContextItem,
     type ContextItemRepository,
     ContextItemSource,
+    FeatureFlag,
     MAX_BYTES_PER_FILE,
     NUM_CODE_RESULTS,
     NUM_TEXT_RESULTS,
     type PromptString,
     type Result,
+    featureFlagProvider,
     isFileURI,
     truncateTextNearestLine,
     uriBasename,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { compact, flatten, zip } from 'lodash'
 import type { RemoteSearch } from '../../context/remote-search'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ContextRankingController } from '../../local-context/context-ranking'
@@ -99,12 +102,15 @@ export async function getEnhancedContext({
                 ? retrieveContextGracefully(searchSymf(providers.symf, editor, input.text), 'symf')
                 : []
 
-        // Combine all context sources
-        const searchContext = [
-            ...(await embeddingsContextItemsPromise),
-            ...(await remoteSearchContextItemsPromise),
-            ...(await localSearchContextItemsPromise),
+        // Retrieve items from all context sources
+        const searchContextBySource = [
+            await embeddingsContextItemsPromise,
+            await remoteSearchContextItemsPromise,
+            await localSearchContextItemsPromise,
         ]
+
+        // Interleave items from context sources, excluding undefined items inserted by lodash's zip
+        const searchContext = compact(flatten(zip(...searchContextBySource)))
 
         const priorityContext = await getPriorityContext(input.text, editor, searchContext)
         return priorityContext.concat(searchContext)
@@ -181,6 +187,36 @@ async function getEnhancedContextFromRanker({
         )
         return rankedContext
     })
+}
+
+export async function getContextStrategy(
+    defaultStrategy: ConfigurationUseContext
+): Promise<ConfigurationUseContext> {
+    // Only run experiment if we're in VS Code
+    if (vscode.workspace.getConfiguration().get<boolean>('cody.advanced.agent.running', false)) {
+        return defaultStrategy
+    }
+
+    const [isEnhancedContextExperiment, useEmbeddings, useSymf] = await Promise.all([
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEnhancedContextExperiment),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEnhancedContexUseEmbeddings),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEnhancedContextUseSymf),
+    ])
+
+    if (!isEnhancedContextExperiment) {
+        return defaultStrategy
+    }
+
+    if (useEmbeddings && useSymf) {
+        return 'blended'
+    }
+    if (useEmbeddings) {
+        return 'embeddings'
+    }
+    if (useSymf) {
+        return 'keyword'
+    }
+    return 'none'
 }
 
 async function searchRemote(

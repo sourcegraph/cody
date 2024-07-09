@@ -2,7 +2,7 @@ import { clsx } from 'clsx'
 import type React from 'react'
 import { useCallback, useEffect, useMemo } from 'react'
 
-import type { AuthStatus, ChatMessage, Guardrails } from '@sourcegraph/cody-shared'
+import type { AuthStatus, ChatMessage, CodyIDE, Guardrails } from '@sourcegraph/cody-shared'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
@@ -192,7 +192,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     <Button onClick={handleGenerateUnitTest}>Generate Unit Tests (Experimental)</Button>
                 </div>
             )}
-            {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage />}
+            {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage IDE={userInfo.ide} />}
             <ScrollDown scrollableParent={scrollableParent} onClick={focusLastHumanMessageEditor} />
         </div>
     )
@@ -202,6 +202,7 @@ export interface UserAccountInfo {
     isDotComUser: boolean
     isCodyProUser: boolean
     user: Pick<AuthStatus, 'username' | 'displayName' | 'avatarURL'>
+    ide: CodyIDE
 }
 
 export type ApiPostMessage = (message: any) => void

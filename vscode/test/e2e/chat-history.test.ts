@@ -26,6 +26,9 @@ test.extend<ExpectedV2Events>({
 
     const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
 
+    // Ensure the chat view is ready before we start typing
+    await expect(chatPanelFrame.getByText('to add context to your chat')).toBeVisible()
+
     await chatInput.fill('Hey')
     await chatInput.press('Enter')
 

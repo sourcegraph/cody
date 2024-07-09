@@ -25,8 +25,9 @@ const getVSCodeConfigurationWithAccessToken = (
 })
 
 const dummyCodeCompletionsClient: CodeCompletionsClient = {
+    // biome-ignore lint/correctness/useYield: keep TS happy in tests.
     async *complete() {
-        yield { completion: '', stopReason: '' }
+        return { completionResponse: { completion: '', stopReason: '' } }
     },
     logger: undefined,
     onConfigurationChange: () => undefined,

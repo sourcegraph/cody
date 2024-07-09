@@ -342,13 +342,25 @@ export class MockServer {
 
         let attribution = false
         let codyPro = false
-        app.post('/.api/graphql', (req, res) => {
+        app.get('/.api/client-config', (req, res) => {
             if (req.headers.authorization !== `token ${VALID_TOKEN}`) {
                 res.sendStatus(401)
                 return
             }
-
+            res.send(JSON.stringify({
+                chatEnabled: true,
+                autoCompleteEnabled: true,
+                customCommandsEnabled: true,
+                attributionEnabled: attribution,
+            }))
+        })
+        app.post('/.api/graphql', (req, res) => {
             const operation = new URL(req.url, 'https://example.com').search.replace(/^\?/, '')
+            if (req.headers.authorization !== `token ${VALID_TOKEN}` && operation !== 'SiteProductVersion') {
+                res.sendStatus(401)
+                return
+            }
+
             if (controller.graphQlMocks.has(operation)) {
                 try {
                     controller.onGraphQl(operation).handleRequest(res)
