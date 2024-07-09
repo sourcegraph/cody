@@ -25,12 +25,12 @@ export function getLineNumberDependentCompletionParams(
 
     return {
         singlelineParams: {
-            timeoutMs: 15_000,
+            timeoutMs: 5_000,
             stopSequences: singlelineStopSequences,
             maxTokensToSample: MAX_RESPONSE_TOKENS,
         },
         multilineParams: {
-            timeoutMs: 15_000,
+            timeoutMs: 5_000,
             stopSequences: multilineStopSequences,
             maxTokensToSample: MAX_RESPONSE_TOKENS,
         },
