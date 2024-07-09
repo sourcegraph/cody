@@ -153,6 +153,7 @@ export {
     type CodeCompletionsParams,
     type SerializedCodeCompletionsParams,
     type CompletionResponseGenerator,
+    type CompletionResponseWithMetaData,
 } from './inferenceClient/misc'
 export type {
     IndexedKeywordContextFetcher,
@@ -218,7 +219,7 @@ export {
     graphqlClient,
 } from './sourcegraph-api/graphql'
 export {
-    ConfigFeaturesSingleton,
+    ClientConfigSingleton,
     addCustomUserAgent,
     customUserAgent,
     isNodeResponse,

@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import {
     type AuthStatus,
     type ChatClient,
-    ConfigFeaturesSingleton,
+    ClientConfigSingleton,
     type Model,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -91,8 +91,8 @@ export class EditManager implements vscode.Disposable {
             source = DEFAULT_EVENT_SOURCE,
             telemetryMetadata,
         } = args
-        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
-        if (!configFeatures.commands) {
+        const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
+        if (!clientConfig.customCommandsEnabled) {
             void vscode.window.showErrorMessage(
                 'This feature has been disabled by your Sourcegraph site admin.'
             )

@@ -51,8 +51,7 @@ export function createOllamaClient(
                 if (line.response) {
                     completionResponse.completion += line.response
                     yield {
-                        completion: '',
-                        stopReason: CompletionStopReason.StreamingChunk,
+                        completionResponse,
                     }
                 }
 
@@ -76,7 +75,7 @@ export function createOllamaClient(
             completionResponse.stopReason = CompletionStopReason.RequestFinished
             log?.onComplete(completionResponse)
 
-            return completionResponse
+            return { completionResponse }
         } catch (error) {
             if (!isAbortError(error) && isError(error)) {
                 log?.onError(error.message, error)
