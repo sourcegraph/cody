@@ -1,29 +1,17 @@
-import { mkdirSync, readdirSync, rmSync } from 'node:fs'
-import * as os from 'node:os'
-import * as path from 'node:path'
+import os from 'node:os'
 import { type ReporterDescription, defineConfig } from '@playwright/test'
 import { ulid } from 'ulidx'
 import type { SymlinkExtensions } from './e2e/utils/symlink-extensions.setup'
+import type { TmpDirOptions } from './e2e/utils/tmpdir.setup'
 import type { TestOptions, WorkerOptions } from './e2e/utils/vscody'
 
 const isWin = process.platform.startsWith('win')
 const isCI = !!process.env.CI
-
-// This makes sure that each run gets a unique run id. This shouldn't really be
-// used other than to invalidate lockfiles etc.
 process.env.RUN_ID = process.env.RUN_ID || ulid()
 
-const globalTmpDir = path.resolve(__dirname, `../.test/runs/${process.env.RUN_ID}/`)
-mkdirSync(globalTmpDir, { recursive: true })
-// get previous runs and delete them
-for (const run of readdirSync(path.resolve(__dirname, '../.test/runs/'))) {
-    if (run !== process.env.RUN_ID) {
-        console.log('clearing previous run', run)
-        rmSync(path.resolve(__dirname, `../.test/runs/${run}`), { force: true, recursive: true })
-    }
-}
-
-export default defineConfig<WorkerOptions & TestOptions & SymlinkExtensions>({
+export default defineConfig<
+    WorkerOptions & TestOptions & TmpDirOptions & SymlinkExtensions & GlobalSetupOptions
+>({
     workers: '50%',
     retries: 0, // NO MORE FLAKE ALLOWED! It's a slippery slope.
     forbidOnly: isCI,
@@ -40,8 +28,9 @@ export default defineConfig<WorkerOptions & TestOptions & SymlinkExtensions>({
         repoRootDir: '../', //deprecated
         vscodeExtensions: ['sourcegraph.cody-ai'],
         symlinkExtensions: ['.'],
-        globalTmpDir: `../.test/runs/${process.env.RUN_ID}/`, //os.tmpdir(),
-        vscodeVersion: 'stablefff',
+        globalTmpDir: `../.test/runs/${process.env.RUN_ID}/`,
+        setupClearGlobalTmpParentDir: true,
+        vscodeVersion: 'stable',
         vscodeTmpDir: '../.test/global/vscode',
         vscodeExtensionCacheDir: `${os.homedir()}/.vscode-server/extensions`,
         vscodeServerTmpDir: '../.test/global/vscode-server',
@@ -52,7 +41,7 @@ export default defineConfig<WorkerOptions & TestOptions & SymlinkExtensions>({
                 : false,
         recordingMode: (process.env.CODY_RECORDING_MODE as any) ?? 'replay',
         recordingDir: '../recordings/vscode/',
-        keepUnusedRecordings: true,
+        keepUnusedRecordings: false,
         bypassCSP: true,
         locale: 'en-US',
         timezoneId: 'America/Los_Angeles',
@@ -71,6 +60,14 @@ export default defineConfig<WorkerOptions & TestOptions & SymlinkExtensions>({
     },
     projects: [
         {
+            name: 'tmpdir',
+            testDir: './e2e/utils',
+            testMatch: ['tmpdir.setup.ts'],
+            use: {
+                clearGlobalTmpDirParent: true,
+            },
+        },
+        {
             name: 'symlink-extensions',
             testDir: './e2e/utils',
             testMatch: ['symlink-extensions.setup.ts'],
@@ -79,14 +76,14 @@ export default defineConfig<WorkerOptions & TestOptions & SymlinkExtensions>({
             name: 'utils',
             testDir: './e2e/utils',
             testMatch: ['**/*.test.ts'],
-            dependencies: ['symlink-extensions'],
+            dependencies: ['tmpdir', 'symlink-extensions'],
         },
         {
             name: 'e2e',
             testDir: './e2e',
             testMatch: ['**/*.test.ts'],
             testIgnore: ['issues/**/*', 'utils/**/*'],
-            dependencies: ['symlink-extensions'],
+            dependencies: ['tmpdir', 'symlink-extensions'],
             use: {
                 // recordIfMissing: true, //uncomment for quick manual override
             },
@@ -96,7 +93,7 @@ export default defineConfig<WorkerOptions & TestOptions & SymlinkExtensions>({
             testDir: './e2e/issues',
             retries: 0,
             testMatch: ['**/*.test.ts'],
-            dependencies: ['symlink-extensions'],
+            dependencies: ['tmpdir', 'symlink-extensions'],
             use: {
                 // recordIfMissing: true, //uncomment for quick manual override
             },

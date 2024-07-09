@@ -15,15 +15,13 @@ test.fixme('CODY-2392', () => {
     //     selectLineRangeInEditorTab,
     // } from '../../e2e/common'
     // import {
-    //     type ExpectedEvents,
     //     type ExpectedV2Events,
     //     type TestConfiguration,
     //     executeCommandInPalette,
     //     test,
     // } from '../../e2e/helpers'
 
-    // test.extend<TestConfiguration & ExpectedEvents & ExpectedV2Events>({
-    //     expectedEvents: [],
+    // test.extend<TestConfiguration & ExpectedV2Events>({
     //     expectedV2Events: [],
     //     preAuthenticate: true,
     // })('@issue [CODY-2392](https://linear.app/sourcegraph/issue/CODY-2392)', async ({ page }) => {
@@ -67,7 +65,6 @@ import { test } from '../../e2e/helpers'
 
 // TODO: add a .only() to actually run this test
 test.extend<TestConfiguration>({
-    expectedEvents: [],
     expectedV2Events: [],
     preAuthenticate: true,
 })('@issue [CODY-1234](https://linear.app/sourcegraph/issue/CODY-1234)', async ({ page }) => {

@@ -1,5 +1,9 @@
+import fs from 'node:fs/promises'
+import path from 'node:path'
 import { expect, test as t } from '@playwright/test'
 import type { UIXContextFnContext } from '.'
+import { workspace } from '.'
+import { MITM_AUTH_TOKEN_PLACEHOLDER } from '../constants'
 type WebViewCtx = Pick<UIXContextFnContext, 'page'>
 
 /**
@@ -66,14 +70,33 @@ export async function waitForBinaryDownloads() {}
 export async function waitForIndexing() {}
 
 export async function waitForStartup() {
+    //TODO: Implement this
+    //TODO: make sure we can shift the timeout
     await Promise.all([waitForBinaryDownloads(), waitForIndexing()])
 }
 
-export async function sidebar<R = any>(
-    withSidebar: (sidebar: any) => Promise<R>,
-    ctx: Pick<UIXContextFnContext, 'page'>
-): Promise<R> {
-    //todo: IFRAME Locator
-    const frame = await ctx.page.frameLocator('iframe')
-    return await withSidebar(frame)
+export async function signIn(ctx: Pick<UIXContextFnContext, 'page'>) {
+    return
 }
+
+/**
+ * This ensures the user is already authenticated on the mock endpoint
+ */
+export function preAuthenticate(ctx: Pick<UIXContextFnContext, 'workspaceDir'>) {
+    return t.step('preAuthenticate', async () => {
+        const secretFilePath = path.join(ctx.workspaceDir, '.vscode/cody_secrets.json')
+        await fs.mkdir(path.dirname(secretFilePath), { recursive: true })
+        await fs.writeFile(
+            secretFilePath,
+            JSON.stringify({
+                token: MITM_AUTH_TOKEN_PLACEHOLDER,
+            })
+        )
+        await workspace.modifySettings(
+            s => ({ ...s, 'cody.experimental.localTokenPath': secretFilePath }),
+            ctx
+        )
+    })
+}
+
+export namespace Config {}

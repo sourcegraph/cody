@@ -10,7 +10,6 @@ import { type DebouncedFunc, throttle } from 'lodash'
 import * as vscode from 'vscode'
 import type { SyntaxNode } from 'web-tree-sitter'
 import type { AuthProvider } from '../services/AuthProvider'
-import { telemetryService } from '../services/telemetry'
 import { execQueryWrapper } from '../tree-sitter/query-sdk'
 
 const EDIT_SHORTCUT_LABEL = isMacOS() ? 'Opt+K' : 'Alt+K'
@@ -401,7 +400,6 @@ export class GhostHintDecorator implements vscode.Disposable {
     }
 
     private _fireDisplayEvent(variant: GhostVariant): void {
-        telemetryService.log('CodyVSCodeExtension:ghostText:visible', { variant }, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.ghostText', 'visible', { privateMetadata: { variant } })
     }
 

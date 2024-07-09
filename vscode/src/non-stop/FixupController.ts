@@ -12,7 +12,6 @@ import {
 import { executeEdit } from '../edit/execute'
 import type { EditIntent, EditMode } from '../edit/types'
 import { logDebug } from '../log'
-import { telemetryService } from '../services/telemetry'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 
@@ -27,38 +26,29 @@ import type { AuthProvider } from '../services/AuthProvider'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
-import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, type FixupTaskID, type FixupTelemetryMetadata } from './FixupTask'
 import { FixupDecorator } from './decorations/FixupDecorator'
 import { type Edit, computeDiff, makeDiffEditBuilderCompatible } from './line-diff'
 import { trackRejection } from './rejection-tracker'
-import type { FixupActor, FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
+import type { FixupActor, FixupFileCollection, FixupTextChanged } from './roles'
 import { CodyTaskState, expandRangeToInsertedText, getMinimumDistanceToRangeBoundary } from './utils'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
-    implements FixupActor, FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged, vscode.Disposable
+    implements FixupActor, FixupFileCollection, FixupTextChanged, vscode.Disposable
 {
     private tasks = new Map<FixupTaskID, FixupTask>()
     private readonly files: FixupFileObserver
     private readonly editObserver: FixupDocumentEditObserver
-    // TODO: Make the fixup scheduler use a cooldown timer with a longer delay
-    private readonly scheduler = new FixupScheduler(10)
     private readonly decorator = new FixupDecorator()
     private readonly controlApplicator
     private readonly persistenceTracker = new PersistenceTracker(vscode.workspace, {
         onPresent: ({ metadata, ...event }) => {
             const safeMetadata = splitSafeMetadata({ ...event, ...metadata })
-            telemetryService.log('CodyVSCodeExtension:fixup:persistence:present', safeMetadata, {
-                hasV2Event: true,
-            })
             telemetryRecorder.recordEvent('cody.fixup.persistence', 'present', safeMetadata)
         },
         onRemoved: ({ metadata, ...event }) => {
             const safeMetadata = splitSafeMetadata({ ...event, ...metadata })
-            telemetryService.log('CodyVSCodeExtension:fixup:persistence:present', safeMetadata, {
-                hasV2Event: true,
-            })
             telemetryRecorder.recordEvent('cody.fixup.persistence', 'present', safeMetadata)
         },
     })
@@ -197,9 +187,6 @@ export class FixupController
 
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         if (!editOk) {
-            telemetryService.log('CodyVSCodeExtension:fixup:revert:failed', legacyMetadata, {
-                hasV2Event: true,
-            })
             telemetryRecorder.recordEvent('cody.fixup.revert', 'failed', {
                 metadata,
                 privateMetadata: {
@@ -208,9 +195,6 @@ export class FixupController
                 },
             })
         } else {
-            telemetryService.log('CodyVSCodeExtension:fixup:reverted', legacyMetadata, {
-                hasV2Event: true,
-            })
             telemetryRecorder.recordEvent('cody.fixup.reverted', 'clicked', {
                 metadata,
                 privateMetadata: {
@@ -364,12 +348,6 @@ export class FixupController
             )[0]
 
         return closestTask
-    }
-
-    // FixupIdleTaskScheduler
-
-    public scheduleIdle<T>(callback: () => T): Promise<T> {
-        return this.scheduler.scheduleIdle(callback)
     }
 
     public async promptUserForTask(
@@ -536,9 +514,6 @@ export class FixupController
         }
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         if (!editOk) {
-            telemetryService.log('CodyVSCodeExtension:fixup:apply:failed', legacyMetadata, {
-                hasV2Event: true,
-            })
             telemetryRecorder.recordEvent('cody.fixup.apply', 'failed', {
                 metadata,
                 privateMetadata,
@@ -553,7 +528,6 @@ export class FixupController
             return
         }
 
-        telemetryService.log('CodyVSCodeExtension:fixup:applied', legacyMetadata, { hasV2Event: true })
         telemetryRecorder.recordEvent('cody.fixup.apply', 'succeeded', {
             metadata,
             privateMetadata,
@@ -590,9 +564,6 @@ export class FixupController
         })
 
         const logAcceptance = (acceptance: 'rejected' | 'accepted') => {
-            telemetryService.log(`CodyVSCodeExtension:fixup:user:${acceptance}`, metadata, {
-                hasV2Event: true,
-            })
             telemetryRecorder.recordEvent('cody.fixup.user', acceptance, {
                 metadata,
                 privateMetadata,

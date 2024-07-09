@@ -1,4 +1,4 @@
-import type { Item, Mention, Provider } from '@openctx/client'
+import type { Item, Mention } from '@openctx/client'
 import {
     contextFiltersProvider,
     displayPathBasename,
@@ -8,37 +8,43 @@ import {
 } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 
-const RemoteFileProvider: Provider & { providerUri: string } = {
-    providerUri: 'internal-remote-file-search',
+import type { OpenContextProvider } from './types'
 
-    meta() {
-        return {
-            name: 'Remote Files',
-            mentions: {},
-        }
-    },
+const RemoteFileProvider = createRemoteFileProvider()
 
-    async mentions({ query }) {
-        const [repoName, filePath] = query?.split(':') || []
+export function createRemoteFileProvider(customTitle?: string): OpenContextProvider {
+    return {
+        providerUri: 'internal-remote-file-search',
 
-        if (!query?.includes(':') || !repoName.trim()) {
-            return await getRepoMentions(query?.trim())
-        }
+        meta() {
+            return {
+                name: customTitle ?? 'Remote Files',
+                mentions: {},
+            }
+        },
 
-        return await getFileMentions(repoName, filePath.trim())
-    },
+        async mentions({ query }) {
+            const [repoName, filePath] = query?.split(':') || []
 
-    async items({ mention }) {
-        if (!mention?.data?.repoName || !mention?.data?.filePath) {
-            return []
-        }
+            if (!query?.includes(':') || !repoName.trim()) {
+                return await getRepoMentions(query?.trim())
+            }
 
-        return await getFileItem(
-            mention.data.repoName as string,
-            mention.data.filePath as string,
-            mention.data.rev as string
-        )
-    },
+            return await getFileMentions(repoName, filePath.trim())
+        },
+
+        async items({ mention }) {
+            if (!mention?.data?.repoName || !mention?.data?.filePath) {
+                return []
+            }
+
+            return await getFileItem(
+                mention.data.repoName as string,
+                mention.data.filePath as string,
+                mention.data.rev as string
+            )
+        },
+    }
 }
 
 async function getRepoMentions(query?: string): Promise<Mention[]> {

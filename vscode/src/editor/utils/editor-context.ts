@@ -426,12 +426,11 @@ async function resolveFileOrSymbolContextItem(
         if (!isErrorLike(resultOrError)) {
             return {
                 ...contextItem,
-                uri: URI.from({
-                    scheme: '',
-                    authority: '',
-                    path: `${repository}${path}`,
-                }),
+                title: path,
+                uri: URI.parse(`${graphqlClient.endpoint}${repository}/-/blob/${path}`),
                 content: resultOrError,
+                repoName: repository,
+                source: ContextItemSource.Unified,
                 size: contextItem.size ?? TokenCounter.countTokens(resultOrError),
             }
         }

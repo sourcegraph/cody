@@ -5,7 +5,7 @@ import type { CsvWriter } from 'csv-writer/src/lib/csv-writer'
 import { rimraf } from 'rimraf'
 
 import { type EvaluationDocument, headerItems } from './EvaluationDocument'
-import type { CodyBenchOptions } from './cody-bench'
+import type { CodyBenchOptions } from './command-bench'
 
 export class SnapshotWriter {
     public csvWriter: CsvWriter<any> | undefined

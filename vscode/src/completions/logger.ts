@@ -12,9 +12,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
-import { getConfiguration } from '../configuration'
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
-import { getExtensionDetails, logPrefix, telemetryService } from '../services/telemetry'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
@@ -31,7 +29,10 @@ import type { ContextSummary } from './context/context-mixer'
 import type { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import type { RequestParams } from './request-manager'
 import * as statistics from './statistics'
-import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import type {
+    InlineCompletionItemWithAnalytics,
+    InlineCompletionResponseHeaders,
+} from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
 import type { InlineCompletionItem } from './types'
 
@@ -121,6 +122,11 @@ interface SharedEventPayload extends InteractionIDPayload {
      * For example, CG can re-route requests to a different model based on the inference provider load.
      */
     resolvedModel?: string
+
+    /**
+     * A subset of HTTP response headers returned by the completion provider.
+     */
+    responseHeaders?: InlineCompletionResponseHeaders
 
     /** Language of the document being completed. */
     languageId: string
@@ -370,15 +376,6 @@ function writeCompletionEvent<SubFeature extends string, Action extends string, 
     params?: TelemetryEventParameters<{ [key: string]: number }, BillingProduct, BillingCategory>,
     legacyParams?: LegacyParams
 ): void {
-    const extDetails = getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration()))
-    telemetryService.log(
-        `${logPrefix(extDetails.ide)}:completion:${subfeature ? `${subfeature}:` : ''}${action}`,
-        legacyParams,
-        {
-            agent: true,
-            hasV2Event: true, // this helper translates the event for us
-        }
-    )
     /**
      * Extract interaction ID from the full legacy params for convenience
      */
@@ -579,6 +576,10 @@ export function loaded(
 
     if (!event.params.resolvedModel && items[0]?.resolvedModel) {
         event.params.resolvedModel = items[0]?.resolvedModel
+    }
+
+    if (!event.params.responseHeaders && items[0]?.responseHeaders) {
+        event.params.responseHeaders = items[0]?.responseHeaders
     }
 
     // 🚨 SECURITY: included only for DotCom users & Public github Repos.

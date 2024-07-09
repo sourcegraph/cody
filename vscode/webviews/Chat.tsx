@@ -2,7 +2,7 @@ import { clsx } from 'clsx'
 import type React from 'react'
 import { useCallback, useEffect, useMemo } from 'react'
 
-import type { AuthStatus, ChatMessage, Guardrails, TelemetryService } from '@sourcegraph/cody-shared'
+import type { AuthStatus, ChatMessage, CodyIDE, Guardrails } from '@sourcegraph/cody-shared'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
@@ -11,6 +11,7 @@ import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/cons
 import styles from './Chat.module.css'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
+import { useContextProviders } from './mentions/providers'
 import { useTelemetryRecorder } from './utils/telemetry'
 
 interface ChatboxProps {
@@ -19,7 +20,6 @@ interface ChatboxProps {
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
-    telemetryService: TelemetryService
     isTranscriptError: boolean
     userInfo: UserAccountInfo
     guardrails?: Guardrails
@@ -34,8 +34,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     messageInProgress,
     transcript,
     vscodeAPI,
-    telemetryService,
-
     isTranscriptError,
     chatEnabled = true,
     userInfo,
@@ -45,20 +43,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     showIDESnippetActions = true,
     className,
 }) => {
+    const { reload: reloadMentionProviders } = useContextProviders()
     const telemetryRecorder = useTelemetryRecorder()
 
     const feedbackButtonsOnSubmit = useCallback(
         (text: string) => {
-            const eventData = {
-                value: text,
-                lastChatUsedEmbeddings: Boolean(
-                    transcript.at(-1)?.contextFiles?.some(file => file.source === 'embeddings')
-                ),
-            }
-
-            telemetryService.log(`CodyVSCodeExtension:codyFeedback:${text}`, eventData, {
-                hasV2Event: true,
-            })
             enum FeedbackType {
                 thumbsUp = 1,
                 thumbsDown = 0,
@@ -85,7 +74,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 },
             })
         },
-        [telemetryService, transcript, userInfo, telemetryRecorder]
+        [transcript, userInfo, telemetryRecorder]
     )
 
     const copyButtonOnSubmit = useCallback(
@@ -166,6 +155,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         }
     }, [])
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: needs to run when is dotcom status is changing to update openctx providers
+    useEffect(() => {
+        reloadMentionProviders()
+    }, [userInfo.isDotComUser, reloadMentionProviders])
+
     return (
         <div className={clsx(styles.container, className, 'tw-relative')}>
             {!chatEnabled && (
@@ -186,7 +180,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 postMessage={postMessage}
                 guardrails={guardrails}
             />
-            {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage />}
+            {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage IDE={userInfo.ide} />}
             <ScrollDown scrollableParent={scrollableParent} onClick={focusLastHumanMessageEditor} />
         </div>
     )
@@ -196,6 +190,7 @@ export interface UserAccountInfo {
     isDotComUser: boolean
     isCodyProUser: boolean
     user: Pick<AuthStatus, 'username' | 'displayName' | 'avatarURL'>
+    ide: CodyIDE
 }
 
 export type ApiPostMessage = (message: any) => void
