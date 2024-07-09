@@ -202,7 +202,7 @@ export type ExtensionMessage =
     | {
           type: 'updateEditorState'
           /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
-          editorState: unknown | undefined | null
+          editorState?: unknown | undefined | null
       }
 
 interface ExtensionAttributionMessage {

@@ -143,7 +143,7 @@ const TranscriptInteraction: FunctionComponent<
 }) => {
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
     useEffect(() => {
-        getVSCodeAPI().onMessage(message => {
+        return getVSCodeAPI().onMessage(message => {
             if (message.type === 'updateEditorState') {
                 humanEditorRef.current?.setEditorState(
                     message.editorState as SerializedPromptEditorState
