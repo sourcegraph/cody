@@ -226,6 +226,13 @@ export class ModelsService {
     // with an initialization step on startup.
     protected ModelsService() {}
 
+    public static reset() {
+        ModelsService.primaryModels = []
+        ModelsService.localModels = []
+        ModelsService.defaultModels.clear()
+        ModelsService.storage = undefined
+    }
+
     /**
      * Get all the providers currently available to the user
      */
@@ -301,7 +308,7 @@ export class ModelsService {
         return [currentModel].concat(models.filter(m => m.model !== currentModel.model))
     }
 
-    public static getDefaultModel(type: ModelUsage, authStatus: AuthStatus): Model | undefined {
+    private static getDefaultModel(type: ModelUsage, authStatus: AuthStatus): Model | undefined {
         const models = ModelsService.getModelsByType(type)
         const firstModelUserCanUse = models.find(m => ModelsService.canUserUseModel(authStatus, m))
         if (!authStatus.authenticated || isFreeUser(authStatus)) {
@@ -314,13 +321,6 @@ export class ModelsService {
 
         // Check for the last selected model
         const lastSelectedModelID = ModelsService.storage?.get(ModelsService.storageKeys[type])
-        // TODO(jsm): Global migration should happen once in the activation
-        // const migratedModelID = migrateAndNotifyForOutdatedModels(lastSelectedModelID)
-
-        // if (migratedModelID && migratedModelID !== lastSelectedModelID) {
-        //     void setModel(migratedModelID, storageKey)
-        // }
-
         // return either the last selected model or first model they can use if any
         return (
             models.find(m => m.model === lastSelectedModelID) ||
@@ -340,6 +340,9 @@ export class ModelsService {
         const resolved = ModelsService.resolveModel(model)
         if (!resolved) {
             return
+        }
+        if (!resolved.usage.includes(type)) {
+            throw new Error(`Model "${resolved.model}" is not compatible with usage type "${type}".`)
         }
         ModelsService.defaultModels.set(type, resolved)
         // If we have persistent storage set, write it there
