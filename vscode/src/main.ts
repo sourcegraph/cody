@@ -71,7 +71,7 @@ import { CharactersLogger } from './services/CharactersLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { displayHistoryQuickPick } from './services/HistoryChat'
 import { localStorage } from './services/LocalStorageProvider'
-import { VSCodeSecretStorage, getAccessToken, secretStorage } from './services/SecretStorageProvider'
+import { VSCodeSecretStorage, secretStorage } from './services/SecretStorageProvider'
 import { registerSidebarCommands } from './services/SidebarCommands'
 import { createStatusBar } from './services/StatusBar'
 import { upstreamHealthProvider } from './services/UpstreamHealthProvider'
@@ -259,84 +259,53 @@ const register = async (
     const sourceControl = new CodySourceControl(chatClient)
     const statusBar = createStatusBar()
 
-    // Adds a change listener to the auth provider that syncs the auth status
-    authProvider.addChangeListener(async (authStatus: AuthStatus) => {
-        // Refresh server-sent client configuration, as it controls which features the user has
-        // access to.
-        ClientConfigSingleton.getInstance().refreshConfig()
+    // Function to handle auth status changes
+    async function handleAuthStatusChange(authStatus: AuthStatus) {
+        // NOTE: MUST update the config and graphQL client first.
+        const newConfig = await getFullConfig()
+        configWatcher.set(newConfig)
+        graphqlClient.onConfigurationChange(newConfig)
+        await ClientConfigSingleton.getInstance().refreshConfig()
 
-        // Reset the available models based on the auth change.
         await syncModels(authStatus)
-
-        // Chat Manager uses Simple Context Provider
         await chatManager.syncAuthStatus(authStatus)
         editorManager.syncAuthStatus(authStatus)
 
-        const parallelPromises: Promise<void>[] = []
-        // feature flag provider
-        parallelPromises.push(featureFlagProvider.syncAuthStatus())
-        // Symf
-        if (symfRunner && authStatus.isLoggedIn) {
-            parallelPromises.push(
-                getAccessToken()
-                    .then(token => symfRunner.setSourcegraphAuth(authStatus.endpoint, token))
-                    .catch(() => {})
-            )
-        } else {
-            symfRunner?.setSourcegraphAuth(null, null)
-        }
-        parallelPromises.push(setupAutocomplete())
-        await Promise.all(parallelPromises)
-
         statusBar.syncAuthStatus(authStatus)
         sourceControl.syncAuthStatus(authStatus)
+        symfRunner?.setSourcegraphAuth(authStatus.endpoint, newConfig.accessToken)
 
-        // Set the default prompt mixin on auth status change.
-        await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
+        const parallelTasks: Promise<void>[] = [
+            featureFlagProvider.syncAuthStatus(),
+            setupAutocomplete(),
+            PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent()),
+            exposeOpenCtxClient(
+                context,
+                initialConfig,
+                authStatus.isDotCom,
+                platform.createOpenCtxController
+            ),
+            configWatcher.initAndOnChange(() => ModelsService.onConfigChange(), disposables),
+        ]
 
-        // Propagate access token through config
-        const newConfig = await getFullConfig()
-        configWatcher.set(newConfig)
-        // Sync auth status to graphqlClient
-        graphqlClient.onConfigurationChange(newConfig)
+        await Promise.all(parallelTasks)
 
-        // Re-register expose openctx client
-        await exposeOpenCtxClient(
-            context,
-            initialConfig,
-            authStatus.isDotCom,
-            platform.createOpenCtxController
-        )
-
-        // When logged out, user's endpoint will be set to null
-        const isLoggedOut = !authStatus.isLoggedIn && !authStatus.endpoint
-        const isAuthError = authStatus?.showNetworkError || authStatus?.showInvalidAccessTokenError
-        const eventValue = isLoggedOut
-            ? 'disconnected'
-            : authStatus.isLoggedIn && !isAuthError
-              ? 'connected'
-              : 'failed'
+        const eventValue =
+            !authStatus.isLoggedIn && !authStatus.endpoint
+                ? 'disconnected'
+                : authStatus.isLoggedIn &&
+                    !(authStatus.showNetworkError || authStatus.showInvalidAccessTokenError)
+                  ? 'connected'
+                  : 'failed'
         telemetryRecorder.recordEvent('cody.auth', eventValue)
-    })
-
-    if (initialConfig.experimentalSupercompletions) {
-        disposables.push(new SupercompletionProvider({ statusBar, chat: chatClient }))
     }
 
-    configWatcher.onChange(async () => {
-        setupAutocomplete()
-    }, disposables)
-
+    // Add change listener to auth provider
+    authProvider.addChangeListener(handleAuthStatusChange)
+    // Setup config watcher
+    configWatcher.onChange(setupAutocomplete, disposables)
     // Sync initial auth status
-    const initAuthStatus = authProvider.getAuthStatus()
-    ClientConfigSingleton.getInstance().refreshConfig()
-    await syncModels(initAuthStatus)
-    await chatManager.syncAuthStatus(initAuthStatus)
-    editorManager.syncAuthStatus(initAuthStatus)
-    await configWatcher.initAndOnChange(() => ModelsService.onConfigChange(), disposables)
-    statusBar.syncAuthStatus(initAuthStatus)
-    sourceControl.syncAuthStatus(initAuthStatus)
-    await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
+    handleAuthStatusChange(authProvider.getAuthStatus())
 
     const commandsManager = platform.createCommandsProvider?.()
     setCommandController(commandsManager)
@@ -371,6 +340,12 @@ const register = async (
         // Process command with the commands controller
         return await executeCodyCommand(id, newCodyCommandArgs(args))
     }
+
+    // Initialize supercompletion provider if experimental feature is enabled
+    if (initialConfig.experimentalSupercompletions) {
+        disposables.push(new SupercompletionProvider({ statusBar, chat: chatClient }))
+    }
+
     // Register Cody Commands
     disposables.push(
         vscode.commands.registerCommand('cody.action.command', (id, a) => executeCommand(id, a)),
