@@ -759,7 +759,7 @@ export class SimpleChatPanelProvider
                         : undefined,
                     command !== undefined
                 )
-                const sendTelemetry = (contextSummary: any, privateContextStats?: any): void => {
+                const sendTelemetry = (contextSummary: any, privateContextSummary?: any): void => {
                     const properties = {
                         ...sharedProperties,
                         traceId: span.spanContext().traceId,
@@ -779,7 +779,7 @@ export class SimpleChatPanelProvider
                         },
                         privateMetadata: {
                             properties,
-                            privateContextStats,
+                            privateContextSummary: privateContextSummary,
                             // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
                             // V2 telemetry exports privateMetadata only for DotCom users
                             // the condition below is an additional safeguard measure
@@ -1165,7 +1165,7 @@ export class SimpleChatPanelProvider
     private async buildPrompt(
         prompter: DefaultPrompter,
         abortSignal: AbortSignal,
-        sendTelemetry?: (contextSummary: any, privateContextStats?: any) => void
+        sendTelemetry?: (contextSummary: any, privateContextSummary?: any) => void
     ): Promise<Message[]> {
         const { prompt, context } = await prompter.makePrompt(
             this.chatModel,
@@ -1192,14 +1192,14 @@ export class SimpleChatPanelProvider
                 }
             }
 
-            const privateContextStats = await this.buildPrivateContextStats(context)
-            sendTelemetry(contextSummary, privateContextStats)
+            const privateContextSummary = await this.buildPrivateContextSummary(context)
+            sendTelemetry(contextSummary, privateContextSummary)
         }
 
         return prompt
     }
 
-    private async buildPrivateContextStats(context: {
+    private async buildPrivateContextSummary(context: {
         used: ContextItem[]
         ignored: ContextItem[]
     }): Promise<object> {
@@ -1211,7 +1211,7 @@ export class SimpleChatPanelProvider
             return {}
         }
 
-        const getContextStats = (items: ContextItem[]) => ({
+        const getContextSummary = (items: ContextItem[]) => ({
             count: items.length,
             items: items.map(i => ({
                 source: i.source,
@@ -1221,8 +1221,8 @@ export class SimpleChatPanelProvider
         })
 
         return {
-            included: getContextStats(context.used),
-            excluded: getContextStats(context.ignored),
+            included: getContextSummary(context.used),
+            excluded: getContextSummary(context.ignored),
             gitMetadata: await this.getRepoMetadataIfPublic(),
         }
     }
