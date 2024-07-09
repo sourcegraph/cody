@@ -172,4 +172,11 @@ export class ModelsService {
         const modelsList = ModelsService.models.map(m => m.model).join(', ')
         throw new Error(`${errorMessage} Available models: ${modelsList}`)
     }
+
+    public static isMultiModalModel(modelID: string): boolean {
+        // A list of multimodal models that we support.
+        // NOTE: Currently only Ollama models are supported.
+        const supportedModels = ['llava']
+        return supportedModels.some(model => modelID.includes(model))
+    }
 }

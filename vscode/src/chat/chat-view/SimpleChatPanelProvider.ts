@@ -495,6 +495,11 @@ export class SimpleChatPanelProvider
                 })
                 break
             }
+            case 'chat/upload-file': {
+                this.chatModel.setImage(message.base64)
+                break
+            }
+
             default:
                 this.postError(new Error(`Invalid request type from Webview Panel: ${message.command}`))
         }
@@ -1292,6 +1297,7 @@ export class SimpleChatPanelProvider
                 {
                     model: this.chatModel.modelID,
                     maxTokensToSample: this.chatModel.contextWindow.output,
+                    base64Image: this.chatModel.getAndResetImage(),
                 },
                 abortSignal
             )

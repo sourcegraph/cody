@@ -132,6 +132,7 @@ object Constants {
   const val `attribution-search` = "attribution-search"
   const val troubleshoot_reloadAuth = "troubleshoot/reloadAuth"
   const val getAllMentionProvidersMetadata = "getAllMentionProvidersMetadata"
+  const val `chat_upload-file` = "chat/upload-file"
   const val `tree-sitter` = "tree-sitter"
   const val indentation = "indentation"
   const val Automatic = "Automatic"
