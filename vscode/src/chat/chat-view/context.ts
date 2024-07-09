@@ -204,23 +204,15 @@ export async function getContextStrategy(
         return defaultStrategy
     }
 
-    let variant: { group: number; strategy: ConfigurationUseContext } = { group: 0, strategy: 'none' }
     if (useEmbeddings && useSymf) {
-        variant = { group: 1, strategy: 'blended' }
+        return 'blended'
     } else if (useEmbeddings) {
-        variant = { group: 2, strategy: 'embeddings' }
+        return 'embeddings'
     } else if (useSymf) {
-        variant = { group: 3, strategy: 'keyword' }
-    } else {
-        variant = { group: 0, strategy: 'none' }
+        return 'keyword'
     }
 
-    telemetryRecorder.recordEvent('cody.embeddings.holdoutTest', 'enrolled', {
-        metadata: {
-            controlVariant: variant.group,
-        },
-    })
-    return variant.strategy
+    return 'none'
 }
 
 async function searchRemote(
