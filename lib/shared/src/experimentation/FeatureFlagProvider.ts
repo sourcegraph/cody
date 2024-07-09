@@ -70,6 +70,15 @@ export enum FeatureFlag {
 
     /** Whether to use generated metadata to power embeddings. */
     CodyEmbeddingsGenerateMetadata = 'cody-embeddings-generate-metadata',
+
+    /** Enhanced context experiment */
+    CodyEnhancedContextExperiment = 'cody-enhanced-context-experiment',
+
+    /** Use symf to provide enhanced context. */
+    CodyEnhancedContextUseSymf = 'cody-enhanced-context-use-symf',
+
+    /** Use embeddings to provide enhanced context. */
+    CodyEnhancedContexUseEmbeddings = 'cody-enhanced-context-use-embeddings',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
