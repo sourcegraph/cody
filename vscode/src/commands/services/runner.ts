@@ -2,8 +2,8 @@ import * as vscode from 'vscode'
 
 import type { Span } from '@opentelemetry/api'
 import {
+    ClientConfigSingleton,
     type CodyCommand,
-    ConfigFeaturesSingleton,
     type ContextItem,
     DefaultChatCommands,
     type EventSource,
@@ -75,8 +75,8 @@ export class CommandRunner implements vscode.Disposable {
         })
 
         // Conditions checks
-        const configFeatures = await ConfigFeaturesSingleton.getInstance().getConfigFeatures()
-        if (!configFeatures.commands) {
+        const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
+        if (!clientConfig.customCommandsEnabled) {
             const disabledMsg = 'This feature has been disabled by your Sourcegraph site admin.'
             void vscode.window.showErrorMessage(disabledMsg)
             this.span.end()

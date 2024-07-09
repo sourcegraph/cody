@@ -1,4 +1,8 @@
 
+## 0.2.1 
+
+- Fixes remote files and remote symbols files link
+
 ## 0.2.0
 
 Initial release includes
