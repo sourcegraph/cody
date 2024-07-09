@@ -71,6 +71,7 @@ export const HumanMessageCell: FunctionComponent<{
                     user={userInfo.user}
                     size={MESSAGE_CELL_AVATAR_SIZE}
                     className="tw-mt-[2px]"
+                    ide={userInfo.ide}
                 />
             }
             content={

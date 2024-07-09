@@ -1,10 +1,14 @@
-.user-avatar {
+.user-avatar, .user-avatar-text{
     isolation: isolate;
     display: inline-flex;
     border-radius: 50%;
-    background-color: var(--vscode-inputOption-activeBackground);
-    color: var(--vscode-inputOption-activeForeground);
     align-items: center;
     justify-content: center;
-    height: fit-content;
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.user-avatar-text {
+    background-color: var(--vscode-inputOption-activeBackground);
+    color: var(--vscode-inputOption-activeForeground);
 }

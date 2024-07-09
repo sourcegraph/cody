@@ -1,3 +1,4 @@
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import type { FunctionComponent } from 'react'
 import type { UserAccountInfo } from '../Chat'
@@ -7,13 +8,15 @@ interface Props {
     user: NonNullable<UserAccountInfo['user']>
     size: number
     className?: string
+    ide?: CodyIDE
 }
 
 /**
  * UserAvatar displays the avatar of a user.
  */
-export const UserAvatar: FunctionComponent<Props> = ({ user, size, className }) => {
+export const UserAvatar: FunctionComponent<Props> = ({ user, size, className, ide }) => {
     const title = user.displayName || user.username
+    const altText = ide === CodyIDE.VSCode ? `Avatar for ${user.username}` : ''
 
     if (user?.avatarURL) {
         let url = user.avatarURL
@@ -36,18 +39,13 @@ export const UserAvatar: FunctionComponent<Props> = ({ user, size, className }) 
                 src={url}
                 role="presentation"
                 title={title}
-                alt={`Avatar for ${user.username}`}
-                width={size}
-                height={size}
+                alt={altText}
             />
         )
     }
+
     return (
-        <div
-            title={title}
-            className={clsx(styles.userAvatar, className)}
-            style={{ width: `${size}px`, height: `${size}px` }}
-        >
+        <div title={title} className={clsx(styles.userAvatarText, className)}>
             <span className={styles.initials}>
                 {getInitials(user?.displayName || user?.username || '')}
             </span>
