@@ -13,7 +13,6 @@ import {
     type Result,
     featureFlagProvider,
     isFileURI,
-    telemetryRecorder,
     truncateTextNearestLine,
     uriBasename,
     wrapInActiveSpan,
@@ -206,12 +205,13 @@ export async function getContextStrategy(
 
     if (useEmbeddings && useSymf) {
         return 'blended'
-    } else if (useEmbeddings) {
+    }
+    if (useEmbeddings) {
         return 'embeddings'
-    } else if (useSymf) {
+    }
+    if (useSymf) {
         return 'keyword'
     }
-
     return 'none'
 }
 
