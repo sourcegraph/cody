@@ -621,7 +621,11 @@ class FireworksProvider extends Provider {
                                 (lastResponseField('stopReason') || CompletionStopReason.StreamingChunk),
                         }
 
-                        span.addEvent('yield', { stopReason: result.completionResponse.stopReason })
+                        span.addEvent('yield', {
+                            charCount: result.completionResponse.completion.length,
+                            stopReason: result.completionResponse.stopReason,
+                        })
+
                         yield result
 
                         chunkIndex += 1
@@ -656,7 +660,10 @@ class FireworksProvider extends Provider {
                     throw new TracedError(message, traceId)
                 } finally {
                     if (result.completionResponse) {
-                        span.addEvent('return', { stopReason: result.completionResponse.stopReason })
+                        span.addEvent('return', {
+                            charCount: result.completionResponse.completion.length,
+                            stopReason: result.completionResponse.stopReason,
+                        })
                         span.setStatus({ code: SpanStatusCode.OK })
                         span.end()
                         log?.onComplete(result.completionResponse)

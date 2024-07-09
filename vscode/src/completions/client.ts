@@ -177,9 +177,12 @@ export function createClient(
                                     completion: parsed.completion || '',
                                     stopReason: parsed.stopReason || CompletionStopReason.StreamingChunk,
                                 }
+
                                 span.addEvent('yield', {
+                                    charCount: result.completionResponse.completion.length,
                                     stopReason: result.completionResponse.stopReason,
                                 })
+
                                 yield result
                             }
 
@@ -234,6 +237,7 @@ export function createClient(
                 } finally {
                     if (result.completionResponse) {
                         span.addEvent('return', {
+                            charCount: result.completionResponse.completion.length,
                             stopReason: result.completionResponse.stopReason,
                         })
                         span.setStatus({ code: SpanStatusCode.OK })
