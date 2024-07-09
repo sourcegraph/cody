@@ -1563,18 +1563,17 @@ export class SimpleChatPanelProvider
         // Used for keeping sidebar chat view closed when webview panel is enabled
         await vscode.commands.executeCommand('setContext', CodyChatPanelViewType, true)
 
-        const clientConfig = await ClientConfigSingleton.getInstance()
-            .getConfig()
-            // In the event of an error, ClientConfigSingleton already logged it internally but it
-            // means we were unable to fetch the client configuration - most likely because we are
-            // not authenticated yet. We need to be able to display the chat panel (which is where
-            // all login functionality is) in this case, so we fallback to some default values:
-            .catch(e => ({ chatEnabled: true, attributionEnabled: false }))
+        const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
+
         void this.postMessage({
             type: 'setConfigFeatures',
             configFeatures: {
-                chat: clientConfig.chatEnabled,
-                attribution: clientConfig.attributionEnabled,
+                // If clientConfig is undefined means we were unable to fetch the client configuration -
+                // most likely because we are not authenticated yet. We need to be able to display the
+                // chat panel (which is where all login functionality is) in this case, so we fallback
+                // to some default values:
+                chat: clientConfig?.chatEnabled ?? true,
+                attribution: clientConfig?.attributionEnabled ?? false,
             },
         })
 

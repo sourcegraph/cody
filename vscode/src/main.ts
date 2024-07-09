@@ -361,8 +361,8 @@ const register = async (
         id: DefaultCodyCommands | PromptString,
         args?: Partial<CodyCommandArgs>
     ): Promise<CommandResult | undefined> => {
-        const { customCommandsEnabled } = await ClientConfigSingleton.getInstance().getConfig()
-        if (!customCommandsEnabled) {
+        const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
+        if (!clientConfig?.customCommandsEnabled) {
             void vscode.window.showErrorMessage(
                 'This feature has been disabled by your Sourcegraph site admin.'
             )
