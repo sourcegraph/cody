@@ -16,6 +16,7 @@ import {
     DOTCOM_URL,
     type DefaultChatCommands,
     type EventSource,
+    FeatureFlag,
     type FeatureFlagProvider,
     type Guardrails,
     type MentionQuery,
@@ -60,6 +61,7 @@ import {
 import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
+import { experimentalUnitTestMessageSubmission } from '../../commands/execute/test-chat-experimental'
 import { getConfiguration, getFullConfig } from '../../configuration'
 import type { EnterpriseContextFactory } from '../../context/enterprise-context-factory'
 import { type RemoteSearch, RepoInclusion } from '../../context/remote-search'
@@ -169,6 +171,7 @@ export class SimpleChatPanelProvider
     private readonly remoteSearch: RemoteSearch | null
     private readonly repoPicker: RemoteRepoPicker | null
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
+    private readonly featureFlagProvider: FeatureFlagProvider
 
     private contextFilesQueryCancellation?: vscode.CancellationTokenSource
     private allMentionProvidersMetadataQueryCancellation?: vscode.CancellationTokenSource
@@ -191,6 +194,7 @@ export class SimpleChatPanelProvider
         guardrails,
         enterpriseContext,
         startTokenReceiver,
+        featureFlagProvider,
     }: SimpleChatPanelProviderOptions) {
         this.extensionUri = extensionUri
         this.authProvider = authProvider
@@ -201,6 +205,7 @@ export class SimpleChatPanelProvider
         this.repoPicker = enterpriseContext?.repoPicker || null
         this.remoteSearch = enterpriseContext?.createRemoteSearch() || null
         this.editor = editor
+        this.featureFlagProvider = featureFlagProvider
 
         this.chatModel = new SimpleChatModel(getDefaultModelID(authProvider, models))
 
@@ -495,13 +500,21 @@ export class SimpleChatPanelProvider
                 })
                 break
             }
+            case 'experimental-unit-test-prompt': {
+                await this.experimentalSetUnitTestPrompt()
+                break
+            }
             default:
                 this.postError(new Error(`Invalid request type from Webview Panel: ${message.command}`))
         }
     }
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
-        const config = await getFullConfig()
+        const [config, experimentalUnitTest] = await Promise.all([
+            getFullConfig(),
+            this.featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalUnitTest),
+        ])
+
         return {
             agentIDE: config.isRunningInsideAgent ? config.agentIDE : CodyIDE.VSCode,
             agentExtensionVersion: config.isRunningInsideAgent
@@ -510,6 +523,7 @@ export class SimpleChatPanelProvider
             uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
             serverEndpoint: config.serverEndpoint,
             experimentalNoodle: config.experimentalNoodle,
+            experimentalUnitTest,
         }
     }
 
@@ -574,6 +588,18 @@ export class SimpleChatPanelProvider
             return JSON.stringify(gitMetadata)
         }
         return ''
+    }
+
+    public async experimentalSetUnitTestPrompt() {
+        const message = await experimentalUnitTestMessageSubmission()
+        if (!message?.editorState) {
+            return
+        }
+
+        this.postMessage({
+            type: 'updateEditorState',
+            editorState: message.editorState as SerializedPromptEditorState,
+        })
     }
 
     /**

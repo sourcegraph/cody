@@ -24,7 +24,10 @@ vi.mock('@vscode/webview-ui-toolkit/react', () => ({
 }))
 
 vi.mock('../utils/VSCodeApi', () => ({
-    getVSCodeAPI: vi.fn().mockReturnValue({ postMessage: () => {} }),
+    getVSCodeAPI: vi.fn().mockReturnValue({
+        onMessage: () => {},
+        postMessage: () => {},
+    }),
 }))
 
 function render(element: JSX.Element): ReturnType<typeof render_> {

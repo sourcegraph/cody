@@ -266,6 +266,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                     vscodeAPI={vscodeAPI}
                                     isTranscriptError={isTranscriptError}
                                     guardrails={attributionEnabled ? guardrails : undefined}
+                                    experimentalUnitTestEnabled={config.experimentalUnitTest}
                                 />
                             </ClientStateContextProvider>
                         </TelemetryRecorderContext.Provider>

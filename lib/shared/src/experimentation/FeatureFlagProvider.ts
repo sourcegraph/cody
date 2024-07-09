@@ -71,6 +71,9 @@ export enum FeatureFlag {
     /** Whether to use generated metadata to power embeddings. */
     CodyEmbeddingsGenerateMetadata = 'cody-embeddings-generate-metadata',
 
+    /** Enable experimental generate unit test prompt template */
+    CodyExperimentalUnitTest = 'cody-experimental-unit-test',
+
     /** Enhanced context experiment */
     CodyEnhancedContextExperiment = 'cody-enhanced-context-experiment',
 
