@@ -1073,21 +1073,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            if (!modelID) {
-                modelID = ModelsService.getDefaultChatModel(authStatus)
-            }
-
-            const chatModel = new SimpleChatModel(modelID!, chatID)
-            for (const message of messages) {
-                const deserializedMessage = PromptString.unsafe_deserializeChatMessage(message)
-                if (deserializedMessage.error) {
-                    chatModel.addErrorAsBotMessage(deserializedMessage.error)
-                } else if (deserializedMessage.speaker === 'assistant') {
-                    chatModel.addBotMessage(deserializedMessage)
-                } else if (deserializedMessage.speaker === 'human') {
-                    chatModel.addHumanMessage(deserializedMessage)
-                }
-            }
+            modelID ??= ModelsService.getDefaultChatModel(authStatus) ?? ''
+            const chatMessages = messages?.map(PromptString.unsafe_deserializeChatMessage) ?? []
+            const chatModel = new SimpleChatModel(modelID, chatID, chatMessages)
             await chatHistory.saveChat(authStatus, chatModel.toSerializedChatTranscript())
             return this.createChatPanel(
                 Promise.resolve({
