@@ -1,9 +1,4 @@
-import {
-    Model,
-    type ModelCategory,
-    type ModelTier,
-    type ServerModelConfiguration,
-} from '../../models/index'
+import { Model, type ServerModelConfiguration } from '../../models/index'
 
 import { fetch } from '../../fetch'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
@@ -67,12 +62,13 @@ export class RestClient {
         //
         // NOTE: This API endpoint hasn't shippeted yet, and probably won't work for you.
         // Also, the URL definitely will change.
-        let serverSideConfig = await this.getRequest<ServerModelConfiguration>(
+        const serverSideConfig = await this.getRequest<ServerModelConfiguration>(
             'getAvailableModels',
             '/.api/modelconfig/supported-models.json'
         )
         if (serverSideConfig instanceof Error) {
-            serverSideConfig = testModels
+            return []
+            // serverSideConfig = testModels
         }
 
         // TODO(PRIME-323): Do a proper review of the data model we will use to describe
@@ -83,6 +79,9 @@ export class RestClient {
     }
 }
 
+// TODO(jsm): delete these
+// these are used for testing the server sent models and should be removed once the real API is available
+/*
 const testModels: ServerModelConfiguration = {
     schemaVersion: '1.0',
     revision: '-',
@@ -139,3 +138,4 @@ const testModels: ServerModelConfiguration = {
         codeCompletion: 'anthropic::unknown::anthropic.claude-instant-v1',
     },
 }
+*/
