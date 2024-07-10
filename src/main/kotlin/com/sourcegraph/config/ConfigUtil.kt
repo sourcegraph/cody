@@ -132,6 +132,9 @@ object ConfigUtil {
   @JvmStatic fun isCodyDebugEnabled(): Boolean = CodyApplicationSettings.instance.isCodyDebugEnabled
 
   @JvmStatic
+  fun isCodyUIHintsEnabled(): Boolean = CodyApplicationSettings.instance.isCodyUIHintsEnabled
+
+  @JvmStatic
   fun isCodyVerboseDebugEnabled(): Boolean =
       CodyApplicationSettings.instance.isCodyVerboseDebugEnabled
 

@@ -1,13 +1,18 @@
 package com.sourcegraph.cody.config.ui
 
-import com.intellij.openapi.components.service
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.ColorPanel
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBCheckBox
-import com.intellij.ui.dsl.builder.*
+import com.intellij.ui.dsl.builder.Cell
+import com.intellij.ui.dsl.builder.MAX_LINE_LENGTH_NO_WRAP
+import com.intellij.ui.dsl.builder.Row
+import com.intellij.ui.dsl.builder.bindSelected
+import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.dsl.builder.selected
+import com.intellij.ui.dsl.builder.toMutableProperty
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.layout.and
 import com.sourcegraph.cody.config.CodyApplicationSettings
@@ -21,7 +26,7 @@ import com.sourcegraph.config.ConfigUtil
 class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY_DISPLAY_NAME) {
   private lateinit var dialogPanel: DialogPanel
   private val settingsModel = SettingsModel()
-  private val codyApplicationSettings = service<CodyApplicationSettings>()
+  private val codyApplicationSettings = CodyApplicationSettings.instance
 
   override fun createPanel(): DialogPanel {
     dialogPanel = panel {
@@ -30,11 +35,20 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
       group("Cody") {
         row {
           enableCodyCheckbox =
+              @Suppress("DialogTitleCapitalization")
               checkBox("Enable Cody")
                   .comment(
                       "Disable this to turn off all AI-based functionality of the plugin, including the Cody chat sidebar and autocomplete",
                       MAX_LINE_LENGTH_NO_WRAP)
                   .bindSelected(settingsModel::isCodyEnabled)
+        }
+        row {
+          checkBox("Enable UI Hints")
+              .comment(
+                  "Disable this to turn off the display of UI hints and help features",
+                  MAX_LINE_LENGTH_NO_WRAP)
+              .enabledIf(enableCodyCheckbox.selected)
+              .bindSelected(settingsModel::isCodyUIHintsEnabled)
         }
         row {
           enableDebugCheckbox =
@@ -105,6 +119,7 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
         // note: this sets the same value for both light & dark mode, currently
         codyApplicationSettings.customAutocompleteColor?.let { JBColor(it, it) }
     settingsModel.isLookupAutocompleteEnabled = codyApplicationSettings.isLookupAutocompleteEnabled
+    settingsModel.isCodyUIHintsEnabled = codyApplicationSettings.isCodyUIHintsEnabled
     settingsModel.blacklistedLanguageIds = codyApplicationSettings.blacklistedLanguageIds
     settingsModel.shouldAcceptNonTrustedCertificatesAutomatically =
         codyApplicationSettings.shouldAcceptNonTrustedCertificatesAutomatically
@@ -137,6 +152,7 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
         settingsModel.isCustomAutocompleteColorEnabled
     codyApplicationSettings.customAutocompleteColor = settingsModel.customAutocompleteColor?.rgb
     codyApplicationSettings.isLookupAutocompleteEnabled = settingsModel.isLookupAutocompleteEnabled
+    codyApplicationSettings.isCodyUIHintsEnabled = settingsModel.isCodyUIHintsEnabled
     codyApplicationSettings.blacklistedLanguageIds = settingsModel.blacklistedLanguageIds
     codyApplicationSettings.shouldAcceptNonTrustedCertificatesAutomatically =
         settingsModel.shouldAcceptNonTrustedCertificatesAutomatically
