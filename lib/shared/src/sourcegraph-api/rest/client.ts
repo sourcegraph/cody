@@ -1,4 +1,9 @@
-import { Model, type ServerModelConfiguration } from '../../models/index'
+import {
+    Model,
+    type ModelCategory,
+    type ModelTier,
+    type ServerModelConfiguration,
+} from '../../models/index'
 
 import { fetch } from '../../fetch'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
@@ -62,7 +67,10 @@ export class RestClient {
         //
         // NOTE: This API endpoint hasn't shippeted yet, and probably won't work for you.
         // Also, the URL definitely will change.
-        let serverSideConfig = await this.getRequest<any>('getAvailableModels', '/.api/supported-llms')
+        let serverSideConfig = await this.getRequest<ServerModelConfiguration>(
+            'getAvailableModels',
+            '/.api/modelconfig/supported-models.json'
+        )
         if (serverSideConfig instanceof Error) {
             serverSideConfig = testModels
         }
@@ -90,9 +98,9 @@ const testModels: ServerModelConfiguration = {
             displayName: 'anthropic.claude-3-opus-20240229-v1_0',
             modelName: 'anthropic.claude-3-opus-20240229-v1_0',
             capabilities: ['autocomplete', 'chat'],
-            category: 'balanced',
+            category: 'balanced' as ModelCategory,
             status: 'stable',
-            tier: 'enterprise',
+            tier: 'enterprise' as ModelTier,
             contextWindow: {
                 maxInputTokens: 9000,
                 maxOutputTokens: 4000,
@@ -103,9 +111,9 @@ const testModels: ServerModelConfiguration = {
             displayName: 'anthropic.claude-instant-v1',
             modelName: 'anthropic.claude-instant-v1',
             capabilities: ['autocomplete', 'chat'],
-            category: 'balanced',
+            category: 'balanced' as ModelCategory,
             status: 'stable',
-            tier: 'enterprise',
+            tier: 'enterprise' as ModelTier,
             contextWindow: {
                 maxInputTokens: 9000,
                 maxOutputTokens: 4000,
@@ -116,9 +124,9 @@ const testModels: ServerModelConfiguration = {
             displayName: 'amazon.titan-text-lite-v1',
             modelName: 'amazon.titan-text-lite-v1',
             capabilities: ['autocomplete', 'chat'],
-            category: 'balanced',
+            category: 'balanced' as ModelCategory,
             status: 'stable',
-            tier: 'enterprise',
+            tier: 'enterprise' as ModelTier,
             contextWindow: {
                 maxInputTokens: 9000,
                 maxOutputTokens: 4000,

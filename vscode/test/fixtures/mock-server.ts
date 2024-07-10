@@ -525,7 +525,7 @@ export class MockServer {
             res.sendStatus(200)
         })
 
-        app.get('/.api/supported-llms', (req, res) => {
+        app.get('/.api/modelconfig/supported-models.json', (req, res) => {
             res.status(200).send(JSON.stringify(controller.availableLLMs))
         })
 

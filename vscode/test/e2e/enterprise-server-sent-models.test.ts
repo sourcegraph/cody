@@ -1,5 +1,9 @@
 import { expect } from '@playwright/test'
-import type { ServerModelConfiguration } from '@sourcegraph/cody-shared/src/models'
+import type {
+    ModelCategory,
+    ModelTier,
+    ServerModelConfiguration,
+} from '@sourcegraph/cody-shared/src/models'
 import { createEmptyChatPanel, sidebarSignin } from './common'
 import { type ExtraWorkspaceSettings, test } from './helpers'
 
@@ -51,9 +55,9 @@ const SERVER_MODELS: ServerModelConfiguration = {
             displayName: 'Opus',
             modelName: 'anthropic.claude-3-opus-20240229-v1_0',
             capabilities: ['autocomplete', 'chat'],
-            category: 'balanced',
+            category: 'balanced' as ModelCategory,
             status: 'stable',
-            tier: 'enterprise',
+            tier: 'enterprise' as ModelTier,
             contextWindow: {
                 maxInputTokens: 9000,
                 maxOutputTokens: 4000,
@@ -64,9 +68,9 @@ const SERVER_MODELS: ServerModelConfiguration = {
             displayName: 'Instant',
             modelName: 'anthropic.claude-instant-v1',
             capabilities: ['autocomplete', 'chat'],
-            category: 'balanced',
+            category: 'balanced' as ModelCategory,
             status: 'stable',
-            tier: 'enterprise',
+            tier: 'enterprise' as ModelTier,
             contextWindow: {
                 maxInputTokens: 9000,
                 maxOutputTokens: 4000,
@@ -77,9 +81,9 @@ const SERVER_MODELS: ServerModelConfiguration = {
             displayName: 'Titan',
             modelName: 'amazon.titan-text-lite-v1',
             capabilities: ['autocomplete', 'chat'],
-            category: 'balanced',
+            category: 'balanced' as ModelCategory,
             status: 'stable',
-            tier: 'enterprise',
+            tier: 'enterprise' as ModelTier,
             contextWindow: {
                 maxInputTokens: 9000,
                 maxOutputTokens: 4000,

@@ -14,6 +14,7 @@ export type ModelRef = `${ProviderId}::${ApiVersionId}::${ModelId}`
 export type ModelCategory = ModelTag.Accuracy | ModelTag.Balanced | ModelTag.Speed
 export type ModelStatus = ModelTag.Experimental | ModelTag.Experimental | 'stable' | ModelTag.Deprecated
 export type ModelTier = ModelTag.Free | ModelTag.Pro | ModelTag.Enterprise
+export type ModelCapability = 'chat' | 'autocomplete'
 
 export interface ContextWindow {
     maxInputTokens: number
@@ -134,28 +135,6 @@ export class Model {
         // BUG: We are assuming the modelRef is valid, but it might not be.
         const [providerId, _, modelId] = modelRef.split('::', 3)
 
-        const categoryTag = ((): ModelTag => {
-            switch (category) {
-                case 'accuracy':
-                    return ModelTag.Accuracy
-                case 'balanced':
-                    return ModelTag.Balanced
-                case 'speed':
-                    return ModelTag.Speed
-            }
-        })()
-
-        const tierTag = ((): ModelTag => {
-            switch (tier) {
-                case 'free':
-                    return ModelTag.Free
-                case 'pro':
-                    return ModelTag.Pro
-                case 'enterprise':
-                    return ModelTag.Enterprise
-            }
-        })()
-
         return new Model({
             model: modelId,
             usage: capabilities.flatMap(capabilityToUsage),
@@ -165,7 +144,7 @@ export class Model {
             },
             // @ts-ignore
             clientSideConfig: clientSideConfig,
-            tags: [categoryTag, tierTag],
+            tags: [category, tier],
             provider: providerId,
             title: displayName,
         })
@@ -176,17 +155,8 @@ export class Model {
     }
 
     static tier(model: Model): ModelTier {
-        if (model.tags.includes(ModelTag.Free)) {
-            return 'free'
-        }
-        if (model.tags.includes(ModelTag.Pro)) {
-            return 'pro'
-        }
-        if (model.tags.includes(ModelTag.Enterprise)) {
-            return 'enterprise'
-        }
-
-        return 'pro'
+        const tierSet = new Set<ModelTag>([ModelTag.Pro, ModelTag.Enterprise])
+        return (model.tags.find(tag => tierSet.has(tag)) ?? ModelTag.Free) as ModelTier
     }
 
     static isCodyPro(model?: Model): boolean {

@@ -55,7 +55,7 @@ object Constants {
   const val pro = "pro"
   const val free = "free"
   const val enterprise = "enterprise"
-  const val `cody-gateway` = "cody-gateway"
+  const val gateway = "gateway"
   const val byok = "byok"
   const val ollama = "ollama"
   const val dev = "dev"
