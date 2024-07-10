@@ -1,4 +1,6 @@
 import {
+    ClientConfigSingleton,
+    Model,
     ModelTag,
     ModelUsage,
     ModelsService,
@@ -7,10 +9,7 @@ import {
     getDotComDefaultModels,
     unauthenticatedStatus,
 } from '@sourcegraph/cody-shared'
-import { Model } from '@sourcegraph/cody-shared'
-import { afterEach, beforeEach } from 'vitest'
-import { describe, expect, it, vi } from 'vitest'
-import * as vscode from 'vscode'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { secretStorage } from '../services/SecretStorageProvider'
 import { syncModels } from './sync'
 import { getEnterpriseContextWindow } from './utils'
@@ -20,15 +19,25 @@ describe('syncModels', () => {
 
     beforeEach(() => {
         setModelsSpy.mockClear()
-    })
 
-    // This test just confirms the environment is in the expected state.
-    it('should not have the userServerDefinedModels config setting enabled', async () => {
-        const codyConfig = vscode.workspace.getConfiguration('cody')
-        if (codyConfig) {
-            const setting = codyConfig.get<boolean>('dev.useServerDefinedModels')
-            expect(setting).to.be.undefined
+        // Mock the /.api/client-config for these tests so that modelsAPIEnabled == false
+        const mockClientConfig = {
+            codyEnabled: true,
+            chatEnabled: true,
+            autoCompleteEnabled: true,
+            customCommandsEnabled: true,
+            attributionEnabled: true,
+            smartContextWindowEnabled: true,
+            modelsAPIEnabled: false,
         }
+        vi.spyOn(ClientConfigSingleton.prototype, 'getConfig').mockResolvedValue(mockClientConfig)
+    })
+    afterEach(() => {
+        // SUPER IMPORTANT: We need to call restoreAllMocks (instead of resetAllMocks)
+        // because we hook into the global state that will impact other states.
+        // Normally this isn't an issue, but here, we don't want our mock/spy that enables
+        // server-side LLM config to leak out of this describe block.
+        vi.restoreAllMocks()
     })
 
     it('does not register models if not authenticated', async () => {
@@ -89,15 +98,17 @@ describe('syncModels from the server', () => {
     beforeEach(() => {
         setModelsSpy = vi.spyOn(ModelsService, 'setModels')
 
-        // Assuming we are looking up the "cody.dev.useServerDefinedModels",
-        // and just returning true.
-        const getConfigSpy = vi.spyOn(vscode.workspace, 'getConfiguration')
-        getConfigSpy.mockImplementation((unused1, unused2) => ({
-            get: vi.fn(() => true),
-            has: vi.fn(() => true),
-            inspect: vi.fn(() => ({ key: 'key' })),
-            update: vi.fn(() => Promise.resolve()),
-        }))
+        // Mock the /.api/client-config for these tests so that modelsAPIEnabled == true
+        const mockClientConfig = {
+            codyEnabled: true,
+            chatEnabled: true,
+            autoCompleteEnabled: true,
+            customCommandsEnabled: true,
+            attributionEnabled: true,
+            smartContextWindowEnabled: true,
+            modelsAPIEnabled: true,
+        }
+        vi.spyOn(ClientConfigSingleton.prototype, 'getConfig').mockResolvedValue(mockClientConfig)
 
         // Mock the secretStorage to return user creds IFF it is for `testEndpoint`.
         const getTokenSpy = vi.spyOn(secretStorage, 'getToken')
