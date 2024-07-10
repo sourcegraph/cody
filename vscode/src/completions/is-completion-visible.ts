@@ -1,4 +1,4 @@
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
 import type { DocumentContext } from '@sourcegraph/cody-shared'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
@@ -37,7 +37,8 @@ export function isCompletionVisible(
         ? true
         : completionMatchesPopupItem(completion, document, context)
     const isMatchingSuffix = completionMatchesSuffix(completion, docContext.currentLineSuffix)
-    const isVisible = !isAborted && isMatchingPopupItem && isMatchingSuffix
+    const isMatchingPrefix = completionMatchesLatestPrefix(completion, document, position)
+    const isVisible = !isAborted && isMatchingPopupItem && isMatchingSuffix && isMatchingPrefix
 
     return isVisible
 }
@@ -87,4 +88,25 @@ function completionMatchesSuffix(
     }
 
     return false
+}
+
+/**
+ * Matches the proposed completion, including the prefix that we build
+ * from the original `position`, with the latest prefix that we build
+ * from the active editor cursor position.
+ */
+function completionMatchesLatestPrefix(
+    completion: Pick<InlineCompletionItemWithAnalytics, 'insertText'>,
+    document: vscode.TextDocument,
+    position: vscode.Position
+): boolean {
+    const cursorPosition = vscode.window.activeTextEditor?.selection.active
+    if (!cursorPosition) {
+        return false
+    }
+    const currentLine = document.lineAt(position)
+    const proposedLinePrefix = document.getText(currentLine.range.with({ end: position }))
+    const proposedInsertText = proposedLinePrefix + completion.insertText
+    const actualLinePrefix = document.getText(currentLine.range.with({ end: cursorPosition }))
+    return proposedInsertText.startsWith(actualLinePrefix)
 }
