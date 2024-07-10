@@ -38,6 +38,7 @@ import {
     InlineCompletionItemProviderConfigSingleton,
 } from './inline-completion-item-provider-config-singleton'
 import { isCompletionVisible } from './is-completion-visible'
+
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './logger'
 import * as CompletionLogger from './logger'
 import { isLocalCompletionsProvider } from './providers/experimental-ollama'
@@ -77,7 +78,7 @@ interface CompletionRequest {
 export class InlineCompletionItemProvider
     implements vscode.InlineCompletionItemProvider, vscode.Disposable
 {
-    private lastCompletionRequest: CompletionRequest | null = null
+    private latestCompletionRequest: CompletionRequest | null = null
     // This field is going to be set if you use the keyboard shortcut to manually trigger a
     // completion. Since VS Code does not provide a way to distinguish manual vs automatic
     // completions, we use consult this field inside the completion callback instead.
@@ -198,11 +199,16 @@ export class InlineCompletionItemProvider
 
     public async provideInlineCompletionItems(
         document: vscode.TextDocument,
-        position: vscode.Position,
-        context: vscode.InlineCompletionContext,
+        initialPosition: vscode.Position,
+        initialContext: vscode.InlineCompletionContext,
         // Making it optional here to execute multiple suggestion in parallel from the CLI script.
         token?: vscode.CancellationToken
     ): Promise<AutocompleteResult | null> {
+        // We cannot rely on `position` and `context` being accurate for the entire duration of
+        // this function, so we support reassigning them later.
+        let position = initialPosition
+        let context = initialContext
+
         const isManualCompletion = Boolean(
             this.lastManualCompletionTimestamp && this.lastManualCompletionTimestamp > Date.now() - 500
         )
@@ -220,13 +226,13 @@ export class InlineCompletionItemProvider
             }
 
             // Update the last request
-            const lastCompletionRequest = this.lastCompletionRequest
+            const lastCompletionRequest = this.latestCompletionRequest
             const completionRequest: CompletionRequest = {
                 document,
                 position,
                 context,
             }
-            this.lastCompletionRequest = completionRequest
+            this.latestCompletionRequest = completionRequest
 
             const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
 
@@ -301,7 +307,7 @@ export class InlineCompletionItemProvider
                     : TriggerKind.Hover
             this.lastManualCompletionTimestamp = null
 
-            const docContext = getCurrentDocContext({
+            let docContext = getCurrentDocContext({
                 document,
                 position,
                 maxPrefixLength: this.config.providerConfig.contextSizeHints.prefixChars,
@@ -309,6 +315,36 @@ export class InlineCompletionItemProvider
                 // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
                 context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
             })
+
+            // Checks if the current line prefix length is less than or equal to the last triggered prefix length
+            // If true, that means user has backspaced/deleted characters to trigger a new completion request,
+            // meaning the previous result is unwanted/rejected.
+            // In that case, we mark the last candidate as "unwanted", remove it from cache, and clear the last candidate
+            const currentPrefix = docContext.currentLinePrefix
+            const lastTriggeredPrefix = this.lastCandidate?.lastTriggerDocContext.currentLinePrefix
+            if (
+                this.lastCandidate &&
+                // Remove the last candidate from cache only if it can be
+                // used in the current document context.
+                canReuseLastCandidateInDocumentContext({
+                    document,
+                    position,
+                    selectedCompletionInfo: context?.selectedCompletionInfo,
+                    lastCandidate: this.lastCandidate,
+                    docContext,
+                }) &&
+                lastTriggeredPrefix !== undefined &&
+                // TODO: consider changing this to the trigger point that users observe.
+                // Currently, if the request is synthesized from the inflight requests with an earlier
+                // trigger point, it is used here to decide if users wants to cancel the completion
+                // but it's not obvious to the user where the trigger point is, which makes this
+                // behavior opaque and hard to understand.
+                currentPrefix.length < lastTriggeredPrefix.length
+            ) {
+                this.handleUnwantedCompletionItem(
+                    getRequestParamsFromLastCandidate(document, this.lastCandidate)
+                )
+            }
 
             const completionIntent = getCompletionIntent({
                 document,
@@ -385,41 +421,27 @@ export class InlineCompletionItemProvider
                     return null
                 }
 
-                // Checks if the current line prefix length is less than or equal to the last triggered prefix length
-                // If true, that means user has backspaced/deleted characters to trigger a new completion request,
-                // meaning the previous result is unwanted/rejected.
-                // In that case, we mark the last candidate as "unwanted", remove it from cache, and clear the last candidate
-                const currentPrefix = docContext.currentLinePrefix
-                const lastTriggeredPrefix = this.lastCandidate?.lastTriggerDocContext.currentLinePrefix
-                if (
-                    this.lastCandidate &&
-                    // Remove the last candidate from cache only if it can be
-                    // used in the current document context.
-                    canReuseLastCandidateInDocumentContext({
+                if (!position.isEqual(this.latestCompletionRequest.position)) {
+                    // The latestCompletionRequest has changed since the request was made.
+                    // This is likely due to another completion request starting, and this request staying in-flight.
+                    // We must update the `position`, `context` and associated values
+                    position = this.latestCompletionRequest.position
+                    context = this.latestCompletionRequest.context
+                    docContext = getCurrentDocContext({
                         document,
                         position,
-                        selectedCompletionInfo: context?.selectedCompletionInfo,
-                        lastCandidate: this.lastCandidate,
-                        docContext,
-                    }) &&
-                    lastTriggeredPrefix !== undefined &&
-                    // TODO: consider changing this to the trigger point that users observe.
-                    // Currently, if the request is synthesized from the inflight requests with an earlier
-                    // trigger point, it is used here to decide if users wants to cancel the completion
-                    // but it's not obvious to the user where the trigger point is, which makes this
-                    // behavior opaque and hard to understand.
-                    currentPrefix.length < lastTriggeredPrefix.length
-                ) {
-                    this.handleUnwantedCompletionItem(
-                        getRequestParamsFromLastCandidate(document, this.lastCandidate)
-                    )
+                        maxPrefixLength: this.config.providerConfig.contextSizeHints.prefixChars,
+                        maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
+                        // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
+                        context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
+                    })
                 }
 
                 const visibleItems = result.items.filter(item =>
                     isCompletionVisible(
                         item,
                         document,
-                        position,
+                        { invokedPosition: initialPosition, latestPosition: position },
                         docContext,
                         context,
                         takeSuggestWidgetSelectionIntoAccount,

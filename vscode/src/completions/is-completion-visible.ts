@@ -1,12 +1,17 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import type { DocumentContext } from '@sourcegraph/cody-shared'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 
+interface CompletionPositions {
+    invokedPosition: vscode.Position
+    latestPosition: vscode.Position
+}
+
 export function isCompletionVisible(
     completion: InlineCompletionItemWithAnalytics,
     document: vscode.TextDocument,
-    position: vscode.Position,
+    positions: CompletionPositions,
     docContext: DocumentContext,
     context: vscode.InlineCompletionContext,
     completeSuggestWidgetSelection: boolean,
@@ -37,7 +42,7 @@ export function isCompletionVisible(
         ? true
         : completionMatchesPopupItem(completion, document, context)
     const isMatchingSuffix = completionMatchesSuffix(completion, docContext.currentLineSuffix)
-    const isMatchingPrefix = completionMatchesLatestPrefix(completion, document, position)
+    const isMatchingPrefix = completionMatchesPrefix(completion, document, positions)
     const isVisible = !isAborted && isMatchingPopupItem && isMatchingSuffix && isMatchingPrefix
 
     return isVisible
@@ -95,18 +100,22 @@ function completionMatchesSuffix(
  * from the original `position`, with the latest prefix that we build
  * from the active editor cursor position.
  */
-function completionMatchesLatestPrefix(
+function completionMatchesPrefix(
     completion: Pick<InlineCompletionItemWithAnalytics, 'insertText'>,
     document: vscode.TextDocument,
-    position: vscode.Position
+    positions: CompletionPositions
 ): boolean {
-    const cursorPosition = vscode.window.activeTextEditor?.selection.active
-    if (!cursorPosition) {
-        return false
-    }
-    const currentLine = document.lineAt(position)
-    const proposedLinePrefix = document.getText(currentLine.range.with({ end: position }))
-    const proposedInsertText = proposedLinePrefix + completion.insertText
-    const actualLinePrefix = document.getText(currentLine.range.with({ end: cursorPosition }))
-    return proposedInsertText.startsWith(actualLinePrefix)
+    // Derive the proposed completion text using the original position at the point when the request was made.
+    const intendedLine = document.lineAt(positions.invokedPosition)
+    const intendedCompletion =
+        document.getText(intendedLine.range.with({ end: positions.invokedPosition })) +
+        completion.insertText
+
+    const latestLine = document.lineAt(positions.latestPosition)
+    const latestPrefix = document.getText(latestLine.range.with({ end: positions.latestPosition }))
+
+    // The `latestPrefix` will be what VS Code uses to determine if the completion is valid,
+    // this may have updated since the original completion request was made, so we
+    // check that the latest prefix is still valid.
+    return intendedCompletion.startsWith(latestPrefix)
 }
