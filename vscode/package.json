@@ -329,7 +329,7 @@
         "group": "Commit",
         "title": "Generate Commit Message (Experimental)",
         "icon": "$(cody-logo)",
-        "when": "cody.activated && config.cody.experimental.commitMessage && config.git.enabled && scmProvider == git && !cody.isGeneratingCommit"
+        "when": "cody.activated && config.cody.experimental.commitMessage && config.git.enabled && !cody.isGeneratingCommit"
       },
       {
         "command": "cody.command.abort-commit",
@@ -723,7 +723,7 @@
         },
         {
           "command": "cody.command.generate-commit",
-          "when": "cody.activated && config.cody.experimental.commitMessage && config.git.enabled && scmProvider == git && !cody.isGeneratingCommit"
+          "when": "cody.activated && config.cody.experimental.commitMessage && config.git.enabled && !cody.isGeneratingCommit"
         },
         {
           "command": "cody.command.abort-commit",
