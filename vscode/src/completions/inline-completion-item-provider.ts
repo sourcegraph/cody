@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import {
     ClientConfigSingleton,
+    type DocumentContext,
     FeatureFlag,
     RateLimitError,
     contextFiltersProvider,
@@ -306,14 +307,12 @@ export class InlineCompletionItemProvider
                     : TriggerKind.Hover
             this.lastManualCompletionTimestamp = null
 
-            let docContext = getCurrentDocContext({
+            let docContext = this.getDocContext(
                 document,
                 position,
-                maxPrefixLength: this.config.providerConfig.contextSizeHints.prefixChars,
-                maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
-                // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
-                context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
-            })
+                context,
+                takeSuggestWidgetSelectionIntoAccount
+            )
 
             const completionIntent = getCompletionIntent({
                 document,
@@ -396,14 +395,12 @@ export class InlineCompletionItemProvider
                     // We must update the `position`, `context` and associated values
                     position = this.latestCompletionRequest.position
                     context = this.latestCompletionRequest.context
-                    docContext = getCurrentDocContext({
+                    docContext = this.getDocContext(
                         document,
                         position,
-                        maxPrefixLength: this.config.providerConfig.contextSizeHints.prefixChars,
-                        maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
-                        // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
-                        context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
-                    })
+                        context,
+                        takeSuggestWidgetSelectionIntoAccount
+                    )
                 }
 
                 // Checks if the current line prefix length is less than or equal to the last triggered prefix length
@@ -758,6 +755,22 @@ export class InlineCompletionItemProvider
         //        outputChannel.show()
         //    },
         // })
+    }
+
+    private getDocContext(
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        context: vscode.InlineCompletionContext,
+        takeSuggestWidgetSelectionIntoAccount: boolean
+    ): DocumentContext {
+        return getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: this.config.providerConfig.contextSizeHints.prefixChars,
+            maxSuffixLength: this.config.providerConfig.contextSizeHints.suffixChars,
+            // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
+            context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
+        })
     }
 
     public dispose(): void {
