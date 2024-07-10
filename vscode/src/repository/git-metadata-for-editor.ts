@@ -1,3 +1,4 @@
+import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getConfiguration } from '../configuration'
 import { getEditor } from '../editor/active-editor'
@@ -29,11 +30,15 @@ class GitMetadataForCurrentEditor {
 
         const config = getConfiguration()
         const currentFile = getEditor()?.active?.document?.uri
-        const gitUrl =
+        const remoteGitUrl =
             config.codebase ||
             (currentFile
                 ? (await repoNameResolver.getRepoRemoteUrlsFromWorkspaceUri(currentFile))[0]
                 : config.codebase)
+
+        const gitUrl = remoteGitUrl
+            ? convertGitCloneURLToCodebaseName(remoteGitUrl) || undefined
+            : undefined
         if (currentFile) {
             const commit = gitCommitIdFromGitExtension(currentFile)
             newGitIdentifiersForFile = {

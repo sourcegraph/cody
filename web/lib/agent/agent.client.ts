@@ -71,7 +71,7 @@ export async function createAgentClient({
 
     // Initialize
     const serverInfo: ServerInfo = await rpc.sendRequest('initialize', {
-        name: 'cody-web',
+        name: 'web',
         version: '0.0.1',
         workspaceRootUri,
         extensionConfiguration: {
@@ -82,7 +82,7 @@ export async function createAgentClient({
                 'cody.experimental.noodle': true,
                 'cody.autocomplete.enabled': false,
                 'cody.experimental.urlContext': true,
-                'cody.allow-remote-context': true,
+                'cody.web': true,
             },
         },
     })

@@ -1,25 +1,11 @@
 import { expect } from '@playwright/test'
 import { createEmptyChatPanel, sidebarSignin } from './common'
-import { type ExpectedEvents, executeCommandInPalette, test } from './helpers'
+import { type ExpectedV2Events, executeCommandInPalette, test } from './helpers'
 
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
-    expectedEvents: [
-        'CodyInstalled',
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:Auth:connected',
-    ],
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
@@ -41,7 +27,10 @@ test.extend<ExpectedEvents>({
         return page.locator('#quickInput_list').getByLabel('Hey, today')
     }
 
-    const [_, chatInput] = await createEmptyChatPanel(page)
+    const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
+
+    // Ensure the chat view is ready before we start typing
+    await expect(chatPanelFrame.getByText('to add context to your chat')).toBeVisible()
 
     await chatInput.fill('Hey')
     await chatInput.press('Enter')

@@ -23,6 +23,7 @@ import type { CompletionLogID } from './logger'
 import type { CompletionProviderTracer, ProviderConfig } from './providers/provider'
 import type { RequestManager, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
+import type { SmartThrottleService } from './smart-throttle'
 import type { AutocompleteItem } from './suggested-autocomplete-items-cache'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import type { ProvideInlineCompletionsItemTraceData } from './tracer'
@@ -44,6 +45,7 @@ export interface InlineCompletionsParams {
     // Shared
     requestManager: RequestManager
     contextMixer: ContextMixer
+    smartThrottleService: SmartThrottleService | null
 
     // UI state
     isDotComUser: boolean
@@ -53,6 +55,7 @@ export interface InlineCompletionsParams {
 
     // Execution
     abortSignal?: AbortSignal
+    cancellationListener?: vscode.Disposable
     tracer?: (data: Partial<ProvideInlineCompletionsItemTraceData>) => void
     artificialDelay?: number
     firstCompletionTimeout: number
@@ -188,11 +191,13 @@ async function doGetInlineCompletions(
         docContext: { multilineTrigger, currentLineSuffix, currentLinePrefix },
         providerConfig,
         contextMixer,
+        smartThrottleService,
         requestManager,
         lastCandidate,
         debounceInterval,
         setIsLoading,
         abortSignal,
+        cancellationListener,
         tracer,
         handleDidAcceptCompletionItem,
         handleDidPartiallyAcceptCompletionItem,
@@ -299,7 +304,7 @@ async function doGetInlineCompletions(
         traceId: getActiveTraceAndSpanId()?.traceId,
     })
 
-    const requestParams: RequestParams = {
+    let requestParams: RequestParams = {
         document,
         docContext,
         position,
@@ -325,12 +330,28 @@ async function doGetInlineCompletions(
         }
     }
 
+    if (smartThrottleService) {
+        // For the smart throttle to work correctly and preserve tail requests, we need full control
+        // over the cancellation logic for each request.
+        // Therefore we must stop listening for cancellation events originating from VS Code.
+        cancellationListener?.dispose()
+
+        autocompleteStageCounterLogger.record('preSmartThrottle')
+        const throttledRequest = await smartThrottleService.throttle(requestParams, triggerKind)
+        if (throttledRequest === null) {
+            return null
+        }
+
+        requestParams = throttledRequest
+    }
+
     autocompleteStageCounterLogger.record('preDebounce')
-    const debounceTime =
-        triggerKind !== TriggerKind.Automatic
-            ? 0
-            : ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) +
-              (artificialDelay ?? 0)
+    const debounceTime = smartThrottleService
+        ? 0
+        : triggerKind !== TriggerKind.Automatic
+          ? 0
+          : ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) +
+            (artificialDelay ?? 0)
 
     // We split the desired debounceTime into two chunks. One that is at most 25ms where every
     // further execution is halted...
@@ -371,6 +392,13 @@ async function doGetInlineCompletions(
 
     tracer?.({ context: contextResult })
 
+    let gitContext = undefined
+    if (gitIdentifiersForFile?.gitUrl) {
+        gitContext = {
+            repoName: gitIdentifiersForFile.gitUrl,
+        }
+    }
+
     const completionProvider = getCompletionProvider({
         document,
         position,
@@ -379,6 +407,7 @@ async function doGetInlineCompletions(
         docContext,
         firstCompletionTimeout,
         completionLogId: logId,
+        gitContext,
     })
 
     tracer?.({

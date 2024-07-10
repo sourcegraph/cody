@@ -1,3 +1,4 @@
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { WelcomeMessage, localStorageKey } from './WelcomeMessage'
@@ -12,7 +13,7 @@ afterEach(() => {
 
 describe('WelcomeMessage', () => {
     test('renders', () => {
-        render(<WelcomeMessage />)
+        render(<WelcomeMessage IDE={CodyIDE.VSCode} />)
 
         // Initial render
         expect(screen.getByText(/Customize chat settings/)).toBeInTheDocument()
@@ -30,7 +31,7 @@ describe('WelcomeMessage', () => {
 
     test('renders as collapsed if localstorage is set', () => {
         window.localStorage.setItem(localStorageKey, 'true')
-        render(<WelcomeMessage />)
+        render(<WelcomeMessage IDE={CodyIDE.VSCode} />)
         expect(screen.getByRole('button', { name: 'Cody Chat Help' })).toBeInTheDocument()
     })
 })

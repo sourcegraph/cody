@@ -1,6 +1,5 @@
 import {
     type FC,
-    type MutableRefObject,
     type PropsWithChildren,
     createContext,
     useCallback,
@@ -38,7 +37,7 @@ interface AgentClient {
 interface CodyWebChatContextData {
     client: AgentClient | Error | null
     activeChatID: string | null
-    activeWebviewPanelID: MutableRefObject<string>
+    activeWebviewPanelID: string
     vscodeAPI: VSCodeWrapper
     initialContext: InitialContext | undefined
     setLastActiveChatID: (chatID: string | null) => void
@@ -49,7 +48,7 @@ interface CodyWebChatContextData {
 export const CodyWebChatContext = createContext<CodyWebChatContextData>({
     client: null,
     activeChatID: null,
-    activeWebviewPanelID: { current: '' },
+    activeWebviewPanelID: '',
     initialContext: undefined,
 
     // Null casting is just to avoid unnecessary null type checks in
@@ -86,14 +85,17 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
     // In order to avoid multiple client creation during dev runs
     // since useEffect can be fired multiple times during dev builds
     const isClientInitialized = useRef(false)
-    const activeWebviewPanelID = useRef<string>('')
+    const activeWebviewPanelIDRef = useRef<string>('')
     const onMessageCallbacksRef = useRef<((message: ExtensionMessage) => void)[]>([])
 
+    const [activeWebviewPanelID, setActiveWebviewPanelID] = useState<string>('')
     const [client, setClient] = useState<AgentClient | Error | null>(null)
     const [lastActiveChatID, setLastActiveChatID] = useLocalStorage<string | null>(
         ACTIVE_CHAT_ID_KEY,
         null
     )
+
+    activeWebviewPanelIDRef.current = activeWebviewPanelID
 
     // TODO [VK] Memoize agent client creation to avoid re-creating client
     useEffect(() => {
@@ -116,15 +118,16 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
                     fullHistory: true,
                 })
 
+                const initialChat = chatHistory.find(chat => chat.chatID === initialChatId)
+
                 // In case of no chats we should create initial empty chat
                 // Also when we have a context
-                if (chatHistory.length === 0 || initialChatId === null) {
+                if (chatHistory.length === 0 || (initialChatId !== undefined && !initialChat)) {
                     await createChat(client)
                 } else {
                     // Activate either last active chat by ID from local storage or
                     // set the last created chat from the history
                     const lastUsedChat = chatHistory.find(chat => chat.chatID === lastActiveChatID)
-                    const initialChat = chatHistory.find(chat => chat.chatID === initialChatId)
                     const lastActiveChat =
                         initialChat ?? lastUsedChat ?? chatHistory[chatHistory.length - 1]
 
@@ -133,7 +136,7 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
 
                 if (initialContext?.repositories.length) {
                     await client.rpc.sendRequest('webview/receiveMessage', {
-                        id: activeWebviewPanelID.current,
+                        id: activeWebviewPanelIDRef.current,
                         message: {
                             command: 'context/choose-remote-search-repo',
                             explicitRepos: initialContext?.repositories ?? [],
@@ -154,7 +157,7 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
             client.rpc.onNotification(
                 'webview/postMessage',
                 ({ id, message }: { id: string; message: ExtensionMessage }) => {
-                    if (activeWebviewPanelID.current === id) {
+                    if (activeWebviewPanelIDRef.current === id) {
                         for (const callback of onMessageCallbacksRef.current) {
                             callback(hydrateAfterPostMessage(message, uri => URI.from(uri as any)))
                         }
@@ -162,7 +165,6 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
                 }
             )
         }
-
         const vscodeAPI: VSCodeWrapper = {
             postMessage: message => {
                 if (client && !isErrorLike(client)) {
@@ -178,7 +180,7 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
                     }
 
                     void client.rpc.sendRequest('webview/receiveMessage', {
-                        id: activeWebviewPanelID.current,
+                        id: activeWebviewPanelIDRef.current,
                         message,
                     })
                 }
@@ -216,15 +218,25 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
                 return
             }
 
-            const { panelID, chatID } = await agent.rpc.sendRequest<{ panelID: string; chatID: string }>(
-                'chat/new'
+            const { panelId, chatId } = await agent.rpc.sendRequest<{ panelId: string; chatId: string }>(
+                'chat/web/new'
             )
-            activeWebviewPanelID.current = panelID
-            setLastActiveChatID(chatID)
 
+            activeWebviewPanelIDRef.current = panelId
+
+            setActiveWebviewPanelID(panelId)
+            setLastActiveChatID(chatId)
+
+            await agent.rpc.sendRequest('webview/receiveMessage', {
+                id: activeWebviewPanelIDRef.current,
+                message: { chatID: chatId, command: 'restoreHistory' },
+            })
+
+            // Set initial context after we restore history so context won't be
+            // overridden by the previous chat session context
             if (initialContext?.repositories.length) {
                 await agent.rpc.sendRequest('webview/receiveMessage', {
-                    id: activeWebviewPanelID.current,
+                    id: activeWebviewPanelIDRef.current,
                     message: {
                         command: 'context/choose-remote-search-repo',
                         explicitRepos: initialContext?.repositories ?? [],
@@ -233,7 +245,7 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
             }
 
             if (onNewChatCreated) {
-                onNewChatCreated(chatID)
+                onNewChatCreated(chatId)
             }
         },
         [client, onNewChatCreated, setLastActiveChatID, initialContext]
@@ -251,7 +263,7 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
             // Restore chat with chat history (transcript data) and set the newly
             // restored panel ID to be able to listen event from only this panel
             // in the vscode API
-            activeWebviewPanelID.current = await agent.rpc.sendRequest('chat/restore', {
+            const nextPanelId = await agent.rpc.sendRequest<string>('chat/restore', {
                 chatID: chat.chatID,
                 messages: chat.transcript.interactions.flatMap(interaction =>
                     // Ignore incomplete messages from bot, this might be possible
@@ -259,6 +271,9 @@ export const CodyWebChatProvider: FC<PropsWithChildren<CodyWebChatProviderProps>
                     [interaction.humanMessage, interaction.assistantMessage].filter(message => message)
                 ),
             })
+
+            activeWebviewPanelIDRef.current = nextPanelId
+            setActiveWebviewPanelID(nextPanelId)
 
             // Make sure that agent will reset the internal state and
             // sends all necessary events with transcript to switch active chat

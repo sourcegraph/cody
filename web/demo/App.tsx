@@ -2,6 +2,9 @@ import type { FC } from 'react'
 
 import { CodyWebChat, CodyWebChatProvider, CodyWebHistory, type Repository, getChatTitle } from '../lib'
 
+// Include highlights styles for demo purpose, clients like
+// Sourcegraph import highlights styles themselves
+import '../../vscode/webviews/utils/highlight.css'
 import styles from './App.module.css'
 
 let ACCESS_TOKEN = localStorage.getItem('accessToken')

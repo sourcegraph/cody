@@ -6,6 +6,7 @@ import {
     type AuthStatus,
     type ChatMessage,
     type ClientStateForWebview,
+    CodyIDE,
     GuardrailsPost,
     type Model,
     PromptString,
@@ -26,11 +27,7 @@ import { ClientStateContextProvider, useClientActionDispatcher } from './client/
 import { WithContextProviders } from './mentions/providers'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
-import {
-    TelemetryRecorderContext,
-    createWebviewTelemetryRecorder,
-    createWebviewTelemetryService,
-} from './utils/telemetry'
+import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from './utils/telemetry'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<(LocalEnv & ConfigurationSubsetForWebview) | null>(null)
@@ -72,6 +69,14 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         () =>
             vscodeAPI.onMessage(message => {
                 switch (message.type) {
+                    case 'ui/theme': {
+                        document.documentElement.dataset.ide = message.agentIDE
+                        const rootStyle = document.documentElement.style
+                        for (const [name, value] of Object.entries(message.cssVariables || {})) {
+                            rootStyle.setProperty(name, value)
+                        }
+                        break
+                    }
                     case 'transcript': {
                         const deserializedMessages = message.messages.map(
                             PromptString.unsafe_deserializeChatMessage
@@ -98,6 +103,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
                             isDotComUser: message.authStatus.isDotCom,
                             user: message.authStatus,
+                            ide: message.config.agentIDE || CodyIDE.VSCode,
                         })
                         setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
                         updateDisplayPathEnvInfoForWebview(message.workspaceFolderUris)
@@ -177,8 +183,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         [vscodeAPI]
     )
 
-    // Deprecated V1 telemetry
-    const telemetryService = useMemo(() => createWebviewTelemetryService(vscodeAPI), [vscodeAPI])
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
@@ -230,7 +234,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 <TelemetryRecorderContext.Provider value={telemetryRecorder}>
                     <LoginSimplified
                         simplifiedLoginRedirect={loginRedirect}
-                        telemetryService={telemetryService}
                         uiKindIsWeb={config?.uiKindIsWeb}
                         vscodeAPI={vscodeAPI}
                     />
@@ -261,9 +264,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                     messageInProgress={messageInProgress}
                                     transcript={transcript}
                                     vscodeAPI={vscodeAPI}
-                                    telemetryService={telemetryService}
                                     isTranscriptError={isTranscriptError}
                                     guardrails={attributionEnabled ? guardrails : undefined}
+                                    experimentalUnitTestEnabled={config.experimentalUnitTest}
                                 />
                             </ClientStateContextProvider>
                         </TelemetryRecorderContext.Provider>

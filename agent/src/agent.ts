@@ -2,12 +2,7 @@ import { spawn } from 'node:child_process'
 import path from 'node:path'
 
 import type { Polly, Request } from '@pollyjs/core'
-import {
-    type CodyCommand,
-    getDotComDefaultModels,
-    isWindows,
-    telemetryRecorder,
-} from '@sourcegraph/cody-shared'
+import { type CodyCommand, isWindows, telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 
@@ -61,7 +56,7 @@ import { AgentGlobalState } from './AgentGlobalState'
 import { AgentProviders } from './AgentProviders'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
-import type { PollyRequestError } from './cli/jsonrpc'
+import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
 import { codyPaths } from './codyPaths'
 import {
     MessageHandler,
@@ -185,7 +180,7 @@ export async function newAgentClient(
         const nodeArguments = process.argv0.endsWith('node')
             ? ['--enable-source-maps', ...process.argv.slice(1, 2)]
             : []
-        nodeArguments.push('jsonrpc')
+        nodeArguments.push('api', 'jsonrpc-stdio')
         const arg0 = clientInfo.codyAgentPath ?? process.argv[0]
         const args = clientInfo.codyAgentPath ? [] : nodeArguments
         const child = spawn(arg0, args, {
@@ -1079,27 +1074,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
             const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            let theModel = modelID
+            const theModel = modelID
                 ? modelID
                 : ModelsService.getModels(
                       ModelUsage.Chat,
                       authStatus.isDotCom && !authStatus.userCanUpgrade
-                  ).at(0)?.model
-            if (!theModel) {
-                theModel = getDotComDefaultModels()[0].model
-            }
-
-            const chatModel = new SimpleChatModel(modelID!, [], chatID)
-            for (const message of messages) {
-                const deserializedMessage = PromptString.unsafe_deserializeChatMessage(message)
-                if (deserializedMessage.error) {
-                    chatModel.addErrorAsBotMessage(deserializedMessage.error)
-                } else if (deserializedMessage.speaker === 'assistant') {
-                    chatModel.addBotMessage(deserializedMessage)
-                } else if (deserializedMessage.speaker === 'human') {
-                    chatModel.addHumanMessage(deserializedMessage)
-                }
-            }
+                  ).at(0)?.model ?? ''
+            const chatMessages = messages?.map(m => PromptString.unsafe_deserializeChatMessage(m)) ?? []
+            const chatModel = new SimpleChatModel(theModel, chatMessages, chatID)
             await chatHistory.saveChat(authStatus, chatModel.toSerializedChatTranscript())
             return this.createChatPanel(
                 Promise.resolve({

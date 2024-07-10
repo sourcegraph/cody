@@ -3,6 +3,7 @@ import type { URI } from 'vscode-uri'
 import type {
     AuthStatus,
     ClientStateForWebview,
+    CodyIDE,
     ConfigurationWithAccessToken,
     ContextItem,
     ContextMentionProviderMetadata,
@@ -11,7 +12,6 @@ import type {
     Model,
     RangeData,
     SerializedChatMessage,
-    TelemetryEventProperties,
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
 
@@ -38,6 +38,21 @@ export type WebviewRecordEventParameters = TelemetryEventParameters<
     BillingProduct,
     BillingCategory
 >
+
+/**
+ * @deprecated v1 telemetry event properties format - use 'recordEvent' instead
+ */
+interface TelemetryEventProperties {
+    [key: string]:
+        | string
+        | number
+        | boolean
+        | null
+        | undefined
+        | string[]
+        | TelemetryEventProperties[]
+        | TelemetryEventProperties
+}
 
 /**
  * A message sent from the webview to the extension host.
@@ -140,6 +155,9 @@ export type WebviewMessage =
     | {
           command: 'getAllMentionProvidersMetadata'
       }
+    | {
+          command: 'experimental-unit-test-prompt'
+      }
 
 /**
  * A message sent from the extension host to the webview.
@@ -151,6 +169,7 @@ export type ExtensionMessage =
           authStatus: AuthStatus
           workspaceFolderUris: string[]
       }
+    | { type: 'ui/theme'; agentIDE: CodyIDE; cssVariables: CodyIDECssVariables }
     | { type: 'history'; localHistory?: UserLocalHistory | undefined | null }
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; view: View }
@@ -179,6 +198,11 @@ export type ExtensionMessage =
     | {
           type: 'allMentionProvidersMetadata'
           providers: ContextMentionProviderMetadata[]
+      }
+    | {
+          type: 'updateEditorState'
+          /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
+          editorState?: unknown | undefined | null
       }
 
 interface ExtensionAttributionMessage {
@@ -229,7 +253,9 @@ export interface ConfigurationSubsetForWebview
     extends Pick<
         ConfigurationWithAccessToken,
         'experimentalNoodle' | 'serverEndpoint' | 'agentIDE' | 'agentExtensionVersion'
-    > {}
+    > {
+    experimentalUnitTest: boolean
+}
 
 /**
  * URLs for the Sourcegraph instance and app.
@@ -281,4 +307,8 @@ const sourcegraphTokenRegex =
  */
 export function isSourcegraphToken(text: string): boolean {
     return sourcegraphTokenRegex.test(text)
+}
+
+interface CodyIDECssVariables {
+    [key: string]: string
 }

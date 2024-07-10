@@ -2,8 +2,6 @@ import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getEditor } from '../../editor/active-editor'
 import { getDocumentSections } from '../../editor/utils/document-sections'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from '../../services/telemetry'
 import { isValidTestFile } from '../utils/test-commands'
 
 interface EditorCodeLens {
@@ -42,7 +40,6 @@ export class CommandCodeLenses implements vscode.CodeLensProvider {
         this._disposables.push(vscode.languages.registerCodeLensProvider({ scheme: 'file' }, this))
         this._disposables.push(
             vscode.commands.registerCommand('cody.editor.codelens.click', async lens => {
-                telemetryService.log('CodyVSCodeExtension:command:codelens:clicked')
                 telemetryRecorder.recordEvent('cody.command.codelens', 'clicked')
                 const clickedLens = lens as EditorCodeLens
                 await this.onCodeLensClick(clickedLens)

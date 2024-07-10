@@ -1,24 +1,11 @@
 import { type Locator, expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 import { createEmptyChatPanel, focusChatInputAtEnd, sidebarExplorer, sidebarSignin } from './common'
-import { type DotcomUrlOverride, type ExpectedEvents, executeCommandInPalette, test } from './helpers'
+import { type DotcomUrlOverride, type ExpectedV2Events, executeCommandInPalette, test } from './helpers'
 
-test.extend<ExpectedEvents>({
-    expectedEvents: [
-        'CodyInstalled',
-        'CodyVSCodeExtension:codyIgnore:hasFile',
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:menu:command:default:clicked',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-    ],
+test.extend<ExpectedV2Events>({
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
@@ -182,22 +169,9 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
     }
 )
 
-test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<ExpectedEvents>({
-    expectedEvents: [
-        'CodyInstalled',
-        'CodyVSCodeExtension:codyIgnore:hasFile',
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-    ],
+test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<ExpectedV2Events>({
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
@@ -218,7 +192,7 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     const modelSelect = chatFrame.getByRole('combobox', { name: 'Select a model' }).last()
 
     await expect(modelSelect).toBeEnabled()
-    await expect(modelSelect).toHaveText(/^Claude 3 Sonnet/)
+    await expect(modelSelect).toHaveText(/^Claude 3.5 Sonnet/)
 
     await firstChatInput.fill('to model1')
     await firstChatInput.press('Enter')
@@ -226,7 +200,7 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     // Verify tooltip shows the correct model
     await chatFrame.locator('[data-testid="chat-message-model-icon"]').last().hover()
     await expect(
-        chatFrame.locator('[data-testid="message"]').getByText('Claude 3 Sonnet by Anthropic')
+        chatFrame.locator('[data-testid="message"]').getByText('Claude 3.5 Sonnet by Anthropic')
     ).toBeVisible()
 
     // Change model and send another message.
@@ -245,23 +219,10 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     ).toBeVisible()
 })
 
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
-    expectedEvents: [
-        'CodyInstalled',
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-        'CodyVSCodeExtension:editChatButton:clicked',
-    ],
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',

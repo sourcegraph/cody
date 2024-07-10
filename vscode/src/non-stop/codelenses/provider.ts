@@ -1,8 +1,7 @@
 import * as vscode from 'vscode'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from '../../services/telemetry'
+import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import { ContentProvider } from '../FixupContentStore'
 import type { FixupFile } from '../FixupFile'
 import type { FixupTask, FixupTaskID } from '../FixupTask'
@@ -31,15 +30,6 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
             vscode.languages.registerCodeLensProvider('*', this),
             vscode.workspace.registerTextDocumentContentProvider('cody-fixup', this.contentStore),
             vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => {
-                telemetryService.log(
-                    'CodyVSCodeExtension:fixup:codeLens:clicked',
-                    {
-                        op: 'cancel',
-                    },
-                    {
-                        hasV2Event: true,
-                    }
-                )
                 telemetryRecorder.recordEvent('cody.fixup.codeLens', 'cancel')
                 const task = this.controller.taskForId(id)
                 if (task) {
@@ -47,56 +37,20 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
                 }
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.diff', id => {
-                telemetryService.log(
-                    'CodyVSCodeExtension:fixup:codeLens:clicked',
-                    {
-                        op: 'diff',
-                    },
-                    {
-                        hasV2Event: true,
-                    }
-                )
                 telemetryRecorder.recordEvent('cody.fixup.codeLens', 'diff')
                 return this.diff(id)
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.retry', async id => {
-                telemetryService.log(
-                    'CodyVSCodeExtension:fixup:codeLens:clicked',
-                    {
-                        op: 'regenerate',
-                    },
-                    {
-                        hasV2Event: true,
-                    }
-                )
                 telemetryRecorder.recordEvent('cody.fixup.codeLens', 'retry')
                 const task = this.controller.taskForId(id)
                 return task ? this.controller.retry(task, 'code-lens') : Promise.resolve()
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.undo', id => {
-                telemetryService.log(
-                    'CodyVSCodeExtension:fixup:codeLens:clicked',
-                    {
-                        op: 'undo',
-                    },
-                    {
-                        hasV2Event: true,
-                    }
-                )
                 telemetryRecorder.recordEvent('cody.fixup.codeLens', 'undo')
                 const task = this.controller.taskForId(id)
                 return task ? this.controller.undo(task) : Promise.resolve()
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.accept', id => {
-                telemetryService.log(
-                    'CodyVSCodeExtension:fixup:codeLens:clicked',
-                    {
-                        op: 'accept',
-                    },
-                    {
-                        hasV2Event: true,
-                    }
-                )
                 telemetryRecorder.recordEvent('cody.fixup.codeLens', 'accept')
                 const task = this.controller.taskForId(id)
                 if (task) {
@@ -104,15 +58,6 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
                 }
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.error', id => {
-                telemetryService.log(
-                    'CodyVSCodeExtension:fixup:codeLens:clicked',
-                    {
-                        op: 'show_error',
-                    },
-                    {
-                        hasV2Event: true,
-                    }
-                )
                 telemetryRecorder.recordEvent('cody.fixup.codeLens', 'showError')
                 return this.showError(id)
             }),
@@ -258,6 +203,12 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
         }
         // show diff view between the current document and replacement
         // Add replacement content to the temp document
+
+        if (!isRunningInsideAgent()) {
+            // Note: For VS Code, we need to accept the task before showing it as a diff here, this is because
+            // we have injected empty whitespace and decorations to the document.
+            this.controller.accept(task)
+        }
 
         // Ensure each diff is fresh so there is no chance of diffing an already diffed file.
         const diffId = `${task.id}-${Date.now()}`

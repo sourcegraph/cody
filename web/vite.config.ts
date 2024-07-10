@@ -1,6 +1,7 @@
 import { resolve } from 'node:path'
 
 import react from '@vitejs/plugin-react-swc'
+import svgr from 'vite-plugin-svgr'
 
 // @ts-ignore
 import { defineProjectWithDefaults } from '../.config/viteShared'
@@ -9,7 +10,7 @@ const fakeProcessEnv: Record<string, string | boolean> = {
     CODY_SHIM_TESTING: false,
     CODY_TESTING: false,
     CODY_PROFILE_TEMP: false,
-    CODY_TELEMETRY_EXPORTER: 'testing',
+    CODY_TELEMETRY_EXPORTER: 'graphql',
     NODE_ENV: 'production',
     NODE_DEBUG: false,
     TESTING_DOTCOM_URL: 'https://sourcegraph.com',
@@ -28,6 +29,7 @@ export default defineProjectWithDefaults(__dirname, {
     plugins: [
         // @ts-ignore
         react({ devTarget: 'esnext' }),
+        svgr(),
     ],
     resolve: {
         alias: [
@@ -86,7 +88,6 @@ export default defineProjectWithDefaults(__dirname, {
     build: {
         // Turn off minification since it breaks json-rpc in inline web-worker in Safari
         minify: false,
-        emptyOutDir: false,
         outDir: 'dist',
         assetsDir: '.',
         reportCompressedSize: false,

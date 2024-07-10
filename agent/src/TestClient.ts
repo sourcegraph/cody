@@ -145,9 +145,10 @@ export class TestClient extends MessageHandler {
                       '--enable-source-maps',
                       // '--expose-gc', // Uncoment when running memory.test.ts
                       agentScript,
-                      'jsonrpc',
+                      'api',
+                      'jsonrpc-stdio',
                   ]
-                : ['jsonrpc']
+                : ['api', 'jsonrpc-stdio']
 
         const child = spawn(bin, args, {
             stdio: 'pipe',
@@ -884,8 +885,8 @@ ${patch}`
         }
     }
 
-    public async beforeAll() {
-        const info = await this.initialize()
+    public async beforeAll(additionalConfig?: Partial<ExtensionConfiguration>) {
+        const info = await this.initialize(additionalConfig)
         if (!info.authStatus?.isLoggedIn) {
             throw new Error('Could not log in')
         }

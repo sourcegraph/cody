@@ -15,8 +15,11 @@ export const sidebarSignin = async (
     await focusSidebar(page)
     await sidebar.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).click()
     await page.getByRole('option', { name: 'Sign In with URL and Access Token' }).click()
+    // Ensure the correct input box has showed up before we start filling in the forms.
+    await expect(page.getByText('Enter the URL of the')).toBeVisible()
     await page.getByRole('combobox', { name: 'input' }).fill(SERVER_URL)
     await page.getByRole('combobox', { name: 'input' }).press('Enter')
+    await expect(page.getByText('Paste your access token')).toBeVisible()
     await page.getByRole('combobox', { name: 'input' }).fill(VALID_TOKEN)
     await page.getByRole('combobox', { name: 'input' }).press('Enter')
 

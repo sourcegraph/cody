@@ -18,8 +18,6 @@ import type { LocalEmbeddingsController } from '../../local-context/local-embedd
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import { localStorage } from '../../services/LocalStorageProvider'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from '../../services/telemetry'
 
 import { DEFAULT_EVENT_SOURCE } from '@sourcegraph/cody-shared'
 import type { URI } from 'vscode-uri'
@@ -161,9 +159,6 @@ export class ChatManager implements vscode.Disposable {
     }
 
     private async sendEditorContextToChat(uri?: URI): Promise<void> {
-        telemetryService.log('CodyVSCodeExtension:addChatContext:clicked', undefined, {
-            hasV2Event: true,
-        })
         telemetryRecorder.recordEvent('cody.addChatContext', 'clicked')
 
         const provider = await this.chatPanelsManager.getActiveChatPanel()
@@ -198,9 +193,6 @@ export class ChatManager implements vscode.Disposable {
      * Export chat history to file system
      */
     private async exportHistory(): Promise<void> {
-        telemetryService.log('CodyVSCodeExtension:exportChatHistoryButton:clicked', undefined, {
-            hasV2Event: true,
-        })
         telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked')
         const historyJson = localStorage.getChatHistory(this.options.authProvider.getAuthStatus())?.chat
         const exportPath = await vscode.window.showSaveDialog({

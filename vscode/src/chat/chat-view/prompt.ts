@@ -71,7 +71,7 @@ export class DefaultPrompter {
                 !this.isCommand &&
                 Boolean(this.explicitContext.length || historyItems.length || this.getEnhancedContext)
             ) {
-                reverseTranscript[0] = PromptMixin.mixInto(reverseTranscript[0])
+                reverseTranscript[0] = PromptMixin.mixInto(reverseTranscript[0], chat.modelID)
             }
 
             const messagesIgnored = promptBuilder.tryAddMessages(reverseTranscript)
@@ -111,6 +111,7 @@ export class DefaultPrompter {
                 // Because this enhanced context is added for the last human message,
                 // we will also add it to the context list for display.
                 context.used.push(...newEnhancedMessages.added)
+                context.ignored.push(...newEnhancedMessages.ignored)
                 ignoredContext.enhanced += newEnhancedMessages.ignored.length
             }
 

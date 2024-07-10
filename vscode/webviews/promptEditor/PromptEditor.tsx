@@ -9,7 +9,6 @@ import { $createTextNode, $getRoot, $getSelection, $insertNodes, type LexicalEdi
 import type { EditorState, SerializedEditorState, SerializedLexicalNode } from 'lexical'
 import { isEqual } from 'lodash'
 import { type FunctionComponent, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
-import type { UserAccountInfo } from '../Chat'
 import {
     isEditorContentOnlyInitialContext,
     lexicalNodesForContextItems,
@@ -20,7 +19,6 @@ import { $selectAfter, $selectEnd } from './lexicalUtils'
 import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
 
 interface Props extends KeyboardEventPluginProps {
-    userInfo?: UserAccountInfo
     editorClassName?: string
     contentEditableClassName?: string
     seamless?: boolean
@@ -42,13 +40,13 @@ export interface PromptEditorRefAPI {
     appendText(text: string, ensureWhitespaceBefore?: boolean): void
     addMentions(items: ContextItem[]): void
     setInitialContextMentions(items: ContextItem[]): void
+    setEditorState(state: SerializedPromptEditorState): void
 }
 
 /**
  * The component for composing and editing prompts.
  */
 export const PromptEditor: FunctionComponent<Props> = ({
-    userInfo,
     editorClassName,
     contentEditableClassName,
     seamless,
@@ -66,6 +64,12 @@ export const PromptEditor: FunctionComponent<Props> = ({
     useImperativeHandle(
         ref,
         (): PromptEditorRefAPI => ({
+            setEditorState(state: SerializedPromptEditorState): void {
+                const editor = editorRef.current
+                if (editor) {
+                    editor.setEditorState(editor.parseEditorState(state.lexicalEditorState))
+                }
+            },
             getSerializedValue(): SerializedPromptEditorValue {
                 if (!editorRef.current) {
                     throw new Error('PromptEditor has no Lexical editor ref')
@@ -181,7 +185,6 @@ export const PromptEditor: FunctionComponent<Props> = ({
 
     return (
         <BaseEditor
-            userInfo={userInfo}
             className={clsx(styles.editor, editorClassName, {
                 [styles.disabled]: disabled,
                 [styles.seamless]: seamless,

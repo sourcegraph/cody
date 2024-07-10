@@ -7,7 +7,7 @@ import {
     sidebarExplorer,
     sidebarSignin,
 } from './common'
-import { type ExpectedEvents, executeCommandInPalette, test } from './helpers'
+import { type ExpectedV2Events, executeCommandInPalette, test } from './helpers'
 
 /**
  * NOTE: .cody/ignore current supports behind 'cody.internal.unstable' flag
@@ -17,24 +17,10 @@ import { type ExpectedEvents, executeCommandInPalette, test } from './helpers'
  * Tests that Cody commands and chat do not work on ignored files,
  * and ignored files are not included in chat context.
  */
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
-    expectEvents: [
-        'CodyInstalled',
-        'CodyVSCodeExtension:codyIgnore:hasFile',
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:command:explain:clicked',
-        'CodyVSCodeExtension:command:explain:executed',
-    ],
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
