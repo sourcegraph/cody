@@ -307,7 +307,7 @@ test.extend<ExpectedV2Events>({
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
     ],
-}).only('@-mention symbol in chat', async ({ page, nap, sidebar }) => {
+})('@-mention symbol in chat', async ({ page, nap, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     // Open the buzz.ts file so that VS Code starts to populate symbols.
