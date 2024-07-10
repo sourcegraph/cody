@@ -512,12 +512,7 @@ export function getMetaKeyByOS(): 'Meta' | 'Control' {
 }
 
 export const openCustomCommandMenu = async (page: Page): Promise<void> => {
-    const customCommandSidebarItem = page
-        .getByRole('treeitem', { name: 'Custom Commands' })
-        .locator('a')
-        // The second item is the setting icon attached to the "Custom Commands" item.
-        .first()
-    await customCommandSidebarItem.click()
+    await executeCommandInPalette(page, 'Custom Commands')
 }
 
 export const testWithGitRemote = test.extend<WorkspaceDirectory>({
