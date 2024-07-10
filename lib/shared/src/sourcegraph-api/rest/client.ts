@@ -83,12 +83,18 @@ export class RestClient {
                 context: undefined, // Not yet captured in in the schema.
             }
 
+            const modelRef = serverModel.modelRef // e.g. 'bigcode::v1::starcoder2-7b'
+            const modelRefParts = modelRef.split('::')
+            const provider = modelRefParts[0]; // 'bigcode'
+            const model = modelRefParts[modelRefParts.length - 1]; // 'starcoder2-7b'
+
+            const isSelfHostedModel = model.startsWith('starcoder') || model.startsWith('mistral') || model.startsWith('mixtral')
             const convertedModel = new Model(
                 // The Model type expects the `model` field to contain both the provider
                 // and model name, whereas the server-side schema has a more nuanced view.
                 // See PRIME-282.
-                `${serverModel.provider}/${serverModel.model}`,
-                [ModelUsage.Chat, ModelUsage.Edit],
+                isSelfHostedModel ? modelRef : `${provider}/${model}`,
+                model.startsWith('starcoder') ? [ModelUsage.Edit] : [ModelUsage.Chat, ModelUsage.Edit],
                 convertedContextWindow,
                 // client-side config not captured in the schema yet.
                 undefined
