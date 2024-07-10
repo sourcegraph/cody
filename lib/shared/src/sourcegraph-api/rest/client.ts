@@ -64,7 +64,10 @@ export class RestClient {
         //
         // NOTE: This API endpoint hasn't shippeted yet, and probably won't work for you.
         // Also, the URL definitely will change.
-        const serverSideConfig = await this.getRequest<any>('getAvailableModels', '/.api/supported-llms')
+        const serverSideConfig = await this.getRequest<any>(
+            'getAvailableModels',
+            '/.api/modelconfig/supported-models.json'
+        )
 
         // TODO(PRIME-323): Do a proper review of the data model we will use to describe
         // server-side configuration. Once complete, it should match the data types we

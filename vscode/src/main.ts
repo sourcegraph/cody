@@ -261,10 +261,15 @@ const register = async (
 
     // Adds a change listener to the auth provider that syncs the auth status
     authProvider.addChangeListener(async (authStatus: AuthStatus) => {
+        // Propagate access token through config
+        const newConfig = await getFullConfig()
+        configWatcher.set(newConfig)
+        // Sync auth status to graphqlClient
+        graphqlClient.onConfigurationChange(newConfig)
+
         // Refresh server-sent client configuration, as it controls which features the user has
         // access to.
-        ClientConfigSingleton.getInstance().refreshConfig()
-
+        ClientConfigSingleton.getInstance().syncAuthStatus(authStatus)
         // Reset the available models based on the auth change.
         await syncModels(authStatus)
 
@@ -293,12 +298,6 @@ const register = async (
 
         // Set the default prompt mixin on auth status change.
         await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
-
-        // Propagate access token through config
-        const newConfig = await getFullConfig()
-        configWatcher.set(newConfig)
-        // Sync auth status to graphqlClient
-        graphqlClient.onConfigurationChange(newConfig)
 
         // Re-register expose openctx client
         await exposeOpenCtxClient(
@@ -329,7 +328,9 @@ const register = async (
 
     // Sync initial auth status
     const initAuthStatus = authProvider.getAuthStatus()
-    ClientConfigSingleton.getInstance().refreshConfig()
+    // Sync auth status to graphqlClient
+    graphqlClient.onConfigurationChange(await getFullConfig())
+    await ClientConfigSingleton.getInstance().syncAuthStatus(initAuthStatus)
     await syncModels(initAuthStatus)
     await chatManager.syncAuthStatus(initAuthStatus)
     editorManager.syncAuthStatus(initAuthStatus)
@@ -360,8 +361,8 @@ const register = async (
         id: DefaultCodyCommands | PromptString,
         args?: Partial<CodyCommandArgs>
     ): Promise<CommandResult | undefined> => {
-        const { customCommandsEnabled } = await ClientConfigSingleton.getInstance().getConfig()
-        if (!customCommandsEnabled) {
+        const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
+        if (!clientConfig?.customCommandsEnabled) {
             void vscode.window.showErrorMessage(
                 'This feature has been disabled by your Sourcegraph site admin.'
             )
