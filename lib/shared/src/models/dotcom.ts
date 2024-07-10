@@ -43,7 +43,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         provider: 'Anthropic',
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: expandedContextWindow,
-        tags: [ModelTag.Gateway, ModelTag.Balanced, ModelTag.Free],
+        tags: [ModelTag.Gateway, ModelTag.Accuracy, ModelTag.Recommended, ModelTag.Free],
     },
     {
         title: 'Claude 3 Sonnet',
