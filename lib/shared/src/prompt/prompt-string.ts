@@ -6,7 +6,7 @@ import type { ContextFiltersProvider } from '../cody-ignore/context-filters-prov
 import type { TerminalOutputArguments } from '../commands/types'
 import { markdownCodeBlockLanguageIDForFilename } from '../common/languages'
 import type { RangeData } from '../common/range'
-import type { AutocompleteContextSnippet, DocumentContext } from '../completions/types'
+import type { AutocompleteContextSnippet, DocumentContext, GitContext } from '../completions/types'
 import type { ConfigGetter } from '../configuration'
 import type { ActiveTextEditorDiagnostic } from '../editor'
 import { createGitDiff } from '../editor/create-git-diff'
@@ -339,6 +339,13 @@ export class PromptString {
                 'symbol' in contextSnippet
                     ? internal_createPromptString(contextSnippet.symbol, ref)
                     : undefined,
+        }
+    }
+
+    public static fromAutocompleteGitContext(gitContext: GitContext, uri: vscode.Uri) {
+        const ref = [uri]
+        return {
+            repoName: internal_createPromptString(gitContext.repoName, ref),
         }
     }
 
