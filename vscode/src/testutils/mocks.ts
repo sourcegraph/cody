@@ -82,6 +82,13 @@ export enum OverviewRulerLane {
     Full = 7,
 }
 
+export enum DecorationRangeBehavior {
+    OpenOpen = 0,
+    ClosedClosed = 1,
+    OpenClosed = 2,
+    ClosedOpen = 3,
+}
+
 export class CodeLens {
     public readonly isResolved = true
     constructor(
@@ -311,6 +318,34 @@ export class Position implements VSCodePosition {
     public compareTo(other: VSCodePosition): number {
         return this.isBefore(other) ? -1 : this.isAfter(other) ? 1 : 0
     }
+
+    static Min(...positions: Position[]): Position {
+        if (positions.length === 0) {
+            throw new TypeError()
+        }
+        let result = positions[0]
+        for (let i = 1; i < positions.length; i++) {
+            const p = positions[i]
+            if (p.isBefore(result)) {
+                result = p
+            }
+        }
+        return result
+    }
+
+    static Max(...positions: Position[]): Position {
+        if (positions.length === 0) {
+            throw new TypeError()
+        }
+        let result = positions[0]
+        for (let i = 1; i < positions.length; i++) {
+            const p = positions[i]
+            if (p.isAfter(result)) {
+                result = p
+            }
+        }
+        return result
+    }
 }
 
 export class Location implements VSCodeLocation {
@@ -400,8 +435,16 @@ export class Range implements VSCodeRange {
 
         throw new Error('not implemented')
     }
-    public intersection(): VSCodeRange | undefined {
-        throw new Error('not implemented')
+    public intersection(other: VSCodeRange): VSCodeRange | undefined {
+        const start = Position.Max(other.start, this.start)
+        const end = Position.Min(other.end, this.end)
+        if (start.isAfter(end)) {
+            // this happens when there is no overlap:
+            // |-----|
+            //          |----|
+            return undefined
+        }
+        return new Range(start, end)
     }
     public union(): VSCodeRange {
         throw new Error('not implemented')
@@ -697,6 +740,12 @@ export enum UIKind {
     Web = 2,
 }
 
+export enum ProgressLocation {
+    SourceControl = 1,
+    Window = 10,
+    Notification = 15,
+}
+
 export class FileSystemError extends Error {
     public code = 'FileSystemError'
 }
@@ -746,6 +795,16 @@ export const vsCodeMocks = {
             key: 'foo',
             dispose: () => {},
         }),
+        withProgress: async (
+            options: vscode_types.ProgressOptions,
+            task: (
+                progress: vscode_types.Progress<{ message?: string; increment?: number }>,
+                token: CancellationToken
+            ) => Thenable<unknown>
+        ) => {
+            const cancel = new CancellationTokenSource()
+            return await task({ report: () => {} }, cancel.token)
+        },
         visibleTextEditors: [],
         tabGroups: { all: [] },
     },
@@ -756,12 +815,12 @@ export const vsCodeMocks = {
         fs: workspaceFs,
         getConfiguration() {
             return {
-                get(key: string) {
+                get(key: string, defaultValue: unknown = undefined) {
                     switch (key) {
                         case 'cody.debug.filter':
                             return '.*'
                         default:
-                            return undefined
+                            return defaultValue
                     }
                 },
                 update(): void {},
@@ -797,13 +856,8 @@ export const vsCodeMocks = {
     DiagnosticSeverity,
     ViewColumn,
     TextDocumentChangeReason,
+    ProgressLocation,
 } as const
-
-export enum ProgressLocation {
-    SourceControl = 1,
-    Window = 10,
-    Notification = 15,
-}
 
 export class MockFeatureFlagProvider extends FeatureFlagProvider {
     constructor(private readonly enabledFlags: Set<FeatureFlag>) {
@@ -866,6 +920,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
         singleline: undefined,
     },
     autocompleteFirstCompletionTimeout: 3500,
+    autocompleteExperimentalSmartThrottle: false,
     testingModelConfig: undefined,
     experimentalChatContextRanker: false,
 } satisfies Configuration

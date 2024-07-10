@@ -12,9 +12,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
-import { getConfiguration } from '../configuration'
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
-import { getExtensionDetails, logPrefix, telemetryService } from '../services/telemetry'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 
 import type { Span } from '@opentelemetry/api'
@@ -36,7 +34,10 @@ import {
 } from './get-inline-completions'
 import type { RequestParams } from './request-manager'
 import * as statistics from './statistics'
-import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
+import type {
+    InlineCompletionItemWithAnalytics,
+    InlineCompletionResponseHeaders,
+} from './text-processing/process-inline-completions'
 import { lines } from './text-processing/utils'
 import type { InlineCompletionItem } from './types'
 
@@ -126,6 +127,11 @@ interface SharedEventPayload extends InteractionIDPayload {
      * For example, CG can re-route requests to a different model based on the inference provider load.
      */
     resolvedModel?: string
+
+    /**
+     * A subset of HTTP response headers returned by the completion provider.
+     */
+    responseHeaders?: InlineCompletionResponseHeaders
 
     /** Language of the document being completed. */
     languageId: string
@@ -375,15 +381,6 @@ function writeCompletionEvent<SubFeature extends string, Action extends string, 
     params?: TelemetryEventParameters<{ [key: string]: number }, BillingProduct, BillingCategory>,
     legacyParams?: LegacyParams
 ): void {
-    const extDetails = getExtensionDetails(getConfiguration(vscode.workspace.getConfiguration()))
-    telemetryService.log(
-        `${logPrefix(extDetails.ide)}:completion:${subfeature ? `${subfeature}:` : ''}${action}`,
-        legacyParams,
-        {
-            agent: true,
-            hasV2Event: true, // this helper translates the event for us
-        }
-    )
     /**
      * Extract interaction ID from the full legacy params for convenience
      */
@@ -554,7 +551,7 @@ function getRecentCompletionsKey(params: RequestParams, completion: string): Rec
 }
 
 // On our analytics dashboards, we apply a distinct count on the completion ID to count unique
-// completions as suggested. Since we don't have want to maintain a list of all completion IDs in
+// completions as suggested. Since we don't want to maintain a list of all completion IDs in
 // the client, we instead retain the last few completion IDs that were marked as suggested to
 // prevent local over counting.
 const completionIdsMarkedAsSuggested = new LRUCache<CompletionAnalyticsID, true>({
@@ -646,6 +643,10 @@ export function loaded(
 
     if (!event.params.resolvedModel && items[0]?.resolvedModel) {
         event.params.resolvedModel = items[0]?.resolvedModel
+    }
+
+    if (!event.params.responseHeaders && items[0]?.responseHeaders) {
+        event.params.responseHeaders = items[0]?.responseHeaders
     }
 
     // 🚨 SECURITY: included only for DotCom users & Public github Repos.
@@ -766,7 +767,7 @@ export function accepted(
     // when the current one is rejected.
     //
     // One such condition is when using backspace. In VS Code, we create completions such that they
-    // always start at the binning of the line. This means when backspacing past the initial trigger
+    // always start at the beginning of the line. This means when backspacing past the initial trigger
     // point, we keep showing the currently rendered completion until the next request is finished.
     // However, we do log the completion as rejected with the keystroke leaving a small window where
     // the completion can be accepted after it was marked as suggested.
@@ -957,7 +958,7 @@ function logSuggestionEvents(isDotComUser: boolean): void {
     // need to retain the ability to mark them as seen
 }
 
-// Restores the logger's internals to a pristine state§
+// Restores the logger's internals to a pristine state.
 export function reset_testOnly(): void {
     activeSuggestionRequests.clear()
     completionIdsMarkedAsSuggested.clear()

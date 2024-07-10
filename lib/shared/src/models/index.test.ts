@@ -27,7 +27,7 @@ describe('Model Provider', () => {
         it('returns max token limit for known DotCom chat model with higher context window (claude 3)', () => {
             const models = getDotComDefaultModels()
             ModelsService.setModels(models)
-            const claude3SonnetModelID = 'anthropic/claude-3-sonnet-20240229'
+            const claude3SonnetModelID = 'anthropic/claude-3-5-sonnet-20240620'
             const claude3SonnetModel = ModelsService.getModelByID(claude3SonnetModelID)
             expect(claude3SonnetModel?.contextWindow?.context?.user).greaterThan(0)
             expect(claude3SonnetModel).toBeDefined()

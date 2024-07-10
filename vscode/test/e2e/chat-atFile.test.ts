@@ -7,29 +7,21 @@ import {
     expectContextCellCounts,
     focusChatInputAtEnd,
     getContextCell,
+    openContextCell,
     openFileInEditorTab,
     openMentionsForProvider,
     selectLineRangeInEditorTab,
     sidebarSignin,
 } from './common'
-import { type ExpectedEvents, executeCommandInPalette, test, withPlatformSlashes } from './helpers'
+import { type ExpectedV2Events, executeCommandInPalette, test, withPlatformSlashes } from './helpers'
 
 // See chat-atFile.test.md for the expected behavior for this feature.
 //
 // NOTE: Creating new chats is slow, and setup is slow, so collapse these into fewer tests.
 
-test.extend<ExpectedEvents>({
-    expectedEvents: [
-        'CodyInstalled',
-        // This is fired on empty @-mention query for open tabs context
-        'CodyVSCodeExtension:at-mention:executed',
-        // Log once on the first character entered for an @-mention query, e.g. "@."
-        'CodyVSCodeExtension:at-mention:file:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-    ],
+test.extend<ExpectedV2Events>({
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
@@ -210,29 +202,15 @@ test.extend<ExpectedEvents>({
     await expect(noMatches).toBeVisible()
 })
 
-test.extend<ExpectedEvents>({
-    expectedEvents: [
-        'CodyInstalled',
-        // This is fired on empty @-mention query for open tabs context
-        'CodyVSCodeExtension:at-mention:executed',
-        // Log once on the first character entered for an @-mention query, e.g. "@."
-        'CodyVSCodeExtension:at-mention:file:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-        'CodyVSCodeExtension:editChatButton:clicked',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-    ],
+test.extend<ExpectedV2Events>({
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
         'cody.auth.signin.token:clicked',
         'cody.auth:connected',
-        'cody.extension:savedLogin',
         'cody.codyIgnore:hasFile',
         'cody.auth:connected',
         'cody.at-mention:executed',
@@ -272,18 +250,9 @@ test.extend<ExpectedEvents>({
     await expectContextCellCounts(contextCell, { files: 2 })
 })
 
-test.extend<ExpectedEvents>({
-    expectedEvents: [
-        'CodyVSCodeExtension:at-mention:file:executed',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-        'CodyVSCodeExtension:chat:context:opened',
-        'CodyVSCodeExtension:chat:context:fileLink:clicked',
-    ],
+test.extend<ExpectedV2Events>({
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
@@ -313,8 +282,8 @@ test.extend<ExpectedEvents>({
     const contextCell = getContextCell(chatPanelFrame)
     await expectContextCellCounts(contextCell, { files: 1 })
     await contextCell.hover()
-    await contextCell.click()
-    const chatContext = chatPanelFrame.locator('details').last()
+    await openContextCell(contextCell)
+    const chatContext = getContextCell(chatPanelFrame).last()
     await chatContext.getByRole('link', { name: 'buzz.ts:2-4' }).hover()
     await chatContext.getByRole('link', { name: 'buzz.ts:2-4' }).click()
     const previewTab = page.getByRole('tab', { name: /buzz.ts, preview, Editor Group/ })
@@ -323,19 +292,9 @@ test.extend<ExpectedEvents>({
 })
 
 // NOTE: @symbols does not require double tabbing to select an option.
-test.extend<ExpectedEvents>({
-    expectedEvents: [
-        'CodyVSCodeExtension:at-mention:executed',
-        'CodyVSCodeExtension:at-mention:symbol:executed',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-        'CodyVSCodeExtension:chatResponse:noCode',
-        'CodyVSCodeExtension:chat:context:opened',
-        'CodyVSCodeExtension:chat:context:fileLink:clicked',
-    ],
+test.extend<ExpectedV2Events>({
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
@@ -395,8 +354,8 @@ test.extend<ExpectedEvents>({
     const contextCell = getContextCell(chatPanelFrame)
     await expectContextCellCounts(contextCell, { files: 2 })
     await contextCell.hover()
-    await contextCell.click()
-    const chatContext = chatPanelFrame.locator('details').last()
+    await openContextCell(contextCell)
+    const chatContext = getContextCell(chatPanelFrame).last()
     await chatContext.getByRole('link', { name: 'buzz.ts:1-15' }).hover()
     await chatContext.getByRole('link', { name: 'buzz.ts:1-15' }).click()
     const previewTab = page.getByRole('tab', { name: /buzz.ts, preview, Editor Group/ })
@@ -404,8 +363,7 @@ test.extend<ExpectedEvents>({
     await expect(previewTab).toBeVisible()
 })
 
-test.extend<ExpectedEvents>({
-    expectedEvents: ['CodyVSCodeExtension:addChatContext:clicked'],
+test.extend<ExpectedV2Events>({
     expectedV2Events: ['cody.addChatContext:clicked'],
 })('Add Selection to Cody Chat', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)

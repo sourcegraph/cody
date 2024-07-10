@@ -14,6 +14,7 @@ import {
     processCompletion,
 } from '../text-processing/process-inline-completions'
 
+import { trace } from '@opentelemetry/api'
 import { getDynamicMultilineDocContext } from './dynamic-multiline'
 import { type HotStreakExtractor, createHotStreakExtractor } from './hot-streak'
 import type { ProviderOptions } from './provider'
@@ -32,7 +33,7 @@ export type FetchCompletionResult =
       }
     | undefined
 
-type FetchCompletionsGenerator = AsyncGenerator<FetchCompletionResult>
+type FetchCompletionsGenerator = AsyncGenerator<FetchCompletionResult, FetchCompletionResult>
 
 /**
  * Uses the first line of the completion to figure out if it start the new multiline syntax node.
@@ -89,7 +90,13 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
 
     const generatorStartTime = performance.now()
 
-    for await (const { completion, stopReason, resolvedModel } of completionResponseGenerator) {
+    for await (const { completionResponse, metadata } of completionResponseGenerator) {
+        if (!completionResponse) {
+            return undefined
+        }
+
+        const { completion, stopReason } = completionResponse
+
         const isFirstCompletionTimeoutElapsed =
             performance.now() - generatorStartTime >= firstCompletionTimeout
         const isFullResponse = stopReason !== CompletionStopReason.StreamingChunk
@@ -117,7 +124,7 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
 
         const postProcessParams: ProcessItemParams = {
             ...providerOptions,
-            resolvedModel,
+            metadata,
         }
 
         /**
@@ -176,7 +183,7 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
                     document: providerOptions.document,
                     position: dynamicMultilineDocContext.position,
                     docContext: dynamicMultilineDocContext,
-                    resolvedModel,
+                    metadata,
                 })
 
                 yield* stopStreamingAndUsePartialResponse({
@@ -221,4 +228,13 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
             }
         }
     }
+
+    trace.getActiveSpan()?.addEvent('completion_stream_end')
+
+    // An extra abort call to ensure the API request is canceled when we reach this point.
+    if (!abortController.signal.aborted) {
+        abortController.abort()
+    }
+
+    return undefined
 }

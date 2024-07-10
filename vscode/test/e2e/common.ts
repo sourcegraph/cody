@@ -15,8 +15,11 @@ export const sidebarSignin = async (
     await focusSidebar(page)
     await sidebar.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).click()
     await page.getByRole('option', { name: 'Sign In with URL and Access Token' }).click()
+    // Ensure the correct input box has showed up before we start filling in the forms.
+    await expect(page.getByText('Enter the URL of the')).toBeVisible()
     await page.getByRole('combobox', { name: 'input' }).fill(SERVER_URL)
     await page.getByRole('combobox', { name: 'input' }).press('Enter')
+    await expect(page.getByText('Paste your access token')).toBeVisible()
     await page.getByRole('combobox', { name: 'input' }).fill(VALID_TOKEN)
     await page.getByRole('combobox', { name: 'input' }).press('Enter')
 
@@ -114,18 +117,22 @@ export function chatMessageRows(chatPanel: FrameLocator): Locator {
  * Gets the chat context cell.
  */
 export function getContextCell(chatPanel: FrameLocator): Locator {
-    return chatPanel.locator('details', { hasText: 'Context' })
+    return chatPanel.locator('[data-testid="context"]', { hasText: 'Context' })
 }
 
 export function contextCellItems(contextCell: Locator): Locator {
     return contextCell.locator('[data-testid="context-item"]')
 }
 
+export async function openContextCell(contextCell: Locator) {
+    contextCell.locator('button', { hasText: 'Context' }).click()
+}
+
 export async function expectContextCellCounts(
     contextCell: Locator,
     counts: { files: number; timeout?: number }
 ): Promise<void> {
-    const summary = contextCell.locator('summary', { hasText: 'Context' })
+    const summary = contextCell.locator('button', { hasText: 'Context' })
     await expect(summary).toHaveAttribute(
         'title',
         `${counts.files} item${counts.files === 1 ? '' : 's'}`,

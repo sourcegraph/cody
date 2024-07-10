@@ -71,17 +71,16 @@ export class DefaultPrompter {
                 !this.isCommand &&
                 Boolean(this.explicitContext.length || historyItems.length || this.getEnhancedContext)
             ) {
-                reverseTranscript[0] = PromptMixin.mixInto(reverseTranscript[0])
+                reverseTranscript[0] = PromptMixin.mixInto(reverseTranscript[0], chat.modelID)
             }
 
-            const transcriptLimitReached = promptBuilder.tryAddMessages(reverseTranscript)
-            if (transcriptLimitReached) {
+            const messagesIgnored = promptBuilder.tryAddMessages(reverseTranscript)
+            if (messagesIgnored) {
                 logDebug(
                     'DefaultPrompter.makePrompt',
-                    `Ignored ${transcriptLimitReached} chat messages due to context limit`
+                    `Ignored ${messagesIgnored} chat messages due to context limit`
                 )
             }
-
             // Counter for context items categorized by source
             const ignoredContext = { user: 0, enhanced: 0, transcript: 0 }
 
@@ -112,6 +111,7 @@ export class DefaultPrompter {
                 // Because this enhanced context is added for the last human message,
                 // we will also add it to the context list for display.
                 context.used.push(...newEnhancedMessages.added)
+                context.ignored.push(...newEnhancedMessages.ignored)
                 ignoredContext.enhanced += newEnhancedMessages.ignored.length
             }
 

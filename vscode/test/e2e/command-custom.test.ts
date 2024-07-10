@@ -5,12 +5,13 @@ import {
     expectContextCellCounts,
     getChatPanel,
     getContextCell,
+    openContextCell,
     sidebarExplorer,
     sidebarSignin,
 } from './common'
 import {
     type DotcomUrlOverride,
-    type ExpectedEvents,
+    type ExpectedV2Events,
     test as baseTest,
     openCustomCommandMenu,
     withPlatformSlashes,
@@ -23,23 +24,10 @@ test.beforeEach(() => {
     mockServer.resetLoggedEvents()
 })
 
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
-    expectedEvents: [
-        'CodyInstalled',
-        'CodyVSCodeExtension:codyIgnore:hasFile',
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:sidebar:custom:clicked',
-        'CodyVSCodeExtension:menu:command:custom:clicked',
-        'CodyVSCodeExtension:menu:custom:build:clicked',
-    ],
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
@@ -157,22 +145,10 @@ test.extend<ExpectedEvents>({
 
 // NOTE: If no custom commands are showing up in the command menu, it might
 // indicate a breaking change during the custom command building step.
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
-    expectedEvents: [
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:menu:command:custom:clicked',
-        'CodyVSCodeExtension:command:custom:executed',
-        'CodyVSCodeExtension:chat-question:submitted',
-        'CodyVSCodeExtension:chat-question:executed',
-    ],
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
@@ -217,7 +193,7 @@ test.extend<ExpectedEvents>({
     // Show the current file numbers used as context
     const contextCell = getContextCell(chatPanel)
     await expectContextCellCounts(contextCell, { files: 6 })
-    await contextCell.click()
+    await openContextCell(contextCell)
     // Display the context files to confirm no hidden files are included
     await expect(chatPanel.getByRole('link', { name: '.mydotfile:1-2' })).not.toBeVisible()
     await expect(chatPanel.getByRole('link', { name: 'error.ts:1-9' })).toBeVisible()
@@ -243,13 +219,12 @@ test.extend<ExpectedEvents>({
     await page.keyboard.press('Enter')
     await expect(chatPanel.getByText('Directory has one context file.')).toBeVisible()
     await expectContextCellCounts(contextCell, { files: 2 })
-    await contextCell.click()
+    await openContextCell(contextCell)
     await expect(
         chatPanel.getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go:1') })
     ).toBeVisible()
     // Click on the file link should open the 'var.go file in the editor
-    const chatContext = chatPanel.locator('details').last()
-    await chatContext
+    await contextCell
         .getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go:1') })
         .click()
     await expect(page.getByRole('tab', { name: 'var.go' })).toBeVisible()
@@ -264,27 +239,17 @@ test.extend<ExpectedEvents>({
     await expect(chatPanel.getByText('Open tabs as context.')).toBeVisible()
     // The files from the open tabs should be added as context
     await expectContextCellCounts(contextCell, { files: 2 })
-    await contextCell.click()
-    await expect(chatContext.getByRole('link', { name: 'index.html' })).toBeVisible()
+    await openContextCell(contextCell)
+    await expect(contextCell.getByRole('link', { name: 'index.html' })).toBeVisible()
     await expect(
-        chatContext.getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go') })
+        contextCell.getByRole('link', { name: withPlatformSlashes('lib/batches/env/var.go') })
     ).toBeVisible()
 })
 
-test.extend<ExpectedEvents>({
+test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
-    expectedEvents: [
-        'CodyVSCodeExtension:auth:clickOtherSignInOptions',
-        'CodyVSCodeExtension:login:clicked',
-        'CodyVSCodeExtension:auth:selectSigninMenu',
-        'CodyVSCodeExtension:auth:fromToken',
-        'CodyVSCodeExtension:Auth:connected',
-        'CodyVSCodeExtension:menu:command:custom:clicked',
-        'CodyVSCodeExtension:menu:command:config:clicked',
-    ],
     expectedV2Events: [
-        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        'cody.extension:savedLogin',
+        'cody.extension:installed',
         'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
@@ -379,7 +344,6 @@ testGitWorkspace('use terminal output as context', async ({ page, sidebar }) => 
     const panel = getChatPanel(page)
     const contextCell = getContextCell(panel)
     await expectContextCellCounts(contextCell, { files: 2 })
-    await contextCell.click()
-    const chatContext = panel.locator('details').last()
-    await expect(chatContext.getByRole('link', { name: withPlatformSlashes('/git diff') })).toBeVisible()
+    await openContextCell(contextCell)
+    await expect(contextCell.getByRole('link', { name: withPlatformSlashes('/git diff') })).toBeVisible()
 })

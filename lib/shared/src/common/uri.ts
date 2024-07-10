@@ -2,6 +2,13 @@ import type { URI } from 'vscode-uri'
 
 import { pathFunctionsForURI } from './path'
 
+export const SUPPORTED_URI_SCHEMAS = new Set([
+    'file',
+    'untitled',
+    'vscode-notebook',
+    'vscode-notebook-cell',
+])
+
 /**
  * dirname, but operates on a {@link URI}.
  *

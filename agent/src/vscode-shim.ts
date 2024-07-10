@@ -51,13 +51,16 @@ import { AgentQuickPick } from './AgentQuickPick'
 import { AgentTabGroups } from './AgentTabGroups'
 import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import type { Agent } from './agent'
-import { matchesGlobPatterns } from './cli/cody-bench/matchesGlobPatterns'
+import { matchesGlobPatterns } from './cli/command-bench/matchesGlobPatterns'
 import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
 
 // Not using CODY_TESTING because it changes the URL endpoint we send requests
 // to and we want to send requests to sourcegraph.com because we record the HTTP
 // traffic.
 export const isTesting = process.env.CODY_SHIM_TESTING === 'true'
+
+// The testing code paths sometimes need to distinguish the different types of testing.
+export const isIntegrationTesting = process.env.CODY_CLIENT_INTEGRATION_TESTING === 'true'
 
 export { AgentEventEmitter as EventEmitter } from '../../vscode/src/testutils/AgentEventEmitter'
 
@@ -83,6 +86,7 @@ export {
     Location,
     MarkdownString,
     OverviewRulerLane,
+    DecorationRangeBehavior,
     Position,
     ProgressLocation,
     QuickInputButtons,

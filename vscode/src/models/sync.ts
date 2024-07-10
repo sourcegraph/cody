@@ -2,6 +2,7 @@ import {
     ANSWER_TOKENS,
     type AuthStatus,
     CHAT_INPUT_TOKEN_BUDGET,
+    ClientConfigSingleton,
     Model,
     ModelUIGroup,
     ModelUsage,
@@ -10,6 +11,7 @@ import {
     getDotComDefaultModels,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { logDebug } from '../log'
 import { secretStorage } from '../services/SecretStorageProvider'
 import { getEnterpriseContextWindow } from './utils'
 
@@ -21,6 +23,12 @@ import { getEnterpriseContextWindow } from './utils'
  * or fallback to the limit from the authentication status if not configured.
  */
 export async function syncModels(authStatus: AuthStatus): Promise<void> {
+    // Offline mode only support Ollama models, which would be synced seperately.
+    if (authStatus.isOfflineMode) {
+        ModelsService.setModels([])
+        return
+    }
+
     // If you are not authenticated, you cannot use Cody. Sorry.
     if (!authStatus.authenticated) {
         ModelsService.setModels([])
@@ -29,7 +37,9 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
 
     // Fetch the LLM models and configuration server-side. See:
     // https://linear.app/sourcegraph/project/server-side-cody-model-selection-cca47c48da6d
-    if (useServerDefinedModels()) {
+    const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
+    if (clientConfig?.modelsAPIEnabled) {
+        logDebug('ModelsService', 'new models API enabled')
         const serverSideModels = await fetchServerSideModels(authStatus.endpoint || '')
         ModelsService.setModels(serverSideModels)
         // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't entirely make sense in
@@ -116,19 +126,6 @@ export function registerModelsFromVSCodeConfiguration() {
     }
 
     ModelsService.addModels(models)
-}
-
-// Checks the local VS Code configuration and sees if the user has opted into fetching
-// LLM model data from the backend.
-function useServerDefinedModels(): boolean {
-    const codyConfig = vscode.workspace.getConfiguration('cody')
-    if (codyConfig) {
-        const value = codyConfig.get<boolean>('dev.useServerDefinedModels')
-        if (value !== undefined) {
-            return value
-        }
-    }
-    return false
 }
 
 // fetchServerSideModels contacts the Sourcegraph endpoint, and fetches the LLM models it

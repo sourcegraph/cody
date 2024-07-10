@@ -1,7 +1,6 @@
 .feedback-buttons {
     display: flex;
     flex-direction: row;
-    gap: 0.15rem;
 }
 
 .feedback-button[disabled] {
@@ -17,4 +16,3 @@
     align-items: center;
     gap: calc(var(--spacing) / 4);
 }
-

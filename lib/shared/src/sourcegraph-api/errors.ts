@@ -55,6 +55,10 @@ export function isRateLimitError(error: unknown): error is RateLimitError {
     return error instanceof RateLimitError || (error as any)?.name === RateLimitError.errorName
 }
 
+export function isContextWindowLimitError(error: unknown): error is Error {
+    return error instanceof Error && error.message.includes('token limit')
+}
+
 export class TracedError extends Error {
     constructor(
         message: string,
@@ -104,6 +108,15 @@ export function isAbortError(error: unknown): error is AbortError {
             error.message.includes('The operation was aborted') ||
             error.message === 'This operation was aborted' ||
             error.message.includes('The user aborted a request'))
+    )
+}
+
+export function isAbortErrorOrSocketHangUp(error: unknown): error is Error {
+    return Boolean(
+        isAbortError(error) ||
+            (error && (error as any).message === 'socket hang up') ||
+            (error && (error as any).message === 'aborted') ||
+            error === 'aborted'
     )
 }
 

@@ -21,8 +21,6 @@ import { getEditor } from '../../editor/active-editor'
 import { editModel } from '../../models'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
 import type { AuthProvider } from '../../services/AuthProvider'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from '../../services/telemetry'
 import type { EditIntent, EditMode } from '../types'
 import { isGenerateIntent } from '../utils/edit-intent'
 import { getEditModelsForUser } from '../utils/edit-models'
@@ -82,7 +80,6 @@ export const getInput = async (
         return null
     }
 
-    telemetryService.log('CodyVSCodeExtension:menu:edit:clicked', { source }, { hasV2Event: true })
     telemetryRecorder.recordEvent('cody.menu.edit', 'clicked', {
         metadata: {
             source: EventSourceMetadataMapping[source as keyof typeof EventSourceMetadataMapping],

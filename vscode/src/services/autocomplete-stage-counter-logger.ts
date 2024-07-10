@@ -10,6 +10,7 @@ export const LOG_INTERVAL = 30 * 60 * 1000 // 30 minutes
 const INITIAL_STATE = {
     preLastCandidate: 0,
     preCache: 0,
+    preSmartThrottle: 0,
     preDebounce: 0,
     preContextRetrieval: 0,
     preNetworkRequest: 0,
@@ -19,10 +20,20 @@ const INITIAL_STATE = {
 
 export class AutocompleteStageCounter implements vscode.Disposable {
     private nextTimeoutId: NodeJS.Timeout | null = null
+    private providerModel: string | null = null
     private currentState = { ...INITIAL_STATE }
 
     constructor() {
         this.nextTimeoutId = setTimeout(() => this.flush(), LOG_INTERVAL)
+    }
+
+    public setProviderModel(providerModel: string): void {
+        // Flush the current counter on model change.
+        if (this.providerModel !== null && this.providerModel !== providerModel) {
+            this.flush()
+        }
+
+        this.providerModel = providerModel
     }
 
     public flush(): void {
@@ -30,9 +41,13 @@ export class AutocompleteStageCounter implements vscode.Disposable {
         const stateToLog = this.currentState
         this.currentState = { ...INITIAL_STATE }
 
-        telemetryRecorder.recordEvent('cody.completion.stageCounter', 'flush', {
-            metadata: stateToLog,
-        })
+        // Do not log empty counter events.
+        if (Object.values(stateToLog).some(count => count > 0)) {
+            telemetryRecorder.recordEvent('cody.completion.stageCounter', 'flush', {
+                metadata: stateToLog,
+                privateMetadata: { providerModel: this.providerModel },
+            })
+        }
 
         this.nextTimeoutId = setTimeout(() => this.flush(), LOG_INTERVAL)
     }
@@ -41,6 +56,11 @@ export class AutocompleteStageCounter implements vscode.Disposable {
      * Records the occurrence of a specific stage in the autocompletion generation pipeline.
      */
     public record(state: keyof typeof this.currentState): void {
+        if (!this.providerModel) {
+            // Do nothing if provider model is not set.
+            return
+        }
+
         this.currentState[state]++
     }
 

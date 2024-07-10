@@ -13,8 +13,6 @@ import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import type { CodyIgnoreType } from '../cody-ignore/notification'
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
 import { FeedbackOptionItems, SupportOptionItems } from './FeedbackOptions'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from './telemetry'
 import { enableVerboseDebugMode } from './utils/export-logs'
 
 interface StatusBarError {
@@ -98,11 +96,6 @@ export function createStatusBar(): CodyStatusBar {
 
     let authStatus: AuthStatus | undefined
     const command = vscode.commands.registerCommand(STATUS_BAR_INTERACTION_COMMAND, async () => {
-        telemetryService.log(
-            'CodyVSCodeExtension:statusBarIcon:clicked',
-            { loggedIn: Boolean(authStatus?.isLoggedIn) },
-            { hasV2Event: true }
-        )
         telemetryRecorder.recordEvent('cody.statusbarIcon', 'clicked', {
             privateMetadata: { loggedIn: Boolean(authStatus?.isLoggedIn) },
         })
@@ -298,17 +291,21 @@ export function createStatusBar(): CodyStatusBar {
         // yellow status bar icon when extension first loads but login hasn't
         // initialized yet
         if (authStatus) {
+            if (authStatus.isOfflineMode) {
+                statusBarItem.text = '$(cody-logo-heavy) Offline'
+                statusBarItem.tooltip = 'Cody is in offline mode'
+                statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
+                return
+            }
             if (authStatus.showNetworkError) {
                 statusBarItem.text = '$(cody-logo-heavy) Connection Issues'
                 statusBarItem.tooltip = 'Resolve network issues for Cody to work again'
-                // statusBarItem.color = new vscode.ThemeColor('statusBarItem.errorForeground')
                 statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground')
                 return
             }
             if (!authStatus.isLoggedIn) {
                 statusBarItem.text = '$(cody-logo-heavy) Sign In'
                 statusBarItem.tooltip = 'Sign in to get started with Cody'
-                // statusBarItem.color = new vscode.ThemeColor('statusBarItem.warningForeground')
                 statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
                 return
             }

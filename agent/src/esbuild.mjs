@@ -58,6 +58,7 @@ async function buildAgent(minify) {
         logLevel: 'error',
         external: ['typescript'],
         minify: minify,
+
         alias: {
             vscode: path.resolve(process.cwd(), 'src', 'vscode-shim.ts'),
             lexical: path.resolve(process.cwd(), '../vscode/build/lexical-package-fix'),

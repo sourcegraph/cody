@@ -16,12 +16,16 @@ interface CodyAgentServer {
   fun shutdown(params: Null?): CompletableFuture<Null?>
   @JsonRequest("chat/new")
   fun chat_new(params: Null?): CompletableFuture<String>
+  @JsonRequest("chat/web/new")
+  fun chat_web_new(params: Null?): CompletableFuture<Chat_Web_NewResult>
+  @JsonRequest("chat/delete")
+  fun chat_delete(params: Chat_DeleteParams): CompletableFuture<List<ChatExportResult>>
   @JsonRequest("chat/restore")
   fun chat_restore(params: Chat_RestoreParams): CompletableFuture<String>
   @JsonRequest("chat/models")
   fun chat_models(params: Chat_ModelsParams): CompletableFuture<Chat_ModelsResult>
   @JsonRequest("chat/export")
-  fun chat_export(params: Null?): CompletableFuture<List<ChatExportResult>>
+  fun chat_export(params: Chat_ExportParams?): CompletableFuture<List<ChatExportResult>>
   @JsonRequest("chat/remoteRepos")
   fun chat_remoteRepos(params: Chat_RemoteReposParams): CompletableFuture<Chat_RemoteReposResult>
   @JsonRequest("chat/submitMessage")
@@ -36,6 +40,8 @@ interface CodyAgentServer {
   fun commands_smell(params: Null?): CompletableFuture<String>
   @JsonRequest("commands/custom")
   fun commands_custom(params: Commands_CustomParams): CompletableFuture<CustomCommandResult>
+  @JsonRequest("customCommands/list")
+  fun customCommands_list(params: Null?): CompletableFuture<List<CodyCommand>>
   @JsonRequest("editCommands/code")
   fun editCommands_code(params: EditCommands_CodeParams): CompletableFuture<EditTask>
   @JsonRequest("editCommands/test")
@@ -98,6 +104,8 @@ interface CodyAgentServer {
   fun testing_memoryUsage(params: Null?): CompletableFuture<Testing_MemoryUsageResult>
   @JsonRequest("testing/awaitPendingPromises")
   fun testing_awaitPendingPromises(params: Null?): CompletableFuture<Null?>
+  @JsonRequest("testing/workspaceDocuments")
+  fun testing_workspaceDocuments(params: GetDocumentsParams): CompletableFuture<GetDocumentsResult>
   @JsonRequest("testing/diagnostics")
   fun testing_diagnostics(params: Testing_DiagnosticsParams): CompletableFuture<Testing_DiagnosticsResult>
   @JsonRequest("testing/progressCancelation")
@@ -108,6 +116,8 @@ interface CodyAgentServer {
   fun extensionConfiguration_change(params: ExtensionConfiguration): CompletableFuture<AuthStatus?>
   @JsonRequest("extensionConfiguration/status")
   fun extensionConfiguration_status(params: Null?): CompletableFuture<AuthStatus?>
+  @JsonRequest("textDocument/change")
+  fun textDocument_change(params: ProtocolTextDocument): CompletableFuture<TextDocument_ChangeResult>
   @JsonRequest("attribution/search")
   fun attribution_search(params: Attribution_SearchParams): CompletableFuture<Attribution_SearchResult>
   @JsonRequest("ignore/test")

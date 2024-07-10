@@ -14,14 +14,16 @@ import {
 } from './anthropic'
 import { createProviderConfig as createExperimentalOllamaProviderConfig } from './experimental-ollama'
 import {
-    DEEPSEEK_CODER_1P3_B,
+    CODE_QWEN_7B,
     DEEPSEEK_CODER_7B,
+    DEEPSEEK_CODER_V2_LITE_BASE,
+    FIREWORKS_DEEPSEEK_7B_LANG_LOG_FINETUNED,
+    FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED,
     FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID,
-    FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID_WITH_200MS_DELAY,
-    FIREWORKS_FIM_LANG_SPECIFIC_MODEL_MIXTRAL,
     type FireworksOptions,
     createProviderConfig as createFireworksProviderConfig,
 } from './fireworks'
+import { createProviderConfig as createGeminiProviderConfig } from './google'
 import { createProviderConfig as createOpenAICompatibleProviderConfig } from './openaicompatible'
 import type { ProviderConfig } from './provider'
 import { createProviderConfig as createUnstableOpenAIProviderConfig } from './unstable-openai'
@@ -50,6 +52,9 @@ export async function createProviderConfigFromVSCodeConfig(
         }
         case 'anthropic': {
             return createAnthropicProviderConfig({ client, model })
+        }
+        case 'unstable-gemini': {
+            return createGeminiProviderConfig({ client, model })
         }
         case 'experimental-openaicompatible': {
             return createOpenAICompatibleProviderConfig({
@@ -149,8 +154,8 @@ export async function createProviderConfig(
                         model: undefined,
                     })
                 }
-                logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
-                return null
+                // Gemini models
+                return createGeminiProviderConfig({ client, model })
             default:
                 logError('createProviderConfig', `Unrecognized provider '${provider}' configured.`)
                 return null
@@ -170,43 +175,46 @@ async function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<
     /**
      * The traffic allocated to the fine-tuned-base feature flag is further split between multiple feature flag in function.
      */
-    const [fimModelControl, fimModelVariant1, fimModelVariant2, fimModelVariant3, fimModelVariant4] =
-        await Promise.all([
-            featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteFIMModelExperimentControl
-            ),
-            featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteFIMModelExperimentVariant1
-            ),
-            featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteFIMModelExperimentVariant2
-            ),
-            featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteFIMModelExperimentVariant3
-            ),
-            featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteFIMModelExperimentVariant4
-            ),
-        ])
+    const [
+        fimModelControl,
+        fimModelVariant1,
+        fimModelVariant2,
+        fimModelVariant3,
+        fimModelVariant4,
+        fimModelCurrentBest,
+    ] = await Promise.all([
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentControl),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant1),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant2),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant3),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant4),
+        featureFlagProvider.evaluateFeatureFlag(
+            FeatureFlag.CodyAutocompleteFIMModelExperimentCurrentBest
+        ),
+    ])
+
     if (fimModelVariant1) {
         // Variant 1: Current production model with +200msec latency to quantity the effect of latency increase while keeping same quality
-        return { provider: 'fireworks', model: FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID_WITH_200MS_DELAY }
+        return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
     }
     if (fimModelVariant2) {
-        return { provider: 'fireworks', model: FIREWORKS_FIM_LANG_SPECIFIC_MODEL_MIXTRAL }
+        return { provider: 'fireworks', model: FIREWORKS_DEEPSEEK_7B_LANG_LOG_FINETUNED }
     }
     if (fimModelVariant3) {
-        return { provider: 'fireworks', model: DEEPSEEK_CODER_1P3_B }
+        return { provider: 'fireworks', model: CODE_QWEN_7B }
     }
     if (fimModelVariant4) {
+        return { provider: 'fireworks', model: FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED }
+    }
+    if (fimModelCurrentBest) {
         return { provider: 'fireworks', model: DEEPSEEK_CODER_7B }
     }
     if (fimModelControl) {
         // Current production model
-        return { provider: 'fireworks', model: FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID }
+        return { provider: 'fireworks', model: 'starcoder-hybrid' }
     }
     // Extra free traffic - redirect to the current production model which could be different than control
-    return { provider: 'fireworks', model: FIREWORKS_FIM_FINE_TUNED_MODEL_HYBRID }
+    return { provider: 'fireworks', model: 'starcoder-hybrid' }
 }
 
 async function resolveDefaultModelFromVSCodeConfigOrFeatureFlags(

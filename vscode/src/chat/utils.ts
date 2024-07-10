@@ -1,6 +1,11 @@
 import semver from 'semver'
 
-import { type AuthStatus, defaultAuthStatus, unauthenticatedStatus } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    defaultAuthStatus,
+    offlineModeAuthStatus,
+    unauthenticatedStatus,
+} from '@sourcegraph/cody-shared'
 import type { CurrentUserInfo } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 /**
@@ -32,8 +37,12 @@ export function newAuthStatus(
     displayName?: string,
     primaryEmail?: string,
     configOverwrites?: AuthStatus['configOverwrites'],
-    userOrganizations?: CurrentUserInfo['organizations']
+    userOrganizations?: CurrentUserInfo['organizations'],
+    isOfflineMode?: boolean
 ): AuthStatus {
+    if (isOfflineMode) {
+        return { ...offlineModeAuthStatus, endpoint, username }
+    }
     if (!user) {
         return { ...unauthenticatedStatus, endpoint }
     }

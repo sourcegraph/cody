@@ -11,8 +11,6 @@ import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { defaultCommands, selectedCodePromptWithExtraFiles } from '.'
 import type { ChatCommandResult } from '../../CommandResult'
-// biome-ignore lint/nursery/noRestrictedImports: Deprecated v1 telemetry used temporarily to support existing analytics.
-import { telemetryService } from '../../services/telemetry'
 import { getContextFileFromCursor } from '../context/selection'
 import type { CodyCommandArgs } from '../types'
 import { type ExecuteChatArguments, executeChat } from './ask'
@@ -78,12 +76,6 @@ export async function executeSmellCommand(
         }
 
         logDebug('executeSmellCommand', 'executing', { args })
-        telemetryService.log('CodyVSCodeExtension:command:smell:executed', {
-            useCodebaseContex: false,
-            requestID: args?.requestID,
-            source: args?.source,
-            traceId: span.spanContext().traceId,
-        })
         telemetryRecorder.recordEvent('cody.command.smell', 'executed', {
             metadata: {
                 useCodebaseContex: 0,

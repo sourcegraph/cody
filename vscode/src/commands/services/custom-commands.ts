@@ -58,6 +58,9 @@ export class CustomCommandsManager implements vscode.Disposable {
             ),
             vscode.commands.registerCommand('cody.commands.delete.json', type =>
                 this.configFileActions(type, 'delete')
+            ),
+            vscode.commands.registerCommand('cody.commands.get-custom-commands', () =>
+                [...this.customCommandsMap].map(command => command[1])
             )
         )
     }

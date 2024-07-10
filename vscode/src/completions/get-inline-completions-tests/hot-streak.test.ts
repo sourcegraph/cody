@@ -25,8 +25,12 @@ describe('[getInlineCompletions] hot streak', () => {
 
     describe('static multiline', () => {
         it('caches hot streaks completions that are streamed in', async () => {
+            const thousandConsoleLogLines = 'console.log(1)\n'.repeat(1000)
+
             let request = await getInlineCompletionsWithInlinedChunks(
-                `function myFunction() {
+                `const shouldNotBeInTheDocumentPrefix = 10_000
+                ${thousandConsoleLogLines}
+                function myFunction() {
                     console.log(1)
                     █console.log(2)
                     █console.log(3)
@@ -34,10 +38,17 @@ describe('[getInlineCompletions] hot streak', () => {
                     █
                 }`,
                 {
-                    configuration: { autocompleteExperimentalHotStreak: true },
+                    configuration: {
+                        autocompleteExperimentalHotStreak: true,
+                        autocompleteAdvancedProvider: 'fireworks',
+                    },
                     delayBetweenChunks: 50,
                 }
             )
+
+            // Use long document text that is much longer than `contextHits.maxPrefixLength`
+            // to test the hot streak behavior in long documents.
+            expect(request.docContext.prefix.includes('shouldNotBeInTheDocumentPrefix')).toBeFalsy()
 
             await vi.runAllTimersAsync()
             // Wait for hot streak completions be yielded and cached.
@@ -137,6 +148,7 @@ describe('[getInlineCompletions] hot streak', () => {
         })
 
         it('yields a singleline completion early if `firstCompletionTimeout` elapses before the multiline completion is ready', async () => {
+            let abortController: AbortController | undefined
             const completionsPromise = getInlineCompletionsWithInlinedChunks(
                 `function myFunction█() {
                     if(i > 1) {█
@@ -160,11 +172,24 @@ describe('[getInlineCompletions] hot streak', () => {
                     providerOptions: {
                         firstCompletionTimeout: 10,
                     },
+                    abortSignal: new AbortController().signal,
+                    onNetworkRequest(_, requestManagerAbortController) {
+                        abortController = requestManagerAbortController
+                    },
                 }
             )
 
             // Wait for the first completion to be ready
-            vi.advanceTimersByTime(15)
+            await vi.advanceTimersByTimeAsync(10)
+            expect(abortController?.signal.aborted).toBe(false)
+
+            // Wait for the first hot streak completion to be ready
+            await vi.advanceTimersByTimeAsync(10)
+            // We anticipate that the streaming will be cancelled because the hot
+            // streak text exceeds the maximum number of lines defined by `MAX_HOT_STREAK_LINES`.
+            // TODO: expose completion chunks, enabling more explicit verification of this behavior.
+            expect(abortController?.signal.aborted).toBe(true)
+
             // Release the `completionsPromise`
             await vi.runAllTimersAsync()
 
