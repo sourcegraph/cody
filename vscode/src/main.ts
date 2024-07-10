@@ -267,19 +267,14 @@ const register = async (
         // Sync auth status to graphqlClient
         graphqlClient.onConfigurationChange(newConfig)
 
-        // Refresh server-sent client configuration, as it controls which features the user has
-        // access to.
+        // Refresh server configuration that controls features enablement and models.
         await ClientConfigSingleton.getInstance().syncAuthStatus(authStatus)
-        // Reset the available models based on the auth change.
+
+        // Reset models list based on the updated auth status and server configuration.
         await syncModels(authStatus)
-        await ModelsService.onConfigChange()
 
         await chatManager.syncAuthStatus(authStatus)
         editorManager.syncAuthStatus(authStatus)
-
-        statusBar.syncAuthStatus(authStatus)
-        sourceControl.syncAuthStatus(authStatus)
-        symfRunner?.setSourcegraphAuth(authStatus.endpoint, newConfig.accessToken)
 
         const parallelTasks: Promise<void>[] = [
             featureFlagProvider.syncAuthStatus(),
@@ -288,7 +283,7 @@ const register = async (
 
         await Promise.all(parallelTasks)
 
-        await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
+        symfRunner?.setSourcegraphAuth(authStatus.endpoint, newConfig.accessToken)
 
         await exposeOpenCtxClient(
             context,
@@ -296,6 +291,10 @@ const register = async (
             authStatus.isDotCom,
             platform.createOpenCtxController
         )
+
+        statusBar.syncAuthStatus(authStatus)
+        sourceControl.syncAuthStatus(authStatus)
+        await PromptMixin.updateContextPreamble(isExtensionModeDevOrTest || isRunningInsideAgent())
 
         const eventValue =
             !authStatus.isLoggedIn && !authStatus.endpoint
@@ -309,11 +308,10 @@ const register = async (
 
     // Add change listener to auth provider
     authProvider.addChangeListener(handleAuthStatusChange)
-    // Sync initial auth status
-    await handleAuthStatusChange(authProvider.getAuthStatus())
 
     // Setup config watcher
     configWatcher.onChange(setupAutocomplete, disposables)
+    await configWatcher.initAndOnChange(() => ModelsService.onConfigChange(), disposables)
 
     setCommandController(platform.createCommandsProvider?.())
     repoNameResolver.init(authProvider)
