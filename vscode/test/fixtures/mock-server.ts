@@ -358,6 +358,8 @@ export class MockServer {
                 autoCompleteEnabled: true,
                 customCommandsEnabled: true,
                 attributionEnabled: attribution,
+                // When server-sent LLMs have been set, we enable the models api
+                modelsAPIEnabled: !!controller.availableLLMs,
             }))
         })
         app.post('/.api/graphql', (req, res) => {

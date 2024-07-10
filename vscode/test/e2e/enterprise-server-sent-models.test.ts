@@ -5,45 +5,42 @@ import type {
     ServerModelConfiguration,
 } from '@sourcegraph/cody-shared/src/models'
 import { createEmptyChatPanel, sidebarSignin } from './common'
-import { type ExtraWorkspaceSettings, test } from './helpers'
+import { test } from './helpers'
 
-test.extend<ExtraWorkspaceSettings>({
-    extraWorkspaceSettings: {
-        'cody.dev.useServerDefinedModels': true,
-    },
-})(
-    'allows multiple enterprise models when server-sent models is enabled',
-    async ({ page, server, sidebar }) => {
-        server.setAvailableLLMs(SERVER_MODELS)
-        await sidebarSignin(page, sidebar, true)
-        // Open chat.
-        const [chatFrame] = await createEmptyChatPanel(page)
-        let modelSelect = chatFrame.getByRole('combobox', { name: 'Select a model' }).last()
+test('allows multiple enterprise models when server-sent models is enabled', async ({
+    page,
+    server,
+    sidebar,
+}) => {
+    server.setAvailableLLMs(SERVER_MODELS)
+    await sidebarSignin(page, sidebar, true)
+    // Open chat.
+    const [chatFrame] = await createEmptyChatPanel(page)
+    let modelSelect = chatFrame.getByRole('combobox', { name: 'Select a model' }).last()
 
-        // First model in the server list should be selected as default
-        await expect(modelSelect).toBeEnabled()
-        await expect(modelSelect).toHaveText(/^Opus/)
+    // First model in the server list should be selected as default
+    await expect(modelSelect).toBeEnabled()
+    await expect(modelSelect).toHaveText(/^Opus/)
 
-        // Change selection to Titan and assert it was updated
-        // Note: currently the backend doesn't respect frontend enterprise
-        // model selection so we don't test that it switches models here
-        await modelSelect.click()
-        const modelChoices = chatFrame.getByRole('listbox', { name: 'Suggestions' })
-        await modelChoices.getByRole('option', { name: 'Titan' }).click()
-        await expect(modelSelect).toHaveText(/^Titan/)
+    // Change selection to Titan and assert it was updated
+    // Note: currently the backend doesn't respect frontend enterprise
+    // model selection so we don't test that it switches models here
+    await modelSelect.click()
+    const modelChoices = chatFrame.getByRole('listbox', { name: 'Suggestions' })
+    await modelChoices.getByRole('option', { name: 'Titan' }).click()
+    await expect(modelSelect).toHaveText(/^Titan/)
 
-        // Close chat window and create a new one and assert the default model is preserved
-        const chatTab = page.getByRole('tab', { name: 'New Chat' })
-        await chatTab.getByRole('button', { name: /^Close/ }).click()
+    // Close chat window and create a new one and assert the default model is preserved
+    const chatTab = page.getByRole('tab', { name: 'New Chat' })
+    await chatTab.getByRole('button', { name: /^Close/ }).click()
 
-        const [newChatFrame] = await createEmptyChatPanel(page)
-        modelSelect = newChatFrame.getByRole('combobox', { name: 'Select a model' }).last()
+    const [newChatFrame] = await createEmptyChatPanel(page)
+    modelSelect = newChatFrame.getByRole('combobox', { name: 'Select a model' }).last()
 
-        // First model in the server list should be selected as default
-        await expect(modelSelect).toBeEnabled()
-        await expect(modelSelect).toHaveText(/^Titan/)
-    }
-)
+    // First model in the server list should be selected as default
+    await expect(modelSelect).toBeEnabled()
+    await expect(modelSelect).toHaveText(/^Titan/)
+})
 
 const SERVER_MODELS: ServerModelConfiguration = {
     schemaVersion: '1.0',
