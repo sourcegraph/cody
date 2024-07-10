@@ -70,22 +70,30 @@ export class ChatManager implements vscode.Disposable {
         // Register Commands
         this.disposables.push(
             vscode.commands.registerCommand('cody.action.chat', args => this.executeChat(args)),
-            vscode.commands.registerCommand(
-                'cody.chat.panel.moveFromSidebarToEditor',
-                async () => await this.chatPanelsManager.moveSidebarChatToEditor()
+            vscode.commands.registerCommand('cody.chat.focusView', () =>
+                vscode.commands.executeCommand('cody.chat.focus')
+            ),
+            vscode.commands.registerCommand('cody.chat.signIn', () =>
+                vscode.commands.executeCommand('cody.chat.focus')
             ),
             vscode.commands.registerCommand(
-                'cody.chat.panel.moveFromEditorToSidebar',
-                async () => await this.chatPanelsManager.moveEditorChatToSidebar()
+                'cody.chat.moveToEditor',
+                async () => await this.chatPanelsManager.moveChatToEditor()
             ),
             vscode.commands.registerCommand(
-                'cody.chat.panel.sidebar.new',
-                async () => await this.chatPanelsManager.resetSidebar()
+                'cody.chat.moveFromEditor',
+                async () => await this.chatPanelsManager.moveChatFromEditor()
+            ),
+            vscode.commands.registerCommand('cody.chat.newPanel', async () => {
+                await this.chatPanelsManager.resetSidebar()
+                await vscode.commands.executeCommand('cody.chat.focus')
+            }),
+            vscode.commands.registerCommand('cody.chat.newEditorPanel', () =>
+                this.createNewWebviewPanel()
             ),
             vscode.commands.registerCommand('cody.chat.history.export', () => this.exportHistory()),
             vscode.commands.registerCommand('cody.chat.history.clear', () => this.clearHistory()),
             vscode.commands.registerCommand('cody.chat.history.delete', item => this.clearHistory(item)),
-            vscode.commands.registerCommand('cody.chat.panel.new', () => this.createNewWebviewPanel()),
             vscode.commands.registerCommand('cody.chat.panel.restore', (id, chat) =>
                 this.restorePanel(id, chat)
             ),

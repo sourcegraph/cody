@@ -126,7 +126,7 @@
           {
             "id": "chat",
             "title": "Cody Chat",
-            "description": "Answer questions about general programming topics, or specific to your codebase, with Cody chat.\n[Open Chat](command:cody.chat.panel.new)",
+            "description": "Answer questions about general programming topics, or specific to your codebase, with Cody chat.\n[Open Chat](command:cody.chat.newEditorPanel)",
             "media": {
               "markdown": "walkthroughs/chat.md"
             }
@@ -150,7 +150,7 @@
           {
             "id": "commands",
             "title": "Cody Commands",
-            "description": "Discover all the built-in Cody commands, and create your own custom commands.\n[Show Commands](command:cody.commands.tree.view.focus)",
+            "description": "Discover all the built-in Cody commands, and create your own custom commands.\n[Show Commands](command:cody.menu.commands)",
             "media": {
               "markdown": "walkthroughs/commands.md"
             }
@@ -238,23 +238,7 @@
         {
           "type": "webview",
           "id": "cody.chat",
-          "name": "Chat",
-          "when": "!cody.activated"
-        },
-        {
-          "id": "cody.commands.tree.view",
-          "name": "Commands",
-          "when": "cody.activated && !cody.currentFileIgnored"
-        },
-        {
-          "id": "cody.commands.disabled.view",
-          "name": "Commands",
-          "when": "cody.activated && cody.currentFileIgnored"
-        },
-        {
-          "id": "cody.chat.tree.view",
-          "name": "Chats",
-          "when": "cody.activated"
+          "name": "Chat"
         },
         {
           "id": "cody.support.tree.view",
@@ -263,18 +247,6 @@
         }
       ]
     },
-    "viewsWelcome": [
-      {
-        "view": "cody.chat.tree.view",
-        "contents": "Chat alongside your code, attach files, add additional context, and try different chat models.\n[New Chat](command:cody.chat.panel.new)",
-        "when": "cody.activated"
-      },
-      {
-        "view": "cody.commands.disabled.view",
-        "contents": "Commands are disabled for this file by an admin setting. Other Cody features are also disabled.\nMore info about [Cody Context Filters](https://sourcegraph.com/docs/cody/capabilities/ignore-context#cody-ignore)",
-        "when": "cody.activated && cody.currentFileIgnored"
-      }
-    ],
     "commands": [
       {
         "command": "cody.welcome",
@@ -357,7 +329,7 @@
         "group": "Commit",
         "title": "Generate Commit Message (Experimental)",
         "icon": "$(cody-logo)",
-        "when": "cody.activated && config.cody.experimental.commitMessage && config.git.enabled && scmProvider == git && !cody.isGeneratingCommit"
+        "when": "cody.activated && config.cody.experimental.commitMessage && config.git.enabled && !cody.isGeneratingCommit"
       },
       {
         "command": "cody.command.abort-commit",
@@ -371,7 +343,8 @@
         "command": "cody.auth.signout",
         "category": "Cody",
         "title": "Sign Out",
-        "icon": "$(sign-out)"
+        "icon": "$(sign-out)",
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.auth.signin",
@@ -391,11 +364,6 @@
         "title": "Chat Settings",
         "group": "Cody",
         "icon": "$(gear)"
-      },
-      {
-        "command": "cody.chat.focus",
-        "category": "Cody",
-        "title": "Sign In"
       },
       {
         "command": "cody.status-bar.interacted",
@@ -445,23 +413,37 @@
         "enablement": "cody.activated && config.cody.autocomplete.experimental.multiModelCompletions && config.cody.autocomplete.enabled && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
       },
       {
-        "command": "cody.chat.panel.new",
+        "command": "cody.chat.focusView",
         "category": "Cody",
+        "group": "Cody",
+        "title": "Focus on Chat View",
+        "enablement": "cody.activated"
+      },
+      {
+        "command": "cody.chat.signIn",
+        "category": "Cody",
+        "group": "Cody",
+        "title": "Sign In",
+        "enablement": "!cody.activated"
+      },
+      {
+        "command": "cody.chat.newEditorPanel",
+        "category": "Cody",
+        "title": "New Chat in Editor",
+        "enablement": "cody.activated",
+        "group": "Cody",
+        "icon": "$(new-comment-icon)"
+      },
+      {
+        "command": "cody.chat.newPanel",
+        "category": "Cody",
+        "group": "Cody",
         "title": "New Chat",
         "enablement": "cody.activated",
-        "group": "Cody",
         "icon": "$(new-comment-icon)"
       },
       {
-        "command": "cody.chat.panel.sidebar.new",
-        "category": "Cody",
-        "title": "New Chat in Sidebar",
-        "enablement": "cody.activated",
-        "group": "Cody",
-        "icon": "$(new-comment-icon)"
-      },
-      {
-        "command": "cody.chat.panel.moveFromSidebarToEditor",
+        "command": "cody.chat.moveToEditor",
         "category": "Cody",
         "title": "Move Chat to Editor Panel",
         "enablement": "cody.activated",
@@ -469,9 +451,9 @@
         "icon": "$(layout-sidebar-left-off)"
       },
       {
-        "command": "cody.chat.panel.moveFromEditorToSidebar",
+        "command": "cody.chat.moveFromEditor",
         "category": "Cody",
-        "title": "Move Chat to Sidebar",
+        "title": "Move Chat from Editor to Main Cody Panel",
         "enablement": "cody.activated",
         "group": "Cody",
         "icon": "$(layout-sidebar-left)"
@@ -498,13 +480,6 @@
         "enablement": "cody.activated",
         "group": "Cody",
         "icon": "$(link-external)"
-      },
-      {
-        "command": "cody.chat.tree.view.focus",
-        "category": "Cody",
-        "title": "Open Cody Sidebar",
-        "group": "Cody",
-        "icon": "$(layout-sidebar-left)"
       },
       {
         "command": "cody.chat.history.clear",
@@ -552,7 +527,7 @@
         "group": "Chat",
         "title": "Add Selection to Cody Chat",
         "icon": "$(mention)",
-        "enablement": "cody.activated && editorHasSelection && cody.hasChatPanelsOpened"
+        "enablement": "cody.activated && editorHasSelection"
       },
       {
         "command": "cody.mention.file",
@@ -560,7 +535,7 @@
         "group": "Chat",
         "title": "Add File to Cody Chat",
         "icon": "$(mention)",
-        "enablement": "cody.activated && resourceSet && cody.hasChatPanelsOpened"
+        "enablement": "cody.activated && resourceSet"
       },
       {
         "command": "cody.embeddings.resolveIssue",
@@ -607,34 +582,34 @@
     ],
     "keybindings": [
       {
-        "command": "cody.chat.focus",
+        "command": "cody.chat.signIn",
         "key": "alt+/",
         "when": "!cody.activated"
       },
       {
-        "command": "cody.chat.focus",
+        "command": "cody.chat.signIn",
         "key": "alt+l",
         "when": "!cody.activated"
       },
       {
-        "command": "cody.chat.panel.new",
+        "command": "cody.chat.newPanel",
         "key": "alt+/",
         "when": "cody.activated"
       },
       {
-        "command": "cody.chat.panel.new",
+        "command": "cody.chat.newPanel",
         "key": "alt+l",
         "when": "cody.activated"
       },
       {
         "command": "cody.mention.selection",
         "key": "alt+/",
-        "when": "cody.activated && editorTextFocus && editorHasSelection && cody.hasChatPanelsOpened"
+        "when": "cody.activated && editorTextFocus && editorHasSelection"
       },
       {
         "command": "cody.mention.selection",
         "key": "alt+l",
-        "when": "cody.activated && editorTextFocus && editorHasSelection && cody.hasChatPanelsOpened"
+        "when": "cody.activated && editorTextFocus && editorHasSelection"
       },
       {
         "command": "cody.tutorial.chat",
@@ -748,7 +723,7 @@
         },
         {
           "command": "cody.command.generate-commit",
-          "when": "cody.activated && config.cody.experimental.commitMessage && config.git.enabled && scmProvider == git && !cody.isGeneratingCommit"
+          "when": "cody.activated && config.cody.experimental.commitMessage && config.git.enabled && !cody.isGeneratingCommit"
         },
         {
           "command": "cody.command.abort-commit",
@@ -763,8 +738,7 @@
           "when": "false"
         },
         {
-          "command": "cody.chat.focus",
-          "title": "Cody: Sign In",
+          "command": "cody.chat.signIn",
           "when": "!cody.activated"
         },
         {
@@ -795,16 +769,16 @@
         {
           "command": "cody.mention.selection",
           "group": "0_cody",
-          "when": "cody.activated && editorHasSelection && cody.hasChatPanelsOpened"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.mention.file",
           "group": "0_cody",
-          "when": "cody.activated && !editorHasSelection && cody.hasChatPanelsOpened"
+          "when": "cody.activated && !editorHasSelection"
         },
         {
-          "command": "cody.chat.panel.new",
-          "when": "cody.activated && (!editorHasSelection || !cody.hasChatPanelsOpened)",
+          "command": "cody.chat.newEditorPanel",
+          "when": "cody.activated && !editorHasSelection",
           "group": "ask"
         },
         {
@@ -843,38 +817,31 @@
           "group": "custom-commands"
         },
         {
-          "command": "cody.chat.focus",
+          "command": "cody.chat.signIn",
           "when": "!cody.activated",
           "group": "other"
         }
       ],
       "view/title": [
         {
-          "command": "cody.chat.panel.new",
-          "when": "view == cody.chat.tree.view && cody.activated",
+          "command": "cody.menu.commands",
+          "when": "view == cody.chat && cody.activated",
           "group": "navigation@1"
         },
         {
-          "command": "cody.chat.history.clear",
-          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
-          "enablement": "cody.hasChatHistory",
+          "command": "cody.chat.newPanel",
+          "when": "view == cody.chat && cody.activated",
           "group": "navigation@2"
         },
         {
-          "command": "cody.chat.history.export",
-          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory",
-          "enablement": "cody.hasChatHistory",
+          "command": "cody.chat.history.panel",
+          "when": "view == cody.chat && cody.activated",
           "group": "navigation@3"
         },
         {
-          "command": "cody.chat.panel.sidebar.new",
+          "command": "cody.chat.moveToEditor",
           "when": "view == cody.chat && cody.activated",
-          "group": "navigation@1"
-        },
-        {
-          "command": "cody.chat.panel.moveFromSidebarToEditor",
-          "when": "view == cody.chat && cody.activated",
-          "group": "navigation@2"
+          "group": "navigation@4"
         },
         {
           "command": "cody.welcome",
@@ -910,13 +877,13 @@
           "visibility": "visible"
         },
         {
-          "command": "cody.chat.panel.moveFromEditorToSidebar",
+          "command": "cody.chat.moveFromEditor",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
           "group": "navigation@1",
           "visibility": "visible"
         },
         {
-          "command": "cody.chat.panel.new",
+          "command": "cody.chat.newEditorPanel",
           "when": "activeWebviewPanelId == cody.chatPanel && cody.activated",
           "group": "navigation@2",
           "visibility": "visible"
@@ -942,18 +909,8 @@
       ],
       "view/item/context": [
         {
-          "command": "cody.chat.history.delete",
-          "when": "view == cody.chat.tree.view && cody.activated && cody.hasChatHistory && viewItem == cody.chats",
-          "group": "inline@2"
-        },
-        {
           "command": "cody.copy.version",
           "when": "view == cody.support.tree.view && viewItem == cody.version",
-          "group": "inline@1"
-        },
-        {
-          "command": "cody.menu.commands-settings",
-          "when": "view == cody.commands.tree.view && viewItem == cody.sidebar.custom-commands",
           "group": "inline@1"
         }
       ],
@@ -962,13 +919,6 @@
           "command": "cody.command.explain-output",
           "group": "0_cody",
           "when": "cody.activated"
-        }
-      ],
-      "explorer/context": [
-        {
-          "command": "cody.mention.file",
-          "group": "0_cody",
-          "when": "cody.activated && resourceSet && !explorerResourceIsFolder && cody.hasChatPanelsOpened"
         }
       ],
       "scm/title": [

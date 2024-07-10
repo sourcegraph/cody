@@ -1055,7 +1055,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return this.createChatPanel(
                 Promise.resolve({
                     type: 'chat',
-                    session: await vscode.commands.executeCommand('cody.chat.panel.new'),
+                    session: await vscode.commands.executeCommand('cody.chat.newEditorPanel'),
                 })
             )
         })
@@ -1064,7 +1064,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             const panelId = await this.createChatPanel(
                 Promise.resolve({
                     type: 'chat',
-                    session: await vscode.commands.executeCommand('cody.chat.panel.new'),
+                    session: await vscode.commands.executeCommand('cody.chat.newEditorPanel'),
                 })
             )
 
