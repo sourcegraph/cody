@@ -310,7 +310,8 @@ const register = async (
     // Add change listener to auth provider
     authProvider.addChangeListener(handleAuthStatusChange)
     // Sync initial auth status
-    handleAuthStatusChange(authProvider.getAuthStatus())
+    await handleAuthStatusChange(authProvider.getAuthStatus())
+
     // Setup config watcher
     configWatcher.onChange(setupAutocomplete, disposables)
 
