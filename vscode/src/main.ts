@@ -269,7 +269,7 @@ const register = async (
 
         // Refresh server-sent client configuration, as it controls which features the user has
         // access to.
-        ClientConfigSingleton.getInstance().syncAuthStatus(authStatus)
+        await ClientConfigSingleton.getInstance().syncAuthStatus(authStatus)
         // Reset the available models based on the auth change.
         await syncModels(authStatus)
 
