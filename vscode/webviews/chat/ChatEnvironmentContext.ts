@@ -1,16 +1,12 @@
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import { createContext, useContext } from 'react'
 
-export enum ChatClientType {
-    Web = 'web',
-    VsCode = 'vscode',
-}
-
 interface ChatEnvironmentContextData {
-    clientType: ChatClientType
+    clientType: CodyIDE
 }
 
 export const ChatEnvironmentContext = createContext<ChatEnvironmentContextData>({
-    clientType: ChatClientType.VsCode,
+    clientType: CodyIDE.VSCode,
 })
 
 export function useChatEnvironment() {

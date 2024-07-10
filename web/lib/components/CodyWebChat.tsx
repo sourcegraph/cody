@@ -15,7 +15,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { Chat, type UserAccountInfo } from 'cody-ai/webviews/Chat'
-import { ChatClientType, ChatEnvironmentContext } from 'cody-ai/webviews/chat/ChatEnvironmentContext'
+import { ChatEnvironmentContext } from 'cody-ai/webviews/chat/ChatEnvironmentContext'
 import {
     type ChatModelContext,
     ChatModelContextProvider,
@@ -190,7 +190,7 @@ export const CodyWebChat: FC<CodyWebChatProps> = props => {
         }
     }, [initialContext])
 
-    const envVars = useMemo(() => ({ clientType: ChatClientType.Web }), [])
+    const envVars = useMemo(() => ({ clientType: CodyIDE.Web }), [])
 
     return (
         <div className={className} data-cody-web-chat={true} ref={setRootElement}>

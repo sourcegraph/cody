@@ -1,3 +1,4 @@
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import { all } from 'lowlight'
 import type { ComponentProps, FunctionComponent } from 'react'
 import { useMemo } from 'react'
@@ -6,7 +7,7 @@ import type { UrlTransform } from 'react-markdown/lib'
 import rehypeHighlight, { type Options as RehypeHighlightOptions } from 'rehype-highlight'
 import rehypeSanitize, { type Options as RehypeSanitizeOptions, defaultSchema } from 'rehype-sanitize'
 import remarkGFM from 'remark-gfm'
-import { ChatClientType, useChatEnvironment } from '../chat/ChatEnvironmentContext'
+import { useChatEnvironment } from '../chat/ChatEnvironmentContext'
 
 /**
  * Supported URIs to render as links in outputted markdown.
@@ -75,9 +76,12 @@ function wrapLinksWithCodyOpenCommand(url: string): string {
     return `command:_cody.vscode.open?${encodedURL}`
 }
 
-const URL_PROCESSORS: Record<ChatClientType, UrlTransform> = {
-    [ChatClientType.Web]: defaultUrlProcessor,
-    [ChatClientType.VsCode]: wrapLinksWithCodyOpenCommand,
+const URL_PROCESSORS: Record<CodyIDE, UrlTransform> = {
+    [CodyIDE.Web]: defaultUrlProcessor,
+    [CodyIDE.JetBrains]: defaultUrlProcessor,
+    [CodyIDE.Neovim]: defaultUrlProcessor,
+    [CodyIDE.Emacs]: defaultUrlProcessor,
+    [CodyIDE.VSCode]: wrapLinksWithCodyOpenCommand,
 }
 
 export const MarkdownFromCody: FunctionComponent<{ className?: string; children: string }> = ({
