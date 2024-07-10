@@ -408,6 +408,7 @@ export async function executeCommandInPalette(page: Page, commandName: string): 
     for (let i = 0; i < 3; i++) {
         try {
             // TODO(sqs): could simplify this further with a cody.auth.signoutAll command
+            await new Promise(resolve => setTimeout(resolve, 1000))
             await page.keyboard.press('F1')
             await expect(page.getByPlaceholder('Type the name of a command to run.')).toBeVisible({
                 timeout: 1000,
