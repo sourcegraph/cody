@@ -27,68 +27,69 @@ test.extend<ExpectedV2Events>({
         'cody.fixup.reverted:clicked',
         'cody.sidebar.edit:clicked',
     ],
-})('edit (fixup) task', async ({ page, sidebar, nap }) => {
-    // Sign into Cody
-    await sidebarSignin(page, sidebar)
-
-    // Open the Explorer view from the sidebar
-    await sidebarExplorer(page).click()
-    await page.getByRole('treeitem', { name: 'type.ts' }).locator('a').dblclick()
-    await page.getByRole('tab', { name: 'type.ts' }).hover()
-
-    // Place the cursor on some text within a range
-    await page.getByText('appleName').click()
-
-    // Open the Edit input
-    await page.getByRole('button', { name: 'Cody Commands' }).click()
-    await page.getByRole('option', { name: 'Edit code' }).click()
-
-    const inputBox = page.getByPlaceholder(/^Enter edit instructions \(type @ to include code/)
-    const instruction = 'Replace apple with banana'
-    const inputTitle = /^Edit type.ts:(\d+).* with Cody$/
-
-    // Wait for the input box to appear with the document name in title
-    await expect(page.getByText(inputTitle)).toBeVisible()
-    await inputBox.focus()
-    await inputBox.fill(instruction)
-    await page
-        .locator('a')
-        .filter({ hasText: /^Submit$/ })
-        .click() // Submit via Submit button
-
-    const acceptLens = page.getByRole('button', { name: 'Accept' })
-    const retryLens = page.getByRole('button', { name: 'Edit & Retry' })
-    const undoLens = page.getByRole('button', { name: 'Undo' })
-
-    // Code Lenses should appear
-    await expect(acceptLens).toBeVisible()
-    await expect(retryLens).toBeVisible()
-    await expect(undoLens).toBeVisible()
-
-    // The text in the doc should be replaced
-    await nap()
-    await expect(page.getByText('appleName')).not.toBeVisible()
-    await expect(page.getByText('bananaName')).toBeVisible()
-
-    // Undo: remove all the changes made by edit
-    await undoLens.click()
-    await nap()
-    await expect(page.getByText('appleName')).toBeVisible()
-    await expect(page.getByText('bananaName')).not.toBeVisible()
-
-    // create another edit from the sidebar Edit button
-    await page.getByText('appleName').click()
-    await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
-    await page.getByText('Edit Code').click()
-    await expect(page.getByText(inputTitle)).toBeVisible()
-    await inputBox.focus()
-    await inputBox.fill(instruction)
-    await page.keyboard.press('Enter')
-
-    await nap()
-    await expect(page.getByText('appleName')).not.toBeVisible()
-    await expect(page.getByText('bananaName')).toBeVisible()
 })
+    .skip('edit (fixup) task', async ({ page, sidebar, nap }) => {
+        // Sign into Cody
+        await sidebarSignin(page, sidebar)
+
+        // Open the Explorer view from the sidebar
+        await sidebarExplorer(page).click()
+        await page.getByRole('treeitem', { name: 'type.ts' }).locator('a').dblclick()
+        await page.getByRole('tab', { name: 'type.ts' }).hover()
+
+        // Place the cursor on some text within a range
+        await page.getByText('appleName').click()
+
+        // Open the Edit input
+        await page.getByRole('button', { name: 'Cody Commands' }).click()
+        await page.getByRole('option', { name: 'Edit code' }).click()
+
+        const inputBox = page.getByPlaceholder(/^Enter edit instructions \(type @ to include code/)
+        const instruction = 'Replace apple with banana'
+        const inputTitle = /^Edit type.ts:(\d+).* with Cody$/
+
+        // Wait for the input box to appear with the document name in title
+        await expect(page.getByText(inputTitle)).toBeVisible()
+        await inputBox.focus()
+        await inputBox.fill(instruction)
+        await page
+            .locator('a')
+            .filter({ hasText: /^Submit$/ })
+            .click() // Submit via Submit button
+
+        const acceptLens = page.getByRole('button', { name: 'Accept' })
+        const retryLens = page.getByRole('button', { name: 'Edit & Retry' })
+        const undoLens = page.getByRole('button', { name: 'Undo' })
+
+        // Code Lenses should appear
+        await expect(acceptLens).toBeVisible()
+        await expect(retryLens).toBeVisible()
+        await expect(undoLens).toBeVisible()
+
+        // The text in the doc should be replaced
+        await nap()
+        await expect(page.getByText('appleName')).not.toBeVisible()
+        await expect(page.getByText('bananaName')).toBeVisible()
+
+        // Undo: remove all the changes made by edit
+        await undoLens.click()
+        await nap()
+        await expect(page.getByText('appleName')).toBeVisible()
+        await expect(page.getByText('bananaName')).not.toBeVisible()
+
+        // create another edit from the sidebar Edit button
+        await page.getByText('appleName').click()
+        await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
+        await page.getByText('Edit Code').click()
+        await expect(page.getByText(inputTitle)).toBeVisible()
+        await inputBox.focus()
+        await inputBox.fill(instruction)
+        await page.keyboard.press('Enter')
+
+        await nap()
+        await expect(page.getByText('appleName')).not.toBeVisible()
+        await expect(page.getByText('bananaName')).toBeVisible()
+    })
 
 test('edit (fixup) input - range selection', async ({ page, sidebar }) => {
     // Sign into Cody

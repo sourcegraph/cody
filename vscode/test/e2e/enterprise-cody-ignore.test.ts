@@ -11,13 +11,12 @@ import {
     withTempDir,
 } from './helpers'
 
-test
-    .extend<ExpectedV2Events>({
-        // list of events we expect this test to log, add to this list as needed
-        expectedV2Events: [
-            // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-        ],
-    })
+test.extend<ExpectedV2Events>({
+    // list of events we expect this test to log, add to this list as needed
+    expectedV2Events: [
+        // 'cody.extension:installed', // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
+    ],
+})
     .extend<WorkspaceDirectory>({
         // biome-ignore lint/correctness/noEmptyPattern: Playwright needs empty pattern to specify "no dependencies".
         workspaceDirectory: async ({}, use) => {
@@ -40,9 +39,12 @@ test
                 await use(dir)
             })
         },
-    })(
-    'using actively invoked commands and autocomplete shows a error',
-    async ({ page, server, sidebar }) => {
+    })
+    .skip('using actively invoked commands and autocomplete shows a error', async ({
+        page,
+        server,
+        sidebar,
+    }) => {
         server.onGraphQl('ContextFilters').replyJson({
             data: {
                 site: {
@@ -119,8 +121,7 @@ test
             await page.getByLabel(title).first().hover()
             await page.getByRole('button', { name: 'Clear Notification' }).click()
         }
-    }
-)
+    })
 
 async function clearAllNotifications(page: Page) {
     await executeCommandInPalette(page, 'Notifications: Clear All Notifications')

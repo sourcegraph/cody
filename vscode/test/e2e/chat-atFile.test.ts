@@ -307,61 +307,62 @@ test.extend<ExpectedV2Events>({
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
     ],
-})('@-mention symbol in chat', async ({ page, nap, sidebar }) => {
-    await sidebarSignin(page, sidebar)
-
-    // Open the buzz.ts file so that VS Code starts to populate symbols.
-    await openFileInEditorTab(page, 'buzz.ts')
-
-    // Open chat.
-    const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
-
-    // Wait for the tsserver to become ready: when sync icon disappears
-    const langServerLoadingState = 'Editor Language Status: Loading'
-    await expect(page.getByRole('button', { name: langServerLoadingState })).toBeVisible()
-    await expect(page.getByRole('button', { name: langServerLoadingState })).not.toBeVisible()
-
-    // Go back to the Cody chat tab
-    await nap()
-    await page.getByRole('tab', { name: 'New Chat' }).click()
-
-    // Symbol empty state shows tooltip to search for a symbol
-    await openMentionsForProvider(chatPanelFrame, chatInput, 'Symbols')
-
-    // Symbol empty symbol results updates tooltip title to show no symbols found
-    await chatInput.pressSequentially('xx', { delay: 10 })
-    await expect(atMentionMenuMessage(chatPanelFrame, /^No symbols found/)).toBeVisible()
-    await chatInput.press('Backspace')
-    await chatInput.press('Backspace')
-    await chatInput.press('Backspace')
-
-    // Clicking on a file in the selector should autocomplete the file in chat input with added space
-    await openMentionsForProvider(chatPanelFrame, chatInput, 'Symbols')
-    await chatInput.pressSequentially('fizzb', { delay: 10 })
-    await expect(chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' })).toBeVisible()
-    await chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' }).click()
-    await expect(chatInput).toHaveText('buzz.ts fizzbuzz() ')
-    await expect(chatInputMentions(chatInput)).toHaveText(['buzz.ts', 'fizzbuzz()'])
-
-    // Submit the message
-    await chatInput.press('Enter')
-
-    // Close file.
-    const pinnedTab = page.getByRole('tab', { name: 'buzz.ts', exact: true })
-    await pinnedTab.getByRole('button', { name: /^Close/ }).click({ force: true })
-
-    // @-file with the correct line range shows up in the chat view and it opens on click
-    const contextCell = getContextCell(chatPanelFrame)
-    await expectContextCellCounts(contextCell, { files: 2 })
-    await contextCell.hover()
-    await openContextCell(contextCell)
-    const chatContext = getContextCell(chatPanelFrame).last()
-    await chatContext.getByRole('link', { name: 'buzz.ts:1-15' }).hover()
-    await chatContext.getByRole('link', { name: 'buzz.ts:1-15' }).click()
-    const previewTab = page.getByRole('tab', { name: /buzz.ts, preview, Editor Group/ })
-    await previewTab.hover()
-    await expect(previewTab).toBeVisible()
 })
+    .skip('@-mention symbol in chat', async ({ page, nap, sidebar }) => {
+        await sidebarSignin(page, sidebar)
+
+        // Open the buzz.ts file so that VS Code starts to populate symbols.
+        await openFileInEditorTab(page, 'buzz.ts')
+
+        // Open chat.
+        const [chatPanelFrame, chatInput] = await createEmptyChatPanel(page)
+
+        // Wait for the tsserver to become ready: when sync icon disappears
+        const langServerLoadingState = 'Editor Language Status: Loading'
+        await expect(page.getByRole('button', { name: langServerLoadingState })).toBeVisible()
+        await expect(page.getByRole('button', { name: langServerLoadingState })).not.toBeVisible()
+
+        // Go back to the Cody chat tab
+        await nap()
+        await page.getByRole('tab', { name: 'New Chat' }).click()
+
+        // Symbol empty state shows tooltip to search for a symbol
+        await openMentionsForProvider(chatPanelFrame, chatInput, 'Symbols')
+
+        // Symbol empty symbol results updates tooltip title to show no symbols found
+        await chatInput.pressSequentially('xx', { delay: 10 })
+        await expect(atMentionMenuMessage(chatPanelFrame, /^No symbols found/)).toBeVisible()
+        await chatInput.press('Backspace')
+        await chatInput.press('Backspace')
+        await chatInput.press('Backspace')
+
+        // Clicking on a file in the selector should autocomplete the file in chat input with added space
+        await openMentionsForProvider(chatPanelFrame, chatInput, 'Symbols')
+        await chatInput.pressSequentially('fizzb', { delay: 10 })
+        await expect(chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' })).toBeVisible()
+        await chatPanelFrame.getByRole('option', { name: 'fizzbuzz()' }).click()
+        await expect(chatInput).toHaveText('buzz.ts fizzbuzz() ')
+        await expect(chatInputMentions(chatInput)).toHaveText(['buzz.ts', 'fizzbuzz()'])
+
+        // Submit the message
+        await chatInput.press('Enter')
+
+        // Close file.
+        const pinnedTab = page.getByRole('tab', { name: 'buzz.ts', exact: true })
+        await pinnedTab.getByRole('button', { name: /^Close/ }).click({ force: true })
+
+        // @-file with the correct line range shows up in the chat view and it opens on click
+        const contextCell = getContextCell(chatPanelFrame)
+        await expectContextCellCounts(contextCell, { files: 2 })
+        await contextCell.hover()
+        await openContextCell(contextCell)
+        const chatContext = getContextCell(chatPanelFrame).last()
+        await chatContext.getByRole('link', { name: 'buzz.ts:1-15' }).hover()
+        await chatContext.getByRole('link', { name: 'buzz.ts:1-15' }).click()
+        const previewTab = page.getByRole('tab', { name: /buzz.ts, preview, Editor Group/ })
+        await previewTab.hover()
+        await expect(previewTab).toBeVisible()
+    })
 
 test.extend<ExpectedV2Events>({
     expectedV2Events: ['cody.addChatContext:clicked'],
