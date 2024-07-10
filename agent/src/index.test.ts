@@ -214,7 +214,7 @@ describe('Agent', () => {
               {
                 "model": "anthropic/claude-3-5-sonnet-20240620",
                 "speaker": "assistant",
-                "text": "Hello! I'm Cody, an AI coding assistant created by Sourcegraph. How can I help you with coding today? Whether you have questions about a specific programming language, need help debugging an issue, or want to discuss software development concepts, I'm here to assist. What would you like to work on?",
+                "text": "Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with coding today? Whether you need help with a specific programming language, debugging, code optimization, or any other coding-related task, I'm here to assist you. What would you like to work on?",
               }
             `
             )
