@@ -11,10 +11,9 @@ export type ProviderId = string
 
 export type ModelRef = `${ProviderId}::${ApiVersionId}::${ModelId}`
 
-export type ModelCapability = 'chat' | 'autocomplete'
-export type ModelCategory = 'accuracy' | 'balanced' | 'speed'
-export type ModelStatus = 'experimental' | 'beta' | 'stable' | 'deprecated'
-export type ModelTier = 'free' | 'pro' | 'enterprise'
+export type ModelCategory = ModelTag.Accuracy | ModelTag.Balanced | ModelTag.Speed
+export type ModelStatus = ModelTag.Experimental | ModelTag.Experimental | 'stable' | ModelTag.Deprecated
+export type ModelTier = ModelTag.Free | ModelTag.Pro | ModelTag.Enterprise
 
 export interface ContextWindow {
     maxInputTokens: number

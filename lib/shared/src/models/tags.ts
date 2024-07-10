@@ -20,7 +20,7 @@ export enum ModelTag {
     Enterprise = 'enterprise',
 
     // Origins - where the model comes from
-    Gateway = 'cody-gateway',
+    Gateway = 'gateway',
     BYOK = 'byok',
     Local = 'local',
     Ollama = 'ollama',

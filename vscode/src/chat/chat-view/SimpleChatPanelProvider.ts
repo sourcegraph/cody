@@ -1666,7 +1666,7 @@ export function revealWebviewViewOrPanel(viewOrPanel: vscode.WebviewView | vscod
 }
 
 function getDefaultModelID(status: AuthStatus): string {
-    const pending = '(pending)'
+    const pending = ''
     try {
         return ModelsService.getDefaultChatModel(status) || pending
     } catch {

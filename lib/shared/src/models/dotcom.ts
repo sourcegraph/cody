@@ -51,7 +51,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         provider: 'Anthropic',
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: expandedContextWindow,
-        tags: [ModelTag.Gateway, ModelTag.Recommended, ModelTag.Accuracy],
+        tags: [ModelTag.Gateway, ModelTag.Recommended, ModelTag.Balanced],
     },
     {
         title: 'Claude 3 Opus',
@@ -87,7 +87,7 @@ export const DEFAULT_DOT_COM_MODELS = [
         provider: 'OpenAI',
         usage: [ModelUsage.Chat, ModelUsage.Edit],
         contextWindow: basicContextWindow,
-        tags: [ModelTag.Gateway, ModelTag.Pro, ModelTag.Accuracy],
+        tags: [ModelTag.Gateway, ModelTag.Pro, ModelTag.Balanced],
     },
     {
         title: 'GPT-3.5 Turbo',
