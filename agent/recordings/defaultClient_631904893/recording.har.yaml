@@ -41,7 +41,8 @@ log:
           encoding: base64
           mimeType: text/plain; charset=utf-8
           size: 188
-          text: "[\"H4sIAAAAAAAAA2zMsQoCMRCE4T5PsVztE9hJsLjOznrPrBjI7koyQeW4d7dRBEn9z3xrI\
+          text:
+            "[\"H4sIAAAAAAAAA2zMsQoCMRCE4T5PsVztE9hJsLjOznrPrBjI7koyQeW4d7dRBEn9z3xrI\
             CKaLp5eR+OlSJr2hNpl9wk3xjBwh0fXexHI+NkbXKOrsqU2NoCal47s9utXLu07aMoV\
             0Q3yxDlb8sfQUU9S2uE0/ylhC28AAAD//wMAK/Ow9eAAAAA=\"]"
         cookies: []
@@ -580,7 +581,8 @@ log:
               - speaker: human
                 text: My name is Lars Monsen.
               - speaker: assistant
-                text: Hello Lars Monsen, it's nice to meet you. I'm Cody, an AI coding assistant
+                text:
+                  Hello Lars Monsen, it's nice to meet you. I'm Cody, an AI coding assistant
                   created by Sourcegraph. How can I help you with coding or
                   development tasks today?
               - speaker: human
@@ -794,7 +796,8 @@ log:
               - speaker: human
                 text: What model are you?
               - speaker: assistant
-                text: I am an AI assistant called Cody, created by Sourcegraph. I don't have
+                text:
+                  I am an AI assistant called Cody, created by Sourcegraph. I don't have
                   information about my specific underlying model architecture or
                   training. How can I assist you with coding or development
                   tasks today?
@@ -1004,7 +1007,7 @@ log:
               - speaker: human
                 text: >-
                   You have access to the provided codebase context. Answer
-                  positively without apologizing. 
+                  positively without apologizing.
 
 
                   Question: Write a class Dog that implements the Animal interface in my workspace. Show the code only, no explanation needed.
@@ -1199,7 +1202,7 @@ log:
               - speaker: human
                 text: >-
                   You have access to the provided codebase context. Answer
-                  positively without apologizing. 
+                  positively without apologizing.
 
 
                   Question: What is Squirrel?
@@ -1407,7 +1410,7 @@ log:
               - speaker: human
                 text: >-
                   You have access to the provided codebase context. Answer
-                  positively without apologizing. 
+                  positively without apologizing.
 
 
                   Question: What is the name of the function that I have selected? Only answer with the name of the function, nothing else
@@ -1610,7 +1613,7 @@ log:
               - speaker: human
                 text: >-
                   You have access to the provided codebase context. Answer
-                  positively without apologizing. 
+                  positively without apologizing.
 
 
                   Question: What is the name of the function that I have selected? Only answer with the name of the function, nothing else
@@ -1741,7 +1744,8 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: "Explain what @src/animal.ts:1-6 ( @src/animal.ts ) does in simple terms.
+                text:
+                  "Explain what @src/animal.ts:1-6 ( @src/animal.ts ) does in simple terms.
                   Assume the audience is a beginner programmer who has just
                   learned the language features and basic syntax. Focus on
                   explaining: 1) The purpose of the code 2) What input(s) it
@@ -1898,7 +1902,8 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: Review the shared code context and configurations to identify the test
+                text:
+                  Review the shared code context and configurations to identify the test
                   framework and libraries in use. Then, generate a suite of
                   multiple unit tests for the functions in <selected> using the
                   detected test framework and libraries. Be sure to import the
@@ -2052,7 +2057,8 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: Please review and analyze @src/animal.ts:1-6 ( @src/animal.ts ) and
+                text:
+                  Please review and analyze @src/animal.ts:1-6 ( @src/animal.ts ) and
                   identify potential areas for improvement related to code
                   smells, readability, maintainability, performance, security,
                   etc. Do not list issues already addressed in the given code.
@@ -2382,8 +2388,9 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: "The magic word is \"kramer\". If I say the magic word, respond with a
-                  single word: \"quone\"."
+                text:
+                  'The magic word is "kramer". If I say the magic word, respond with a
+                  single word: "quone".'
             model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
             temperature: 0
             topK: -1
@@ -2489,8 +2496,9 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: "The magic word is \"kramer\". If I say the magic word, respond with a
-                  single word: \"quone\"."
+                text:
+                  'The magic word is "kramer". If I say the magic word, respond with a
+                  single word: "quone".'
               - speaker: assistant
                 text: >-
                   Quone.
@@ -2710,8 +2718,9 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: "Another magic word is \"georgey\". If I say the magic word, respond with
-                  a single word: \"festivus\"."
+                text:
+                  'Another magic word is "georgey". If I say the magic word, respond with
+                  a single word: "festivus".'
             model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
             temperature: 0
             topK: -1
@@ -2817,10 +2826,12 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: "Another magic word is \"georgey\". If I say the magic word, respond with
-                  a single word: \"festivus\"."
+                text:
+                  'Another magic word is "georgey". If I say the magic word, respond with
+                  a single word: "festivus".'
               - speaker: assistant
-                text: Sure, I can do that! If you say the word "georgey", I will respond with
+                text:
+                  Sure, I can do that! If you say the word "georgey", I will respond with
                   "festivus".
               - speaker: human
                 text: kramer
@@ -2929,10 +2940,12 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: "Another magic word is \"georgey\". If I say the magic word, respond with
-                  a single word: \"festivus\"."
+                text:
+                  'Another magic word is "georgey". If I say the magic word, respond with
+                  a single word: "festivus".'
               - speaker: assistant
-                text: Sure, I can do that! If you say the word "georgey", I will respond with
+                text:
+                  Sure, I can do that! If you say the word "georgey", I will respond with
                   "festivus".
               - speaker: human
                 text: kramer
@@ -3897,7 +3910,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {
@@ -3997,7 +4010,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CodyConfigFeaturesResponse {
                   site {
                       codyConfigFeatures {
@@ -4099,7 +4112,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query ContextFilters {
                   site {
                       codyContextFilters(version: V1) {
@@ -4118,7 +4131,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 114
-          text: "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdHJ+SmVzvl5JakVJW6ZOSWpRcUg0aLE\
+          text:
+            "[\"H4sIAAAAAAAAA6pWSkks\",\"SVSyqlYqzixJBdHJ+SmVzvl5JakVJW6ZOSWpRcUg0aLE\
             ciWrvNKcnNra2loAAAAA//8=\",\"AwA2LshlNQAAAA==\"]"
         cookies: []
         headers:
@@ -4200,7 +4214,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -4304,7 +4318,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -4403,7 +4417,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -4505,7 +4519,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -4602,7 +4616,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -4626,7 +4640,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 251
-          text: "[\"H4sIAAAAAAAAA3zOwQqC\",\"QBAG4HeZs+K0BqFXr3rrBYbdMRdtJ3ZXKmTfPSyiSOg0\
+          text:
+            "[\"H4sIAAAAAAAAA3zOwQqC\",\"QBAG4HeZs+K0BqFXr3rrBYbdMRdtJ3ZXKmTfPSyiSOg0\
             8PP/H7OAoUhQLxBs5PVqMfe27RpxvT3NnqIV98wHip0YnqAGcnHwcrG60BPNhvMyD+I\
             cx1yh2qNSFWSfQUe3o4zsAtQ7hYgZ9BRi898byI7ziyvxAD+bLanlfJl4ffaN9tbzVf\
             wYihDJazHsYdP7gipETCmlBwAAAP//AwBQeP+1EwEAAA==\"]"
@@ -4710,7 +4725,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -4729,7 +4744,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 132
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eWD53MSiE\
+          text:
+            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eWD53MSiE\
             uf8vJLUipLwzLyU/HIlK6XUvMSknNQUpdra2loAAAAA//8DAOgINKVLAAAA\"]"
           textDecoded:
             data:
@@ -4816,7 +4832,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -4915,7 +4931,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -5012,7 +5028,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -5031,7 +5047,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 128
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8s\
+          text:
+            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8s\
             syU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//AwAfFAXARQAAAA==\"]"
           textDecoded:
             data:
@@ -5118,7 +5135,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -5228,7 +5245,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -5336,7 +5353,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -5366,7 +5383,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 379
-          text: "[\"H4sIAAAAAAAAA2RPy04=\",\"wkAU/Ze7bmkNUdpJSBQEF2jjIzQY4+J2emmnj5k6DxSa\
+          text:
+            "[\"H4sIAAAAAAAAA2RPy04=\",\"wkAU/Ze7bmkNUdpJSBQEF2jjIzQY4+J2emmnj5k6DxSa\
             /jtpMHHh7pycx72nhxwtAuuBO61J2q0hPVKRA4N0lzS8Uqfk/uXqqeJz8KBEk5IWe0H\
             5qkXRALPakQe5MF2DxwRbAgZvymlOhcauXCjrx2EYggfOkJYXg/kzZMrGtb+X360DD/\
             CAFvX29REYlNZ2hgVBU04nhVJFQ2MDV9KStBOu2gCDu2URKb5Z41f2Tm5RZ9V1vl6df\
@@ -5452,7 +5470,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUserCodySubscription {
                   currentUser {
                       codySubscription {
@@ -5475,7 +5493,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 228
-          text: "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5c4U2FoVsRToIgqWtDm6xyRCoSbi5GUrJu4uCoI7n5\
+          text:
+            "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5c4U2FoVsRToIgqWtDm6xyRCoSbi5GUrJu4uCoI7n5\
             +Os0IoV5IopERnHl2joPb1ehnSPE9nA1rtXi6w4RUg0h/F4bVEgzMpBouvPKKBCmJeO\
             fK/YnOzDcoRkSqb4fHeGrNcDK+KGISFKUW/K3aaqRyFkVcmtuOFPt05/2f2vzTnnJwA\
             AAP//AwBuKtnYwgAAAA==\"]"
@@ -5568,7 +5587,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query Repository($name: String!) {
               	repository(name: $name) {
               		id
@@ -5664,7 +5683,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -5761,7 +5780,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -5856,7 +5875,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -5873,7 +5892,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 136
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkYWBuYW5vFGB\
+          text:
+            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkYWBuYW5vFGB\
             kYmugbmugbG8aZ6JrqGRoaJBoZJqUlmpqlKtbW1AAAAAP//AwC1tndfSQAAAA==\"]"
           textDecoded:
             data:

@@ -6,6 +6,14 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+### Fixed
+
+### Changed
+
+## 1.26.0
+
+### Added
+
 - Ollama: Added support for running Cody offline with local Ollama models. [pull/4691](https://github.com/sourcegraph/cody/pull/4691)
 - Edit: Added support for users' to edit the applied edit before the diff view is removed. [pull/4684](https://github.com/sourcegraph/cody/pull/4684)
 - Autocomplete: Added experimental support for Gemini 1.5 Flash as the autocomplete model. To enable this experimental feature, update the `autocomplete.advanced.provider` configuration setting to `unstable-gemini`. Prerequisite: Your Sourcegraph instance (v5.5.0+) must first be configured to use Gemini 1.5 Flash as the autocomplete model. [pull/4743](https://github.com/sourcegraph/cody/pull/4743)

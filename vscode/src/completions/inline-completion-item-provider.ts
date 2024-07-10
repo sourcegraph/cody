@@ -230,7 +230,7 @@ export class InlineCompletionItemProvider
 
             const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
 
-            if (!clientConfig.autoCompleteEnabled) {
+            if (clientConfig && !clientConfig.autoCompleteEnabled) {
                 // If ConfigFeatures exists and autocomplete is disabled then raise
                 // the error banner for autocomplete config turned off
                 const error = new Error('AutocompleteConfigTurnedOff')

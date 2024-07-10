@@ -39,7 +39,6 @@ import {
     executeTestChatCommand,
     executeTestEditCommand,
 } from './commands/execute'
-import { executeExplainHistoryCommand } from './commands/execute/explain-history'
 import { CodySourceControl } from './commands/scm/source-control'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
@@ -259,14 +258,19 @@ const register = async (
     const sourceControl = new CodySourceControl(chatClient)
     const statusBar = createStatusBar()
 
-    // Function to handle auth status changes
+    // Functions that need to be called on auth status changes
     async function handleAuthStatusChange(authStatus: AuthStatus) {
         // NOTE: MUST update the config and graphQL client first.
         const newConfig = await getFullConfig()
+        // Propagate access token through config
         configWatcher.set(newConfig)
+        // Sync auth status to graphqlClient
         graphqlClient.onConfigurationChange(newConfig)
-        await ClientConfigSingleton.getInstance().refreshConfig()
 
+        // Refresh server-sent client configuration, as it controls which features the user has
+        // access to.
+        await ClientConfigSingleton.getInstance().syncAuthStatus(authStatus)
+        // Reset the available models based on the auth change.
         await syncModels(authStatus)
         await ModelsService.onConfigChange()
 
@@ -305,13 +309,12 @@ const register = async (
 
     // Add change listener to auth provider
     authProvider.addChangeListener(handleAuthStatusChange)
-    // Setup config watcher
-    configWatcher.onChange(setupAutocomplete, disposables)
     // Sync initial auth status
     handleAuthStatusChange(authProvider.getAuthStatus())
+    // Setup config watcher
+    configWatcher.onChange(setupAutocomplete, disposables)
 
-    const commandsManager = platform.createCommandsProvider?.()
-    setCommandController(commandsManager)
+    setCommandController(platform.createCommandsProvider?.())
     repoNameResolver.init(authProvider)
 
     // Execute Cody Commands and Cody Custom Commands
@@ -332,8 +335,8 @@ const register = async (
         id: DefaultCodyCommands | PromptString,
         args?: Partial<CodyCommandArgs>
     ): Promise<CommandResult | undefined> => {
-        const { customCommandsEnabled } = await ClientConfigSingleton.getInstance().getConfig()
-        if (!customCommandsEnabled) {
+        const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
+        if (!clientConfig?.customCommandsEnabled) {
             void vscode.window.showErrorMessage(
                 'This feature has been disabled by your Sourcegraph site admin.'
             )
@@ -381,14 +384,6 @@ const register = async (
                     )
                 }
             })
-        )
-    }
-
-    if (commandsManager !== undefined) {
-        disposables.push(
-            vscode.commands.registerCommand('cody.command.explain-history', a =>
-                executeExplainHistoryCommand(commandsManager, a)
-            )
         )
     }
 
