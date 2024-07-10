@@ -272,7 +272,6 @@ const register = async (
 
         // Reset models list based on the updated auth status and server configuration.
         await syncModels(authStatus)
-
         await chatManager.syncAuthStatus(authStatus)
         editorManager.syncAuthStatus(authStatus)
 
@@ -280,14 +279,13 @@ const register = async (
             featureFlagProvider.syncAuthStatus(),
             setupAutocomplete(),
         ]
-
         await Promise.all(parallelTasks)
 
         symfRunner?.setSourcegraphAuth(authStatus.endpoint, newConfig.accessToken)
 
-        await exposeOpenCtxClient(
+        void exposeOpenCtxClient(
             context,
-            initialConfig,
+            newConfig,
             authStatus.isDotCom,
             platform.createOpenCtxController
         )
