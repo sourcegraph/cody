@@ -84,7 +84,7 @@ export const FIREWORKS_FIM_LANG_SPECIFIC_MODEL_MIXTRAL = 'fim-lang-specific-mode
 
 export const FIREWORKS_DEEPSEEK_7B_LANG_STACK_FINETUNED =
     'fim-lang-specific-model-deepseek-stack-trained'
-export const FIREWORKS_DEEPSEEK_7B_LANG_LOG_FINETUNED = 'fim-lang-specific-model-deepseek-logs-trained  '
+export const FIREWORKS_DEEPSEEK_7B_LANG_LOG_FINETUNED = 'fim-lang-specific-model-deepseek-logs-trained'
 
 // Huggingface link (https://huggingface.co/deepseek-ai/deepseek-coder-1.3b-base)
 export const DEEPSEEK_CODER_1P3_B = 'deepseek-coder-1p3b'
