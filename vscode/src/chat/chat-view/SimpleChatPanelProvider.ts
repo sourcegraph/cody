@@ -876,7 +876,7 @@ export class SimpleChatPanelProvider
     }
 
     private async handleSetChatModel(modelID: string): Promise<void> {
-        this.chatModel.updateModel(modelID)
+        this.chatModel.setDefaultModel(modelID)
     }
 
     private async handleGetAllMentionProvidersMetadata(): Promise<void> {

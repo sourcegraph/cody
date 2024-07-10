@@ -278,6 +278,7 @@ export class ModelsService {
     }
 
     private static getDefaultModel(type: ModelUsage, authStatus: AuthStatus): Model | undefined {
+        // Free users can only use the default free model, so we just find the first model they can use
         const models = ModelsService.getModelsByType(type)
         const firstModelUserCanUse = models.find(m => ModelsService.canUserUseModel(authStatus, m))
         if (!authStatus.authenticated || isFreeUser(authStatus)) {
@@ -288,13 +289,11 @@ export class ModelsService {
             return current
         }
 
-        // Check for the last selected model
+        // If this editor has local storage enabled, check to see if the
+        // user set a default model in a previous session.
         const lastSelectedModelID = ModelsService.storage?.get(ModelsService.storageKeys[type])
         // return either the last selected model or first model they can use if any
-        return (
-            models.find(m => m.model === lastSelectedModelID) ||
-            models.find(m => ModelsService.canUserUseModel(authStatus, m))
-        )
+        return models.find(m => m.model === lastSelectedModelID) || firstModelUserCanUse
     }
 
     public static getDefaultEditModel(authStatus: AuthStatus): EditModel | undefined {
@@ -324,9 +323,14 @@ export class ModelsService {
             return false
         }
         const tier = Model.tier(resolved)
+        // Cody Enterprise users are able to use any models that the backend says is supported.
         if (isEnterpriseUser(status)) {
-            return tier === 'enterprise'
+            return true
         }
+
+        // A Cody Pro user can use any Free or Pro model, but not Enterprise.
+        // (But in reality, Sourcegraph.com wouldn't serve any Enterprise-only models to
+        // Cody Pro users anyways.)
         if (isCodyProUser(status)) {
             return tier !== 'enterprise'
         }

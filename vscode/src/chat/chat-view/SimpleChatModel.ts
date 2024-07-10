@@ -30,7 +30,7 @@ export class SimpleChatModel {
         this.contextWindow = ModelsService.getContextWindowByID(this.modelID)
     }
 
-    public async updateModel(newModelID: string): Promise<void> {
+    public async setDefaultModel(newModelID: string): Promise<void> {
         this.modelID = newModelID
         this.contextWindow = ModelsService.getContextWindowByID(this.modelID)
         await ModelsService.setDefaultModel(ModelUsage.Chat, newModelID)
