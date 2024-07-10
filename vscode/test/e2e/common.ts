@@ -39,8 +39,8 @@ export async function closeSidebar(page: Page): Promise<void> {
 
 async function isSidebarVisible(page: Page): Promise<boolean> {
     const sidebarsVisible = await Promise.all([
-        page.getByRole('heading', { name: 'Cody: Chat' }).isVisible(),
-        page.getByRole('heading', { name: 'Cody' }).isVisible(),
+        page.getByRole('heading', { name: 'Cody: Chat' }).isVisible({ timeout: 1 }),
+        page.getByRole('heading', { name: 'Cody' }).isVisible({ timeout: 1 }),
     ])
     return sidebarsVisible[0] || sidebarsVisible[1]
 }

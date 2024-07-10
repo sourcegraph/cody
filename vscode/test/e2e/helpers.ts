@@ -405,10 +405,18 @@ export async function signOut(page: Page): Promise<void> {
 
 export async function executeCommandInPalette(page: Page, commandName: string): Promise<void> {
     await closeSidebar(page)
-    // TODO(sqs): could simplify this further with a cody.auth.signoutAll command
-    await page.keyboard.press('F1')
-    await page.getByPlaceholder('Type the name of a command to run.').fill(`>${commandName}`)
-    await page.keyboard.press('Enter')
+    for (let i = 0; i < 3; i++) {
+        try {
+            // TODO(sqs): could simplify this further with a cody.auth.signoutAll command
+            await page.keyboard.press('F1')
+            await expect(page.getByPlaceholder('Type the name of a command to run.')).toBeVisible({
+                timeout: 1000,
+            })
+            await page.getByPlaceholder('Type the name of a command to run.').fill(`>${commandName}`)
+            await page.keyboard.press('Enter')
+            break
+        } catch {}
+    }
 }
 
 /**
