@@ -7,6 +7,7 @@ import {
     type ExpectedV2Events,
     type ExtraWorkspaceSettings,
     test as baseTest,
+    executeCommandInPalette,
 } from './helpers'
 import { testGitWorkspace } from './utils/gitWorkspace'
 
@@ -49,7 +50,7 @@ testGitWorkspace
 
         // Click on the command in the sidebar to verify it opens the source control panel.
         await page.getByRole('tab', { name: 'Cody', exact: true }).locator('a').click()
-        await page.getByText('Generate Commit Message (Experimental)', { exact: true }).click()
+        await executeCommandInPalette(page, 'Generate Commit Message (Experimental)')
 
         const scmInputBox = page.getByLabel('Source Control Input')
         await expect(scmInputBox.filter({ hasText: 'hello from the assistant' }).first()).toBeVisible()
