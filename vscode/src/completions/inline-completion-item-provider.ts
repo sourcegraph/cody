@@ -38,7 +38,6 @@ import {
     InlineCompletionItemProviderConfigSingleton,
 } from './inline-completion-item-provider-config-singleton'
 import { isCompletionVisible } from './is-completion-visible'
-
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './logger'
 import * as CompletionLogger from './logger'
 import { isLocalCompletionsProvider } from './providers/experimental-ollama'
@@ -316,36 +315,6 @@ export class InlineCompletionItemProvider
                 context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
             })
 
-            // Checks if the current line prefix length is less than or equal to the last triggered prefix length
-            // If true, that means user has backspaced/deleted characters to trigger a new completion request,
-            // meaning the previous result is unwanted/rejected.
-            // In that case, we mark the last candidate as "unwanted", remove it from cache, and clear the last candidate
-            const currentPrefix = docContext.currentLinePrefix
-            const lastTriggeredPrefix = this.lastCandidate?.lastTriggerDocContext.currentLinePrefix
-            if (
-                this.lastCandidate &&
-                // Remove the last candidate from cache only if it can be
-                // used in the current document context.
-                canReuseLastCandidateInDocumentContext({
-                    document,
-                    position,
-                    selectedCompletionInfo: context?.selectedCompletionInfo,
-                    lastCandidate: this.lastCandidate,
-                    docContext,
-                }) &&
-                lastTriggeredPrefix !== undefined &&
-                // TODO: consider changing this to the trigger point that users observe.
-                // Currently, if the request is synthesized from the inflight requests with an earlier
-                // trigger point, it is used here to decide if users wants to cancel the completion
-                // but it's not obvious to the user where the trigger point is, which makes this
-                // behavior opaque and hard to understand.
-                currentPrefix.length < lastTriggeredPrefix.length
-            ) {
-                this.handleUnwantedCompletionItem(
-                    getRequestParamsFromLastCandidate(document, this.lastCandidate)
-                )
-            }
-
             const completionIntent = getCompletionIntent({
                 document,
                 position,
@@ -435,6 +404,36 @@ export class InlineCompletionItemProvider
                         // We ignore the current context selection if completeSuggestWidgetSelection is not enabled
                         context: takeSuggestWidgetSelectionIntoAccount ? context : undefined,
                     })
+                }
+
+                // Checks if the current line prefix length is less than or equal to the last triggered prefix length
+                // If true, that means user has backspaced/deleted characters to trigger a new completion request,
+                // meaning the previous result is unwanted/rejected.
+                // In that case, we mark the last candidate as "unwanted", remove it from cache, and clear the last candidate
+                const currentPrefix = docContext.currentLinePrefix
+                const lastTriggeredPrefix = this.lastCandidate?.lastTriggerDocContext.currentLinePrefix
+                if (
+                    this.lastCandidate &&
+                    // Remove the last candidate from cache only if it can be
+                    // used in the current document context.
+                    canReuseLastCandidateInDocumentContext({
+                        document,
+                        position,
+                        selectedCompletionInfo: context?.selectedCompletionInfo,
+                        lastCandidate: this.lastCandidate,
+                        docContext,
+                    }) &&
+                    lastTriggeredPrefix !== undefined &&
+                    // TODO: consider changing this to the trigger point that users observe.
+                    // Currently, if the request is synthesized from the inflight requests with an earlier
+                    // trigger point, it is used here to decide if users wants to cancel the completion
+                    // but it's not obvious to the user where the trigger point is, which makes this
+                    // behavior opaque and hard to understand.
+                    currentPrefix.length < lastTriggeredPrefix.length
+                ) {
+                    this.handleUnwantedCompletionItem(
+                        getRequestParamsFromLastCandidate(document, this.lastCandidate)
+                    )
                 }
 
                 const visibleItems = result.items.filter(item =>

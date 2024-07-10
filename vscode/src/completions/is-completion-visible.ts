@@ -96,9 +96,8 @@ function completionMatchesSuffix(
 }
 
 /**
- * Matches the proposed completion, including the prefix that we build
- * from the original `position`, with the latest prefix that we build
- * from the active editor cursor position.
+ * Check that the full completion matches that _latest_ line prefix
+ * using the users' current position.
  */
 function completionMatchesPrefix(
     completion: Pick<InlineCompletionItemWithAnalytics, 'insertText'>,
@@ -113,9 +112,5 @@ function completionMatchesPrefix(
 
     const latestLine = document.lineAt(positions.latestPosition)
     const latestPrefix = document.getText(latestLine.range.with({ end: positions.latestPosition }))
-
-    // The `latestPrefix` will be what VS Code uses to determine if the completion is valid,
-    // this may have updated since the original completion request was made, so we
-    // check that the latest prefix is still valid.
     return intendedCompletion.startsWith(latestPrefix)
 }
