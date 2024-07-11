@@ -427,7 +427,7 @@ describe('InlineCompletionItemProvider', () => {
 
             const mockGetInlineCompletions = vi
                 .fn()
-                // First respones
+                // First response
                 .mockImplementationOnce(
                     () =>
                         new Promise(resolve => {
