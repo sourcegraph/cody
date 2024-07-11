@@ -371,69 +371,47 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('does not log a completion if the prefix no longer matches after subsequent invocations', async () => {
-            vi.useFakeTimers()
-
             const spy = vi.spyOn(CompletionLogger, 'suggested')
 
             const { document, position: firstPosition } = documentAndPosition(
                 'const foo = █a',
                 'typescript'
             )
-            const secondPosition = firstPosition.with(firstPosition.line, firstPosition.character + 1)
 
-            const mockGetInlineCompletions = vi
-                .fn()
-                // First respones
-                .mockImplementationOnce(
-                    () =>
-                        new Promise(resolve => {
-                            setTimeout(() => {
-                                resolve({
-                                    logId: '1' as CompletionLogID,
-                                    items: [
-                                        {
-                                            insertText: 'bar', // Completion: "const foo = bar"
-                                            range: new vsCodeMocks.Range(firstPosition, firstPosition),
-                                        },
-                                    ],
-                                    source: InlineCompletionsResultSource.Network,
-                                })
-                            }, 100)
-                        })
-                )
-                // Second response
-                .mockImplementationOnce(
-                    () =>
-                        new Promise(resolve => {
-                            setTimeout(() => {
-                                resolve({
-                                    logId: '2' as CompletionLogID,
-                                    items: [
-                                        {
-                                            insertText: 'awesome', // Completion: "const foo = awesome"
-                                            range: new vsCodeMocks.Range(secondPosition, secondPosition),
-                                        },
-                                    ],
-                                    source: InlineCompletionsResultSource.Network,
-                                })
-                            }, 100)
-                        })
-                )
+            // Update the cursor position to be after the expected completion request
+            const cursorSelectionMock = vi
+                .spyOn(vsCodeMocks.window, 'activeTextEditor', 'get')
+                .mockReturnValue({
+                    selection: {
+                        active: firstPosition.with(firstPosition.line, firstPosition.character + 1),
+                    },
+                } as any)
 
-            const provider = new MockableInlineCompletionItemProvider(mockGetInlineCompletions)
+            // Mock the `getInlineCompletions` function to return a completion item that requires the original
+            // prefix to be present.
+            const fn = vi.fn(getInlineCompletions).mockResolvedValue({
+                logId: '1' as CompletionLogID,
+                items: [
+                    {
+                        insertText: 'bar', // Completion: "const foo = bar"
+                        range: new vsCodeMocks.Range(firstPosition, firstPosition),
+                    },
+                ],
+                source: InlineCompletionsResultSource.Network,
+            })
 
-            // Call provideInlineCompletionItems twice, these will run in parallel, and we should expect
-            // that the first request is deemed not visible, due to `secondPosition` updating.
-            provider.provideInlineCompletionItems(document, firstPosition, DUMMY_CONTEXT)
-            provider.provideInlineCompletionItems(document, secondPosition, DUMMY_CONTEXT)
+            // Call provideInlineCompletionItems with the `firstPosition`. This will trigger a completion request
+            // but by the time it resolves, the cursor position will have changed. Meaning the prefix is no longer
+            // valid and this completion should not be suggested.
+            new MockableInlineCompletionItemProvider(fn).provideInlineCompletionItems(
+                document,
+                firstPosition,
+                DUMMY_CONTEXT
+            )
 
-            // Run the timers to resolve the promises
-            await vi.runAllTimersAsync()
-
-            // Only the second completion should be called, as the first completion is no longer visible
-            // due to the prefix changing before the request resolved.
-            expect(spy).toHaveBeenCalledTimes(1)
-            expect(spy).toHaveBeenCalledWith('2', expect.anything())
+            // The completion is no longer visible due to the prefix changing before the request resolved.
+            expect(spy).toHaveBeenCalledTimes(0)
+            cursorSelectionMock.mockReset()
         })
     })
 

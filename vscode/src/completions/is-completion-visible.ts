@@ -13,7 +13,7 @@ export function isCompletionVisible(
     document: vscode.TextDocument,
     positions: CompletionPositions,
     docContext: DocumentContext,
-    context: vscode.InlineCompletionContext,
+    context: vscode.InlineCompletionContext | undefined,
     completeSuggestWidgetSelection: boolean,
     abortSignal: AbortSignal | undefined
 ): boolean {
@@ -55,9 +55,9 @@ export function isCompletionVisible(
 function completionMatchesPopupItem(
     completion: InlineCompletionItemWithAnalytics,
     document: vscode.TextDocument,
-    context: vscode.InlineCompletionContext
+    context?: vscode.InlineCompletionContext
 ): boolean {
-    if (context.selectedCompletionInfo) {
+    if (context?.selectedCompletionInfo) {
         const currentText = document.getText(context.selectedCompletionInfo.range)
         const selectedText = context.selectedCompletionInfo.text
 

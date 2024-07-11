@@ -199,16 +199,11 @@ export class InlineCompletionItemProvider
 
     public async provideInlineCompletionItems(
         document: vscode.TextDocument,
-        initialPosition: vscode.Position,
-        initialContext: vscode.InlineCompletionContext,
+        invokedPosition: vscode.Position,
+        invokedContext: vscode.InlineCompletionContext,
         // Making it optional here to execute multiple suggestion in parallel from the CLI script.
         token?: vscode.CancellationToken
     ): Promise<AutocompleteResult | null> {
-        // We cannot rely on `position` and `context` being accurate for the entire duration of
-        // this function, so we support reassigning them later.
-        let position = initialPosition
-        let context = initialContext
-
         const isManualCompletion = Boolean(
             this.lastManualCompletionTimestamp && this.lastManualCompletionTimestamp > Date.now() - 500
         )
@@ -229,8 +224,8 @@ export class InlineCompletionItemProvider
             const lastCompletionRequest = this.latestCompletionRequest
             const completionRequest: CompletionRequest = {
                 document,
-                position,
-                context,
+                position: invokedPosition,
+                context: invokedContext,
             }
             this.latestCompletionRequest = completionRequest
 
@@ -283,7 +278,7 @@ export class InlineCompletionItemProvider
 
             // When the user has the completions popup open and an item is selected that does not match
             // the text that is already in the editor, VS Code will never render the completion.
-            if (!currentEditorContentMatchesPopupItem(document, context)) {
+            if (!currentEditorContentMatchesPopupItem(document, invokedContext)) {
                 return null
             }
 
@@ -300,7 +295,7 @@ export class InlineCompletionItemProvider
 
             const triggerKind = isManualCompletion
                 ? TriggerKind.Manual
-                : context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic
+                : invokedContext.triggerKind === vscode.InlineCompletionTriggerKind.Automatic
                   ? TriggerKind.Automatic
                   : takeSuggestWidgetSelectionIntoAccount
                     ? TriggerKind.SuggestWidget
@@ -309,14 +304,14 @@ export class InlineCompletionItemProvider
 
             let docContext = this.getDocContext(
                 document,
-                position,
-                context,
+                invokedPosition,
+                invokedContext,
                 takeSuggestWidgetSelectionIntoAccount
             )
 
             const completionIntent = getCompletionIntent({
                 document,
-                position,
+                position: invokedPosition,
                 prefix: docContext.prefix,
             })
 
@@ -341,6 +336,11 @@ export class InlineCompletionItemProvider
             const debounceInterval = isLocalProvider ? 125 : 75
 
             try {
+                // We cannot rely on `position` and `context` being accurate after this request is
+                // completed, so we support reassinging them later.
+                let position: vscode.Position = invokedPosition
+                let context: vscode.InlineCompletionContext | undefined = invokedContext
+
                 const result = await this.getInlineCompletions({
                     document,
                     position,
@@ -389,12 +389,16 @@ export class InlineCompletionItemProvider
                     return null
                 }
 
-                if (!position.isEqual(this.latestCompletionRequest.position)) {
-                    // The latestCompletionRequest has changed since the request was made.
+                const latestCursorPosition = vscode.window.activeTextEditor?.selection.active
+                if (
+                    latestCursorPosition !== undefined &&
+                    !latestCursorPosition.isEqual(invokedPosition)
+                ) {
+                    // The cursor position has changed since the request was made.
                     // This is likely due to another completion request starting, and this request staying in-flight.
                     // We must update the `position`, `context` and associated values
-                    position = this.latestCompletionRequest.position
-                    context = this.latestCompletionRequest.context
+                    position = latestCursorPosition
+                    context = undefined
                     docContext = this.getDocContext(
                         document,
                         position,
@@ -437,7 +441,7 @@ export class InlineCompletionItemProvider
                     isCompletionVisible(
                         item,
                         document,
-                        { invokedPosition: initialPosition, latestPosition: position },
+                        { invokedPosition, latestPosition: position },
                         docContext,
                         context,
                         takeSuggestWidgetSelectionIntoAccount,
@@ -760,7 +764,7 @@ export class InlineCompletionItemProvider
     private getDocContext(
         document: vscode.TextDocument,
         position: vscode.Position,
-        context: vscode.InlineCompletionContext,
+        context: vscode.InlineCompletionContext | undefined,
         takeSuggestWidgetSelectionIntoAccount: boolean
     ): DocumentContext {
         return getCurrentDocContext({
