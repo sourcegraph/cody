@@ -297,9 +297,11 @@ interface ChatIntentResponse {
 type RecordContextResponse = unknown
 
 interface RankContextResponse {
-    ranker: string
-    used: number[]
-    discarded: number[]
+    rankContext: {
+        ranker: string
+        used: number[]
+        discarded: number[]
+    }
 }
 
 interface ContextSearchResponse {
@@ -880,10 +882,10 @@ export class SourcegraphGraphQLAPIClient {
             RANK_CONTEXT_QUERY,
             {
                 interactionId: interactionID,
-                context: context,
+                contextItems: context,
             }
         )
-        return extractDataOrError(response, data => data)
+        return extractDataOrError(response, data => data.rankContext)
     }
 
     public async contextSearch(

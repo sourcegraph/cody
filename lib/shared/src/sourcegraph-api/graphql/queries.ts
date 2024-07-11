@@ -195,7 +195,7 @@ query Repositories($names: [String!]!, $first: Int!) {
 `
 
 export const CHAT_INTENT_QUERY = `
-query ChatIntent($query: String!, $interactionId: String) {
+query ChatIntent($query: String!, $interactionId: String!) {
     chatIntent(query: $query, interactionId: $interactionId) {
         intent
         score
@@ -212,10 +212,9 @@ query RecordContext($interactionId: String!, $usedContextItems: [InputContextIte
 export const RANK_CONTEXT_QUERY = `
 query RankContext($interactionId: String!, $contextItems: [InputContextItem!]!) {
     rankContext(interactionId: $interactionId, contextItems: $contextItems) {
-        contextItems {
-            score
-            content
-        }
+        ranker
+        used
+        discarded
     }
 }`
 
