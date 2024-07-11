@@ -113,6 +113,7 @@ export interface InlineCompletionsResult {
 export enum InlineCompletionsResultSource {
     Network = 'Network',
     Cache = 'Cache',
+    FuzzyCache = 'FuzzyCache',
     HotStreak = 'HotStreak',
     CacheAfterRequestStart = 'CacheAfterRequestStart',
 
