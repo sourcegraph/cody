@@ -10,6 +10,12 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+## 1.26.1
+
+### Fixed
+
+- A no-op command `New Chat in Sidebar` was removed. (This will be added back with functionality in the next minor stable release version.)
+
 ## 1.26.0
 
 ### Added
