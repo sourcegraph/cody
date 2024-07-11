@@ -13,6 +13,7 @@ import { displayLineRange } from '../common/range'
 import { displayPathBasename } from '../editor/displayPath'
 
 export const CONTEXT_ITEM_MENTION_NODE_TYPE = 'contextItemMention'
+export const TEMPLATE_INPUT_NODE_TYPE = 'templateInput'
 
 /**
  * The subset of {@link ContextItem} fields that we need to store to identify and display context
